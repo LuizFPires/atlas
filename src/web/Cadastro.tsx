@@ -5,6 +5,7 @@ import { useTema } from '../tema/tema'
 import { EMAIL_RE, juntarFalaEmail } from './compra'
 import { sessionIdDaUrl } from './cadastro-api'
 import { PRECO } from './conteudo'
+import { LinksLegais } from './Legal'
 import './web.css'
 
 export interface DadosCadastro { nome: string; empresa: string; faz: string; email: string }
@@ -90,6 +91,7 @@ export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onE
               {enviando ? 'Enviando…' : <>Receber meu acesso por e-mail <Icone nome="seta" /></>}
             </button>
             <span className="c-mute" style={{ fontSize: 13, lineHeight: 1.5 }}>O e-mail chega em até 1 minuto. Abra no computador onde você vai construir.</span>
+            <span className="c-mute v-rodape-links" style={{ fontSize: 13, margin: 0 }}><LinksLegais novaAba /></span>
           </form>
         )}
       </div>

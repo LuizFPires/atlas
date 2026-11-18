@@ -142,7 +142,7 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         if (tipo === 'implantacao' && !(await ctx.pagamento.store.tentarEvento(`checkout:ip:${ipDe(req)}`, 10, 15 * 60_000, ctx.pagamento.agora()))) {
           return json({ erro: 'muitas_solicitacoes', mensagem: 'Muitas tentativas. Espere uns minutos.' }, 429)
         }
-        return json(await criarCheckout(ctx.pagamento, { conta_id: s('conta_id'), tipo, email: s('email'), licenca_id: s('licenca_id') }))
+        return json(await criarCheckout(ctx.pagamento, { conta_id: s('conta_id'), tipo, email: s('email'), licenca_id: s('licenca_id'), aceite_termos_versao: (b as Record<string, unknown>).aceite_termos === true ? s('versao_termos') : '' }))
       }
       case '/cadastro': {
         if (!ctx.cadastro) return json({ erro: 'cadastro_indisponivel' }, 503)

@@ -77,7 +77,7 @@ describe('D — URL de retorno vem do servidor', () => {
     const c = { deps: m.deps, pagamento: m.deps, carregarKit: async () => [], autorizarServico: () => false }
     const r = await tratar(c, new Request('https://x.test/functions/v1/pagamento/checkout', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co', url_sucesso: 'https://evil.test/x', url_cancelar: 'https://evil.test/y', success_url: 'https://evil.test/z' }),
+      body: JSON.stringify({ conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co', aceite_termos: true, versao_termos: '1.0', url_sucesso: 'https://evil.test/x', url_cancelar: 'https://evil.test/y', success_url: 'https://evil.test/z' }),
     }))
     expect(r.status).toBe(200)
     const f = new URLSearchParams(m.chamadas[0].body)
@@ -89,14 +89,14 @@ describe('D — URL de retorno vem do servidor', () => {
     for (const base of [null, undefined, 'http://loja.test', 'javascript:alert(1)', 'nao-e-url', 'https://u:p@loja.test']) {
       const m = montarPag()
       m.store.contas[0].base_retorno = base
-      await expect(criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co' })).rejects.toMatchObject({ codigo: 'retorno_nao_configurado', status: 503 })
+      await expect(criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co', aceite_termos_versao: '1.0' })).rejects.toMatchObject({ codigo: 'retorno_nao_configurado', status: 503 })
       expect(m.chamadas).toHaveLength(0)
     }
   })
   it('normaliza para a origem exata (descarta caminho/query da base)', async () => {
     const m = montarPag()
     m.store.contas[0].base_retorno = 'https://loja.test/qualquer?x=1'
-    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co' })
+    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co', aceite_termos_versao: '1.0' })
     expect(new URLSearchParams(m.chamadas[0].body).get('success_url')).toBe('https://loja.test/compra/sucesso?session_id={CHECKOUT_SESSION_ID}')
   })
 })

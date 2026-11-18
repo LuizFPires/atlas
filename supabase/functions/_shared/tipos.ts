@@ -13,6 +13,8 @@ export interface Cliente {
   cadastro_em?: Date | null
   /** M6: usuário do Supabase Auth ligado a este cliente (login do portal). Nunca sai para o navegador. */
   auth_user_id?: string | null
+  /** LGPD: quando a conta foi excluída (dados pessoais anonimizados). */
+  excluido_em?: Date | null
 }
 export interface Licenca {
   id: string
@@ -201,6 +203,10 @@ export interface Store {
   /** Marca a sessão como paga (upsert: cria se o webhook chegar sem registro prévio). */
   marcarSessaoPaga(contaId: string, sessaoId: string, email: string): Promise<void>
   sessaoPorId(sessaoId: string): Promise<SessaoCheckout | null>
+  /** LGPD: grava o aceite dos Termos/Política (versão + quando) para o e-mail da compra. Falhou = lança (a compra não segue sem o registro). */
+  registrarConsentimento(email: string, versao: string, origem: 'checkout', quando: Date): Promise<void>
+  /** LGPD: apaga/anonimiza os dados pessoais do cliente de forma atômica (RPC excluir_conta). false = cliente não encontrado. */
+  excluirConta(clienteId: string, quando: Date): Promise<boolean>
   /** Invalida (usado_em) os links de instalação ainda abertos do cliente. */
   invalidarLinks(clienteId: string, quando: Date): Promise<void>
   /** Atômico: invalida os links abertos do cliente e insere o novo na mesma operação (sempre sobra um só válido). */

@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
+import { tratar } from '../functions/_shared/http.ts'
 import { criarCheckout } from '../functions/_shared/pagamento/checkout.ts'
 import { codificarForm } from '../functions/_shared/pagamento/stripe-api.ts'
 import { CONTA, montarPag, SK_TESTE } from './helpers-pagamento.ts'
@@ -14,7 +15,7 @@ describe('checkout (Stripe do cliente)', () => {
 
   it('implantação: pagamento único R$ 4.800 com Pix e cartão, usando a chave da conta do cliente', async () => {
     const m = montarPag()
-    const r = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'Ana@Loja.com', ...urls })
+    const r = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'Ana@Loja.com', aceite_termos_versao: '1.0', ...urls })
     expect(r.url).toContain('checkout.stripe.com')
     const c = m.chamadas[0]
     expect(c.url).toBe('https://api.stripe.com/v1/checkout/sessions')
@@ -32,8 +33,8 @@ describe('checkout (Stripe do cliente)', () => {
 
   it('não vaza sessao_id e duas chamadas com o mesmo e-mail geram sessões distintas', async () => {
     const m = montarPag()
-    const a = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com' })
-    const b = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com' })
+    const a = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com', aceite_termos_versao: '1.0' })
+    const b = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com', aceite_termos_versao: '1.0' })
     expect(Object.keys(a)).toEqual(['url'])
     expect(a).not.toHaveProperty('sessao_id')
     expect(m.chamadas[0].headers['Idempotency-Key']).not.toBe(m.chamadas[1].headers['Idempotency-Key'])
@@ -55,17 +56,49 @@ describe('checkout (Stripe do cliente)', () => {
 
   it('recusa conta desconhecida, e-mail inválido, segredo ausente e licença de outra conta', async () => {
     const m = montarPag()
-    await expect(criarCheckout(m.deps, { conta_id: 'x', tipo: 'implantacao', email: 'a@b.co', ...urls })).rejects.toMatchObject({ codigo: 'conta_desconhecida' })
-    await expect(criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'nao-e-email', ...urls })).rejects.toMatchObject({ codigo: 'email_invalido' })
+    await expect(criarCheckout(m.deps, { conta_id: 'x', tipo: 'implantacao', email: 'a@b.co', aceite_termos_versao: '1.0', ...urls })).rejects.toMatchObject({ codigo: 'conta_desconhecida' })
+    await expect(criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'nao-e-email', aceite_termos_versao: '1.0', ...urls })).rejects.toMatchObject({ codigo: 'email_invalido' })
     await expect(criarCheckout(m.deps, { conta_id: CONTA, tipo: 'mensalidade', licenca_id: 'l1', ...urls })).rejects.toMatchObject({ codigo: 'sem_licenca' })
     m.store.contas.push({ id: 'sem-segredo', conta_stripe_id: 'acct_2', segredo_ref: 'NAO_EXISTE', modo: 'teste' })
-    await expect(criarCheckout(m.deps, { conta_id: 'sem-segredo', tipo: 'implantacao', email: 'a@b.co', ...urls })).rejects.toMatchObject({ codigo: 'gateway_nao_configurado', status: 503 })
+    await expect(criarCheckout(m.deps, { conta_id: 'sem-segredo', tipo: 'implantacao', email: 'a@b.co', aceite_termos_versao: '1.0', ...urls })).rejects.toMatchObject({ codigo: 'gateway_nao_configurado', status: 503 })
     expect(m.chamadas).toHaveLength(0)
   })
 
   it('falha da Stripe vira erro 502 amigável', async () => {
     const m = montarPag()
     m.falhar.proxima = true
-    await expect(criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co', ...urls })).rejects.toMatchObject({ codigo: 'gateway_erro', status: 502 })
+    await expect(criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co', aceite_termos_versao: '1.0', ...urls })).rejects.toMatchObject({ codigo: 'gateway_erro', status: 502 })
+  })
+})
+
+describe('consentimento LGPD no checkout', () => {
+  it('sem aceite (ou versão inválida) recusa, não abre pagamento e não grava nada', async () => {
+    for (const v of [undefined, '', '   ', '1.0; drop table', 'x'.repeat(30)]) {
+      const m = montarPag()
+      await expect(criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com', aceite_termos_versao: v })).rejects.toMatchObject({ codigo: 'aceite_obrigatorio', status: 400 })
+      expect(m.chamadas).toHaveLength(0)
+      expect(m.store.consentimentos).toHaveLength(0)
+    }
+  })
+  it('com aceite grava versão + e-mail + data e só então abre o pagamento', async () => {
+    const m = montarPag()
+    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'Ana@Loja.com', aceite_termos_versao: '1.0' })
+    expect(m.store.consentimentos).toEqual([{ email: 'ana@loja.com', cliente_id: null, versao_termos: '1.0', origem: 'checkout', aceito_em: m.deps.agora() }])
+    expect(m.chamadas).toHaveLength(1)
+  })
+  it('fail-closed: se o aceite não pôde ser gravado, o pagamento não é aberto', async () => {
+    const m = montarPag()
+    m.store.registrarConsentimento = async () => { throw new Error('banco fora') }
+    await expect(criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com', aceite_termos_versao: '1.0' })).rejects.toThrow('banco fora')
+    expect(m.chamadas).toHaveLength(0)
+  })
+  it('pela rota HTTP: só aceite_termos === true vale', async () => {
+    for (const aceite of [false, 'true', undefined]) {
+      const m = montarPag()
+      const c = { deps: m.deps, pagamento: m.deps, carregarKit: async () => [], autorizarServico: () => false }
+      const r = await tratar(c, new Request('https://x.test/pagamento/checkout', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co', aceite_termos: aceite, versao_termos: '1.0' }) }))
+      expect(r.status).toBe(400)
+      expect(m.chamadas).toHaveLength(0)
+    }
   })
 })
