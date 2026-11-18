@@ -34,6 +34,8 @@ export type TipoPagamento = 'implantacao' | 'mensalidade'
 export type StatusPagamento = 'pendente' | 'pago' | 'falhou' | 'estornado'
 export interface Pagamento {
   licenca_id: string
+  /** Conta do cliente dona deste pagamento. A chave natural é (conta_gateway_id, gateway_ref). */
+  conta_gateway_id: string
   tipo: TipoPagamento
   valor: number
   status: StatusPagamento
@@ -49,6 +51,18 @@ export interface ContaGateway {
   conta_stripe_id: string
   segredo_ref: string
   modo: 'teste' | 'ao_vivo'
+  /** Origem https do site do cliente para onde a Stripe devolve o comprador (nunca vem da requisição). */
+  base_retorno?: string | null
+}
+/** Condição do UPDATE condicional da licença (todas as informadas valem juntas, como um WHERE ... AND ...). */
+export interface CondicaoLicenca {
+  status?: StatusLicenca
+  status_diferente?: StatusLicenca
+  avisos_atraso?: number
+  /** pausa_prevista_em <= este instante */
+  pausa_prevista_ate?: Date
+  /** mensalidade_encerra_em <= este instante */
+  encerra_ate?: Date
 }
 export interface NovaCompra {
   email: string
@@ -82,6 +96,8 @@ export interface Store {
   licencaDoCliente(clienteId: string): Promise<Licenca | null>
   licencaPorId(id: string): Promise<Licenca | null>
   salvarLicenca(l: Licenca): Promise<void>
+  /** Atômico: UPDATE licencas SET <campos de `set`> WHERE id AND <cond>. false = 0 linhas (outro processo mudou antes). */
+  atualizarLicencaSe(id: string, set: Partial<Omit<Licenca, 'id' | 'cliente_id'>>, cond: CondicaoLicenca): Promise<boolean>
   inserirLink(l: Omit<Link, 'id' | 'usado_em'>): Promise<void>
   linkPorHash(hash: string): Promise<Link | null>
   /** Atômico: UPDATE ... WHERE usado_em IS NULL. false = já usado. */
@@ -114,12 +130,12 @@ export interface Store {
   licencaPorGateway(contaId: string, ref: { cliente?: string | null; assinatura?: string | null }): Promise<Licenca | null>
   /** Cria cliente+licença da compra paga; se o e-mail já tem licença, devolve a existente (idempotente). */
   criarCompra(c: NovaCompra): Promise<{ licenca: Licenca; nova: boolean }>
-  /** Upsert por gateway_ref. Devolve o status anterior (null = não existia). */
+  /** Upsert por (conta_gateway_id, gateway_ref). Devolve o status anterior (null = não existia). */
   gravarPagamento(p: Pagamento): Promise<StatusPagamento | null>
-  pagamentoPorRef(ref: string): Promise<Pagamento | null>
-  pagamentosPorPi(pi: string): Promise<Pagamento[]>
+  pagamentoPorRef(contaId: string, ref: string): Promise<Pagamento | null>
+  pagamentosPorPi(contaId: string, pi: string): Promise<Pagamento[]>
   pagamentosDa(licencaId: string): Promise<Pagamento[]>
-  atualizarStatusPagamento(ref: string, status: StatusPagamento): Promise<void>
+  atualizarStatusPagamento(contaId: string, ref: string, status: StatusPagamento): Promise<void>
   licencasAtrasadas(): Promise<Licenca[]>
   /** Mensalidade cancelada cujo período pago já acabou (mensalidade_encerra_em <= agora) e ainda não 'cancelada'. */
   licencasEncerramentoVencido(agora: Date): Promise<Licenca[]>

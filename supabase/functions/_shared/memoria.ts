@@ -1,6 +1,6 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
-import type { Ativacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, Link, NovaCompra, Ocorrencia, Pagamento, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
+import type { Ativacao, CondicaoLicenca, Cliente, Codigo, ContaGateway, Entrega, Licenca, Link, NovaCompra, Ocorrencia, Pagamento, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
   clientes: Cliente[] = []
@@ -22,6 +22,19 @@ export class StoreMemoria implements Store {
   async licencaDoCliente(id: string) { return this.licencas.find((l) => l.cliente_id === id) ?? null }
   async licencaPorId(id: string) { return this.licencas.find((l) => l.id === id) ?? null }
   async salvarLicenca(l: Licenca) { const i = this.licencas.findIndex((x) => x.id === l.id); this.licencas[i] = l }
+  /** Equivale ao UPDATE condicional: sem await, então é atômico. Troca o objeto (quem segurava o antigo continua com a cópia velha). */
+  async atualizarLicencaSe(id: string, set: Partial<Omit<Licenca, 'id' | 'cliente_id'>>, c: CondicaoLicenca) {
+    const i = this.licencas.findIndex((x) => x.id === id)
+    if (i < 0) return false
+    const l = this.licencas[i]
+    if (c.status && l.status !== c.status) return false
+    if (c.status_diferente && l.status === c.status_diferente) return false
+    if (c.avisos_atraso !== undefined && (l.avisos_atraso ?? 0) !== c.avisos_atraso) return false
+    if (c.pausa_prevista_ate && !(l.pausa_prevista_em && l.pausa_prevista_em <= c.pausa_prevista_ate)) return false
+    if (c.encerra_ate && !(l.mensalidade_encerra_em && l.mensalidade_encerra_em <= c.encerra_ate)) return false
+    this.licencas[i] = { ...l, ...set }
+    return true
+  }
   async inserirLink(l: Omit<Link, 'id' | 'usado_em'>) { this.links.push({ ...l, id: this.id(), usado_em: null }) }
   async linkPorHash(h: string) { return this.links.find((l) => l.token_hash === h) ?? null }
   async consumirLink(id: string, q: Date) {
@@ -115,17 +128,17 @@ export class StoreMemoria implements Store {
     return { licenca, nova: true }
   }
   async gravarPagamento(p: Pagamento) {
-    const i = this.pagamentos.findIndex((x) => x.gateway_ref === p.gateway_ref)
+    const i = this.pagamentos.findIndex((x) => x.conta_gateway_id === p.conta_gateway_id && x.gateway_ref === p.gateway_ref)
     if (i < 0) { this.pagamentos.push({ ...p }); return null }
     const antes = this.pagamentos[i].status
     this.pagamentos[i] = { ...p }
     return antes
   }
-  async pagamentoPorRef(ref: string) { return this.pagamentos.find((p) => p.gateway_ref === ref) ?? null }
-  async pagamentosPorPi(pi: string) { return this.pagamentos.filter((p) => p.gateway_pi === pi) }
+  async pagamentoPorRef(conta: string, ref: string) { return this.pagamentos.find((p) => p.conta_gateway_id === conta && p.gateway_ref === ref) ?? null }
+  async pagamentosPorPi(conta: string, pi: string) { return this.pagamentos.filter((p) => p.conta_gateway_id === conta && p.gateway_pi === pi) }
   async pagamentosDa(lid: string) { return this.pagamentos.filter((p) => p.licenca_id === lid) }
-  async atualizarStatusPagamento(ref: string, status: StatusPagamento) {
-    const p = this.pagamentos.find((x) => x.gateway_ref === ref)
+  async atualizarStatusPagamento(conta: string, ref: string, status: StatusPagamento) {
+    const p = this.pagamentos.find((x) => x.conta_gateway_id === conta && x.gateway_ref === ref)
     if (p) p.status = status
   }
   async licencasAtrasadas() { return this.licencas.filter((l) => l.status === 'atrasada') }

@@ -34,8 +34,8 @@ export async function cancelarCompra(d: DepsPagamento, email: string) {
   const pagos = (await d.store.pagamentosDa(lic.id)).filter((p) => p.status === 'pago')
   const pis = [...new Set(pagos.map((p) => p.gateway_pi).filter((x): x is string => !!x))]
   for (const pi of pis) await api.reembolsar(pi, `arrependimento-${lic.id}-${pi}`)
-  for (const p of pagos) await d.store.atualizarStatusPagamento(p.gateway_ref, 'estornado')
-  await d.store.salvarLicenca({ ...lic, status: 'cancelada', pausa_prevista_em: null, mensalidade_encerra_em: null })
+  for (const p of pagos) await d.store.atualizarStatusPagamento(p.conta_gateway_id, p.gateway_ref, 'estornado')
+  await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada', pausa_prevista_em: null, mensalidade_encerra_em: null }, { status_diferente: 'cancelada' })
   await d.store.inserirOcorrencia({ cliente_id: lic.cliente_id, tipo: 'compra_cancelada', descricao: `Arrependimento (CDC art. 49): ${pagos.length} pagamento(s) estornado(s).` })
   return { ok: true, estornados: pagos.length }
 }
@@ -50,9 +50,9 @@ export async function cancelarMensalidade(d: DepsPagamento, email: string) {
   const emDia = lic.status === 'ativa'
   const { encerra_em } = await api.cancelarAssinatura(lic.gateway_assinatura_ref, !emDia)
   if (!emDia || !encerra_em) {
-    await d.store.salvarLicenca({ ...lic, status: 'cancelada', pausa_prevista_em: null })
+    await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada', pausa_prevista_em: null }, { status_diferente: 'cancelada' })
     return { ok: true, encerra_em: d.agora() }
   }
-  await d.store.salvarLicenca({ ...lic, mensalidade_encerra_em: encerra_em })
+  await d.store.atualizarLicencaSe(lic.id, { mensalidade_encerra_em: encerra_em }, { status_diferente: 'cancelada' })
   return { ok: true, encerra_em }
 }

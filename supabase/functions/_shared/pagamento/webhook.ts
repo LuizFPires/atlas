@@ -4,7 +4,7 @@
 import type { Licenca, Pagamento, TipoPagamento } from '../tipos.ts'
 import { ErroRegra } from '../tipos.ts'
 import { verificarAssinaturaStripe } from './assinatura-stripe.ts'
-import type { DepsPagamento } from './config.ts'
+import { type DepsPagamento, VALOR_IMPLANTACAO } from './config.ts'
 import { marcarAtraso, sairDoAtraso } from './atraso.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,7 +43,8 @@ async function tratar(d: DepsPagamento, contaId: string, tipo: string, o: Obj): 
   switch (tipo) {
     case 'checkout.session.completed':
       // Pix fica 'unpaid' até compensar: aí vem async_payment_succeeded. Cartão já vem 'paid'.
-      if (o.payment_status === 'paid' || o.payment_status === 'no_payment_required') await sessaoPaga(d, contaId, o)
+      // 'no_payment_required' (cupom 100%) NÃO libera: fail-closed.
+      if (o.payment_status === 'paid') await sessaoPaga(d, contaId, o)
       return true
     case 'checkout.session.async_payment_succeeded':
       await sessaoPaga(d, contaId, o)
@@ -62,7 +63,7 @@ async function tratar(d: DepsPagamento, contaId: string, tipo: string, o: Obj): 
       await assinaturaEncerrada(d, contaId, o)
       return true
     case 'charge.refunded':
-      await estornado(d, o)
+      await estornado(d, contaId, o)
       return true
     default:
       return false
@@ -76,10 +77,14 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   if (s.mode === 'subscription') {
     const lic = (str(meta.atlas_licenca) && (await d.store.licencaPorId(meta.atlas_licenca))) || (await d.store.licencaPorGateway(contaId, { cliente: idDe(s.customer) }))
     if (!lic || lic.conta_gateway_id !== contaId) return // sessão que não é nossa
-    await d.store.salvarLicenca({ ...lic, gateway_assinatura_ref: idDe(s.subscription), gateway_cliente_ref: lic.gateway_cliente_ref ?? idDe(s.customer), mensalidade_encerra_em: null })
+    await d.store.atualizarLicencaSe(lic.id, { gateway_assinatura_ref: idDe(s.subscription), gateway_cliente_ref: lic.gateway_cliente_ref ?? idDe(s.customer), mensalidade_encerra_em: null }, { status_diferente: 'cancelada' })
     return
   }
   if (s.mode !== 'payment') return
+  // Só vale a sessão que NÓS criamos para esta conta, paga, em BRL e com o valor cheio da implantação.
+  // Qualquer outra (outro produto, valor menor, cupom, outra conta) é ignorada: nunca concede licença.
+  if (s.payment_status !== 'paid' || meta.atlas_tipo !== 'implantacao' || meta.atlas_conta !== contaId) return
+  if (String(s.currency ?? '').toLowerCase() !== 'brl' || !(Number(s.amount_total) >= Math.round(VALOR_IMPLANTACAO * 100))) return
   const email = str(s.customer_details?.email) ?? str(s.customer_email)
   const pi = idDe(s.payment_intent)
   if (!email || !pi) throw new ErroRegra('sessao_incompleta', 'Sessão sem e-mail ou pagamento.', 400)
@@ -93,9 +98,24 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
     gateway_cliente_ref: idDe(s.customer),
     agora,
   })
-  await d.store.gravarPagamento({ licenca_id: licenca.id, tipo: 'implantacao', valor, status: 'pago', gateway_ref: pi, gateway_pi: pi, pago_em: agora })
+  // Licença de outra conta (ou sem conta) para este e-mail: não grava nada nem mexe no estado dela.
+  if (licenca.conta_gateway_id !== contaId) throw new ErroRegra('conta_divergente', 'Esse e-mail já tem licença em outra conta de pagamento.', 409)
+  const antes = await d.store.pagamentoPorRef(contaId, pi)
+  if (antes?.status === 'estornado') return // reentrega de compra já devolvida: não reativa
+  await d.store.gravarPagamento({ licenca_id: licenca.id, conta_gateway_id: contaId, tipo: 'implantacao', valor, status: 'pago', gateway_ref: pi, gateway_pi: pi, pago_em: agora })
+  if (licenca.status === 'cancelada') {
+    // Recompra depois do arrependimento/cancelamento: reativa com nova janela de 7 dias. O pagamento já foi gravado acima.
+    if (antes?.status !== 'pago') {
+      await d.store.atualizarLicencaSe(
+        licenca.id,
+        { status: 'ativa', comprada_em: agora, pausa_prevista_em: null, avisos_atraso: 0, mensalidade_encerra_em: null, gateway_assinatura_ref: null, gateway_cliente_ref: idDe(s.customer) ?? licenca.gateway_cliente_ref ?? null },
+        { status: 'cancelada' },
+      )
+    }
+    return
+  }
   // Licença liberada: se ela já existia (reenvio/segunda compra), garante que está em dia.
-  if (licenca.status !== 'ativa' && licenca.status !== 'cancelada') await sairDoAtraso(d, licenca)
+  if (licenca.status !== 'ativa') await sairDoAtraso(d, licenca)
 }
 
 async function registrarFalhaSessao(d: DepsPagamento, contaId: string, s: Obj) {
@@ -105,7 +125,7 @@ async function registrarFalhaSessao(d: DepsPagamento, contaId: string, s: Obj) {
   const cli = await d.store.clientePorEmail(email.trim().toLowerCase())
   const lic = cli && (await d.store.licencaDoCliente(cli.id))
   if (!lic || lic.conta_gateway_id !== contaId) return // compra nunca liberada: nada a desfazer
-  await d.store.gravarPagamento({ licenca_id: lic.id, tipo: 'implantacao', valor: reais(s.amount_total), status: 'falhou', gateway_ref: pi, gateway_pi: pi, pago_em: null })
+  await d.store.gravarPagamento({ licenca_id: lic.id, conta_gateway_id: contaId, tipo: 'implantacao', valor: reais(s.amount_total), status: 'falhou', gateway_ref: pi, gateway_pi: pi, pago_em: null })
 }
 
 async function licencaDaFatura(d: DepsPagamento, contaId: string, f: Obj): Promise<Licenca | null> {
@@ -121,20 +141,20 @@ async function faturaPaga(d: DepsPagamento, contaId: string, f: Obj) {
   const lic = await licencaDaFatura(d, contaId, f)
   if (!lic) throw new ErroRegra('licenca_nao_encontrada', 'Fatura de licença desconhecida (pode chegar antes do checkout).', 409) // 409 → Stripe reenvia
   const agora = d.agora()
-  const p: Pagamento = { licenca_id: lic.id, ...dadosFatura(f), valor: reais(f.amount_paid), status: 'pago', pago_em: agora }
+  const p: Pagamento = { licenca_id: lic.id, conta_gateway_id: contaId, ...dadosFatura(f), valor: reais(f.amount_paid), status: 'pago', pago_em: agora }
   const antes = await d.store.gravarPagamento(p)
-  if (antes === 'estornado') await d.store.atualizarStatusPagamento(p.gateway_ref, 'estornado') // estorno não é desfeito por reentrega
+  if (antes === 'estornado') await d.store.atualizarStatusPagamento(contaId, p.gateway_ref, 'estornado') // estorno não é desfeito por reentrega
   if (lic.status === 'cancelada') return
-  if (!lic.gateway_assinatura_ref && idDe(f.subscription)) await d.store.salvarLicenca({ ...lic, gateway_assinatura_ref: idDe(f.subscription) })
+  if (!lic.gateway_assinatura_ref && idDe(f.subscription)) await d.store.atualizarLicencaSe(lic.id, { gateway_assinatura_ref: idDe(f.subscription) }, { status_diferente: 'cancelada' })
   await sairDoAtraso(d, (await d.store.licencaPorId(lic.id)) ?? lic)
 }
 
 async function faturaFalhou(d: DepsPagamento, contaId: string, f: Obj) {
   const lic = await licencaDaFatura(d, contaId, f)
   if (!lic) throw new ErroRegra('licenca_nao_encontrada', 'Fatura de licença desconhecida.', 409)
-  const antes = await d.store.pagamentoPorRef(String(f.id))
+  const antes = await d.store.pagamentoPorRef(contaId, String(f.id))
   if (antes?.status !== 'pago') {
-    await d.store.gravarPagamento({ licenca_id: lic.id, ...dadosFatura(f), valor: reais(f.amount_due), status: 'falhou', pago_em: null })
+    await d.store.gravarPagamento({ licenca_id: lic.id, conta_gateway_id: contaId, ...dadosFatura(f), valor: reais(f.amount_due), status: 'falhou', pago_em: null })
   }
   if (antes?.status === 'pago') return // reentrega atrasada de falha antiga: já foi paga
   await marcarAtraso(d, lic)
@@ -143,13 +163,17 @@ async function faturaFalhou(d: DepsPagamento, contaId: string, f: Obj) {
 async function assinaturaEncerrada(d: DepsPagamento, contaId: string, sub: Obj) {
   const lic = await d.store.licencaPorGateway(contaId, { assinatura: idDe(sub) })
   if (!lic || lic.status === 'cancelada') return
-  await d.store.salvarLicenca({ ...lic, status: 'cancelada', pausa_prevista_em: null })
+  await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada', pausa_prevista_em: null }, { status_diferente: 'cancelada' })
 }
 
-async function estornado(d: DepsPagamento, ch: Obj) {
+async function estornado(d: DepsPagamento, contaId: string, ch: Obj) {
   const pi = idDe(ch.payment_intent)
   if (!pi) return
   // só estorno total muda o status (parcial não derruba a licença)
   if (Number(ch.amount_refunded ?? 0) < Number(ch.amount ?? 1)) return
-  for (const p of await d.store.pagamentosPorPi(pi)) await d.store.atualizarStatusPagamento(p.gateway_ref, 'estornado')
+  // escopo da conta do webhook: o mesmo pi_ em outra conta nunca é tocado
+  for (const p of await d.store.pagamentosPorPi(contaId, pi)) {
+    const lic = await d.store.licencaPorId(p.licenca_id)
+    if (lic?.conta_gateway_id === contaId) await d.store.atualizarStatusPagamento(contaId, p.gateway_ref, 'estornado')
+  }
 }

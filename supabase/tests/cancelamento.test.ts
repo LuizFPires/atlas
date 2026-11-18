@@ -15,8 +15,8 @@ async function cenario() {
   const m = montarPag()
   const agora = m.deps.agora()
   Object.assign(m.store.licencas[0], { conta_gateway_id: CONTA, gateway_cliente_ref: 'cus_1', gateway_assinatura_ref: 'sub_1', comprada_em: agora })
-  await m.store.gravarPagamento({ licenca_id: 'l1', tipo: 'implantacao', valor: 4800, status: 'pago', gateway_ref: 'pi_1', gateway_pi: 'pi_1', pago_em: agora })
-  await m.store.gravarPagamento({ licenca_id: 'l1', tipo: 'mensalidade', valor: 200, status: 'pago', gateway_ref: 'in_1', gateway_pi: 'pi_m1', pago_em: agora })
+  await m.store.gravarPagamento({ licenca_id: 'l1', conta_gateway_id: CONTA, tipo: 'implantacao', valor: 4800, status: 'pago', gateway_ref: 'pi_1', gateway_pi: 'pi_1', pago_em: agora })
+  await m.store.gravarPagamento({ licenca_id: 'l1', conta_gateway_id: CONTA, tipo: 'mensalidade', valor: 200, status: 'pago', gateway_ref: 'in_1', gateway_pi: 'pi_m1', pago_em: agora })
   await m.ativar(H1)
   const pode = async () => (await verificar(m.deps, { email, computador_hash: H1, token_dispositivo: TOKEN })).pode_construir
   return { m, pode }

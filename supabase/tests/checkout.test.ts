@@ -4,7 +4,7 @@ import { criarCheckout } from '../functions/_shared/pagamento/checkout.ts'
 import { codificarForm } from '../functions/_shared/pagamento/stripe-api.ts'
 import { CONTA, montarPag, SK_TESTE } from './helpers-pagamento.ts'
 
-const urls = { url_sucesso: 'https://atlas.test/ok', url_cancelar: 'https://atlas.test/voltar' }
+const urls = {}
 const corpoDe = (c: { body?: string }) => new URLSearchParams(c.body)
 
 describe('checkout (Stripe do cliente)', () => {

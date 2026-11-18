@@ -13,7 +13,7 @@ async function enviar(m: M, ev: object, conta = CONTA) {
   return processarWebhook(m.deps, conta, corpo, await assinarStripe(corpo))
 }
 const sessaoImpl = (extra: Record<string, unknown> = {}) => ({
-  id: 'cs_1', mode: 'payment', payment_status: 'paid', amount_total: 480000, customer: 'cus_1', payment_intent: 'pi_1',
+  id: 'cs_1', mode: 'payment', payment_status: 'paid', amount_total: 480000, currency: 'brl', metadata: { atlas_tipo: 'implantacao', atlas_conta: CONTA }, customer: 'cus_1', payment_intent: 'pi_1',
   customer_details: { email: 'Bia@Padaria.com', name: 'Bia Souza' }, ...extra,
 })
 const fatura = (extra: Record<string, unknown> = {}) => ({ id: 'in_1', customer: 'cus_1', subscription: 'sub_1', amount_paid: 20000, amount_due: 20000, payment_intent: 'pi_m1', ...extra })

@@ -71,7 +71,7 @@ export async function tratar(ctx: Contexto, req: Request): Promise<Response> {
         if (tipo === 'implantacao' && !(await ctx.pagamento.store.tentarEvento(`checkout:ip:${ipDe(req)}`, 10, 15 * 60_000, ctx.pagamento.agora()))) {
           return json({ erro: 'muitas_solicitacoes', mensagem: 'Muitas tentativas. Espere uns minutos.' }, 429)
         }
-        return json(await criarCheckout(ctx.pagamento, { conta_id: s('conta_id'), tipo, email: s('email'), licenca_id: s('licenca_id'), url_sucesso: s('url_sucesso'), url_cancelar: s('url_cancelar') }))
+        return json(await criarCheckout(ctx.pagamento, { conta_id: s('conta_id'), tipo, email: s('email'), licenca_id: s('licenca_id') }))
       }
       // Portal (F15): o cliente já está autenticado lá; aqui só entra chamada de serviço.
       case '/compra/cancelar':

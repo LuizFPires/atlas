@@ -12,7 +12,7 @@ export interface ChamadaStripe { url: string; method: string; headers: Record<st
 /** Monta deps de pagamento 100% em memória: segredos de fixture, Stripe falsa (fetch gravado), e-mails gravados. */
 export function montarPag(status: 'ativa' | 'atrasada' | 'pausada' | 'cancelada' = 'ativa') {
   const m = montar(status)
-  m.store.contas.push({ id: CONTA, conta_stripe_id: 'acct_cliente1', segredo_ref: 'CLIENTE1', modo: 'teste' })
+  m.store.contas.push({ id: CONTA, conta_stripe_id: 'acct_cliente1', segredo_ref: 'CLIENTE1', modo: 'teste', base_retorno: 'https://loja.atlas.test' })
   const chamadas: ChamadaStripe[] = []
   const avisos: Array<{ email: string; aviso: AvisoAtraso }> = []
   const falhar = { proxima: false }

@@ -21,14 +21,22 @@ export interface PedidoCheckout {
   /** implantação: e-mail de quem compra. mensalidade: ignorado (vem da licença). */
   email?: string
   licenca_id?: string
-  url_sucesso: string
-  url_cancelar: string
+}
+
+/** URLs de retorno montadas no servidor a partir da origem https cadastrada na conta. A requisição não influencia. */
+function urlsDeRetorno(base: string | null | undefined) {
+  let u: URL | null
+  try { u = base ? new URL(base) : null } catch { u = null }
+  if (!u || u.protocol !== 'https:' || u.username || u.password || u.origin === 'null') {
+    throw new ErroRegra('retorno_nao_configurado', 'O endereço de retorno do pagamento ainda não está configurado.', 503)
+  }
+  return { success_url: `${u.origin}/compra/sucesso`, cancel_url: `${u.origin}/compra/cancelada` }
 }
 
 export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promise<{ url: string; sessao_id: string }> {
   const { conta, api } = await apiDaConta(d, p.conta_id)
   const meta = { atlas_conta: conta.id, atlas_tipo: p.tipo }
-  const base = { success_url: p.url_sucesso, cancel_url: p.url_cancelar, locale: 'pt-BR' }
+  const base = { ...urlsDeRetorno(conta.base_retorno), locale: 'pt-BR' }
 
   if (p.tipo === 'implantacao') {
     const email = (p.email ?? '').trim().toLowerCase()
