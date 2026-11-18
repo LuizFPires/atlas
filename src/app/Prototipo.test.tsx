@@ -135,3 +135,52 @@ test('se o ajuste falha, o texto volta para o campo e o cliente é avisado com c
   expect(await screen.findByRole('alert')).toHaveTextContent('Não consegui fazer isso agora')
   expect(screen.getByLabelText('Pedir ajuste')).toHaveValue('mais claro')
 })
+
+const ajustar = async (user: ReturnType<typeof userEvent.setup>, texto: string) => {
+  await user.type(screen.getByLabelText('Pedir ajuste'), texto)
+  await user.click(screen.getByRole('button', { name: 'Enviar' }))
+}
+
+test('desfazer: volta à versão anterior, o celular volta ao que era e nada é apagado', async () => {
+  const { user, prototipo } = montar()
+  const v1 = (await screen.findByTitle(/Tela Marcar horário/)).getAttribute('srcdoc')
+  expect(screen.queryByRole('button', { name: /Voltar à versão/ })).not.toBeInTheDocument()
+  await ajustar(user, 'troque a cor')
+  await screen.findByText(/Troquei a cor/)
+  await user.click(screen.getByRole('button', { name: /Voltar à versão 1/ }))
+  expect(await screen.findByText(/voltei para a versão 1/)).toBeInTheDocument()
+  expect(screen.getByText(/· Versão 1$/)).toBeInTheDocument()
+  expect(screen.getByTitle(/Tela Marcar horário/).getAttribute('srcdoc')).toBe(v1)
+  const e = await prototipo.estado('agenda-da-barbearia-do-ze')
+  expect(e.versoes).toHaveLength(2)
+  expect(e.atual).toBe(1)
+})
+
+test('versões: dá para ir a qualquer uma e voltar à mais nova; novo ajuste depois de voltar vira versão nova sem apagar', async () => {
+  const { user, prototipo } = montar()
+  await screen.findByTitle(/Tela Marcar horário/)
+  await ajustar(user, 'troque a cor')
+  await screen.findByText(/Troquei a cor/)
+  await ajustar(user, 'mais espaço entre os horários')
+  await screen.findByText(/Anotei o seu pedido/)
+  const grupo = screen.getByRole('group', { name: 'Versões do protótipo' })
+  expect(within(grupo).getAllByRole('button').map((b) => b.textContent)).toEqual(['v1', 'v2', 'v3'])
+  await user.click(within(grupo).getByRole('button', { name: 'v1' }))
+  await ajustar(user, 'tire o campo de e-mail')
+  await screen.findByText(/versão 4/)
+  const e = await prototipo.estado('agenda-da-barbearia-do-ze')
+  expect(e.versoes.map((v) => v.numero)).toEqual([1, 2, 3, 4])
+  expect(e.atual).toBe(4)
+  await user.click(within(screen.getByRole('group', { name: 'Versões do protótipo' })).getByRole('button', { name: 'v2' }))
+  expect(await screen.findByText(/· Versão 2$/)).toBeInTheDocument()
+})
+
+test('voltar para versão que não existe é recusado e o fixture nunca reescreve versão antiga', async () => {
+  const p = criarPrototipoFixture()
+  await p.desenhar('obra-a', 'A', ESTILOS_EXEMPLO[0])
+  await expect(p.voltar('obra-a', 9)).rejects.toThrow('versao-inexistente')
+  const antes = p.escritos.length
+  await p.desenhar('obra-a', 'A', ESTILOS_EXEMPLO[1]) // desenhar de novo não refaz por cima
+  expect(p.escritos).toHaveLength(antes)
+  expect((await p.estado('obra-a')).versoes).toHaveLength(1)
+})

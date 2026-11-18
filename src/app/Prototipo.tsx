@@ -100,6 +100,21 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
   }
 
   const versao = estado.versoes.find((v) => v.numero === estado.atual)
+  const anterior = [...estado.versoes].reverse().find((v) => v.numero < estado.atual)
+
+  // Desfazer: só muda a versão que o cliente está vendo. Nada é apagado, então dá para voltar para a mais nova também.
+  const irPara = async (numero: number) => {
+    if (numero === estado.atual || ocupado) return
+    setOcupado(true)
+    setErro('')
+    try {
+      const e = await prototipo.voltar(obra.pasta, numero)
+      setEstado(e)
+      const nova = e.versoes.find((v) => v.numero === e.atual)
+      setMsgs((m) => [...m, { quem: 'CLAUDE', txt: `Pronto, voltei para a versão ${numero}. As outras versões continuam guardadas na pasta da obra; dá para ir e voltar quando quiser.` }])
+      if (nova && !nova.telas.some((t) => t.id === aba)) setAba(nova.telas[0]?.id ?? '')
+    } catch (x) { setErro(recadoDoErroProto(x)) } finally { setOcupado(false) }
+  }
   const tela = versao?.telas.find((t) => t.id === aba) ?? versao?.telas[0]
 
   return (
@@ -110,6 +125,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
           <h1>{obra.nome}</h1>
         </div>
         <div className="at-proto__acoes">
+          {anterior && <Botao variante="secundario" disabled={ocupado} onClick={() => void irPara(anterior.numero)}>↶ Voltar à versão {anterior.numero}</Botao>}
           <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
           <Botao disabled={!versao} onClick={() => onConcluir ? onConcluir() : onVoltar()}>Telas do meu jeito: dar o nome →</Botao>
         </div>
@@ -140,6 +156,14 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
             <div className="at-proto__abas" role="tablist" aria-label="Telas do sistema">
               {versao.telas.map((t) => (
                 <button key={t.id} type="button" role="tab" aria-selected={t.id === tela?.id} className={`at-proto__aba ${t.id === tela?.id ? 'at-proto__aba--on' : ''}`} onClick={() => setAba(t.id)}>{t.nome}</button>
+              ))}
+            </div>
+          )}
+          {estado.versoes.length > 1 && (
+            <div className="at-proto__versoes" role="group" aria-label="Versões do protótipo">
+              <span>Versões guardadas:</span>
+              {estado.versoes.map((v) => (
+                <button key={v.numero} type="button" aria-pressed={v.numero === estado.atual} title={v.resumo} className={`at-proto__versao ${v.numero === estado.atual ? 'at-proto__versao--on' : ''}`} disabled={ocupado} onClick={() => void irPara(v.numero)}>v{v.numero}</button>
               ))}
             </div>
           )}
