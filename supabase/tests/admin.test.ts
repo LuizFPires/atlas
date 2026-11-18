@@ -21,7 +21,7 @@ type A = Awaited<ReturnType<typeof montarAdmin>>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const painel = async (a: A) => (await (await chamar(a.ctx(), '/admin/painel', JWT_LUIZ)).json()) as any
 
-const ROTAS = ['/admin/eu', '/admin/painel', '/admin/ocorrencias/resolver', '/admin/liberar-troca', '/admin/entregas', '/admin/cadastros', '/admin/qualquer-coisa']
+const ROTAS = ['/admin/eu', '/admin/painel', '/admin/ocorrencias/resolver', '/admin/liberar-troca', '/admin/entregas', '/admin/cadastros', '/admin/cortesia', '/admin/qualquer-coisa']
 
 describe('admin — só o admin entra (segurança)', () => {
   it('sem token, token inválido, cliente comum logado e e-mail parecido: nenhuma rota /admin/* abre', async () => {
@@ -71,6 +71,16 @@ describe('admin — só o admin entra (segurança)', () => {
 })
 
 describe('admin — painel: indicadores e lista de atenção', () => {
+  it('clientes_ativos não conta cortesia vencida (bate com a situação cancelada)', async () => {
+    const a = await montarAdmin()
+    const agora = a.deps.agora()
+    const base = (await painel(a)).indicadores.clientes_ativos
+    a.store.clientes.push({ id: 'cv', email_compra: 'v@x.com', nome_tratamento: 'V' })
+    a.store.licencas.push({ id: 'lv', cliente_id: 'cv', status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null, comprada_em: null, tipo: 'cortesia', validade_em: new Date(agora.getTime() - DIA) } as never)
+    const corpo = await painel(a)
+    expect(corpo.indicadores.clientes_ativos).toBe(base)
+    expect(corpo.clientes.find((c: { nome: string }) => c.nome === 'V')).toMatchObject({ situacao: 'cancelada' })
+  })
   it('agrega receita, inadimplência, ativações e travados do próprio Atlas, sem vazar segredo', async () => {
     const a = await montarAdmin()
     const agora = a.deps.agora()

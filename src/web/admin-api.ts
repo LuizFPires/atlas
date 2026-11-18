@@ -15,6 +15,8 @@ export interface IndicadoresAdmin {
 export interface LinhaCliente {
   licenca_id: string; nome: string; empresa: string; ramo: string; situacao: Situacao; obras: number
   ultimo_sinal_em: string | null; travado_em: 'cadastro' | 'instalacao' | null
+  /** Cortesia do gestor (com vencimento) ou licença paga. Ausente = paga. */
+  tipo?: 'paga' | 'cortesia'; validade_em?: string | null
 }
 export interface ItemAtencao { id: string; tipo: string; quem: string; oque: string; quando: string; licenca_id: string | null }
 export interface PainelAdmin { gerado_em: string; indicadores: IndicadoresAdmin; atencao: ItemAtencao[]; clientes: LinhaCliente[] }
@@ -30,6 +32,8 @@ export interface AdminApi {
   painel(): Promise<Resp<{ painel: PainelAdmin }>>
   liberarTroca(licencaId: string, motivo: string): Promise<Resp<{ ja_liberada: boolean }>>
   resolverOcorrencia(id: string): Promise<Resp>
+  /** Libera (ou renova) uma cortesia. `validadeEm` é um instante ISO; o servidor valida tudo de novo. */
+  liberarCortesia(email: string, validadeEm: string, nome?: string): Promise<Resp<{ nova: boolean; validade_em: string }>>
   entregas(filtro?: { marca?: string; licenca_id?: string }): Promise<Resp<{ entregas: LinhaEntrega[] }>>
   cadastros(): Promise<Resp<{ cadastros: LinhaCadastro[] }>>
   sair(): void
@@ -94,6 +98,11 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       return { ok: true, painel: painel as unknown as PainelAdmin }
     },
     liberarTroca: (licencaId, motivo) => servidor<{ ja_liberada: boolean }>('/admin/liberar-troca', { licenca_id: licencaId, motivo }),
+    liberarCortesia(email, validadeEm, nome) {
+      const e = email.trim().toLowerCase()
+      if (!EMAIL_RE.test(e)) return Promise.resolve({ ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' })
+      return servidor<{ nova: boolean; validade_em: string }>('/admin/cortesia', { email: e, validade_em: validadeEm, ...(nome?.trim() ? { nome: nome.trim() } : {}) })
+    },
     resolverOcorrencia: (id) => servidor('/admin/ocorrencias/resolver', { id }),
     entregas: (filtro = {}) => servidor<{ entregas: LinhaEntrega[] }>('/admin/entregas', filtro),
     cadastros: () => servidor<{ cadastros: LinhaCadastro[] }>('/admin/cadastros'),

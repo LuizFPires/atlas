@@ -12,7 +12,7 @@ import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts
 import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
-import { adminLogado, type DepsAdmin, euAdmin, liberarTrocaUrgente, painel, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
+import { adminLogado, liberarCortesia, type DepsAdmin, euAdmin, liberarTrocaUrgente, painel, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
 import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, excluirConta, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
 
 export interface Contexto {
@@ -89,6 +89,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await liberarTrocaUrgente(ctx.admin, jwt, { licenca_id: o.licenca_id, motivo: o.motivo }))
         case '/admin/entregas':
           return json(await verEntregas(ctx.admin, jwt, { licenca_id: o.licenca_id, marca: o.marca }))
+        case '/admin/cortesia':
+          return json(await liberarCortesia(ctx.admin, jwt, { email: o.email, validade_em: o.validade_em, nome: o.nome }))
         case '/admin/cadastros':
           return json(await verCadastros(ctx.admin, jwt))
         default:

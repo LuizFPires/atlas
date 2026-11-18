@@ -186,3 +186,33 @@ describe('quandoFoi', () => {
     expect(quandoFoi(null, agora)).toBe('sem sinal ainda')
   })
 })
+
+describe('cortesia manual no painel', () => {
+  it('mostra tipo e validade da cortesia na lista e libera uma nova (data vira fim do dia em Brasília)', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const comCortesia: PainelAdmin = { ...PAINEL, clientes: [...PAINEL.clientes, { licenca_id: 'l9', nome: 'Convidado', empresa: '', ramo: '', situacao: 'em_dia', obras: 0, ultimo_sinal_em: null, travado_em: null, tipo: 'cortesia', validade_em: '2026-11-30T02:59:59.000Z' }] }
+    const { api, chamadas } = ambiente((url) => (url.endsWith('/admin/painel') ? resp(comCortesia) : url.endsWith('/admin/cortesia') ? resp({ ok: true, nova: true, validade_em: '2026-11-28T02:59:59.000Z' }) : undefined))
+    montar(api)
+    const clientes = await screen.findByRole('region', { name: 'Clientes' })
+    expect(within(clientes).getByText(/cortesia até 29\/11\/2026/)).toBeInTheDocument()
+    const form = screen.getByRole('region', { name: 'Liberar cortesia' })
+    await userEvent.type(within(form).getByLabelText('E-mail da pessoa'), 'Amigo@Email.com')
+    await userEvent.type(within(form).getByLabelText('Vale até'), '2026-11-27')
+    await userEvent.click(within(form).getByRole('button', { name: 'Liberar cortesia' }))
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Cortesia liberada para amigo@email.com'))
+    const c = chamadas.find((x) => x.url.endsWith('/admin/cortesia'))!
+    expect(JSON.parse(String(c.init.body))).toEqual({ email: 'amigo@email.com', validade_em: '2026-11-28T02:59:59.000Z' })
+  })
+
+  it('se o servidor recusar, mostra o erro e NÃO diz que liberou', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente((url) => (url.endsWith('/admin/cortesia') ? resp({ erro: 'ja_tem_licenca_paga', mensagem: 'Essa pessoa já tem uma licença paga. Não precisa de cortesia.' }, 409) : undefined))
+    montar(api)
+    const form = await screen.findByRole('region', { name: 'Liberar cortesia' })
+    await userEvent.type(within(form).getByLabelText('E-mail da pessoa'), 'ana@loja.com')
+    await userEvent.type(within(form).getByLabelText('Vale até'), '2026-11-27')
+    await userEvent.click(within(form).getByRole('button', { name: 'Liberar cortesia' }))
+    expect(await within(form).findByRole('alert')).toHaveTextContent('já tem uma licença paga')
+    expect(screen.queryByText(/Cortesia liberada/)).toBeNull()
+  })
+})
