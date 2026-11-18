@@ -12,25 +12,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { spawn } = require('node:child_process')
 
-const norm = process.platform === 'win32' ? (s) => s.toLowerCase() : (s) => s
-
-/** Resolve `partes` dentro de `raiz`. Lança se sair da raiz ou se algum pedaço existente for link simbólico/junção. */
-function caminhoSeguro(raiz, ...partes) {
-  const base = path.resolve(raiz)
-  const alvo = path.resolve(base, ...partes.map(String))
-  const prefixo = base.endsWith(path.sep) ? base : base + path.sep
-  if (norm(alvo) !== norm(base) && !norm(alvo).startsWith(norm(prefixo))) throw new Error('caminho-fora-da-raiz')
-  // Confere cada degrau existente de base até alvo (lstat não segue link).
-  const resto = path.relative(base, alvo)
-  let atual = base
-  for (const p of ['', ...(resto ? resto.split(path.sep) : [])]) {
-    atual = p ? path.join(atual, p) : atual
-    let st
-    try { st = fs.lstatSync(atual) } catch (e) { if (e.code === 'ENOENT') break; throw e }
-    if (st.isSymbolicLink()) throw new Error('caminho-com-link')
-  }
-  return alvo
-}
+const { caminhoSeguro, urlOficial, HOSTS_OFICIAIS } = require('./seguro-puro.cjs')
 
 /** Cria um arquivo NOVO (flag 'wx': EEXIST se já existe). */
 function criarArquivoExclusivo(caminho, conteudo) {
@@ -43,36 +25,49 @@ function copiarExclusivo(origem, destino) {
   fs.copyFileSync(origem, destino, fs.constants.COPYFILE_EXCL)
 }
 
-// Hosts oficiais. Acrescentar é mudar o código, nunca aceitar URL de dado.
-const HOSTS_OFICIAIS = Object.freeze(['claude.ai', 'www.claude.ai', 'docs.claude.com', 'support.claude.com', 'github.com', 'vercel.com'])
-
-/** Valida (https, sem usuário/senha, host na allowlist). Devolve a URL normalizada ou lança. */
-function urlOficial(url, hosts = HOSTS_OFICIAIS) {
-  let u
-  try { u = new URL(String(url)) } catch { throw new Error('url-invalida') }
-  if (u.protocol !== 'https:' || u.username || u.password || !hosts.includes(u.hostname.toLowerCase())) throw new Error('host-nao-permitido')
-  return u.toString()
-}
-
 /** shell.openExternal só para host oficial. `shell` vem do chamador (facilita teste). */
 async function abrirExterno(shell, url, hosts = HOSTS_OFICIAIS) {
   await shell.openExternal(urlOficial(url, hosts))
 }
 
 /**
- * Roda o Claude Code CLI. `args` é SEMPRE uma lista fixa escrita no código (nunca montada com texto do cliente
- * como flag); texto do cliente só entra por `entrada` (stdin). Sem shell, com timeout e saída limitada.
- * `cwd` (pasta da obra) deve vir de caminhoSeguro. `exe` pode ser trocado por ATLAS_CLAUDE_EXE (ex.: caminho do claude.exe).
- * Se for .cmd/.bat (npm no Windows), roda via cmd.exe e só aceita args simples (letras, números, . / : = @ -).
+ * Localiza o Claude Code CLI de forma segura (sem shell, sem `where`). Devolve { cmd, prefixo, env } ou null.
+ * Ordem: ATLAS_CLAUDE_EXE; no PATH, claude.exe; ou claude.cmd do npm -> usa o binário/cli.js que o shim aponta
+ * (node_modules/@anthropic-ai/claude-code), pois .cmd não roda sem shell. Funciona com espaço no caminho (args em array).
  */
-function executarClaude(args, { cwd, entrada, timeoutMs = 30_000, maxSaida = 1_000_000, exe = process.env.ATLAS_CLAUDE_EXE || 'claude', env = process.env } = {}) {
+function resolverClaude(env = process.env) {
+  const fixo = env.ATLAS_CLAUDE_EXE
+  if (fixo) return /\.(cmd|bat)$/i.test(fixo) ? null : { cmd: fixo, prefixo: [], env }
+  if (process.platform !== 'win32') return { cmd: 'claude', prefixo: [], env }
+  const dirs = String(env.PATH || env.Path || '').split(path.delimiter).filter((d) => d && path.isAbsolute(d))
+  for (const d of dirs) {
+    const exe = path.join(d, 'claude.exe')
+    if (fs.existsSync(exe)) return { cmd: exe, prefixo: [], env }
+    if (fs.existsSync(path.join(d, 'claude.cmd'))) {
+      const pkg = path.join(d, 'node_modules', '@anthropic-ai', 'claude-code')
+      const bin = path.join(pkg, 'bin', 'claude.exe')
+      if (fs.existsSync(bin)) return { cmd: bin, prefixo: [], env }
+      const cli = path.join(pkg, 'cli.js')
+      if (fs.existsSync(cli)) return { cmd: process.execPath, prefixo: [cli], env: { ...env, ELECTRON_RUN_AS_NODE: '1' } }
+    }
+  }
+  return null
+}
+
+/**
+ * Roda o Claude Code CLI. `args` é SEMPRE uma lista fixa escrita no código (nunca montada com texto do cliente
+ * como flag); texto do cliente só entra por `entrada` (stdin). Sem shell (nunca), com timeout e saída limitada.
+ * `cwd` (pasta da obra) deve vir de caminhoSeguro. Executável: resolverClaude (ou `resolvido` injetado em teste).
+ */
+function executarClaude(args, { cwd, entrada, timeoutMs = 30_000, maxSaida = 1_000_000, env = process.env, resolvido } = {}) {
   if (!Array.isArray(args) || args.some((a) => typeof a !== 'string' || /[\r\n\0]/.test(a))) return Promise.reject(new Error('args-invalidos'))
-  const ehCmd = /\.(cmd|bat)$/i.test(exe)
-  if (ehCmd && args.some((a) => !/^[\w./:=@-]+$/.test(a))) return Promise.reject(new Error('args-invalidos'))
+  const r = resolvido || resolverClaude(env)
+  if (!r) return Promise.reject(new Error('claude-nao-instalado'))
   return new Promise((resolve, reject) => {
-    const filho = ehCmd
-      ? spawn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', exe, ...args], { cwd, env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] })
-      : spawn(exe, args, { cwd, env, windowsHide: true, shell: false, stdio: ['pipe', 'pipe', 'pipe'] })
+    let filho
+    try { filho = spawn(r.cmd, [...r.prefixo, ...args], { cwd, env: r.env, windowsHide: true, shell: false, stdio: ['pipe', 'pipe', 'pipe'] }) } catch (e) {
+      reject(new Error(e && e.code === 'ENOENT' ? 'claude-nao-instalado' : 'claude-falhou')); return
+    }
     let out = ''
     let err = ''
     let fim = false
@@ -81,10 +76,13 @@ function executarClaude(args, { cwd, entrada, timeoutMs = 30_000, maxSaida = 1_0
     filho.stdout.on('data', (d) => { out += d; if (out.length > maxSaida) { filho.kill(); encerrar(reject, new Error('claude-saida-grande')) } })
     filho.stderr.on('data', (d) => { err = (err + d).slice(-4000) })
     filho.on('error', (e) => encerrar(reject, new Error(e.code === 'ENOENT' ? 'claude-nao-instalado' : 'claude-falhou')))
+    filho.stdin.on('error', () => encerrar(reject, new Error('claude-indisponivel'))) // EPIPE: CLI fechou cedo
     filho.on('close', (codigo) => encerrar(resolve, { codigo, saida: out, erro: err }))
-    if (typeof entrada === 'string') filho.stdin.end(entrada)
-    else filho.stdin.end()
+    try {
+      if (typeof entrada === 'string') filho.stdin.end(entrada)
+      else filho.stdin.end()
+    } catch { encerrar(reject, new Error('claude-indisponivel')) }
   })
 }
 
-module.exports = { caminhoSeguro, criarArquivoExclusivo, copiarExclusivo, HOSTS_OFICIAIS, urlOficial, abrirExterno, executarClaude }
+module.exports = { caminhoSeguro, criarArquivoExclusivo, copiarExclusivo, HOSTS_OFICIAIS, urlOficial, abrirExterno, executarClaude, resolverClaude }
