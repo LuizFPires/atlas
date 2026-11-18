@@ -41,9 +41,12 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { caminhoSeguro, criarArquivoExclusivo, envMinimo, executarClaude, iniciarClaudeEmFluxo, resolverClaude } = require('../seguro.cjs')
-const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson, garantirSemConfigDeProjeto } = require('./obra-fs.cjs')
+const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson, lerTexto, garantirSemConfigDeProjeto } = require('./obra-fs.cjs')
+const { criarLojaDeParadas } = require('./cota-store.cjs')
+const { lerPlanoDoTexto } = require('./painel.cjs')
 const { montarPlanMd, validarPlanNovo, comoDado } = require('./plan-md.cjs')
 const { ehModoObra, gravarRecomendadoGlobal } = require('./modo.cjs')
+const { detectarCota } = require('./cota.cjs')
 
 /**
  * Ferramentas permitidas à linha: SUBCOMANDOS EXATOS, sem curinga em git/gh/npm inteiros. Isto é lista de permissão do Claude,
@@ -131,8 +134,12 @@ function resumirLinha(linha) {
   if (!j || typeof j !== 'object') return null
   if (j.type === 'result') {
     const t = typeof j.result === 'string' ? j.result : ''
-    return { texto: j.is_error ? 'A linha de produção parou' : 'A linha de produção terminou', cota: j.is_error === true && RE_COTA.test(t), fim: true }
+    // Cota: sinal ESTRUTURADO (cota.cjs detectarCota) ou, como antes, a frase de limite num resultado com is_error.
+    const c = detectarCota(j)
+    return { texto: j.is_error ? 'A linha de produção parou' : 'A linha de produção terminou', cota: j.is_error === true && (c !== null || RE_COTA.test(t)), voltaEm: c ? c.voltaEm : null, fim: true }
   }
+  const sinal = detectarCota(j)
+  if (sinal) return { texto: 'Aguardando a cota do plano', cota: sinal.forca === 'forte', cotaFraca: sinal.forca === 'fraca', voltaEm: sinal.voltaEm }
   if (j.type === 'assistant' && j.message && Array.isArray(j.message.content)) {
     for (const c of j.message.content) {
       if (c && c.type === 'tool_use' && typeof c.name === 'string') return { texto: `Usando ${comoDado(c.name, 40).join(' ')}` }
@@ -152,6 +159,10 @@ function resumirLinha(linha) {
 function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
   const linhas = new Map()
+  // `dadosApp` = userData do app (o MESMO que a cota recebe). Arquivos do git isolado ficam em <dadosApp>\git-isolado.
+  const dirGit = path.join(dadosApp, 'git-isolado')
+  /** Paradas por cota vistas pelo APP, fora da obra (cota-store.cjs): a retomada automática só confia nisto. */
+  const paradas = criarLojaDeParadas({ raiz, dadosApp })
   let iniciando = false // reserva durante iniciar() (há awaits entre a conferência e o religar)
 
   const claudePronto = async () => {
@@ -175,14 +186,18 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     if (pluginDir) args.push('--plugin-dir', pluginDir)
     const reg = { parar: () => {}, recentes: [], desde: agora().toISOString() }
     let cota = false
+    let cotaFraca = false
+    let voltaEm = null
     pastaAtlas(raiz, pasta)
-    const env = envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dadosApp) })
+    const env = envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dirGit) })
     const r = iniciarFluxo(args, {
       cwd, env, entrada: '/construir',
       onLinha: (l) => {
         const s = resumirLinha(l)
         if (!s) return
         if (s.cota) cota = true
+        if (s.cotaFraca) cotaFraca = true
+        if (s.voltaEm) voltaEm = s.voltaEm
         reg.recentes.push(s.texto)
         if (reg.recentes.length > 30) reg.recentes.shift()
       },
@@ -190,10 +205,22 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     reg.parar = r.parar
     linhas.set(pasta, reg)
     gravarLinha(pasta, { estado: 'rodando', desde: reg.desde })
+    paradas.apagar(pasta) // religou: o registro de parada por cota acabou (um novo fim por cota grava de novo)
     r.fim.then(({ codigo, parado }) => {
       if (linhas.get(pasta) === reg) linhas.delete(pasta) // não apaga uma linha mais nova (pausar + continuar rápido)
-      const motivo = parado ? 'pausada' : cota ? 'cota' : codigo === 0 ? 'concluiu' : codigo === null ? 'fechou' : 'erro'
-      gravarLinha(pasta, { estado: 'parou', motivo, codigo, fimEm: agora().toISOString() })
+      // Sinal fraco de limite (erro rate_limit no meio) só conta se a linha acabou com falha; com sucesso foi só um tropeço que passou.
+      const motivo = parado ? 'pausada' : cota || (cotaFraca && codigo !== 0) ? 'cota' : codigo === 0 ? 'concluiu' : codigo === null ? 'fechou' : 'erro'
+      gravarLinha(pasta, { estado: 'parou', motivo, codigo, fimEm: agora().toISOString(), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}) })
+      // Registro do APP (fora da obra) que permite a retomada automática: só em fim por cota de uma linha que o app iniciou, com a obra
+      // ainda por terminar e sem pausa do cliente (se uma linha mais nova já roda, ela cuida do próprio registro).
+      try {
+        if (linhas.has(pasta)) return
+        let pct = 0
+        const t = lerTexto(path.join(cwd, 'PLAN.md'))
+        if (t !== null) pct = lerPlanoDoTexto(t).pct
+        if (motivo === 'cota' && pct < 100) paradas.marcar(pasta, { voltaEm, em: agora().toISOString() })
+        else paradas.apagar(pasta)
+      } catch { /* sem registro: só o clique do cliente retoma */ }
     })
   }
 
@@ -204,7 +231,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
       await claudePronto()
       garantirSemConfigDeProjeto(cwd) // de novo: a pasta pode ter mudado durante a espera
       const entrada = `${PEDIDO_PLANEJAR}\n\nNome da obra (dado):\n${comoDado(obraNome, 200).join(' ') || 'Obra'}\n`
-      const r = await executar(['-p', '--output-format', 'json', ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', 'Read,Glob,Grep', '--disallowedTools', `Edit,Write,Bash,Task,NotebookEdit,${FERRAMENTAS_NEGADAS}`], { cwd, entrada, timeoutMs: 300_000, maxSaida: 1_000_000, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dadosApp) }) })
+      const r = await executar(['-p', '--output-format', 'json', ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', 'Read,Glob,Grep', '--disallowedTools', `Edit,Write,Bash,Task,NotebookEdit,${FERRAMENTAS_NEGADAS}`], { cwd, entrada, timeoutMs: 300_000, maxSaida: 1_000_000, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dirGit) }) })
       if (r.codigo !== 0) throw new Error('claude-falhou')
       let texto = r.saida
       try { const j = JSON.parse(r.saida); if (j && typeof j.result === 'string') texto = j.result } catch { /* saída já era o texto */ }
@@ -251,7 +278,8 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     /** Usado por PontePainel/PonteRetomar: a mesma linha de produção, sem criar PLAN nem mexer no modo. */
     linha: {
       religar,
-      parar(pasta) { const l = linhas.get(pasta); if (l) { linhas.delete(pasta); l.parar() } },
+      /** Pausa do cliente (painel.pausar): derruba a linha e apaga o registro de parada por cota. */
+      parar(pasta) { const l = linhas.get(pasta); if (l) { linhas.delete(pasta); l.parar() } paradas.apagar(pasta) },
       rodando: (pasta) => linhas.has(pasta),
       recentes: (pasta) => (linhas.get(pasta)?.recentes ?? []).slice(),
       ultimoFim: (pasta) => lerJson(caminhoSeguro(raiz, pasta, '.atlas', 'linha.json')),

@@ -10,6 +10,10 @@ import type { PontePrototipo } from './ponte-prototipo'
 import type { PonteBatismo, PonteNomes } from './ponte-batismo'
 import type { PontePosObra } from './ponte-posobra'
 import type { PonteRetomar } from './ponte-retomar'
+import type { PonteCota } from './ponte-cota'
+import type { PonteOcorrencias } from './ponte-ocorrencia'
+import type { PonteCelular } from './ponte-celular'
+import type { PonteImportar } from './ponte-importar'
 
 /** Cofre do sistema (Windows Credential Manager / DPAPI). NUNCA grava segredo em arquivo. */
 export interface Cofre {
@@ -41,6 +45,10 @@ export interface PonteDesktop {
   batismo?: PonteBatismo
   nomes?: PonteNomes
   posobra?: PontePosObra
+  cota?: PonteCota
+  ocorrencias?: PonteOcorrencias
+  celular?: PonteCelular
+  importar?: PonteImportar
 }
 
 declare global {

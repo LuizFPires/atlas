@@ -1,7 +1,7 @@
 // Preload do app Atlas: a ÚNICA ponte entre a tela (renderer) e o processo principal.
 //
 // O QUE FAZ: expõe window.atlasDesktop (contextIsolation ligado, sandbox ligado, SEM nodeIntegration). Só os namespaces
-// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra. Todo argumento vira String/boolean aqui e é
+// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar. Todo argumento vira String/boolean aqui e é
 // revalidado de novo no processo principal (main.cjs); o renderer nunca recebe caminho de origem, módulo Node nem Electron.
 //
 // COMO TESTAR (Windows): `npx electron app/main.cjs`, abrir as ferramentas do desenvolvedor e digitar `window.atlasDesktop`:
@@ -9,7 +9,14 @@
 'use strict'
 const { contextBridge, ipcRenderer } = require('electron')
 
-const chamar = (canal, ...args) => ipcRenderer.invoke(canal, ...args)
+// O Electron embrulha o erro do processo principal ("Error invoking remote method 'x': Error: codigo-do-erro"); a tela compara o
+// código puro (ex.: 'zip-bomba', 'ja-recebido'), então devolvemos só ele. Mensagem que não é um código simples passa como veio.
+const chamar = async (canal, ...args) => {
+  try { return await ipcRenderer.invoke(canal, ...args) } catch (e) {
+    const m = /Error: ([a-z0-9][a-z0-9-]{0,60})\s*$/.exec(String((e && e.message) || ''))
+    throw new Error(m ? m[1] : String((e && e.message) || 'falhou'))
+  }
+}
 
 // Só o que o front precisa; nada de Node exposto.
 contextBridge.exposeInMainWorld('atlasDesktop', {
@@ -81,6 +88,29 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     entender: (pasta, pedido) => chamar('atlas:posobra:entender', String(pasta), JSON.parse(JSON.stringify(pedido ?? {}))),
     executar: (pasta, pedido, plano) => chamar('atlas:posobra:executar', String(pasta), JSON.parse(JSON.stringify(pedido ?? {})), JSON.parse(JSON.stringify(plano ?? {}))),
     historico: (pasta) => chamar('atlas:posobra:historico', String(pasta)),
+  },
+  cota: {
+    ler: (pasta) => chamar('atlas:cota:ler', String(pasta)),
+    retomar: (pasta) => chamar('atlas:cota:retomar', String(pasta)),
+  },
+  celular: {
+    // síncrona na porta: o endereço é fixo no processo principal (lido uma vez).
+    enderecoApp: (() => { const e = ipcRenderer.sendSync('atlas:celular:endereco'); return () => e })(),
+    // só frequência e 3 avisos (dados puros); o processo principal revalida estritamente.
+    aplicar: (prefs) => chamar('atlas:celular:aplicar', JSON.parse(JSON.stringify(prefs ?? {}))),
+  },
+  importar: {
+    // o renderer só recebe nome limpo, tamanho e um token opaco de uso único; o caminho do .zip fica no processo principal.
+    escolherZip: () => chamar('atlas:importar:escolher'),
+    validar: (token) => chamar('atlas:importar:validar', String(token)),
+    receber: (pasta, token) => chamar('atlas:importar:receber', String(pasta), String(token)),
+  },
+  ocorrencias: {
+    ler: (pasta) => chamar('atlas:ocorrencias:ler', String(pasta)),
+    avisar: (pasta, id) => chamar('atlas:ocorrencias:avisar', String(pasta), Number(id)),
+    // a chave (se houver) só vai ao processo principal, que a entrega ao cofre; nunca a arquivo.
+    resolver: (pasta, id, segredo) => chamar('atlas:ocorrencias:resolver', String(pasta), Number(id), segredo === undefined || segredo === null ? undefined : String(segredo)),
+    adiar: (pasta, id) => chamar('atlas:ocorrencias:adiar', String(pasta), Number(id)),
   },
   construcao: {
     planejar: (pasta, obraNome) => chamar('atlas:construcao:planejar', String(pasta), String(obraNome)),

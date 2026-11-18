@@ -99,7 +99,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteContas = useMemo<PonteContas>(() => contas ?? (modoFixture() ? criarContasFixture() : contasIndisponivel), [contas])
 
   // Idem para o celular (Remote Control): sem adaptador real, não finge que o celular está ligado.
-  const ponteCelular = useMemo<PonteCelular>(() => celular ?? (modoFixture() ? criarCelularFixture() : celularIndisponivel), [celular])
+  const ponteCelular = useMemo<PonteCelular>(() => celular ?? (modoFixture() ? criarCelularFixture() : (ponte.celular ?? celularIndisponivel)), [celular, ponte])
 
   // Idem para a pasta das obras (Atlas\Obras): sem adaptador real, não finge que criou a pasta.
   const ponteObras = useMemo<PonteObras>(() => obras ?? (modoFixture() ? criarObrasFixture(dono || 'Zé') : (ponte.obras ?? obrasIndisponivel)), [obras, dono, ponte])
@@ -111,7 +111,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteEstilo = useMemo<PonteEstilo>(() => estilo ?? (modoFixture() ? criarEstiloFixture(ponteObras.raiz()) : (ponte.estilo ?? estiloIndisponivel)), [estilo, ponteObras, ponte])
 
   // Idem para o .zip que vem de outra IA (não confiável): sem adaptador real, não finge que recebeu nem abre nada.
-  const ponteImportar = useMemo<PonteImportar>(() => importar ?? (modoFixture() ? criarImportarFixture(ponteObras.raiz()) : importarIndisponivel), [importar, ponteObras])
+  const ponteImportar = useMemo<PonteImportar>(() => importar ?? (modoFixture() ? criarImportarFixture(ponteObras.raiz()) : (ponte.importar ?? importarIndisponivel)), [importar, ponteObras, ponte])
 
   // Idem para o Claude que desenha e ajusta as telas (HTML não confiável: só em iframe sandbox): sem adaptador real, não finge.
   const pontePrototipo = useMemo<PontePrototipo>(() => prototipo ?? (modoFixture() ? criarPrototipoFixture(ponteObras.raiz()) : (ponte.prototipo ?? prototipoIndisponivel)), [prototipo, ponteObras, ponte])
@@ -131,7 +131,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const pontesObra = useMemo(() => {
     if (painel || ponte.painel || !modoFixture()) {
       const fixture = modoFixture()
-      return { painel: painel ?? ponte.painel ?? painelIndisponivel, cota: cota ?? (fixture ? criarCotaFixture() : cotaIndisponivel), ocorrencias: ocorrencias ?? (fixture ? criarOcorrenciasFixture() : ocorrenciasIndisponivel) }
+      return { painel: painel ?? ponte.painel ?? painelIndisponivel, cota: cota ?? (fixture ? criarCotaFixture() : (ponte.cota ?? cotaIndisponivel)), ocorrencias: ocorrencias ?? (fixture ? criarOcorrenciasFixture() : (ponte.ocorrencias ?? ocorrenciasIndisponivel)) }
     }
     const fx = criarPainelFixture()
     return {

@@ -7,6 +7,7 @@ const os = require('node:os')
 const path = require('node:path')
 const { criarConstrucao, etapasDoTexto, resumirLinha } = require('./construcao.cjs')
 const { criarModo } = require('./modo.cjs')
+const { criarLojaDeParadas } = require('./cota-store.cjs')
 const { montarPlanMd, validarPlanNovo } = require('./plan-md.cjs')
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-obra-'))
@@ -17,13 +18,14 @@ function montar({ logado = true, instalado = true } = {}) {
   fs.mkdirSync(path.join(raiz, 'obra'))
   const chamadas = []
   let terminar
+  const dadosApp = tmp()
   const c = criarConstrucao({
-    raiz, home, dadosApp: tmp(), modos: criarModo({ raiz }),
+    raiz, home, dadosApp, modos: criarModo({ raiz }),
     claudeEstado: async () => ({ conectado: logado }),
     resolver: () => (instalado ? { cmd: 'x' } : null),
     iniciarFluxo: (args, o) => { chamadas.push({ args, o }); return { parar: () => terminar({ codigo: null, parado: true }), fim: new Promise((r) => { terminar = r }) } },
   })
-  return { raiz, home, c, chamadas, terminar: (v) => terminar(v) }
+  return { raiz, home, dadosApp, c, chamadas, terminar: (v) => terminar(v) }
 }
 
 test('PLAN gerado é válido e texto do cliente não vira cabeçalho/tarefa', () => {
@@ -175,4 +177,33 @@ test('integração: GIT_CONFIG_COUNT vence o .git/config local', (t) => {
   const ler = (k) => spawnSync('git', ['config', '--get', k], { cwd: repo, env, encoding: 'utf8' }).stdout.trim()
   assert.match(ler('core.hooksPath'), /git-vazio$/)
   assert.equal(ler('core.sshCommand'), '')
+})
+
+test('fim por cota grava o registro no store do APP (fora da obra); pausa e religar o apagam', async () => {
+  const { raiz, dadosApp, c, chamadas, terminar } = montar()
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  const loja = criarLojaDeParadas({ raiz, dadosApp })
+  chamadas[0].o.onLinha(JSON.stringify({ type: 'result', is_error: true, result: 'Claude AI usage limit reached|' + Math.floor(Date.now() / 1000 + 3600) }))
+  terminar({ codigo: 1, parado: false })
+  await new Promise((r) => setTimeout(r, 20))
+  assert.ok(loja.obter('obra'))
+  assert.ok(loja.obter('obra').voltaEm)
+  assert.ok(fs.existsSync(path.join(dadosApp, 'cota', 'paradas.json')))
+  assert.ok(!fs.existsSync(path.join(raiz, 'obra', '.atlas', 'paradas.json'))) // nada disso na pasta da obra
+  c.linha.religar('obra') // religou: registro apagado
+  assert.equal(loja.obter('obra'), null)
+  chamadas[1].o.onLinha(JSON.stringify({ type: 'result', is_error: true, result: 'Claude AI usage limit reached|' + Math.floor(Date.now() / 1000 + 3600) }))
+  terminar({ codigo: 1, parado: false })
+  await new Promise((r) => setTimeout(r, 20))
+  assert.ok(loja.obter('obra'))
+  c.linha.parar('obra') // pausa do cliente
+  assert.equal(loja.obter('obra'), null)
+})
+
+test('fim que não é cota não deixa registro', async () => {
+  const { raiz, dadosApp, c, terminar } = montar()
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  terminar({ codigo: 1, parado: false })
+  await new Promise((r) => setTimeout(r, 20))
+  assert.equal(criarLojaDeParadas({ raiz, dadosApp }).obter('obra'), null)
 })

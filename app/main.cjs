@@ -20,6 +20,10 @@ const { criarBatismo } = require('./adaptadores/batismo.cjs')
 const { criarNomes } = require('./adaptadores/nomes.cjs')
 const { criarPosObra } = require('./adaptadores/posobra.cjs')
 const { criarLicenca } = require('./adaptadores/licenca.cjs')
+const { criarCota } = require('./adaptadores/cota.cjs')
+const { criarOcorrencias } = require('./adaptadores/ocorrencias.cjs')
+const { criarCelular } = require('./adaptadores/celular.cjs')
+const { criarImportar } = require('./adaptadores/importar.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -31,10 +35,17 @@ const obras = criarObras({ shell })
 const arquivos = criarArquivos({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
 const claude = criarClaude({ shell })
 const modos = criarModo({ raiz: obras.raiz() })
-const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: process.env.ATLAS_KIT_PLUGIN || null, dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado') })
+const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: process.env.ATLAS_KIT_PLUGIN || null, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
 const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
-// cota: sem adaptador real ainda (pendente); sem ele o Retomar só liga a linha por painel.continuar.
-const retomar = criarRetomar({ raiz: obras.raiz(), painel, construcao })
+// Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
+const cota = criarCota({ raiz: obras.raiz(), construcao, painel, claudeEstado: () => claude.estado(), dadosApp: app.getPath('userData') })
+// Ocorrências (F11): livro do kit da obra (docs\ocorrencias.json). A chave colada vai SÓ ao cofre (DPAPI). Canais de aviso: pendência (ver ocorrencias.cjs).
+const ocorrencias = criarOcorrencias({ raiz: obras.raiz(), cofre })
+// Celular (F04b): endereço do app do Claude + preferências guardadas; a CONEXÃO (Remote Control) é pendência e não é fingida (celular.cjs).
+const celular = criarCelular({ dados: require('node:path').join(app.getPath('userData'), 'celular') })
+// Importar (F06c): o .zip de outra IA é NÃO CONFIÁVEL; descompacta com todas as defesas (ver adaptadores/importar.cjs).
+const importar = criarImportar({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
+const retomar = criarRetomar({ raiz: obras.raiz(), painel, cota, construcao })
 // Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
 const disparo = criarDisparo({ raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
@@ -105,6 +116,25 @@ handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
 handle('atlas:retomar:andamento', () => retomar.obraEmAndamento())
 handle('atlas:retomar:continuar', (pasta) => retomar.continuar({ pasta: String(pasta) }))
 
+// Cota do plano (F10): ler o estado, retomar quando o Claude voltou a responder. A vigia retoma sozinha (sem clique) as obras paradas por cota.
+handle('atlas:cota:ler', (pasta) => cota.ler(String(pasta)))
+handle('atlas:cota:retomar', (pasta) => cota.retomar(String(pasta)))
+
+// Ocorrências (F11): o único tipo de parada que exige o cliente. resolver recebe a chave (se houver) e a entrega direto ao cofre.
+handle('atlas:ocorrencias:ler', (pasta) => ocorrencias.ler(String(pasta)))
+handle('atlas:ocorrencias:avisar', (pasta, id) => ocorrencias.avisar(String(pasta), Number(id)))
+handle('atlas:ocorrencias:resolver', (pasta, id, segredo) => ocorrencias.resolver(String(pasta), Number(id), segredo === undefined || segredo === null ? undefined : String(segredo)))
+handle('atlas:ocorrencias:adiar', (pasta, id) => ocorrencias.adiar(String(pasta), Number(id)))
+
+// Celular (F04b): o endereço é fixo (síncrono, como obras.raiz); aplicar guarda as preferências e diz a verdade sobre a conexão.
+ipcMain.on('atlas:celular:endereco', (e) => { e.returnValue = confiavel(e) ? celular.enderecoApp() : '' })
+handle('atlas:celular:aplicar', (prefs) => celular.aplicar(prefs))
+
+// Trazer protótipo de outra IA (F06c): escolher o .zip (token opaco), validar SEM gravar e receber (descompactar com as defesas).
+handle('atlas:importar:escolher', () => importar.escolherZip())
+handle('atlas:importar:validar', (token) => importar.validar(String(token)))
+handle('atlas:importar:receber', (pasta, token) => importar.receber(String(pasta), String(token)))
+
 // Estilo do sistema (F06b): o Claude propõe 3 estilos; materializar grava o design-system.md (nunca sobrescreve).
 handle('atlas:estilo:propor', (entrada, pasta) => estilo.propor(entrada, pasta === undefined ? undefined : String(pasta)))
 handle('atlas:estilo:materializar', (pasta, origem) => estilo.materializar(String(pasta), origem))
@@ -159,4 +189,6 @@ function abrir() {
 }
 
 app.whenReady().then(abrir)
+// Vigia da cota: 20 s depois de abrir (o app pode ter sido ligado com o Windows) e a cada 2 min; só obras paradas POR COTA.
+setTimeout(() => { const v = () => cota.vigiar().catch(() => {}); v(); setInterval(v, 120_000).unref() }, 20_000).unref()
 app.on('window-all-closed', () => app.quit())

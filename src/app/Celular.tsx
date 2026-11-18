@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Botao, Icone } from '../ui'
 import { LateralPassos } from './Ativacao'
+import { caminhoQr, matrizQr } from './entrega-dados'
 import { criarArmazemLocal, type ArmazemPrefs, type Frequencia, type IdAviso, type PonteCelular, type PrefsCelular } from './ponte-celular'
 import './app.css'
 import './claude.css'
@@ -32,13 +33,13 @@ export const AVISOS: { id: IdAviso; nome: string }[] = [
   { id: 'fim', nome: 'Me avisar quando a obra ficar pronta' },
 ]
 
-/** Quadradinho de exemplo do protótipo. O QR de verdade (do endereço da ponte) é pendência de /entregar. */
+/** QR de verdade do endereço do app do Claude, gerado aqui dentro (nenhum serviço externo recebe o endereço). */
 function Qr({ endereco }: { endereco: string }) {
+  const matriz = useMemo(() => matrizQr(endereco), [endereco])
+  const n = matriz.length
   return (
-    <svg className="at-cel__qr" width="84" height="84" viewBox="0 0 21 21" role="img" aria-label="QR code para baixar o app do Claude" data-endereco={endereco}>
-      <path d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0z" fill="#141619" />
-      <path d="M1 1h5v5H1zM15 1h5v5h-5zM1 15h5v5H1z" fill="#FFFFFF" />
-      <path d="M2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2zM9 1h2v2H9zM8 8h3v2H8zM12 10h2v1h-2zM15 9h1v3h-1zM18 8h2v1h-2zM8 13h1v3H8zM11 12h3v1h-3zM16 14h3v2h-3zM10 16h2v2h-2zM14 17h1v3h-1zM17 18h3v1h-3zM9 19h3v1H9z" fill="#141619" />
+    <svg className="at-cel__qr" width="84" height="84" viewBox={`0 0 ${n} ${n}`} shapeRendering="crispEdges" role="img" aria-label="QR code para baixar o app do Claude" data-endereco={endereco}>
+      <path d={caminhoQr(matriz)} fill="#141619" />
     </svg>
   )
 }
