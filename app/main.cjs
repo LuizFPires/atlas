@@ -24,7 +24,7 @@ const obras = criarObras({ shell })
 const arquivos = criarArquivos({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
 const claude = criarClaude({ shell })
 const modos = criarModo({ raiz: obras.raiz() })
-const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: process.env.ATLAS_KIT_PLUGIN || null })
+const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: process.env.ATLAS_KIT_PLUGIN || null, dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado') })
 const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
 // cota: sem adaptador real ainda (pendente); sem ele o Retomar só liga a linha por painel.continuar.
 const retomar = criarRetomar({ raiz: obras.raiz(), painel, construcao })

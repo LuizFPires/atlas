@@ -24,12 +24,18 @@
 //  Andamento: a saída `stream-json` é resumida em frases curtas (últimas 30 na memória) e o fim da linha vai para
 //  <obra>\.atlas\linha.json ({estado, motivo: concluiu|cota|pausada|erro|fechou}); nenhum texto bruto do Claude vai à tela.
 //
+//  GIT ISOLADO: o env do Claude (planejar e construir) leva GIT_CONFIG_NOSYSTEM=1, GIT_CONFIG_GLOBAL=<gitconfig do app> e
+//  GIT_CONFIG_SYSTEM=NUL; o gitconfig do app (fora da obra, sem segredo) aponta core.hooksPath/init.templateDir para uma pasta
+//  vazia e desliga fsmonitor. Isso NEUTRALIZA hooks de .git trazidos pela obra. Além disso: Write/Edit em .git/** são negados e
+//  uma obra NOVA com .git de fora (zip importado) é recusada (o .git criado pela própria linha é aceito ao religar).
+//
 // COMO TESTAR (Windows, com o Claude Code instalado e logado): criar uma obra, aprovar o plano; deve aparecer PLAN.md na pasta da
 // obra e .atlas\modo.json; o recomendado.json em C:\Users\<você>\.claude muda conforme o modo; o Gerenciador de Tarefas mostra o
 // claude rodando. Sem o Claude instalado: o botão avisa com calma ("claude-nao-instalado") e nenhum arquivo é criado.
 // Testes sem Claude: `node --test app/adaptadores/*.teste.cjs`.
 'use strict'
 const fs = require('node:fs')
+const path = require('node:path')
 const { caminhoSeguro, criarArquivoExclusivo, envMinimo, executarClaude, iniciarClaudeEmFluxo, resolverClaude } = require('../seguro.cjs')
 const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson, garantirSemConfigDeProjeto } = require('./obra-fs.cjs')
 const { montarPlanMd, validarPlanNovo, comoDado } = require('./plan-md.cjs')
@@ -50,8 +56,30 @@ const FERRAMENTAS_LINHA = [
 /** Negados explícitos (valem mesmo que uma regra de permissão mais larga apareça). Config do projeto/kit não se edita. */
 const FERRAMENTAS_NEGADAS = [
   'Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node:*)', 'Bash(npx:*)', 'Bash(curl:*)', 'Bash(wget:*)', 'Bash(powershell:*)', 'Bash(cmd:*)',
-  'Write(.claude/**)', 'Edit(.claude/**)', 'Write(CLAUDE.md)', 'Edit(CLAUDE.md)',
+  'Write(.claude/**)', 'Edit(.claude/**)', 'Write(CLAUDE.md)', 'Edit(CLAUDE.md)', 'Write(.git/**)', 'Edit(.git/**)',
 ].join(',')
+/**
+ * Git ISOLADO: um `.git` vindo de fora pode trazer hooks (rodam no `git commit`) e config (fsmonitor, sshCommand...). No env do
+ * Claude (planejar e construir) o git lê SÓ um gitconfig gerado pelo app (fora da obra, sem segredo, regravado a cada disparo):
+ * core.hooksPath e init.templateDir apontam para uma pasta vazia, fsmonitor desligado. Config de sistema/global do usuário não vale.
+ * Isto neutraliza hooks e config do `.git` da obra no nível do ambiente (config local do repo ainda vale, mas hooks não rodam).
+ */
+function prepararGitIsolado(dadosApp) {
+  const vazio = path.join(dadosApp, 'git-vazio')
+  fs.mkdirSync(vazio, { recursive: true })
+  const url = (p) => p.split('\\').join('/')
+  const conf = path.join(dadosApp, 'gitconfig-atlas')
+  const texto = ['# Gerado pelo Atlas a cada disparo. Nao editar. Sem segredo.', '[core]', `\thooksPath = "${url(vazio)}"`, '\tfsmonitor = false', '[init]', `\ttemplateDir = "${url(vazio)}"`, ''].join('\n')
+  gravarAtomico(conf, texto)
+  return { conf, vazio }
+}
+
+/** Variáveis de ambiente do git isolado (ver prepararGitIsolado). */
+function envGitIsolado(dadosApp) {
+  const { conf } = prepararGitIsolado(dadosApp)
+  return { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: conf, GIT_CONFIG_SYSTEM: process.platform === 'win32' ? 'NUL' : '/dev/null', GIT_TERMINAL_PROMPT: '0' }
+}
+
 /** Só settings do usuário: ignora .claude/settings.json e CLAUDE.md da pasta da obra (o kit vem por --plugin-dir). */
 const ARGS_SEM_CONFIG_DE_PROJETO = ['--setting-sources', 'user', '--strict-mcp-config']
 const MAX_ETAPAS = 20
@@ -111,7 +139,7 @@ function resumirLinha(linha) {
  * `deps`: { raiz, modos (PonteModoObra real), claudeEstado (async () => {conectado}), pluginDir?, home?, agora?,
  *           iniciarFluxo?, executar?, resolver? }  — os três últimos existem para teste (padrão: seguro.cjs).
  */
-function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude }) {
+function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
   const linhas = new Map()
   let iniciando = false // reserva durante iniciar() (há awaits entre a conferência e o religar)
@@ -128,17 +156,17 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
   }
 
   /** Liga a linha de produção na pasta da obra (a skill /construir retoma do ponto em que o PLAN parou). */
-  function religar(pasta) {
+  function religar(pasta, { nova = false } = {}) {
     const cwd = pastaDaObra(raiz, pasta)
     if (linhas.has(pasta)) return // já rodando: idempotente
     if (linhas.size > 0) throw new Error('ja-rodando')
-    garantirSemConfigDeProjeto(cwd) // config de projeto suspeita: não roda
+    garantirSemConfigDeProjeto(cwd, { permitirGit: !nova }) // config de projeto suspeita: não roda (obra nova: .git de fora também não)
     const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', FERRAMENTAS_LINHA, '--disallowedTools', FERRAMENTAS_NEGADAS]
     if (pluginDir) args.push('--plugin-dir', pluginDir)
     const reg = { parar: () => {}, recentes: [], desde: agora().toISOString() }
     let cota = false
     pastaAtlas(raiz, pasta)
-    const env = envMinimo({ CLAUDE_PROJECT_DIR: cwd })
+    const env = envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dadosApp) })
     const r = iniciarFluxo(args, {
       cwd, env, entrada: '/construir',
       onLinha: (l) => {
@@ -166,7 +194,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
       await claudePronto()
       garantirSemConfigDeProjeto(cwd) // de novo: a pasta pode ter mudado durante a espera
       const entrada = `${PEDIDO_PLANEJAR}\n\nNome da obra (dado):\n${comoDado(obraNome, 200).join(' ') || 'Obra'}\n`
-      const r = await executar(['-p', '--output-format', 'json', ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', 'Read,Glob,Grep', '--disallowedTools', `Edit,Write,Bash,Task,NotebookEdit,${FERRAMENTAS_NEGADAS}`], { cwd, entrada, timeoutMs: 300_000, maxSaida: 1_000_000, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd }) })
+      const r = await executar(['-p', '--output-format', 'json', ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', 'Read,Glob,Grep', '--disallowedTools', `Edit,Write,Bash,Task,NotebookEdit,${FERRAMENTAS_NEGADAS}`], { cwd, entrada, timeoutMs: 300_000, maxSaida: 1_000_000, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dadosApp) }) })
       if (r.codigo !== 0) throw new Error('claude-falhou')
       let texto = r.saida
       try { const j = JSON.parse(r.saida); if (j && typeof j.result === 'string') texto = j.result } catch { /* saída já era o texto */ }
@@ -197,7 +225,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
         try {
           await modos.gravar(pasta, modo)
           gravarRecomendadoGlobal(modo, { home, agora: agora() })
-          religar(pasta)
+          religar(pasta, { nova: true })
         } catch (e) {
           for (const f of [arquivoPlan, caminhoSeguro(raiz, pasta, '.atlas', 'modo.json')]) { try { fs.unlinkSync(f) } catch { /* não existia */ } }
           try { if (antes === null) fs.unlinkSync(recomendado); else gravarAtomico(recomendado, antes) } catch { /* melhor esforço */ }
@@ -221,4 +249,4 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
   }
 }
 
-module.exports = { criarConstrucao, FERRAMENTAS_NEGADAS, RE_COTA, etapasDoTexto, resumirLinha, previsaoPorEtapas, FERRAMENTAS_LINHA }
+module.exports = { criarConstrucao, envGitIsolado, FERRAMENTAS_NEGADAS, RE_COTA, etapasDoTexto, resumirLinha, previsaoPorEtapas, FERRAMENTAS_LINHA }

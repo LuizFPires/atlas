@@ -24,13 +24,44 @@ function pastaDaObra(raiz, pasta) {
 }
 
 /**
- * Config de PROJETO não é confiável (a obra pode vir de um repositório de terceiros): se a pasta tem `.claude`, `CLAUDE.md`
- * ou `.mcp.json` (existindo como arquivo, pasta ou link), NÃO se dispara o Claude. Conferido com lstat antes de CADA disparo.
+ * Config de PROJETO não é confiável (a obra pode vir de um repositório de terceiros): se a pasta tem `.claude`, `CLAUDE.md`,
+ * `CLAUDE.local.md` ou `.mcp.json` (existindo como arquivo, pasta ou link) na raiz OU em subpastas (varredura rasa: 2 níveis,
+ * sem node_modules/.git), NÃO se dispara o Claude. Conferido com lstat antes de CADA disparo. Fail-closed: erro != ENOENT recusa.
+ *
+ * `.git`: numa obra NOVA (planejar / iniciar) um `.git` que já esteja na pasta veio de fora (ex.: zip importado) e pode trazer
+ * hooks/config: recusa ('obra-com-config-suspeita'). Depois que a linha rodou, o `.git` é o que o próprio /construir criou
+ * (`permitirGit: true`, usado ao religar/continuar/retomar); mesmo assim os hooks são neutralizados pelo gitconfig do app.
  */
-function garantirSemConfigDeProjeto(cwd) {
-  for (const nome of ['.claude', 'CLAUDE.md', '.mcp.json']) {
-    try { fs.lstatSync(path.join(cwd, nome)) } catch (e) { if (e.code === 'ENOENT') continue; throw new Error('obra-com-config-suspeita') }
-    throw new Error('obra-com-config-suspeita')
+const NOMES_SUSPEITOS = ['.claude', 'CLAUDE.md', 'CLAUDE.local.md', '.mcp.json']
+const IGNORAR_NA_VARREDURA = new Set(['node_modules', '.git', '.atlas'])
+const MAX_SUBPASTAS_VARRIDAS = 400
+
+function existe(caminho) {
+  try { fs.lstatSync(caminho) } catch (e) { if (e.code === 'ENOENT') return false; return true } // erro estranho => trata como suspeito
+  return true
+}
+
+function subpastas(dir) {
+  const ents = fs.readdirSync(dir, { withFileTypes: true }) // erro => propaga (fail-closed)
+  return ents.filter((e) => e.isDirectory() && !e.isSymbolicLink() && !IGNORAR_NA_VARREDURA.has(e.name)).map((e) => path.join(dir, e.name))
+}
+
+function garantirSemConfigDeProjeto(cwd, { permitirGit = false } = {}) {
+  const suspeito = () => new Error('obra-com-config-suspeita')
+  const nomes = permitirGit ? NOMES_SUSPEITOS : [...NOMES_SUSPEITOS, '.git']
+  for (const nome of nomes) if (existe(path.join(cwd, nome))) throw suspeito()
+  let restante = MAX_SUBPASTAS_VARRIDAS
+  try {
+    for (const n1 of subpastas(cwd)) {
+      if (--restante < 0) return
+      for (const nome of NOMES_SUSPEITOS) if (existe(path.join(n1, nome))) throw suspeito()
+      for (const n2 of subpastas(n1)) {
+        if (--restante < 0) return
+        for (const nome of NOMES_SUSPEITOS) if (existe(path.join(n2, nome))) throw suspeito()
+      }
+    }
+  } catch (e) {
+    throw suspeito()
   }
 }
 

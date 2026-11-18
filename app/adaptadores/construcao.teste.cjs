@@ -18,7 +18,7 @@ function montar({ logado = true, instalado = true } = {}) {
   const chamadas = []
   let terminar
   const c = criarConstrucao({
-    raiz, home, modos: criarModo({ raiz }),
+    raiz, home, dadosApp: tmp(), modos: criarModo({ raiz }),
     claudeEstado: async () => ({ conectado: logado }),
     resolver: () => (instalado ? { cmd: 'x' } : null),
     iniciarFluxo: (args, o) => { chamadas.push({ args, o }); return { parar: () => terminar({ codigo: null, parado: true }), fim: new Promise((r) => { terminar = r }) } },
@@ -119,4 +119,41 @@ test('RE_COTA não casa cotação', () => {
   const { RE_COTA } = require('./construcao.cjs')
   assert.ok(!RE_COTA.test('Pedido de cotação do fornecedor') && !RE_COTA.test('quotation'))
   assert.ok(RE_COTA.test('Você atingiu a cota') && RE_COTA.test('Claude usage limit reached'))
+})
+
+test('git isolado: env do Claude com config de sistema/global controlada, sem hooks; .git negado', async () => {
+  const { c, chamadas } = montar()
+  await c.iniciar('obra', 'A', 'automatico', ETAPAS)
+  const env = chamadas[0].o.env
+  assert.equal(env.GIT_CONFIG_NOSYSTEM, '1')
+  assert.ok(env.GIT_CONFIG_SYSTEM === 'NUL' || env.GIT_CONFIG_SYSTEM === '/dev/null')
+  const conf = fs.readFileSync(env.GIT_CONFIG_GLOBAL, 'utf8')
+  assert.match(conf, /hooksPath = ".*git-vazio"/)
+  assert.match(conf, /fsmonitor = false/)
+  assert.ok(!/token|password|secret|key/i.test(conf))
+  assert.equal(fs.readdirSync(path.join(path.dirname(env.GIT_CONFIG_GLOBAL), 'git-vazio')).length, 0)
+  const negadas = chamadas[0].args[chamadas[0].args.indexOf('--disallowedTools') + 1].split(',')
+  for (const n of ['Write(.git/**)', 'Edit(.git/**)']) assert.ok(negadas.includes(n), n)
+})
+
+test('config suspeita ampliada: CLAUDE.local.md, aninhado e .git de fora (obra nova); .git da própria linha ao religar', async () => {
+  const casos = [['CLAUDE.local.md', 'f'], ['sub/.claude', 'd'], ['sub/a/CLAUDE.md', 'f'], ['.git', 'd']]
+  for (const [rel, tipo] of casos) {
+    const { raiz, c, chamadas } = montar()
+    const alvo = path.join(raiz, 'obra', rel)
+    fs.mkdirSync(tipo === 'd' ? alvo : path.dirname(alvo), { recursive: true })
+    if (tipo === 'f') fs.writeFileSync(alvo, 'x')
+    await assert.rejects(c.iniciar('obra', 'A', 'automatico', ETAPAS), /obra-com-config-suspeita/, rel)
+    await assert.rejects(c.planejar('obra', 'A'), /obra-com-config-suspeita/, rel)
+    assert.equal(chamadas.length, 0)
+  }
+  // node_modules é ignorado na varredura; .git criado pela linha (religar) é aceito
+  const { raiz, c, chamadas } = montar()
+  fs.mkdirSync(path.join(raiz, 'obra', 'node_modules', 'x'), { recursive: true })
+  fs.writeFileSync(path.join(raiz, 'obra', 'node_modules', 'x', 'CLAUDE.md'), 'x')
+  await c.iniciar('obra', 'A', 'automatico', ETAPAS)
+  c.linha.parar('obra')
+  fs.mkdirSync(path.join(raiz, 'obra', '.git'))
+  c.linha.religar('obra')
+  assert.equal(chamadas.length, 2)
 })
