@@ -3,7 +3,7 @@
   "ocorrencias": [
     {
       "id": 1,
-      "status": "aberta",
+      "status": "resolvida",
       "servico": "GitHub Actions",
       "motivo": "Billing do Actions bloqueado: 'recent account payments have failed or your spending limit needs to be increased'",
       "acao": "Rodar o CI do PR #1 (etapa de build/lint/testes) e, com verde, seguir para merge do M1",
@@ -14,8 +14,8 @@
       ],
       "criada_em": "2026-11-18T10:05:30.093Z",
       "tentativas": [],
-      "resolvida_em": null,
-      "nota_final": null
+      "resolvida_em": "2026-11-18T10:12:36.309Z",
+      "nota_final": ""
     }
   ]
 }
