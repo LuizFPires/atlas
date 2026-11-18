@@ -1,0 +1,63 @@
+/* F09 Painel da obra (prototipo/F09Painel.dc.html). Só tokens do Atlas. */
+.at-pn { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.at-pn h1 { margin: 0; font-size: 28px; letter-spacing: -0.01em; }
+.at-pn__topo { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.at-pn__titulo { display: flex; flex-direction: column; gap: 4px; }
+.at-pn__rotulo { font: 500 12px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2); text-transform: uppercase; }
+.at-pn__mini { font: 500 11px var(--font-mono); letter-spacing: 0.1em; color: var(--mute2); }
+.at-pn__selo { margin-left: 10px; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: var(--lime); color: var(--on-lime); }
+.at-pn__selo--pausada, .at-pn__selo--espera-ok, .at-pn__selo--cota, .at-pn__selo--precisa-de-voce, .at-pn__selo--billing { background: var(--card2); color: var(--text); border: 1px solid var(--card-b); }
+.at-pn__acoes { margin-left: auto; display: flex; gap: 10px; }
+.at-pn__btn { height: 44px; padding: 0 18px; border-radius: 12px; font-size: 15px; }
+.at-pn__pronta { display: flex; align-items: center; gap: 18px; background: var(--lime); color: var(--on-lime); border-radius: 18px; padding: 18px 22px; }
+.at-pn__pronta-bola { width: 48px; height: 48px; flex: none; border-radius: 50%; background: #141619; color: #c6f135; display: flex; align-items: center; justify-content: center; }
+.at-pn__pronta-txt { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.at-pn__pronta-txt b { font-size: 21px; }
+.at-pn__pronta-txt span { font-size: 15px; }
+.at-pn__publicar { height: 52px; padding: 0 24px; border-radius: 12px; font-size: 16px; background: #141619; color: #c6f135; }
+.at-pn__ok { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--soft); border: 1px solid var(--lime); border-radius: 18px; padding: 16px 22px; }
+.at-pn__ok .at-pn__pronta-txt b { font-size: 18px; }
+.at-pn__parada, .at-pn__erro { margin: 0; background: var(--card2); border-radius: 12px; padding: 12px 16px; font-size: 14px; line-height: 1.5; color: var(--text); }
+.at-pn__modo { display: flex; flex-direction: column; gap: 12px; background: var(--card); border: 1px solid var(--card-b); border-radius: 18px; padding: 14px 22px; }
+.at-pn__modo-cab { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.at-pn__modo-ativo { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 14px; color: var(--mute); }
+.at-pn__modo-ativo b { color: var(--text); font-size: 15px; }
+.at-pn__link { background: none; border: 0; padding: 0; margin-left: auto; color: var(--lime-txt, var(--lime)); font: 600 14px var(--font-text); cursor: pointer; text-decoration: underline; }
+.at-pn__modo-troca { display: flex; flex-direction: column; gap: 12px; }
+.at-pn__opcoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.at-pn__opcao { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 14px 16px; border-radius: 14px; border: 2px solid var(--card-b); background: transparent; color: var(--text); font: 15px var(--font-text); cursor: pointer; }
+.at-pn__opcao--on { border-color: var(--lime); background: var(--soft); }
+.at-pn__opcao-cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.at-pn__recomendado { font: 600 11px var(--font-mono); letter-spacing: 0.1em; padding: 3px 8px; border-radius: 999px; background: var(--lime); color: var(--on-lime); }
+.at-pn__paradas { display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.5; padding: 12px 14px; border-radius: 12px; background: var(--card2); }
+.at-pn__item { display: flex; gap: 10px; align-items: flex-start; }
+.at-pn__item svg { flex: none; margin-top: 3px; }
+.at-pn__grade { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 18px; min-height: 420px; }
+.at-pn__col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.at-pn__card { background: var(--card); border: 1px solid var(--card-b); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+.at-pn__agora { flex: 1; gap: 12px; padding: 20px 22px; }
+.at-pn__pct { display: flex; align-items: flex-end; gap: 14px; }
+.at-pn__pct-n { font-size: 84px; font-weight: 700; line-height: 0.9; letter-spacing: -0.04em; color: var(--lime-txt, var(--lime)); }
+.at-pn__texto { font-size: 14px; color: var(--mute); line-height: 1.5; }
+.at-pn__pct .at-pn__texto { font-size: 15px; padding-bottom: 8px; }
+.at-pn__barra { height: 10px; border-radius: 5px; background: var(--card-b); }
+.at-pn__barra > div { height: 10px; border-radius: 5px; background: var(--lime); }
+.at-pn__tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.at-pn__tres > div { display: flex; flex-direction: column; gap: 3px; }
+.at-pn__tres b { font-size: 14px; font-weight: 600; }
+.at-pn__quem { display: flex; gap: 12px; align-items: center; }
+.at-pn__quem > div { display: flex; flex-direction: column; gap: 1px; }
+.at-pn__quem b { font-size: 15px; font-weight: 600; }
+.at-pn__sigla { width: 34px; height: 34px; border-radius: 10px; flex: none; display: flex; align-items: center; justify-content: center; font: 700 13px var(--font-mono); background: var(--card2); color: var(--mute); }
+.at-pn__sigla--ativo { background: var(--soft); color: var(--lime-txt, var(--lime)); }
+.at-pn__detalhes { margin-top: auto; border-top: 1px dashed var(--card-b); padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.at-pn__detalhes .at-pn__link { margin-left: 0; align-self: flex-start; }
+.at-pn__etapas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.at-pn__etapas li { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.at-pn__etapas li > span:first-child { font: 600 13px var(--font-mono); color: var(--lime-txt, var(--lime)); width: 32px; }
+.at-pn__canteiro { border-radius: 18px; overflow: hidden; position: relative; border: 1px solid var(--card-b); background: #0b1220; min-height: 320px; }
+.at-pn__cena { width: 100%; height: 100%; border: 0; object-fit: cover; display: block; position: absolute; inset: 0; }
+.at-pn__canteiro-rotulo { position: absolute; left: 16px; top: 14px; font: 600 12px var(--font-mono); letter-spacing: 0.1em; color: #edefea; background: rgb(10 12 14 / 0.65); padding: 6px 10px; border-radius: 8px; pointer-events: none; }
+.at-pn__canteiro-legenda { position: absolute; left: 16px; right: 16px; bottom: 14px; font-size: 14px; color: #edefea; background: rgb(10 12 14 / 0.7); padding: 10px 12px; border-radius: 10px; pointer-events: none; }
+.at-pn__rodape { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--mute2); }
+.at-pn__ponto { width: 8px; height: 8px; border-radius: 4px; background: var(--lime); }
