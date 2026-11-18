@@ -32,3 +32,13 @@
 .at-pub__custo-total b { font-size: 18px; }
 .at-pub__custo-total small { font-size: 12px; color: var(--mute2); }
 .at-pub__link { background: none; border: 0; padding: 0; font: 600 14px var(--font-text); color: var(--lime-txt); cursor: pointer; text-decoration: underline; align-self: flex-start; }
+
+/* F13b Publicando: usa o guia de mão dada (claude.css / contas.css). */
+.at-pando { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.at-pando__grade { display: grid; grid-template-columns: minmax(0, 1fr) 430px; gap: 26px; min-width: 0; }
+.at-pando__titulo { margin: 0; font-size: 27px; line-height: 1.2; letter-spacing: -0.01em; }
+.at-pando__estado { display: flex; align-items: center; gap: 12px; background: var(--soft); border-radius: 12px; padding: 12px 16px; font-size: 15px; margin: 0; }
+.at-pando__estado--erro { background: var(--card2); }
+.at-pando__nota { font-size: 13px; color: var(--mute2); margin-top: auto; }
+.at-pando__outro { display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 1100px) { .at-pando__grade { grid-template-columns: 1fr; } }
