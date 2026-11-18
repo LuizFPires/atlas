@@ -25,6 +25,18 @@ export function CartaoPasso({ passo, n, total }: { passo: PassoConta; n: number;
         <span className={`at-contas__selo at-contas__selo--${passo.quem}`} aria-label={`Quem faz este passo: ${ROTULO_QUEM[passo.quem]}`}>{ROTULO_QUEM[passo.quem]}</span>
       </div>
       <span className="at-claude__faca">{passo.faca}</span>
+      {passo.dados && passo.dados.length > 0 && (
+        <div className="at-claude__dados">
+          {passo.dados.map((d) => (
+            <div key={`${d.tipo}-${d.nome}`} className="at-claude__dado">
+              <span className="at-claude__dado-tipo">{d.tipo}</span>
+              <span>{d.nome}</span>
+              <b title={d.valor}>{d.valor}</b>
+              <button type="button" onClick={() => { void navigator.clipboard?.writeText(d.valor).catch(() => {}) }} aria-label={`Copiar ${d.tipo} ${d.nome} ${d.valor}`}>Copiar</button>
+            </div>
+          ))}
+        </div>
+      )}
       {passo.en && (
         <span className="at-claude__palavra"><Icone nome="ajuda" tamanho={16} /> <b>{passo.en}</b> quer dizer <b>&quot;{passo.pt}&quot;</b></span>
       )}

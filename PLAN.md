@@ -229,13 +229,13 @@ Notas: ⏩ Auto (recomendado): F12Retomar — ao ligar o computador o Atlas abre
 peso: 3
 spec: S16, S19
 tela: prototipo/F13aPublicar.dc.html
-- [ ] Montar a escolha "onde o sistema vai morar" (4 opções, multiescolha, lista lateral dinâmica)
-- [ ] Implementar o guia endereço grátis (5 passos) e app instalável (5 passos)
-- [ ] Implementar o guia de domínio (8 passos; ler DNS atual da Vercel na hora)
-- [ ] Implementar o guia das lojas (13 passos; VOCÊ/O ATLAS, tradução, "Não consegui")
-- [ ] Montar o F13bPublicando com o padrão do guia de mão dada
-- [ ] Conferir fidelidade com o protótipo (F13aPublicar e F13bPublicando)
-Notas:
+- [x] Montar a escolha "onde o sistema vai morar" (4 opções, multiescolha, lista lateral dinâmica)
+- [x] Implementar o guia endereço grátis (5 passos) e app instalável (5 passos)
+- [x] Implementar o guia de domínio (8 passos; ler DNS atual da Vercel na hora)
+- [x] Implementar o guia das lojas (13 passos; VOCÊ/O ATLAS, tradução, "Não consegui")
+- [x] Montar o F13bPublicando com o padrão do guia de mão dada
+- [x] Conferir fidelidade com o protótipo (F13aPublicar e F13bPublicando)
+Notas: ⏩ Auto (recomendado): F13aPublicar (escolha "onde o sistema vai morar": 4 opções multiescolha — endereço grátis Vercel, domínio próprio Registro.br, app instalável PWA, lojas Apple/Google — com lista lateral dinâmica conforme o que marca) e F13bPublicando (guia de mão dada passo a passo, com selo VOCÊ/O ATLAS, inglês traduzido e "Não consegui"). Invariante: pagamentos e "Enviar para revisão" são SEMPRE do cliente; o resto o Atlas faz. Serviços externos (Vercel, Registro.br, lojas) atrás de ports (mock em fixture; adaptador real p/ /entregar — resolver só hosts oficiais, sem SSRF; nomes/telas/URLs reais a conferir). Modo fixture, sem deploy. QA reprovou (1 médio): sem adaptador, o guia das lojas/vistoria afirmava "Publicado!"/"50 testes aprovados" (fingia). Fix: condicionar/bloquear os passos que dependem do adaptador com recado calmo; não afirmar publicação sem adaptador. Baixas: validar lerDns com registroDnsValido também no consumidor (regex IPv4 rejeita 0.0.0.0/privados); condicionar "pode fechar o Atlas" e "é só falar" à existência do recurso. Re-QA aprovou. Baixas p/ polish: condicionar também o "Pronto!" do guia PWA e do domínio a real=true (hoje inalcancável sem adaptador, mas incoerente).
 
 ## Milestone 23 — App: entrega do sistema
 peso: 1

@@ -51,3 +51,9 @@
 .at-claude__convite span { font-size: 14px; line-height: 1.5; color: var(--mute); }
 .at-claude__novidade { margin: 0; font-size: 15px; line-height: 1.5; background: var(--soft); border: 1px solid var(--lime); border-radius: 12px; padding: 12px 16px; }
 .at-claude__convite .at-botao { height: 42px; padding: 0 16px; font-size: 14px; margin-top: 4px; }
+.at-claude__dados { display: flex; flex-direction: column; gap: 8px; }
+.at-claude__dado { display: grid; grid-template-columns: 80px 70px minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--input); border: 1px solid var(--card-b); border-radius: 10px; padding: 8px 8px 8px 12px; font: 14px var(--font-mono); }
+.at-claude__dado-tipo { color: var(--mute); }
+.at-claude__dado b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.at-claude__dado button { height: 32px; padding: 0 12px; border-radius: 8px; border: none; background: var(--lime); color: var(--on-lime); font: 700 13px var(--font-text); cursor: pointer; }
+.at-claude__status { justify-content: center; font-weight: 600; background: #eef6d6; color: #3f5600; border: 1px solid #c9e37a; height: 44px; border-radius: 8px; display: flex; align-items: center; padding: 0 14px; font-size: 15px; box-sizing: border-box; }

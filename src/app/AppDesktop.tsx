@@ -14,6 +14,10 @@ import { Prototipo } from './Prototipo'
 import { Batismo } from './Batismo'
 import { Aprovar } from './Aprovar'
 import { Painel } from './Painel'
+import { Publicar } from './Publicar'
+import { Publicando } from './Publicando'
+import { criarPublicarFixture, publicarIndisponivel, slugDaObra, type PontePublicar } from './ponte-publicar'
+import type { Selecao } from './publicar-dados'
 import { Retomar } from './Retomar'
 import { criarRetomarFixture, retomarIndisponivel, religarLinha, type ObraParada, type PonteRetomar } from './ponte-retomar'
 import { criarPainelFixture, painelIndisponivel, type PontePainel } from './ponte-painel'
@@ -45,7 +49,7 @@ function Obras({ ativo, onNavegar, pedido, children }: { ativo: IdTela; onNavega
         <>
           <p className="rotulo">Ajuda do Atlas</p>
           <h1>Vamos resolver juntos</h1>
-          <p>Você parou no passo {pedido.passo} de {pedido.totalPassos} da conta do {pedido.conta}. Estou olhando o print do site: {pedido.print.titulo} ({pedido.print.url}).</p>
+          <p>Você parou no passo {pedido.passo} de {pedido.totalPassos} {pedido.origem === 'F13b' ? 'do guia' : 'da conta'} do {pedido.conta}. Estou olhando o print do site: {pedido.print.titulo} ({pedido.print.url}).</p>
         </>
       ) : (
         children ?? (
@@ -64,7 +68,7 @@ function Obras({ ativo, onNavegar, pedido, children }: { ativo: IdTela; onNavega
 let ponteFixture: PonteDesktop | null = null
 const ponteInicial = () => ponteDoAmbiente() ?? (ponteFixture ??= criarPonteFixture())
 
-export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo, nomes, construcao, modos, painel, cota, ocorrencias, retomar }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo; nomes?: PonteNomes; construcao?: PonteConstrucao; modos?: PonteModoObra; painel?: PontePainel; cota?: PonteCota; ocorrencias?: PonteOcorrencias; retomar?: PonteRetomar }) {
+export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo, nomes, construcao, modos, painel, cota, ocorrencias, retomar, publicar }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo; nomes?: PonteNomes; construcao?: PonteConstrucao; modos?: PonteModoObra; painel?: PontePainel; cota?: PonteCota; ocorrencias?: PonteOcorrencias; retomar?: PonteRetomar; publicar?: PontePublicar }) {
   const [tela, setTela] = useState<string | null>(null)
   const [ativo, setAtivo] = useState<IdTela>('obras')
   const [instalando, setInstalando] = useState(false)
@@ -73,9 +77,10 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const [dono, setDono] = useState('')
   const [paradaF12, setParadaF12] = useState<ObraParada | null>(null)
   // Dentro de Minhas obras: lista (F05), nova obra (F06) ou trazer protótipo (F06c, do M15).
-  const [fluxo, setFluxo] = useState<'lista' | 'nova' | 'trazer' | 'estilo' | 'telas' | 'batismo' | 'aprovar' | 'publicar'>('lista')
+  const [fluxo, setFluxo] = useState<'lista' | 'nova' | 'trazer' | 'estilo' | 'telas' | 'batismo' | 'aprovar' | 'publicar' | 'publicando'>('lista')
   const [ideia, setIdeia] = useState('')
   const [obraAtual, setObraAtual] = useState<ObraDoEstilo | null>(null)
+  const [selecaoPub, setSelecaoPub] = useState<Selecao>({})
   const [estiloEscolhido, setEstiloEscolhido] = useState<EstiloProposto | null>(null)
   useImpedirSono(ponte, instalando)
 
@@ -139,6 +144,9 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     return { obraEmAndamento: base.obraEmAndamento, continuar: (o) => religarLinha({ painel: pontePainel, cota: ponteCota }, o.pasta) }
   }, [retomar, pontePainel, ponteCota])
 
+  // Publicação (Vercel, Registro.br, lojas): pagamentos e "Enviar para revisão" são do cliente; sem adaptador real, não finge que publicou.
+  const pontePublicar = useMemo<PontePublicar>(() => publicar ?? (modoFixture() ? criarPublicarFixture() : publicarIndisponivel), [publicar])
+
   const ponteNomes = useMemo<PonteNomes>(() => nomes ?? (modoFixture() ? criarNomesFixture() : nomesIndisponivel), [nomes])
 
   const ativacao = useMemo<AtivacaoApi>(
@@ -194,14 +202,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'obras' && fluxo === 'estilo' && obraAtual) conteudo = <Estilo obra={obraAtual} arquivos={ponteArquivos} estilo={ponteEstilo} onVoltar={() => setFluxo('lista')} onConcluir={(r) => { setEstiloEscolhido(r.estilo); setFluxo('telas') }} />
   else if (ativo === 'obras' && fluxo === 'telas' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('batismo')} />
   else if (ativo === 'obras' && fluxo === 'batismo' && obraAtual) conteudo = <Batismo obra={obraAtual} batismo={ponteBatismo} nomes={ponteNomes} arquivos={ponteArquivos} onVoltar={() => setFluxo('telas')} onConcluir={() => setFluxo('aprovar')} />
-  else if (ativo === 'obra' && obraAtual && fluxo === 'publicar') conteudo = (
-    <>
-      <p className="rotulo">Publicar o sistema</p>
-      <h1>Onde o seu sistema vai morar</h1>
-      <p>Em breve você escolhe aqui: endereço grátis, domínio próprio, app no celular ou nas lojas.</p>
-      <button type="button" className="at-pn__link" onClick={() => setFluxo('lista')}>Voltar ao painel da obra</button>
-    </>
-  )
+  else if (ativo === 'obra' && obraAtual && fluxo === 'publicar') conteudo = <Publicar slug={slugDaObra(obraAtual.nome)} onPublicar={(sel) => { setSelecaoPub(sel); setFluxo('publicando') }} onVoltar={() => setFluxo('lista')} />
+  else if (ativo === 'obra' && obraAtual && fluxo === 'publicando') conteudo = <Publicando obra={obraAtual} selecao={selecaoPub} publicar={pontePublicar} onVoltar={() => setFluxo('publicar')} onConcluir={() => setFluxo('lista')} onPedirAjuda={(p) => { setPedidoAjuda(p); setAtivo('ajuda') }} />
   else if (ativo === 'obra' && obraAtual) conteudo = <Painel obra={obraAtual} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => setAtivo('ajuda')} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => setFluxo('publicar')} />
   else if (ativo === 'obras' && fluxo === 'aprovar' && obraAtual) conteudo = <Aprovar obra={obraAtual} construcao={pontesModo.construcao} claude={ponteClaude} modos={pontesModo.modos} onVoltar={() => setFluxo('batismo')} onComecou={() => { setFluxo('lista'); setAtivo('obra') }} />
   else if (ativo === 'obras' && fluxo === 'nova') conteudo = <NovaObra obras={ponteObras} ideia={ideia} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} onEstilo={(o: ObraNova) => { setObraAtual({ nome: o.respostas.nome, pasta: o.pasta.pasta }); setFluxo('estilo') }} />

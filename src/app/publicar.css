@@ -1,0 +1,44 @@
+/* F13a Onde o sistema vai morar + F13b Publicando (prototipo/F13aPublicar.dc.html, F13bPublicando.dc.html). Só tokens do Atlas. */
+.at-pub { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 26px; min-width: 0; }
+.at-pub__col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.at-pub__cab { display: flex; flex-direction: column; gap: 6px; }
+.at-pub__rotulo { font: 500 12px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2); text-transform: uppercase; }
+.at-pub h1 { margin: 0; font-size: 30px; letter-spacing: -0.01em; }
+.at-pub__sub { font-size: 15px; line-height: 1.5; color: var(--mute); }
+.at-pub__grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.at-pub__opcao { display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 18px; border: 2px solid var(--card-b); background: var(--card); color: var(--text); cursor: pointer; text-align: left; font-family: var(--font-text); min-width: 0; }
+.at-pub__opcao--on { border-color: var(--lime); background: var(--soft); }
+.at-pub__opcao-cab { display: flex; align-items: center; gap: 12px; }
+.at-pub__bola { width: 42px; height: 42px; flex: none; border-radius: 21px; background: var(--lime); color: var(--on-lime); display: flex; align-items: center; justify-content: center; }
+.at-pub__opcao-cab b { font-size: 17px; flex: 1; }
+.at-pub__caixa { width: 24px; height: 24px; flex: none; border-radius: 7px; border: 2px solid var(--card-b); color: var(--on-lime); display: flex; align-items: center; justify-content: center; }
+.at-pub__opcao--on .at-pub__caixa { border-color: var(--lime); background: var(--lime); }
+.at-pub__exemplo { font: 600 14px var(--font-mono); color: var(--lime-txt); }
+.at-pub__txt { font-size: 14px; line-height: 1.5; color: var(--mute); }
+.at-pub__custo { font-size: 13px; font-weight: 600; }
+.at-pub__rodape { margin-top: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.at-pub__rodape span { font-size: 14px; color: var(--mute); flex: 1; min-width: 200px; }
+.at-pub__lado { background: var(--card); border: 1px solid var(--card-b); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.at-pub__lado ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+.at-pub__lado li { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; line-height: 1.45; }
+.at-pub__quem { width: 22px; height: 22px; flex: none; border-radius: 11px; font: 700 11px var(--font-mono); display: flex; align-items: center; justify-content: center; }
+.at-pub__quem--A { background: var(--lime); color: var(--on-lime); }
+.at-pub__quem--V { background: var(--warn, #f2b14a); color: var(--on-warn, #1e1606); }
+.at-pub__legenda { display: flex; gap: 14px; font-size: 12px; color: var(--mute); }
+.at-pub__legenda b { color: var(--lime-txt); }
+.at-pub__legenda span + span b { color: var(--warn, #f2b14a); }
+.at-pub__custo-total { margin-top: auto; background: var(--input); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.at-pub__custo-total span { font-size: 13px; color: var(--mute); }
+.at-pub__custo-total b { font-size: 18px; }
+.at-pub__custo-total small { font-size: 12px; color: var(--mute2); }
+.at-pub__link { background: none; border: 0; padding: 0; font: 600 14px var(--font-text); color: var(--lime-txt); cursor: pointer; text-decoration: underline; align-self: flex-start; }
+
+/* F13b Publicando: usa o guia de mão dada (claude.css / contas.css). */
+.at-pando { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.at-pando__grade { display: grid; grid-template-columns: minmax(0, 1fr) 430px; gap: 26px; min-width: 0; }
+.at-pando__titulo { margin: 0; font-size: 27px; line-height: 1.2; letter-spacing: -0.01em; }
+.at-pando__estado { display: flex; align-items: center; gap: 12px; background: var(--soft); border-radius: 12px; padding: 12px 16px; font-size: 15px; margin: 0; }
+.at-pando__estado--erro { background: var(--card2); }
+.at-pando__nota { font-size: 13px; color: var(--mute2); margin-top: auto; }
+.at-pando__outro { display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 1100px) { .at-pando__grade { grid-template-columns: 1fr; } }

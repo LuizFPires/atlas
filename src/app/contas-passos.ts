@@ -8,8 +8,12 @@ export type IdConta = 'github' | 'supabase' | 'hosp' | 'pag'
 export type Quem = 'voce' | 'atlas'
 export const ROTULO_QUEM: Record<Quem, string> = { voce: 'VOCÊ', atlas: 'O ATLAS' }
 
-export interface ItemSite { tipo: 'botao' | 'campo'; txt: string; destaque?: boolean; dica?: string }
+export interface ItemSite { tipo: 'botao' | 'campo' | 'status'; txt: string; destaque?: boolean; dica?: string }
+/** Linha para copiar e colar (ex.: registro de DNS). */
+export interface DadoCopiar { tipo: string; nome: string; valor: string }
 export interface PassoConta {
+  /** Linhas para o cliente copiar e colar no site (o Atlas só mostra; quem cola é o cliente). */
+  dados?: DadoCopiar[]
   faca: string
   calma: string
   quem: Quem
