@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icone, Microfone, useVoz } from '../ui'
 import { textoDaObra } from './ponte-cota'
-import { saudacaoAjuda, type ContextoAjuda, type PonteAjuda, type PrintAjuda, type RespostaAjuda, type Turno } from './ponte-ajuda'
+import { AINDA_NAO_DEU, ehPaginaId, normalizarResposta, saudacaoAjuda, type ContextoAjuda, type PonteAjuda, type PrintAjuda, type RespostaAjuda, type Turno } from './ponte-ajuda'
 import './ajuda.css'
 
 interface Props {
@@ -40,6 +40,7 @@ export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
   const [falado, setFalado] = useState(false)
   const [ocupado, setOcupado] = useState(false)
   const [aviso, setAviso] = useState('')
+  const [fechado, setFechado] = useState(false) // "Fiz, deu certo": a conversa terminou bem
   const proximo = useRef(1)
   const fim = useRef<HTMLDivElement>(null)
   const reqId = useRef(0)
@@ -47,6 +48,7 @@ export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
 
   useEffect(() => { fim.current?.scrollIntoView?.({ block: 'end' }) }, [msgs, ocupado])
 
+  const ultimaAcao = [...msgs].reverse().find((m) => m.de === 'atlas')
   const historico = (): Turno[] => msgs.map((m) => ({ de: m.de, texto: m.texto }))
 
   const enviar = async (mensagem: string, vindoDaVoz = false) => {
@@ -60,11 +62,21 @@ export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
     setAviso('')
     setOcupado(true)
     try {
-      const r = await ajuda.conversar({ ...contexto, print: prints[prints.length - 1] ?? null }, antes, t)
-      if (id === reqId.current) setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: textoDaObra(r.texto, 800), resposta: r }])
+      // A resposta do Claude é DADO: passa pelo normalizador (texto simples, sem promessa de gente, página só da lista fechada).
+      const r = normalizarResposta(await ajuda.conversar({ ...contexto, print: prints[prints.length - 1] ?? null }, antes, t))
+      if (id === reqId.current) setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: r.texto, resposta: r }])
     } catch {
       if (id === reqId.current) setAviso('Não consegui responder agora. Nada se perdeu: tente de novo em instantes.')
     } finally { if (id === reqId.current) setOcupado(false) }
+  }
+
+  const abrirPagina = async (id: unknown) => {
+    if (!ehPaginaId(id)) return
+    try { await ajuda.abrirPagina(id) } catch { setAviso('Não consegui abrir a página agora. Tente de novo em instantes.') }
+  }
+  const deuCerto = () => {
+    setFechado(true)
+    setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: 'Que bom que deu certo! Se aparecer outra coisa, é só me chamar por aqui.' }])
   }
 
   const tirar = async () => {
@@ -109,7 +121,27 @@ export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
             </div>
           </div>
         ) : (
-          <div key={m.id} className="at-ajuda-p__balao at-ajuda-p__balao--atlas">{m.texto}</div>
+          <div key={m.id} className="at-ajuda-p__balao at-ajuda-p__balao--atlas">
+            <span>{m.texto}</span>
+            {m.resposta?.passos && (
+              <ol className="at-ajuda-p__passos">
+                {m.resposta.passos.map((p, i) => <li key={i}><b>{i + 1}.</b> {p}</li>)}
+              </ol>
+            )}
+            {m.resposta?.traducoes && (
+              <ul className="at-ajuda-p__trad" aria-label="O que quer dizer">
+                {m.resposta.traducoes.map((t) => <li key={t.en}><b>{t.en}</b> quer dizer “{t.pt}”</li>)}
+              </ul>
+            )}
+            {m.resposta?.depois && <span className="at-ajuda-p__depois">{m.resposta.depois}</span>}
+            {m.resposta?.passos && (
+              <div className="at-ajuda-p__acoes">
+                {m.resposta.pagina && <button type="button" className="at-ajuda-p__primario" disabled={fechado || m !== ultimaAcao} onClick={() => void abrirPagina(m.resposta?.pagina)}>Abrir a página certa</button>}
+                <button type="button" className="at-ajuda-p__sec" disabled={fechado || m !== ultimaAcao || ocupado} onClick={deuCerto}><Icone nome="check" tamanho={14} /> Fiz, deu certo</button>
+                <button type="button" className="at-ajuda-p__sec" disabled={fechado || m !== ultimaAcao || ocupado} onClick={() => void enviar(AINDA_NAO_DEU)}>Ainda não deu</button>
+              </div>
+            )}
+          </div>
         ))}
         {ocupado && <div className="at-ajuda-p__balao at-ajuda-p__balao--atlas" role="status">Estou olhando…</div>}
         {aviso && <p className="at-ajuda-p__aviso" role="alert">{aviso}</p>}

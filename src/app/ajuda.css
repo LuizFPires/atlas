@@ -37,3 +37,12 @@
 .at-ajuda-p__erro > div { display: flex; flex-direction: column; gap: 2px; }
 .at-ajuda-p__erro b { font-size: 15px; }
 .at-ajuda-p__erro div > span { font-size: 13px; color: var(--mute); }
+.at-ajuda-p__passos { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; color: var(--mute); }
+.at-ajuda-p__passos b { color: var(--text); }
+.at-ajuda-p__trad { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; font-size: 14px; color: var(--mute); }
+.at-ajuda-p__trad b { color: var(--text); font-family: var(--font-mono); font-weight: 500; }
+.at-ajuda-p__depois { color: var(--mute); }
+.at-ajuda-p__acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.at-ajuda-p__primario { height: 40px; padding: 0 14px; border-radius: 10px; border: none; background: var(--lime); color: var(--on-lime); font: 700 14px var(--font-text); white-space: nowrap; cursor: pointer; }
+.at-ajuda-p__sec { height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 14px var(--font-text); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.at-ajuda-p__primario:disabled, .at-ajuda-p__sec:disabled { opacity: 0.5; cursor: default; }

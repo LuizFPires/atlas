@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Ajuda } from './Ajuda'
-import { criarAjudaFixture, montarPedidoAjuda, type ContextoAjuda } from './ponte-ajuda'
+import { PAGINAS_OFICIAIS, RECADO_SEM_HUMANO, criarAjudaFixture, montarPedidoAjuda, normalizarResposta, type ContextoAjuda } from './ponte-ajuda'
 
 const ctx: ContextoAjuda = { origem: 'erro', onde: 'a publicação', erro: { titulo: 'Algo deu errado ao publicar.' }, print: { url: 'vercel.com/new', titulo: 'Error: Repository not found', detalhe: 'The Vercel GitHub app does not have access.' } }
 
@@ -13,7 +13,7 @@ test('painel: saudação, print, conversa e microfone com texto editável', asyn
   expect(screen.getByLabelText('Print da tela')).toHaveTextContent('Repository not found')
   expect(screen.getByRole('button', { name: 'Falar' })).toBeInTheDocument()
   await userEvent.type(screen.getByLabelText('Mensagem para a Ajuda do Atlas'), 'Apareceu o vermelho{enter}')
-  expect(await screen.findByText(/Vou olhar o que aconteceu/)).toBeInTheDocument()
+  expect(await screen.findByText(/Achei o problema/)).toBeInTheDocument()
   expect(ajuda.pedidos[0]).toContain('conteúdo do cliente')
   expect(ajuda.pedidos[0]).toContain('- Apareceu o vermelho')
 })
@@ -23,4 +23,34 @@ test('a mensagem do cliente vira DADO delimitado, nunca instrução', () => {
   expect(p).toContain('DADOS')
   expect(p).toContain('INÍCIO conteúdo do cliente')
   expect(p).not.toMatch(/^# ordem/m)
+})
+
+test('passos curtos, tradução do inglês, "Abrir a página certa" (lista fechada) e "Fiz, deu certo"', async () => {
+  const ajuda = criarAjudaFixture()
+  render(<TemaProvider><Ajuda ajuda={ajuda} contexto={ctx} nome="Zé" onFechar={() => {}} /></TemaProvider>)
+  await userEvent.type(screen.getByLabelText('Mensagem para a Ajuda do Atlas'), 'Apareceu esse vermelho{enter}')
+  expect(await screen.findByText(/A Vercel não está enxergando a pasta/)).toBeInTheDocument()
+  expect(screen.getByText(/Marque a pasta da sua obra/)).toBeInTheDocument()
+  expect(screen.getByLabelText('O que quer dizer')).toHaveTextContent('Save quer dizer “Salvar”')
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir a página certa' }))
+  expect(ajuda.abertas).toEqual([{ id: 'github-apps', url: 'https://github.com/settings/installations' }])
+  await userEvent.click(screen.getByRole('button', { name: /Fiz, deu certo/ }))
+  expect(screen.getByText(/Que bom que deu certo/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Abrir a página certa' })).toBeDisabled()
+})
+
+test('"Ainda não deu" pede outro caminho ao Atlas (a conversa continua)', async () => {
+  const ajuda = criarAjudaFixture()
+  render(<TemaProvider><Ajuda ajuda={ajuda} contexto={ctx} onFechar={() => {}} /></TemaProvider>)
+  await userEvent.type(screen.getByLabelText('Mensagem para a Ajuda do Atlas'), 'oi{enter}')
+  await userEvent.click(await screen.findByRole('button', { name: 'Ainda não deu' }))
+  expect(await screen.findByText(/Vamos por outro caminho/)).toBeInTheDocument()
+})
+
+test('a resposta do Claude é dado: página fora da lista e promessa de gente são descartadas', () => {
+  expect(normalizarResposta({ texto: 'Abra isto', pagina: 'https://evil.test/x', passos: ['ok'] }).pagina).toBeUndefined()
+  expect(normalizarResposta({ texto: 'x', pagina: 'vercel-novo' }).pagina).toBe('vercel-novo')
+  expect(normalizarResposta({ texto: 'Vou chamar um atendente para você.' }).texto).toBe(RECADO_SEM_HUMANO)
+  expect(normalizarResposta({ texto: 'Fale com o suporte', passos: ['Entre em contato com a nossa equipe'] }).passos).toBeUndefined()
+  for (const url of Object.values(PAGINAS_OFICIAIS).map((p) => p.url)) expect(url).toMatch(/^https:\/\/(github\.com|vercel\.com|supabase\.com|claude\.ai|registro\.br)(\/|$)/)
 })
