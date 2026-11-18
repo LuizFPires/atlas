@@ -35,7 +35,7 @@ tela:
 - [ ] Implementar webhook de pagamento (implantação e mensalidade) atualizando licenças
 - [ ] Implementar fluxo de atraso: aviso por e-mail e pausa do pipeline em 7 dias
 - [ ] Implementar cancelar compra (7 dias, CDC art. 49) e cancelar mensalidade sem fidelidade
-Notas:
+Notas: ⏩ Auto (recomendado): gateway = Stripe (decidido 18/11). Invariante: a conta Stripe é SEMPRE do cliente (as credenciais/webhook são dele; nunca passam pelo Luiz). Implementação em modo teste/fixture (sem chaves ao vivo, sem deploy — deploy é /entregar). Pix + assinatura recorrente via Stripe Checkout + Billing; webhook assinado atualiza licenças; atraso→aviso+pausa em 7 dias liga no M2 (status 'atrasada'/pausa_prevista_em); cancelamento CDC art. 49 (7 dias) e mensalidade sem fidelidade.
 
 ## Milestone 4 — Web: página de vendas e cadastro
 peso: 3
