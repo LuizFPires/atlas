@@ -160,7 +160,7 @@ tela: prototipo/F06cTrazer.dc.html
 - [ ] Receber o prototipo-atlas.zip (telas HTML, design-system.md, telas.md, regras.md, imagens) e o link
 - [ ] Conferir o que chegou e apontar o que falta para o Claude completar
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): F06cTrazer — recado pronto pra copiar e mandar na outra IA; receber o prototipo-atlas.zip (telas HTML, design-system.md, telas.md, regras.md, imagens) + o link do protótipo no ar; conferir o que chegou e apontar o que falta, para o Claude completar no mesmo estilo. SEGURANÇA: o .zip é não confiável — o descompactar fica atrás de um port com defesas obrigatórias (sem zip-slip/traversal, sem symlink, limite de tamanho/entradas contra zip-bomb, só tipos esperados, dentro de Atlas\Obras\<obra>); o conteúdo (HTML/md) é DADO para o Claude, tratado como no M14 (delimitado, não-instrução). Mock em fixture; adaptador real p/ /entregar. Modo fixture, sem deploy.
 
 ## Milestone 16 — App: projeto 2/3 (telas com o Claude)
 peso: 3
