@@ -188,6 +188,28 @@ export class StoreMemoria implements Store {
     if (s) s.paga = true
     else this.sessoes.push({ conta_gateway_id: conta, sessao_id: id, email, paga: true })
   }
+  consentimentos: Array<{ email: string; cliente_id: string | null; versao_termos: string; origem: string; aceito_em: Date }> = []
+  async registrarConsentimento(email: string, versao: string, origem: 'checkout', quando: Date) {
+    this.consentimentos.push({ email, cliente_id: null, versao_termos: versao, origem, aceito_em: quando })
+  }
+  /** Espelha a RPC excluir_conta (0012): anonimiza o cliente e apaga o que é só dele; mantém pagamentos (obrigação fiscal). */
+  async excluirConta(clienteId: string, quando: Date) {
+    const cli = this.clientes.find((x) => x.id === clienteId)
+    if (!cli) return false
+    if (cli.excluido_em) return true // idempotente, como a RPC
+    const email = cli.email_compra
+    const lics = this.licencas.filter((l) => l.cliente_id === clienteId).map((l) => l.id)
+    Object.assign(cli, { email_compra: `excluido+${clienteId}@anonimo.invalid`, nome_tratamento: 'Conta excluída', empresa: null, ramo: null, excluido_em: quando })
+    for (const l of this.licencas) if (lics.includes(l.id)) Object.assign(l, { status: 'cancelada', pausa_prevista_em: null, troca_liberada_em: null, gateway_cliente_ref: null, gateway_assinatura_ref: null })
+    this.ativacoes = this.ativacoes.filter((a) => !lics.includes(a.licenca_id))
+    this.trocas = this.trocas.filter((t) => !lics.includes(t.licenca_id))
+    this.ocorrencias = this.ocorrencias.filter((o) => o.cliente_id !== clienteId)
+    this.links = this.links.filter((x) => x.cliente_id !== clienteId)
+    this.codigos = this.codigos.filter((x) => x.cliente_id !== clienteId)
+    this.sessoes = this.sessoes.filter((s) => s.email !== email)
+    for (const c of this.consentimentos) if (c.email === email) Object.assign(c, { email: `excluido+${clienteId}@anonimo.invalid`, cliente_id: clienteId })
+    return true
+  }
   async sessaoPorId(id: string) { return this.sessoes.find((s) => s.sessao_id === id) ?? null }
   async invalidarLinks(clienteId: string, quando: Date) {
     for (const l of this.links) if (l.cliente_id === clienteId && !l.usado_em) l.usado_em = quando

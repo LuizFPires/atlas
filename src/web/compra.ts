@@ -22,15 +22,20 @@ export function configCompra(): ConfigCompra | null {
 
 export type ResultadoCompra = { ok: true; url: string } | { ok: false; mensagem: string }
 
-export async function iniciarCompra(email: string, cfg: ConfigCompra | null = configCompra(), f: typeof fetch = fetch): Promise<ResultadoCompra> {
+/**
+ * `versaoAceita` é a versão dos Termos/Política que o cliente marcou que leu e aceita (LGPD).
+ * Sem ela a compra nem sai daqui; o servidor também recusa e é ele quem registra o aceite.
+ */
+export async function iniciarCompra(email: string, cfg: ConfigCompra | null = configCompra(), f: typeof fetch = fetch, versaoAceita: string | null = null): Promise<ResultadoCompra> {
   const e = email.trim().toLowerCase()
+  if (!versaoAceita) return { ok: false, mensagem: 'Para continuar, marque que você leu e aceita a Política de Privacidade e os Termos de Uso.' }
   if (!EMAIL_RE.test(e)) return { ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' }
   if (!cfg) return { ok: false, mensagem: 'A compra ainda não está aberta por aqui. Volte daqui a pouco.' }
   try {
     const r = await f(`${cfg.api}/pagamento/checkout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conta_id: cfg.contaId, tipo: 'implantacao', email: e }),
+      body: JSON.stringify({ conta_id: cfg.contaId, tipo: 'implantacao', email: e, aceite_termos: true, versao_termos: versaoAceita }),
     })
     const corpo = (await r.json().catch(() => ({}))) as { url?: string; mensagem?: string }
     if (r.ok && corpo.url && corpo.url.startsWith('https://')) return { ok: true, url: corpo.url }

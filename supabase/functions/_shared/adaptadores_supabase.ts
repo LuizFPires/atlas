@@ -52,6 +52,8 @@
 //   gravarPagamento            RPC gravar_pagamento (0010)
 //   pagamentoPorRef/PorPi/Da   SELECT pagamentos (licenca_id,conta_gateway_id,tipo,valor,status,gateway_ref,gateway_pi,pago_em)
 //   atualizarStatusPagamento   UPDATE pagamentos SET status WHERE conta_gateway_id AND gateway_ref
+//   registrarConsentimento     INSERT consentimentos (email,versao_termos,origem,aceito_em)  (0011)
+//   excluirConta               RPC excluir_conta (0012): anonimiza o cliente, apaga o pessoal, mantém pagamentos
 //   registrarSessao            INSERT sessoes_checkout ... ON CONFLICT (sessao_id) DO NOTHING
 //   marcarSessaoPaga           UPDATE sessoes_checkout SET paga,paga_em WHERE sessao_id; se 0 linhas, INSERT (2 passos, com retry no 23505)
 //   sessaoPorId                SELECT sessoes_checkout (conta_gateway_id,sessao_id,email,paga) WHERE sessao_id
@@ -110,7 +112,7 @@ async function ler(mk: () => any, limite = Infinity): Promise<any[]> {
 }
 
 // Colunas lidas (só o que o servidor precisa).
-const C_CLIENTE = 'id,email_compra,nome_tratamento,empresa,ramo,cadastro_em,auth_user_id'
+const C_CLIENTE = 'id,email_compra,nome_tratamento,empresa,ramo,cadastro_em,auth_user_id,excluido_em'
 const C_LICENCA = 'id,cliente_id,status,pausa_prevista_em,troca_liberada_em,comprada_em,avisos_atraso,conta_gateway_id,gateway_cliente_ref,gateway_assinatura_ref,mensalidade_encerra_em'
 const C_ATIVACAO = 'id,licenca_id,computador_hash,token_hash,ativo,ativado_em,desativado_em'
 const C_ATIVACAO_ADMIN = 'id,licenca_id,computador_hash,ativo,ativado_em,desativado_em'
@@ -118,7 +120,7 @@ const C_PAGAMENTO = 'licenca_id,conta_gateway_id,tipo,valor,status,gateway_ref,g
 const C_ENTREGA = 'licenca_id,obra_id,marca_dagua,baixado_em'
 const C_OCORRENCIA = 'id,cliente_id,tipo,descricao,autor,resolvida,criada_em,resolvida_por,resolvida_em'
 
-const cliente = (r: any) => r && { id: r.id, email_compra: r.email_compra, nome_tratamento: r.nome_tratamento, empresa: r.empresa, ramo: r.ramo, cadastro_em: dt(r.cadastro_em), auth_user_id: r.auth_user_id }
+const cliente = (r: any) => r && { id: r.id, email_compra: r.email_compra, nome_tratamento: r.nome_tratamento, empresa: r.empresa, ramo: r.ramo, cadastro_em: dt(r.cadastro_em), auth_user_id: r.auth_user_id, excluido_em: dt(r.excluido_em) }
 const licenca = (r: any) => r && {
   id: r.id, cliente_id: r.cliente_id, status: r.status, pausa_prevista_em: dt(r.pausa_prevista_em), troca_liberada_em: dt(r.troca_liberada_em),
   comprada_em: dt(r.comprada_em), avisos_atraso: r.avisos_atraso ?? 0, conta_gateway_id: r.conta_gateway_id ?? null,
@@ -270,6 +272,10 @@ export function criarStoreSupabase() {
     async atualizarStatusPagamento(conta: string, ref: string, status: string) {
       ok(await t('pagamentos').update({ status }).eq('conta_gateway_id', conta).eq('gateway_ref', ref), 'atualizarStatusPagamento')
     },
+    async registrarConsentimento(email: string, versao: string, origem: string, quando: Date) {
+      ok(await t('consentimentos').insert({ email, versao_termos: versao, origem, aceito_em: iso(quando) }), 'registrarConsentimento')
+    },
+    async excluirConta(clienteId: string, quando: Date) { return (await rpc('excluir_conta', { p_cliente: clienteId, p_quando: iso(quando) })) === true },
     async registrarSessao(conta: string, id: string, email: string) {
       ok(await t('sessoes_checkout').upsert({ sessao_id: id, conta_gateway_id: conta, email }, { onConflict: 'sessao_id', ignoreDuplicates: true }), 'registrarSessao')
     },

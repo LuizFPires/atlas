@@ -4,6 +4,7 @@
 import { ErroRegra } from '../tipos.ts'
 import { type DepsPagamento, VALOR_IMPLANTACAO, VALOR_MENSALIDADE } from './config.ts'
 
+const VERSAO_RE = /^[0-9A-Za-z._-]{1,20}$/
 const centavos = (v: number) => Math.round(v * 100)
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -21,6 +22,8 @@ export interface PedidoCheckout {
   /** implantação: e-mail de quem compra. mensalidade: ignorado (vem da licença). */
   email?: string
   licenca_id?: string
+  /** LGPD: versão dos Termos/Política que o comprador aceitou. Obrigatória na implantação (sem aceite, sem pagamento). */
+  aceite_termos_versao?: string
 }
 
 /** URLs de retorno montadas no servidor a partir da origem https cadastrada na conta. A requisição não influencia. */
@@ -41,6 +44,10 @@ export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promis
   if (p.tipo === 'implantacao') {
     const email = (p.email ?? '').trim().toLowerCase()
     if (!EMAIL_RE.test(email)) throw new ErroRegra('email_invalido', 'Confira o e-mail da compra.')
+    const versao = typeof p.aceite_termos_versao === 'string' ? p.aceite_termos_versao.trim() : ''
+    if (!VERSAO_RE.test(versao)) throw new ErroRegra('aceite_obrigatorio', 'Para continuar, marque que você leu e aceita a Política de Privacidade e os Termos de Uso.', 400)
+    // Fail-closed: se o aceite não ficou registrado, o pagamento nem é aberto.
+    await d.store.registrarConsentimento(email, versao, 'checkout', d.agora())
     const s = await api.criarCheckout(
       {
         ...base,

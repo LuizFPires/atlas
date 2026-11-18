@@ -46,6 +46,8 @@ export interface PortalApi {
   cancelarMensalidade(): Promise<Resp<{ encerra_em: string }>>
   /** Computador já liberado e o e-mail não chegou: manda o acesso de novo. */
   reenviarAcesso(): Promise<Resp<{ enviado_para: string }>>
+  /** LGPD: exclui a conta de forma definitiva (anonimiza os dados, para a cobrança e apaga o login). Só vale com o servidor confirmando. */
+  excluirConta(): Promise<Resp>
   sair(): void
 }
 
@@ -133,6 +135,11 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
     reenviarAcesso: () => servidor<{ enviado_para: string }>('/portal/reenviar-acesso'),
     cancelarCompra: () => servidor<{ estornados: number }>('/portal/compra/cancelar', { confirmar: true }),
     cancelarMensalidade: () => servidor<{ encerra_em: string }>('/portal/mensalidade/cancelar', { confirmar: true }),
+    async excluirConta() {
+      const r = await servidor('/portal/conta/excluir', { confirmar: true })
+      if (r.ok) { token = ''; guardarSessao('') } // a sessão morreu junto com a conta
+      return r
+    },
     sair() { token = ''; guardarSessao('') },
   }
 }

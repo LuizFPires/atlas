@@ -195,3 +195,19 @@
 .p-cancela { display: flex; align-items: center; gap: 20px; padding: 12px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
 .p-cancela-txt { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 4px; line-height: 1.5; }
 .p-confirma { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--erro); border-radius: 14px; padding: 16px; }
+
+/* Textos legais (/privacidade, /termos, /licenca) */
+.lg-main { max-width: 820px; margin: 0 auto; padding: 32px var(--pad, 24px) 64px; }
+.lg-texto { line-height: 1.65; font-size: 16px; }
+.lg-texto h1 { font-size: 32px; margin: 0 0 12px; }
+.lg-texto h2 { font-size: 22px; margin: 32px 0 8px; }
+.lg-texto h3 { font-size: 18px; margin: 24px 0 6px; }
+.lg-texto ul { padding-left: 22px; }
+.lg-texto hr { border: 0; border-top: 1px solid var(--card-b); margin: 24px 0; }
+.lg-tabela { overflow-x: auto; margin: 12px 0; }
+.lg-texto table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.lg-texto th, .lg-texto td { border: 1px solid var(--card-b); padding: 8px 10px; text-align: left; vertical-align: top; }
+.lg-rodape { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--card-b); font-size: 14px; }
+.lg-rodape a, .v-rodape a, .v-consent a { color: inherit; text-decoration: underline; }
+.v-consent { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; text-align: left; }
+.v-consent input { margin-top: 3px; width: 18px; height: 18px; flex: none; accent-color: var(--lime, #c6f432); }

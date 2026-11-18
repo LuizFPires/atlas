@@ -3,6 +3,7 @@ import { Bolinha, Icone } from '../ui'
 import { ImagemAssinatura, Monograma, NomeAtlas } from '../marca/Marca'
 import { useTema } from '../tema/tema'
 import { duvidas, ehParaVoce, etapas, exemplos, formas, naoEhParaVoce, PRECO, recebe, tresPassos, VIDEO_URL } from './conteudo'
+import { LinksLegais } from './Legal'
 import './web.css'
 
 function Comprar({ onComprar, className = '', children }: { onComprar: () => void; className?: string; children: ReactNode }) {
@@ -159,7 +160,7 @@ export function Vendas({ onComprar, extra }: { onComprar: () => void; extra?: Re
       <footer className="v-rodape">
         <Monograma fundo={tema} largura={34} altura={19} />
         <span>Atlas · PL Engenharia · CNPJ [__.___.___/____-__]</span>
-        <span className="v-rodape-links"><span>Termos de uso</span><span>Licença do software</span><span>Privacidade</span><span>Contato</span></span>
+        <span className="v-rodape-links"><LinksLegais /><span>Contato</span></span>
       </footer>
       {extra}
     </div>

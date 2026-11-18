@@ -13,7 +13,7 @@ import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
 import { adminLogado, type DepsAdmin, euAdmin, liberarTrocaUrgente, painel, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
-import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
+import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, excluirConta, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
 
 export interface Contexto {
   deps: Deps
@@ -116,6 +116,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await cancelarPeloPortal(ctx.portal, jwt, 'compra', (b as Record<string, unknown>).confirmar))
         case '/portal/mensalidade/cancelar':
           return json(await cancelarPeloPortal(ctx.portal, jwt, 'mensalidade', (b as Record<string, unknown>).confirmar))
+        case '/portal/conta/excluir':
+          return json(await excluirConta(ctx.portal, jwt, (b as Record<string, unknown>).confirmar))
         case '/portal/forma-pagamento':
           return json(await formaDePagamento(ctx.portal, jwt))
         default:
@@ -142,7 +144,7 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         if (tipo === 'implantacao' && !(await ctx.pagamento.store.tentarEvento(`checkout:ip:${ipDe(req)}`, 10, 15 * 60_000, ctx.pagamento.agora()))) {
           return json({ erro: 'muitas_solicitacoes', mensagem: 'Muitas tentativas. Espere uns minutos.' }, 429)
         }
-        return json(await criarCheckout(ctx.pagamento, { conta_id: s('conta_id'), tipo, email: s('email'), licenca_id: s('licenca_id') }))
+        return json(await criarCheckout(ctx.pagamento, { conta_id: s('conta_id'), tipo, email: s('email'), licenca_id: s('licenca_id'), aceite_termos_versao: (b as Record<string, unknown>).aceite_termos === true ? s('versao_termos') : '' }))
       }
       case '/cadastro': {
         if (!ctx.cadastro) return json({ erro: 'cadastro_indisponivel' }, 503)

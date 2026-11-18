@@ -10,6 +10,8 @@ import { Portal } from './web/Portal'
 import { criarPortalApi } from './web/portal-api'
 import { Admin } from './web/Admin'
 import { criarAdminApi } from './web/admin-api'
+import { PaginaLegal } from './web/Legal'
+import { idLegalDoCaminho } from './web/textos-legais'
 import { AppDesktop, noAppDesktop } from './app/AppDesktop'
 
 const portalApi = criarPortalApi()
@@ -50,5 +52,8 @@ export default function App() {
   if (caminho === '/conta') return <Portal api={portalApi} />
   // Painel do administrador: o link existe para todos, mas só o servidor decide quem entra (JWT + allowlist).
   if (caminho === '/admin') return <Admin api={adminApi} />
+  // Textos legais públicos: privacidade, termos e licença do software.
+  const legal = idLegalDoCaminho(caminho)
+  if (legal) return <PaginaLegal id={legal} />
   return <PaginaVendas />
 }

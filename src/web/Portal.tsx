@@ -3,6 +3,7 @@ import { CampoFalado, Icone } from '../ui'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
 import type { ContaPortal, PerfilPortal, PortalApi } from './portal-api'
+import { LinksLegais } from './Legal'
 import './web.css'
 
 /** Portal do cliente (F15) em /conta: login próprio do Atlas (e-mail + código), independente do login do Claude. */
@@ -24,6 +25,7 @@ export function Portal({ api }: { api: PortalApi }) {
   }, [api])
 
   const sair = () => { api.sair(); setPerfil(null); setAviso('') }
+  const contaExcluida = () => { setPerfil(null); setAviso('') }
   const rotulo = perfil ? [perfil.nome, perfil.empresa].filter(Boolean).join(' · ') : ''
 
   return (
@@ -37,7 +39,7 @@ export function Portal({ api }: { api: PortalApi }) {
       {carregando ? (
         <main className="p-main"><p className="c-lead" role="status">Abrindo a sua conta…</p></main>
       ) : perfil ? (
-        <Conta api={api} />
+        <Conta api={api} onExcluida={contaExcluida} />
       ) : (
         <Entrada api={api} aviso={aviso} onEntrou={(p) => setPerfil(p)} />
       )}
@@ -111,7 +113,7 @@ const STATUS_LICENCA = {
 const STATUS_PAGAMENTO = { pago: 'Pago', pendente: 'Aguardando', falhou: 'Não passou', estornado: 'Devolvido' } as const
 
 /** Tela principal (F15): licença, computador com a licença e pagamentos. Tudo vem do servidor, já escopado pelo login. */
-function Conta({ api }: { api: PortalApi }) {
+function Conta({ api, onExcluida }: { api: PortalApi; onExcluida: () => void }) {
   const [conta, setConta] = useState<ContaPortal | null>(null)
   const [erro, setErro] = useState('')
   const [fora, setFora] = useState(false)
@@ -131,10 +133,10 @@ function Conta({ api }: { api: PortalApi }) {
 
   if (fora) return <main className="p-main"><p role="alert" className="v-erro">{erro} Atualize a página para entrar de novo.</p></main>
   if (!conta) return <main className="p-main">{erro ? <p role="alert" className="v-erro">{erro}</p> : <p className="c-lead" role="status">Abrindo a sua conta…</p>}</main>
-  return <ContaTela api={api} conta={conta} erro={erro} recarregar={recarregar} />
+  return <ContaTela api={api} conta={conta} erro={erro} recarregar={recarregar} onExcluida={onExcluida} />
 }
 
-function ContaTela({ api, conta, erro, recarregar }: { api: PortalApi; conta: ContaPortal; erro: string; recarregar: () => Promise<void> }) {
+function ContaTela({ api, conta, erro, recarregar, onExcluida }: { api: PortalApi; conta: ContaPortal; erro: string; recarregar: () => Promise<void>; onExcluida: () => void }) {
   const { licenca: l } = conta
   const [msgPag, setMsgPag] = useState('')
   const mudarPagamento = async () => {
@@ -190,6 +192,8 @@ function ContaTela({ api, conta, erro, recarregar }: { api: PortalApi; conta: Co
         )}
       </section>
       <Cancelamentos api={api} conta={conta} recarregar={recarregar} />
+      <ExcluirConta api={api} conta={conta} onExcluida={onExcluida} />
+      <span className="c-mute v-rodape-links" style={{ fontSize: 13, margin: 0 }}><LinksLegais /></span>
     </main>
   )
 }
@@ -336,5 +340,56 @@ function Computador({ api, conta, recarregar }: { api: PortalApi; conta: ContaPo
       )}
       {erro && <span role="alert" className="v-erro">{erro}</span>}
     </>
+  )
+}
+
+/** Direito de apagar os dados (LGPD art. 18, VI). Irreversível, por isso diz o que some e o que fica, e pede confirmação. */
+function ExcluirConta({ api, conta, onExcluida }: { api: PortalApi; conta: ContaPortal; onExcluida: () => void }) {
+  const [pedindo, setPedindo] = useState(false)
+  const [ocupado, setOcupado] = useState(false)
+  const [erro, setErro] = useState('')
+  const [feito, setFeito] = useState(false)
+
+  const excluir = async () => {
+    setErro(''); setOcupado(true)
+    const r = await api.excluirConta()
+    setOcupado(false)
+    if (r.ok) setFeito(true)
+    else setErro(r.mensagem)
+  }
+
+  if (feito) {
+    return (
+      <section className="p-card" aria-labelledby="p-ex" role="status">
+        <span className="v-mono p-rotulo" id="p-ex">Conta excluída</span>
+        <p className="p-liberada">Pronto. A sua conta foi excluída e os seus dados pessoais foram apagados. Você já pode fechar esta página.</p>
+        <button type="button" className="p-link" onClick={onExcluida}>Fechar</button>
+      </section>
+    )
+  }
+  return (
+    <section className="p-card" aria-labelledby="p-ex">
+      <span className="v-mono p-rotulo" id="p-ex">Seus dados</span>
+      <div className="p-cancela">
+        <div className="p-cancela-txt">
+          <b>Excluir minha conta</b>
+          <span className="c-mute">Apaga os seus dados pessoais do Atlas. Isso não pode ser desfeito.</span>
+        </div>
+        {!pedindo && <button type="button" className="p-botao p-botao--perigo" onClick={() => { setPedindo(true); setErro('') }}>Excluir minha conta</button>}
+      </div>
+      {pedindo && (
+        <div className="p-confirma" role="alertdialog" aria-label="Confirmar exclusão da conta">
+          <b>Tem certeza que quer excluir a sua conta, {conta.perfil.nome.split(' ')[0]}?</b>
+          <span className="c-mute">O que será apagado, para sempre: o seu nome, o nome da empresa, o seu e-mail e as respostas do cadastro; o vínculo com o computador; e o seu login do Atlas.</span>
+          <span className="c-mute">A licença é encerrada agora{conta.licenca.mensalidade_ativa ? ' e a mensalidade deixa de ser cobrada' : ''}, e o Atlas deixa de construir obras. Isso não devolve nenhum pagamento (para desistir da compra, use Cancelar a compra, se ainda estiver no prazo de 7 dias).</span>
+          <span className="c-mute">O que a lei manda guardar fica, sem o seu nome: os valores e as datas dos pagamentos, para fins fiscais. As suas obras continuam sendo suas, no seu GitHub.</span>
+          <div className="p-linha">
+            <button type="button" className="p-botao p-botao--perigo" disabled={ocupado} onClick={excluir}>{ocupado ? 'Um instante…' : 'Sim, excluir tudo'}</button>
+            <button type="button" className="p-link" disabled={ocupado} onClick={() => setPedindo(false)}>Não, voltar</button>
+          </div>
+        </div>
+      )}
+      {erro && <span role="alert" className="v-erro">{erro}</span>}
+    </section>
   )
 }
