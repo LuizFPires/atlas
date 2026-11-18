@@ -5,7 +5,7 @@
 export type TipoArquivo = 'imagem' | 'logo' | 'cores' | 'manual' | 'design-system'
 
 /** Onde, dentro da subpasta da obra, o arquivo é guardado. */
-export type Destino = 'estilo/referencias' | 'estilo/identidade' | 'marca' | 'raiz'
+export type Destino = 'estilo/referencias' | 'estilo/identidade' | 'marca' | 'posobra/prints' | 'raiz'
 
 export interface ArquivoEscolhido {
   nome: string
