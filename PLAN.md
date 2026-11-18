@@ -77,7 +77,7 @@ tela: prototipo/F16Admin.dc.html
 - [ ] Montar a lista "precisam de atenção" a partir de ocorrencias_admin
 - [ ] Implementar ações do admin (liberar troca urgente, ver entregas/marca d'água, cadastros)
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): painel só do admin (Luiz) — todas as rotas /admin/* exigem identidade de admin (papel/allowlist configurável, nunca um cliente comum; JWT validado no servidor). Lê os dados do PRÓPRIO Atlas (vendas do Atlas: receita, inadimplência, ativações, clientes travados; ocorrencias_admin), não os pagamentos das obras dos clientes (esses são do gateway do cliente). Ações: liberar troca urgente (override 1/7 dias), ver entregas/marca d'água, ver cadastros. Modo fixture, sem deploy. Nunca expor segredo; admin vê agregados e dados operacionais, não chaves.
 
 ## Milestone 8 — Instalador para Windows
 peso: 3
