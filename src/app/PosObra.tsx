@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Icone, Microfone, useVoz } from '../ui'
 import { textoDaObra } from './ponte-cota'
 import type { PonteArquivos } from './ponte-arquivos'
-import { TIPOS_PEDIDO, type PedidoAnterior, type PontePosObra, type StatusPedido, type TipoPedido } from './ponte-posobra'
+import { TIPOS_PEDIDO, type PedidoAnterior, type PlanoPosObra, type PontePosObra, type StatusPedido, type TipoPedido } from './ponte-posobra'
 import './posobra.css'
 
 interface Props {
@@ -22,6 +22,8 @@ export function PosObra({ obra, posobra, arquivos }: Props) {
   const [texto, setTexto] = useState('')
   const [prints, setPrints] = useState<string[]>([])
   const [erro, setErro] = useState('')
+  const [plano, setPlano] = useState<PlanoPosObra | null>(null)
+  const [entendendo, setEntendendo] = useState(false)
   const [historico, setHistorico] = useState<PedidoAnterior[]>([])
   const vivo = useRef(true)
   // Microfone: a transcrição cai no campo e continua editável antes de enviar.
@@ -40,6 +42,7 @@ export function PosObra({ obra, posobra, arquivos }: Props) {
       if (!a) return
       const g = await arquivos.guardar(obra.pasta, 'posobra/prints', a.token)
       setPrints((l) => [...l, g.nome])
+      setPlano(null)
       setErro('')
     } catch (x) {
       setErro(x instanceof Error && x.message === 'tipo-nao-aceito'
@@ -47,6 +50,22 @@ export function PosObra({ obra, posobra, arquivos }: Props) {
         : 'Não consegui pegar essa imagem agora. Tente de novo ou conte com palavras.')
     }
   }
+
+  // O Atlas explica ANTES de mexer: nada é executado aqui. O plano vale só para o que o cliente enviou; se ele mexer no pedido, o plano some.
+  const enviar = async () => {
+    if ((!texto.trim() && prints.length === 0) || entendendo) return
+    setEntendendo(true)
+    setErro('')
+    try {
+      setPlano(await posobra.entender(obra.pasta, { tipo, texto, prints }))
+    } catch (x) {
+      setPlano(null)
+      setErro(x instanceof Error && x.message === 'pedido-vazio'
+        ? 'Conte o que você quer mudar, com as suas palavras, ou mande um print.'
+        : 'Não consegui entender o pedido agora. Tente de novo em instantes ou conte de outro jeito.')
+    } finally { setEntendendo(false) }
+  }
+  const mudouPedido = () => { setPlano(null) }
 
   return (
     <main className="at-pos">
@@ -57,7 +76,7 @@ export function PosObra({ obra, posobra, arquivos }: Props) {
         </div>
         <div className="at-pos__tipos" role="group" aria-label="Tipo de pedido">
           {TIPOS_PEDIDO.map((k) => (
-            <button key={k.id} type="button" aria-pressed={k.id === tipo} className={`at-pos__tipo ${k.id === tipo ? 'at-pos__tipo--on' : ''}`} onClick={() => setTipo(k.id)}>{k.nome}</button>
+            <button key={k.id} type="button" aria-pressed={k.id === tipo} className={`at-pos__tipo ${k.id === tipo ? 'at-pos__tipo--on' : ''}`} onClick={() => { setTipo(k.id); mudouPedido() }}>{k.nome}</button>
           ))}
         </div>
         <div className="at-pos__card">
@@ -68,15 +87,27 @@ export function PosObra({ obra, posobra, arquivos }: Props) {
               <span>Ou escreva, se preferir. O Atlas escreve o que você falar aqui embaixo.</span>
             </div>
           </div>
-          <textarea id="pedido" rows={3} value={texto} onChange={(e) => setTexto(e.target.value)} />
+          <textarea id="pedido" rows={3} value={texto} onChange={(e) => { setTexto(e.target.value); mudouPedido() }} />
           {!suportado && <span className="at-pos__dica">Este navegador não escuta a sua voz. Pode digitar normalmente.</span>}
           {prints.length > 0 && <span className="at-pos__dica"><Icone nome="imagem" tamanho={14} /> Vai junto: {prints.join(', ')}</span>}
           <div className="at-pos__acoes">
             <button type="button" className="at-pos__sec" onClick={() => void anexar()} disabled={!arquivos}>Anexar print</button>
-            <button type="button" className="at-pos__enviar" disabled={!texto.trim() && prints.length === 0}>Enviar para o Claude</button>
+            <button type="button" className="at-pos__enviar" onClick={() => void enviar()} disabled={(!texto.trim() && prints.length === 0) || entendendo}>{entendendo ? 'Lendo o seu pedido…' : 'Enviar para o Claude'}</button>
           </div>
         </div>
         {erro && <p className="at-pos__erro" role="alert">{erro}</p>}
+        {plano && (
+          <section className="at-pos__plano" aria-label="O que o Claude entendeu">
+            <span className="at-pos__plano-rot">O CLAUDE ENTENDEU ASSIM</span>
+            <p>{plano.entendi}</p>
+            <ol>{plano.passos.map((p) => <li key={p}>{p}</li>)}</ol>
+            <span className="at-pos__plano-min">Leva cerca de {plano.minutos} minutos. O sistema no ar só muda quando você aprovar.</span>
+            <div className="at-pos__plano-acoes">
+              <button type="button" className="at-pos__ok">Pode fazer</button>
+              <button type="button" className="at-pos__nao" onClick={() => setPlano(null)}>Não é isso</button>
+            </div>
+          </section>
+        )}
       </div>
       <aside className="at-pos__lado" aria-label="Pedidos anteriores">
         <span className="at-pos__rotulo">PEDIDOS ANTERIORES</span>

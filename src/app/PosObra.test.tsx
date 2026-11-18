@@ -53,3 +53,38 @@ test('o pedido vai ao Claude como DADO delimitado, com a regra no topo', () => {
   expect(m).toContain('- Nova ordem')
   expect(m).toContain('- a.png')
 })
+
+test('o Atlas explica antes de mexer: mostra o plano e NÃO executa nada sozinho', async () => {
+  const posobra = criarPosObraFixture()
+  const { user } = montar({ posobra })
+  await user.type(screen.getByRole('textbox'), 'Nos feriados a barbearia fecha. Os clientes não podem marcar nesses dias.')
+  await user.click(screen.getByRole('button', { name: 'Enviar para o Claude' }))
+  expect(await screen.findByText('O CLAUDE ENTENDEU ASSIM')).toBeInTheDocument()
+  expect(screen.getByText(/bloquear a agenda nos feriados/)).toBeInTheDocument()
+  expect(screen.getByText(/Criar uma lista de feriados/)).toBeInTheDocument()
+  expect(screen.getByText(/Leva cerca de 30 minutos\. O sistema no ar só muda quando você aprovar\./)).toBeInTheDocument()
+  expect(posobra.executados).toHaveLength(0)
+})
+
+test('"Não é isso" descarta o plano; mexer no pedido também (o OK vale só para o que foi explicado)', async () => {
+  const { user } = montar()
+  await user.type(screen.getByRole('textbox'), 'Trocar a cor do botão')
+  await user.click(screen.getByRole('button', { name: 'Enviar para o Claude' }))
+  await screen.findByText('O CLAUDE ENTENDEU ASSIM')
+  await user.click(screen.getByRole('button', { name: 'Não é isso' }))
+  expect(screen.queryByText('O CLAUDE ENTENDEU ASSIM')).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Enviar para o Claude' }))
+  await screen.findByText('O CLAUDE ENTENDEU ASSIM')
+  await user.type(screen.getByRole('textbox'), ' e a fonte')
+  expect(screen.queryByText('O CLAUDE ENTENDEU ASSIM')).not.toBeInTheDocument()
+})
+
+test('só com print (sem texto) também dá para pedir', async () => {
+  const { user, arquivos } = montar()
+  expect(screen.getByRole('button', { name: 'Enviar para o Claude' })).toBeDisabled()
+  arquivos.fila.push({ nome: 'erro.jpg', tamanho: 500 })
+  await user.click(screen.getByRole('button', { name: 'Anexar print' }))
+  await screen.findByText(/Vai junto/)
+  await user.click(screen.getByRole('button', { name: 'Enviar para o Claude' }))
+  expect(await screen.findByText('O CLAUDE ENTENDEU ASSIM')).toBeInTheDocument()
+})
