@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Botao, CampoFalado, Icone, useVoz } from '../ui'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EntradaEstilo, EstiloProposto, PonteEstilo } from './ponte-estilo'
-import { FASES, linkCurto, MAX_REFERENCIAS, MIN_REFERENCIAS, normalizarLink, SENTIMENTOS } from './estilo-dados'
+import { FASES, linkCurto, MAX_REFERENCIAS, MIN_REFERENCIAS, MODOS, normalizarLink, SENTIMENTOS, UPLOADS } from './estilo-dados'
 import './estilo.css'
 
 /** A obra que acabou de ser criada (nome e subpasta dentro de Atlas\Obras). */
@@ -14,10 +14,17 @@ interface Props {
   estilo: PonteEstilo
   onVoltar: () => void
   /** Depois que o design system foi guardado na pasta da obra. */
-  onConcluir?: (resultado: { estilo: EstiloProposto; caminho: string }) => void
+  onConcluir?: (resultado: { estilo: EstiloProposto | null; caminho: string }) => void
 }
 
 interface Ref { tipo: 'link' | 'print'; valor: string; texto: string }
+
+const recadoUpload = (e: unknown) => {
+  const m = e instanceof Error ? e.message : ''
+  if (m === 'tipo-nao-aceito') return 'Esse tipo de arquivo eu não consigo ler. Pode ser PNG, SVG, JPG, PDF ou o design-system.md.'
+  if (m === 'grande-demais') return 'Esse arquivo é grande demais. Tente um menor, de até 20 MB.'
+  return 'Não consegui pegar esse arquivo agora. Tente de novo em instantes.'
+}
 
 const recado = (e: unknown) => {
   const m = e instanceof Error ? e.message : ''
@@ -38,7 +45,13 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
   const [escolhido, setEscolhido] = useState('')
   const [ocupado, setOcupado] = useState<'' | 'propondo' | 'guardando'>('')
   const [erro, setErro] = useState('')
-  const [guardado, setGuardado] = useState<{ estilo: EstiloProposto; caminho: string } | null>(null)
+  const [guardado, setGuardado] = useState<{ estilo: EstiloProposto | null; caminho: string } | null>(null)
+  const [modo, setModo] = useState<'criar' | 'tenho'>('criar')
+  // Identidade que o cliente já tem: nomes dos arquivos guardados na obra, por tipo.
+  const [enviados, setEnviados] = useState<Record<string, string[]>>({})
+  const [coresTxt, setCoresTxt] = useState('')
+  const [figma, setFigma] = useState('')
+  const [prontoDS, setProntoDS] = useState(false)
 
   const { gravando, alternar, suportado } = useVoz((falado) => setFala((v) => [v, falado].filter(Boolean).join(' ')))
   const total = refs.length + (fala.trim() ? 1 : 0)
@@ -99,6 +112,41 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
     finally { setOcupado('') }
   }
 
+  const subir = async (id: (typeof UPLOADS)[number]['id']) => {
+    try {
+      const a = await arquivos.escolher(id)
+      if (!a) return
+      // Um design-system.md pronto vai direto para a raiz da obra; o resto fica em estilo/identidade.
+      const pronto = id === 'manual' && a.nome.toLowerCase() === 'design-system.md'
+      const g = await arquivos.guardar(obra.pasta, pronto ? 'raiz' : 'estilo/identidade', a)
+      setAviso('')
+      if (pronto) setProntoDS(true)
+      setEnviados((e) => ({ ...e, [id]: [...(e[id] ?? []), g.nome] }))
+    } catch (e) { setAviso(recadoUpload(e)) }
+  }
+  const tirarEnvio = (id: string, nome: string) => {
+    setEnviados((e) => ({ ...e, [id]: (e[id] ?? []).filter((n) => n !== nome) }))
+    if (nome === 'design-system.md') setProntoDS(false)
+  }
+  const figmaOk = figma.trim() ? normalizarLink(figma) : null
+  const todosArquivos = Object.values(enviados).flat()
+  const temIdentidade = todosArquivos.length > 0 || !!coresTxt.trim() || !!figmaOk
+
+  const usarIdentidade = async () => {
+    if (!temIdentidade) { setErro('Mande pelo menos uma coisa: a logo, as cores ou o manual.'); return }
+    if (figma.trim() && !figmaOk) { setErro('Esse link do manual não parece certo. Cole o endereço completo.'); return }
+    setErro('')
+    setOcupado('guardando')
+    try {
+      const { caminho } = await estilo.materializar(obra.pasta, {
+        tipo: 'identidade',
+        identidade: { arquivos: todosArquivos.filter((n) => !(prontoDS && n === 'design-system.md')), cores: [coresTxt.trim(), figmaOk ?? ''].filter(Boolean).join(String.fromCharCode(10)), prontoDS },
+      })
+      setGuardado({ estilo: null, caminho })
+    } catch { setErro('Não consegui guardar o design system na pasta da obra agora. O que você mandou continua aqui; tente de novo em instantes.') }
+    finally { setOcupado('') }
+  }
+
   const alternarSentir = (s: string) => setSentir(sentir.includes(s) ? sentir.filter((x) => x !== s) : [...sentir, s])
 
   return (
@@ -114,7 +162,11 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
         <span>Antes de desenhar as telas, vamos escolher as cores, as letras e o jeito dos botões. Assim o protótipo já nasce com a cara da sua barbearia.</span>
       </header>
 
+      <div className="at-estilo__modos" role="group" aria-label="Como você quer começar">
+        {MODOS.map((m) => <button key={m.id} type="button" aria-pressed={modo === m.id} className={`at-estilo__modo ${modo === m.id ? 'at-estilo__modo--on' : ''}`} onClick={() => { setModo(m.id); setErro(''); setAviso(''); setGuardado(null) }}>{m.nome}</button>)}
+      </div>
       <div className="at-estilo__grade">
+      {modo === 'criar' && (
       <div className="at-estilo__card">
         <b className="at-estilo__tit">Mande 2 ou 3 sites ou apps que você acha bonitos</b>
         <span className="at-estilo__sub">Pode ser de qualquer ramo: uma loja, um banco, um restaurante. Vale link ou print da tela.</span>
@@ -162,8 +214,51 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
         <span className="at-estilo__sub">{total} de {MIN_REFERENCIAS} a {MAX_REFERENCIAS} referências</span>
         <Botao onClick={propor} disabled={ocupado !== ''}>{ocupado === 'propondo' ? 'Montando os estilos…' : propostos ? 'Montar os 3 estilos de novo' : 'Mostrar 3 estilos'}</Botao>
       </div>
+      )}
 
-      <section className="at-estilo__estilos" aria-label="Estilos">
+      {modo === 'tenho' && (
+        <div className="at-estilo__card">
+          <b className="at-estilo__tit">Mande o que você já tem</b>
+          <span className="at-estilo__sub">O Atlas lê tudo e monta o design system do seu sistema a partir disso.</span>
+          {UPLOADS.map((u) => {
+            const nomes = enviados[u.id] ?? []
+            return (
+              <div key={u.id} className="at-estilo__up">
+                <button type="button" className={`at-estilo__upload ${nomes.length ? 'at-estilo__upload--ok' : ''}`} onClick={() => subir(u.id)} aria-label={`${u.nome}: escolher arquivo`}>
+                  <span className="at-estilo__upload-ic"><Icone nome={u.icone} tamanho={24} /></span>
+                  <span className="at-estilo__upload-txt"><b>{u.nome}</b><span>{u.desc}</span></span>
+                  <span className="at-estilo__upload-go">Escolher arquivo</span>
+                </button>
+                {nomes.length > 0 && (
+                  <ul className="at-estilo__enviados" aria-label={`Arquivos de ${u.nome}`}>
+                    {nomes.map((n) => (
+                      <li key={n}><Icone nome="check" tamanho={14} /> {n}{u.id === 'manual' && n === 'design-system.md' && <em> · design system pronto</em>}
+                        <button type="button" className="at-estilo__tirar" aria-label={`Tirar ${n}`} onClick={() => tirarEnvio(u.id, n)}><Icone nome="x" tamanho={14} /></button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )
+          })}
+          <CampoFalado rotulo="Os códigos das cores" obs="(opcional)" valor={coresTxt} onChange={setCoresTxt} placeholder="Ex.: azul #1D3557, dourado #D8B45A" />
+          <CampoFalado rotulo="Link do manual ou do Figma" obs="(opcional)" valor={figma} onChange={setFigma} placeholder="figma.com/..." />
+          {aviso && <p className="at-nova__erro" role="alert">{aviso}</p>}
+        </div>
+      )}
+
+      {modo === 'tenho' && (
+        <section className="at-estilo__estilos" aria-label="O que o Atlas faz com o que você mandou">
+          <div className="at-estilo__estilos-cab"><b>O que o Atlas vai fazer</b></div>
+          <div className="at-estilo__vazio">
+            <span>Eu leio a logo, as cores e o manual e escrevo o design system do seu sistema na pasta da obra.</span>
+            <span>Se você mandar um <b>design-system.md</b> pronto, eu uso ele do jeito que veio.</span>
+            <span>Seus arquivos ficam só no seu computador, na pasta da obra.</span>
+          </div>
+        </section>
+      )}
+
+      {modo === 'criar' && <section className="at-estilo__estilos" aria-label="Estilos">
         <div className="at-estilo__estilos-cab"><b>O Atlas montou 3 estilos para você</b><span>toque para escolher</span></div>
         {propostos ? (
           <div className="at-estilo__tres" role="radiogroup" aria-label="Escolha um estilo">
@@ -194,13 +289,13 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
             <span>Mande 2 ou 3 referências e diga o que o seu cliente deve sentir. Aí eu monto 3 estilos para você escolher.</span>
           </div>
         )}
-      </section>
+      </section>}
       </div>
 
       {erro && <p className="at-nova__erro" role="alert">{erro}</p>}
       {guardado && (
         <div className="at-estilo__feito" role="status">
-          <b>Estilo "{guardado.estilo.nome}" guardado!</b>
+          <b>{guardado.estilo ? `Estilo "${guardado.estilo.nome}" guardado!` : 'Identidade visual guardada!'}</b>
           <span>Ele já é o design system do seu sistema, guardado na pasta da obra. Dá para ajustar depois.</span>
           <code>{guardado.caminho}</code>
         </div>
@@ -209,7 +304,9 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
         <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
         {guardado
           ? <Botao onClick={() => onConcluir?.(guardado)}>Ver minhas obras →</Botao>
-          : <Botao disabled={!propostos || ocupado !== ''} onClick={usar}>{ocupado === 'guardando' ? 'Guardando…' : `Usar "${propostos?.find((p) => p.id === escolhido)?.nome ?? ''}" e desenhar as telas →`}</Botao>}
+          : modo === 'tenho'
+            ? <Botao disabled={!temIdentidade || ocupado !== ''} onClick={usarIdentidade}>{ocupado === 'guardando' ? 'Guardando…' : 'Usar a minha identidade e desenhar as telas →'}</Botao>
+            : <Botao disabled={!propostos || ocupado !== ''} onClick={usar}>{ocupado === 'guardando' ? 'Guardando…' : `Usar "${propostos?.find((p) => p.id === escolhido)?.nome ?? ''}" e desenhar as telas →`}</Botao>}
         <span>Vira o design system do seu sistema. Dá para ajustar depois.</span>
       </div>
     </div>

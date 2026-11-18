@@ -33,7 +33,10 @@ export interface EstiloProposto {
 /** O que o cliente já tem: arquivos subidos (nomes dentro da obra) e as cores, se escreveu. */
 export interface Identidade {
   arquivos: string[]
+  /** Códigos das cores e links (manual, Figma) que o cliente escreveu ou falou. */
   cores: string
+  /** Já veio um design-system.md pronto: ele foi guardado na raiz da obra e vale do jeito que veio. */
+  prontoDS?: boolean
 }
 
 export type OrigemDoDesignSystem =
@@ -57,16 +60,16 @@ export const ESTILOS_EXEMPLO: EstiloProposto[] = [
 /** Texto do design-system.md da obra (formato simples, lido pelo Claude e por outras IAs). */
 export function montarDesignSystemMd(origem: OrigemDoDesignSystem): string {
   if (origem.tipo === 'identidade') {
-    const { arquivos, cores } = origem.identidade
+    const { arquivos, cores, prontoDS } = origem.identidade
     return [
       '# Design system da obra',
       '',
-      'Origem: identidade visual que o cliente já tem. O Claude lê os arquivos abaixo e completa este documento.',
+      `Origem: identidade visual que o cliente já tem.${prontoDS ? ' Veio um design-system.md pronto: ele vale do jeito que veio.' : ' O Claude lê os arquivos abaixo e completa este documento.'}`,
       '',
       '## Arquivos do cliente',
       ...(arquivos.length ? arquivos.map((a) => `- estilo/identidade/${a}`) : ['- (nenhum arquivo)']),
       '',
-      '## Cores informadas',
+      '## Cores e links informados',
       cores.trim() || '(o Claude tira das imagens enviadas)',
       '',
     ].join('\n')
