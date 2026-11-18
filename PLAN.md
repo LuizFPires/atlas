@@ -254,7 +254,7 @@ tela: prototipo/F14PosObra.dc.html
 - [ ] Explicar o que vai fazer antes de mexer
 - [ ] Rodar a correção pelo mesmo pipeline exigindo licença em dia
 - [ ] Conferir fidelidade com o protótipo
-Notas: ⏩ Auto (recomendado): F14PosObra — o cliente descreve a mudança com as palavras dele (fala, texto ou print), o Atlas EXPLICA o que vai fazer ANTES de mexer, e a correção roda pelo MESMO pipeline da obra, exigindo licença em dia (liga no /verificar do M2 — sem licença válida, não roda). O pedido/print do cliente é DADO para o Claude (tratado como M14/M15: delimitado, não-instrução; print via PonteArquivos). Atrás de ports (mock em fixture; adaptador real p/ /entregar). Modo fixture, sem deploy.
+Notas: ⏩ Auto (recomendado): F14PosObra — o cliente descreve a mudança com as palavras dele (fala, texto ou print), o Atlas EXPLICA o que vai fazer ANTES de mexer, e a correção roda pelo MESMO pipeline da obra, exigindo licença em dia (liga no /verificar do M2 — sem licença válida, não roda). O pedido/print do cliente é DADO para o Claude (tratado como M14/M15: delimitado, não-instrução; print via PonteArquivos). Atrás de ports (mock em fixture; adaptador real p/ /entregar). Modo fixture, sem deploy. QA reprovou (1 médio): corrida no "explicar antes de mexer" — pedido editável enquanto explica, resposta velha podia virar plano e o cliente aprovava execução não explicada. Fix: travar campos enquanto explica + id de requisição (descarta resposta obsoleta) + executar snapshot do pedido explicado. Baixas /entregar: conferir assinatura Ed25519 do /verificar; destino posobra/prints no adaptador real.
 
 ## Milestone 25 — App: Ajuda do Atlas
 peso: 2
