@@ -180,7 +180,7 @@ tela: prototipo/F07bBatismo.dc.html
 - [ ] Conferir nomes parecidos e se o endereço .app está livre
 - [ ] Implementar subir nome e logo próprios
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): F07bBatismo (no fim do projeto, com todo o contexto): o Claude sugere 3 nomes com logo, slogan e motivo (PonteBatismo, mock em fixture). Conferir nomes parecidos e se o endereço (.app/.com.br) está livre — checagem de domínio atrás de um port (mock em fixture; adaptador real p/ /entregar, resolvendo via serviço oficial, sem SSRF). Quem já tem nome/logo sobe os arquivos (PonteArquivos do M14; SVG recusado como logo). Nomes sugeridos e entrada do cliente tratados com cuidado; nunca segredo em arquivo. Modo fixture, sem deploy.
 
 ## Milestone 18 — App: aprovar e começar a obra
 peso: 2
