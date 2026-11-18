@@ -11,6 +11,8 @@ export interface Cliente {
   ramo?: string | null
   /** Quando as 4 respostas foram gravadas (nulo = cadastro ainda não feito). */
   cadastro_em?: Date | null
+  /** M6: usuário do Supabase Auth ligado a este cliente (login do portal). Nunca sai para o navegador. */
+  auth_user_id?: string | null
 }
 export interface Licenca {
   id: string
@@ -81,13 +83,23 @@ export interface NovaCompra {
   gateway_cliente_ref: string | null
   agora: Date
 }
-export interface Troca { licenca_id: string; de_hash: string; para_hash: string; feita_em: Date; por_admin: boolean }
+export interface Troca { licenca_id: string; de_hash: string; /** nulo = computador liberado pelo portal, ainda sem o novo ativado */ para_hash: string | null; feita_em: Date; por_admin: boolean }
 /** Sessão do Stripe Checkout (prova da compra). O id `cs_…` é impossível de adivinhar e só volta ao comprador na URL de sucesso. */
 export interface SessaoCheckout { conta_gateway_id: string; sessao_id: string; email: string; paga: boolean }
 export interface Link { id: string; cliente_id: string; token_hash: string; expira_em: Date; usado_em: Date | null }
 export interface Codigo { id: string; cliente_id: string; finalidade: Finalidade; codigo_hash: string; tentativas: number; expira_em: Date; usado_em: Date | null }
 export interface Entrega { licenca_id: string; obra_id: string; marca_dagua: string; baixado_em: Date }
 export interface Ocorrencia { cliente_id: string | null; tipo: string; descricao: string }
+
+/** Liberação pelo portal: desativa o computador atual sem ativar outro (o novo ativa depois, pelo link). */
+export interface LiberacaoAtomica {
+  licenca_id: string
+  ativacao_atual_id: string
+  de_hash: string
+  quando: Date
+  por_admin: boolean
+  intervalo_ms: number
+}
 
 export interface TrocaAtomica {
   licenca_id: string
@@ -129,6 +141,8 @@ export interface Store {
   /** RPC transacional: desativa a atual + insere a nova + registra a troca (+ zera o override). false = a atual mudou/limite. */
   trocarAtivacao(p: TrocaAtomica): Promise<boolean>
   trocasDa(licencaId: string): Promise<Troca[]>
+  /** RPC transacional (liberar_computador): desativa a atual e registra a troca (para_hash nulo). Mesmas regras de limite/override de trocarAtivacao. */
+  liberarAtivacao(p: LiberacaoAtomica): Promise<boolean>
   inserirEntrega(e: Entrega): Promise<void>
   inserirOcorrencia(o: Ocorrencia): Promise<void>
 
@@ -152,6 +166,11 @@ export interface Store {
   /** Mensalidade cancelada cujo período pago já acabou (mensalidade_encerra_em <= agora) e ainda não 'cancelada'. */
   licencasEncerramentoVencido(agora: Date): Promise<Licenca[]>
   clientePorId(id: string): Promise<Cliente | null>
+
+  // ── M6: portal do cliente (login próprio via Supabase Auth) ──
+  clientePorAuthUser(authUserId: string): Promise<Cliente | null>
+  /** Atômico: UPDATE clientes SET auth_user_id WHERE id AND auth_user_id IS NULL. false = já ligado a alguém. */
+  vincularAuthUser(clienteId: string, authUserId: string): Promise<boolean>
 
   // ── M4: cadastro pós-pagamento ──
   /** Atômico: UPDATE clientes SET nome_tratamento, empresa, ramo, cadastro_em WHERE id AND cadastro_em IS NULL. false = já cadastrado. */

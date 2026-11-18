@@ -1,6 +1,6 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
-import type { Ativacao, CondicaoLicenca, Cliente, Codigo, ContaGateway, Entrega, Licenca, Link, NovaCompra, Ocorrencia, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
+import type { Ativacao, CondicaoLicenca, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
   clientes: Cliente[] = []
@@ -96,6 +96,20 @@ export class StoreMemoria implements Store {
     if (p.por_admin) { const l = this.licencas.find((x) => x.id === p.licenca_id); if (l) l.troca_liberada_em = null }
     return true
   }
+  /** Equivale à função SQL liberar_computador. */
+  async liberarAtivacao(p: LiberacaoAtomica) {
+    const atual = this.ativacoes.find((x) => x.id === p.ativacao_atual_id && x.licenca_id === p.licenca_id)
+    if (!atual || !atual.ativo) return false
+    if (p.intervalo_ms > 0) {
+      const lim = p.quando.getTime() - p.intervalo_ms
+      if (this.trocas.some((t) => t.licenca_id === p.licenca_id && t.feita_em.getTime() > lim)) return false
+    }
+    atual.ativo = false
+    atual.desativado_em = p.quando
+    this.trocas.push({ licenca_id: p.licenca_id, de_hash: p.de_hash, para_hash: null, feita_em: p.quando, por_admin: p.por_admin })
+    if (p.por_admin) { const l = this.licencas.find((x) => x.id === p.licenca_id); if (l) l.troca_liberada_em = null }
+    return true
+  }
   async trocasDa(lid: string) { return this.trocas.filter((t) => t.licenca_id === lid) }
   async inserirEntrega(e: Entrega) { this.entregas.push(e) }
   async inserirOcorrencia(o: Ocorrencia) { this.ocorrencias.push(o) }
@@ -146,6 +160,14 @@ export class StoreMemoria implements Store {
   async licencasAtrasadas() { return this.licencas.filter((l) => l.status === 'atrasada') }
   async licencasEncerramentoVencido(agora: Date) { return this.licencas.filter((l) => l.status !== 'cancelada' && l.mensalidade_encerra_em && l.mensalidade_encerra_em <= agora) }
   async clientePorId(id: string) { return this.clientes.find((c) => c.id === id) ?? null }
+
+  async clientePorAuthUser(id: string) { return this.clientes.find((c) => c.auth_user_id === id) ?? null }
+  async vincularAuthUser(clienteId: string, authUserId: string) {
+    const c = this.clientes.find((x) => x.id === clienteId)
+    if (!c || c.auth_user_id) return false
+    c.auth_user_id = authUserId
+    return true
+  }
 
   async salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string }, quando: Date) {
     const cli = this.clientes.find((x) => x.id === clienteId)
