@@ -299,7 +299,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
       <div className="at-estilo__rodape">
         <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
         {guardado
-          ? <Botao onClick={() => onConcluir?.(guardado)}>Ver minhas obras →</Botao>
+          ? <Botao onClick={() => onConcluir?.(guardado)}>Desenhar as telas →</Botao>
           : modo === 'tenho'
             ? <Botao disabled={!temIdentidade || ocupado !== ''} onClick={usarIdentidade}>{ocupado === 'guardando' ? 'Guardando…' : 'Usar a minha identidade e desenhar as telas →'}</Botao>
             : <Botao disabled={!propostos || ocupado !== ''} onClick={usar}>{ocupado === 'guardando' ? 'Guardando…' : `Usar "${propostos?.find((p) => p.id === escolhido)?.nome ?? ''}" e desenhar as telas →`}</Botao>}

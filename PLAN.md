@@ -166,11 +166,11 @@ Notas: ⏩ Auto (recomendado): F06cTrazer — recado pronto pra copiar e mandar 
 peso: 3
 spec: S14
 tela: prototipo/F07Prototipo.dc.html
-- [ ] Desenhar as telas com o Claude no estilo escolhido
-- [ ] Implementar ajustes por fala com preview do celular ao lado
-- [ ] Implementar desfazer e versões do protótipo
-- [ ] Conferir fidelidade com o protótipo
-Notas:
+- [x] Desenhar as telas com o Claude no estilo escolhido
+- [x] Implementar ajustes por fala com preview do celular ao lado
+- [x] Implementar desfazer e versões do protótipo
+- [x] Conferir fidelidade com o protótipo
+Notas: ⏩ Auto (recomendado): F07Prototipo — o Claude desenha as telas da obra no estilo escolhido (M14); o cliente pede ajustes falando e vê o preview do celular mudar ao lado; desfazer e versões do protótipo (histórico na pasta da obra). A geração é o Claude por baixo → atrás de um port (PontePrototipo) com mock em fixture; adaptador real p/ /entregar. SEGURANÇA: o preview das telas (HTML gerado/importado) renderiza em iframe sandbox sem scripts; os pedidos do cliente (fala/texto) são DADO para o Claude (delimitado, não-instrução, como M14/M15). Versões ficam na pasta da obra; nunca segredo em arquivo. Modo fixture, sem deploy. QA aprovou (sandbox sólido). Baixas p/ /entregar/go-live: bloquear navegação do iframe (meta-refresh/link — sanitizar ou pedir ao Claude que não gere); CSP no próprio app (index.html/vercel.json, preexistente).
 
 ## Milestone 17 — App: projeto 3/3 (batismo)
 peso: 2
