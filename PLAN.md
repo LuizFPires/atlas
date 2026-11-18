@@ -98,7 +98,7 @@ tela: prototipo/F02Ativacao.dc.html
 - [ ] Ligar a ativação ao servidor de licenças (registra o computador)
 - [ ] Ensinar as 3 coisas durante a espera (fala, canteiro, pasta)
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): app Electron que reaproveita o front (vite) servido no app; abre com o Windows (M8 encadeia F02), impede dormir durante a obra (power save blocker), microfone em tudo. Tela de instalar+ativar (F02): e-mail da compra → código de 6 dígitos, ligando na ativação do M2 (bearer token por dispositivo, registra o computador). Ensina as 3 coisas na espera (tudo pode ser falado; o computador é o canteiro; pasta das obras). Honra --tela=F02 e telaInicial (F05 se já ativado). CI (ubuntu) NÃO builda o Electron — mantém front build + testes de lógica. Coordenação com o M8: definir os ids reais do plugin/app e o PLUGIN_SHA256 (hoje placeholder; se o empacotamento do kit ficar p/ o M26, segue placeholder e o instalador falha fechado).
 
 ## Milestone 10 — App: conectar o Claude e detectar o plano
 peso: 2
