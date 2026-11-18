@@ -106,6 +106,20 @@ describe('painel do admin (F16)', () => {
     expect(document.body.textContent).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u) // sem emoji
   })
 
+  it('fidelidade ao F16: rótulo ADMINISTRADOR, menu, subtítulo do mês e a ordem dos 5 cartões', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente()
+    montar(api)
+    await screen.findByRole('heading', { name: 'Visão geral' })
+    expect(screen.getByText('ADMINISTRADOR')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByText('novembro de 2026')).toBeInTheDocument()
+    const nomes = [...document.querySelectorAll('.ad-kpi-nome')].map((n) => n.textContent)
+    expect(nomes).toEqual(['Clientes ativos', 'Receita recorrente', 'Ativações no mês', 'Inadimplência', 'Clientes travados'])
+    expect(screen.getByText('PRECISAM DE ATENÇÃO')).toBeInTheDocument()
+    expect(screen.getByText('CLIENTES')).toBeInTheDocument()
+  })
+
   it('liberar troca urgente: pede o motivo, envia o id da licença e confirma', async () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api, chamadas } = ambiente()
