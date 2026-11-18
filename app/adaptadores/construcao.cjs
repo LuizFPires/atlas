@@ -44,6 +44,7 @@ const { caminhoSeguro, criarArquivoExclusivo, envMinimo, executarClaude, iniciar
 const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson, garantirSemConfigDeProjeto } = require('./obra-fs.cjs')
 const { montarPlanMd, validarPlanNovo, comoDado } = require('./plan-md.cjs')
 const { ehModoObra, gravarRecomendadoGlobal } = require('./modo.cjs')
+const { detectarCota } = require('./cota.cjs')
 
 /**
  * Ferramentas permitidas à linha: SUBCOMANDOS EXATOS, sem curinga em git/gh/npm inteiros. Isto é lista de permissão do Claude,
@@ -131,8 +132,12 @@ function resumirLinha(linha) {
   if (!j || typeof j !== 'object') return null
   if (j.type === 'result') {
     const t = typeof j.result === 'string' ? j.result : ''
-    return { texto: j.is_error ? 'A linha de produção parou' : 'A linha de produção terminou', cota: j.is_error === true && RE_COTA.test(t), fim: true }
+    // Cota: sinal ESTRUTURADO (cota.cjs detectarCota) ou, como antes, a frase de limite num resultado com is_error.
+    const c = detectarCota(j)
+    return { texto: j.is_error ? 'A linha de produção parou' : 'A linha de produção terminou', cota: j.is_error === true && (c !== null || RE_COTA.test(t)), voltaEm: c ? c.voltaEm : null, fim: true }
   }
+  const sinal = detectarCota(j)
+  if (sinal) return { texto: 'Aguardando a cota do plano', cota: sinal.forca === 'forte', cotaFraca: sinal.forca === 'fraca', voltaEm: sinal.voltaEm }
   if (j.type === 'assistant' && j.message && Array.isArray(j.message.content)) {
     for (const c of j.message.content) {
       if (c && c.type === 'tool_use' && typeof c.name === 'string') return { texto: `Usando ${comoDado(c.name, 40).join(' ')}` }
@@ -175,6 +180,8 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     if (pluginDir) args.push('--plugin-dir', pluginDir)
     const reg = { parar: () => {}, recentes: [], desde: agora().toISOString() }
     let cota = false
+    let cotaFraca = false
+    let voltaEm = null
     pastaAtlas(raiz, pasta)
     const env = envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dadosApp) })
     const r = iniciarFluxo(args, {
@@ -183,6 +190,8 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
         const s = resumirLinha(l)
         if (!s) return
         if (s.cota) cota = true
+        if (s.cotaFraca) cotaFraca = true
+        if (s.voltaEm) voltaEm = s.voltaEm
         reg.recentes.push(s.texto)
         if (reg.recentes.length > 30) reg.recentes.shift()
       },
@@ -192,8 +201,9 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     gravarLinha(pasta, { estado: 'rodando', desde: reg.desde })
     r.fim.then(({ codigo, parado }) => {
       if (linhas.get(pasta) === reg) linhas.delete(pasta) // não apaga uma linha mais nova (pausar + continuar rápido)
-      const motivo = parado ? 'pausada' : cota ? 'cota' : codigo === 0 ? 'concluiu' : codigo === null ? 'fechou' : 'erro'
-      gravarLinha(pasta, { estado: 'parou', motivo, codigo, fimEm: agora().toISOString() })
+      // Sinal fraco de limite (erro rate_limit no meio) só conta se a linha acabou com falha; com sucesso foi só um tropeço que passou.
+      const motivo = parado ? 'pausada' : cota || (cotaFraca && codigo !== 0) ? 'cota' : codigo === 0 ? 'concluiu' : codigo === null ? 'fechou' : 'erro'
+      gravarLinha(pasta, { estado: 'parou', motivo, codigo, fimEm: agora().toISOString(), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}) })
     })
   }
 

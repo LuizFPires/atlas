@@ -20,6 +20,7 @@ const { criarBatismo } = require('./adaptadores/batismo.cjs')
 const { criarNomes } = require('./adaptadores/nomes.cjs')
 const { criarPosObra } = require('./adaptadores/posobra.cjs')
 const { criarLicenca } = require('./adaptadores/licenca.cjs')
+const { criarCota } = require('./adaptadores/cota.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -33,8 +34,9 @@ const claude = criarClaude({ shell })
 const modos = criarModo({ raiz: obras.raiz() })
 const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: process.env.ATLAS_KIT_PLUGIN || null, dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado') })
 const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
-// cota: sem adaptador real ainda (pendente); sem ele o Retomar só liga a linha por painel.continuar.
-const retomar = criarRetomar({ raiz: obras.raiz(), painel, construcao })
+// Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
+const cota = criarCota({ raiz: obras.raiz(), construcao, painel, claudeEstado: () => claude.estado(), dadosApp: require('node:path').join(app.getPath('userData'), 'cota') })
+const retomar = criarRetomar({ raiz: obras.raiz(), painel, cota, construcao })
 // Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
 const disparo = criarDisparo({ raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
@@ -105,6 +107,10 @@ handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
 handle('atlas:retomar:andamento', () => retomar.obraEmAndamento())
 handle('atlas:retomar:continuar', (pasta) => retomar.continuar({ pasta: String(pasta) }))
 
+// Cota do plano (F10): ler o estado, retomar quando o Claude voltou a responder. A vigia retoma sozinha (sem clique) as obras paradas por cota.
+handle('atlas:cota:ler', (pasta) => cota.ler(String(pasta)))
+handle('atlas:cota:retomar', (pasta) => cota.retomar(String(pasta)))
+
 // Estilo do sistema (F06b): o Claude propõe 3 estilos; materializar grava o design-system.md (nunca sobrescreve).
 handle('atlas:estilo:propor', (entrada, pasta) => estilo.propor(entrada, pasta === undefined ? undefined : String(pasta)))
 handle('atlas:estilo:materializar', (pasta, origem) => estilo.materializar(String(pasta), origem))
@@ -159,4 +165,6 @@ function abrir() {
 }
 
 app.whenReady().then(abrir)
+// Vigia da cota: 20 s depois de abrir (o app pode ter sido ligado com o Windows) e a cada 2 min; só obras paradas POR COTA.
+setTimeout(() => { const v = () => cota.vigiar().catch(() => {}); v(); setInterval(v, 120_000).unref() }, 20_000).unref()
 app.on('window-all-closed', () => app.quit())

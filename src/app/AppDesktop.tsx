@@ -131,7 +131,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const pontesObra = useMemo(() => {
     if (painel || ponte.painel || !modoFixture()) {
       const fixture = modoFixture()
-      return { painel: painel ?? ponte.painel ?? painelIndisponivel, cota: cota ?? (fixture ? criarCotaFixture() : cotaIndisponivel), ocorrencias: ocorrencias ?? (fixture ? criarOcorrenciasFixture() : ocorrenciasIndisponivel) }
+      return { painel: painel ?? ponte.painel ?? painelIndisponivel, cota: cota ?? (fixture ? criarCotaFixture() : (ponte.cota ?? cotaIndisponivel)), ocorrencias: ocorrencias ?? (fixture ? criarOcorrenciasFixture() : ocorrenciasIndisponivel) }
     }
     const fx = criarPainelFixture()
     return {

@@ -1,7 +1,7 @@
 // Preload do app Atlas: a ÚNICA ponte entre a tela (renderer) e o processo principal.
 //
 // O QUE FAZ: expõe window.atlasDesktop (contextIsolation ligado, sandbox ligado, SEM nodeIntegration). Só os namespaces
-// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra. Todo argumento vira String/boolean aqui e é
+// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota. Todo argumento vira String/boolean aqui e é
 // revalidado de novo no processo principal (main.cjs); o renderer nunca recebe caminho de origem, módulo Node nem Electron.
 //
 // COMO TESTAR (Windows): `npx electron app/main.cjs`, abrir as ferramentas do desenvolvedor e digitar `window.atlasDesktop`:
@@ -81,6 +81,10 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     entender: (pasta, pedido) => chamar('atlas:posobra:entender', String(pasta), JSON.parse(JSON.stringify(pedido ?? {}))),
     executar: (pasta, pedido, plano) => chamar('atlas:posobra:executar', String(pasta), JSON.parse(JSON.stringify(pedido ?? {})), JSON.parse(JSON.stringify(plano ?? {}))),
     historico: (pasta) => chamar('atlas:posobra:historico', String(pasta)),
+  },
+  cota: {
+    ler: (pasta) => chamar('atlas:cota:ler', String(pasta)),
+    retomar: (pasta) => chamar('atlas:cota:retomar', String(pasta)),
   },
   construcao: {
     planejar: (pasta, obraNome) => chamar('atlas:construcao:planejar', String(pasta), String(obraNome)),
