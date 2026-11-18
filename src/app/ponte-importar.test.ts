@@ -135,6 +135,29 @@ describe('fixture da porta', () => {
   })
 })
 
+describe('lixo do Mac e validação antes de gravar', () => {
+  test('.DS_Store e __MACOSX/ são ignorados em silêncio e não vão para a obra', async () => {
+    const f = criarImportarFixture()
+    f.fila.push({ nome: 'prototipo-atlas.zip', tamanho: 5000, entradas: [...pacoteExemplo().entradas, arquivoZip('.DS_Store', 10), arquivoZip('telas/.DS_Store', 10), arquivoZip('__MACOSX/telas/._01-inicio.html', 10), arquivoZip('__MACOSX/._x', 10)] })
+    const z = (await f.escolherZip())!
+    await f.validar(z.token)
+    const r = await f.receber('obra', z.token)
+    expect(r.arquivos).toHaveLength(pacoteExemplo().entradas.length)
+    expect(f.guardados.some((g) => /DS_Store|MACOSX|\._/.test(g))).toBe(false)
+  })
+  test('um .exe ainda recusa tudo, mesmo com lixo do Mac', () => {
+    expect(() => validarPacote([arquivoZip('.DS_Store', 1), arquivoZip('a.html'), arquivoZip('x.exe')], 1000)).toThrow('arquivo-nao-aceito')
+  })
+  test('validar não grava nem gasta o token; falha lança', async () => {
+    const f = criarImportarFixture()
+    f.fila.push({ nome: 'prototipo-atlas.zip', tamanho: 1000, entradas: [arquivoZip('a.html'), arquivoZip('x.exe')] })
+    const z = (await f.escolherZip())!
+    await expect(f.validar(z.token)).rejects.toThrow('arquivo-nao-aceito')
+    expect(f.guardados).toHaveLength(0)
+    await expect(f.validar('zip-99')).rejects.toThrow('token-invalido')
+  })
+})
+
 describe('conteúdo como dado', () => {
   test('o pedido ao Claude delimita o que veio de fora e leva a regra no topo', async () => {
     const f = criarImportarFixture()

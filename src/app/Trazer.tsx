@@ -28,6 +28,7 @@ const recadoDoErro = (e: unknown) => {
     case 'link-nao-aceito': return 'O .zip tem um jeito de guardar arquivos que não é seguro, então eu não abri. Peça para a outra IA gerar de novo.'
     case 'zip-vazio': return 'Esse .zip está vazio. Peça para a outra IA mandar de novo.'
     case 'ja-recebido': return 'Essa obra já tem um protótipo guardado. Use outro nome de obra.'
+    case 'indisponivel': return 'A importação ainda não está ligada neste computador. Quando estiver, este botão passa a funcionar; por enquanto, não há nada que você precise refazer.'
     default: return 'Não consegui receber esse arquivo agora. Tente de novo em instantes.'
   }
 }
@@ -63,6 +64,7 @@ export function TrazerPrototipo({ obras, importar, onVoltar, onConcluir }: Props
       const z = await importar.escolherZip()
       if (!z) return
       setZip(z)
+      await importar.validar(z.token) // só cria a pasta da obra se o pacote passar
       const { pasta } = await obras.criarSubpasta(nome.trim())
       setRecebido(await importar.receber(pasta, z.token))
     } catch (e) {

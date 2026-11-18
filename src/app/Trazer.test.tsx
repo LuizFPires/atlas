@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { TrazerPrototipo } from './Trazer'
 import { RECADO } from './trazer-dados'
-import { arquivoZip, criarImportarFixture, pacoteExemplo, type ImportarFixture } from './ponte-importar'
+import { arquivoZip, criarImportarFixture, importarIndisponivel, pacoteExemplo, type ImportarFixture } from './ponte-importar'
 import { criarObrasFixture } from './ponte-obras'
 
 const montar = (importar: ImportarFixture = criarImportarFixture()) => {
@@ -111,4 +111,26 @@ test('um .zip sem design-system.md nem regras.md aponta o que falta para o Claud
   expect(screen.getByText('Sem imagens nem logomarca')).toBeInTheDocument()
   expect(screen.queryByText('Faltou a tela de entrar (login)')).toBeNull()
   expect(screen.getByRole('button', { name: /Abrir no Atlas e ajustar/ })).toBeEnabled()
+})
+
+test('pacote recusado não deixa subpasta vazia da obra', async () => {
+  const importar = criarImportarFixture()
+  importar.fila.push({ nome: 'prototipo-atlas.zip', tamanho: 1000, entradas: [arquivoZip('a.html'), arquivoZip('instalar.exe')] })
+  const { user, obras } = montar(importar)
+  await user.type(screen.getByLabelText(/Nome da obra/), 'Teste')
+  await user.click(screen.getByRole('button', { name: /prototipo-atlas.zip: escolher arquivo/ }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não abri nada')
+  expect(obras.criadas).toHaveLength(0)
+})
+
+test('sem adaptador de importação: recado honesto, sem "tente de novo", e nenhuma pasta criada', async () => {
+  const obras = criarObrasFixture()
+  const user = userEvent.setup()
+  render(<TemaProvider><TrazerPrototipo obras={obras} importar={importarIndisponivel} onVoltar={vi.fn()} /></TemaProvider>)
+  await user.type(screen.getByLabelText(/Nome da obra/), 'Teste')
+  await user.click(screen.getByRole('button', { name: /prototipo-atlas.zip: escolher arquivo/ }))
+  const a = await screen.findByRole('alert')
+  expect(a).toHaveTextContent('A importação ainda não está ligada neste computador')
+  expect(a).not.toHaveTextContent('Tente de novo')
+  expect(obras.criadas).toHaveLength(0)
 })

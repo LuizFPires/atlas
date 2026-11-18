@@ -20,6 +20,7 @@
 //  5. Nomes seguros: nomeArquivoSeguro em cada nome de arquivo e de pasta; colisão resolvida com nomeLivre; nomes reservados do Windows.
 //  6. O CONTEÚDO (html, design-system.md, telas.md, regras.md) é DADO para o Claude: use montarPedidoCompletar (comoDado/blocoDoCliente
 //     + REGRA_CONTEUDO_CLIENTE) e rode o Claude sem permissão de escrever fora da pasta da obra nem de rodar comandos por causa dele.
+//  8. Lixo do Mac (.DS_Store, __MACOSX/) é ignorado em silêncio por validarPacote; o adaptador real também não o grava.
 //  7. O link do protótipo: só http/https, sem usuário/senha (normalizarLinkPrototipo). O app só o mostra; o adaptador real, se for
 //     checar se abre, faz no main com tempo-limite, sem seguir redirecionamento para endereço interno (SSRF).
 // Nunca guarda segredo.
@@ -97,6 +98,11 @@ export interface PonteImportar {
    * 'muitas-entradas' | 'zip-bomba' | 'compressao-suspeita' | 'arquivo-nao-aceito' | 'ja-recebido' | 'zip-vazio'.
    */
   receber(pasta: string, token: string): Promise<Recebido>
+  /**
+   * Valida o .zip escolhido (validarPacote) SEM gravar nada e SEM gastar o token. Quem chama só cria a subpasta da obra se passar,
+   * para uma falha não deixar pasta vazia. Mesmos erros de `receber`, menos 'ja-recebido'.
+   */
+  validar(token: string): Promise<void>
 }
 
 // ---- Caminho seguro -------------------------------------------------------------------------------------------------
@@ -126,13 +132,20 @@ export function caminhoNoPrototipo(raiz: string, pasta: string, destino: string)
 
 const EXECUTAVEL = /\.(exe|dll|bat|cmd|com|scr|msi|msp|ps1|psm1|vbs|vbe|wsf|wsh|lnk|url|jar|hta|cpl|reg|sh|app|dmg|apk|zip|rar|7z|iso|scf)$/i
 
+/** `.DS_Store` em qualquer pasta e tudo sob `__MACOSX/`. */
+export function ehLixoDoMac(nome: string): boolean {
+  return nome.startsWith('__MACOSX/') || nome.split('/').pop() === '.DS_Store'
+}
+
 export interface Aceita extends ArquivoRecebido { origem: string }
 
 /**
  * Confere TODAS as entradas antes de gravar qualquer coisa. Lança na primeira coisa suspeita (o pacote inteiro é recusado,
  * não "o que der"). Devolve onde cada arquivo vai ficar dentro de prototipo/.
  */
-export function validarPacote(entradas: readonly EntradaZip[], tamanhoZip: number): Aceita[] {
+export function validarPacote(todas: readonly EntradaZip[], tamanhoZip: number): Aceita[] {
+  // Lixo que o Finder do Mac põe no .zip: ignorado em silêncio (não conta, não é gravado, não recusa o pacote).
+  const entradas = todas.filter((e) => !ehLixoDoMac(e.nome))
   if (tamanhoZip > LIMITES.zip) throw new Error('grande-demais')
   if (entradas.length > LIMITES.entradas) throw new Error('muitas-entradas')
   let total = 0
@@ -253,6 +266,11 @@ export function criarImportarFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): Imp
       emAberto.set(token, p)
       return { nome: nomeArquivoSeguro(p.nome), tamanho: p.tamanho, token }
     },
+    async validar(token) {
+      const p = emAberto.get(token)
+      if (!p) throw new Error('token-invalido')
+      validarPacote(p.entradas, p.tamanho)
+    },
     async receber(pasta, token) {
       const p = emAberto.get(token)
       if (!p) throw new Error('token-invalido')
@@ -276,4 +294,5 @@ export function criarImportarFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): Imp
 export const importarIndisponivel: PonteImportar = {
   async escolherZip() { throw new Error('indisponivel') },
   async receber() { throw new Error('indisponivel') },
+  async validar() { throw new Error('indisponivel') },
 }
