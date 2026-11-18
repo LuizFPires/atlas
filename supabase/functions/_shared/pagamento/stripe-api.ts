@@ -11,6 +11,8 @@ export interface StripeApi {
   /** imediato=false → cancela só no fim do período já pago. */
   cancelarAssinatura(subId: string, imediato: boolean): Promise<{ encerra_em: Date | null }>
   reembolsar(paymentIntent: string, chaveIdempotencia: string): Promise<void>
+  /** Portal de cobrança da Stripe (trocar cartão/forma de pagamento) do cliente final. Devolve a URL https. */
+  criarPortalCobranca(clienteRef: string, urlRetorno: string): Promise<string>
 }
 
 /** Codifica objeto aninhado no formato form-urlencoded da Stripe: a[b][0]=c. */
@@ -59,6 +61,11 @@ export function criarStripeApi(chaveSecreta: string, fetchFn: FetchFn, base = 'h
         if ((e as { stripe?: string }).stripe === 'resource_missing') return { encerra_em: null }
         throw e
       }
+    },
+    async criarPortalCobranca(clienteRef, urlRetorno) {
+      const s = await chamar('POST', '/v1/billing_portal/sessions', { customer: clienteRef, return_url: urlRetorno })
+      if (typeof s.url !== 'string' || !s.url.startsWith('https://')) throw new ErroRegra('gateway_erro', 'Resposta inesperada do pagamento.', 502)
+      return s.url
     },
     async reembolsar(pi, idem) {
       try {

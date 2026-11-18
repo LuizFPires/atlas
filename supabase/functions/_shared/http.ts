@@ -12,6 +12,7 @@ import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts
 import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
+import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
 
 export interface Contexto {
   deps: Deps
@@ -20,6 +21,8 @@ export interface Contexto {
   pagamento?: DepsPagamento
   /** Cadastro pós-pagamento (M4) e e-mail de boas-vindas. Ausente = /cadastro responde 503. */
   cadastro?: DepsCadastro
+  /** Portal do cliente (M6, login próprio). Ausente = rotas /portal/* respondem 503. */
+  portal?: DepsPortal
   /** Origem do site (ex.: https://atlas-ia.app.br). Só ela recebe CORS; ausente = nenhuma origem de navegador. */
   origemWeb?: string
   /** Chamadas de serviço/admin (gerar link pós-compra, override). Conferido contra segredo do ambiente. */
@@ -44,7 +47,7 @@ export async function tratar(ctx: Contexto, req: Request): Promise<Response> {
   const origem = req.headers.get('Origin')
   const liberada = !!ctx.origemWeb && origem === ctx.origemWeb
   const cors: Record<string, string> = liberada
-    ? { 'Access-Control-Allow-Origin': origem, Vary: 'Origin', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '600' }
+    ? { 'Access-Control-Allow-Origin': origem, Vary: 'Origin', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Max-Age': '600' }
     : {}
   if (req.method === 'OPTIONS') return new Response(null, { status: liberada ? 204 : 403, headers: cors })
   const res = await tratarRota(ctx, req)
@@ -66,6 +69,31 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
     const s = (k: string) => (typeof b[k] === 'string' ? b[k] : '')
     // Credencial da ativação: SOMENTE o cabeçalho X-Atlas-Dispositivo (nunca o corpo, que pode ir para log).
     const dispositivo = req.headers.get('X-Atlas-Dispositivo') ?? ''
+    // Portal: o dono é SEMPRE o usuário do JWT (cabeçalho Authorization). Nada de id/e-mail do corpo.
+    if (rota.startsWith('/portal/')) {
+      if (!ctx.portal) return json({ erro: 'portal_indisponivel' }, 503)
+      const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
+      switch (rota) {
+        case '/portal/eu':
+          return json(await eu(ctx.portal, jwt))
+        case '/portal/conta':
+          return json(await conta(ctx.portal, jwt))
+        case '/portal/trocar/solicitar-codigo':
+          return json(await pedirCodigoTroca(ctx.portal, jwt, ipDe(req)))
+        case '/portal/trocar/desativar':
+          return json(await desativarComputador(ctx.portal, jwt, s('codigo')))
+        case '/portal/reenviar-acesso':
+          return json(await reenviarAcesso(ctx.portal, jwt))
+        case '/portal/compra/cancelar':
+          return json(await cancelarPeloPortal(ctx.portal, jwt, 'compra', (b as Record<string, unknown>).confirmar))
+        case '/portal/mensalidade/cancelar':
+          return json(await cancelarPeloPortal(ctx.portal, jwt, 'mensalidade', (b as Record<string, unknown>).confirmar))
+        case '/portal/forma-pagamento':
+          return json(await formaDePagamento(ctx.portal, jwt))
+        default:
+          return json({ erro: 'nao_encontrado' }, 404)
+      }
+    }
     switch (rota) {
       case '/link-instalacao':
         if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)

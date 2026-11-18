@@ -25,11 +25,21 @@ Deno.serve(async (req) => {
   const pagamento = { ...deps, segredos, stripe: (chave: string) => criarStripeApi(chave, fetch), enviarAvisoAtraso }
   // Cadastro pós-pagamento (M4). enviarBoasVindas monta o texto com montarBoasVindas (_shared/emails.ts); o envio real é do /entregar.
   const cadastro = { ...deps, enviarBoasVindas }
+  // Portal (M6, /conta): o JWT do Supabase Auth é validado NO SERVIDOR (GET /auth/v1/user com o token do cliente + chave anon);
+  // só vale com e-mail confirmado. O resto (dono, licença, ações) é decidido por portal.ts a partir dessa identidade.
+  const autenticarPortal = async (jwt) => {
+    const r = await fetch(`${Deno.env.get('SUPABASE_URL')}/auth/v1/user`, { headers: { Authorization: `Bearer ${jwt}`, apikey: Deno.env.get('SUPABASE_ANON_KEY') } })
+    if (!r.ok) return null
+    const u = await r.json()
+    return u?.id && u?.email && u?.email_confirmed_at ? { auth_user_id: u.id, email: u.email } : null
+  }
+  const portal = { ...pagamento, ...cadastro, autenticarPortal }
   return tratar(
     {
       deps,
       pagamento,
       cadastro,
+      portal,
       origemWeb: Deno.env.get('ATLAS_WEB_ORIGEM') ?? undefined,
       carregarKit: criarCarregarKit(),
       autorizarServico: (r) => r.headers.get('Authorization') === `Bearer ${servico}`,
