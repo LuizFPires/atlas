@@ -1,5 +1,6 @@
 // Item 4 — troca de computador: 1 a cada 7 dias, com override manual do admin.
 import { consumirCodigo } from './ativacao.ts'
+import { sha256, tokenAleatorio } from './cripto.ts'
 import { type Deps, ErroRegra, HASH_RE } from './tipos.ts'
 
 export const INTERVALO_TROCA_MS = 7 * 24 * 3600_000
@@ -24,12 +25,20 @@ export async function trocarComputador(d: Deps, a: { email: string; codigo: stri
     }
   }
   await consumirCodigo(d, cliente.id, 'troca', a.codigo)
-  const agora = d.agora()
-  await d.store.desativarAtivacao(atual.id, agora)
-  await d.store.inserirAtivacao(lic.id, a.novo_hash, agora)
-  await d.store.inserirTroca({ licenca_id: lic.id, de_hash: atual.computador_hash, para_hash: a.novo_hash, feita_em: agora, por_admin: override })
-  if (override) await d.store.salvarLicenca({ ...lic, troca_liberada_em: null })
-  return { ok: true }
+  const token_dispositivo = tokenAleatorio()
+  // Uma transação só (RPC trocar_computador): desativa a atual, cria a nova, registra a troca e zera o override.
+  const feita = await d.store.trocarAtivacao({
+    licenca_id: lic.id,
+    ativacao_atual_id: atual.id,
+    de_hash: atual.computador_hash,
+    para_hash: a.novo_hash,
+    token_hash: await sha256(token_dispositivo),
+    quando: d.agora(),
+    por_admin: override,
+    intervalo_ms: override ? 0 : INTERVALO_TROCA_MS,
+  })
+  if (!feita) throw new ErroRegra('troca_conflito', 'A troca não pôde ser concluída agora. Peça um novo código e tente de novo.', 409)
+  return { ok: true, token_dispositivo }
 }
 
 /** Override manual (admin, F16): libera uma troca fora do limite. A autenticação do admin é da borda HTTP. */

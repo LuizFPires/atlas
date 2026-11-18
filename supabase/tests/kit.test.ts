@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { entregarKit, marcaDagua, type CarregarKit } from '../functions/_shared/kit.ts'
-import { H1, H2, montar } from './helpers.ts'
+import { H1, H2, montar, TOKEN } from './helpers.ts'
 
 const fixture: CarregarKit = async () => [
   { caminho: '.claude/agents/arquiteto.md', conteudo: '# Arquiteto' },
@@ -13,8 +13,8 @@ const email = 'ana@loja.com'
 describe('/entregar-kit', () => {
   it('marca todos os arquivos, registra a entrega e proíbe cache', async () => {
     const m = montar()
-    await m.store.inserirAtivacao('l1', H1, m.deps.agora())
-    const r = await entregarKit(m.deps, fixture, { email, computador_hash: H1, obra_id: 'obra-1' })
+    await m.ativar()
+    const r = await entregarKit(m.deps, fixture, { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: 'obra-1' })
     expect(r.marca_dagua).toBe(await marcaDagua(m.deps, 'l1'))
     for (const f of r.arquivos) expect(f.conteudo).toContain(r.marca_dagua)
     expect(r.arquivos[0].conteudo).toContain('licenciado a Ana')
@@ -29,18 +29,34 @@ describe('/entregar-kit', () => {
     const outra = await marcaDagua({ ...m.deps, segredo: 'outro' }, 'l1')
     expect(outra).not.toBe(await marcaDagua(m.deps, 'l1'))
     expect(await marcaDagua(m.deps, 'l2')).not.toBe(await marcaDagua(m.deps, 'l1'))
-    await m.store.inserirAtivacao('l1', H1, m.deps.agora())
-    await entregarKit(m.deps, fixture, { email, computador_hash: H1, obra_id: 'o' })
+    await m.ativar()
+    await entregarKit(m.deps, fixture, { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: 'o' })
     expect(JSON.stringify(m.store.entregas)).not.toContain('Arquiteto')
+  })
+  it('JSON que não é objeto não sai sem marca: falha', async () => {
+    const m = montar()
+    await m.ativar()
+    for (const conteudo of ['[1,2]', '{quebrado', '"texto"']) {
+      const k: CarregarKit = async () => [{ caminho: 'x.json', conteudo }]
+      await expect(entregarKit(m.deps, k, { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: 'o' })).rejects.toMatchObject({ codigo: 'kit_invalido' })
+    }
+    expect(m.store.entregas).toHaveLength(0)
+  })
+  it('sem a credencial da ativação não entrega, sem detalhe do motivo', async () => {
+    const m = montar()
+    await m.ativar()
+    await expect(entregarKit(m.deps, fixture, { email, computador_hash: H1, token_dispositivo: 'errado', obra_id: 'o' })).rejects.toMatchObject({ codigo: 'negado', status: 403 })
+    await expect(entregarKit(m.deps, fixture, { email, computador_hash: H1, token_dispositivo: '', obra_id: 'o' })).rejects.toMatchObject({ codigo: 'negado' })
+    expect(m.store.entregas).toHaveLength(0)
   })
   it('nega sem licença liberada ou em outro computador, e obra inválida', async () => {
     const m = montar()
-    await m.store.inserirAtivacao('l1', H1, m.deps.agora())
-    await expect(entregarKit(m.deps, fixture, { email, computador_hash: H2, obra_id: 'o' })).rejects.toMatchObject({ status: 403 })
-    await expect(entregarKit(m.deps, fixture, { email, computador_hash: H1, obra_id: '../x' })).rejects.toMatchObject({ codigo: 'obra_invalida' })
+    await m.ativar()
+    await expect(entregarKit(m.deps, fixture, { email, computador_hash: H2, token_dispositivo: TOKEN, obra_id: 'o' })).rejects.toMatchObject({ status: 403 })
+    await expect(entregarKit(m.deps, fixture, { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: '../x' })).rejects.toMatchObject({ codigo: 'obra_invalida' })
     const p = montar('pausada')
-    await p.store.inserirAtivacao('l1', H1, p.deps.agora())
-    await expect(entregarKit(p.deps, fixture, { email, computador_hash: H1, obra_id: 'o' })).rejects.toMatchObject({ codigo: 'licenca_pausada' })
+    await p.ativar()
+    await expect(entregarKit(p.deps, fixture, { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: 'o' })).rejects.toMatchObject({ codigo: 'negado', status: 403 })
     expect(p.store.entregas).toHaveLength(0)
   })
 })

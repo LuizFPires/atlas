@@ -22,3 +22,8 @@ export async function validarLink(d: Deps, token: string) {
   if (l.expira_em <= d.agora()) throw new ErroRegra('link_expirado', 'Esse link venceu. Peça outro.', 410)
   return l
 }
+
+/** Consumo atômico do link (UPDATE ... WHERE usado_em IS NULL): dois pedidos em paralelo não passam os dois. */
+export async function consumirLinkOuFalha(d: Deps, id: string) {
+  if (!(await d.store.consumirLink(id, d.agora()))) throw new ErroRegra('link_usado', 'Esse link já foi usado. Peça outro.', 410)
+}

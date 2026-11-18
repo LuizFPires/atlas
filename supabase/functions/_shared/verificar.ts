@@ -1,54 +1,46 @@
-// Item 5 — /verificar: licença em dia + computador ativado, com tolerância curta offline.
-import { hmac } from './cripto.ts'
-import { type Deps, ErroRegra, HASH_RE, type Licenca } from './tipos.ts'
+// Item 5 — /verificar: licença em dia + computador ativado + credencial da ativação, com tolerância curta offline.
+// Fail-closed: só libera pelo que está na allowlist; qualquer outra coisa nega.
+import { assinarEd25519, iguais, sha256 } from './cripto.ts'
+import { type Deps, ErroRegra, HASH_RE } from './tipos.ts'
+import { payloadResposta, type RespostaVerificar } from './verificar-publico.ts'
+
+export type { RespostaVerificar } from './verificar-publico.ts'
 
 /** Por quanto tempo o app pode confiar na última resposta sem internet. Curto de propósito. */
 export const TOLERANCIA_OFFLINE_MS = 30 * 60_000
 
-export interface RespostaVerificar {
-  pode_construir: boolean
-  motivo: 'ok' | 'licenca_atrasada_pausa' | 'licenca_pausada' | 'licenca_cancelada' | 'computador_nao_ativado' | 'sem_licenca'
-  licenca_id: string | null
-  valido_ate: string
-  assinatura: string
-}
-
-const payload = (r: Pick<RespostaVerificar, 'pode_construir' | 'licenca_id' | 'valido_ate'>, hash: string) =>
-  `${r.pode_construir}|${r.licenca_id}|${hash}|${r.valido_ate}`
-
-async function montarResposta(d: Deps, hash: string, pode: boolean, motivo: RespostaVerificar['motivo'], lic: Licenca | null) {
+async function montarResposta(d: Deps, hash: string, pode: boolean, motivo: RespostaVerificar['motivo'], licencaId: string | null) {
   const base = {
     pode_construir: pode,
-    licenca_id: lic?.id ?? null,
+    motivo,
+    licenca_id: licencaId,
     valido_ate: new Date(d.agora().getTime() + TOLERANCIA_OFFLINE_MS).toISOString(),
   }
-  return { ...base, motivo, assinatura: await hmac(d.segredo, payload(base, hash)) } satisfies RespostaVerificar
+  return { ...base, assinatura: await assinarEd25519(d.chaveAssinatura, payloadResposta(base, hash)) } satisfies RespostaVerificar
 }
 
-export async function verificar(d: Deps, a: { email: string; computador_hash: string }): Promise<RespostaVerificar> {
+export async function verificar(
+  d: Deps,
+  a: { email: string; computador_hash: string; token_dispositivo: string },
+): Promise<RespostaVerificar> {
   if (!HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
+  const negar = () => montarResposta(d, a.computador_hash, false, 'negado', null)
   const cliente = await d.store.clientePorEmail(a.email.trim().toLowerCase())
   const lic = cliente && (await d.store.licencaDoCliente(cliente.id))
-  if (!lic) return montarResposta(d, a.computador_hash, false, 'sem_licenca', null)
-  if (lic.status === 'cancelada') return montarResposta(d, a.computador_hash, false, 'licenca_cancelada', lic)
-  if (lic.status === 'pausada') return montarResposta(d, a.computador_hash, false, 'licenca_pausada', lic)
-  if (lic.status === 'atrasada' && lic.pausa_prevista_em && lic.pausa_prevista_em <= d.agora()) {
-    return montarResposta(d, a.computador_hash, false, 'licenca_atrasada_pausa', lic)
-  }
+  if (!lic) return negar()
+  // Credencial: o segredo da ativação (só o hash fica guardado). Sem ela, negação genérica, sem detalhes.
   const ativa = await d.store.ativacaoAtiva(lic.id)
-  if (!ativa || ativa.computador_hash !== a.computador_hash) {
-    return montarResposta(d, a.computador_hash, false, 'computador_nao_ativado', lic)
-  }
-  // 'atrasada' dentro dos 7 dias de carência ainda constrói (aviso é do app/e-mail)
-  return montarResposta(d, a.computador_hash, true, 'ok', lic)
-}
+  const hashToken = await sha256(a.token_dispositivo || '-')
+  if (!ativa || ativa.computador_hash !== a.computador_hash || !ativa.token_hash || !iguais(hashToken, ativa.token_hash)) return negar()
 
-/**
- * Usado pelo app: decide se a última resposta guardada ainda vale sem internet.
- * Roda o mesmo HMAC; o segredo de verificação do app é o público/derivado (etapa do app, M posterior).
- */
-export async function respostaAindaVale(d: Deps, r: RespostaVerificar, hash: string): Promise<boolean> {
-  if (!r.pode_construir) return false
-  if (new Date(r.valido_ate) <= d.agora()) return false
-  return (await hmac(d.segredo, payload(r, hash))) === r.assinatura
+  if (lic.status === 'ativa') return montarResposta(d, a.computador_hash, true, 'ok', lic.id)
+  // 'atrasada' constrói só dentro da carência explícita (pausa_prevista_em no futuro).
+  if (lic.status === 'atrasada') {
+    if (lic.pausa_prevista_em && lic.pausa_prevista_em > d.agora()) return montarResposta(d, a.computador_hash, true, 'ok', lic.id)
+    if (lic.pausa_prevista_em) return montarResposta(d, a.computador_hash, false, 'licenca_atrasada_pausa', lic.id)
+    return negar() // atrasada sem pausa definida: fail-closed, motivo genérico
+  }
+  if (lic.status === 'pausada') return montarResposta(d, a.computador_hash, false, 'licenca_pausada', lic.id)
+  if (lic.status === 'cancelada') return montarResposta(d, a.computador_hash, false, 'licenca_cancelada', lic.id)
+  return negar() // status desconhecido
 }

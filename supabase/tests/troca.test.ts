@@ -8,10 +8,13 @@ const H3 = 'c'.repeat(64)
 
 async function comAtivacao() {
   const m = montar()
-  await m.store.inserirAtivacao('l1', H1, m.deps.agora())
+  await m.ativar()
   return m
 }
 async function codigoTroca(m: Awaited<ReturnType<typeof comAtivacao>>) {
+  // zera só os limites de emissão: aqui o foco é a regra de 7 dias (o limite de emissão tem teste próprio)
+  await m.store.limparEventos('emissao:ip:desconhecido')
+  await m.store.limparEventos('emissao:cliente:c1:troca')
   await solicitarCodigo(m.deps, 'ana@loja.com', 'troca')
   return m.emails[m.emails.length - 1]
 }
@@ -24,6 +27,7 @@ describe('troca de computador', () => {
     const ativos = m.store.ativacoes.filter((a) => a.ativo)
     expect(ativos).toHaveLength(1)
     expect(ativos[0].computador_hash).toBe(H2)
+    expect(ativos[0].token_hash).toMatch(/^[0-9a-f]{64}$/)
     expect(m.store.trocas[0]).toMatchObject({ de_hash: H1, para_hash: H2, por_admin: false })
   })
   it('bloqueia segunda troca em menos de 7 dias e libera depois', async () => {

@@ -23,13 +23,13 @@ export function aplicarMarca(a: ArquivoKit, nome: string, marca: string): Arquiv
   const av = aviso(nome, marca)
   const ext = a.caminho.slice(a.caminho.lastIndexOf('.')).toLowerCase()
   if (ext === '.json') {
-    try {
-      const o = JSON.parse(a.conteudo)
-      if (o && typeof o === 'object' && !Array.isArray(o)) {
-        return { ...a, conteudo: JSON.stringify({ _licenca: av, _marca: marca, ...o }, null, 2) }
-      }
-    } catch { /* JSON inválido: cai no rodapé abaixo */ }
-    return a
+    // Sem marca não há entrega: JSON inválido ou que não seja objeto quebraria o invariante da marca por cliente.
+    let o: unknown
+    try { o = JSON.parse(a.conteudo) } catch { o = null }
+    if (!o || typeof o !== 'object' || Array.isArray(o)) {
+      throw new ErroRegra('kit_invalido', 'Um arquivo do kit não pôde receber a marca do cliente.', 500)
+    }
+    return { ...a, conteudo: JSON.stringify({ _licenca: av, _marca: marca, ...o }, null, 2) }
   }
   if (['.js', '.cjs', '.mjs', '.ts', '.tsx'].includes(ext)) {
     return { ...a, conteudo: `// ${av}\nconst ATLAS_LICENCA = '${marca}'\n${a.conteudo}` }
@@ -42,11 +42,11 @@ export function aplicarMarca(a: ArquivoKit, nome: string, marca: string): Arquiv
 export async function entregarKit(
   d: Deps,
   carregar: CarregarKit,
-  a: { email: string; computador_hash: string; obra_id: string },
+  a: { email: string; computador_hash: string; token_dispositivo: string; obra_id: string },
 ) {
   if (!/^[\w.-]{1,80}$/.test(a.obra_id)) throw new ErroRegra('obra_invalida', 'Identificação da obra inválida.')
   const v = await verificar(d, a)
-  if (!v.pode_construir || !v.licenca_id) throw new ErroRegra(v.motivo, 'Sua licença não está liberada para construir agora.', 403)
+  if (!v.pode_construir || !v.licenca_id) throw new ErroRegra('negado', 'Não foi possível liberar o kit.', 403)
   const cliente = await d.store.clientePorEmail(a.email.trim().toLowerCase())
   const marca = await marcaDagua(d, v.licenca_id)
   const nome = cliente?.nome_tratamento ?? 'cliente'
