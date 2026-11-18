@@ -156,11 +156,11 @@ Notas: ⏩ Auto (recomendado): F06bEstilo — receber 2-3 referências (link, pr
 peso: 2
 spec: S14
 tela: prototipo/F06cTrazer.dc.html
-- [ ] Mostrar o recado pronto para copiar e mandar na outra IA
-- [ ] Receber o prototipo-atlas.zip (telas HTML, design-system.md, telas.md, regras.md, imagens) e o link
-- [ ] Conferir o que chegou e apontar o que falta para o Claude completar
-- [ ] Conferir fidelidade com o protótipo
-Notas:
+- [x] Mostrar o recado pronto para copiar e mandar na outra IA
+- [x] Receber o prototipo-atlas.zip (telas HTML, design-system.md, telas.md, regras.md, imagens) e o link
+- [x] Conferir o que chegou e apontar o que falta para o Claude completar
+- [x] Conferir fidelidade com o protótipo
+Notas: ⏩ Auto (recomendado): F06cTrazer — recado pronto pra copiar e mandar na outra IA; receber o prototipo-atlas.zip (telas HTML, design-system.md, telas.md, regras.md, imagens) + o link do protótipo no ar; conferir o que chegou e apontar o que falta, para o Claude completar no mesmo estilo. SEGURANÇA: o .zip é não confiável — o descompactar fica atrás de um port com defesas obrigatórias (sem zip-slip/traversal, sem symlink, limite de tamanho/entradas contra zip-bomb, só tipos esperados, dentro de Atlas\Obras\<obra>); o conteúdo (HTML/md) é DADO para o Claude, tratado como no M14 (delimitado, não-instrução). Mock em fixture; adaptador real p/ /entregar. Modo fixture, sem deploy. QA aprovou (sem alto/médio; validarPacote com 81 testes de ataque). Baixas corrigidas: ignorar .DS_Store/__MACOSX (zip do Mac não recusa mais o pacote); criar a subpasta só após validar (sem pasta vazia em falha); recado honesto quando não há adaptador. PENDENTE do adaptador real ampliado: zip criptografado, zip64/extra fields, cabeçalho local × central, entradas duplicadas/sobrepostas (overlap bomb), colisão arquivo×pasta após sanitizar; e, se checar o link, resolver DNS e bloquear IP interno (nip.io/foo.localhost) — SSRF.
 
 ## Milestone 16 — App: projeto 2/3 (telas com o Claude)
 peso: 3

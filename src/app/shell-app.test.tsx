@@ -51,10 +51,10 @@ test('impede o computador de dormir enquanto ativo e solta ao sair', async () =>
 
 const ativado = () => criarPonteFixture([], criarCofreMemoria({ [CHAVE_COFRE]: JSON.stringify({ token: 't', email: 'a@b.co', nome: 'Zé' }) }))
 
-test('em Minhas obras, "Já tenho um protótipo" leva ao encaminhamento do F06c e dá para voltar', async () => {
+test('em Minhas obras, "Já tenho um protótipo" leva à tela F06c (trazer o protótipo) e dá para voltar', async () => {
   montar(ativado())
   await userEvent.click(await screen.findByRole('button', { name: 'Já tenho um protótipo' }))
-  expect(screen.getByRole('heading', { name: /Que bom que você já começou/ })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: /Fez o protótipo em outra IA/ })).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: /Voltar/ }))
   expect(screen.getByRole('heading', { name: /Tudo pronto, Zé/ })).toBeInTheDocument()
 })
