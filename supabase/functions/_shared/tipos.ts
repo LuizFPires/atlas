@@ -130,7 +130,8 @@ export interface Store {
   licencaPorGateway(contaId: string, ref: { cliente?: string | null; assinatura?: string | null }): Promise<Licenca | null>
   /** Cria cliente+licença da compra paga; se o e-mail já tem licença, devolve a existente (idempotente). */
   criarCompra(c: NovaCompra): Promise<{ licenca: Licenca; nova: boolean }>
-  /** Upsert por (conta_gateway_id, gateway_ref). Devolve o status anterior (null = não existia). */
+  /** Upsert atômico por (conta_gateway_id, gateway_ref), condicional a status <> 'estornado' (estorno nunca é sobrescrito).
+   *  Devolve o status anterior lido na própria operação (null = não existia; 'estornado' = nada foi aplicado). */
   gravarPagamento(p: Pagamento): Promise<StatusPagamento | null>
   pagamentoPorRef(contaId: string, ref: string): Promise<Pagamento | null>
   pagamentosPorPi(contaId: string, pi: string): Promise<Pagamento[]>

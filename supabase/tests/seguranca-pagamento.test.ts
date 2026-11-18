@@ -175,4 +175,36 @@ describe('F — recompra depois do arrependimento', () => {
     await enviar(m, evento('checkout.session.async_payment_succeeded', sessao()))
     expect(m.store.licencas.find((l) => l.conta_gateway_id === CONTA)?.status).toBe('cancelada')
   })
+  it('nova desistência após recompra estorna só o pagamento da compra atual', async () => {
+    const m = montarPag()
+    await enviar(m, evento('checkout.session.completed', sessao()))
+    const lic = () => m.store.licencas.find((l) => l.conta_gateway_id === CONTA)!
+    // pagamento antigo ainda 'pago' (compra anterior) e um já estornado
+    await m.store.gravarPagamento({ licenca_id: lic().id, conta_gateway_id: CONTA, tipo: 'mensalidade', valor: 200, status: 'pago', gateway_ref: 'in_velho', gateway_pi: 'pi_velho', pago_em: m.deps.agora() })
+    m.avancar(2 * DIA)
+    await cancelarCompra(m.deps, 'bia@padaria.com') // estorna pi_1 e pi_velho
+    m.avancar(10 * DIA)
+    await m.store.gravarPagamento({ licenca_id: lic().id, conta_gateway_id: CONTA, tipo: 'mensalidade', valor: 200, status: 'pago', gateway_ref: 'in_antigo', gateway_pi: 'pi_antigo', pago_em: new Date(m.deps.agora().getTime() - 20 * DIA) })
+    await enviar(m, evento('checkout.session.completed', sessao({ id: 'cs_2', payment_intent: 'pi_novo' })))
+    m.chamadas.length = 0
+    expect(await cancelarCompra(m.deps, 'bia@padaria.com')).toEqual({ ok: true, estornados: 1 })
+    const pis = m.chamadas.filter((c) => c.url.endsWith('/v1/refunds')).map((c) => new URLSearchParams(c.body).get('payment_intent'))
+    expect(pis).toEqual(['pi_novo'])
+    expect(m.store.pagamentos.find((p) => p.gateway_ref === 'in_antigo')?.status).toBe('pago') // de compra anterior: intocado
+    expect(m.store.pagamentos.find((p) => p.gateway_ref === 'pi_novo')?.status).toBe('estornado')
+  })
+  it('estorno concorrente ao gravarPagamento: não reativa nem sobrescreve estornado com pago', async () => {
+    const m = montarPag()
+    await enviar(m, evento('checkout.session.completed', sessao()))
+    await cancelarCompra(m.deps, 'bia@padaria.com')
+    const lic = () => m.store.licencas.find((l) => l.conta_gateway_id === CONTA)!
+    // leitura prévia obsoleta (antes do estorno) não pode influenciar a decisão
+    m.store.pagamentoPorRef = async () => null
+    await enviar(m, evento('checkout.session.async_payment_succeeded', sessao()))
+    expect(lic().status).toBe('cancelada')
+    expect(m.store.pagamentos.find((p) => p.gateway_ref === 'pi_1')?.status).toBe('estornado')
+    // e o upsert condicional do store em si
+    expect(await m.store.gravarPagamento({ licenca_id: lic().id, conta_gateway_id: CONTA, tipo: 'implantacao', valor: 4800, status: 'pago', gateway_ref: 'pi_1', gateway_pi: 'pi_1', pago_em: m.deps.agora() })).toBe('estornado')
+    expect(m.store.pagamentos.find((p) => p.gateway_ref === 'pi_1')?.status).toBe('estornado')
+  })
 })

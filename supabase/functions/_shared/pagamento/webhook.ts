@@ -100,12 +100,16 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   })
   // Licença de outra conta (ou sem conta) para este e-mail: não grava nada nem mexe no estado dela.
   if (licenca.conta_gateway_id !== contaId) throw new ErroRegra('conta_divergente', 'Esse e-mail já tem licença em outra conta de pagamento.', 409)
-  const antes = await d.store.pagamentoPorRef(contaId, pi)
-  if (antes?.status === 'estornado') return // reentrega de compra já devolvida: não reativa
-  await d.store.gravarPagamento({ licenca_id: licenca.id, conta_gateway_id: contaId, tipo: 'implantacao', valor, status: 'pago', gateway_ref: pi, gateway_pi: pi, pago_em: agora })
+  // gravarPagamento é atômico (upsert condicional: nunca sobrescreve 'estornado') e devolve o estado anterior.
+  // A decisão de reativar usa SÓ esse resultado, não uma leitura prévia (um estorno concorrente não é desfeito).
+  const prev = await d.store.gravarPagamento({ licenca_id: licenca.id, conta_gateway_id: contaId, tipo: 'implantacao', valor, status: 'pago', gateway_ref: pi, gateway_pi: pi, pago_em: agora })
+  if (prev === 'estornado') {
+    await d.store.atualizarStatusPagamento(contaId, pi, 'estornado') // garantia: segue estornado; reentrega de compra devolvida não reativa
+    return
+  }
   if (licenca.status === 'cancelada') {
-    // Recompra depois do arrependimento/cancelamento: reativa com nova janela de 7 dias. O pagamento já foi gravado acima.
-    if (antes?.status !== 'pago') {
+    // Recompra depois do arrependimento/cancelamento: reativa com nova janela de 7 dias.
+    if (prev !== 'pago') {
       await d.store.atualizarLicencaSe(
         licenca.id,
         { status: 'ativa', comprada_em: agora, pausa_prevista_em: null, avisos_atraso: 0, mensalidade_encerra_em: null, gateway_assinatura_ref: null, gateway_cliente_ref: idDe(s.customer) ?? licenca.gateway_cliente_ref ?? null },

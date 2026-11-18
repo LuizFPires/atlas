@@ -31,7 +31,8 @@ export async function cancelarCompra(d: DepsPagamento, email: string) {
   const api = await apiDaLicenca(d, lic)
   // Primeiro o gateway (falha aqui não muda nada no nosso lado e dá para repetir: as chamadas são idempotentes).
   if (lic.gateway_assinatura_ref) await api.cancelarAssinatura(lic.gateway_assinatura_ref, true)
-  const pagos = (await d.store.pagamentosDa(lic.id)).filter((p) => p.status === 'pago')
+  // Só a compra atual: pagamentos de compras anteriores (antes de uma recompra) nunca são devolvidos aqui.
+  const pagos = (await d.store.pagamentosDa(lic.id)).filter((p) => p.status === 'pago' && !!p.pago_em && p.pago_em >= compra)
   const pis = [...new Set(pagos.map((p) => p.gateway_pi).filter((x): x is string => !!x))]
   for (const pi of pis) await api.reembolsar(pi, `arrependimento-${lic.id}-${pi}`)
   for (const p of pagos) await d.store.atualizarStatusPagamento(p.conta_gateway_id, p.gateway_ref, 'estornado')

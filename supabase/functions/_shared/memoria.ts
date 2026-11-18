@@ -131,6 +131,7 @@ export class StoreMemoria implements Store {
     const i = this.pagamentos.findIndex((x) => x.conta_gateway_id === p.conta_gateway_id && x.gateway_ref === p.gateway_ref)
     if (i < 0) { this.pagamentos.push({ ...p }); return null }
     const antes = this.pagamentos[i].status
+    if (antes === 'estornado' && p.status !== 'estornado') return antes // upsert condicional: WHERE status <> 'estornado'
     this.pagamentos[i] = { ...p }
     return antes
   }
