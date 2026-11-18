@@ -87,8 +87,9 @@ export function normalizarResposta(bruto: unknown): RespostaAjuda {
     return t
   }
   // Defesa em profundidade: qualquer sinal de gente em QUALQUER campo troca a resposta inteira.
+  // Checa o texto NORMALIZADO (o que será mostrado: sem invisíveis, linhas juntas) e também o cru sem invisíveis.
   const campos = [o.texto, o.depois, ...(Array.isArray(o.passos) ? o.passos : []), ...(Array.isArray(o.traducoes) ? o.traducoes.flatMap((t) => (t && typeof t === 'object' ? Object.values(t) : [])) : [])]
-  if (campos.some((c) => typeof c === 'string' && prometeHumano(c))) return { texto: RECADO_SEM_HUMANO }
+  if (campos.some((c) => typeof c === 'string' && (prometeHumano(c) || prometeHumano(textoDaObra(c, 100000)) || prometeHumano(c.replace(/[\p{Cc}\p{Cf}]/gu, ''))))) return { texto: RECADO_SEM_HUMANO }
   const texto = limpa(o.texto, 800) || RECADO_SEM_HUMANO
   const passos = (Array.isArray(o.passos) ? o.passos : []).slice(0, 4).map((p) => limpa(p, 220)).filter(Boolean)
   const traducoes = (Array.isArray(o.traducoes) ? o.traducoes : []).slice(0, 4)

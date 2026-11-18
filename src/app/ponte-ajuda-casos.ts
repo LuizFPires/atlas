@@ -12,14 +12,19 @@ export function tirarSegredos(t: string): string {
     .replace(/\b(?:sk|pk|rk|ghp|gho|ghu|ghs|github_pat|xox[baprs]|AKIA|EAA)[-_A-Za-z0-9]{8,}/g, '[segredo]')
     .replace(/\beyJ[\w-]{10,}(?:\.[\w-]{5,})*/g, '[segredo]')
     .replace(/\bBearer\s+\S+/gi, 'Bearer [segredo]')
-    // palavra-gatilho: apaga TUDO dali até o fim da frase (melhor apagar demais do que vazar)
-    .replace(/\b(senha|password|passwd|pass|chave|key|token|segredo|secret|cpf|cnpj|cart[ãa]o|card|c[óo]digo|code|pin|cookie)\b(?:[^\n.!?]|[.!?](?!\s|$))*/gi, '$1 [segredo]')
-    .replace(/\b(?:\d[ -]?){13,19}\b/g, '[segredo]')
+    // chave=valor genérico (DB_PASSWORD=x, api key: z, access-token: y); o valor pode vir após um newline
+    .replace(/[\w-]*(?:key|token|secret|pass(?:word|wd)?|senha|chave)[\w-]*[ \t]*[:=][ \t]*\n?[ \t]*\S+/gi, '[segredo]')
+    // "<valor> como/de senha": apaga também o valor que vem ANTES do gatilho
+    .replace(/\S+\s+(?:como|de|é a|e a)\s+(?=(?:senha|password|passwd|pass|chave|token|segredo|secret|pin)(?![A-Za-zÀ-ÿ]))/gi, '[segredo] ')
+    // palavra-gatilho: apaga TUDO dali até o fim da frase (melhor apagar demais do que vazar); atravessa newline logo após a palavra
+    .replace(/(?<![A-Za-zÀ-ÿ])(senha|password|passwd|pass|chave|api[_ -]?key|access[_ -]?token|secret[_ -]?key|auth[_ -]?token|key|token|segredo|secret|cpf|cnpj|cart[ãa]o|card|c[óo]digo|code|pin|cookie)(?![A-Za-zÀ-ÿ])(?:\s*\n\s*\S+|(?:[^\n.!?]|[.!?](?!\s|$))*)/gi, '$1 [segredo]')
+    .replace(/\b\d(?:[ -]?\d){12,18}\b/g, '[segredo]')
     .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[e-mail]')
     .replace(/\b[A-Fa-f0-9]{32,}\b/g, '[segredo]')
     .replace(/\b[A-Za-z0-9+/_=-]{40,}\b/g, '[segredo]')
     .replace(/(https?:\/\/[^\s?#]*)[?#]\S*/gi, '$1?…')
     .replace(/[?&#][\w.-]+=\S*/g, '?…')
+    .replace(/([?#])\S+/g, '$1…')
 }
 
 export type MotivoCaso = 'ainda-nao-deu' | 'sem-saida' | 'fechou-sem-resolver'

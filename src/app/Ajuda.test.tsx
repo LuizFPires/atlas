@@ -68,4 +68,20 @@ describe('fix m25 — humano e segredo', () => {
     expect(tirarSegredos('Será que funciona? Vou tentar de novo')).toBe('Será que funciona? Vou tentar de novo')
     expect(tirarSegredos('abra https://x.com/a?code=123')).not.toContain('123')
   })
+  it('redige segredo com separador, chave=valor e newline, sem vazar nada', async () => {
+    const { tirarSegredos } = await import('./ponte-ajuda-casos')
+    for (const [f, v] of [['DB_PASSWORD=x9y8z7', 'x9y8z7'], ['API_KEY=abc123q', 'abc123q'], ['SECRET_KEY=qwe456r', 'qwe456r'], ['access_token: yyy777', 'yyy777'], ['api key: zzz888', 'zzz888'], ['senha\nhunter2', 'hunter2'], ['password:\nhunter3', 'hunter3'], ['digitei hunter2 como senha', 'hunter2'], ['meu token-de-acesso=ttt999', 'ttt999']])
+      expect(tirarSegredos(f)).not.toContain(v)
+    expect(tirarSegredos('o erro 4111111111111111 apareceu')).toBe('o erro [segredo] apareceu')
+  })
+  it('qualquer token com ? ou # perde o resto', async () => {
+    const { tirarSegredos } = await import('./ponte-ajuda-casos')
+    expect(tirarSegredos('veja a?xyz987 agora')).not.toContain('xyz987')
+    expect(tirarSegredos('veja pagina#frag654 agora')).not.toContain('frag654')
+  })
+  it('promessa de humano escondida por invisível ou quebra de linha vira o recado', () => {
+    for (const f of ['espe\u200bcialista', 'fale\nconosco', 'espe\u00adcia\u2060lista', 'wha\u200btsapp'])
+      for (const r of [{ texto: f }, { texto: 'Ok.', passos: [f] }, { texto: 'Ok.', depois: f }, { texto: 'Ok.', traducoes: [{ en: 'a', pt: f }] }])
+        expect(normalizarResposta(r)).toEqual({ texto: RECADO_SEM_HUMANO })
+  })
 })
