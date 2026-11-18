@@ -121,17 +121,17 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Idem para conferir nomes parecidos e endereço livre (consulta pública): sem adaptador real, não finge que conferiu.
   // Idem para o plano da obra e o modo (automático ou passo a passo): o mesmo armazém de preferências é o que o painel da obra (M19) lê.
   const pontesModo = useMemo(() => {
-    const m = modos ?? (modoFixture() ? criarModoObraFixture() : modoObraIndisponivel)
-    return { modos: m, construcao: construcao ?? (modoFixture() ? criarConstrucaoFixture(m, ponteObras.raiz()) : construcaoIndisponivel) }
-  }, [modos, construcao, ponteObras])
+    const m = modos ?? (modoFixture() ? criarModoObraFixture() : (ponte.modos ?? modoObraIndisponivel))
+    return { modos: m, construcao: construcao ?? (modoFixture() ? criarConstrucaoFixture(m, ponteObras.raiz()) : (ponte.construcao ?? construcaoIndisponivel)) }
+  }, [modos, construcao, ponteObras, ponte])
 
   // Idem para o painel da obra (PLAN.md, prazo, canteiro 3D): sem adaptador real, não finge andamento.
   // Cota do plano (F10) e ocorrências (F11) andam junto do painel: no fixture, esgotar a cota ou abrir uma ocorrência liga e desliga
   // a parada correspondente do mesmo painel. Sem adaptador real, nada é fingido.
   const pontesObra = useMemo(() => {
-    if (painel || !modoFixture()) {
+    if (painel || ponte.painel || !modoFixture()) {
       const fixture = modoFixture()
-      return { painel: painel ?? painelIndisponivel, cota: cota ?? (fixture ? criarCotaFixture() : cotaIndisponivel), ocorrencias: ocorrencias ?? (fixture ? criarOcorrenciasFixture() : ocorrenciasIndisponivel) }
+      return { painel: painel ?? ponte.painel ?? painelIndisponivel, cota: cota ?? (fixture ? criarCotaFixture() : cotaIndisponivel), ocorrencias: ocorrencias ?? (fixture ? criarOcorrenciasFixture() : ocorrenciasIndisponivel) }
     }
     const fx = criarPainelFixture()
     return {
@@ -139,7 +139,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
       cota: cota ?? criarCotaFixture((esgotada) => fx.simular.pararPor(esgotada ? 'cota' : null)),
       ocorrencias: ocorrencias ?? criarOcorrenciasFixture((precisa) => fx.simular.pararPor(precisa ? 'voce' : null)),
     }
-  }, [painel, cota, ocorrencias])
+  }, [painel, cota, ocorrencias, ponte])
   const pontePainel = pontesObra.painel
   const ponteCota = pontesObra.cota
   const ponteOcorrencias = pontesObra.ocorrencias
@@ -147,10 +147,10 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Retomar (F12): detecta a obra em andamento e religa a linha por PontePainel/PonteCota. No fixture, sem obra informada, não há nada em andamento.
   const ponteRetomar = useMemo<PonteRetomar>(() => {
     if (retomar) return retomar
-    if (!modoFixture()) return retomarIndisponivel
+    if (!modoFixture()) return ponte.retomar ?? retomarIndisponivel
     const base = criarRetomarFixture(null)
     return { obraEmAndamento: base.obraEmAndamento, continuar: (o) => religarLinha({ painel: pontePainel, cota: ponteCota }, o.pasta) }
-  }, [retomar, pontePainel, ponteCota])
+  }, [retomar, pontePainel, ponteCota, ponte])
 
   // Publicação (Vercel, Registro.br, lojas): pagamentos e "Enviar para revisão" são do cliente; sem adaptador real, não finge que publicou.
   const pontePublicar = useMemo<PontePublicar>(() => publicar ?? (modoFixture() ? criarPublicarFixture() : publicarIndisponivel), [publicar])

@@ -9,6 +9,10 @@ const { criarCofre } = require('./cofre.cjs')
 const { criarObras } = require('./adaptadores/obras.cjs')
 const { criarArquivos } = require('./adaptadores/arquivos.cjs')
 const { criarClaude } = require('./adaptadores/claude.cjs')
+const { criarModo } = require('./adaptadores/modo.cjs')
+const { criarConstrucao } = require('./adaptadores/construcao.cjs')
+const { criarPainel } = require('./adaptadores/painel.cjs')
+const { criarRetomar } = require('./adaptadores/retomar.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -19,6 +23,11 @@ let janelaPrincipal = null
 const obras = criarObras({ shell })
 const arquivos = criarArquivos({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
 const claude = criarClaude({ shell })
+const modos = criarModo({ raiz: obras.raiz() })
+const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: process.env.ATLAS_KIT_PLUGIN || null, dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado') })
+const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
+// cota: sem adaptador real ainda (pendente); sem ele o Retomar só liga a linha por painel.continuar.
+const retomar = criarRetomar({ raiz: obras.raiz(), painel, construcao })
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -58,6 +67,30 @@ handle('atlas:claude:site', (alvo) => claude.abrirSite(String(alvo)))
 handle('atlas:claude:estado', () => claude.estado())
 handle('atlas:claude:renovar', () => claude.renovarConexao())
 
+// Modo da obra (automático | passo a passo): <obra>\.atlas\modo.json.
+handle('atlas:modos:ler', (pasta) => modos.ler(String(pasta)))
+handle('atlas:modos:gravar', (pasta, modo) => modos.gravar(String(pasta), String(modo)))
+
+// Planejar e iniciar a construção (PLAN.md + linha de produção do kit na pasta da obra).
+handle('atlas:construcao:planejar', (pasta, nome) => construcao.planejar(String(pasta), String(nome)))
+handle('atlas:construcao:iniciar', (pasta, nome, modo, etapas) => construcao.iniciar(String(pasta), String(nome), String(modo), Array.isArray(etapas) ? etapas : []))
+
+// Painel da obra: andamento, pausa/continua, OK da etapa, modo, canteiro 3D (só 127.0.0.1) e versão de teste.
+handle('atlas:painel:ler', (pasta) => painel.ler(String(pasta)))
+handle('atlas:painel:pausar', (pasta) => painel.pausar(String(pasta)))
+handle('atlas:painel:continuar', (pasta) => painel.continuar(String(pasta)))
+handle('atlas:painel:aprovar', (pasta) => painel.aprovarEtapa(String(pasta)))
+handle('atlas:painel:modo', (pasta, modo) => painel.aplicarModo(String(pasta), String(modo)))
+ipcMain.on('atlas:painel:endereco', (e, pasta) => { e.returnValue = confiavel(e) ? painel.enderecoCanteiro(String(pasta)) : null })
+handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
+
+// Retomar (F12): obra em andamento ao abrir o app e "Continuar obra".
+handle('atlas:retomar:andamento', () => retomar.obraEmAndamento())
+handle('atlas:retomar:continuar', (pasta) => retomar.continuar({ pasta: String(pasta) }))
+
+// Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois).
+app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })
+
 // O computador é o canteiro: durante a obra ele não pode dormir.
 handle('atlas:sono', (ligado) => {
   if (ligado && bloqueio === null) bloqueio = powerSaveBlocker.start('prevent-app-suspension')
@@ -69,7 +102,11 @@ function abrir() {
   // src/app/tela.ts (telaInicial). Para desligar: Configurações → Abrir com o Windows (a tela F12 avisa o cliente).
   app.setLoginItemSettings({ openAtLogin: true })
   // Microfone liberado só para o próprio app (tudo pode ser falado).
-  session.defaultSession.setPermissionRequestHandler((_wc, permissao, ok) => ok(permissao === 'media'))
+  // Só a página do próprio app (file:// dentro de dist-app) recebe o microfone; iframes/outras origens não.
+  const origemDoApp = require('node:url').pathToFileURL(path.join(__dirname, '..', 'dist-app') + path.sep).href
+  const doApp = (url) => typeof url === 'string' && url.startsWith(origemDoApp)
+  session.defaultSession.setPermissionRequestHandler((wc, permissao, ok, detalhes) => ok(permissao === 'media' && doApp(wc.getURL()) && doApp((detalhes && detalhes.requestingUrl) || wc.getURL())))
+  session.defaultSession.setPermissionCheckHandler((wc, permissao, origem) => permissao === 'media' && doApp((wc && wc.getURL()) || '') && String(origem).startsWith('file://'))
   const janela = new BrowserWindow({
     width: 1100, height: 780, backgroundColor: '#141619', title: 'Atlas',
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },

@@ -3,7 +3,7 @@
 // O QUE FAZ:
 //  1. caminhoSeguro / criarArquivoExclusivo / copiarExclusivo: tudo dentro de uma raiz (Atlas\Obras), sem symlink, sem sobrescrever.
 //  2. abrirExterno: shell.openExternal só para hosts oficiais da allowlist (nunca URL vinda de dado).
-//  3. executarClaude: roda o Claude Code CLI de forma controlada (spawn, args fixos, sem shell, timeout, saída limitada).
+//  3. executarClaude / iniciarClaudeEmFluxo: roda o Claude Code CLI de forma controlada (spawn, args fixos, sem shell, timeout, saída limitada).
 //
 // COMO TESTAR (Windows): `node -e "const s=require('./app/seguro.cjs'); console.log(s.caminhoSeguro('C:/r','a/b'))"`;
 // tentar '..' ou um link simbólico dentro da raiz deve lançar 'caminho-fora-da-raiz' / 'caminho-com-link'.
@@ -23,6 +23,16 @@ function criarArquivoExclusivo(caminho, conteudo) {
 function copiarExclusivo(origem, destino) {
   if (fs.lstatSync(origem).isSymbolicLink()) throw new Error('origem-com-link')
   fs.copyFileSync(origem, destino, fs.constants.COPYFILE_EXCL)
+}
+
+/** Variáveis que um processo-filho (Claude, canteiro) realmente precisa. Nada de chaves/tokens do ambiente do app. */
+const ENV_PERMITIDAS = ['PATH', 'PATHEXT', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'USERPROFILE', 'HOME', 'HOMEDRIVE', 'HOMEPATH', 'APPDATA', 'LOCALAPPDATA', 'TEMP', 'TMP', 'PROGRAMDATA', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PROGRAMW6432', 'USERNAME', 'COMPUTERNAME', 'OS', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS', 'LANG', 'TERM', 'HTTPS_PROXY', 'HTTP_PROXY', 'NO_PROXY', 'SSL_CERT_FILE', 'NODE_EXTRA_CA_CERTS', 'CLAUDE_CODE_GIT_BASH_PATH', 'ATLAS_CLAUDE_EXE']
+
+/** Ambiente MÍNIMO para filhos: só ENV_PERMITIDAS (comparação sem diferenciar maiúsculas, como o Windows) + `extra`. */
+function envMinimo(extra = {}, origem = process.env) {
+  const out = {}
+  for (const k of Object.keys(origem)) if (ENV_PERMITIDAS.includes(k.toUpperCase()) && typeof origem[k] === 'string') out[k] = origem[k]
+  return { ...out, ...extra }
 }
 
 /** shell.openExternal só para host oficial. `shell` vem do chamador (facilita teste). */
@@ -85,4 +95,53 @@ function executarClaude(args, { cwd, entrada, timeoutMs = 30_000, maxSaida = 1_0
   })
 }
 
-module.exports = { caminhoSeguro, criarArquivoExclusivo, copiarExclusivo, HOSTS_OFICIAIS, urlOficial, abrirExterno, executarClaude, resolverClaude }
+/**
+ * Roda o Claude Code CLI de forma LONGA (a linha de produção), entregando a saída linha a linha em `onLinha`. Mesmas regras de
+ * executarClaude: args fixos, sem shell, texto só por stdin. Sem timeout (a obra dura horas); quem manda parar é `parar()`,
+ * que derruba a árvore inteira de processos (no Windows, taskkill /T). Lança 'claude-nao-instalado' se não achar o CLI.
+ * Devolve { parar, fim }; `fim` resolve { codigo, erro, parado } e NUNCA rejeita.
+ */
+function iniciarClaudeEmFluxo(args, { cwd, entrada, env = process.env, resolvido, onLinha = () => {}, maxLinha = 200_000 } = {}) {
+  if (!Array.isArray(args) || args.some((a) => typeof a !== 'string' || /[\r\n\0]/.test(a))) throw new Error('args-invalidos')
+  const r = resolvido || resolverClaude(env)
+  if (!r) throw new Error('claude-nao-instalado')
+  let filho
+  try { filho = spawn(r.cmd, [...r.prefixo, ...args], { cwd, env: r.env, windowsHide: true, shell: false, stdio: ['pipe', 'pipe', 'pipe'] }) } catch (e) {
+    throw new Error(e && e.code === 'ENOENT' ? 'claude-nao-instalado' : 'claude-falhou')
+  }
+  let parado = false
+  let resto = ''
+  let err = ''
+  const fim = new Promise((resolve) => {
+    let feito = false
+    const acabar = (codigo) => {
+      if (feito) return
+      feito = true
+      if (resto.trim()) { try { onLinha(resto.slice(0, maxLinha)) } catch { /* quem escuta não derruba a linha */ } }
+      resolve({ codigo, erro: err, parado })
+    }
+    filho.stdout.on('data', (d) => {
+      resto += d
+      let i
+      while ((i = resto.indexOf('\n')) >= 0) {
+        const linha = resto.slice(0, i); resto = resto.slice(i + 1)
+        if (linha.trim()) { try { onLinha(linha.slice(0, maxLinha)) } catch { /* idem */ } }
+      }
+      if (resto.length > maxLinha) resto = '' // linha monstruosa: descarta
+    })
+    filho.stderr.on('data', (d) => { err = (err + d).slice(-4000) })
+    filho.on('error', () => acabar(null))
+    filho.stdin.on('error', () => {}) // EPIPE: o fim chega por 'close'
+    filho.on('close', (codigo) => acabar(codigo))
+  })
+  try { if (typeof entrada === 'string') filho.stdin.end(entrada); else filho.stdin.end() } catch { /* idem */ }
+  const parar = () => {
+    parado = true
+    if (process.platform === 'win32' && filho.pid) {
+      try { require('node:child_process').execFile('taskkill', ['/pid', String(filho.pid), '/T', '/F'], { windowsHide: true }, () => {}) } catch { filho.kill() }
+    } else filho.kill()
+  }
+  return { parar, fim }
+}
+
+module.exports = { envMinimo, caminhoSeguro, criarArquivoExclusivo, copiarExclusivo, HOSTS_OFICIAIS, urlOficial, abrirExterno, executarClaude, iniciarClaudeEmFluxo, resolverClaude }
