@@ -3,14 +3,14 @@ import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { PosObra } from './PosObra'
 import { criarArquivosFixture } from './ponte-arquivos'
-import { criarPosObraFixture, montarPedidoPosObra } from './ponte-posobra'
+import { SemLicencaError, criarLicencaApi, criarLicencaFixture, criarPosObraFixture, executarComLicenca, licencaIndisponivel, montarPedidoPosObra, type PonteLicenca } from './ponte-posobra'
 import { REGRA_CONTEUDO_CLIENTE } from './ponte-estilo'
 
 const obra = { nome: 'Agenda da Barbearia do Zé', pasta: 'agenda-da-barbearia-do-ze' }
 const montar = (p: Partial<React.ComponentProps<typeof PosObra>> = {}) => {
   const user = userEvent.setup()
   const arquivos = criarArquivosFixture()
-  render(<TemaProvider><PosObra obra={obra} posobra={criarPosObraFixture()} arquivos={arquivos} {...p} /></TemaProvider>)
+  render(<TemaProvider><PosObra obra={obra} posobra={criarPosObraFixture()} licenca={criarLicencaFixture()} arquivos={arquivos} {...p} /></TemaProvider>)
   return { user, arquivos }
 }
 
@@ -87,4 +87,67 @@ test('só com print (sem texto) também dá para pedir', async () => {
   await screen.findByText(/Vai junto/)
   await user.click(screen.getByRole('button', { name: 'Enviar para o Claude' }))
   expect(await screen.findByText('O CLAUDE ENTENDEU ASSIM')).toBeInTheDocument()
+})
+
+const pedirEAprovar = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.type(screen.getByRole('textbox'), 'Nos feriados a barbearia fecha.')
+  await user.click(screen.getByRole('button', { name: 'Enviar para o Claude' }))
+  await screen.findByText('O CLAUDE ENTENDEU ASSIM')
+  await user.click(screen.getByRole('button', { name: 'Pode fazer' }))
+}
+
+test('com licença em dia: confere a licença, roda a correção e vai para o histórico como versão de teste', async () => {
+  const posobra = criarPosObraFixture()
+  const licenca = criarLicencaFixture()
+  const { user } = montar({ posobra, licenca })
+  await pedirEAprovar(user)
+  expect(await screen.findByText(/Combinado! Comecei/)).toBeInTheDocument()
+  expect(licenca.chamadas).toBe(1)
+  expect(posobra.executados).toHaveLength(1)
+  expect(posobra.executados[0].texto).toContain('feriados')
+  expect(await screen.findAllByText('Para conferir')).toHaveLength(2)
+})
+
+test.each(['atrasada', 'pausada', 'cancelada', 'negado', 'sem-conexao', 'indisponivel'] as const)('sem licença em dia (%s): NÃO roda e mostra um recado calmo', async (motivo) => {
+  const posobra = criarPosObraFixture()
+  const { user } = montar({ posobra, licenca: criarLicencaFixture(motivo) })
+  await pedirEAprovar(user)
+  const recado = await screen.findByRole('status')
+  expect(recado.textContent).toMatch(/licen|internet|portal/i)
+  expect(recado.textContent).not.toMatch(/atendente|ligue|telefone|suporte humano/i)
+  expect(posobra.executados).toHaveLength(0)
+  // O pedido continua ali: o cliente não perde o que escreveu.
+  expect(screen.getByRole('textbox')).toHaveValue('Nos feriados a barbearia fecha.')
+})
+
+test('executarComLicenca: licença que dá erro ou trava nega; o pipeline nunca é chamado', async () => {
+  const posobra = criarPosObraFixture()
+  const quebrada: PonteLicenca = { verificar: async () => { throw new Error('rede') } }
+  const plano = { entendi: 'x', passos: [], minutos: 1 }
+  await expect(executarComLicenca(quebrada, posobra, 'p', { tipo: 'mudar', texto: 'a', prints: [] }, plano)).rejects.toBeInstanceOf(SemLicencaError)
+  await expect(executarComLicenca(licencaIndisponivel, posobra, 'p', { tipo: 'mudar', texto: 'a', prints: [] }, plano)).rejects.toMatchObject({ motivo: 'indisponivel' })
+  expect(posobra.executados).toHaveLength(0)
+})
+
+const ponteFalsa = { cofre: { guardar: async () => {}, apagar: async () => {}, ler: async () => JSON.stringify({ token: 'seg', email: 'ze@x.com', nome: 'Zé' }) }, hashComputador: async () => 'f'.repeat(64) }
+const resposta = (corpo: object, status = 200) => Promise.resolve(new Response(JSON.stringify(corpo), { status }))
+const comFetch = (fn: () => Promise<Response>) => criarLicencaApi(ponteFalsa, 'https://api.x', fn as unknown as typeof fetch).verificar()
+
+test('adaptador real da licença: liga no /verificar com o token só no cabeçalho; só "ok" libera', async () => {
+  const f = vi.fn(() => resposta({ pode_construir: true, motivo: 'ok' }))
+  expect(await criarLicencaApi(ponteFalsa, 'https://api.x/', f as unknown as typeof fetch).verificar()).toEqual({ ok: true })
+  const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]
+  expect(url).toBe('https://api.x/verificar')
+  expect((init.headers as Record<string, string>)['X-Atlas-Dispositivo']).toBe('seg')
+  expect(String(init.body)).not.toContain('seg')
+  const motivo = (m: string) => comFetch(() => resposta({ pode_construir: false, motivo: m }))
+  expect(await motivo('licenca_pausada')).toEqual({ ok: false, motivo: 'pausada' })
+  expect(await motivo('licenca_atrasada_pausa')).toEqual({ ok: false, motivo: 'atrasada' })
+  expect(await motivo('licenca_cancelada')).toEqual({ ok: false, motivo: 'cancelada' })
+  expect(await motivo('qualquer')).toEqual({ ok: false, motivo: 'negado' })
+  // pode_construir verdadeiro com motivo estranho: nega (fail-closed).
+  expect(await comFetch(() => resposta({ pode_construir: true, motivo: 'x' }))).toEqual({ ok: false, motivo: 'negado' })
+  expect(await comFetch(() => resposta({}, 500))).toEqual({ ok: false, motivo: 'negado' })
+  expect(await comFetch(() => Promise.reject(new Error('off')))).toEqual({ ok: false, motivo: 'sem-conexao' })
+  expect(await criarLicencaApi(ponteFalsa, null).verificar()).toEqual({ ok: false, motivo: 'indisponivel' })
 })

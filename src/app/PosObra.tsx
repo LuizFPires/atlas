@@ -2,13 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import { Icone, Microfone, useVoz } from '../ui'
 import { textoDaObra } from './ponte-cota'
 import type { PonteArquivos } from './ponte-arquivos'
-import { TIPOS_PEDIDO, type PedidoAnterior, type PlanoPosObra, type PontePosObra, type StatusPedido, type TipoPedido } from './ponte-posobra'
+import { SemLicencaError, TIPOS_PEDIDO, executarComLicenca, recadoLicenca, type PonteLicenca, type PedidoAnterior, type PlanoPosObra, type PontePosObra, type StatusPedido, type TipoPedido } from './ponte-posobra'
 import './posobra.css'
 
 interface Props {
   obra: { nome: string; pasta: string }
   posobra: PontePosObra
   arquivos?: PonteArquivos
+  /** Licença em dia (S4 /verificar): conferida ANTES de mexer na obra. */
+  licenca: PonteLicenca
+  /** Depois que a correção virou versão de teste: ver o andamento no painel da obra. */
+  onAcompanhar?: () => void
 }
 
 const ROTULO_STATUS: Record<StatusPedido, string> = { 'no-ar': 'No ar', 'para-conferir': 'Para conferir', 'em-andamento': 'Em andamento' }
@@ -17,12 +21,15 @@ const ROTULO_STATUS: Record<StatusPedido, string> = { 'no-ar': 'No ar', 'para-co
  * F14: pós-obra. O cliente conta, com as palavras dele, o que quer mudar (falando, escrevendo ou mandando um print).
  * Tudo o que ele diz é DADO para o Claude (o adaptador delimita); o print é só uma imagem guardada na pasta da obra.
  */
-export function PosObra({ obra, posobra, arquivos }: Props) {
+export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar }: Props) {
   const [tipo, setTipo] = useState<TipoPedido>('mudar')
   const [texto, setTexto] = useState('')
   const [prints, setPrints] = useState<string[]>([])
   const [erro, setErro] = useState('')
   const [plano, setPlano] = useState<PlanoPosObra | null>(null)
+  const [rodando, setRodando] = useState(false)
+  const [recadoLic, setRecadoLic] = useState('')
+  const [feito, setFeito] = useState<string | null>(null)
   const [entendendo, setEntendendo] = useState(false)
   const [historico, setHistorico] = useState<PedidoAnterior[]>([])
   const vivo = useRef(true)
@@ -65,7 +72,26 @@ export function PosObra({ obra, posobra, arquivos }: Props) {
         : 'Não consegui entender o pedido agora. Tente de novo em instantes ou conte de outro jeito.')
     } finally { setEntendendo(false) }
   }
-  const mudouPedido = () => { setPlano(null) }
+  const mudouPedido = () => { setPlano(null); setRecadoLic(''); setFeito(null) }
+
+  // "Pode fazer": confere a licença e SÓ ENTÃO roda a correção pelo mesmo pipeline da obra. Sem licença em dia, nada roda.
+  const aprovar = async () => {
+    if (!plano || rodando) return
+    setRodando(true)
+    setErro('')
+    setRecadoLic('')
+    try {
+      const r = await executarComLicenca(licenca, posobra, obra.pasta, { tipo, texto, prints }, plano)
+      setFeito(r.nome)
+      setPlano(null)
+      setTexto('')
+      setPrints([])
+      setHistorico(await posobra.historico(obra.pasta).catch(() => historico))
+    } catch (x) {
+      if (x instanceof SemLicencaError) setRecadoLic(recadoLicenca(x.motivo))
+      else setErro('Não consegui começar agora. Nada foi mexido no seu sistema. Tente de novo em instantes.')
+    } finally { setRodando(false) }
+  }
 
   return (
     <main className="at-pos">
@@ -96,6 +122,13 @@ export function PosObra({ obra, posobra, arquivos }: Props) {
           </div>
         </div>
         {erro && <p className="at-pos__erro" role="alert">{erro}</p>}
+        {recadoLic && <p className="at-pos__licenca" role="status">{recadoLic}</p>}
+        {feito && (
+          <p className="at-pos__licenca" role="status">
+            Combinado! Comecei “{feito}” numa versão de teste. O sistema no ar só muda quando você aprovar.{' '}
+            {onAcompanhar && <button type="button" className="at-pos__nao" onClick={onAcompanhar}>Ver como está indo</button>}
+          </p>
+        )}
         {plano && (
           <section className="at-pos__plano" aria-label="O que o Claude entendeu">
             <span className="at-pos__plano-rot">O CLAUDE ENTENDEU ASSIM</span>
@@ -103,8 +136,8 @@ export function PosObra({ obra, posobra, arquivos }: Props) {
             <ol>{plano.passos.map((p) => <li key={p}>{p}</li>)}</ol>
             <span className="at-pos__plano-min">Leva cerca de {plano.minutos} minutos. O sistema no ar só muda quando você aprovar.</span>
             <div className="at-pos__plano-acoes">
-              <button type="button" className="at-pos__ok">Pode fazer</button>
-              <button type="button" className="at-pos__nao" onClick={() => setPlano(null)}>Não é isso</button>
+              <button type="button" className="at-pos__ok" onClick={() => void aprovar()} disabled={rodando}>{rodando ? 'Conferindo a licença…' : 'Pode fazer'}</button>
+              <button type="button" className="at-pos__nao" onClick={() => setPlano(null)} disabled={rodando}>Não é isso</button>
             </div>
           </section>
         )}
