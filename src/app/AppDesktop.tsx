@@ -15,6 +15,8 @@ import { Batismo } from './Batismo'
 import { Aprovar } from './Aprovar'
 import { Painel } from './Painel'
 import { criarPainelFixture, painelIndisponivel, type PontePainel } from './ponte-painel'
+import { criarOcorrenciasFixture, ocorrenciasIndisponivel, type PonteOcorrencias } from './ponte-ocorrencia'
+import { cotaIndisponivel, criarCotaFixture, type PonteCota } from './ponte-cota'
 import { construcaoIndisponivel, criarConstrucaoFixture, criarModoObraFixture, modoObraIndisponivel, type PonteConstrucao, type PonteModoObra } from './ponte-construcao'
 import { batismoIndisponivel, criarBatismoFixture, criarNomesFixture, nomesIndisponivel, type PonteBatismo, type PonteNomes } from './ponte-batismo'
 import type { EstiloProposto } from './ponte-estilo'
@@ -60,7 +62,7 @@ function Obras({ ativo, onNavegar, pedido, children }: { ativo: IdTela; onNavega
 let ponteFixture: PonteDesktop | null = null
 const ponteInicial = () => ponteDoAmbiente() ?? (ponteFixture ??= criarPonteFixture())
 
-export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo, nomes, construcao, modos, painel }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo; nomes?: PonteNomes; construcao?: PonteConstrucao; modos?: PonteModoObra; painel?: PontePainel }) {
+export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo, nomes, construcao, modos, painel, cota, ocorrencias }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo; nomes?: PonteNomes; construcao?: PonteConstrucao; modos?: PonteModoObra; painel?: PontePainel; cota?: PonteCota; ocorrencias?: PonteOcorrencias }) {
   const [tela, setTela] = useState<string | null>(null)
   const [ativo, setAtivo] = useState<IdTela>('obras')
   const [instalando, setInstalando] = useState(false)
@@ -108,7 +110,23 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   }, [modos, construcao, ponteObras])
 
   // Idem para o painel da obra (PLAN.md, prazo, canteiro 3D): sem adaptador real, não finge andamento.
-  const pontePainel = useMemo<PontePainel>(() => painel ?? (modoFixture() ? criarPainelFixture() : painelIndisponivel), [painel])
+  // Cota do plano (F10) e ocorrências (F11) andam junto do painel: no fixture, esgotar a cota ou abrir uma ocorrência liga e desliga
+  // a parada correspondente do mesmo painel. Sem adaptador real, nada é fingido.
+  const pontesObra = useMemo(() => {
+    if (painel || !modoFixture()) {
+      const fixture = modoFixture()
+      return { painel: painel ?? painelIndisponivel, cota: cota ?? (fixture ? criarCotaFixture() : cotaIndisponivel), ocorrencias: ocorrencias ?? (fixture ? criarOcorrenciasFixture() : ocorrenciasIndisponivel) }
+    }
+    const fx = criarPainelFixture()
+    return {
+      painel: fx as PontePainel,
+      cota: cota ?? criarCotaFixture((esgotada) => fx.simular.pararPor(esgotada ? 'cota' : null)),
+      ocorrencias: ocorrencias ?? criarOcorrenciasFixture((precisa) => fx.simular.pararPor(precisa ? 'voce' : null)),
+    }
+  }, [painel, cota, ocorrencias])
+  const pontePainel = pontesObra.painel
+  const ponteCota = pontesObra.cota
+  const ponteOcorrencias = pontesObra.ocorrencias
 
   const ponteNomes = useMemo<PonteNomes>(() => nomes ?? (modoFixture() ? criarNomesFixture() : nomesIndisponivel), [nomes])
 
@@ -155,7 +173,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
       <button type="button" className="at-pn__link" onClick={() => setFluxo('lista')}>Voltar ao painel da obra</button>
     </>
   )
-  else if (ativo === 'obra' && obraAtual) conteudo = <Painel obra={obraAtual} painel={pontePainel} modos={pontesModo.modos} onPublicar={() => setFluxo('publicar')} />
+  else if (ativo === 'obra' && obraAtual) conteudo = <Painel obra={obraAtual} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => setAtivo('ajuda')} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => setFluxo('publicar')} />
   else if (ativo === 'obras' && fluxo === 'aprovar' && obraAtual) conteudo = <Aprovar obra={obraAtual} construcao={pontesModo.construcao} claude={ponteClaude} modos={pontesModo.modos} onVoltar={() => setFluxo('batismo')} onComecou={() => { setFluxo('lista'); setAtivo('obra') }} />
   else if (ativo === 'obras' && fluxo === 'nova') conteudo = <NovaObra obras={ponteObras} ideia={ideia} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} onEstilo={(o: ObraNova) => { setObraAtual({ nome: o.respostas.nome, pasta: o.pasta.pasta }); setFluxo('estilo') }} />
   else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} nome={dono || undefined} onComecar={(i) => { setIdeia(i ?? ''); setFluxo('nova') }} onTrazer={() => setFluxo('trazer')} />

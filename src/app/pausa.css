@@ -1,0 +1,17 @@
+/* F10 Pausa pela cota (prototipo/F10Pausa.dc.html). Só tokens do Atlas. Tom calmo: nada de aviso/erro em vermelho. */
+.at-pausa { display: flex; align-items: center; justify-content: center; min-height: 100%; padding: 8px 0; }
+.at-pausa__card { width: 100%; max-width: 720px; box-sizing: border-box; background: var(--card); border: 1px solid var(--card-b); border-radius: 24px; padding: 44px; display: flex; flex-direction: column; gap: 22px; }
+.at-pausa__cab { display: flex; align-items: center; gap: 14px; }
+.at-pausa__bola { width: 56px; height: 56px; border-radius: 28px; background: var(--soft); color: var(--lime-txt, var(--lime)); display: flex; align-items: center; justify-content: center; }
+.at-pausa__rotulo { font: 500 12px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2); }
+.at-pausa h1 { margin: 0; font-size: 34px; line-height: 1.15; letter-spacing: -0.01em; }
+.at-pausa p { margin: 0; font-size: 17px; line-height: 1.55; color: var(--mute); }
+.at-pausa__tempo { display: flex; align-items: center; gap: 18px; background: var(--card2); border-radius: 16px; padding: 18px 20px; }
+.at-pausa__relogio { font: 600 40px var(--font-mono); color: var(--lime-txt, var(--lime)); }
+.at-pausa__tempo-txt { display: flex; flex-direction: column; gap: 3px; }
+.at-pausa__tempo-txt b { font-size: 16px; }
+.at-pausa__tempo-txt span { font-size: 14px; color: var(--mute); }
+.at-pausa__acoes { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.at-pausa__btn { height: 50px; padding: 0 22px; border-radius: 12px; font-size: 16px; }
+.at-pausa__link { background: none; border: 0; padding: 0; color: var(--lime-txt, var(--lime)); font: 15px var(--font-text); cursor: pointer; text-decoration: underline; }
+.at-pausa__nota { font-size: 14px; color: var(--mute2); margin: 0; }

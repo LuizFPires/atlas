@@ -1,0 +1,28 @@
+/* F11 Ocorrência (prototipo/F11Ocorrencia.dc.html). Só tokens do Atlas. */
+.at-oc { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 26px; min-width: 0; }
+.at-oc__col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.at-oc h1 { margin: 0; font-size: 32px; line-height: 1.2; letter-spacing: -0.01em; }
+.at-oc__selo { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #1e1606; background: var(--aviso); padding: 6px 12px; border-radius: 999px; }
+.at-oc__texto { margin: 0; font-size: 16px; line-height: 1.55; color: var(--mute); }
+.at-oc__passos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.at-oc__passo { width: 100%; box-sizing: border-box; display: flex; align-items: flex-start; gap: 14px; text-align: left; background: var(--card); border: 1px solid var(--card-b); border-radius: 14px; padding: 14px 16px; color: var(--text); font-family: var(--font-text); cursor: pointer; }
+.at-oc__passo--atual { border-color: var(--lime); }
+.at-oc__bola { width: 28px; height: 28px; border-radius: 14px; flex: none; display: flex; align-items: center; justify-content: center; font: 600 13px var(--font-mono); background: var(--card-b); color: var(--mute); }
+.at-oc__bola--ok { background: var(--lime); color: var(--on-lime); }
+.at-oc__passo-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.at-oc__passo-txt b { font-size: 16px; }
+.at-oc__passo-txt > span { font-size: 14px; line-height: 1.45; color: var(--mute); }
+.at-oc__print { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 14px; border-radius: 10px; border: 1px dashed var(--card-b); background: var(--card2); }
+.at-oc__acoes { margin-top: auto; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.at-oc__btn { height: 52px; padding: 0 24px; border-radius: 12px; font-size: 16px; }
+.at-oc__link { background: none; border: 0; padding: 0; color: var(--lime-txt, var(--lime)); font: 15px var(--font-text); cursor: pointer; text-decoration: underline; text-align: left; }
+.at-oc__link--forte { font-weight: 600; }
+.at-oc__erro { margin: 0; background: var(--card2); border-radius: 12px; padding: 12px 16px; font-size: 14px; line-height: 1.5; color: var(--text); }
+.at-oc__lado { display: flex; flex-direction: column; gap: 16px; }
+.at-oc__cartao { background: var(--card); border: 1px solid var(--card-b); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+.at-oc__cartao--2 { background: var(--card2); border: 0; gap: 10px; font-size: 15px; line-height: 1.5; }
+.at-oc__cartao label { font-size: 15px; font-weight: 600; }
+.at-oc__cartao input { height: 48px; border-radius: 12px; border: 1px solid var(--card-b); background: var(--input); color: var(--text); padding: 0 14px; font: 15px var(--font-mono); }
+.at-oc__rotulo { font: 500 12px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2); }
+.at-oc__nota { font-size: 13px; color: var(--mute); }
+.at-oc__aviso { font-size: 14px; color: var(--mute2); }
