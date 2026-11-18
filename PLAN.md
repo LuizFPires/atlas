@@ -125,10 +125,10 @@ Notas: ⏩ Auto (recomendado): guia de mão dada (F04Contas) para o cliente abri
 peso: 1
 spec: S13, S20
 tela: prototipo/F04bCelular.dc.html
-- [ ] Montar a tela "computador ligado, acompanhe pelo celular" com QR para o app do Claude
-- [ ] Implementar a escolha de frequência de notícias (30 min / 1 h / 3 h / por etapa)
-- [ ] Implementar a escolha dos avisos (precisa de você, etapa terminou, obra pronta)
-- [ ] Conferir fidelidade com o protótipo
+- [x] Montar a tela "computador ligado, acompanhe pelo celular" com QR para o app do Claude
+- [x] Implementar a escolha de frequência de notícias (30 min / 1 h / 3 h / por etapa)
+- [x] Implementar a escolha dos avisos (precisa de você, etapa terminou, obra pronta)
+- [x] Conferir fidelidade com o protótipo
 Notas: ⏩ Auto (recomendado): tela F04bCelular — "computador ligado, acompanhe pelo celular" com QR para o app do Claude; escolha da frequência de notícias (30 min / 1 h / 3 h / por etapa) e dos avisos (precisa de você, etapa terminou, obra pronta), preferências guardadas. A conexão real da sessão do computador com o app do celular (Remote Control) o próprio protótipo marca como "a confirmar na implementação" → fica atrás de um port com mock em fixture; adaptador real p/ /entregar. Modo fixture, sem deploy.
 
 ## Milestone 13 — App: minhas obras e nova obra
