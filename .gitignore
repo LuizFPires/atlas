@@ -9,5 +9,6 @@ node_modules/
 .claude/*.log
 
 dist
+dist-app
 dev-dist
 *.tsbuildinfo

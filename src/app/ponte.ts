@@ -1,0 +1,48 @@
+// Ponte entre o front (React) e o app desktop (Electron). O front só conhece esta interface:
+// a API do Electron fica atrás dela, então o CI (ubuntu) testa tudo sem empacotar nada.
+
+/** Cofre do sistema (Windows Credential Manager / DPAPI). NUNCA grava segredo em arquivo. */
+export interface Cofre {
+  guardar(chave: string, valor: string): Promise<void>
+  ler(chave: string): Promise<string | null>
+  apagar(chave: string): Promise<void>
+}
+
+export interface PonteDesktop {
+  /** Argumentos de linha de comando do app (ex.: --tela=F02). */
+  argv: string[]
+  cofre: Cofre
+  /** Impressão digital do computador (SHA-256 hex, 64 caracteres). O id da máquina nunca sai em claro. */
+  hashComputador(): Promise<string>
+  /** Nome amigável do computador, só para mostrar na tela. */
+  descricaoComputador(): Promise<string>
+  /** Liga/desliga o bloqueio de suspensão (o computador é o canteiro). */
+  impedirSono(ligado: boolean): Promise<void>
+}
+
+declare global {
+  interface Window { atlasDesktop?: PonteDesktop }
+}
+
+/** Cofre em memória: usado nos testes e no modo fixture. Some quando o app fecha (de propósito: não vai a disco). */
+export function criarCofreMemoria(inicial: Record<string, string> = {}): Cofre {
+  const m = new Map(Object.entries(inicial))
+  return {
+    async guardar(c, v) { m.set(c, v) },
+    async ler(c) { return m.get(c) ?? null },
+    async apagar(c) { m.delete(c) },
+  }
+}
+
+/** Ponte de mentirinha (modo fixture / navegador de desenvolvimento). */
+export function criarPonteFixture(argv: string[] = [], cofre: Cofre = criarCofreMemoria()): PonteDesktop {
+  return {
+    argv,
+    cofre,
+    hashComputador: async () => 'f'.repeat(64),
+    descricaoComputador: async () => 'DESKTOP-FIXTURE · Windows 11',
+    impedirSono: async () => {},
+  }
+}
+
+export const ponteDoAmbiente = (): PonteDesktop | null => (typeof window !== 'undefined' ? (window.atlasDesktop ?? null) : null)
