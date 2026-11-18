@@ -5,7 +5,7 @@ description: Linha de produção completa de um app, do briefing à construção
 
 # Linha de produção
 
-Sete etapas. Cada uma termina num arquivo e só avança com o "ok" do usuário (✋).
+Em palavras simples: é o caminho da ideia até o app no ar, em etapas. Cada uma termina num arquivo e só avança com o "ok" do usuário (✋), como o dono vistoriando cada fase da obra.
 
 | # | Etapa | Quem executa | Entrega | Portão |
 |---|---|---|---|---|

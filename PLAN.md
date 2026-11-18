@@ -271,9 +271,9 @@ Notas: ⏩ Auto (recomendado): F17Ajuda — painel lateral de 520px (print do er
 peso: 3
 spec: S19, S16
 tela:
-- [ ] Reescrever textos de agentes e skills em linguagem simples (tom de voz do Atlas)
-- [ ] Adicionar capacidades ao pipeline (login de usuários finais, notificações, pagamento na conta do cliente, LGPD básico)
-- [ ] Fechar as lacunas de publicação (PWA/TWA por padrão, Expo+EAS p/ iOS; guia leigo de domínio) — decidido 18/11/2026
-- [ ] Garantir que o PLAN.md das obras do cliente siga o formato obrigatório do painel
-- [ ] Integrar a entrega do kit por obra com marca d'água e aviso de licença no topo dos arquivos
-Notas:
+- [x] Reescrever textos de agentes e skills em linguagem simples (tom de voz do Atlas)
+- [x] Adicionar capacidades ao pipeline (login de usuários finais, notificações, pagamento na conta do cliente, LGPD básico)
+- [x] Fechar as lacunas de publicação (PWA/TWA por padrão, Expo+EAS p/ iOS; guia leigo de domínio) — decidido 18/11/2026
+- [x] Garantir que o PLAN.md das obras do cliente siga o formato obrigatório do painel
+- [x] Integrar a entrega do kit por obra com marca d'água e aviso de licença no topo dos arquivos
+Notas: ⏩ Auto (recomendado): último milestone. Reescrever textos dos agentes/skills do kit (.claude/) em linguagem simples (tom do Atlas) SEM quebrar triggers/estrutura das skills. Adicionar capacidades ao pipeline (login de usuário final, notificações, pagamento na conta do CLIENTE, LGPD básico) como skills/capacidades que as obras podem usar. Fechar lacunas de publicação (PWA/TWA por padrão, Expo+EAS p/ iOS; guia leigo de domínio — decidido 18/11). Garantir que o PLAN.md das obras siga o formato do painel (reusar montarPlanMd/validação do M18). Entrega do kit por obra com marca d'água por cliente (HMAC, M2) + aviso de licença (Lei 9.609/98) no topo dos arquivos entregues — invariante. Modo fixture onde aplicável. QA aprovou (invariantes conferidos). Baixas p/ /entregar: criarCarregarKit real + PonteKit Electron; ligar publicacao.ts às F13a/F13b; paridade de temAvisoNoTopo servidor/cliente; aplicarMarca com BOM em .md; modelos LGPD são rascunho p/ advogado.

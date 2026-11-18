@@ -32,11 +32,34 @@ export function aplicarMarca(a: ArquivoKit, nome: string, marca: string): Arquiv
     return { ...a, conteudo: JSON.stringify({ _licenca: av, _marca: marca, ...o }, null, 2) }
   }
   if (['.js', '.cjs', '.mjs', '.ts', '.tsx'].includes(ext)) {
-    return { ...a, conteudo: `// ${av}\nconst ATLAS_LICENCA = '${marca}'\n${a.conteudo}` }
+    // Linha #! (hooks executáveis) precisa continuar sendo a primeira; o aviso vem logo abaixo, ainda no topo.
+    const sb = a.conteudo.match(/^#![^\n]*\n/)
+    const resto = sb ? a.conteudo.slice(sb[0].length) : a.conteudo
+    return { ...a, conteudo: `${sb ? sb[0] : ''}// ${av}\nconst ATLAS_LICENCA = '${marca}'\n${resto}` }
   }
   if (ext === '.html') return { ...a, conteudo: `<!-- ${av} -->\n<meta name="atlas-licenca" content="${marca}">\n${a.conteudo}` }
+  // Agente/skill (.md com frontmatter): o Claude Code exige o '---' na primeira linha. O aviso entra como comentário YAML
+  // logo na linha 2 (continua no topo) e a marca fecha o arquivo.
+  if (ext === '.md') {
+    const abre = a.conteudo.match(/^---\r?\n/)
+    if (abre) {
+      return { ...a, conteudo: `${abre[0]}# ${av} atlas-licenca:${marca}\n${a.conteudo.slice(abre[0].length)}\n<!-- atlas-licenca:${marca} -->\n` }
+    }
+  }
   // .md e demais: comentário HTML invisível na renderização + rodapé com a marca
   return { ...a, conteudo: `<!-- ${av} -->\n${a.conteudo}\n<!-- atlas-licenca:${marca} -->\n` }
+}
+
+/** Confere se o arquivo entregue leva o aviso de licença (Lei 9.609/98) e a marca do cliente nas primeiras linhas. */
+export function temAvisoNoTopo(a: ArquivoKit, marca: string): boolean {
+  if (a.caminho.toLowerCase().endsWith('.json')) {
+    try {
+      const o = JSON.parse(a.conteudo) as Record<string, unknown>
+      return typeof o._licenca === 'string' && o._licenca.includes(LEI) && o._marca === marca && Object.keys(o)[0] === '_licenca'
+    } catch { return false }
+  }
+  const topo = a.conteudo.split(/\r?\n/).slice(0, 4).join('\n')
+  return topo.includes(LEI) && topo.includes(marca)
 }
 
 export async function entregarKit(
@@ -51,6 +74,8 @@ export async function entregarKit(
   const marca = await marcaDagua(d, v.licenca_id)
   const nome = cliente?.nome_tratamento ?? 'cliente'
   const arquivos = (await carregar(a.obra_id)).map((f) => aplicarMarca(f, nome, marca))
+  // Pós-condição do invariante: nenhum arquivo sai sem o aviso no topo e a marca do cliente.
+  if (!arquivos.every((f) => temAvisoNoTopo(f, marca))) throw new ErroRegra('kit_invalido', 'Um arquivo do kit não pôde receber a marca do cliente.', 500)
   await d.store.inserirEntrega({ licenca_id: v.licenca_id, obra_id: a.obra_id, marca_dagua: marca, baixado_em: d.agora() })
   return {
     marca_dagua: marca,

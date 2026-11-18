@@ -5,7 +5,7 @@ description: Etapa 8 da linha de produção, a entrega (habite-se e entrega das 
 
 # Entregar — habite-se e entrega das chaves
 
-A obra está pronta. Agora vêm a vistoria da prefeitura, a ligação definitiva de água e luz, e o anúncio do imóvel. Você é o mestre de obras: coordena três subagentes e para nos pontos em que só o dono assina.
+Em palavras simples: o app está pronto e agora vai para o mundo. A obra está pronta. Agora vêm a vistoria da prefeitura, a ligação definitiva de água e luz, e o anúncio do imóvel. Você é o mestre de obras: coordena três subagentes e para nos pontos em que só o dono assina.
 
 | Passo | Quem | Na obra |
 |---|---|---|
@@ -57,6 +57,10 @@ Chame o `implantador`: `Implante em <ambiente>. Stack: <resumo>. Supabase: <ref>
 - Homologação aprovada pelo usuário → repita em produção.
 
 ## 5. Lojas (só se houver app mobile)
+**Qual caminho (decidido em 18/11/2026):** o padrão é o **PWA** (o app instala pelo navegador, sem loja). Se o cliente quer só o Google Play, use **TWA** (o site vira app Android). Só use **Expo + EAS** quando a Apple exigir (App Store) ou o app precisar de recurso nativo; a Apple não aceita site embrulhado. Explique a escolha em duas frases, sem sigla.
+**Avisos cedo:** antes de qualquer passo, diga o que demora: o número D-U-N-S da Apple (conta de empresa, pode levar dias) e os 12 testadores por 14 dias do Google Play. Peça para o cliente começar já.
+**Domínio:** se ele quiser um endereço próprio, siga `guia-dominio.md` (nesta mesma pasta), de mão dada; o domínio sempre fica no nome do cliente.
+Se o app for só PWA, pule o corretor: o `implantador` publica e o cliente instala pelo navegador (Android: Instalar; iPhone: Compartilhar e Adicionar à Tela de Início).
 Chame o `corretor`: `Prepare e envie o app em <caminho> para <plataformas>. Nome na loja: <nome>.`
 O resultado esperado é o app no **TestFlight** e no **teste interno do Google Play**. A publicação para o público é sempre do usuário.
 Mostre a lista `USUÁRIO` do corretor como checklist numerado e grave em `docs/entrega.md` (seção "Lojas"). Os passos típicos dele:

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { entregarKit, marcaDagua, type CarregarKit } from '../functions/_shared/kit.ts'
+import { entregarKit, marcaDagua, temAvisoNoTopo, type CarregarKit } from '../functions/_shared/kit.ts'
 import { H1, H2, montar, TOKEN } from './helpers.ts'
 
 const fixture: CarregarKit = async () => [
@@ -58,5 +58,65 @@ describe('/entregar-kit', () => {
     await p.ativar()
     await expect(entregarKit(p.deps, fixture, { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: 'o' })).rejects.toMatchObject({ codigo: 'negado', status: 403 })
     expect(p.store.entregas).toHaveLength(0)
+  })
+})
+
+describe('/entregar-kit com o kit de verdade (.claude)', () => {
+  const mod = (n: string): Promise<unknown> => import(/* @vite-ignore */ n)
+  interface Fs { readdirSync(p: string, o: { recursive: true }): string[]; readFileSync(p: string, e: string): string; statSync(p: string): { isFile(): boolean } }
+
+  async function kitReal(): Promise<CarregarKit> {
+    const fs = (await mod('node:fs')) as Fs
+    const { fileURLToPath } = (await mod('node:url')) as { fileURLToPath(u: string | URL): string }
+    const raiz = fileURLToPath(new URL('../../.claude', import.meta.url))
+    const sl = String.fromCharCode(92)
+    const norm = (f: string) => f.split(sl).join('/')
+    const alvo = (f: string) => ((f.startsWith('agents/') || f.startsWith('skills/')) && f.endsWith('.md')) || (f.startsWith('hooks/') && f.endsWith('.cjs'))
+    return async () => fs.readdirSync(raiz, { recursive: true }).map(norm)
+      .filter((f) => alvo(f) && fs.statSync(`${raiz}/${f}`).isFile())
+      .map((f) => ({ caminho: `.claude/${f}`, conteudo: fs.readFileSync(`${raiz}/${f}`, 'utf8') }))
+  }
+
+  it('todo agente, skill e hook sai com a marca do cliente e o aviso (Lei 9.609/98) no topo', async () => {
+    const m = montar()
+    await m.ativar()
+    const r = await entregarKit(m.deps, await kitReal(), { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: 'obra-real' })
+    expect(r.arquivos.length).toBeGreaterThan(20)
+    for (const f of r.arquivos) {
+      expect(temAvisoNoTopo(f, r.marca_dagua), f.caminho).toBe(true)
+      expect(f.conteudo).toContain('licenciado a Ana')
+    }
+  })
+
+  it('agentes e skills continuam começando em "---" (frontmatter válido) e hooks mantêm o #! na 1ª linha', async () => {
+    const m = montar()
+    await m.ativar()
+    const r = await entregarKit(m.deps, await kitReal(), { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: 'obra-real' })
+    for (const f of r.arquivos.filter((x) => x.caminho.startsWith('.claude/agents/') || x.caminho.endsWith('/SKILL.md'))) {
+      expect(f.conteudo.startsWith('---\n') || f.conteudo.startsWith('---\r\n'), f.caminho).toBe(true)
+      expect(f.conteudo.split(/\r?\n/)[1].startsWith('# Software proprietário'), f.caminho).toBe(true)
+    }
+    for (const f of r.arquivos.filter((x) => x.caminho.endsWith('.cjs'))) {
+      if (f.conteudo.includes('#!/usr/bin/env')) expect(f.conteudo.startsWith('#!'), f.caminho).toBe(true)
+    }
+  })
+
+  it('shebang continua na 1ª linha e o aviso vem logo abaixo', async () => {
+    const m = montar()
+    await m.ativar()
+    const k: CarregarKit = async () => [{ caminho: '.claude/hooks/x.cjs', conteudo: '#!/usr/bin/env node\nconsole.log(1)\n' }]
+    const r = await entregarKit(m.deps, k, { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: 'o' })
+    const l = r.arquivos[0].conteudo.split('\n')
+    expect(l[0]).toBe('#!/usr/bin/env node')
+    expect(l[1]).toContain('Lei 9.609/98')
+  })
+
+  it('temAvisoNoTopo recusa arquivo sem aviso, com a marca de outro cliente ou com o aviso só no fim', async () => {
+    const m = montar()
+    const marca = await marcaDagua(m.deps, 'l1')
+    expect(temAvisoNoTopo({ caminho: 'a.md', conteudo: '# Arquiteto' }, marca)).toBe(false)
+    expect(temAvisoNoTopo({ caminho: 'a.md', conteudo: `<!-- Lei 9.609/98 ${await marcaDagua(m.deps, 'l2')} -->\nx` }, marca)).toBe(false)
+    expect(temAvisoNoTopo({ caminho: 'a.md', conteudo: `1\n2\n3\n4\n<!-- Lei 9.609/98 ${marca} -->` }, marca)).toBe(false)
+    expect(temAvisoNoTopo({ caminho: 'a.json', conteudo: JSON.stringify({ a: 1, _licenca: 'Lei 9.609/98', _marca: marca }) }, marca)).toBe(false)
   })
 })

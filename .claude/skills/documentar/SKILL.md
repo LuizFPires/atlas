@@ -5,7 +5,7 @@ description: Etapas 4 e 5 da linha de produção. Chama o subagente escritor par
 
 # Documentar
 
-Você só coordena. Quem escreve e quem revisa são subagentes diferentes.
+Em palavras simples: o protótipo aprovado vira os papéis da obra. Você só coordena. Quem escreve e quem revisa são subagentes diferentes, para um conferir o trabalho do outro.
 
 1. Confira que `docs/aprovacoes.md` registra o protótipo aprovado. Se não, pare e volte para a skill `prototipo`.
 2. `node .claude/hooks/etapa.cjs documentacao`
