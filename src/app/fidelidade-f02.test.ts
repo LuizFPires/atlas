@@ -1,9 +1,7 @@
 // Fidelidade com o protótipo F02Ativacao: os textos que o cliente lê são os mesmos da tela desenhada.
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import proto from '../../prototipo/F02Ativacao.dc.html?raw'
 import { DICAS } from './Ativacao'
 
-const proto = readFileSync(resolve(process.cwd(), 'prototipo/F02Ativacao.dc.html'), 'utf8')
 // No protótipo a barra invertida da pasta vem escapada dentro de uma string JS.
 const normal = (s: string) => s.replace(/\\\\/g, '\\')
 
