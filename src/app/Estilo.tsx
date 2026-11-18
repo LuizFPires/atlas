@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Botao, CampoFalado, Icone, useVoz } from '../ui'
 import type { PonteArquivos } from './ponte-arquivos'
+import type { EntradaEstilo, EstiloProposto, PonteEstilo } from './ponte-estilo'
 import { FASES, linkCurto, MAX_REFERENCIAS, MIN_REFERENCIAS, normalizarLink, SENTIMENTOS } from './estilo-dados'
 import './estilo.css'
 
@@ -10,7 +11,10 @@ export interface ObraDoEstilo { nome: string; pasta: string }
 interface Props {
   obra: ObraDoEstilo
   arquivos: PonteArquivos
+  estilo: PonteEstilo
   onVoltar: () => void
+  /** Depois que o design system foi guardado na pasta da obra. */
+  onConcluir?: (resultado: { estilo: EstiloProposto; caminho: string }) => void
 }
 
 interface Ref { tipo: 'link' | 'print'; valor: string; texto: string }
@@ -23,13 +27,18 @@ const recado = (e: unknown) => {
 }
 
 /** F06b: estilo do sistema (projeto 1/3). Referências (link, print ou fala) e o sentimento desejado. */
-export function Estilo({ obra, arquivos, onVoltar }: Props) {
+export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) {
   const [refs, setRefs] = useState<Ref[]>([])
   const [link, setLink] = useState('')
   const [fala, setFala] = useState('')
   const [sentir, setSentir] = useState<string[]>([])
   const [extra, setExtra] = useState('')
   const [aviso, setAviso] = useState('')
+  const [propostos, setPropostos] = useState<EstiloProposto[] | null>(null)
+  const [escolhido, setEscolhido] = useState('')
+  const [ocupado, setOcupado] = useState<'' | 'propondo' | 'guardando'>('')
+  const [erro, setErro] = useState('')
+  const [guardado, setGuardado] = useState<{ estilo: EstiloProposto; caminho: string } | null>(null)
 
   const { gravando, alternar, suportado } = useVoz((falado) => setFala((v) => [v, falado].filter(Boolean).join(' ')))
   const total = refs.length + (fala.trim() ? 1 : 0)
@@ -57,6 +66,39 @@ export function Estilo({ obra, arquivos, onVoltar }: Props) {
     } catch (e) { setAviso(recado(e)) }
   }
 
+  const entrada = (): EntradaEstilo => ({
+    referencias: [...refs.map((r) => ({ tipo: r.tipo, valor: r.valor })), ...(fala.trim() ? [{ tipo: 'fala' as const, valor: fala.trim() }] : [])],
+    sentimentos: sentir,
+    extra: extra.trim(),
+  })
+  const faltaRef = total < MIN_REFERENCIAS
+  const faltaSentir = sentir.length === 0 && !extra.trim()
+
+  const propor = async () => {
+    if (faltaRef) { setErro('Mande pelo menos 2 referências: link, print ou falando.'); return }
+    if (faltaSentir) { setErro('Escolha pelo menos um jeito que o seu cliente deve se sentir.'); return }
+    setErro('')
+    setOcupado('propondo')
+    try {
+      const p = await estilo.propor(entrada())
+      setPropostos(p)
+      setEscolhido(p[0]?.id ?? '')
+    } catch { setErro('Não consegui montar os estilos agora. Suas referências continuam aqui; tente de novo em instantes.') }
+    finally { setOcupado('') }
+  }
+
+  const usar = async () => {
+    const e = propostos?.find((p) => p.id === escolhido)
+    if (!e) return
+    setErro('')
+    setOcupado('guardando')
+    try {
+      const { caminho } = await estilo.materializar(obra.pasta, { tipo: 'estilo', estilo: e, entrada: entrada() })
+      setGuardado({ estilo: e, caminho })
+    } catch { setErro('Não consegui guardar o estilo na pasta da obra agora. Sua escolha continua aqui; tente de novo em instantes.') }
+    finally { setOcupado('') }
+  }
+
   const alternarSentir = (s: string) => setSentir(sentir.includes(s) ? sentir.filter((x) => x !== s) : [...sentir, s])
 
   return (
@@ -72,6 +114,7 @@ export function Estilo({ obra, arquivos, onVoltar }: Props) {
         <span>Antes de desenhar as telas, vamos escolher as cores, as letras e o jeito dos botões. Assim o protótipo já nasce com a cara da sua barbearia.</span>
       </header>
 
+      <div className="at-estilo__grade">
       <div className="at-estilo__card">
         <b className="at-estilo__tit">Mande 2 ou 3 sites ou apps que você acha bonitos</b>
         <span className="at-estilo__sub">Pode ser de qualquer ramo: uma loja, um banco, um restaurante. Vale link ou print da tela.</span>
@@ -117,10 +160,57 @@ export function Estilo({ obra, arquivos, onVoltar }: Props) {
         </div>
         <CampoFalado rotulo="Quer dizer de outro jeito?" obs="(opcional)" valor={extra} onChange={setExtra} placeholder="Ex.: que pareça uma barbearia de bairro, mas com capricho" />
         <span className="at-estilo__sub">{total} de {MIN_REFERENCIAS} a {MAX_REFERENCIAS} referências</span>
+        <Botao onClick={propor} disabled={ocupado !== ''}>{ocupado === 'propondo' ? 'Montando os estilos…' : propostos ? 'Montar os 3 estilos de novo' : 'Mostrar 3 estilos'}</Botao>
       </div>
 
+      <section className="at-estilo__estilos" aria-label="Estilos">
+        <div className="at-estilo__estilos-cab"><b>O Atlas montou 3 estilos para você</b><span>toque para escolher</span></div>
+        {propostos ? (
+          <div className="at-estilo__tres" role="radiogroup" aria-label="Escolha um estilo">
+            {propostos.map((e) => (
+              <button key={e.id} type="button" role="radio" aria-checked={e.id === escolhido} className={`at-estilo__opcao ${e.id === escolhido ? 'at-estilo__opcao--on' : ''}`} onClick={() => { setEscolhido(e.id); setGuardado(null) }}>
+                <div className="at-estilo__previa" style={{ background: e.fundo }}>
+                  <div className="at-estilo__previa-topo" style={{ background: e.topo, color: e.topoTxt, fontFamily: e.fonte }}>Marcar horário</div>
+                  <div className="at-estilo__previa-corpo">
+                    <div className="at-estilo__previa-linha">
+                      <span style={{ borderRadius: e.raio, background: e.topo }} />
+                      <span style={{ borderRadius: e.raio, border: `1px solid ${e.linha}` }} />
+                      <span style={{ borderRadius: e.raio, border: `1px solid ${e.linha}` }} />
+                    </div>
+                    <div className="at-estilo__previa-grade">
+                      {[0, 1, 2, 3, 4, 5].map((i) => <span key={i} style={{ borderRadius: e.raio, ...(i === 4 ? { background: e.destaque } : { border: `1px solid ${e.linha}` }) }} />)}
+                    </div>
+                    <span className="at-estilo__previa-botao" style={{ borderRadius: e.raio, background: e.destaque, color: e.destTxt }}>Marcar</span>
+                  </div>
+                </div>
+                <div className="at-estilo__bolas" aria-hidden="true"><span style={{ background: e.topo }} /><span style={{ background: e.destaque }} /><span style={{ background: e.fundo }} /></div>
+                <b>{e.nome}</b>
+                <span>{e.de}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="at-estilo__vazio">
+            <span>Mande 2 ou 3 referências e diga o que o seu cliente deve sentir. Aí eu monto 3 estilos para você escolher.</span>
+          </div>
+        )}
+      </section>
+      </div>
+
+      {erro && <p className="at-nova__erro" role="alert">{erro}</p>}
+      {guardado && (
+        <div className="at-estilo__feito" role="status">
+          <b>Estilo "{guardado.estilo.nome}" guardado!</b>
+          <span>Ele já é o design system do seu sistema, guardado na pasta da obra. Dá para ajustar depois.</span>
+          <code>{guardado.caminho}</code>
+        </div>
+      )}
       <div className="at-estilo__rodape">
         <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
+        {guardado
+          ? <Botao onClick={() => onConcluir?.(guardado)}>Ver minhas obras →</Botao>
+          : <Botao disabled={!propostos || ocupado !== ''} onClick={usar}>{ocupado === 'guardando' ? 'Guardando…' : `Usar "${propostos?.find((p) => p.id === escolhido)?.nome ?? ''}" e desenhar as telas →`}</Botao>}
+        <span>Vira o design system do seu sistema. Dá para ajustar depois.</span>
       </div>
     </div>
   )

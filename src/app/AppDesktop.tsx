@@ -10,6 +10,7 @@ import { Obras as ListaObras } from './Obras'
 import { NovaObra, type ObraNova } from './NovaObra'
 import { Estilo, type ObraDoEstilo } from './Estilo'
 import { TrazerPrototipo } from './Trazer'
+import { criarEstiloFixture, estiloIndisponivel, type PonteEstilo } from './ponte-estilo'
 import { arquivosIndisponivel, criarArquivosFixture, type PonteArquivos } from './ponte-arquivos'
 import { criarObrasFixture, obrasIndisponivel, type PonteObras } from './ponte-obras'
 import { celularIndisponivel, criarCelularFixture, type PonteCelular } from './ponte-celular'
@@ -49,7 +50,7 @@ function Obras({ ativo, onNavegar, pedido, children }: { ativo: IdTela; onNavega
 let ponteFixture: PonteDesktop | null = null
 const ponteInicial = () => ponteDoAmbiente() ?? (ponteFixture ??= criarPonteFixture())
 
-export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos }) {
+export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo }) {
   const [tela, setTela] = useState<string | null>(null)
   const [ativo, setAtivo] = useState<IdTela>('obras')
   const [instalando, setInstalando] = useState(false)
@@ -76,6 +77,9 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
 
   // Idem para os arquivos que o cliente sobe para a obra (print, logo, manual): sem adaptador real, não finge que subiu.
   const ponteArquivos = useMemo<PonteArquivos>(() => arquivos ?? (modoFixture() ? criarArquivosFixture(ponteObras.raiz()) : arquivosIndisponivel), [arquivos, ponteObras])
+
+  // Idem para o Claude que propõe os 3 estilos e escreve o design-system.md: sem adaptador real, não finge.
+  const ponteEstilo = useMemo<PonteEstilo>(() => estilo ?? (modoFixture() ? criarEstiloFixture(ponteObras.raiz()) : estiloIndisponivel), [estilo, ponteObras])
 
   const ativacao = useMemo<AtivacaoApi>(
     () => {
@@ -109,7 +113,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Demais telas (F05+ vêm nos próximos milestones): por ora cai em Obras.
   let conteudo: ReactNode
   if (ativo === 'obras' && fluxo === 'trazer') conteudo = <TrazerPrototipo onVoltar={() => setFluxo('lista')} />
-  else if (ativo === 'obras' && fluxo === 'estilo' && obraAtual) conteudo = <Estilo obra={obraAtual} arquivos={ponteArquivos} onVoltar={() => setFluxo('lista')} />
+  else if (ativo === 'obras' && fluxo === 'estilo' && obraAtual) conteudo = <Estilo obra={obraAtual} arquivos={ponteArquivos} estilo={ponteEstilo} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} />
   else if (ativo === 'obras' && fluxo === 'nova') conteudo = <NovaObra obras={ponteObras} ideia={ideia} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} onEstilo={(o: ObraNova) => { setObraAtual({ nome: o.respostas.nome, pasta: o.pasta.pasta }); setFluxo('estilo') }} />
   else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} nome={dono || undefined} onComecar={(i) => { setIdeia(i ?? ''); setFluxo('nova') }} onTrazer={() => setFluxo('trazer')} />
   return <Obras ativo={ativo} onNavegar={setAtivo} pedido={pedidoAjuda}>{conteudo}</Obras>

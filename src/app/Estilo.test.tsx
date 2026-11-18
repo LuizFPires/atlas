@@ -2,13 +2,14 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Estilo } from './Estilo'
+import { criarEstiloFixture, type EstiloFixture } from './ponte-estilo'
 import { criarArquivosFixture, type ArquivosFixture } from './ponte-arquivos'
 
 const OBRA = { nome: 'Agenda da Barbearia do Zé', pasta: 'agenda-da-barbearia-do-ze' }
 
 const montar = (arquivos: ArquivosFixture = criarArquivosFixture()) => {
   const onVoltar = vi.fn()
-  render(<TemaProvider><Estilo obra={OBRA} arquivos={arquivos} onVoltar={onVoltar} /></TemaProvider>)
+  render(<TemaProvider><Estilo obra={OBRA} arquivos={arquivos} estilo={criarEstiloFixture()} onVoltar={onVoltar} /></TemaProvider>)
   return { arquivos, onVoltar }
 }
 const clicar = (n: string | RegExp) => userEvent.click(screen.getByRole('button', { name: n }))
@@ -75,4 +76,57 @@ test('voltar chama onVoltar', async () => {
   const { onVoltar } = montar()
   await clicar('← Voltar')
   expect(onVoltar).toHaveBeenCalled()
+})
+
+describe('3 estilos e design system', () => {
+  const montarCompleto = (est: EstiloFixture = criarEstiloFixture()) => {
+    const arquivos = criarArquivosFixture()
+    const onConcluir = vi.fn()
+    render(<TemaProvider><Estilo obra={OBRA} arquivos={arquivos} estilo={est} onVoltar={() => {}} onConcluir={onConcluir} /></TemaProvider>)
+    return { est, arquivos, onConcluir }
+  }
+  const preencher = async () => {
+    await colar('aesop.com')
+    await colar('nubank.com.br')
+    await clicar('Confiança')
+    await clicar('Tradição')
+  }
+
+  test('sem 2 referências ou sem sentimento não propõe, com recado amigo', async () => {
+    const { est } = montarCompleto()
+    await clicar('Mostrar 3 estilos')
+    expect(screen.getByRole('alert')).toHaveTextContent('pelo menos 2 referências')
+    await colar('aesop.com')
+    await colar('nubank.com.br')
+    await clicar('Mostrar 3 estilos')
+    expect(screen.getByRole('alert')).toHaveTextContent('jeito que o seu cliente deve se sentir')
+    expect(est.pedidos).toHaveLength(0)
+  })
+
+  test('propõe 3 estilos pela porta e o escolhido vira o design-system.md na pasta da obra', async () => {
+    const { est, onConcluir } = montarCompleto()
+    await preencher()
+    await clicar('Mostrar 3 estilos')
+    expect(est.pedidos[0].sentimentos).toEqual(['Confiança', 'Tradição'])
+    expect(est.pedidos[0].referencias.map((r) => r.tipo)).toEqual(['link', 'link'])
+    expect(await screen.findAllByRole('radio')).toHaveLength(3)
+    await userEvent.click(screen.getByRole('radio', { name: /Navalha/ }))
+    await clicar('Usar "Navalha" e desenhar as telas →')
+    expect(await screen.findByText('Estilo "Navalha" guardado!')).toBeInTheDocument()
+    expect(est.escritos).toHaveLength(1)
+    expect(est.escritos[0].caminho).toBe(['C:', 'Users', 'Zé', 'Atlas', 'Obras', 'agenda-da-barbearia-do-ze', 'design-system.md'].join(String.fromCharCode(92)))
+    expect(est.escritos[0].texto).toContain('Estilo: Navalha')
+    expect(est.escritos[0].texto).toContain('Sentimento: Confiança, Tradição')
+    await clicar('Ver minhas obras →')
+    expect(onConcluir).toHaveBeenCalled()
+  })
+
+  test('falha do Claude não perde as referências e mostra recado calmo', async () => {
+    const { est } = montarCompleto({ ...criarEstiloFixture(), propor: async () => { throw new Error('x') } })
+    expect(est).toBeTruthy()
+    await preencher()
+    await clicar('Mostrar 3 estilos')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Suas referências continuam aqui')
+    expect(screen.getByText('aesop.com')).toBeInTheDocument()
+  })
 })
