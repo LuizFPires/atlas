@@ -9,7 +9,7 @@ const resp = (status: number, corpo: unknown) => Promise.resolve(new Response(JS
 
 describe('compra', () => {
   test('chama o checkout de implantação do M3 e devolve a URL do gateway', async () => {
-    const f = vi.fn(() => resp(200, { url: 'https://checkout.stripe.com/c/pay/cs_1', sessao_id: 'cs_1' }))
+    const f = vi.fn(() => resp(200, { url: 'https://checkout.stripe.com/c/pay/cs_1' }))
     const r = await iniciarCompra(' Ana@Loja.com ', cfg, f as unknown as typeof fetch)
     expect(r).toEqual({ ok: true, url: 'https://checkout.stripe.com/c/pay/cs_1' })
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]

@@ -161,10 +161,12 @@ describe('prova da compra (session_id) para o cadastro', () => {
     const m = montarPag()
     const { criarCheckout } = await import('../functions/_shared/pagamento/checkout.ts')
     const r = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'Bia@Padaria.com' })
-    expect(m.store.sessoes).toEqual([{ conta_gateway_id: CONTA, sessao_id: r.sessao_id, email: 'bia@padaria.com', paga: false }])
-    await enviar(m, evento('checkout.session.completed', sessaoImpl({ id: r.sessao_id, payment_status: 'unpaid' })))
+    expect(r).toEqual({ url: expect.any(String) })
+    const sid = m.store.sessoes[0].sessao_id
+    expect(m.store.sessoes).toEqual([{ conta_gateway_id: CONTA, sessao_id: sid, email: 'bia@padaria.com', paga: false }])
+    await enviar(m, evento('checkout.session.completed', sessaoImpl({ id: sid, payment_status: 'unpaid' })))
     expect(m.store.sessoes[0].paga).toBe(false) // Pix ainda não compensou
-    await enviar(m, evento('checkout.session.async_payment_succeeded', sessaoImpl({ id: r.sessao_id })))
+    await enviar(m, evento('checkout.session.async_payment_succeeded', sessaoImpl({ id: sid })))
     expect(m.store.sessoes[0].paga).toBe(true)
   })
   it('sessão de pagamento estornado não vira prova', async () => {

@@ -30,6 +30,17 @@ describe('checkout (Stripe do cliente)', () => {
     expect(f.get('metadata[atlas_tipo]')).toBe('implantacao')
   })
 
+  it('não vaza sessao_id e duas chamadas com o mesmo e-mail geram sessões distintas', async () => {
+    const m = montarPag()
+    const a = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com' })
+    const b = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com' })
+    expect(Object.keys(a)).toEqual(['url'])
+    expect(a).not.toHaveProperty('sessao_id')
+    expect(m.chamadas[0].headers['Idempotency-Key']).not.toBe(m.chamadas[1].headers['Idempotency-Key'])
+    expect(a.url).not.toBe(b.url)
+    expect(new Set(m.store.sessoes.map((s) => s.sessao_id)).size).toBe(2)
+  })
+
   it('mensalidade: assinatura mensal R$ 200 para licença da mesma conta, reaproveitando o customer', async () => {
     const m = montarPag()
     Object.assign(m.store.licencas[0], { conta_gateway_id: CONTA, gateway_cliente_ref: 'cus_1' })
