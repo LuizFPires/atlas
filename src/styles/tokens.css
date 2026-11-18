@@ -17,6 +17,9 @@
   --aviso: #f2b14a;
   --aviso-txt: #f2b14a;
   --erro: #e5534b;
+  --erro-bg: #2a1614;
+  --painel: #17191c;
+  --me: #2a3a12;
   --gravando: #f05a4f;
   /* menu lateral: sempre escuro */
   --side: #101214;
@@ -47,6 +50,9 @@
   --aviso: #f6d28e;
   --aviso-txt: #7a4e00;
   --erro: #c4372d;
+  --erro-bg: #fbe4e1;
+  --painel: #ffffff;
+  --me: #ddf59a;
   --side: #1f2226;
   --side-border: #1f2226;
   --side-card: #2a2e33;
