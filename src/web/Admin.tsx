@@ -36,6 +36,12 @@ const SITUACAO: Record<Situacao, { texto: string; classe: string }> = {
 }
 const TRAVADO = { cadastro: 'responder o cadastro', instalacao: 'instalar e ativar' } as const
 
+const DIA_MS = 24 * 3600_000
+/** "AAAA-MM-DD" -> fim desse dia em Brasília (23:59), como instante ISO. */
+export const fimDoDiaBrasilia = (aaaammdd: string) => new Date(`${aaaammdd}T23:59:59-03:00`).toISOString()
+/** Data de hoje + n dias, em Brasília, no formato do <input type="date">. */
+const dataEm = (base: Date, dias: number) => new Date(base.getTime() + dias * DIA_MS - 3 * 3600_000).toISOString().slice(0, 10)
+
 /** Painel do administrador (F16) em /admin. Só o Luiz: o servidor recusa qualquer outro login. */
 export function Admin({ api }: { api: AdminApi }) {
   const [email, setEmail] = useState<string | null>(null)
@@ -149,6 +155,8 @@ function VisaoGeral({ api }: { api: AdminApi }) {
   const { dado, erro, recarregar } = useCarga<PainelAdmin>(buscar)
   const [liberando, setLiberando] = useState<{ licencaId: string; quem: string; motivo: string } | null>(null)
   const [msg, setMsg] = useState('')
+  const [cortesia, setCortesia] = useState({ email: '', data: '' })
+  const [erroCortesia, setErroCortesia] = useState('')
 
   if (!dado) return erro ? <p role="alert" className="ad-erro">{erro}</p> : <p role="status" className="ad-mute">Carregando os números…</p>
   const { indicadores: i, atencao, clientes } = dado
@@ -160,6 +168,15 @@ function VisaoGeral({ api }: { api: AdminApi }) {
     if (!r.ok) { setMsg(r.mensagem); return }
     setMsg(r.ja_liberada ? `A troca de ${liberando.quem} já estava liberada.` : `Troca liberada para ${liberando.quem}. Ela vale uma vez e fica registrada no seu nome.`)
     setLiberando(null)
+    await recarregar()
+  }
+  const confirmarCortesia = async (ev: React.FormEvent) => {
+    ev.preventDefault(); setErroCortesia(''); setMsg('')
+    if (!cortesia.data) { setErroCortesia('Escolha até quando a cortesia vale.'); return }
+    const r = await api.liberarCortesia(cortesia.email, fimDoDiaBrasilia(cortesia.data))
+    if (!r.ok) { setErroCortesia(r.mensagem); return } // erro honesto: nada foi liberado
+    setMsg(`${r.nova ? 'Cortesia liberada' : 'Cortesia renovada'} para ${cortesia.email.trim().toLowerCase()} até ${dia(r.validade_em)}.`)
+    setCortesia({ email: '', data: '' })
     await recarregar()
   }
   const dar_baixa = async (id: string) => {
@@ -201,6 +218,19 @@ function VisaoGeral({ api }: { api: AdminApi }) {
             {atencao.length === 0 && <p className="ad-mute">Nada pedindo atenção agora.</p>}
             {atencao.map((a) => <Atencao key={a.id} a={a} onBaixa={() => dar_baixa(a.id)} onLiberar={() => a.licenca_id && abrirLiberar(a.licenca_id, a.quem, 'Cliente pediu a troca antes do prazo de 7 dias.')} />)}
           </section>
+          <section className="ad-card" aria-label="Liberar cortesia">
+            <span className="ad-rotulo">LIBERAR CORTESIA</span>
+            <p className="ad-p">Dê um acesso de presente a alguém, por uns dias. Quando a data chegar, o acesso acaba sozinho.</p>
+            <form onSubmit={confirmarCortesia} noValidate>
+              <CampoFalado rotulo="E-mail da pessoa" type="email" autoComplete="off" valor={cortesia.email} onChange={(email) => setCortesia({ ...cortesia, email })} placeholder="amigo@email.com" juntar={juntarFalaEmail} />
+              <label className="ad-campo-data">Vale até
+                <input type="date" value={cortesia.data} min={dataEm(agora, 1)} max={dataEm(agora, 180)} onChange={(e) => setCortesia({ ...cortesia, data: e.target.value })} />
+              </label>
+              <span className="ad-mute2">Entre 1 e 180 dias. Costuma ser de 10 a 15.</span>
+              {erroCortesia && <p role="alert" className="ad-erro">{erroCortesia}</p>}
+              <div className="ad-linha"><button type="submit" className="ad-botao ad-botao--lime" disabled={!cortesia.email.trim() || !cortesia.data}>Liberar cortesia</button></div>
+            </form>
+          </section>
           {liberando && (
             <section className="ad-card" aria-label="Liberar troca urgente">
               <span className="ad-rotulo">LIBERAR TROCA URGENTE</span>
@@ -223,7 +253,7 @@ function LinhaDoCliente({ c, agora, onLiberar }: { c: LinhaCliente; agora: Date;
   return (
     <div className="ad-tabela" role="row">
       <div className="ad-quem"><b>{c.empresa || c.nome}</b><span className="ad-mute">{c.ramo || (c.empresa ? c.nome : '')}</span></div>
-      <span className={`ad-st ${st.classe}`}>{st.texto}</span>
+      <span className={`ad-st ${st.classe}`}>{st.texto}{c.tipo === 'cortesia' && <small className="ad-mute"> · cortesia até {dia(c.validade_em ?? null)}</small>}</span>
       <span>{c.obras > 0 ? `${c.obras} ${c.obras === 1 ? 'entregue' : 'entregues'}` : '—'}</span>
       <span className="ad-mute">{c.travado_em ? `travado em: ${TRAVADO[c.travado_em]}` : quandoFoi(c.ultimo_sinal_em, agora)}</span>
       <button type="button" className="ad-link" aria-label={`Liberar troca de ${c.empresa || c.nome}`} onClick={onLiberar} disabled={c.situacao === 'cancelada'}>Liberar troca</button>
