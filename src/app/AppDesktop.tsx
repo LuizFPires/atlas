@@ -3,6 +3,7 @@ import { Shell, type IdTela } from '../shell/Shell'
 import { ImagemAssinatura } from '../marca/Marca'
 import { Ativacao } from './Ativacao'
 import { Claude } from './Claude'
+import type { PedidoAjudaPasso } from './ajuda-passo'
 import { Contas } from './Contas'
 import { contasIndisponivel, criarContasFixture, type PonteContas } from './ponte-contas'
 import { claudeIndisponivel, criarClaudeFixture, type PonteClaude } from './ponte-claude'
@@ -14,12 +15,22 @@ import { useImpedirSono } from './sono'
 /** Estamos dentro do app desktop (Electron) ou no modo fixture de desenvolvimento (?app=1)? */
 export const noAppDesktop = () => ponteDoAmbiente() !== null
 
-function Obras({ ativo, onNavegar }: { ativo: IdTela; onNavegar: (t: IdTela) => void }) {
+function Obras({ ativo, onNavegar, pedido }: { ativo: IdTela; onNavegar: (t: IdTela) => void; pedido?: PedidoAjudaPasso | null }) {
   return (
     <Shell ativo={ativo} onNavegar={onNavegar} onFalar={() => {}}>
-      <p className="rotulo">Minhas obras</p>
-      <h1>Bem-vindo ao Atlas</h1>
-      <ImagemAssinatura />
+      {ativo === 'ajuda' && pedido ? (
+        <>
+          <p className="rotulo">Ajuda do Atlas</p>
+          <h1>Vamos resolver juntos</h1>
+          <p>Você parou no passo {pedido.passo} de {pedido.totalPassos} da conta do {pedido.conta}. Estou olhando o print do site: {pedido.print.titulo} ({pedido.print.url}).</p>
+        </>
+      ) : (
+        <>
+          <p className="rotulo">Minhas obras</p>
+          <h1>Bem-vindo ao Atlas</h1>
+          <ImagemAssinatura />
+        </>
+      )}
     </Shell>
   )
 }
@@ -32,6 +43,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas }: { po
   const [tela, setTela] = useState<string | null>(null)
   const [ativo, setAtivo] = useState<IdTela>('obras')
   const [instalando, setInstalando] = useState(false)
+  const [pedidoAjuda, setPedidoAjuda] = useState<PedidoAjudaPasso | null>(null)
   const [computador, setComputador] = useState('')
   useImpedirSono(ponte, instalando)
 
@@ -67,7 +79,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas }: { po
     return <Ativacao api={ativacao} computador={computador} onInstalando={setInstalando} onContinuar={() => setTela(TELA_CLAUDE)} />
   }
   if (tela === TELA_CLAUDE) return <Claude claude={ponteClaude} onContinuar={() => setTela(TELA_CONTAS)} onPedirAjuda={() => { setAtivo('ajuda'); setTela('F05') }} />
-  if (tela === TELA_CONTAS) return <Contas contas={ponteContas} onContinuar={() => setTela('F04b')} />
+  if (tela === TELA_CONTAS) return <Contas contas={ponteContas} onContinuar={() => setTela('F04b')} onPedirAjuda={(p) => { setPedidoAjuda(p); setAtivo('ajuda'); setTela('F05') }} />
   // Demais telas (F04b+ vêm nos próximos milestones): por ora cai em Obras.
-  return <Obras ativo={ativo} onNavegar={setAtivo} />
+  return <Obras ativo={ativo} onNavegar={setAtivo} pedido={pedidoAjuda} />
 }

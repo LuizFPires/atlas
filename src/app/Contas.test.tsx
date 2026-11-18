@@ -80,3 +80,15 @@ test('sem detecção (adaptador indisponível) nada é dado como pronto', async 
   expect(screen.getByText('CONTA 1 DE 4 · GITHUB')).toBeInTheDocument()
   expect(screen.getByText('PASSO 1 DE 5')).toBeInTheDocument()
 })
+
+test('"Não consegui" abre a ajuda do passo e leva o print do passo à Ajuda do Atlas', async () => {
+  const onPedirAjuda = vi.fn()
+  montar(undefined, { onPedirAjuda })
+  expect(screen.queryByText('Tudo bem, acontece com todo mundo.')).not.toBeInTheDocument()
+  await clicar('Abrir o site →')
+  await clicar('Não consegui fazer este passo')
+  expect(screen.getByText('Tudo bem, acontece com todo mundo.')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Ver este passo em vídeo/ })).toBeInTheDocument()
+  await clicar(/Pedir ajuda ao Atlas/)
+  expect(onPedirAjuda).toHaveBeenCalledWith({ origem: 'F04', conta: 'GitHub', passo: 2, totalPassos: 5, print: { url: 'github.com/signup', titulo: 'Welcome to GitHub!', botaoCerto: 'seu e-mail' } })
+})
