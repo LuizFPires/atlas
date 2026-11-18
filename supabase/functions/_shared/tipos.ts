@@ -54,6 +54,11 @@ export class ErroRegra extends Error {
     this.codigo = codigo
     this.status = status
   }
+  /** Campos extras da resposta (ex.: proxima_troca_em). */
+  extra(): Record<string, unknown> {
+    const { proxima_troca_em } = this as unknown as { proxima_troca_em?: Date }
+    return proxima_troca_em ? { proxima_troca_em } : {}
+  }
 }
 
 export const HASH_RE = /^[0-9a-f]{64}$/
