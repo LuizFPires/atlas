@@ -1,0 +1,152 @@
+import { useEffect, useState } from 'react'
+import { Botao, Icone } from '../ui'
+import type { ObraDoEstilo } from './Estilo'
+import type { PonteClaude, Plano } from './ponte-claude'
+import { NOME_PLANO } from './claude-plano'
+import { MODO_RECOMENDADO, MODOS_OBRA, PARADAS_REAIS, TEXTO_MODO, type Etapa, type ModoObra, type Planejamento, type PonteConstrucao, type PonteModoObra } from './ponte-construcao'
+import './aprovar.css'
+
+interface Props {
+  obra: ObraDoEstilo
+  construcao: PonteConstrucao
+  claude: PonteClaude
+  /** Preferência do modo, guardada na pasta da obra (o painel da obra, M19, lê a mesma). */
+  modos: PonteModoObra
+  /** Volta ao protótipo (batismo). */
+  onVoltar: () => void
+  /** Depois que a obra começou (PLAN.md gerado e construção disparada no modo escolhido): segue para o painel da obra (M19); até lá, volta às obras. */
+  onComecou?: () => void
+}
+
+export const recadoDoErroAprovar = (e: unknown) => {
+  switch (e instanceof Error ? e.message : '') {
+    case 'indisponivel': return 'Quem monta o plano da obra ainda não está ligado neste computador. Quando estiver, esta tela passa a funcionar; você não precisa refazer nada.'
+    default: return 'Não consegui fazer isso agora. Tente de novo em instantes.'
+  }
+}
+
+/** Texto do prazo em dias de obra (nunca em tokens). */
+export const textoDias = (dias: number) => `≈ ${dias} ${dias === 1 ? 'dia' : 'dias'}`
+
+/** Texto do consumo da cota, em palavras simples. */
+export function textoCota(pausas: number): string {
+  if (pausas <= 0) return 'A obra deve caber na cota do seu plano, sem parar.'
+  return `A obra deve usar a cota do seu plano até o fim ${pausas === 1 ? 'uma vez' : `umas ${pausas} vezes`}. Quando isso acontece, ela pausa sozinha e volta quando a cota renova. Nada se perde.`
+}
+
+/** F08: aprovar e começar a obra. Mostra etapas, prazo no plano do cliente e consumo da cota. */
+export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou }: Props) {
+  const [plano, setPlano] = useState<Plano | undefined>()
+  const [plan, setPlan] = useState<Planejamento | null>(null)
+  const [erro, setErro] = useState('')
+  const [modo, setModo] = useState<ModoObra>(MODO_RECOMENDADO)
+  const [guardado, setGuardado] = useState(false)
+  const [ocupado, setOcupado] = useState(false)
+  const [comecou, setComecou] = useState<{ modo: ModoObra; plan: string } | null>(null)
+
+  useEffect(() => {
+    let vivo = true
+    construcao.planejar(obra.pasta, obra.nome).then((p) => { if (vivo) setPlan(p) }, (x) => { if (vivo) setErro(recadoDoErroAprovar(x)) })
+    claude.estado().then((s) => { if (vivo) setPlano(s.plano) }, () => undefined)
+    // Se o cliente já tinha escolhido antes (voltou a esta tela), respeita a escolha dele.
+    modos.ler(obra.pasta).then((m) => { if (vivo && m) { setModo(m); setGuardado(true) } }, () => undefined)
+    return () => { vivo = false }
+  }, [construcao, claude, modos, obra.pasta, obra.nome])
+
+  const escolher = async (novo: ModoObra) => {
+    const anterior = modo
+    setModo(novo)
+    setErro('')
+    try { await modos.gravar(obra.pasta, novo); setGuardado(true) } catch (x) { setModo(anterior); setErro(recadoDoErroAprovar(x)) }
+  }
+
+  const comecar = async () => {
+    if (!plan || ocupado || comecou) return
+    setOcupado(true)
+    setErro('')
+    try {
+      const r = await construcao.iniciar(obra.pasta, obra.nome, modo, plan.etapas)
+      setComecou(r)
+    } catch (x) { setErro(recadoDoErroAprovar(x)) } finally { setOcupado(false) }
+  }
+
+  const etapas: Etapa[] = plan?.etapas ?? []
+  const meu = plano ?? 'pro'
+  const previsao = plan?.previsao[meu]
+  const outro: Plano = meu === 'pro' ? 'max' : 'pro'
+  const previsaoOutro = plan?.previsao[outro]
+
+  return (
+    <div className="at-apr">
+      <header className="at-apr__cab">
+        <span className="at-apr__rotulo">PROTÓTIPO APROVADO · VERSÃO 3</span>
+        <h1>Pronto para a obra. Confira antes de começar.</h1>
+      </header>
+      {erro && <p className="at-apr__erro" role="alert">{erro}</p>}
+      {!plan && !erro && <p role="status">O Atlas está montando o plano da obra…</p>}
+      {plan && (
+        <div className="at-apr__grade">
+          <section className="at-apr__card" aria-label="O que vai ser construído">
+            <span className="at-apr__rotulo">O QUE VAI SER CONSTRUÍDO · {etapas.length} ETAPAS</span>
+            {etapas.map((e) => (
+              <div key={e.n} className="at-apr__etapa"><span>{e.n}</span><div><b>{e.nome}</b><small>{e.desc}</small></div></div>
+            ))}
+          </section>
+          <div className="at-apr__lado">
+            {previsao && (
+              <section className="at-apr__card at-apr__previsao" aria-label="Previsão no seu plano">
+                <span className="at-apr__rotulo">PREVISÃO NO SEU PLANO ({NOME_PLANO[meu].toUpperCase()})</span>
+                <div className="at-apr__dias"><b>{textoDias(previsao.dias)}</b><span>com pausas da cota</span></div>
+                <span className="at-apr__texto">{previsaoOutro ? `No ${NOME_PLANO[outro]} seria cerca de ${previsaoOutro.dias} ${previsaoOutro.dias === 1 ? 'dia' : 'dias'}. ` : ''}Você pode deixar rodando à noite: a obra pausa e volta sozinha.</span>
+                <span className="at-apr__texto">{textoCota(previsao.pausas)}</span>
+              </section>
+            )}
+            <section className="at-apr__card at-apr__modos" aria-label="Como você quer a obra">
+              <span className="at-apr__rotulo">COMO VOCÊ QUER A OBRA</span>
+              <div role="radiogroup" aria-label="Modo da obra" className="at-apr__opcoes">
+                {MODOS_OBRA.map((m) => (
+                  <button key={m} type="button" role="radio" aria-checked={modo === m} className={`at-apr__modo ${modo === m ? 'at-apr__modo--on' : ''} ${m === MODO_RECOMENDADO ? 'at-apr__modo--destaque' : ''}`} onClick={() => void escolher(m)}>
+                    <span className="at-apr__modo-cab"><b>{TEXTO_MODO[m].titulo}</b>{m === MODO_RECOMENDADO && <span className="at-apr__selo">RECOMENDADO</span>}</span>
+                    <span className="at-apr__texto">{TEXTO_MODO[m].explica}</span>
+                  </button>
+                ))}
+              </div>
+              {modo === 'automatico' && (
+                <div className="at-apr__paradas">
+                  <b>O Atlas só vai te chamar nas paradas de verdade:</b>
+                  {PARADAS_REAIS.map((t) => <span key={t} className="at-apr__item"><Icone nome="check" tamanho={16} />{t}</span>)}
+                  <span className="at-apr__texto">Fora isso, ele segue sozinho do começo ao fim.</span>
+                </div>
+              )}
+              <span className="at-apr__texto" role="status">{guardado ? 'Escolha guardada na pasta da obra. ' : ''}Você pode trocar de modo depois, no painel da obra, sem perder nada.</span>
+            </section>
+            <section className="at-apr__combinado" aria-label="Combinado antes de começar">
+              <b>Combinado antes de começar</b>
+              <span className="at-apr__item"><Icone nome="check" tamanho={16} />Você pode pausar quando quiser.</span>
+              <span className="at-apr__item"><Icone nome="check" tamanho={16} />Pode desligar o computador: a obra é salva a cada passo.</span>
+              <span className="at-apr__item"><Icone nome="check" tamanho={16} />Mudou de ideia? Ajustes entram no pós-obra, sem perder nada.</span>
+              <span className="at-apr__item"><Icone nome="check" tamanho={16} />Depois de começar ainda dá para ajustar: é só pedir, falando, e o Atlas muda sem perder o que já está pronto.</span>
+            </section>
+            <section className="at-apr__combinado" aria-label="Aviso das lojas de aplicativos">
+              <b>Quer o app na App Store ou no Google Play?</b>
+              <span>Avise já: a papelada das lojas leva alguns dias, e o Atlas adianta durante a obra. Duas coisas costumam pegar quem nunca publicou:</span>
+              <span className="at-apr__item"><Icone nome="relogio" tamanho={16} /><span><b>Apple (empresa):</b> pede o número D-U-N-S, que é um cadastro gratuito da sua empresa e pode demorar alguns dias para sair.</span></span>
+              <span className="at-apr__item"><Icone nome="pessoas" tamanho={16} /><span><b>Google Play (conta nova):</b> exige 12 pessoas testando o app por 14 dias seguidos antes de poder publicar. O Atlas te ajuda a juntar essa turma.</span></span>
+              <span>Se você só quer instalar pelo celular, sem loja, não precisa de nada disso.</span>
+            </section>
+            {comecou && (
+              <p className="at-apr__ok" role="status">
+                <b>A obra começou.</b> {comecou.modo === 'automatico' ? 'O Atlas vai tocar tudo sozinho e só te chama nas paradas de verdade.' : 'O Atlas vai parar no fim de cada etapa para você aprovar.'} O plano da obra foi guardado em {comecou.plan}.
+                {onComecou && <> <button type="button" className="at-apr__link" onClick={onComecou}>Ver minhas obras</button></>}
+              </p>
+            )}
+            <div className="at-apr__rodape">
+              <Botao variante="secundario" onClick={onVoltar}>Voltar ao protótipo</Botao>
+              <Botao className="at-apr__comecar" disabled={ocupado || !!comecou} onClick={() => void comecar()}>Começar a obra</Botao>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
