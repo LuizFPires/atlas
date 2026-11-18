@@ -4,6 +4,8 @@ import { lerEmailsAdmin } from '../functions/_shared/admin.ts'
 import { verificar } from '../functions/_shared/verificar.ts'
 import { chamar, comDoisClientes, JWT_ANA } from './helpers-portal.ts'
 import { H1, montar, TOKEN } from './helpers.ts'
+import { assinarStripe, CONTA, evento, montarPag } from './helpers-pagamento.ts'
+import { processarWebhook } from '../functions/_shared/pagamento/webhook.ts'
 
 const JWT_LUIZ = 'jwt-luiz'
 const DIA = 24 * 3600_000
@@ -138,5 +140,44 @@ describe('cortesia x compra — mesmo e-mail, um só cliente/licença (lock unif
     const chave = "hashtextextended('cliente:' || lower(trim(p_email)), 0)"
     expect(sql.split(chave)).toHaveLength(3)
     expect(sql).not.toMatch(/'compra:'|'cortesia:'/)
+  })
+})
+
+describe('cortesia -> compra: a compra converte a cortesia em paga (migration 0015)', () => {
+  it('store: vira paga, sem validade, 1 cliente e 1 licença', async () => {
+    const m = montar()
+    const agora = m.deps.agora()
+    await m.store.criarCortesia({ email: 'conv@x.com', nome: 'Conv', validade_em: new Date(agora.getTime() + 10 * DIA), agora })
+    const r = await m.store.criarCompra({ email: 'conv@x.com', nome: 'Conv', agora, valor: 100, conta_gateway_id: 'c1', gateway_cliente_ref: 'cus' } as never)
+    expect(r.licenca).toMatchObject({ tipo: 'paga', validade_em: null, status: 'ativa', conta_gateway_id: 'c1' })
+    expect(m.store.clientes.filter((c) => c.email_compra === 'conv@x.com')).toHaveLength(1)
+    expect(m.store.licencas.filter((l) => l.cliente_id === r.licenca.cliente_id)).toHaveLength(1)
+  })
+
+  it('webhook: grava o pagamento sem 409 conta_divergente e a licença segue válida após a validade antiga', async () => {
+    const m = montarPag()
+    const agora = m.deps.agora()
+    await m.store.criarCortesia({ email: 'bia@padaria.com', nome: 'Bia', validade_em: new Date(agora.getTime() + 2 * DIA), agora })
+    const ev = evento('checkout.session.completed', {
+      id: 'cs_1', mode: 'payment', payment_status: 'paid', amount_total: 480000, currency: 'brl', metadata: { atlas_tipo: 'implantacao', atlas_conta: CONTA },
+      customer: 'cus_1', payment_intent: 'pi_1', customer_details: { email: 'Bia@Padaria.com', name: 'Bia Souza' },
+    })
+    const corpo = JSON.stringify(ev)
+    await expect(processarWebhook(m.deps, CONTA, corpo, await assinarStripe(corpo))).resolves.not.toThrow()
+    expect(m.store.pagamentos.filter((p) => p.gateway_pi === 'pi_1')).toHaveLength(1)
+    const lics = m.store.licencas.filter((l) => l.cliente_id === m.store.clientes.find((c) => c.email_compra === 'bia@padaria.com')!.id)
+    expect(lics).toHaveLength(1)
+    expect(lics[0]).toMatchObject({ tipo: 'paga', validade_em: null, conta_gateway_id: CONTA })
+  })
+
+  it('a migration 0015 mantém lock, security definer, search_path e grants', async () => {
+    const mod = (n: string): Promise<unknown> => import(/* @vite-ignore */ n)
+    const fs = (await mod('node:fs')) as { readFileSync(p: string, e: string): string }
+    const { fileURLToPath } = (await mod('node:url')) as { fileURLToPath(u: string | URL): string }
+    const sql = fs.readFileSync(fileURLToPath(new URL('../migrations/0015_cortesia_vira_paga.sql', import.meta.url)), 'utf8')
+    expect(sql).toContain("hashtextextended('cliente:' || lower(trim(p_email)), 0)")
+    expect(sql).toContain('security definer set search_path = public')
+    expect(sql).toContain('revoke all on function criar_compra from public, anon, authenticated')
+    expect(sql).toContain('grant execute on function criar_compra to service_role')
   })
 })

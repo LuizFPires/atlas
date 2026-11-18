@@ -151,7 +151,7 @@ export async function painel(d: DepsAdmin, jwt: string) {
   const pausadas = licencas.filter((l) => l.status === 'pausada').length
 
   const indicadores: IndicadoresAdmin = {
-    clientes_ativos: licencas.filter((l) => l.status === 'ativa').length,
+    clientes_ativos: licencas.filter((l) => l.status === 'ativa' && !cortesiaVencida(l, agora)).length,
     receita: {
       recorrente_mensal: comMensalidade.length * VALOR_MENSALIDADE,
       recebida_no_mes: noMes.reduce((t, p) => t + p.valor, 0),

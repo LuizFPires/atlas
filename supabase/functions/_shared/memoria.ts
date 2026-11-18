@@ -138,6 +138,11 @@ export class StoreMemoria implements Store {
     let cli = this.clientes.find((x) => x.email_compra === c.email)
     if (!cli) { cli = { id: this.id(), email_compra: c.email, nome_tratamento: c.nome }; this.clientes.push(cli) }
     const ja = this.licencas.find((l) => l.cliente_id === cli.id)
+    if (ja?.tipo === 'cortesia') {
+      // Espelha a migration 0015: a compra converte a cortesia em paga.
+      Object.assign(ja, { tipo: 'paga', validade_em: null, status: 'ativa', comprada_em: c.agora, avisos_atraso: 0, pausa_prevista_em: null, conta_gateway_id: c.conta_gateway_id, gateway_cliente_ref: c.gateway_cliente_ref, gateway_assinatura_ref: null, mensalidade_encerra_em: null })
+      return { licenca: ja, nova: false }
+    }
     if (ja) return { licenca: ja, nova: false }
     const licenca: Licenca = {
       id: this.id(), cliente_id: cli.id, status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null,
