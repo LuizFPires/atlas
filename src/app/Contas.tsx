@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Botao, Icone } from '../ui'
 import { LateralPassos } from './Ativacao'
 import { CartaoPasso, PreviaSite } from './GuiaConta'
 import { CONTAS, TEXTO_OPCIONAL, type IdConta } from './contas-passos'
-import type { ContaObrigatoria, PonteContas } from './ponte-contas'
+import { CONTAS_OBRIGATORIAS, type ContaObrigatoria, type PonteContas } from './ponte-contas'
 import './app.css'
 import './claude.css'
 import './contas.css'
@@ -12,21 +12,54 @@ interface Props {
   contas: PonteContas
   /** Segue para F04b (acompanhar pelo celular). */
   onContinuar: () => void
+  /** De quanto em quanto tempo o Atlas olha sozinho se a conta ficou pronta (leve). Padrão: 5 s. */
+  sondagemMs?: number
 }
 
 /** F04: abrir as contas (prototipo/F04Contas). GitHub, Supabase e Vercel, uma por vez, um passo por vez. As contas são do próprio cliente. */
-export function Contas({ contas, onContinuar }: Props) {
+export function Contas({ contas, onContinuar, sondagemMs = 5000 }: Props) {
   const [conta, setConta] = useState(0)
   const [passo, setPasso] = useState(0)
   const [feitas, setFeitas] = useState<Partial<Record<IdConta, boolean>>>({})
   const [aviso, setAviso] = useState('')
+  const [detectada, setDetectada] = useState<IdConta | null>(null)
 
   const c = CONTAS[conta]
   const p = c.passos[passo]
   const ultimo = passo === c.passos.length - 1
   const fim = ultimo && conta === CONTAS.length - 2 // última conta obrigatória (Vercel)
 
-  const ir = (nova: number) => { setConta(nova); setPasso(0); setAviso('') }
+  // Detecção sozinha: ao abrir, vê o que já está pronto; depois, enquanto o cliente faz a conta no site, olha de tempos em tempos.
+  useEffect(() => {
+    let vivo = true
+    void (async () => {
+      const prontas: Partial<Record<IdConta, boolean>> = {}
+      for (const id of CONTAS_OBRIGATORIAS) prontas[id] = await contas.pronta(id).catch(() => false)
+      if (!vivo || !CONTAS_OBRIGATORIAS.some((id) => prontas[id])) return
+      setFeitas((f) => ({ ...f, ...prontas }))
+      const primeira = CONTAS.findIndex((x) => !x.opcional && !prontas[x.id])
+      if (primeira >= 0) { setConta(primeira); setPasso(0) }
+    })()
+    return () => { vivo = false }
+  }, [contas])
+
+  const idAtual = CONTAS[conta].id
+  const jaFeita = !!feitas[idAtual]
+  useEffect(() => {
+    if (CONTAS[conta].opcional || jaFeita) return
+    let vivo = true
+    const id = setInterval(() => {
+      void contas.pronta(idAtual as ContaObrigatoria).then((ok) => {
+        if (!vivo || !ok) return
+        setFeitas((f) => ({ ...f, [idAtual]: true }))
+        setDetectada(idAtual)
+        setPasso(CONTAS[conta].passos.length - 1)
+      }).catch(() => {})
+    }, sondagemMs)
+    return () => { vivo = false; clearInterval(id) }
+  }, [conta, idAtual, jaFeita, contas, sondagemMs])
+
+  const ir = (nova: number) => { setConta(nova); setPasso(0); setAviso(''); setDetectada(null) }
 
   const avancar = async () => {
     setAviso('')
@@ -67,6 +100,7 @@ export function Contas({ contas, onContinuar }: Props) {
               {!c.opcional && (
                 <>
                   <CartaoPasso passo={p} n={passo + 1} total={c.passos.length} />
+                  {detectada === c.id && <p className="at-contas__detectada" role="status"><Icone nome="check" tamanho={16} /> O Atlas viu sozinho: a sua conta do {c.nome} está pronta.</p>}
                   <div className="at-ativ__rodape at-claude__acoes">
                     <Botao variante="secundario" onClick={voltar} disabled={conta === 0 && passo === 0}>← Voltar</Botao>
                     {fim ? <Botao onClick={onContinuar}>Último passo →</Botao> : <Botao onClick={() => void avancar()}>{passo === 0 ? 'Abrir o site →' : ultimo ? 'Próxima conta →' : 'Fiz isso →'}</Botao>}

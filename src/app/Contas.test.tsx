@@ -53,3 +53,30 @@ test('se o site não abre, avisa com calma e deixa seguir', async () => {
   expect(screen.getByRole('alert')).toHaveTextContent(/Não consegui abrir o site do GitHub/)
   expect(screen.getByText('PASSO 2 DE 5')).toBeInTheDocument()
 })
+
+test('o Atlas percebe sozinho quando a conta ficou pronta e pula para o "Pronto!"', async () => {
+  const c = criarContasFixture()
+  montar(c, { sondagemMs: 10 })
+  await clicar('Abrir o site →')
+  expect(screen.getByText('PASSO 2 DE 5')).toBeInTheDocument()
+  c.simularPronta('github')
+  expect(await screen.findByText('PASSO 5 DE 5')).toBeInTheDocument()
+  expect(screen.getByRole('status')).toHaveTextContent('está pronta')
+  expect(screen.getByText(/Pronto! O Atlas já viu/)).toBeInTheDocument()
+  await clicar('Próxima conta →')
+  expect(screen.getByText('CONTA 2 DE 4 · SUPABASE')).toBeInTheDocument()
+})
+
+test('ao abrir, retoma da primeira conta que ainda não está pronta', async () => {
+  montar(criarContasFixture(['github']), { sondagemMs: 10 })
+  expect(await screen.findByText('CONTA 2 DE 4 · SUPABASE')).toBeInTheDocument()
+})
+
+test('sem detecção (adaptador indisponível) nada é dado como pronto', async () => {
+  const c = criarContasFixture()
+  c.pronta = async () => { throw new Error('x') }
+  montar(c, { sondagemMs: 10 })
+  await new Promise((r) => setTimeout(r, 60))
+  expect(screen.getByText('CONTA 1 DE 4 · GITHUB')).toBeInTheDocument()
+  expect(screen.getByText('PASSO 1 DE 5')).toBeInTheDocument()
+})
