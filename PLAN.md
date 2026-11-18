@@ -188,9 +188,10 @@ spec: S14, S20
 tela: prototipo/F08Aprovar.dc.html
 - [ ] Mostrar etapas, prazo no plano do cliente e consumo da cota
 - [ ] Mostrar o aviso das lojas (D-U-N-S, 12 testadores/14 dias)
-- [ ] Gerar o PLAN.md da obra do cliente (formato obrigatório) e iniciar a construção
+- [ ] Oferecer a escolha do modo da obra: "automático do começo ao fim, sem me chamar" (destaque/recomendado) ou "me chamar para aprovar cada etapa"; guardar a escolha na obra e explicar em linguagem de leigo
+- [ ] Gerar o PLAN.md da obra do cliente (formato obrigatório) e iniciar a construção no modo escolhido
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: Decisão do usuário (18/11): o Atlas deve deixar o cliente escolher entre AUTOMÁTICO (roda do M1 ao fim sem intervenção — o grande valor do negócio, opção em destaque) e PASSO A PASSO (aprova cada etapa). A engine do kit já tem os dois modos (manual × roteiro automático/recomendado.json); falta a escolha na UI. O automático só para nas travas reais: ocorrência que exige o cliente (F11), pausa por cota (F10) e billing/credencial. Dá para trocar o modo depois (no painel da obra). Isto estende o protótipo F08Aprovar (registrar a divergência; a UI segue o design system).
 
 ## Milestone 19 — App: painel da obra (canteiro)
 peso: 3
@@ -199,9 +200,10 @@ tela: prototipo/F09Painel.dc.html
 - [ ] Integrar o canteiro 3D (cena real de .claude/canteiro) ao painel
 - [ ] Mostrar % ponderado (lido do PLAN), prazo restante e "agora na obra"
 - [ ] Esconder detalhes técnicos atrás de "ver detalhes"
+- [ ] Respeitar o modo da obra (M18): no automático, seguir etapa após etapa sem pedir aprovação (parar só em ocorrência/pausa/billing); no passo a passo, parar ao fim de cada etapa e pedir o OK; permitir trocar o modo aqui a qualquer momento
 - [ ] Mostrar "Publicar o sistema" ao concluir
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: Ver decisão do modo automático × passo a passo no M18. O painel honra a escolha e deixa trocar a qualquer momento.
 
 ## Milestone 20 — App: pausa por cota e ocorrência
 peso: 2
