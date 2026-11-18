@@ -16,6 +16,14 @@ test('a tela inicial segue exatamente a regra do instalador (M8)', () => {
   expect(telaInicial([], true)).toBe('F05')
 })
 
+test('com obra em andamento a tela inicial é Retomar (F12); sem ela, Obras (F05); a flag e a ativação mandam primeiro (M21)', () => {
+  expect(telaInicial([], true, true)).toBe('F12')
+  expect(telaInicial([], true, false)).toBe('F05')
+  expect(telaInicial([], false, true)).toBe('F02')
+  expect(telaInicial(['--tela=F05'], true, true)).toBe('F05')
+  for (const [argv, ativado] of casos) for (const obra of [false, true]) expect(telaInicial(argv, ativado, obra)).toBe(telaDoInstalador(argv, ativado, obra))
+})
+
 test('flag lê --nome=valor', () => {
   expect(flag(['--tela=F02', '--token=abc=='], 'token')).toBe('abc==')
   expect(flag(['--tela=F02'], 'token')).toBe('')

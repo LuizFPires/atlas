@@ -38,7 +38,8 @@ ipcMain.handle('atlas:sono', (_e, ligado) => {
 })
 
 function abrir() {
-  // Abre junto com o Windows.
+  // Abre junto com o Windows (ao ligar o computador). Com obra em andamento, a tela inicial é Retomar (F12): a regra está em
+  // src/app/tela.ts (telaInicial). Para desligar: Configurações → Abrir com o Windows (a tela F12 avisa o cliente).
   app.setLoginItemSettings({ openAtLogin: true })
   // Microfone liberado só para o próprio app (tudo pode ser falado).
   session.defaultSession.setPermissionRequestHandler((_wc, permissao, ok) => ok(permissao === 'media'))
