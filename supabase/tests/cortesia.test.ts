@@ -106,3 +106,37 @@ describe('cortesia — /verificar', () => {
     expect(await verificar(m.deps, arg)).toMatchObject({ pode_construir: true, motivo: 'ok' })
   })
 })
+
+describe('cortesia x compra — mesmo e-mail, um só cliente/licença (lock unificado, migration 0014)', () => {
+  const dados = (m: Awaited<ReturnType<typeof montar>>) => ({ agora: m.deps.agora(), validade_em: new Date(m.deps.agora().getTime() + 10 * DIA) })
+
+  it('cortesia e depois compra: compra vê a licença da cortesia, sem duplicar', async () => {
+    const m = montar()
+    const { agora, validade_em } = dados(m)
+    await m.store.criarCortesia({ email: 'dup@x.com', nome: 'Dup', validade_em, agora })
+    const r = await m.store.criarCompra({ email: 'dup@x.com', nome: 'Dup', agora, valor: 100, conta_gateway_id: 'c1', gateway_cliente_ref: 'cus' } as never)
+    expect(r.nova).toBe(false)
+    expect(m.store.clientes.filter((c) => c.email_compra === 'dup@x.com')).toHaveLength(1)
+    expect(m.store.licencas.filter((l) => l.cliente_id === r.licenca.cliente_id)).toHaveLength(1)
+  })
+
+  it('compra e depois cortesia: cortesia não mexe na paga e não duplica', async () => {
+    const m = montar()
+    const { agora, validade_em } = dados(m)
+    await m.store.criarCompra({ email: 'dup2@x.com', nome: 'Dup', agora, valor: 100, conta_gateway_id: 'c1', gateway_cliente_ref: 'cus' } as never)
+    const r = await m.store.criarCortesia({ email: 'dup2@x.com', nome: 'Dup', validade_em, agora })
+    expect(r.resultado).toBe('ja_tem_paga')
+    expect(m.store.clientes.filter((c) => c.email_compra === 'dup2@x.com')).toHaveLength(1)
+    expect(m.store.licencas.filter((l) => l.cliente_id === r.licenca.cliente_id)).toHaveLength(1)
+  })
+
+  it('a migration 0014 usa a MESMA chave de lock nas duas funções', async () => {
+    const mod = (n: string): Promise<unknown> => import(/* @vite-ignore */ n)
+    const fs = (await mod('node:fs')) as { readFileSync(p: string, e: string): string }
+    const { fileURLToPath } = (await mod('node:url')) as { fileURLToPath(u: string | URL): string }
+    const sql = fs.readFileSync(fileURLToPath(new URL('../migrations/0014_cortesia_lock_unificado.sql', import.meta.url)), 'utf8')
+    const chave = "hashtextextended('cliente:' || lower(trim(p_email)), 0)"
+    expect(sql.split(chave)).toHaveLength(3)
+    expect(sql).not.toMatch(/'compra:'|'cortesia:'/)
+  })
+})
