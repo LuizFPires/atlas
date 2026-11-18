@@ -14,6 +14,10 @@ import type { PonteCota } from './ponte-cota'
 import type { PonteOcorrencias } from './ponte-ocorrencia'
 import type { PonteCelular } from './ponte-celular'
 import type { PonteImportar } from './ponte-importar'
+import type { PonteAjuda } from './ponte-ajuda'
+import type { PonteCasosAdmin } from './ponte-ajuda-casos'
+import type { PontePublicar } from './ponte-publicar'
+import type { PonteKit } from '../kit/entrega-kit'
 
 /** Cofre do sistema (Windows Credential Manager / DPAPI). NUNCA grava segredo em arquivo. */
 export interface Cofre {
@@ -49,6 +53,11 @@ export interface PonteDesktop {
   ocorrencias?: PonteOcorrencias
   celular?: PonteCelular
   importar?: PonteImportar
+  ajuda?: PonteAjuda
+  casos?: PonteCasosAdmin
+  publicar?: PontePublicar
+  /** Kit por obra (entrega-kit.ts): o processo principal guarda numa pasta temporária do app, fora da obra. */
+  kit?: PonteKit
 }
 
 declare global {

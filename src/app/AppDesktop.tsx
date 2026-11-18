@@ -90,10 +90,10 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
 
   // Idem para as contas do cliente (GitHub, Supabase, Vercel): sem adaptador real, não finge que ficaram prontas.
   // A Ajuda do Atlas: o Claude por baixo, atrás de uma porta. Sem adaptador real, não finge que entendeu.
-  const ponteAjuda = useMemo<PonteAjuda>(() => ajuda ?? (modoFixture() ? criarAjudaFixture() : ajudaIndisponivel), [ajuda])
+  const ponteAjuda = useMemo<PonteAjuda>(() => ajuda ?? (modoFixture() ? criarAjudaFixture() : (ponte.ajuda ?? ajudaIndisponivel)), [ajuda, ponte])
   // Casos que o Atlas não resolveu vão ao painel do administrador (ocorrencias_admin, M7); sem adaptador real, não finge que anotou.
-  const ponteCasos = useMemo<PonteCasosAdmin>(() => casos ?? (modoFixture() ? criarCasosFixture() : casosIndisponivel), [casos])
-  const abrirAjuda = (contexto: ContextoAjuda) => setPainelAjuda((a) => ({ contexto: { obra: obraAtual?.nome, ...contexto }, n: (a?.n ?? 0) + 1 }))
+  const ponteCasos = useMemo<PonteCasosAdmin>(() => casos ?? (modoFixture() ? criarCasosFixture() : (ponte.casos ?? casosIndisponivel)), [casos, ponte])
+  const abrirAjuda = (contexto: ContextoAjuda) => setPainelAjuda((a) => ({ contexto: { obra: obraAtual?.nome, pasta: obraAtual?.pasta, ...contexto }, n: (a?.n ?? 0) + 1 }))
   const pedirAjudaPasso = (p: PedidoAjudaPasso) => abrirAjuda(contextoDoPasso(p))
 
   const ponteContas = useMemo<PonteContas>(() => contas ?? (modoFixture() ? criarContasFixture() : contasIndisponivel), [contas])
@@ -153,7 +153,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   }, [retomar, pontePainel, ponteCota, ponte])
 
   // Publicação (Vercel, Registro.br, lojas): pagamentos e "Enviar para revisão" são do cliente; sem adaptador real, não finge que publicou.
-  const pontePublicar = useMemo<PontePublicar>(() => publicar ?? (modoFixture() ? criarPublicarFixture() : publicarIndisponivel), [publicar])
+  const pontePublicar = useMemo<PontePublicar>(() => publicar ?? (modoFixture() ? criarPublicarFixture() : (ponte.publicar ?? publicarIndisponivel)), [publicar, ponte])
 
   // Pós-obra (F14): sem adaptador real, não finge que entendeu nem que mexeu na obra.
   const pontePosObra = useMemo<PontePosObra>(() => posobra ?? (modoFixture() ? criarPosObraFixture() : (ponte.posobra ?? posObraIndisponivel)), [posobra, ponte])

@@ -78,7 +78,7 @@ export interface PontePublicar {
   /** Coloca o sistema no ar na conta da Vercel DO CLIENTE e liga o banco. Devolve o endereço .vercel.app. */
   publicarNoAr(slug: string): Promise<{ endereco: string }>
   /** Gera o cartaz com QR code na pasta da obra. Devolve o nome do arquivo. */
-  gerarCartaz(endereco: string): Promise<{ arquivo: string }>
+  gerarCartaz(endereco: string, pastaObra?: string): Promise<{ arquivo: string }>
   /** "Pode fechar o Atlas: ele continua deste passo". Guarda só guia e número do passo (nada secreto). */
   lerProgresso(pastaObra: string): Promise<Progresso | null>
   gravarProgresso(pastaObra: string, p: Progresso): Promise<void>
