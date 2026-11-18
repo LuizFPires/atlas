@@ -19,13 +19,13 @@ Notas: Repositório privado LuizFPires/atlas (base main). Decisão: incluir um w
 peso: 3
 spec: S3, S4, S5
 tela:
-- [ ] Criar o schema Supabase (clientes, licencas, ativacoes, trocas, links, codigos, entregas_kit, pagamentos, ocorrencias_admin)
-- [ ] Implementar geração de link de instalação de uso único (~48 h)
-- [ ] Implementar ativação por e-mail + código de 6 dígitos (1 licença = 1 computador)
-- [ ] Implementar troca de computador com limite 1/7 dias e override manual
-- [ ] Implementar /verificar (licença em dia + computador ativado) com tolerância curta offline
-- [ ] Implementar /entregar-kit com marca d'água por cliente, sem persistir no disco
-Notas:
+- [x] Criar o schema Supabase (clientes, licencas, ativacoes, trocas, links, codigos, entregas_kit, pagamentos, ocorrencias_admin)
+- [x] Implementar geração de link de instalação de uso único (~48 h)
+- [x] Implementar ativação por e-mail + código de 6 dígitos (1 licença = 1 computador)
+- [x] Implementar troca de computador com limite 1/7 dias e override manual
+- [x] Implementar /verificar (licença em dia + computador ativado) com tolerância curta offline
+- [x] Implementar /entregar-kit com marca d'água por cliente, sem persistir no disco
+Notas: ⏩ Auto (recomendado): sem decisões de negócio pendentes — regras vêm dos invariantes (1 licença = 1 computador, link uso único ~48h, troca 1/7 dias, marca d'água por cliente, nunca persistir segredo no disco) e de S3/S4/S5. Implementação como migrations Supabase + edge functions com fixtures/testes, sem deploy em produção (deploy é da etapa /entregar). Revisão de segurança reprovou (1 alto + 3 médios); decisões (auto — recomendado): (1) limite de emissão de código 3/15 min por cliente e por IP, falhas contadas por cliente+finalidade em janela (429), invalidar códigos abertos ao emitir novo, hash do código via HMAC; (2) credencial do app = segredo por ativação (device token), implementado como bearer token sobre TLS (cabeçalho X-Atlas-Dispositivo), guardado só como hash e comparado em tempo constante — o "desafio/HMAC" não cabe porque o servidor só guarda o hash; token rotaciona na troca/reativação; exigido em /verificar e /entregar-kit, negação genérica sem credencial; (3) status 'atrasada' com pausa nula = negar por padrão (allowlist fail-closed); (4) assinatura do /verificar migra para Ed25519 no servidor já neste milestone (contrato entregue agora), watermark segue HMAC. Pendente p/ /entregar (precisa de credenciais): adaptadores_supabase.ts, ATLAS_SEGREDO, ATLAS_SERVICO_TOKEN. Verificação offline + chave pública embutida ficam p/ o milestone do app. Re-QA aprovou após as correções (fix 2f42dcb). Endurecimento adicional (baixos baratos): IP do hop confiável da plataforma (não XFF à esquerda); token só pelo cabeçalho X-Atlas-Dispositivo (sem fallback no corpo); RLS sem expor token_hash ao portal. Decisão (auto — recomendado): o DoS dirigido por e-mail conhecido (gastar as 3 emissões/10 tentativas de um cliente em 15 min) é tradeoff aceito da proteção por conta. Requisito do milestone do app: token_dispositivo guardado no cofre do SO (Windows Credential Manager/DPAPI), nunca em arquivo. Pendente p/ /entregar: validar a migration 0002 em Postgres real e adicionar job de purga das chaves de limite; escolher o header de IP confiável da plataforma de deploy (ex.: x-real-ip do gateway Supabase) e o nº de proxies confiáveis — o teto de IP é defesa secundária, pois os tetos por cliente e por falhas do cliente já barram o brute-force (achado de IP reconhecido como baixa, não bloqueia o M2).
 
 ## Milestone 3 — Pagamento e cobrança recorrente
 peso: 2
