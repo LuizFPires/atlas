@@ -1,11 +1,11 @@
 // Preload do app Atlas: a ÚNICA ponte entre a tela (renderer) e o processo principal.
 //
 // O QUE FAZ: expõe window.atlasDesktop (contextIsolation ligado, sandbox ligado, SEM nodeIntegration). Só os namespaces
-// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar. Todo argumento vira String/boolean aqui e é
+// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra. Todo argumento vira String/boolean aqui e é
 // revalidado de novo no processo principal (main.cjs); o renderer nunca recebe caminho de origem, módulo Node nem Electron.
 //
 // COMO TESTAR (Windows): `npx electron app/main.cjs`, abrir as ferramentas do desenvolvedor e digitar `window.atlasDesktop`:
-// deve listar só argv, cofre, hashComputador, descricaoComputador, impedirSono, arquivos, obras, claude, modos, construcao, painel, retomar. `typeof require` = 'undefined'.
+// deve listar só argv, cofre, hashComputador, descricaoComputador, impedirSono, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra. `typeof require` = 'undefined'.
 'use strict'
 const { contextBridge, ipcRenderer } = require('electron')
 
@@ -56,6 +56,31 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     // síncrona na porta: o processo principal só devolve http://127.0.0.1:<porta>/... (ou null).
     enderecoCanteiro: (pasta) => ipcRenderer.sendSync('atlas:painel:endereco', String(pasta)),
     abrirTeste: (pasta) => chamar('atlas:painel:teste', String(pasta)),
+  },
+  estilo: {
+    // referencias/sentimentos viram texto; o processo principal revalida tudo. pasta é opcional (a obra, para o Claude olhar os prints).
+    propor: (entrada, pasta) => chamar('atlas:estilo:propor', JSON.parse(JSON.stringify(entrada ?? {})), pasta ? String(pasta) : undefined),
+    materializar: (pasta, origem) => chamar('atlas:estilo:materializar', String(pasta), JSON.parse(JSON.stringify(origem ?? {}))),
+  },
+  prototipo: {
+    estado: (pasta) => chamar('atlas:prototipo:estado', String(pasta)),
+    desenhar: (pasta, obraNome, estilo) => chamar('atlas:prototipo:desenhar', String(pasta), String(obraNome), JSON.parse(JSON.stringify(estilo ?? {}))),
+    ajustar: (pasta, pedido) => chamar('atlas:prototipo:ajustar', String(pasta), String(pedido)),
+    voltar: (pasta, numero) => chamar('atlas:prototipo:voltar', String(pasta), Number(numero)),
+  },
+  batismo: {
+    sugerir: (pasta, obraNome, pedido) => chamar('atlas:batismo:sugerir', String(pasta), String(obraNome), JSON.parse(JSON.stringify(pedido ?? {}))),
+    batizar: (pasta, marca) => chamar('atlas:batismo:batizar', String(pasta), JSON.parse(JSON.stringify(marca ?? {}))),
+  },
+  nomes: {
+    // só o NOME vai ao processo principal; o host e o caminho da consulta são fixos lá (anti-SSRF, ver adaptadores/nomes.cjs).
+    conferir: (nome) => chamar('atlas:nomes:conferir', String(nome)),
+  },
+  posobra: {
+    // pedido/plano viram dados puros (texto); o processo principal revalida tudo e CONFERE A LICENÇA de novo antes de executar.
+    entender: (pasta, pedido) => chamar('atlas:posobra:entender', String(pasta), JSON.parse(JSON.stringify(pedido ?? {}))),
+    executar: (pasta, pedido, plano) => chamar('atlas:posobra:executar', String(pasta), JSON.parse(JSON.stringify(pedido ?? {})), JSON.parse(JSON.stringify(plano ?? {}))),
+    historico: (pasta) => chamar('atlas:posobra:historico', String(pasta)),
   },
   construcao: {
     planejar: (pasta, obraNome) => chamar('atlas:construcao:planejar', String(pasta), String(obraNome)),

@@ -108,16 +108,16 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteArquivos = useMemo<PonteArquivos>(() => arquivos ?? (modoFixture() ? criarArquivosFixture(ponteObras.raiz()) : (ponte.arquivos ?? arquivosIndisponivel)), [arquivos, ponteObras, ponte])
 
   // Idem para o Claude que propõe os 3 estilos e escreve o design-system.md: sem adaptador real, não finge.
-  const ponteEstilo = useMemo<PonteEstilo>(() => estilo ?? (modoFixture() ? criarEstiloFixture(ponteObras.raiz()) : estiloIndisponivel), [estilo, ponteObras])
+  const ponteEstilo = useMemo<PonteEstilo>(() => estilo ?? (modoFixture() ? criarEstiloFixture(ponteObras.raiz()) : (ponte.estilo ?? estiloIndisponivel)), [estilo, ponteObras, ponte])
 
   // Idem para o .zip que vem de outra IA (não confiável): sem adaptador real, não finge que recebeu nem abre nada.
   const ponteImportar = useMemo<PonteImportar>(() => importar ?? (modoFixture() ? criarImportarFixture(ponteObras.raiz()) : importarIndisponivel), [importar, ponteObras])
 
   // Idem para o Claude que desenha e ajusta as telas (HTML não confiável: só em iframe sandbox): sem adaptador real, não finge.
-  const pontePrototipo = useMemo<PontePrototipo>(() => prototipo ?? (modoFixture() ? criarPrototipoFixture(ponteObras.raiz()) : prototipoIndisponivel), [prototipo, ponteObras])
+  const pontePrototipo = useMemo<PontePrototipo>(() => prototipo ?? (modoFixture() ? criarPrototipoFixture(ponteObras.raiz()) : (ponte.prototipo ?? prototipoIndisponivel)), [prototipo, ponteObras, ponte])
 
   // Idem para o Claude que sugere os nomes e grava a marca na pasta da obra: sem adaptador real, não finge.
-  const ponteBatismo = useMemo<PonteBatismo>(() => batismo ?? (modoFixture() ? criarBatismoFixture(ponteObras.raiz()) : batismoIndisponivel), [batismo, ponteObras])
+  const ponteBatismo = useMemo<PonteBatismo>(() => batismo ?? (modoFixture() ? criarBatismoFixture(ponteObras.raiz()) : (ponte.batismo ?? batismoIndisponivel)), [batismo, ponteObras, ponte])
   // Idem para conferir nomes parecidos e endereço livre (consulta pública): sem adaptador real, não finge que conferiu.
   // Idem para o plano da obra e o modo (automático ou passo a passo): o mesmo armazém de preferências é o que o painel da obra (M19) lê.
   const pontesModo = useMemo(() => {
@@ -156,7 +156,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const pontePublicar = useMemo<PontePublicar>(() => publicar ?? (modoFixture() ? criarPublicarFixture() : publicarIndisponivel), [publicar])
 
   // Pós-obra (F14): sem adaptador real, não finge que entendeu nem que mexeu na obra.
-  const pontePosObra = useMemo<PontePosObra>(() => posobra ?? (modoFixture() ? criarPosObraFixture() : posObraIndisponivel), [posobra])
+  const pontePosObra = useMemo<PontePosObra>(() => posobra ?? (modoFixture() ? criarPosObraFixture() : (ponte.posobra ?? posObraIndisponivel)), [posobra, ponte])
 
   // Licença em dia (S4 /verificar) é exigida ANTES de qualquer correção. Sem adaptador/endereço, nega (fail-closed); nunca finge licença fora do fixture.
   const ponteLicenca = useMemo<PonteLicenca>(() => {
@@ -166,7 +166,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     return url ? criarLicencaApi(ponte, url) : licencaIndisponivel
   }, [licenca, ponte])
 
-  const ponteNomes = useMemo<PonteNomes>(() => nomes ?? (modoFixture() ? criarNomesFixture() : nomesIndisponivel), [nomes])
+  const ponteNomes = useMemo<PonteNomes>(() => nomes ?? (modoFixture() ? criarNomesFixture() : (ponte.nomes ?? nomesIndisponivel)), [nomes, ponte])
 
   const ativacao = useMemo<AtivacaoApi>(
     () => {

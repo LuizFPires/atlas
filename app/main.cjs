@@ -13,6 +13,13 @@ const { criarModo } = require('./adaptadores/modo.cjs')
 const { criarConstrucao } = require('./adaptadores/construcao.cjs')
 const { criarPainel } = require('./adaptadores/painel.cjs')
 const { criarRetomar } = require('./adaptadores/retomar.cjs')
+const { criarDisparo } = require('./adaptadores/projeto-comum.cjs')
+const { criarEstilo } = require('./adaptadores/estilo.cjs')
+const { criarPrototipo } = require('./adaptadores/prototipo.cjs')
+const { criarBatismo } = require('./adaptadores/batismo.cjs')
+const { criarNomes } = require('./adaptadores/nomes.cjs')
+const { criarPosObra } = require('./adaptadores/posobra.cjs')
+const { criarLicenca } = require('./adaptadores/licenca.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -28,6 +35,16 @@ const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: ()
 const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
 // cota: sem adaptador real ainda (pendente); sem ele o Retomar só liga a linha por painel.continuar.
 const retomar = criarRetomar({ raiz: obras.raiz(), painel, construcao })
+// Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
+const disparo = criarDisparo({ raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
+const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
+const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
+const batismo = criarBatismo({ raiz: obras.raiz(), disparo })
+const nomes = criarNomes()
+// Pós-obra: roda pela MESMA linha da obra (construcao.linha) e só com licença em dia, conferida AQUI no processo principal (token do cofre).
+// O endereço da API vem de ATLAS_API_URL (https); sem ele a licença nega (fail-closed) e o pós-obra não executa.
+const licenca = criarLicenca({ cofre, hashComputador: async () => hash() })
+const posobra = criarPosObra({ raiz: obras.raiz(), disparo, construcao, licenca })
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -87,6 +104,28 @@ handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
 // Retomar (F12): obra em andamento ao abrir o app e "Continuar obra".
 handle('atlas:retomar:andamento', () => retomar.obraEmAndamento())
 handle('atlas:retomar:continuar', (pasta) => retomar.continuar({ pasta: String(pasta) }))
+
+// Estilo do sistema (F06b): o Claude propõe 3 estilos; materializar grava o design-system.md (nunca sobrescreve).
+handle('atlas:estilo:propor', (entrada, pasta) => estilo.propor(entrada, pasta === undefined ? undefined : String(pasta)))
+handle('atlas:estilo:materializar', (pasta, origem) => estilo.materializar(String(pasta), origem))
+
+// Protótipo (F07): o Claude devolve as telas, o app grava versões imutáveis em <obra>/prototipo/versoes/vNNN; desfazer = ponteiro.
+handle('atlas:prototipo:estado', (pasta) => prototipo.estado(String(pasta)))
+handle('atlas:prototipo:desenhar', (pasta, nome, estilo) => prototipo.desenhar(String(pasta), String(nome), estilo))
+handle('atlas:prototipo:ajustar', (pasta, pedido) => prototipo.ajustar(String(pasta), String(pedido)))
+handle('atlas:prototipo:voltar', (pasta, numero) => prototipo.voltar(String(pasta), Number(numero)))
+
+// Batismo (F07b): 3 nomes (logo só de lista fechada) e marca/marca.md sem sobrescrever.
+handle('atlas:batismo:sugerir', (pasta, nome, pedido) => batismo.sugerir(String(pasta), String(nome), pedido))
+handle('atlas:batismo:batizar', (pasta, marca) => batismo.batizar(String(pasta), marca))
+
+// Nomes: conferir endereço livre (.app / .com.br) só por RDAP oficial, anti-SSRF (host fixo, IP público, sem redirect, timeout).
+handle('atlas:nomes:conferir', (nome) => nomes.conferir(String(nome)))
+
+// Pós-obra (F14): entender (só explica) e executar (exige licença em dia; mesmo pipeline da obra).
+handle('atlas:posobra:entender', (pasta, pedido) => posobra.entender(String(pasta), pedido))
+handle('atlas:posobra:executar', (pasta, pedido, plano) => posobra.executar(String(pasta), pedido, plano))
+handle('atlas:posobra:historico', (pasta) => posobra.historico(String(pasta)))
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois).
 app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })

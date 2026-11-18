@@ -89,7 +89,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
     setErro('')
     setOcupado('propondo')
     try {
-      const p = await estilo.propor(entrada())
+      const p = await estilo.propor(entrada(), obra.pasta)
       setPropostos(p)
       setEscolhido(p[0]?.id ?? '')
     } catch { setErro('Não consegui montar os estilos agora. Suas referências continuam aqui; tente de novo em instantes.') }

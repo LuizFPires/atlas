@@ -259,4 +259,4 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
   }
 }
 
-module.exports = { criarConstrucao, envGitIsolado, FERRAMENTAS_NEGADAS, RE_COTA, etapasDoTexto, resumirLinha, previsaoPorEtapas, FERRAMENTAS_LINHA }
+module.exports = { criarConstrucao, envGitIsolado, ARGS_SEM_CONFIG_DE_PROJETO, FERRAMENTAS_NEGADAS, RE_COTA, etapasDoTexto, resumirLinha, previsaoPorEtapas, FERRAMENTAS_LINHA }

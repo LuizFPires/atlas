@@ -49,8 +49,8 @@ export type OrigemDoDesignSystem =
   | { tipo: 'identidade'; identidade: Identidade }
 
 export interface PonteEstilo {
-  /** Pede ao Claude 3 estilos a partir das referências e do sentimento. */
-  propor(entrada: EntradaEstilo): Promise<EstiloProposto[]>
+  /** Pede ao Claude 3 estilos a partir das referências e do sentimento. `pasta` (opcional): a obra, para o Claude olhar os prints guardados nela. */
+  propor(entrada: EntradaEstilo, pasta?: string): Promise<EstiloProposto[]>
   /** Transforma a escolha no design-system.md dentro da subpasta da obra. Devolve o caminho, só para mostrar. */
   materializar(pasta: string, origem: OrigemDoDesignSystem): Promise<{ caminho: string }>
 }
