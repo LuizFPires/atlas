@@ -2,14 +2,15 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Batismo } from './Batismo'
+import { criarArquivosFixture, type ArquivosFixture } from './ponte-arquivos'
 import { batismoIndisponivel, criarBatismoFixture, criarNomesFixture, nomesIndisponivel, resumoDaConferencia, slugDominio, type PonteNomes, limparNome, LOGOS, montarMarcaMd, montarPedidoSugerir, type BatismoFixture, type PonteBatismo } from './ponte-batismo'
 
 const obra = { nome: 'Agenda da Barbearia do Zé', pasta: 'agenda-da-barbearia-do-ze' }
-const montar = (batismo: PonteBatismo = criarBatismoFixture(), nomes: PonteNomes = criarNomesFixture()) => {
+const montar = (batismo: PonteBatismo = criarBatismoFixture(), nomes: PonteNomes = criarNomesFixture(), arquivos: ArquivosFixture = criarArquivosFixture()) => {
   const user = userEvent.setup()
   const onVoltar = vi.fn()
   const onConcluir = vi.fn()
-  render(<TemaProvider><Batismo obra={obra} batismo={batismo} nomes={nomes} onVoltar={onVoltar} onConcluir={onConcluir} /></TemaProvider>)
+  render(<TemaProvider><Batismo obra={obra} batismo={batismo} nomes={nomes} arquivos={arquivos} onVoltar={onVoltar} onConcluir={onConcluir} /></TemaProvider>)
   return { user, onVoltar, onConcluir, batismo }
 }
 
@@ -120,4 +121,68 @@ test('o endereço é só letras e números, sem acento, e nunca vem de texto per
   await expect(n.conferir('🙂🙂')).rejects.toThrow('nome-invalido')
   const c = await n.conferir('http://169.254.169.254/')
   expect(c.enderecos.every((e) => /^[a-z0-9]+\.(app|com\.br)$/.test(e.dominio))).toBe(true)
+})
+
+const irParaTenho = async (user: ReturnType<typeof userEvent.setup>) => {
+  await screen.findAllByRole('radio')
+  await user.click(screen.getByRole('button', { name: 'Já tenho nome e logomarca' }))
+}
+
+test('quem já tem marca digita o nome, sobe a logo na subpasta da obra e batiza', async () => {
+  const arq = criarArquivosFixture()
+  const f = criarBatismoFixture()
+  const { user, onConcluir } = montar(f, criarNomesFixture(), arq)
+  await irParaTenho(user)
+  expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Batizar como “…”/ })).toBeDisabled()
+  await user.type(screen.getByLabelText(/Qual o nome do sistema/), 'Agenda do Zé')
+  expect(screen.getAllByRole('button', { name: 'Falar' }).length).toBeGreaterThan(0)
+  await user.click(screen.getByRole('button', { name: 'Escolher arquivo' }))
+  expect(await screen.findByText(/Guardada na pasta da obra: logo-barbearia\.png/)).toBeInTheDocument()
+  expect(arq.guardados).toEqual([['C:', 'Users', 'Zé', 'Atlas', 'Obras', obra.pasta, 'marca', 'logo-barbearia.png'].join(String.fromCharCode(92))])
+  expect(screen.getByLabelText('Como fica no celular')).toHaveTextContent('Agenda do Zé')
+  await user.click(screen.getByRole('button', { name: /Batizar como “Agenda do Zé”/ }))
+  expect(onConcluir).toHaveBeenCalledTimes(1)
+  expect(f.escritos[0].texto).toContain('arquivo: marca/logo-barbearia.png')
+  expect(f.escritos[0].texto).toContain('nome e logo que o cliente já tinha')
+})
+
+test('SVG é recusado como logo e nada é guardado', async () => {
+  const arq = criarArquivosFixture()
+  arq.fila.push({ nome: 'logo.svg', tamanho: 1000 })
+  const { user } = montar(criarBatismoFixture(), criarNomesFixture(), arq)
+  await irParaTenho(user)
+  await user.click(screen.getByRole('button', { name: 'Escolher arquivo' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('SVG não')
+  expect(arq.guardados).toEqual([])
+})
+
+test('arquivo grande demais é recusado e desistir do diálogo não faz nada', async () => {
+  const arq = criarArquivosFixture()
+  arq.fila.push({ nome: 'logo.png', tamanho: 50 * 1024 * 1024 }, null)
+  const { user } = montar(criarBatismoFixture(), criarNomesFixture(), arq)
+  await irParaTenho(user)
+  await user.click(screen.getByRole('button', { name: 'Escolher arquivo' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('grande demais')
+  await user.click(screen.getByRole('button', { name: 'Escolher arquivo' }))
+  expect(arq.guardados).toEqual([])
+})
+
+test('o nome do cliente também é conferido, e dá para batizar sem logo ainda', async () => {
+  const f = criarBatismoFixture()
+  const { user } = montar(f)
+  await irParaTenho(user)
+  await user.type(screen.getByLabelText(/Qual o nome do sistema/), 'Atlas')
+  await user.click(screen.getByRole('button', { name: 'Conferir nome e endereço' }))
+  expect(await screen.findByText(/existe um aplicativo com nome parecido/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: /Batizar como “Atlas”/ }))
+  expect(f.escritos[0].texto).toContain('o cliente ainda não mandou')
+})
+
+test('a logo do cliente é só do tipo logo: SVG fora, PDF e WebP dentro', async () => {
+  const { extensaoPermitida } = await import('./ponte-arquivos')
+  expect(extensaoPermitida('logo', 'a.svg')).toBe(false)
+  for (const n of ['a.png', 'a.jpg', 'a.webp', 'a.pdf']) expect(extensaoPermitida('logo', n)).toBe(true)
+  const f = criarArquivosFixture()
+  await expect(f.guardar('obra', 'marca', f.registrar('logo', { nome: 'x.svg', tamanho: 1 }))).rejects.toThrow('tipo-nao-aceito')
 })
