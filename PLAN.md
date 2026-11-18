@@ -254,7 +254,7 @@ tela: prototipo/F14PosObra.dc.html
 - [ ] Explicar o que vai fazer antes de mexer
 - [ ] Rodar a correção pelo mesmo pipeline exigindo licença em dia
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): F14PosObra — o cliente descreve a mudança com as palavras dele (fala, texto ou print), o Atlas EXPLICA o que vai fazer ANTES de mexer, e a correção roda pelo MESMO pipeline da obra, exigindo licença em dia (liga no /verificar do M2 — sem licença válida, não roda). O pedido/print do cliente é DADO para o Claude (tratado como M14/M15: delimitado, não-instrução; print via PonteArquivos). Atrás de ports (mock em fixture; adaptador real p/ /entregar). Modo fixture, sem deploy.
 
 ## Milestone 25 — App: Ajuda do Atlas
 peso: 2
