@@ -1,5 +1,8 @@
 // Ponte entre o front (React) e o app desktop (Electron). O front só conhece esta interface:
 // a API do Electron fica atrás dela, então o CI (ubuntu) testa tudo sem empacotar nada.
+import type { PonteArquivos } from './ponte-arquivos'
+import type { PonteClaude } from './ponte-claude'
+import type { PonteObras } from './ponte-obras'
 
 /** Cofre do sistema (Windows Credential Manager / DPAPI). NUNCA grava segredo em arquivo. */
 export interface Cofre {
@@ -18,6 +21,10 @@ export interface PonteDesktop {
   descricaoComputador(): Promise<string>
   /** Liga/desliga o bloqueio de suspensão (o computador é o canteiro). */
   impedirSono(ligado: boolean): Promise<void>
+  /** Adaptadores reais injetados pelo preload (app/preload.cjs). Opcionais: o que faltar cai no *Indisponivel. */
+  arquivos?: PonteArquivos
+  obras?: PonteObras
+  claude?: PonteClaude
 }
 
 declare global {
