@@ -108,7 +108,7 @@ tela: prototipo/F03Claude.dc.html
 - [ ] Detectar e explicar o plano (Pro/Max) ao conectar
 - [ ] Reconhecer upgrade sozinho ou com o botão "Já fiz o upgrade" (1 clique)
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): login guiado do Claude (F03): passo a passo abrindo claude.ai, e-mail, código, Authorize — é o login DO PRÓPRIO CLIENTE, sem OAuth de assinatura (regra Anthropic). O Atlas só DETECTA o plano (Pro/Max) e explica; nunca escolhe plano; upgrade é no site do Claude. Reconhece o upgrade sozinho (polling leve) ou com "Já fiz o upgrade" (1 clique). A interação real com o Claude Code CLI fica atrás de um port (PonteClaude) com mock em fixture; o adaptador real (rodar o CLI, ler o plano) fica p/ /entregar. Cada palavra em inglês vem traduzida; "Não consegui" abre ajuda do passo.
 
 ## Milestone 11 — App: abrir as contas
 peso: 2
