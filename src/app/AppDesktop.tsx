@@ -16,6 +16,7 @@ import { Aprovar } from './Aprovar'
 import { Painel } from './Painel'
 import { Publicar } from './Publicar'
 import { Publicando } from './Publicando'
+import { Entrega, type ResumoEntrega } from './Entrega'
 import { criarPublicarFixture, publicarIndisponivel, slugDaObra, type PontePublicar } from './ponte-publicar'
 import type { Selecao } from './publicar-dados'
 import { Retomar } from './Retomar'
@@ -77,10 +78,12 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const [dono, setDono] = useState('')
   const [paradaF12, setParadaF12] = useState<ObraParada | null>(null)
   // Dentro de Minhas obras: lista (F05), nova obra (F06) ou trazer protótipo (F06c, do M15).
-  const [fluxo, setFluxo] = useState<'lista' | 'nova' | 'trazer' | 'estilo' | 'telas' | 'batismo' | 'aprovar' | 'publicar' | 'publicando'>('lista')
+  const [fluxo, setFluxo] = useState<'lista' | 'nova' | 'trazer' | 'estilo' | 'telas' | 'batismo' | 'aprovar' | 'publicar' | 'publicando' | 'entrega'>('lista')
   const [ideia, setIdeia] = useState('')
   const [obraAtual, setObraAtual] = useState<ObraDoEstilo | null>(null)
   const [selecaoPub, setSelecaoPub] = useState<Selecao>({})
+  const [enderecoNoAr, setEnderecoNoAr] = useState<string | null>(null)
+  const [resumoEntrega, setResumoEntrega] = useState<ResumoEntrega | null>(null)
   const [estiloEscolhido, setEstiloEscolhido] = useState<EstiloProposto | null>(null)
   useImpedirSono(ponte, instalando)
 
@@ -203,7 +206,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'obras' && fluxo === 'telas' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('batismo')} />
   else if (ativo === 'obras' && fluxo === 'batismo' && obraAtual) conteudo = <Batismo obra={obraAtual} batismo={ponteBatismo} nomes={ponteNomes} arquivos={ponteArquivos} onVoltar={() => setFluxo('telas')} onConcluir={() => setFluxo('aprovar')} />
   else if (ativo === 'obra' && obraAtual && fluxo === 'publicar') conteudo = <Publicar slug={slugDaObra(obraAtual.nome)} onPublicar={(sel) => { setSelecaoPub(sel); setFluxo('publicando') }} onVoltar={() => setFluxo('lista')} />
-  else if (ativo === 'obra' && obraAtual && fluxo === 'publicando') conteudo = <Publicando obra={obraAtual} selecao={selecaoPub} publicar={pontePublicar} onVoltar={() => setFluxo('publicar')} onConcluir={() => setFluxo('lista')} onPedirAjuda={(p) => { setPedidoAjuda(p); setAtivo('ajuda') }} />
+  else if (ativo === 'obra' && obraAtual && fluxo === 'publicando') conteudo = <Publicando obra={obraAtual} selecao={selecaoPub} publicar={pontePublicar} onVoltar={() => setFluxo('publicar')} onConcluir={(noAr) => { setEnderecoNoAr(noAr); setResumoEntrega(null); void pontePainel.ler(obraAtual.pasta).then((e) => setResumoEntrega({ etapas: e.etapas.length, tarefas: e.feitas }), () => {}); setFluxo('entrega') }} onPedirAjuda={(p) => { setPedidoAjuda(p); setAtivo('ajuda') }} />
+  else if (ativo === 'obra' && obraAtual && fluxo === 'entrega') conteudo = <Entrega obra={obraAtual} endereco={enderecoNoAr} resumo={resumoEntrega} onMudar={() => setFluxo('lista')} />
   else if (ativo === 'obra' && obraAtual) conteudo = <Painel obra={obraAtual} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => setAtivo('ajuda')} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => setFluxo('publicar')} />
   else if (ativo === 'obras' && fluxo === 'aprovar' && obraAtual) conteudo = <Aprovar obra={obraAtual} construcao={pontesModo.construcao} claude={ponteClaude} modos={pontesModo.modos} onVoltar={() => setFluxo('batismo')} onComecou={() => { setFluxo('lista'); setAtivo('obra') }} />
   else if (ativo === 'obras' && fluxo === 'nova') conteudo = <NovaObra obras={ponteObras} ideia={ideia} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} onEstilo={(o: ObraNova) => { setObraAtual({ nome: o.respostas.nome, pasta: o.pasta.pasta }); setFluxo('estilo') }} />
