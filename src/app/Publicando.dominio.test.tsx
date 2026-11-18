@@ -77,3 +77,15 @@ test('se não deu para ler o DNS, avisa com calma e não deixa seguir com linhas
   expect(screen.getByRole('button', { name: 'Fiz isso →' })).toBeDisabled()
   expect(screen.queryByRole('button', { name: /^Copiar / })).toBeNull()
 })
+
+test('o app também valida o DNS que a porta devolve: linha inválida não é mostrada para copiar', async () => {
+  const pub = criarPublicarFixture()
+  pub.lerDns = async () => [{ tipo: 'A', nome: '@', valor: '10.0.0.1' }, { tipo: 'CNAME', nome: 'www', valor: 'cname.vercel-dns.com' }]
+  montar({ dominio: true }, pub)
+  await ateODominio()
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('livre'))
+  await clicar('Abrir o site →')
+  for (let i = 0; i < 3; i++) await clicar('Fiz isso →')
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/não parece certa/))
+  expect(screen.queryByText(/10\.0\.0\.1/)).toBeNull()
+})

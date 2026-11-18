@@ -45,3 +45,9 @@ test('produção sem adaptador não finge: não publica, não lê DNS e não diz
   expect(await publicarIndisponivel.dnsNoAr('a.com.br', [])).toBe(false)
   expect(await publicarIndisponivel.nomeLivre('a.com.br')).toBe('incerto')
 })
+
+test('registro A recusa IP zerado, broadcast, privado, loopback e link-local', () => {
+  for (const v of ['0.0.0.0', '255.255.255.255', '10.0.0.1', '172.16.5.5', '172.31.255.1', '192.168.1.1', '127.0.0.1', '169.254.1.1'])
+    expect(registroDnsValido({ tipo: 'A', nome: '@', valor: v })).toBe(false)
+  expect(registroDnsValido({ tipo: 'A', nome: '@', valor: '172.32.0.1' })).toBe(true)
+})

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Botao, CampoFalado, Icone } from '../ui'
 import type { PedidoAjudaPasso } from './ajuda-passo'
 import { CartaoPasso, PreviaSite } from './GuiaConta'
-import { dominioValido, slugDaObra, type PontePublicar, type RegistroDns, type SituacaoNome } from './ponte-publicar'
+import { dominioValido, registroDnsValido, slugDaObra, type PontePublicar, type RegistroDns, type SituacaoNome } from './ponte-publicar'
 import { guiasEscolhidos, type Selecao } from './publicar-dados'
 import { montarGuia, type ContextoGuia } from './publicar-passos'
 import './app.css'
@@ -47,7 +47,8 @@ export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, 
   const [tentativa, setTentativa] = useState(0)
   const [aviso, setAviso] = useState('')
 
-  const ctx = useMemo<ContextoGuia>(() => ({ obra: obra.nome, slug, endereco, dominio, dns }), [obra.nome, slug, endereco, dominio, dns])
+  const real = !publicar.indisponivel
+  const ctx = useMemo<ContextoGuia>(() => ({ obra: obra.nome, slug, endereco, dominio, dns, real }), [obra.nome, slug, endereco, dominio, dns, real])
   const guias = useMemo(() => ids.map((id) => montarGuia(id, ctx)), [ids, ctx])
   const g = guias[Math.min(gi, guias.length - 1)]
   const p = g?.passos[Math.min(passo, (g?.passos.length ?? 1) - 1)]
@@ -78,7 +79,11 @@ export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, 
     const poe = (a: Omit<Auto, 'chave'>) => setAuto({ ...a, chave })
     const fim = (a: Omit<Auto, 'chave'>) => { if (vivo) poe(a) }
     const erro = (texto: string) => fim({ estado: 'erro', texto })
-    if (autoId === 'publicar') {
+    if (autoId === 'adaptador') {
+      poe(real
+        ? { estado: 'ok', texto: 'O Atlas cuida desta parte.' }
+        : { estado: 'erro', texto: 'Essa parte ainda não está ligada neste computador. Ainda não publiquei de verdade, então não vou dizer que deu certo.' })
+    } else if (autoId === 'publicar') {
       poe({ estado: 'rodando', texto: 'O Atlas está colocando o sistema no ar…' })
       publicar.publicarNoAr(slug).then((r) => { if (vivo) setEndereco(r.endereco); fim({ estado: 'ok', texto: `No ar: ${r.endereco}` }) }, () => erro('Não consegui colocar no ar agora. Nada se perdeu: tente de novo.'))
     } else if (autoId === 'cartaz') {
@@ -94,13 +99,19 @@ export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, 
       })
     } else if (autoId === 'dns') {
       poe({ estado: 'rodando', texto: 'O Atlas está lendo o que a Vercel pede para o seu endereço…' })
-      publicar.lerDns(dominio).then((r) => { if (vivo) setDns(r); fim({ estado: 'ok', texto: 'Linhas prontas para copiar.' }) }, () => erro('Não consegui ler o que a Vercel pede agora. Tente de novo.'))
+      publicar.lerDns(dominio).then((r) => {
+        const bons = r.filter(registroDnsValido)
+        if (!bons.length || bons.length < r.length) return erro('A Vercel devolveu uma linha que não parece certa, então não vou mostrar para você copiar. Tente de novo.')
+        if (vivo) setDns(bons)
+        fim({ estado: 'ok', texto: 'Linhas prontas para copiar.' })
+      }, () => erro('Não consegui ler o que a Vercel pede agora. Tente de novo.'))
     } else if (autoId === 'espera') {
       poe({ estado: 'rodando', texto: 'Conferindo a cada 5 minutos se a internet já reconheceu o seu endereço…' })
       const conferir = async () => {
         try {
-          const regs = dns ?? await publicar.lerDns(dominio)
+          const regs = dns ?? (await publicar.lerDns(dominio)).filter(registroDnsValido)
           if (!vivo) return false
+          if (!regs.length) return false
           if (!dns) setDns(regs)
           if (await publicar.dnsNoAr(dominio, regs)) {
             if (vivo) { poe({ estado: 'ok', texto: 'A internet já reconheceu o seu endereço.' }); setPasso((n) => n + 1) }
@@ -166,7 +177,7 @@ export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, 
           </div>
           {aviso && <p className="at-ativ__erro" role="alert">{aviso}</p>}
           <button type="button" className="at-ativ__link at-claude__nao-consegui" onClick={() => onPedirAjuda?.({ origem: 'F13b', conta: g.nome, passo: passo + 1, totalPassos: g.passos.length, print: { url: p.site.url, titulo: p.site.titulo, botaoCerto: p.site.itens.find((i) => i.destaque)?.txt } })}>Não consegui fazer este passo</button>
-          <span className="at-pando__nota">Pode fechar o Atlas a qualquer momento. Quando voltar, ele continua deste passo.</span>
+          {real && <span className="at-pando__nota">Pode fechar o Atlas a qualquer momento. Quando voltar, ele continua deste passo.</span>}
           {onVoltar && <button type="button" className="at-pub__link" onClick={onVoltar}>Mudar o que vou publicar</button>}
         </div>
         <PreviaSite site={p.site} />

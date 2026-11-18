@@ -1,4 +1,5 @@
 import { screen, waitFor } from '@testing-library/react'
+import { publicarIndisponivel, type PublicarFixture } from './ponte-publicar'
 import { clicar, montar, passoDe, quem } from './publicando-teste'
 
 test('endereço grátis: 5 passos, cada um mostra quem faz; o Atlas publica e só então libera o passo', async () => {
@@ -68,4 +69,19 @@ test('continua do passo em que parou quando o cliente volta', async () => {
   document.body.innerHTML = ''
   montar({ gratis: true }, pub)
   expect(await passoDe(2, 5)).toBeInTheDocument()
+})
+
+test('sem adaptador: não afirma vistoria nem publicação, mostra o recado calmo e não libera o passo', async () => {
+  const { pub, onConcluir } = montar({ gratis: true }, publicarIndisponivel as unknown as PublicarFixture)
+  expect(pub).toBeDefined()
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/ainda não está ligada neste computador/))
+  expect(screen.getByRole('button', { name: 'Continuar →' })).toBeDisabled()
+  expect(screen.queryByText(/Pode fechar o Atlas a qualquer momento/)).toBeNull()
+  expect(screen.queryAllByText(/50 testes aprovados|está no ar|Publicado!/)).toHaveLength(0)
+  expect(onConcluir).not.toHaveBeenCalled()
+})
+
+test('com adaptador, a nota de "pode fechar o Atlas" aparece', async () => {
+  montar({ gratis: true })
+  expect(await screen.findByText(/Pode fechar o Atlas a qualquer momento/)).toBeInTheDocument()
 })

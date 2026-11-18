@@ -7,7 +7,7 @@ import type { IdOpcao } from './publicar-dados'
 import type { DestinoSite, RegistroDns } from './ponte-publicar'
 
 /** O que o Atlas faz sozinho ao chegar no passo (sempre por uma porta). */
-export type AutoPasso = 'nome' | 'dns' | 'publicar' | 'espera' | 'cartaz'
+export type AutoPasso = 'nome' | 'dns' | 'publicar' | 'espera' | 'cartaz' | 'adaptador'
 
 export interface PassoGuia extends PassoConta {
   /** O botão principal abre este site oficial (destino fixo, nunca uma URL de dado). */
@@ -34,6 +34,8 @@ export interface ContextoGuia {
   dominio: string
   /** Registros que a Vercel pediu (lidos na hora); null = ainda lendo. */
   dns: RegistroDns[] | null
+  /** false = sem adaptador: o Atlas não afirma que publicou nem que a vistoria passou. */
+  real?: boolean
 }
 
 const B = (txt: string, destaque = false, dica = 'clique aqui'): ItemSite => ({ tipo: 'botao', txt, destaque, dica })
@@ -42,11 +44,11 @@ const S = (txt: string): ItemSite => ({ tipo: 'status', txt })
 
 export function guiaGratis(x: ContextoGuia): Guia {
   return { id: 'gratis', nome: 'Endereço grátis', titulo: `Endereço grátis: ${x.slug}.vercel.app`, intro: 'O jeito mais rápido de colocar no ar. É de graça e fica pronto em minutos.', passos: [
-    { quem: 'atlas', faca: 'Vistoria final: o Atlas usa o sistema como se fosse um cliente, tela por tela, antes de abrir as portas.', calma: 'Se achar algum problema, ele mesmo corrige e testa de novo.', site: { url: 'vistoria do Atlas', titulo: 'Vistoria final', itens: [S('50 testes aprovados'), S('Celular e computador conferidos')] } },
-    { quem: 'voce', faca: 'Confirme o endereço grátis do seu sistema. Se quiser outro nome, é só falar.', calma: 'Este endereço é de graça e continua funcionando mesmo se depois você comprar um domínio.', site: { url: 'vercel.com', titulo: 'Endereço do sistema', itens: [C(`${x.slug}.vercel.app`, true, 'confira o nome'), B('Confirmar')] } },
+    { quem: 'atlas', auto: 'adaptador', faca: 'Vistoria final: o Atlas usa o sistema como se fosse um cliente, tela por tela, antes de abrir as portas.', calma: 'Se achar algum problema, ele mesmo corrige e testa de novo.', site: { url: 'vistoria do Atlas', titulo: 'Vistoria final', itens: x.real === false ? [S('Ainda não fiz a vistoria de verdade')] : [S('50 testes aprovados'), S('Celular e computador conferidos')] } },
+    { quem: 'voce', faca: 'Confirme o endereço grátis do seu sistema.', calma: 'Este endereço é de graça e continua funcionando mesmo se depois você comprar um domínio.', site: { url: 'vercel.com', titulo: 'Endereço do sistema', itens: [C(`${x.slug}.vercel.app`, true, 'confira o nome'), B('Confirmar')] } },
     { quem: 'atlas', auto: 'publicar', faca: 'O Atlas está colocando o sistema no ar, na sua conta da Vercel.', calma: 'Leva poucos minutos. O banco de dados de verdade é ligado agora, vazio e pronto para uso.', site: { url: `vercel.com/${x.slug}`, titulo: 'Publicando…', itens: [S('Montando o sistema'), S('Banco de dados ligado')] } },
     { quem: 'voce', faca: 'Abra no seu celular e faça um teste de verdade: marque um horário.', calma: 'Aponte a câmera para o QR code que aparece no Atlas. Achou algo estranho? Fale com a Ajuda do Atlas.', site: { url: x.endereco, titulo: `${x.obra} · Sua vez, sem fila.`, itens: [B('Marcar horário', true, 'teste aqui')] } },
-    { quem: 'atlas', faca: `Pronto! ${x.endereco} está no ar, com cadeado de segurança.`, calma: 'Já pode mandar o endereço para a equipe e para os clientes.', site: { url: x.endereco, titulo: 'No ar', itens: [S('Conexão segura'), S('Funcionando no celular e no computador')] } },
+    { quem: 'atlas', faca: x.real === false ? 'Ainda não publiquei de verdade: esta parte não está ligada neste computador.' : `Pronto! ${x.endereco} está no ar, com cadeado de segurança.`, calma: 'Já pode mandar o endereço para a equipe e para os clientes.', site: { url: x.endereco, titulo: 'No ar', itens: [S('Conexão segura'), S('Funcionando no celular e no computador')] } },
   ] }
 }
 
@@ -77,19 +79,19 @@ export function guiaPwa(x: ContextoGuia): Guia {
 
 export function guiaLojas(x: ContextoGuia): Guia {
   return { id: 'lojas', nome: 'App Store e Google Play', titulo: 'Nas lojas: App Store e Google Play', intro: 'O caminho mais longo: tem contas, pagamentos e revisão das lojas. O Atlas acompanha cada passo até o app aparecer na busca.', passos: [
-    { quem: 'atlas', faca: 'Antes de tudo: para ir para as lojas, o Atlas transforma o seu sistema num app de celular de verdade.', calma: 'A Apple recusa app que é só um site embrulhado. Por isso o Atlas faz um app próprio, com o mesmo visual e os mesmos dados.', site: { url: 'Atlas', titulo: 'Preparando o app das lojas', itens: [S(`Montando o app ${x.obra}`)] } },
+    { quem: 'atlas', auto: 'adaptador', faca: 'Antes de tudo: para ir para as lojas, o Atlas transforma o seu sistema num app de celular de verdade.', calma: 'A Apple recusa app que é só um site embrulhado. Por isso o Atlas faz um app próprio, com o mesmo visual e os mesmos dados.', site: { url: 'Atlas', titulo: 'Preparando o app das lojas', itens: [S(`Montando o app ${x.obra}`)] } },
     { quem: 'voce', abre: 'apple-inscricao', faca: 'Crie a sua conta de desenvolvedor da Apple. Clique em Start Your Enrollment e entre com o seu Apple ID.', calma: 'Custa US$ 99 por ano, e o pagamento é seu. Se for no nome da empresa, a Apple pede o número D-U-N-S, que é grátis mas pode levar alguns dias. O Atlas te ajuda a pedir.', en: 'Start Your Enrollment', pt: 'Começar a inscrição', site: { url: 'developer.apple.com/programs/enroll', titulo: 'Apple Developer Program', itens: [B('Start Your Enrollment', true)] } },
     { quem: 'voce', abre: 'google-console', faca: 'Crie a sua conta no Google Play Console e pague a taxa única.', calma: 'Custa US$ 25, uma vez só, e o pagamento é seu. O Google pede um documento com foto para confirmar quem você é.', en: 'Create account', pt: 'Criar conta', site: { url: 'play.google.com/console/signup', titulo: 'Google Play Console', itens: [B('Create account', true)] } },
-    { quem: 'atlas', faca: 'Enquanto as contas são aprovadas, o Atlas prepara tudo o que as lojas pedem: textos, telas de exemplo, ícone e política de privacidade.', calma: 'Você só vai conferir. Ninguém precisa escrever nada do zero.', site: { url: 'Atlas', titulo: 'Material das lojas', itens: [S('Textos e descrição'), S('6 telas de exemplo'), S('Política de privacidade')] } },
+    { quem: 'atlas', auto: 'adaptador', faca: 'Enquanto as contas são aprovadas, o Atlas prepara tudo o que as lojas pedem: textos, telas de exemplo, ícone e política de privacidade.', calma: 'Você só vai conferir. Ninguém precisa escrever nada do zero.', site: { url: 'Atlas', titulo: 'Material das lojas', itens: [S('Textos e descrição'), S('6 telas de exemplo'), S('Política de privacidade')] } },
     { quem: 'voce', abre: 'app-store-connect', faca: 'Crie o app no App Store Connect: clique no + e em New App. Copie e cole o que o Atlas preparou.', calma: 'O identificador nunca mais muda depois de publicado. Por isso o Atlas já escolheu um bom.', en: 'New App', pt: 'Novo app', dados: [{ tipo: 'Nome', nome: '', valor: x.obra }, { tipo: 'ID', nome: '', valor: `br.com.${x.slug}.app` }], site: { url: 'appstoreconnect.apple.com/apps', titulo: 'Apps', itens: [B('+', true, 'comece aqui'), B('New App')] } },
     { quem: 'voce', faca: 'Na primeira vez, vai abrir a janela oficial da Apple para você entrar com o seu Apple ID. Confirme com o código que aparece no seu iPhone.', calma: 'É só desta vez. O Atlas não vê nem guarda a sua senha nem o código: quem entra é você, na página da Apple. Nas próximas versões o envio é automático.', site: { url: 'Apple ID', titulo: 'Entrar com o Apple ID', itens: [C('seu Apple ID', true, 'seu e-mail da Apple'), C('código de 6 números')] } },
-    { quem: 'atlas', faca: 'O Atlas monta o app na nuvem e envia para teste: TestFlight (Apple) e teste interno (Google).', calma: 'Funciona no seu computador com Windows. Não precisa de Mac.', site: { url: 'Atlas', titulo: 'Enviando para teste', itens: [S('iPhone: no TestFlight'), S('Android: no teste interno')] } },
+    { quem: 'atlas', auto: 'adaptador', faca: 'O Atlas monta o app na nuvem e envia para teste: TestFlight (Apple) e teste interno (Google).', calma: 'Funciona no seu computador com Windows. Não precisa de Mac.', site: { url: 'Atlas', titulo: 'Enviando para teste', itens: [S('iPhone: no TestFlight'), S('Android: no teste interno')] } },
     { quem: 'voce', abre: 'testflight', faca: 'Teste no seu celular: instale o app TestFlight no iPhone e abra o convite que chegou no seu e-mail.', calma: 'No Android, o convite de teste abre direto na Play Store.', site: { url: 'TestFlight', titulo: `${x.obra} · Teste`, itens: [B('Instalar', true)] } },
     { quem: 'voce', faca: 'Só no Google, para conta pessoal nova: chame 12 pessoas para testar o app por 14 dias.', calma: 'É uma regra do Google. O Atlas prepara a mensagem pronta para você mandar no WhatsApp e conta os dias.', site: { url: 'play.google.com/console', titulo: 'Teste fechado', itens: [S('Testadores: 12 de 12'), S('Dias de teste: 3 de 14')] } },
     { quem: 'voce', faca: 'Confira e copie as respostas de privacidade e de classificação etária que o Atlas já preencheu.', calma: 'São formulários das lojas. O Atlas respondeu com base no que o seu app realmente faz.', site: { url: 'appstoreconnect.apple.com', titulo: 'App Privacy', itens: [C('Rascunho do Atlas colado', true, 'confira'), B('Save')] } },
     { quem: 'voce', faca: 'Aperte Enviar para revisão, na Apple e no Google.', calma: 'Esse botão é sempre seu: é você quem decide publicar. O Atlas nunca aperta por você.', en: 'Submit for Review', pt: 'Enviar para revisão', site: { url: 'appstoreconnect.apple.com', titulo: `${x.obra} · 1.0`, itens: [B('Submit for Review', true)] } },
-    { quem: 'atlas', faca: 'O Atlas acompanha a revisão e avisa no celular. Se a loja pedir alguma mudança, ele explica e ajusta; você reenvia.', calma: 'A Apple costuma responder em alguns dias. O Google também.', site: { url: 'Atlas', titulo: 'Em revisão', itens: [S('Apple: em revisão'), S('Google: em revisão')] } },
-    { quem: 'atlas', faca: `Publicado! A ${x.obra} está na App Store e no Google Play.`, calma: 'Os seus clientes já encontram pelo nome na busca das lojas.', site: { url: 'App Store · Google Play', titulo: `${x.obra} · Sua vez, sem fila.`, itens: [S('App Store'), S('Google Play')] } },
+    { quem: 'atlas', auto: 'adaptador', faca: 'O Atlas acompanha a revisão e avisa no celular. Se a loja pedir alguma mudança, ele explica e ajusta; você reenvia.', calma: 'A Apple costuma responder em alguns dias. O Google também.', site: { url: 'Atlas', titulo: 'Em revisão', itens: [S('Apple: em revisão'), S('Google: em revisão')] } },
+    { quem: 'atlas', auto: 'adaptador', faca: x.real === false ? 'Ainda não publiquei de verdade: esta parte não está ligada neste computador.' : `Publicado! A ${x.obra} está na App Store e no Google Play.`, calma: x.real === false ? 'Quando o Atlas estiver ligado às lojas, é aqui que você vê o app publicado.' : 'Os seus clientes já encontram pelo nome na busca das lojas.', site: { url: 'App Store · Google Play', titulo: `${x.obra} · Sua vez, sem fila.`, itens: [S('App Store'), S('Google Play')] } },
   ] }
 }
 

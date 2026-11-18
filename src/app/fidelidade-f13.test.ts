@@ -49,6 +49,7 @@ test('F13b: todo texto de passo do protótipo (faca, calma, intro) está no app,
   for (let m = re.exec(b); m; m = re.exec(b)) doProto.push(limpa(m[1]))
   expect(doProto.length).toBeGreaterThan(60)
   const DIFERENCAS_CONSCIENTES = [
+    'Confirme o endereço grátis do seu sistema. Se quiser outro nome, é só falar.', // não há campo para trocar o nome aqui (revisão M22)
     'Custa cerca de R$ 40 por ano. O Pix confirma em minutos; o boleto pode levar até 3 dias. O Atlas espera e te avisa.',
     'Não precisa entender o que é: o Atlas já preparou tudo. É só copiar e colar.',
     'Custa US$ 99 por ano. Se for no nome da empresa, a Apple pede o número D-U-N-S, que é grátis mas pode levar alguns dias. O Atlas te ajuda a pedir.',

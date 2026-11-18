@@ -44,10 +44,18 @@ export function dominioValido(d: string): boolean {
 export interface RegistroDns { tipo: 'A' | 'CNAME'; nome: string; valor: string }
 
 const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/
+/** IP público de verdade: recusa 0.0.0.0, broadcast, privados (10/8, 172.16/12, 192.168/16), loopback, link-local e reservados. */
+function ipv4Publico(v: string): boolean {
+  if (!IPV4.test(v)) return false
+  const [a, b] = v.split('.').map(Number)
+  if (a === 0 || a === 127 || a >= 224) return false
+  if (a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254)) return false
+  return true
+}
 const HOST = /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/
 /** Só aceita o que parece um registro de DNS de verdade (o que vier de fora é dado, não confiável). */
 export function registroDnsValido(r: RegistroDns): boolean {
-  if (r.tipo === 'A') return r.nome === '@' && IPV4.test(r.valor)
+  if (r.tipo === 'A') return r.nome === '@' && ipv4Publico(r.valor)
   if (r.tipo === 'CNAME') return /^[a-z0-9-]{1,63}$/.test(r.nome) && HOST.test(r.valor)
   return false
 }
@@ -57,6 +65,8 @@ export type SituacaoNome = 'livre' | 'ocupado' | 'incerto'
 export interface Progresso { guia: string; passo: number }
 
 export interface PontePublicar {
+  /** true só em `publicarIndisponivel`: sem adaptador, o Atlas não finge publicação nem guarda progresso. */
+  readonly indisponivel?: boolean
   /** Abre o site oficial no navegador do cliente. Em `registro`, o domínio (já validado) pode vir para a pesquisa. */
   abrirSite(destino: DestinoSite, dominio?: string): Promise<void>
   /** Consulta pública: o nome está livre no Registro.br? "incerto" se não deu para saber (nunca finge). */
@@ -121,6 +131,7 @@ export function criarPublicarFixture(opcoes: { dns?: RegistroDns[]; ocupados?: s
 
 /** Sem adaptador real e fora do modo fixture: o Atlas não finge que publicou, que conferiu nome nem DNS. */
 export const publicarIndisponivel: PontePublicar = {
+  indisponivel: true,
   async abrirSite() { throw new Error('indisponivel') },
   async nomeLivre() { return 'incerto' },
   async lerDns() { throw new Error('indisponivel') },

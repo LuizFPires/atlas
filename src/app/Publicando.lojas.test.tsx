@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import { clicar, montar, passoDe, quem } from './publicando-teste'
 import { guiaLojas } from './publicar-passos'
 
@@ -68,4 +68,12 @@ test('dados para copiar do App Store Connect (nome e identificador do app)', asy
   await clicar('Continuar →')
   expect(await passoDe(5, 13)).toBeInTheDocument()
   expect(screen.getByText('br.com.cadeira1.app')).toBeInTheDocument()
+})
+
+test('lojas sem adaptador: o primeiro passo do Atlas não avança e nada diz que publicou', async () => {
+  const { publicarIndisponivel } = await import('./ponte-publicar')
+  montar({ lojas: true }, publicarIndisponivel as never)
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/ainda não está ligada neste computador/))
+  expect(screen.getByRole('button', { name: 'Continuar →' })).toBeDisabled()
+  expect(screen.queryByText(/Publicado!/)).toBeNull()
 })
