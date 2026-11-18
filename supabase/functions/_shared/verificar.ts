@@ -33,6 +33,11 @@ export async function verificar(
   const hashToken = await sha256(a.token_dispositivo || '-')
   if (!ativa || ativa.computador_hash !== a.computador_hash || !ativa.token_hash || !iguais(hashToken, ativa.token_hash)) return negar()
 
+  // Cortesia: vale só até validade_em. Venceu (ou veio sem prazo): acesso cai e a licença é encerrada (best-effort; o bloqueio não depende disso).
+  if (lic.tipo === 'cortesia' && lic.status === 'ativa' && (!lic.validade_em || lic.validade_em.getTime() <= d.agora().getTime())) {
+    await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada' }, { status: 'ativa' })
+    return montarResposta(d, a.computador_hash, false, 'cortesia_expirada', lic.id)
+  }
   if (lic.status === 'ativa') return montarResposta(d, a.computador_hash, true, 'ok', lic.id)
   // 'atrasada' constrói só dentro da carência explícita (pausa_prevista_em no futuro).
   if (lic.status === 'atrasada') {

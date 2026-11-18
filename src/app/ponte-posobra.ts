@@ -49,7 +49,7 @@ export interface PontePosObra {
 
 // ---- Licença ------------------------------------------------------------------------------------------------------------------
 
-export type MotivoSemLicenca = 'atrasada' | 'pausada' | 'cancelada' | 'negado' | 'sem-conexao' | 'indisponivel'
+export type MotivoSemLicenca = 'atrasada' | 'pausada' | 'cancelada' | 'cortesia-expirada' | 'negado' | 'sem-conexao' | 'indisponivel'
 export type ResultadoLicenca = { ok: true } | { ok: false; motivo: MotivoSemLicenca }
 
 export interface PonteLicenca {
@@ -65,6 +65,8 @@ export function recadoLicenca(motivo: MotivoSemLicenca): string {
       return 'Para eu mexer na sua obra, a licença precisa estar em dia. Ela está em pausa agora. Regularize no portal e volte aqui: o seu pedido fica guardado, e o sistema que já está no ar continua funcionando normalmente.'
     case 'cancelada':
       return 'A licença desta obra foi cancelada, então eu não consigo mexer nela. O sistema que já está no ar e o código no seu GitHub continuam seus. Se quiser voltar, é só reativar a licença no portal.'
+    case 'cortesia-expirada':
+      return 'A sua cortesia de acesso chegou ao fim, então eu não consigo mexer na obra agora. O que já está no ar e o código no seu GitHub continuam seus. Para continuar, é só assinar o Atlas.'
     case 'sem-conexao':
       return 'Não consegui conferir a sua licença porque estou sem internet. Confira a conexão e tente de novo: eu só mexo na obra depois de conferir.'
     case 'indisponivel':
@@ -84,7 +86,7 @@ export function criarLicencaFixture(motivo: MotivoSemLicenca | null = null): Lic
   return f
 }
 
-const MOTIVOS_DO_SERVIDOR: Record<string, MotivoSemLicenca> = { licenca_atrasada_pausa: 'atrasada', licenca_pausada: 'pausada', licenca_cancelada: 'cancelada' }
+const MOTIVOS_DO_SERVIDOR: Record<string, MotivoSemLicenca> = { licenca_atrasada_pausa: 'atrasada', licenca_pausada: 'pausada', licenca_cancelada: 'cancelada', cortesia_expirada: 'cortesia-expirada' }
 
 /**
  * Adaptador real: POST {api}/verificar com o e-mail da compra e o hash do computador; o token do dispositivo (segredo, vem do cofre)

@@ -4,7 +4,7 @@
 
 export interface RespostaVerificar {
   pode_construir: boolean
-  motivo: 'ok' | 'licenca_atrasada_pausa' | 'licenca_pausada' | 'licenca_cancelada' | 'negado'
+  motivo: 'ok' | 'licenca_atrasada_pausa' | 'licenca_pausada' | 'licenca_cancelada' | 'cortesia_expirada' | 'negado'
   licenca_id: string | null
   valido_ate: string
   assinatura: string
