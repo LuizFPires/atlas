@@ -45,7 +45,8 @@ Com isso em mãos, a próxima `/entregar` aplica as migrations, define os segred
 
 ## Ainda pendente (fase de obra, antes do produto completo)
 - **Adaptadores do app Windows (Electron):** cofre DPAPI, PonteClaude/Contas/Obras/Publicar/Painel/Cota e empacotar+assinar `Atlas.exe`. Sem eles, o app desktop não ativa licença nem constrói obra de verdade. É uma frente de trabalho à parte (maior que o adaptador do Supabase).
-- **LGPD técnica:** servir/linka a política, consentimento no checkout, exclusão de conta no portal.
+- ~~**LGPD técnica**~~ **FEITO (branch feat/lgpd-tecnica):** política, termos e licença servidos em `/privacidade`, `/termos`, `/licenca` (a partir de `docs/legal/*.md`) e linkados no rodapé, no pagamento e no cadastro; checkbox obrigatório no pagamento, com o aceite (versão + e-mail + data) gravado no servidor antes de abrir o Stripe (migration 0011); "Excluir minha conta" no portal (migration 0012: anonimiza o cliente, apaga o pessoal, para a cobrança, apaga o login; mantém só pagamentos, por obrigação fiscal). Aplicar 0011 e 0012 junto das demais migrations; a edge function precisa de `SUPABASE_SERVICE_ROLE_KEY` (já injetada) para apagar o login.
+- **O que ainda é SEU na LGPD (texto jurídico, não inventei nada):** nos três arquivos de `docs/legal/` preencher `[data de publicação]`, CNPJ `[__.___.___/____-__]`, `[endereço completo]`, Encarregado/DPO `[nome]` e `[e-mail do encarregado]`, `[nome do gateway]`, e revisar com advogado. As páginas mostram o texto exatamente como está (inclusive os colchetes). Ao mudar o texto de forma relevante, suba `VERSAO_TERMOS` em `src/web/textos-legais.ts` (e o "Versão x.y" do texto) para o novo aceite registrar a versão nova. O rodapé de Vendas também tem o CNPJ em branco (`src/web/Vendas.tsx`).
 
 ## Lojas
 Não se aplica: o app do Atlas é Electron/Windows (instalador), não mobile/Expo. Distribuição é pelo instalador assinado (pendente), não App Store/Play.
