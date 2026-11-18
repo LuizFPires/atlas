@@ -3,10 +3,15 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
+// Build do app desktop (`vite build --mode app`): caminhos relativos (file://), sem PWA, pasta própria.
+export default defineConfig(({ mode }) => {
+  const app = mode === 'app'
+  return {
+  base: app ? './' : '/',
+  build: app ? { outDir: 'dist-app' } : undefined,
   plugins: [
     react(),
-    VitePWA({
+    ...(app ? [] : [VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
       manifest: {
@@ -23,7 +28,8 @@ export default defineConfig({
           { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-    }),
+    })]),
   ],
   test: { environment: 'jsdom', globals: true, setupFiles: ['./src/test-setup.ts'] },
+  }
 })

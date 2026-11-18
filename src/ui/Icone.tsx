@@ -55,6 +55,7 @@ const CAMINHOS = {
       <path d="M3 20a6 6 0 0 1 12 0M16 5a3.2 3.2 0 0 1 0 6M18 14a6 6 0 0 1 3 6" />
     </>
   ),
+  pasta: <path d="M3 6h6l2 2h10v11H3z" />,
   obra: <path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />,
 } as const
 

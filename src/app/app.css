@@ -1,0 +1,44 @@
+/* F02 Instalar e ativar (prototipo/F02Ativacao.dc.html). Só tokens; o painel da esquerda é sempre escuro. */
+.at-ativ-fundo { min-height: 100vh; background: #2b2f35; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; }
+.at-ativ { width: 980px; max-width: 100%; min-height: 720px; background: var(--bg); color: var(--text); border-radius: 18px; box-shadow: 0 30px 80px rgb(0 0 0 / 0.45); display: flex; overflow: hidden; }
+.at-ativ__lado { width: 250px; flex-shrink: 0; background: var(--side); padding: 32px 26px; box-sizing: border-box; display: flex; flex-direction: column; gap: 26px; color: #9ba39a; }
+.at-ativ__marca { display: flex; align-items: center; gap: 8px; }
+.at-ativ__passos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 26px; }
+.at-ativ__passo { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 400; }
+.at-ativ__passo--atual { color: #edefea; font-weight: 600; }
+.at-ativ__bola { width: 28px; height: 28px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font: 600 13px var(--font-mono); background: #2a2e33; color: #9ba39a; }
+.at-ativ__bola--on { background: #c6f135; color: #141619; }
+
+.at-ativ__corpo { flex: 1; min-width: 0; padding: 44px 48px; box-sizing: border-box; display: flex; flex-direction: column; }
+.at-ativ__form { flex: 1; display: flex; flex-direction: column; gap: 22px; }
+.at-ativ__form h1 { margin: 0; font-size: 30px; letter-spacing: -0.01em; }
+.at-ativ__form .at-ativ__h1-menor { font-size: 28px; }
+.at-ativ__txt { margin: 0; font-size: 16px; line-height: 1.55; color: var(--mute); }
+.at-ativ__txt b { color: var(--text); }
+.at-ativ__erro { margin: 0; font-size: 15px; color: var(--erro); }
+
+.at-ativ__codigo { position: relative; display: flex; align-items: center; gap: 10px; cursor: text; }
+.at-ativ__digito { width: 56px; height: 68px; border-radius: 12px; border: 2px solid var(--card-b); background: var(--input); display: flex; align-items: center; justify-content: center; font: 600 30px var(--font-mono); }
+.at-ativ__digito--on { border-color: var(--lime); }
+.at-ativ__entrada { position: absolute; left: 0; top: 0; width: calc(6 * 56px + 5 * 10px); height: 68px; opacity: 0; cursor: text; }
+.at-ativ__mic { margin-left: 8px; position: relative; z-index: 1; }
+
+.at-ativ__caixa { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--mute); background: var(--card); border: 1px solid var(--card-b); border-radius: 12px; padding: 14px 16px; }
+.at-ativ__caixa b { color: var(--text); font-size: 15px; }
+
+.at-ativ__rodape { margin-top: auto; display: flex; align-items: center; gap: 16px; }
+.at-ativ__link { background: none; border: none; padding: 0; font: 15px var(--font-text); color: var(--lime-txt); cursor: pointer; }
+.at-ativ__link:disabled { opacity: 0.5; cursor: not-allowed; }
+.at-ativ__nota { font-size: 14px; color: var(--mute); }
+
+.at-ativ__progresso { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--card-b); border-radius: 12px; padding: 12px 16px; }
+.at-ativ__prog-nome { font-size: 14px; font-weight: 600; white-space: nowrap; }
+.at-ativ__barra { flex: 1; height: 8px; border-radius: 4px; background: var(--card-b); }
+.at-ativ__barra > div { height: 8px; border-radius: 4px; background: var(--lime); transition: width 0.4s; }
+.at-ativ__prog-resta { font: 500 13px var(--font-mono); color: var(--mute); white-space: nowrap; }
+
+.at-ativ__dica { display: flex; gap: 14px; align-items: flex-start; background: var(--card); border: 1px solid var(--card-b); border-radius: 14px; padding: 16px 18px; }
+.at-ativ__dica-icone { width: 42px; height: 42px; flex: none; border-radius: 21px; background: var(--lime); color: var(--on-lime); display: flex; align-items: center; justify-content: center; }
+.at-ativ__dica > div { display: flex; flex-direction: column; gap: 3px; }
+.at-ativ__dica b { font-size: 16px; }
+.at-ativ__dica > div span { font-size: 15px; line-height: 1.5; color: var(--mute); }

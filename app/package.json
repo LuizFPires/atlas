@@ -1,0 +1,7 @@
+{
+  "name": "atlas-app",
+  "version": "0.1.0",
+  "private": true,
+  "main": "main.cjs",
+  "description": "Atlas - app para Windows (Electron). Empacotado só no /entregar; o CI não instala o Electron."
+}
