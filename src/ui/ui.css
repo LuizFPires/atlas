@@ -1,0 +1,33 @@
+.at-botao {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  height: 52px; padding: 0 22px; border-radius: var(--raio-botao);
+  font: 700 15px var(--font-text); white-space: nowrap; flex-shrink: 0; cursor: pointer;
+}
+.at-botao--principal { background: var(--lime); color: var(--on-lime); border: none; }
+.at-botao--secundario { background: transparent; color: var(--text); border: 1px solid var(--card-b); }
+.at-botao:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.at-bolinha {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  border-radius: 50%; background: var(--lime); color: #141619;
+}
+
+.at-cartao { background: var(--card); border: 1px solid var(--card-b); border-radius: var(--raio-cartao); padding: 20px; }
+.at-cartao--sel { background: var(--soft); border-color: var(--lime); }
+
+.at-chip {
+  height: 36px; padding: 0 16px; border-radius: 999px; white-space: nowrap;
+  background: transparent; color: var(--mute); border: 1px solid var(--card-b); font: 500 14px var(--font-text); cursor: pointer;
+}
+.at-chip--ativo { background: var(--lime); color: var(--on-lime); border-color: var(--lime); font-weight: 600; }
+
+.at-mic {
+  display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; flex-shrink: 0;
+  border-radius: 50%; border: 1px solid var(--card-b); background: var(--card2); color: var(--text); cursor: pointer;
+}
+.at-mic--gravando { background: var(--gravando); border-color: var(--gravando); color: #fff; animation: at-pulso 1.2s ease-out infinite; }
+@keyframes at-pulso {
+  0% { box-shadow: 0 0 0 0 rgb(240 90 79 / 0.55); }
+  100% { box-shadow: 0 0 0 14px rgb(240 90 79 / 0); }
+}
+@media (prefers-reduced-motion: reduce) { .at-mic--gravando { animation: none; } }
