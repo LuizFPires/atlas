@@ -89,7 +89,28 @@ export interface SessaoCheckout { conta_gateway_id: string; sessao_id: string; e
 export interface Link { id: string; cliente_id: string; token_hash: string; expira_em: Date; usado_em: Date | null }
 export interface Codigo { id: string; cliente_id: string; finalidade: Finalidade; codigo_hash: string; tentativas: number; expira_em: Date; usado_em: Date | null }
 export interface Entrega { licenca_id: string; obra_id: string; marca_dagua: string; baixado_em: Date }
-export interface Ocorrencia { cliente_id: string | null; tipo: string; descricao: string }
+export interface Ocorrencia {
+  cliente_id: string | null
+  tipo: string
+  descricao: string
+  /** M7: quem causou (e-mail do admin nas ações do painel; nulo = o próprio sistema). */
+  autor?: string | null
+  /** M7: já nasce resolvida (registro de auditoria que não precisa de atenção). Padrão: aberta. */
+  resolvida?: boolean
+  criada_em?: Date
+}
+/** M7: ocorrencias_admin como o painel lê. */
+export interface OcorrenciaAdmin {
+  id: string
+  cliente_id: string | null
+  tipo: string
+  descricao: string
+  autor: string | null
+  resolvida: boolean
+  criada_em: Date
+  resolvida_por: string | null
+  resolvida_em: Date | null
+}
 
 /** Liberação pelo portal: desativa o computador atual sem ativar outro (o novo ativa depois, pelo link). */
 export interface LiberacaoAtomica {
@@ -186,6 +207,24 @@ export interface Store {
   trocarLinks(l: Omit<Link, 'id' | 'usado_em'>, quando: Date): Promise<void>
   /** Desfaz o cadastro quando o e-mail de boas-vindas não saiu, para o cliente poder tentar de novo. */
   reabrirCadastro(clienteId: string): Promise<void>
+
+  // ── M7: painel do administrador (só leitura agregada + resolver ocorrência) ──
+  // Adaptador real (/entregar): service_role, SELECT só das colunas abaixo (nunca token_hash, gateway_*, conta_gateway_id).
+  // Com ~1.200 clientes/ano as listas cabem na memória do painel; se crescer, trocar por RPC de agregação/paginação.
+  listarClientes(): Promise<Cliente[]>
+  listarLicencas(): Promise<Licenca[]>
+  listarPagamentos(): Promise<Pagamento[]>
+  listarAtivacoes(): Promise<Ativacao[]>
+  listarTrocas(): Promise<Troca[]>
+  /** ocorrencias_admin WHERE NOT resolvida ORDER BY criada_em DESC LIMIT n. */
+  ocorrenciasAbertas(limite: number): Promise<OcorrenciaAdmin[]>
+  /** Atômico: UPDATE ocorrencias_admin SET resolvida=true, resolvida_por, resolvida_em WHERE id AND NOT resolvida. false = 0 linhas. */
+  resolverOcorrencia(id: string, por: string, quando: Date): Promise<boolean>
+  /** entregas_kit ORDER BY baixado_em DESC LIMIT n. */
+  entregasRecentes(limite: number): Promise<Entrega[]>
+  entregasDaLicenca(licencaId: string, limite: number): Promise<Entrega[]>
+  /** entregas_kit WHERE marca_dagua = $1 (índice já existe): rastrear de quem veio um arquivo vazado. */
+  entregasPorMarca(marca: string): Promise<Entrega[]>
 }
 
 export interface Deps {

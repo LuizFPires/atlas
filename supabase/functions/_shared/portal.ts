@@ -8,7 +8,7 @@ import { prepararLink } from './links.ts'
 import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts'
 import { type DepsPagamento, PRAZO_ARREPENDIMENTO_MS, VALOR_MENSALIDADE } from './pagamento/config.ts'
 import { type Cliente, ErroRegra, type Licenca, type StatusLicenca, type StatusPagamento, type TipoPagamento } from './tipos.ts'
-import { INTERVALO_TROCA_MS } from './troca.ts'
+import { INTERVALO_TROCA_MS, registrarTrocaAntecipada } from './troca.ts'
 
 /** Quem o Supabase Auth diz que está logado. `email` já vem CONFIRMADO (o login é por código enviado a ele). */
 export interface IdentidadePortal { auth_user_id: string; email: string }
@@ -147,7 +147,7 @@ export async function pedirCodigoTroca(d: DepsPortal, jwt: string, ip: string) {
   const { cliente, licenca: l } = await clienteLogado(d, jwt)
   if (l.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Essa licença está cancelada.', 409)
   const bloqueada = await proximaTroca(d, l)
-  if (bloqueada) throw erroLimite(bloqueada)
+  if (bloqueada) { await registrarTrocaAntecipada(d, cliente.id, bloqueada); throw erroLimite(bloqueada) }
   await solicitarCodigo(d, cliente.email_compra, 'troca', ip)
   return { ok: true, enviado_para: mascarar(cliente.email_compra) }
 }
@@ -178,7 +178,7 @@ export async function desativarComputador(d: DepsPortal, jwt: string, codigo: st
   const atual = await d.store.ativacaoAtiva(l.id)
   if (!atual) throw new ErroRegra('sem_ativacao', 'Nenhum computador está com a licença agora.', 409)
   const bloqueada = await proximaTroca(d, l)
-  if (bloqueada) throw erroLimite(bloqueada)
+  if (bloqueada) { await registrarTrocaAntecipada(d, cliente.id, bloqueada); throw erroLimite(bloqueada) }
   await consumirCodigo(d, cliente.id, 'troca', typeof codigo === 'string' ? codigo : '')
   const override = l.troca_liberada_em !== null
   const feita = await d.store.liberarAtivacao({

@@ -3,6 +3,7 @@
 // carregador do kit (bucket privado) entram aqui no deploy (incluindo enviarAvisoAtraso, S10).
 // @ts-nocheck
 import { importarChavePrivada } from '../_shared/cripto.ts'
+import { lerEmailsAdmin } from '../_shared/admin.ts'
 import { tratar } from '../_shared/http.ts'
 import { criarStripeApi } from '../_shared/pagamento/stripe-api.ts'
 
@@ -34,9 +35,12 @@ Deno.serve(async (req) => {
     return u?.id && u?.email && u?.email_confirmed_at ? { auth_user_id: u.id, email: u.email } : null
   }
   const portal = { ...pagamento, ...cadastro, autenticarPortal }
+  // Painel do admin (M7): mesma validação de JWT do portal + allowlist ATLAS_ADMIN_EMAILS (vazia = ninguém entra).
+  const admin = { ...deps, autenticarPortal, emailsAdmin: lerEmailsAdmin(Deno.env.get('ATLAS_ADMIN_EMAILS')) }
   return tratar(
     {
       deps,
+      admin,
       pagamento,
       cadastro,
       portal,

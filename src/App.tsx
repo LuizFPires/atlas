@@ -8,8 +8,11 @@ import { Cadastro } from './web/Cadastro'
 import { enviarCadastro } from './web/cadastro-api'
 import { Portal } from './web/Portal'
 import { criarPortalApi } from './web/portal-api'
+import { Admin } from './web/Admin'
+import { criarAdminApi } from './web/admin-api'
 
 const portalApi = criarPortalApi()
+const adminApi = criarAdminApi()
 
 /** O aplicativo (PWA) fica em "/app". */
 function Aplicativo() {
@@ -42,5 +45,7 @@ export default function App() {
   if (caminho === '/comecar' || caminho === '/compra/sucesso') return <Cadastro onEnviar={enviarCadastro} />
   // Portal do cliente: login próprio do Atlas, separado do login do Claude.
   if (caminho === '/conta') return <Portal api={portalApi} />
+  // Painel do administrador: o link existe para todos, mas só o servidor decide quem entra (JWT + allowlist).
+  if (caminho === '/admin') return <Admin api={adminApi} />
   return <PaginaVendas />
 }
