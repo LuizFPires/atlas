@@ -140,7 +140,7 @@ tela: prototipo/F05Obras.dc.html
 - [ ] Criar a subpasta da obra em Atlas\Obras ao iniciar
 - [ ] Montar a nova obra (F06NovaObra) com perguntas guiadas e microfone
 - [ ] Conferir fidelidade com o protótipo (F05Obras e F06NovaObra)
-Notas:
+Notas: ⏩ Auto (recomendado): F05Obras (lista com analogia da casa + exemplos; primeira obra vazia com um botão claro) e F06NovaObra (perguntas guiadas em vez de caixa em branco, microfone com transcrição editável). "Começar do zero" e "Já tenho um protótipo" (leva ao F06c do M15). Criar a subpasta da obra em C:\Users\<nome>\Atlas\Obras ao iniciar — filesystem atrás de um port (mock em fixture; adaptador real p/ /entregar, sem segredo em arquivo). Modo fixture, sem deploy.
 
 ## Milestone 14 — App: projeto 1/3 (estilo)
 peso: 2
