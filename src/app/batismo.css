@@ -1,0 +1,52 @@
+/* F07b Batismo (prototipo/F07bBatismo.dc.html). Só tokens do Atlas; as cores DENTRO do celular são da obra (marrom/dourado do exemplo). */
+.at-bat { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 30px; min-width: 0; }
+.at-bat h1 { margin: 0; font-size: 30px; letter-spacing: -0.01em; }
+.at-bat__principal { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.at-bat__fases { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.at-bat__fase { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--lime); font-size: 14px; font-weight: 600; color: var(--text); }
+.at-bat__fase span { font-family: var(--font-mono); }
+.at-bat__fase--agora { background: var(--lime); color: var(--on-lime); }
+.at-bat__proj { font: 500 12px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2); text-transform: uppercase; margin-left: auto; }
+.at-bat__cab { display: flex; flex-direction: column; gap: 6px; }
+.at-bat__cab > span { font-size: 15px; line-height: 1.5; color: var(--mute); }
+.at-bat__modos { display: flex; gap: 10px; flex-wrap: wrap; }
+.at-bat__modo { height: 44px; padding: 0 18px; border-radius: 12px; border: 2px solid var(--card-b); background: transparent; color: var(--text); font: 600 15px var(--font-text); cursor: pointer; white-space: nowrap; }
+.at-bat__modo--on { border-color: var(--lime); background: var(--soft); }
+.at-bat__nomes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.at-bat__nome { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; border: 2px solid var(--card-b); background: var(--card); color: var(--text); cursor: pointer; text-align: left; font-family: var(--font-text); min-width: 0; }
+.at-bat__nome--on { border-color: var(--lime); }
+.at-bat__nome b { font-size: 17px; }
+.at-bat__amostra { height: 110px; border-radius: 12px; background: #fbf7f2; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.at-bat__amostra-logo { width: 46px; height: 46px; border-radius: 12px; background: #2b211b; display: flex; align-items: center; justify-content: center; flex: none; }
+.at-bat__amostra-nome { font: 600 22px Fraunces, Georgia, serif; color: #2b211b; }
+.at-bat__slogan { font-size: 13px; font-style: italic; color: var(--lime-txt, var(--lime)); }
+.at-bat__porque { font-size: 13px; line-height: 1.45; color: var(--mute); }
+.at-bat__check { font-size: 12px; color: var(--mute2); }
+.at-bat__check--aviso { color: var(--text); }
+.at-bat__acoes-meio { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.at-bat__falar { display: flex; align-items: center; gap: 6px; height: 42px; padding: 0 16px; border-radius: 10px; border: none; background: var(--lime); color: var(--on-lime); font: 600 14px var(--font-text); cursor: pointer; }
+.at-bat__nota { font-size: 13px; color: var(--mute); }
+.at-bat__ideia { display: flex; gap: 10px; align-items: center; }
+.at-bat__ideia input { flex: 1; min-width: 0; height: 48px; border-radius: 12px; border: 1px solid var(--card-b); background: var(--input); color: var(--text); padding: 0 14px; font: 15px var(--font-text); }
+.at-bat__ideia .at-mic { width: 48px; height: 48px; flex: none; border-radius: 24px; }
+.at-bat__so-leitor { position: absolute; left: -9999px; }
+.at-bat__dica { font-size: 13px; color: var(--mute); }
+.at-bat__tenho { background: var(--card); border: 1px solid var(--card-b); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.at-bat__logo-caixa { display: flex; align-items: center; gap: 14px; border: 2px dashed var(--card-b); border-radius: 14px; padding: 16px; }
+.at-bat__logo-caixa div { display: flex; flex-direction: column; gap: 2px; }
+.at-bat__logo-caixa span { font-size: 13px; color: var(--mute); }
+.at-bat__escolher { margin-left: auto; background: none; border: 0; color: var(--lime-txt, var(--lime)); font: 600 13px var(--font-text); cursor: pointer; }
+.at-bat__rodape { margin-top: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.at-bat__lado { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.at-bat__celular { width: 310px; height: 640px; border-radius: 42px; background: #0b0c0d; padding: 11px; box-sizing: border-box; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35); }
+.at-bat__tela { width: 100%; height: 100%; border-radius: 32px; overflow: hidden; display: flex; flex-direction: column; background: linear-gradient(160deg, #6e5a4a, #2b211b); }
+.at-bat__barra { padding: 16px 18px 0; display: flex; justify-content: space-between; font: 600 12px var(--font-text); color: #fbf7f2; }
+.at-bat__apps { padding: 26px 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 10px; }
+.at-bat__app { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 10px; color: #fbf7f2; text-align: center; min-width: 0; }
+.at-bat__icone { width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+.at-bat__cartao { margin: auto 14px 16px; background: #fbf7f2; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 8px; color: #2b211b; }
+.at-bat__cartao-cab { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.at-bat__cartao-cab b { font: 600 20px Fraunces, Georgia, serif; overflow-wrap: anywhere; }
+.at-bat__cartao-logo { width: 36px; height: 36px; border-radius: 10px; background: #2b211b; display: flex; align-items: center; justify-content: center; flex: none; }
+.at-bat__cartao-slogan { font-size: 13px; font-style: italic; color: #7a6a5e; }
+.at-bat__cartao-botao { height: 40px; border-radius: 10px; background: #b5651d; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }

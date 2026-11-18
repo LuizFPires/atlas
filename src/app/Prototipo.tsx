@@ -14,7 +14,7 @@ interface Props {
   /** Para mandar um print ou foto junto do pedido (opcional). */
   arquivos?: PonteArquivos
   onVoltar: () => void
-  /** Segue para dar o nome (F07b, M17); até lá volta às obras. */
+  /** Segue para dar o nome (F07b, Batismo). */
   onConcluir?: () => void
 }
 
