@@ -12,7 +12,7 @@ import { Estilo, type ObraDoEstilo } from './Estilo'
 import { TrazerPrototipo } from './Trazer'
 import { Prototipo } from './Prototipo'
 import { Batismo } from './Batismo'
-import { batismoIndisponivel, criarBatismoFixture, type PonteBatismo } from './ponte-batismo'
+import { batismoIndisponivel, criarBatismoFixture, criarNomesFixture, nomesIndisponivel, type PonteBatismo, type PonteNomes } from './ponte-batismo'
 import type { EstiloProposto } from './ponte-estilo'
 import { criarPrototipoFixture, prototipoIndisponivel, type PontePrototipo } from './ponte-prototipo'
 import { criarEstiloFixture, estiloIndisponivel, type PonteEstilo } from './ponte-estilo'
@@ -56,7 +56,7 @@ function Obras({ ativo, onNavegar, pedido, children }: { ativo: IdTela; onNavega
 let ponteFixture: PonteDesktop | null = null
 const ponteInicial = () => ponteDoAmbiente() ?? (ponteFixture ??= criarPonteFixture())
 
-export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo }) {
+export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo, nomes }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo; nomes?: PonteNomes }) {
   const [tela, setTela] = useState<string | null>(null)
   const [ativo, setAtivo] = useState<IdTela>('obras')
   const [instalando, setInstalando] = useState(false)
@@ -96,6 +96,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
 
   // Idem para o Claude que sugere os nomes e grava a marca na pasta da obra: sem adaptador real, não finge.
   const ponteBatismo = useMemo<PonteBatismo>(() => batismo ?? (modoFixture() ? criarBatismoFixture(ponteObras.raiz()) : batismoIndisponivel), [batismo, ponteObras])
+  // Idem para conferir nomes parecidos e endereço livre (consulta pública): sem adaptador real, não finge que conferiu.
+  const ponteNomes = useMemo<PonteNomes>(() => nomes ?? (modoFixture() ? criarNomesFixture() : nomesIndisponivel), [nomes])
 
   const ativacao = useMemo<AtivacaoApi>(
     () => {
@@ -131,7 +133,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   if (ativo === 'obras' && fluxo === 'trazer') conteudo = <TrazerPrototipo obras={ponteObras} importar={ponteImportar} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} />
   else if (ativo === 'obras' && fluxo === 'estilo' && obraAtual) conteudo = <Estilo obra={obraAtual} arquivos={ponteArquivos} estilo={ponteEstilo} onVoltar={() => setFluxo('lista')} onConcluir={(r) => { setEstiloEscolhido(r.estilo); setFluxo('telas') }} />
   else if (ativo === 'obras' && fluxo === 'telas' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('batismo')} />
-  else if (ativo === 'obras' && fluxo === 'batismo' && obraAtual) conteudo = <Batismo obra={obraAtual} batismo={ponteBatismo} onVoltar={() => setFluxo('telas')} onConcluir={() => setFluxo('lista')} />
+  else if (ativo === 'obras' && fluxo === 'batismo' && obraAtual) conteudo = <Batismo obra={obraAtual} batismo={ponteBatismo} nomes={ponteNomes} onVoltar={() => setFluxo('telas')} onConcluir={() => setFluxo('lista')} />
   else if (ativo === 'obras' && fluxo === 'nova') conteudo = <NovaObra obras={ponteObras} ideia={ideia} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} onEstilo={(o: ObraNova) => { setObraAtual({ nome: o.respostas.nome, pasta: o.pasta.pasta }); setFluxo('estilo') }} />
   else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} nome={dono || undefined} onComecar={(i) => { setIdeia(i ?? ''); setFluxo('nova') }} onTrazer={() => setFluxo('trazer')} />
   return <Obras ativo={ativo} onNavegar={setAtivo} pedido={pedidoAjuda}>{conteudo}</Obras>

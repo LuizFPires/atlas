@@ -2,14 +2,14 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Batismo } from './Batismo'
-import { batismoIndisponivel, criarBatismoFixture, limparNome, LOGOS, montarMarcaMd, montarPedidoSugerir, type BatismoFixture, type PonteBatismo } from './ponte-batismo'
+import { batismoIndisponivel, criarBatismoFixture, criarNomesFixture, nomesIndisponivel, resumoDaConferencia, slugDominio, type PonteNomes, limparNome, LOGOS, montarMarcaMd, montarPedidoSugerir, type BatismoFixture, type PonteBatismo } from './ponte-batismo'
 
 const obra = { nome: 'Agenda da Barbearia do Zé', pasta: 'agenda-da-barbearia-do-ze' }
-const montar = (batismo: PonteBatismo = criarBatismoFixture()) => {
+const montar = (batismo: PonteBatismo = criarBatismoFixture(), nomes: PonteNomes = criarNomesFixture()) => {
   const user = userEvent.setup()
   const onVoltar = vi.fn()
   const onConcluir = vi.fn()
-  render(<TemaProvider><Batismo obra={obra} batismo={batismo} onVoltar={onVoltar} onConcluir={onConcluir} /></TemaProvider>)
+  render(<TemaProvider><Batismo obra={obra} batismo={batismo} nomes={nomes} onVoltar={onVoltar} onConcluir={onConcluir} /></TemaProvider>)
   return { user, onVoltar, onConcluir, batismo }
 }
 
@@ -91,4 +91,33 @@ test('o pedido ao Claude e o marca.md levam a fala do cliente como dado; o logo 
   await expect(f.batizar('obra', { origem: 'sugestao', nome: 'Ok', slogan: '', logo: 'onerror' as never })).rejects.toThrow('logo-invalido')
   await expect(f.batizar('../x', { origem: 'sugestao', nome: 'Ok', slogan: '', logo: 'hora' })).rejects.toThrow('pasta-invalida')
   for (const d of Object.values(LOGOS)) expect(d).toMatch(/^[MmLlHhVvCcZzAa0-9 .,-]+$/)
+})
+
+test('cada cartão mostra a conferência: livre, parecido existente e endereço', async () => {
+  montar()
+  expect(await screen.findByText(/nome livre · cadeira1\.app livre/)).toBeInTheDocument()
+  expect(screen.getByText(/existe um salão com nome parecido em SP/)).toBeInTheDocument()
+  expect(screen.getByText(/nome livre · horinha\.app livre/)).toBeInTheDocument()
+  expect(screen.getByText(/o Atlas procura nomes parecidos e confere/)).toBeInTheDocument()
+})
+
+test('se a conferência falha, não diz que está livre', async () => {
+  montar(criarBatismoFixture(), nomesIndisponivel)
+  expect((await screen.findAllByText(/não consegui conferir agora/)).length).toBe(3)
+  expect(screen.queryByText(/nome livre/)).not.toBeInTheDocument()
+})
+
+test('endereço ocupado e endereço não conferido viram frases claras', () => {
+  expect(resumoDaConferencia({ parecidos: [], enderecos: [{ dominio: 'agenda.app', livre: false }, { dominio: 'agenda.com.br', livre: false }] }).texto).toBe('nome livre, mas agenda.app e agenda.com.br já estão em uso')
+  expect(resumoDaConferencia({ parecidos: [], enderecos: [{ dominio: 'a.app', livre: null }] }).texto).toMatch(/não consegui conferir/)
+})
+
+test('o endereço é só letras e números, sem acento, e nunca vem de texto perigoso', async () => {
+  expect(slugDominio('Café do Zé 2!')).toBe('cafedoze2')
+  expect(slugDominio('../../etc?x=1#')).toBe('etcx1')
+  expect(slugDominio('🙂')).toBe('')
+  const n = criarNomesFixture()
+  await expect(n.conferir('🙂🙂')).rejects.toThrow('nome-invalido')
+  const c = await n.conferir('http://169.254.169.254/')
+  expect(c.enderecos.every((e) => /^[a-z0-9]+\.(app|com\.br)$/.test(e.dominio))).toBe(true)
 })

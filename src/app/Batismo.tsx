@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Botao, Icone, Microfone, useVoz } from '../ui'
 import type { ObraDoEstilo } from './Estilo'
-import { limparNome, LOGOS, type Marca, type NomeProposto, type PonteBatismo } from './ponte-batismo'
+import { limparNome, LOGOS, resumoDaConferencia, type Conferencia, type Marca, type NomeProposto, type PonteBatismo, type PonteNomes } from './ponte-batismo'
 import './batismo.css'
 
 interface Props {
   obra: ObraDoEstilo
   batismo: PonteBatismo
+  /** Confere nomes parecidos e se o endereço está livre (.app, .com.br). */
+  nomes: PonteNomes
   onVoltar: () => void
   /** Segue para a aprovação (F08, M18) com a marca já gravada na pasta da obra. */
   onConcluir?: (marca: Marca, caminho: string) => void
@@ -27,6 +29,14 @@ const Logo = ({ id, tamanho }: { id: string; tamanho: number }) => (
     <path d={id in LOGOS ? LOGOS[id as keyof typeof LOGOS] : ''} />
   </svg>
 )
+
+/** Linha de conferência de um nome: ✓ livre, ⚠ já existe algo parecido ou endereço ocupado. */
+function Verificacao({ c }: { c: Conferencia | null | undefined }) {
+  if (c === undefined) return <span className="at-bat__check" role="status">conferindo nome e endereço…</span>
+  if (c === null) return <span className="at-bat__check">não consegui conferir agora; tente de novo daqui a pouco</span>
+  const r = resumoDaConferencia(c)
+  return <span className={`at-bat__check ${r.ok ? '' : 'at-bat__check--aviso'}`}><span aria-hidden="true">{r.ok ? '✓' : '⚠'}</span> {r.texto}</span>
+}
 
 /** Os 8 "apps" do celular de mentirinha: o do cliente aparece entre os outros, como no protótipo. */
 const OUTROS = [['Fotos', '#E9E3DA'], ['Mapas', '#CFE3D2'], ['Banco', '#D7CDE8'], ['Música', '#F2C9C4'], ['Câmera', '#DADDD3'], ['Clima', '#C9DDF0'], ['Notas', '#F4E7B5']] as const
@@ -59,8 +69,10 @@ function CelularMarca({ nome, slogan, logo }: { nome: string; slogan: string; lo
 }
 
 /** F07b: batismo (projeto 3/3). O Atlas sugere 3 nomes com logo, slogan e motivo. */
-export function Batismo({ obra, batismo, onVoltar, onConcluir }: Props) {
+export function Batismo({ obra, batismo, nomes: conferidor, onVoltar, onConcluir }: Props) {
   const [nomes, setNomes] = useState<NomeProposto[]>([])
+  // Conferência por nome: undefined = conferindo, null = não deu para conferir agora.
+  const [conferencias, setConferencias] = useState<Record<string, Conferencia | null>>({})
   const [vistos, setVistos] = useState<string[]>([])
   const [escolhido, setEscolhido] = useState('')
   const [erro, setErro] = useState('')
@@ -79,6 +91,9 @@ export function Batismo({ obra, batismo, onVoltar, onConcluir }: Props) {
       setNomes(lista)
       setVistos((v) => [...new Set([...v, ...lista.map((n) => n.nome)])])
       setEscolhido(lista[0]?.id ?? '')
+      for (const n of lista) {
+        conferidor.conferir(n.nome).then((c) => setConferencias((m) => ({ ...m, [n.nome]: c })), () => setConferencias((m) => ({ ...m, [n.nome]: null })))
+      }
     } catch (x) { setErro(recadoDoErroBatismo(x)) } finally { setOcupado(false); setPronto(true) }
   }
 
@@ -125,6 +140,7 @@ export function Batismo({ obra, batismo, onVoltar, onConcluir }: Props) {
               <b>{n.nome}</b>
               <span className="at-bat__slogan">“{n.slogan}”</span>
               <span className="at-bat__porque">{n.porque}</span>
+              <Verificacao c={conferencias[n.nome]} />
             </button>
           ))}
         </div>
@@ -141,6 +157,8 @@ export function Batismo({ obra, batismo, onVoltar, onConcluir }: Props) {
           </form>
         )}
         {falando && !suportado && <span className="at-bat__dica">Este navegador não escuta a sua voz. Pode digitar normalmente.</span>}
+
+        <p className="at-bat__nota">Antes de você decidir, o Atlas procura nomes parecidos e confere se o endereço na internet está livre.</p>
 
         <div className="at-bat__rodape">
           <Botao variante="secundario" onClick={onVoltar}>← Voltar às telas</Botao>
