@@ -1,6 +1,6 @@
 # App desktop (Electron) — pendências para /entregar
 
-## Estado dos adaptadores reais do Electron (atualizado em feat/app-adaptadores-base)
+## Estado dos adaptadores reais do Electron (atualizado em feat/app-adaptadores-obra)
 
 Código só Windows/Electron em `app/` (fora do eslint/tsc/vitest/build do CI). Cada arquivo traz no topo o que faz e como testar numa máquina Windows.
 
@@ -8,7 +8,18 @@ Código só Windows/Electron em `app/` (fora do eslint/tsc/vitest/build do CI). 
   - Cofre real (`app/cofre.cjs`, `electron.safeStorage` = DPAPI; só o blob cifrado em `userData\cofre`; falha fechada).
   - Primitivas seguras (`app/seguro.cjs`): caminho dentro da raiz sem symlink, `abrirExterno` com allowlist de hosts, `executarClaude` (spawn sem shell, args fixos, timeout).
   - `PonteArquivos` (`app/adaptadores/arquivos.cjs`), `PonteObras` (`obras.cjs`), `PonteClaude` (`claude.cjs`: login só guiado, plano via `claude auth status`).
-- **Faltam** (continuam `*Indisponivel` fora do fixture): publicar, painel, cota, ocorrencias, retomar, construcao, modo, importar, prototipo, estilo, batismo, nomes, celular, ajuda, kit, posobra. Cada um deve reaproveitar `app/seguro.cjs` e expor um namespace novo em preload/main, com o campo opcional correspondente em `PonteDesktop`.
+- **Ligados no bloco "obra rodando"** (`feat/app-adaptadores-obra`; teste sem Electron/Claude: `node --test app/adaptadores/*.teste.cjs`):
+  - `modos` (`adaptadores/modo.cjs`): `<obra>\.atlas\modo.json` atômico (tmp+rename), caminhoSeguro, sem link. Fonte do modo.
+  - `construcao` (`construcao.cjs` + `plan-md.cjs`): `planejar` (Claude só leitura) e `iniciar` (confere Claude instalado/logado ANTES de gravar; PLAN.md no formato do painel, validado e gravado com `wx`; modo.json; `recomendado.json`; dispara `claude -p` com `/construir` na pasta da obra, sem shell, `acceptEdits`, sem `--add-dir`). Andamento do stream resumido em frases curtas; fim em `<obra>\.atlas\linha.json`.
+  - `painel` (`painel.cjs`): % ponderado (usa `.claude/hooks/plano.cjs` do kit; porta local se faltar), prazo (`prazo.cjs`), "agora na obra" real, pausar/continuar/aprovarEtapa/aplicarModo, canteiro do kit em 127.0.0.1 (`ATLAS_CANTEIRO_PORTA`, padrão 4747), `abrirTeste` por allowlist (loopback ou `dist\index.html`).
+  - `retomar` (`retomar.cjs`): varre `Atlas\Obras` achando a obra com PLAN < 100% e religa por `painel.continuar` (+ `cota.retomar` quando houver adaptador de cota).
+  - Preload/main: namespaces `modos`, `construcao`, `painel`, `retomar`; `before-quit` derruba a linha e o canteiro.
+- **Decisões deste bloco**:
+  - `recomendado.json` é GLOBAL (`~/.claude/recomendado.json`, é onde as skills do kit leem): o Atlas o regrava ao iniciar a obra, ao trocar o modo e ao continuar/retomar (reafirma o modo da obra). Premissa: o cliente roda UMA obra por vez (uma linha por vez; a segunda falha com `ja-rodando`).
+  - Os espelhos CJS (`plan-md.cjs`, `modo.cjs`) copiam `montarPlanMd`/`validarPlanNovo`/`paraRecomendado` do TS; mudou lá, mudar aqui (a paridade do PLAN foi conferida uma vez com o texto do TS).
+  - Previsão de dias/pausas de `planejar` é heurística pelo número de etapas; trocar por medição real depois.
+- **Faltam no bloco "obra rodando"** (precisam de teste real no Windows com Claude logado): (a) o kit (skills `/construir`, agentes, hooks) chegar ao Claude da obra sem ir para o repositório do cliente — hoje só via `ATLAS_KIT_PLUGIN` (`--plugin-dir`) ou instalação global (pendência `kit`); sem os hooks do kit o `.canteiro\` não é alimentado e o prazo fica `null`; (b) a linha escrever `<obra>\.atlas	este.json` (`{url}` loopback) para `abrirTeste`; (c) `-p` com `/construir`: confirmar que a skill roda em modo não interativo e ajustar `FERRAMENTAS_LINHA`; (d) no passo a passo a linha termina no ponto de decisão e só volta com `aprovarEtapa`; (e) `ocorrencias` reais (hoje o painel só LÊ `docs\ocorrencias.json`) e `cota` real (detecção por texto do stream: `RE_COTA`).
+- **Faltam** (continuam `*Indisponivel` fora do fixture): publicar, cota, ocorrencias, importar, prototipo, estilo, batismo, nomes, celular, ajuda, kit, posobra. Cada um deve reaproveitar `app/seguro.cjs` e expor um namespace novo em preload/main, com o campo opcional correspondente em `PonteDesktop`.
 - **Verificar numa máquina Windows** (não há runtime Electron no CI): (a) o cofre sobrevive a fechar/abrir o app; (b) `claude auth status` devolve JSON com `loggedIn`/`subscriptionType` na versão do CLI empacotada (testado com 2.1.322); (c) o `claude` do PATH funciona sem `.cmd` (senão definir `ATLAS_CLAUDE_EXE`); (d) a lista `HOSTS_OFICIAIS` e as URLs `claude.ai/login` e `claude.ai/upgrade` em `claude.cjs`; (e) `EXTENSOES` de `arquivos.cjs` e `nomeParaPasta` de `obras.cjs` espelham `src/app/ponte-*.ts` (manter em sincronia).
 
 O CI (ubuntu) só roda eslint, tsc, vitest e o build do front. `electron` e `electron-builder` NÃO são dependências do projeto (mantém o `npm ci` leve); `app/` (main.cjs, preload.cjs, cofre.cjs) não é compilado nem linta no CI. A API do Electron fica atrás de `src/app/ponte.ts` (interface testável).

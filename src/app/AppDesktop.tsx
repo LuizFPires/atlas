@@ -147,10 +147,10 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Retomar (F12): detecta a obra em andamento e religa a linha por PontePainel/PonteCota. No fixture, sem obra informada, não há nada em andamento.
   const ponteRetomar = useMemo<PonteRetomar>(() => {
     if (retomar) return retomar
-    if (!modoFixture()) return retomarIndisponivel
+    if (!modoFixture()) return ponte.retomar ?? retomarIndisponivel
     const base = criarRetomarFixture(null)
     return { obraEmAndamento: base.obraEmAndamento, continuar: (o) => religarLinha({ painel: pontePainel, cota: ponteCota }, o.pasta) }
-  }, [retomar, pontePainel, ponteCota])
+  }, [retomar, pontePainel, ponteCota, ponte])
 
   // Publicação (Vercel, Registro.br, lojas): pagamentos e "Enviar para revisão" são do cliente; sem adaptador real, não finge que publicou.
   const pontePublicar = useMemo<PontePublicar>(() => publicar ?? (modoFixture() ? criarPublicarFixture() : publicarIndisponivel), [publicar])

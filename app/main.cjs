@@ -12,6 +12,7 @@ const { criarClaude } = require('./adaptadores/claude.cjs')
 const { criarModo } = require('./adaptadores/modo.cjs')
 const { criarConstrucao } = require('./adaptadores/construcao.cjs')
 const { criarPainel } = require('./adaptadores/painel.cjs')
+const { criarRetomar } = require('./adaptadores/retomar.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -25,6 +26,8 @@ const claude = criarClaude({ shell })
 const modos = criarModo({ raiz: obras.raiz() })
 const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: process.env.ATLAS_KIT_PLUGIN || null })
 const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
+// cota: sem adaptador real ainda (pendente); sem ele o Retomar só liga a linha por painel.continuar.
+const retomar = criarRetomar({ raiz: obras.raiz(), painel, construcao })
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -80,6 +83,10 @@ handle('atlas:painel:aprovar', (pasta) => painel.aprovarEtapa(String(pasta)))
 handle('atlas:painel:modo', (pasta, modo) => painel.aplicarModo(String(pasta), String(modo)))
 ipcMain.on('atlas:painel:endereco', (e, pasta) => { e.returnValue = confiavel(e) ? painel.enderecoCanteiro(String(pasta)) : null })
 handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
+
+// Retomar (F12): obra em andamento ao abrir o app e "Continuar obra".
+handle('atlas:retomar:andamento', () => retomar.obraEmAndamento())
+handle('atlas:retomar:continuar', (pasta) => retomar.continuar({ pasta: String(pasta) }))
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois).
 app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })
