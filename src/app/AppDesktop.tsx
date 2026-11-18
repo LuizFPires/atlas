@@ -121,9 +121,9 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Idem para conferir nomes parecidos e endereço livre (consulta pública): sem adaptador real, não finge que conferiu.
   // Idem para o plano da obra e o modo (automático ou passo a passo): o mesmo armazém de preferências é o que o painel da obra (M19) lê.
   const pontesModo = useMemo(() => {
-    const m = modos ?? (modoFixture() ? criarModoObraFixture() : modoObraIndisponivel)
+    const m = modos ?? (modoFixture() ? criarModoObraFixture() : (ponte.modos ?? modoObraIndisponivel))
     return { modos: m, construcao: construcao ?? (modoFixture() ? criarConstrucaoFixture(m, ponteObras.raiz()) : construcaoIndisponivel) }
-  }, [modos, construcao, ponteObras])
+  }, [modos, construcao, ponteObras, ponte])
 
   // Idem para o painel da obra (PLAN.md, prazo, canteiro 3D): sem adaptador real, não finge andamento.
   // Cota do plano (F10) e ocorrências (F11) andam junto do painel: no fixture, esgotar a cota ou abrir uma ocorrência liga e desliga

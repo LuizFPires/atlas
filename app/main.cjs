@@ -9,6 +9,7 @@ const { criarCofre } = require('./cofre.cjs')
 const { criarObras } = require('./adaptadores/obras.cjs')
 const { criarArquivos } = require('./adaptadores/arquivos.cjs')
 const { criarClaude } = require('./adaptadores/claude.cjs')
+const { criarModo } = require('./adaptadores/modo.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -19,6 +20,7 @@ let janelaPrincipal = null
 const obras = criarObras({ shell })
 const arquivos = criarArquivos({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
 const claude = criarClaude({ shell })
+const modos = criarModo({ raiz: obras.raiz() })
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -57,6 +59,10 @@ handle('atlas:claude:login', () => claude.abrirLogin())
 handle('atlas:claude:site', (alvo) => claude.abrirSite(String(alvo)))
 handle('atlas:claude:estado', () => claude.estado())
 handle('atlas:claude:renovar', () => claude.renovarConexao())
+
+// Modo da obra (automático | passo a passo): <obra>\.atlas\modo.json.
+handle('atlas:modos:ler', (pasta) => modos.ler(String(pasta)))
+handle('atlas:modos:gravar', (pasta, modo) => modos.gravar(String(pasta), String(modo)))
 
 // O computador é o canteiro: durante a obra ele não pode dormir.
 handle('atlas:sono', (ligado) => {
