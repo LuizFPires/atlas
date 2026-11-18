@@ -52,11 +52,11 @@ Notas: ⏩ Auto (recomendado): frontend derivado do protótipo (F00Vendas, F00bC
 peso: 1
 spec: S10
 tela: prototipo/F01Email.dc.html
-- [ ] Montar o e-mail de boas-vindas personalizado (nome, empresa, ramo) com botão de instalar
-- [ ] Implementar o link de uso único e o aviso "abra no computador" quando aberto no celular
-- [ ] Montar os e-mails de código de ativação e de aviso de atraso antes da pausa
-- [ ] Conferir fidelidade com o protótipo
-Notas:
+- [x] Montar o e-mail de boas-vindas personalizado (nome, empresa, ramo) com botão de instalar
+- [x] Implementar o link de uso único e o aviso "abra no computador" quando aberto no celular
+- [x] Montar os e-mails de código de ativação e de aviso de atraso antes da pausa
+- [x] Conferir fidelidade com o protótipo
+Notas: ⏩ Auto (recomendado): reusa e consolida supabase/functions/_shared/emails.ts (montarBoasVindas do M4), mantendo a sanitização de texto livre. E-mails em HTML fiéis ao protótipo F01Email; link de uso único (~48h) com aviso "abra no computador onde vai construir" quando aberto no celular; e-mail de código de ativação (liga no M2) e de aviso de atraso antes da pausa (liga no M3). Nunca promete atendimento humano. Modo fixture: envio real fica p/ /entregar. Divergências aceitas (auto — recomendado): logo do protótipo vira wordmark "ATLAS" (o _blob só existe no canvas) e o e-mail tem moldura única (hero escuro + corpo claro), sem versão do tema B — aceitável para e-mail. Limites mantidos: reenvio 3/h por cliente, abertura 30/IP a cada 15 min. QA reprovou por 1 médio (reenvio invalidava todos os links antes do envio); corrigido: só invalida o antigo após o envio dar certo. Pendente p/ /entregar: montar link_instalacao a partir do token no reenvio; adaptadores de envio.
 
 ## Milestone 6 — Portal do cliente (web)
 peso: 2
