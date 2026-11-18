@@ -57,6 +57,13 @@ const CAMINHOS = {
   ),
   pasta: <path d="M3 6h6l2 2h10v11H3z" />,
   obra: <path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />,
+  martelo: <path d="M14 4l6 6-3 3-6-6zM12 8L4 16l4 4 8-8" />,
+  relogio: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </>
+  ),
 } as const
 
 export type NomeIcone = keyof typeof CAMINHOS
