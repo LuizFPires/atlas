@@ -19,6 +19,8 @@ interface Props {
   onConcluir: (noAr: string | null) => void
   /** "Não consegui fazer este passo": abre a Ajuda do Atlas (F17) com o print do passo. */
   onPedirAjuda?: (pedido: PedidoAjudaPasso) => void
+  /** Deu erro de verdade num passo do Atlas (não é "ocupado"): abre a Ajuda do Atlas sozinha, com o print e o registro do passo. */
+  onErro?: (pedido: PedidoAjudaPasso, erro: { titulo: string; detalhe: string }) => void
   onVoltar?: () => void
   /** De quanto em quanto tempo o Atlas confere se a internet já reconheceu o domínio. Padrão: 5 minutos. */
   sondagemMs?: number
@@ -31,7 +33,7 @@ type Auto = { estado: 'rodando' | 'ok' | 'erro'; texto: string; chave: string; o
  * Cada passo mostra quem faz (VOCÊ ou O ATLAS). Pagamento e "Enviar para revisão" são SEMPRE do cliente: o Atlas só guia,
  * abre o site oficial e faz a parte técnica (publicar, ler o DNS, esperar a internet, gerar o cartaz).
  */
-export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, onVoltar, sondagemMs = 5 * 60_000 }: Props) {
+export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, onErro, onVoltar, sondagemMs = 5 * 60_000 }: Props) {
   const ids = useMemo(() => guiasEscolhidos(selecao), [selecao])
   const slug = slugDaObra(obra.nome)
   const [nomeBase, setNomeBase] = useState(slug) // o que o cliente está digitando
@@ -129,6 +131,17 @@ export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, 
     // dns/endereco entram de propósito só na leitura do passo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pronto, gi, passo, autoId, tentativa, dominio, slug, publicar, sondagemMs])
+
+  // Erro de verdade (não o nome ocupado nem a parte ainda não ligada): chama a Ajuda do Atlas sozinha, uma vez por erro.
+  useEffect(() => {
+    if (!onErro || !g || !p || !autoBruto || autoBruto.estado !== 'erro' || autoBruto.ocupado || !real) return
+    onErro(
+      { origem: 'F13b', conta: g.nome, passo: passo + 1, totalPassos: g.passos.length, print: { url: p.site.url, titulo: p.site.titulo, botaoCerto: p.site.itens.find((i) => i.destaque)?.txt } },
+      { titulo: 'Algo deu errado ao publicar.', detalhe: autoBruto.texto },
+    )
+    // só quando um erro novo aparece
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoBruto])
 
   const ir = useCallback((i: number, n = 0) => { setGi(i); setPasso(n); setAviso('') }, [])
   if (!pronto || !g || !p) return null

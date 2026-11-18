@@ -1,0 +1,48 @@
+/* F17 Ajuda do Atlas (prototipo/F17Ajuda.dc.html): painel lateral de 520 px. Só tokens do Atlas. */
+.at-ajuda-p { position: fixed; top: 0; right: 0; z-index: 50; width: 520px; max-width: 100vw; height: 100vh; box-sizing: border-box; background: var(--painel); border-left: 1px solid var(--card-b); box-shadow: -24px 0 60px rgba(0, 0, 0, 0.35); display: flex; flex-direction: column; color: var(--text); font-family: var(--font-text); }
+.at-ajuda-p__topo { height: 72px; flex: none; box-sizing: border-box; padding: 0 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--card-b); }
+.at-ajuda-p__logo { width: 42px; height: 42px; border-radius: 12px; background: var(--side); color: var(--lime); display: flex; align-items: center; justify-content: center; }
+.at-ajuda-p__tit { display: flex; flex-direction: column; gap: 2px; }
+.at-ajuda-p__tit b { font-size: 17px; }
+.at-ajuda-p__tit span { font-size: 13px; color: var(--lime-txt); }
+.at-ajuda-p__fechar { margin-left: auto; width: 36px; height: 36px; border: none; background: transparent; color: var(--mute); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.at-ajuda-p__conversa { flex: 1; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.at-ajuda-p__balao { border-radius: 16px; padding: 12px 14px; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere; }
+.at-ajuda-p__balao--atlas { align-self: flex-start; max-width: 92%; background: var(--card); display: flex; flex-direction: column; gap: 10px; }
+.at-ajuda-p__balao--eu { background: var(--me); }
+.at-ajuda-p__eu { align-self: flex-end; max-width: 84%; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.at-ajuda-p__falado { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--lime-txt); margin-right: 6px; }
+.at-ajuda-p__print { width: 300px; border-radius: 12px; overflow: hidden; border: 1px solid var(--card-b); background: #ffffff; }
+.at-ajuda-p__barra { height: 22px; background: #e9ebe6; display: flex; align-items: center; gap: 5px; padding: 0 8px; }
+.at-ajuda-p__barra i { width: 7px; height: 7px; border-radius: 4px; background: #e46a5e; }
+.at-ajuda-p__barra i:nth-child(2) { background: #e8be4f; }
+.at-ajuda-p__barra i:nth-child(3) { background: #69c25b; }
+.at-ajuda-p__barra span { margin-left: 6px; font: 10px var(--font-mono); color: #5f665c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.at-ajuda-p__print-corpo { padding: 14px; display: flex; flex-direction: column; gap: 6px; color: #1b1e22; }
+.at-ajuda-p__print-corpo b { font-size: 12px; color: #c4372d; }
+.at-ajuda-p__print-corpo span { font-size: 11px; color: #5f665c; }
+.at-ajuda-p__aviso { margin: 0; background: var(--card2); border-radius: 12px; padding: 10px 14px; font-size: 14px; }
+.at-ajuda-p__rodape { padding: 14px 16px 18px; border-top: 1px solid var(--card-b); display: flex; flex-direction: column; gap: 10px; }
+.at-ajuda-p__chips { display: flex; gap: 8px; }
+.at-ajuda-p__chip { height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 13px var(--font-text); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.at-ajuda-p__linha { display: flex; align-items: center; gap: 8px; }
+.at-ajuda-p__mic { width: 48px; height: 48px; flex: none; border-radius: 24px; }
+.at-ajuda-p__linha input { flex: 1; min-width: 0; height: 48px; box-sizing: border-box; border-radius: 12px; border: 1px solid var(--card-b); background: var(--input); color: var(--text); padding: 0 14px; font: 15px var(--font-text); }
+.at-ajuda-p__enviar { width: 44px; height: 44px; flex: none; border-radius: 12px; border: none; background: var(--lime); color: var(--on-lime); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.at-ajuda-p__enviar:disabled { opacity: 0.5; cursor: default; }
+.at-ajuda-p__so-leitor { position: absolute; left: -9999px; }
+.at-ajuda-p__dica { font-size: 13px; color: var(--mute); }
+.at-ajuda-p__erro { position: fixed; left: 290px; bottom: 32px; z-index: 40; width: 560px; max-width: calc(100vw - 840px); box-sizing: border-box; display: flex; align-items: center; gap: 14px; background: var(--erro-bg); border: 1px solid var(--erro); border-radius: 16px; padding: 14px 16px; color: var(--text); box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35); }
+.at-ajuda-p__erro > span { width: 34px; height: 34px; flex: none; border-radius: 17px; background: var(--erro); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.at-ajuda-p__erro > div { display: flex; flex-direction: column; gap: 2px; }
+.at-ajuda-p__erro b { font-size: 15px; }
+.at-ajuda-p__erro div > span { font-size: 13px; color: var(--mute); }
+.at-ajuda-p__passos { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; color: var(--mute); }
+.at-ajuda-p__passos b { color: var(--text); }
+.at-ajuda-p__trad { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; font-size: 14px; color: var(--mute); }
+.at-ajuda-p__trad b { color: var(--text); font-family: var(--font-mono); font-weight: 500; }
+.at-ajuda-p__depois { color: var(--mute); }
+.at-ajuda-p__acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.at-ajuda-p__primario { height: 40px; padding: 0 14px; border-radius: 10px; border: none; background: var(--lime); color: var(--on-lime); font: 700 14px var(--font-text); white-space: nowrap; cursor: pointer; }
+.at-ajuda-p__sec { height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 14px var(--font-text); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.at-ajuda-p__primario:disabled, .at-ajuda-p__sec:disabled { opacity: 0.5; cursor: default; }

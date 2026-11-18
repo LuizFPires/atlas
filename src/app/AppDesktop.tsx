@@ -4,6 +4,9 @@ import { ImagemAssinatura } from '../marca/Marca'
 import { Ativacao } from './Ativacao'
 import { Claude } from './Claude'
 import type { PedidoAjudaPasso } from './ajuda-passo'
+import { Ajuda } from './Ajuda'
+import { ajudaIndisponivel, contextoDoPasso, criarAjudaFixture, type ContextoAjuda, type PonteAjuda } from './ponte-ajuda'
+import { casosIndisponivel, criarCasosFixture, type PonteCasosAdmin } from './ponte-ajuda-casos'
 import { Celular } from './Celular'
 import { Contas } from './Contas'
 import { Obras as ListaObras } from './Obras'
@@ -45,23 +48,15 @@ import { useImpedirSono } from './sono'
 /** Estamos dentro do app desktop (Electron) ou no modo fixture de desenvolvimento (?app=1)? */
 export const noAppDesktop = () => ponteDoAmbiente() !== null
 
-function Obras({ ativo, onNavegar, pedido, children }: { ativo: IdTela; onNavegar: (t: IdTela) => void; pedido?: PedidoAjudaPasso | null; children?: ReactNode }) {
+function Obras({ ativo, onNavegar, children }: { ativo: IdTela; onNavegar: (t: IdTela) => void; children?: ReactNode }) {
   return (
     <Shell ativo={ativo} onNavegar={onNavegar} onFalar={() => {}}>
-      {ativo === 'ajuda' && pedido ? (
+      {children ?? (
         <>
-          <p className="rotulo">Ajuda do Atlas</p>
-          <h1>Vamos resolver juntos</h1>
-          <p>Você parou no passo {pedido.passo} de {pedido.totalPassos} {pedido.origem === 'F13b' ? 'do guia' : 'da conta'} do {pedido.conta}. Estou olhando o print do site: {pedido.print.titulo} ({pedido.print.url}).</p>
+          <p className="rotulo">Minhas obras</p>
+          <h1>Bem-vindo ao Atlas</h1>
+          <ImagemAssinatura />
         </>
-      ) : (
-        children ?? (
-          <>
-            <p className="rotulo">Minhas obras</p>
-            <h1>Bem-vindo ao Atlas</h1>
-            <ImagemAssinatura />
-          </>
-        )
       )}
     </Shell>
   )
@@ -71,11 +66,12 @@ function Obras({ ativo, onNavegar, pedido, children }: { ativo: IdTela; onNavega
 let ponteFixture: PonteDesktop | null = null
 const ponteInicial = () => ponteDoAmbiente() ?? (ponteFixture ??= criarPonteFixture())
 
-export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo, nomes, construcao, modos, painel, cota, ocorrencias, retomar, publicar, posobra, licenca }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo; nomes?: PonteNomes; construcao?: PonteConstrucao; modos?: PonteModoObra; painel?: PontePainel; cota?: PonteCota; ocorrencias?: PonteOcorrencias; retomar?: PonteRetomar; publicar?: PontePublicar; posobra?: PontePosObra; licenca?: PonteLicenca }) {
+export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo, nomes, construcao, modos, painel, cota, ocorrencias, retomar, publicar, posobra, licenca, ajuda, casos }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo; nomes?: PonteNomes; construcao?: PonteConstrucao; modos?: PonteModoObra; painel?: PontePainel; cota?: PonteCota; ocorrencias?: PonteOcorrencias; retomar?: PonteRetomar; publicar?: PontePublicar; posobra?: PontePosObra; licenca?: PonteLicenca; ajuda?: PonteAjuda; casos?: PonteCasosAdmin }) {
   const [tela, setTela] = useState<string | null>(null)
   const [ativo, setAtivo] = useState<IdTela>('obras')
   const [instalando, setInstalando] = useState(false)
-  const [pedidoAjuda, setPedidoAjuda] = useState<PedidoAjudaPasso | null>(null)
+  // A Ajuda do Atlas (F17) é um painel lateral por cima de qualquer tela; `n` renova a conversa a cada abertura.
+  const [painelAjuda, setPainelAjuda] = useState<{ contexto: ContextoAjuda; n: number } | null>(null)
   const [computador, setComputador] = useState('')
   const [dono, setDono] = useState('')
   const [paradaF12, setParadaF12] = useState<ObraParada | null>(null)
@@ -93,6 +89,13 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteClaude = useMemo<PonteClaude>(() => claude ?? (modoFixture() ? criarClaudeFixture({ conectado: false }, { loginAutomatico: true }) : claudeIndisponivel), [claude])
 
   // Idem para as contas do cliente (GitHub, Supabase, Vercel): sem adaptador real, não finge que ficaram prontas.
+  // A Ajuda do Atlas: o Claude por baixo, atrás de uma porta. Sem adaptador real, não finge que entendeu.
+  const ponteAjuda = useMemo<PonteAjuda>(() => ajuda ?? (modoFixture() ? criarAjudaFixture() : ajudaIndisponivel), [ajuda])
+  // Casos que o Atlas não resolveu vão ao painel do administrador (ocorrencias_admin, M7); sem adaptador real, não finge que anotou.
+  const ponteCasos = useMemo<PonteCasosAdmin>(() => casos ?? (modoFixture() ? criarCasosFixture() : casosIndisponivel), [casos])
+  const abrirAjuda = (contexto: ContextoAjuda) => setPainelAjuda((a) => ({ contexto: { obra: obraAtual?.nome, ...contexto }, n: (a?.n ?? 0) + 1 }))
+  const pedirAjudaPasso = (p: PedidoAjudaPasso) => abrirAjuda(contextoDoPasso(p))
+
   const ponteContas = useMemo<PonteContas>(() => contas ?? (modoFixture() ? criarContasFixture() : contasIndisponivel), [contas])
 
   // Idem para o celular (Remote Control): sem adaptador real, não finge que o celular está ligado.
@@ -195,21 +198,23 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   }, [ponte, ponteRetomar])
 
   if (tela === null) return null
+  const painelDeAjuda = painelAjuda ? <Ajuda key={painelAjuda.n} ajuda={ponteAjuda} casos={ponteCasos} contexto={painelAjuda.contexto} nome={dono.split(' ')[0] || undefined} onFechar={() => setPainelAjuda(null)} /> : null
+  const com = (n: ReactNode) => <>{n}{painelDeAjuda}</>
   if (tela === TELA_ATIVACAO) {
-    return <Ativacao api={ativacao} computador={computador} onInstalando={setInstalando} onContinuar={() => setTela(TELA_CLAUDE)} />
+    return com(<Ativacao api={ativacao} computador={computador} onInstalando={setInstalando} onContinuar={() => setTela(TELA_CLAUDE)} />)
   }
-  if (tela === TELA_CLAUDE) return <Claude claude={ponteClaude} onContinuar={() => setTela(TELA_CONTAS)} onPedirAjuda={() => { setAtivo('ajuda'); setTela('F05') }} />
-  if (tela === TELA_CONTAS) return <Contas contas={ponteContas} onContinuar={() => setTela(TELA_CELULAR)} onPedirAjuda={(p) => { setPedidoAjuda(p); setAtivo('ajuda'); setTela('F05') }} />
-  if (tela === TELA_CELULAR) return <Celular celular={ponteCelular} onVoltar={() => setTela(TELA_CONTAS)} onConcluir={() => setTela('F05')} />
+  if (tela === TELA_CLAUDE) return com(<Claude claude={ponteClaude} onContinuar={() => setTela(TELA_CONTAS)} onPedirAjuda={() => abrirAjuda({ origem: 'menu', onde: 'a conexão com o Claude' })} />)
+  if (tela === TELA_CONTAS) return com(<Contas contas={ponteContas} onContinuar={() => setTela(TELA_CELULAR)} onPedirAjuda={pedirAjudaPasso} />)
+  if (tela === TELA_CELULAR) return com(<Celular celular={ponteCelular} onVoltar={() => setTela(TELA_CONTAS)} onConcluir={() => setTela('F05')} />)
   if (tela === TELA_RETOMAR && paradaF12) {
-    return (
+    return com(
       <Retomar
         obra={paradaF12}
         nome={dono || undefined}
         retomar={ponteRetomar}
         onContinuou={(o) => { setObraAtual({ nome: o.nome, pasta: o.pasta }); setFluxo('lista'); setAtivo('obra'); setTela('F05') }}
         onAgoraNao={() => setTela('F05')}
-      />
+      />,
     )
   }
   // Demais telas (F05+ vêm nos próximos milestones): por ora cai em Obras.
@@ -220,11 +225,12 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'obras' && fluxo === 'batismo' && obraAtual) conteudo = <Batismo obra={obraAtual} batismo={ponteBatismo} nomes={ponteNomes} arquivos={ponteArquivos} onVoltar={() => setFluxo('telas')} onConcluir={() => setFluxo('aprovar')} />
   else if (ativo === 'posobra') conteudo = obraAtual ? <PosObra obra={obraAtual} posobra={pontePosObra} arquivos={ponteArquivos} licenca={ponteLicenca} onAcompanhar={() => setAtivo('obra')} /> : <p>Escolha uma obra em Minhas obras para pedir uma mudança nela.</p>
   else if (ativo === 'obra' && obraAtual && fluxo === 'publicar') conteudo = <Publicar slug={slugDaObra(obraAtual.nome)} onPublicar={(sel) => { setSelecaoPub(sel); setFluxo('publicando') }} onVoltar={() => setFluxo('lista')} />
-  else if (ativo === 'obra' && obraAtual && fluxo === 'publicando') conteudo = <Publicando obra={obraAtual} selecao={selecaoPub} publicar={pontePublicar} onVoltar={() => setFluxo('publicar')} onConcluir={(noAr) => { setEnderecoNoAr(noAr); setResumoEntrega(null); void pontePainel.ler(obraAtual.pasta).then((e) => setResumoEntrega({ etapas: e.etapas.length, tarefas: e.feitas }), () => {}); setFluxo('entrega') }} onPedirAjuda={(p) => { setPedidoAjuda(p); setAtivo('ajuda') }} />
+  else if (ativo === 'obra' && obraAtual && fluxo === 'publicando') conteudo = <Publicando obra={obraAtual} selecao={selecaoPub} publicar={pontePublicar} onVoltar={() => setFluxo('publicar')} onConcluir={(noAr) => { setEnderecoNoAr(noAr); setResumoEntrega(null); void pontePainel.ler(obraAtual.pasta).then((e) => setResumoEntrega({ etapas: e.etapas.length, tarefas: e.feitas }), () => {}); setFluxo('entrega') }} onPedirAjuda={pedirAjudaPasso} onErro={(p, e) => abrirAjuda({ ...contextoDoPasso(p), origem: 'erro', onde: 'a publicação', erro: e })} />
   else if (ativo === 'obra' && obraAtual && fluxo === 'entrega') conteudo = <Entrega obra={obraAtual} endereco={enderecoNoAr} resumo={resumoEntrega} onMudar={() => setAtivo('posobra')} />
-  else if (ativo === 'obra' && obraAtual) conteudo = <Painel obra={obraAtual} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => setAtivo('ajuda')} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => setFluxo('publicar')} />
+  else if (ativo === 'obra' && obraAtual) conteudo = <Painel obra={obraAtual} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => abrirAjuda({ origem: 'menu' })} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => setFluxo('publicar')} />
   else if (ativo === 'obras' && fluxo === 'aprovar' && obraAtual) conteudo = <Aprovar obra={obraAtual} construcao={pontesModo.construcao} claude={ponteClaude} modos={pontesModo.modos} onVoltar={() => setFluxo('batismo')} onComecou={() => { setFluxo('lista'); setAtivo('obra') }} />
   else if (ativo === 'obras' && fluxo === 'nova') conteudo = <NovaObra obras={ponteObras} ideia={ideia} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} onEstilo={(o: ObraNova) => { setObraAtual({ nome: o.respostas.nome, pasta: o.pasta.pasta }); setFluxo('estilo') }} />
   else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} nome={dono || undefined} onComecar={(i) => { setIdeia(i ?? ''); setFluxo('nova') }} onTrazer={() => setFluxo('trazer')} />
-  return <Obras ativo={ativo} onNavegar={setAtivo} pedido={pedidoAjuda}>{conteudo}</Obras>
+  // "Ajuda do Atlas" no menu abre o painel por cima da tela atual (não troca de tela).
+  return com(<Obras ativo={ativo} onNavegar={(t) => (t === 'ajuda' ? abrirAjuda({ origem: 'menu' }) : setAtivo(t))}>{conteudo}</Obras>)
 }
