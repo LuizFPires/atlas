@@ -13,7 +13,7 @@ tela: prototipo/Shell.dc.html
 - [ ] Implementar o menu lateral Shell com "Falar com o Atlas" e "Ajuda do Atlas" fixos
 - [ ] Carregar a marca (monograma, nome-atlas, imagem-assinatura do canteiro) de prototipo/assets
 - [ ] Conferir fidelidade com o protótipo
-Notas: Repositório privado LuizFPires/atlas (base main). Decisão: incluir um workflow de CI básico (build/lint do Vite+React+TS) já no M1, para o merge ter checks verdes. Sem decisões de negócio pendentes para o M1 (fundação derivada do protótipo e do design system).
+Notas: Repositório privado LuizFPires/atlas (base main). Decisão: incluir um workflow de CI básico (build/lint do Vite+React+TS) já no M1, para o merge ter checks verdes. Sem decisões de negócio pendentes para o M1 (fundação derivada do protótipo e do design system). ⏸ aguardando ocorrência #1 (GitHub Actions) — billing do Actions bloqueado, CI do PR #1 não roda; código verificado localmente (lint, 7 testes, build).
 
 ## Milestone 2 — Servidor de licenças: dados e APIs
 peso: 3
