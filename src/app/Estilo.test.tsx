@@ -118,7 +118,7 @@ describe('3 estilos e design system', () => {
     expect(est.escritos[0].texto).toContain('Estilo: Navalha')
     expect(est.escritos[0].texto).toContain('- Confiança')
     expect(est.escritos[0].texto).toContain('- Tradição')
-    await clicar('Ver minhas obras →')
+    await clicar('Desenhar as telas →')
     expect(onConcluir).toHaveBeenCalled()
   })
 
