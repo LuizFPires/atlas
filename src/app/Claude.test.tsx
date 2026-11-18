@@ -109,3 +109,30 @@ test('plano ainda não detectado: avisa com calma, sem escolher nada', async () 
   await conectar(criarClaudeFixture({ conectado: true, conta: 'a@b.com' }))
   expect(screen.getByText(/Ainda não consegui ver qual é o seu plano/)).toBeInTheDocument()
 })
+
+test('reconhece o upgrade sozinho (polling leve), sem o cliente clicar em nada', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  try {
+    const c = criarClaudeFixture({ conectado: true, conta: 'a@b.com', plano: 'pro' })
+    render(<TemaProvider><Claude claude={c} onContinuar={() => {}} sondagemMs={1000} /></TemaProvider>)
+    for (let i = 0; i < 5; i++) await clicar(/Abrir o site →|Fiz isso →/)
+    await clicar('Ver meu plano →')
+    expect(screen.getByText('COMO O ATLAS VAI TRABALHAR NO SEU PLANO PRO')).toBeInTheDocument()
+    c.simularUpgrade('max')
+    await vi.advanceTimersByTimeAsync(1100)
+    expect(await screen.findByText(/Percebi a troca! Agora você está no plano Max/)).toBeInTheDocument()
+    expect(screen.getByText('COMO O ATLAS VAI TRABALHAR NO SEU PLANO MAX')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Já fiz o upgrade' })).not.toBeInTheDocument()
+  } finally { vi.useRealTimers() }
+})
+
+test('"Já fiz o upgrade" (1 clique) renova a conexão quando o Claude Code só reflete depois', async () => {
+  const c = criarClaudeFixture({ conectado: true, conta: 'a@b.com', plano: 'pro' })
+  await conectar(c)
+  await clicar('Já fiz o upgrade')
+  expect(await screen.findByText(/Ainda vejo o plano Pro/)).toBeInTheDocument()
+  c.simularUpgrade('max', true)
+  await clicar('Já fiz o upgrade')
+  expect(await screen.findByText(/Percebi a troca! Agora você está no plano Max/)).toBeInTheDocument()
+  expect(screen.getByText('COMO O ATLAS VAI TRABALHAR NO SEU PLANO MAX')).toBeInTheDocument()
+})
