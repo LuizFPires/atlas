@@ -10,6 +10,7 @@ const { criarObras } = require('./adaptadores/obras.cjs')
 const { criarArquivos } = require('./adaptadores/arquivos.cjs')
 const { criarClaude } = require('./adaptadores/claude.cjs')
 const { criarModo } = require('./adaptadores/modo.cjs')
+const { criarConstrucao } = require('./adaptadores/construcao.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -21,6 +22,7 @@ const obras = criarObras({ shell })
 const arquivos = criarArquivos({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
 const claude = criarClaude({ shell })
 const modos = criarModo({ raiz: obras.raiz() })
+const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: process.env.ATLAS_KIT_PLUGIN || null })
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -63,6 +65,10 @@ handle('atlas:claude:renovar', () => claude.renovarConexao())
 // Modo da obra (automático | passo a passo): <obra>\.atlas\modo.json.
 handle('atlas:modos:ler', (pasta) => modos.ler(String(pasta)))
 handle('atlas:modos:gravar', (pasta, modo) => modos.gravar(String(pasta), String(modo)))
+
+// Planejar e iniciar a construção (PLAN.md + linha de produção do kit na pasta da obra).
+handle('atlas:construcao:planejar', (pasta, nome) => construcao.planejar(String(pasta), String(nome)))
+handle('atlas:construcao:iniciar', (pasta, nome, modo, etapas) => construcao.iniciar(String(pasta), String(nome), String(modo), Array.isArray(etapas) ? etapas : []))
 
 // O computador é o canteiro: durante a obra ele não pode dormir.
 handle('atlas:sono', (ligado) => {

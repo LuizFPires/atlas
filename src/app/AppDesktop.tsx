@@ -122,7 +122,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Idem para o plano da obra e o modo (automático ou passo a passo): o mesmo armazém de preferências é o que o painel da obra (M19) lê.
   const pontesModo = useMemo(() => {
     const m = modos ?? (modoFixture() ? criarModoObraFixture() : (ponte.modos ?? modoObraIndisponivel))
-    return { modos: m, construcao: construcao ?? (modoFixture() ? criarConstrucaoFixture(m, ponteObras.raiz()) : construcaoIndisponivel) }
+    return { modos: m, construcao: construcao ?? (modoFixture() ? criarConstrucaoFixture(m, ponteObras.raiz()) : (ponte.construcao ?? construcaoIndisponivel)) }
   }, [modos, construcao, ponteObras, ponte])
 
   // Idem para o painel da obra (PLAN.md, prazo, canteiro 3D): sem adaptador real, não finge andamento.
