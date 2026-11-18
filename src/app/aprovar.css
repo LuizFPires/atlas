@@ -31,3 +31,5 @@
 .at-apr__modo-cab b { font-size: 16px; }
 .at-apr__selo { font: 600 11px var(--font-mono); letter-spacing: 0.1em; padding: 3px 8px; border-radius: 999px; background: var(--lime); color: var(--on-lime); }
 .at-apr__paradas { display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5; padding: 14px 16px; border-radius: 14px; background: var(--card2); }
+.at-apr__ok { margin: 0; background: var(--soft); border: 1px solid var(--lime); border-radius: 14px; padding: 14px 18px; font-size: 15px; line-height: 1.5; }
+.at-apr__link { background: none; border: 0; padding: 0; color: var(--lime-txt, var(--lime)); font: 600 15px var(--font-text); cursor: pointer; text-decoration: underline; }

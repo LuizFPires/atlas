@@ -109,3 +109,33 @@ test('o formato da preferência é lido de volta e liga o recomendado.json', () 
   expect(paraRecomendado('passo-a-passo')).toEqual({ ativo: false })
   expect(ARQUIVO_MODO).toBe('.atlas/modo.json')
 })
+
+test('"Começar a obra" gera o plano e dispara a construção no modo escolhido (automático)', async () => {
+  const construcao = criarConstrucaoFixture()
+  const { user } = montar(construcao)
+  await user.click(await screen.findByRole('button', { name: 'Começar a obra' }))
+  expect(await screen.findByText(/A obra começou\./)).toBeInTheDocument()
+  expect(construcao.iniciadas).toHaveLength(1)
+  expect(construcao.iniciadas[0]).toMatchObject({ pasta: obra.pasta, modo: 'automatico', recomendado: { ativo: true } })
+  expect(construcao.iniciadas[0].plan).toMatch(/^## Milestone 8 — Publicação$/m)
+  expect(screen.getByText(/tocar tudo sozinho/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Começar a obra' })).toBeDisabled()
+})
+
+test('no passo a passo, o início respeita o modo e guarda a preferência para o painel', async () => {
+  const modos = criarModoObraFixture()
+  const construcao = criarConstrucaoFixture(modos)
+  const { user } = montar(construcao, undefined, modos)
+  await user.click(await screen.findByRole('radio', { name: /Me chamar para aprovar/ }))
+  await user.click(screen.getByRole('button', { name: 'Começar a obra' }))
+  expect(await screen.findByText(/parar no fim de cada etapa/)).toBeInTheDocument()
+  expect(construcao.iniciadas[0]).toMatchObject({ modo: 'passo-a-passo', recomendado: { ativo: false } })
+  expect(await modos.ler(obra.pasta)).toBe('passo-a-passo')
+})
+
+test('se a construção não puder começar, avisa com calma e deixa tentar de novo', async () => {
+  const { user } = montar({ planejar: criarConstrucaoFixture().planejar, iniciar: async () => { throw new Error('indisponivel') } })
+  await user.click(await screen.findByRole('button', { name: 'Começar a obra' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(/ainda não está ligado/)
+  expect(screen.getByRole('button', { name: 'Começar a obra' })).toBeEnabled()
+})

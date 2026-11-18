@@ -14,6 +14,8 @@ interface Props {
   modos: PonteModoObra
   /** Volta ao protótipo (batismo). */
   onVoltar: () => void
+  /** Depois que a obra começou (PLAN.md gerado e construção disparada no modo escolhido): segue para o painel da obra (M19); até lá, volta às obras. */
+  onComecou?: () => void
 }
 
 export const recadoDoErroAprovar = (e: unknown) => {
@@ -33,12 +35,14 @@ export function textoCota(pausas: number): string {
 }
 
 /** F08: aprovar e começar a obra. Mostra etapas, prazo no plano do cliente e consumo da cota. */
-export function Aprovar({ obra, construcao, claude, modos, onVoltar }: Props) {
+export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou }: Props) {
   const [plano, setPlano] = useState<Plano | undefined>()
   const [plan, setPlan] = useState<Planejamento | null>(null)
   const [erro, setErro] = useState('')
   const [modo, setModo] = useState<ModoObra>(MODO_RECOMENDADO)
   const [guardado, setGuardado] = useState(false)
+  const [ocupado, setOcupado] = useState(false)
+  const [comecou, setComecou] = useState<{ modo: ModoObra; plan: string } | null>(null)
 
   useEffect(() => {
     let vivo = true
@@ -54,6 +58,16 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar }: Props) {
     setModo(novo)
     setErro('')
     try { await modos.gravar(obra.pasta, novo); setGuardado(true) } catch (x) { setModo(anterior); setErro(recadoDoErroAprovar(x)) }
+  }
+
+  const comecar = async () => {
+    if (!plan || ocupado || comecou) return
+    setOcupado(true)
+    setErro('')
+    try {
+      const r = await construcao.iniciar(obra.pasta, obra.nome, modo, plan.etapas)
+      setComecou(r)
+    } catch (x) { setErro(recadoDoErroAprovar(x)) } finally { setOcupado(false) }
   }
 
   const etapas: Etapa[] = plan?.etapas ?? []
@@ -120,9 +134,15 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar }: Props) {
               <span className="at-apr__item"><Icone nome="pessoas" tamanho={16} /><span><b>Google Play (conta nova):</b> exige 12 pessoas testando o app por 14 dias seguidos antes de poder publicar. O Atlas te ajuda a juntar essa turma.</span></span>
               <span>Se você só quer instalar pelo celular, sem loja, não precisa de nada disso.</span>
             </section>
+            {comecou && (
+              <p className="at-apr__ok" role="status">
+                <b>A obra começou.</b> {comecou.modo === 'automatico' ? 'O Atlas vai tocar tudo sozinho e só te chama nas paradas de verdade.' : 'O Atlas vai parar no fim de cada etapa para você aprovar.'} O plano da obra foi guardado em {comecou.plan}.
+                {onComecou && <> <button type="button" className="at-apr__link" onClick={onComecou}>Ver minhas obras</button></>}
+              </p>
+            )}
             <div className="at-apr__rodape">
               <Botao variante="secundario" onClick={onVoltar}>Voltar ao protótipo</Botao>
-              <Botao className="at-apr__comecar" disabled>Começar a obra</Botao>
+              <Botao className="at-apr__comecar" disabled={ocupado || !!comecou} onClick={() => void comecar()}>Começar a obra</Botao>
             </div>
           </div>
         </div>
