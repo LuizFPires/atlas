@@ -3,12 +3,15 @@ import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { TrazerPrototipo } from './Trazer'
 import { RECADO } from './trazer-dados'
+import { arquivoZip, criarImportarFixture, pacoteExemplo, type ImportarFixture } from './ponte-importar'
+import { criarObrasFixture } from './ponte-obras'
 
-const montar = () => {
+const montar = (importar: ImportarFixture = criarImportarFixture()) => {
   const user = userEvent.setup()
   const onVoltar = vi.fn()
-  render(<TemaProvider><TrazerPrototipo onVoltar={onVoltar} /></TemaProvider>)
-  return { user, onVoltar }
+  const obras = criarObrasFixture()
+  render(<TemaProvider><TrazerPrototipo obras={obras} importar={importar} onVoltar={onVoltar} /></TemaProvider>)
+  return { user, onVoltar, obras, importar }
 }
 
 test('mostra o recado pronto e o botão copia o texto inteiro', async () => {
@@ -32,4 +35,48 @@ test('Voltar leva de volta às obras', async () => {
   const { user, onVoltar } = montar()
   await user.click(screen.getByRole('button', { name: /Voltar/ }))
   expect(onVoltar).toHaveBeenCalledTimes(1)
+})
+
+test('o passo 2 tem microfone nos campos de texto', () => {
+  montar()
+  expect(screen.getAllByRole('button', { name: 'Falar' }).length).toBeGreaterThanOrEqual(2)
+})
+
+test('recebe o .zip dentro da pasta da obra e anota o link', async () => {
+  const { user, obras, importar } = montar()
+  await user.type(screen.getByLabelText(/Nome da obra/), 'Agenda da Barbearia do Zé')
+  await user.click(screen.getByRole('button', { name: /prototipo-atlas.zip: escolher arquivo/ }))
+  expect(await screen.findByText(/recebido · 2,3 MB/)).toBeInTheDocument()
+  expect(obras.criadas).toContain('agenda-da-barbearia-do-ze')
+  expect((importar as ImportarFixture).guardados[0]).toContain('\\agenda-da-barbearia-do-ze\\prototipo\\')
+  await user.type(screen.getByLabelText(/Link do protótipo/), 'agenda-ze.lovable.app')
+  await user.click(screen.getByRole('button', { name: 'Anotar link' }))
+  expect(screen.getByText('agenda-ze.lovable.app')).toBeInTheDocument()
+})
+
+test('link perigoso ou com senha é recusado', async () => {
+  const { user } = montar()
+  for (const l of ['javascript:alert(1)', 'https://eu:senha@x.com', 'file:///c:/x']) {
+    await user.clear(screen.getByLabelText(/Link do protótipo/))
+    await user.type(screen.getByLabelText(/Link do protótipo/), l)
+    await user.click(screen.getByRole('button', { name: 'Anotar link' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('não parece certo')
+  }
+})
+
+test('pede o nome da obra antes de abrir o arquivo', async () => {
+  const { user } = montar()
+  await user.click(screen.getByRole('button', { name: /prototipo-atlas.zip: escolher arquivo/ }))
+  expect(screen.getByRole('alert')).toHaveTextContent('dê um nome para a obra')
+})
+
+test('um .zip com programa dentro é recusado com recado calmo e nada fica "recebido"', async () => {
+  const importar = criarImportarFixture()
+  importar.fila.push({ nome: 'prototipo-atlas.zip', tamanho: 1000, entradas: [...pacoteExemplo().entradas, arquivoZip('instalar.exe')] })
+  const { user } = montar(importar)
+  await user.type(screen.getByLabelText(/Nome da obra/), 'Teste')
+  await user.click(screen.getByRole('button', { name: /prototipo-atlas.zip: escolher arquivo/ }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não abri nada')
+  expect(screen.queryByText(/recebido ·/)).toBeNull()
+  expect(importar.guardados).toHaveLength(0)
 })
