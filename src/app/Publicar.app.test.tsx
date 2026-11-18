@@ -25,6 +25,6 @@ test('do painel da obra pronta: Publicar o sistema -> escolha (F13a) -> guia (F1
   expect(await screen.findByText('PASSO 1 DE 5')).toBeInTheDocument()
   expect(screen.getByRole('heading', { level: 1, name: /Endereço grátis/ })).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Não consegui fazer este passo' }))
-  expect(await screen.findByRole('heading', { name: 'Vamos resolver juntos' })).toBeInTheDocument()
-  expect(screen.getByText(/passo 1 de 5 do guia do Endereço grátis/)).toBeInTheDocument()
+  expect(await screen.findByRole('complementary', { name: 'Ajuda do Atlas' })).toBeInTheDocument()
+  expect(screen.getByText(/Vi que você parou no passo 1 de 5 do Endereço grátis/)).toBeInTheDocument()
 })

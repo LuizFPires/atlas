@@ -78,6 +78,13 @@ export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
   }
 
   return (
+    <>
+    {contexto.origem === 'erro' && (
+      <div className="at-ajuda-p__erro" role="alert">
+        <span aria-hidden="true">!</span>
+        <div><b>{textoDaObra(contexto.erro?.titulo, 100) || 'Algo deu errado.'}</b><span>A Ajuda do Atlas já abriu ao lado, com o print da tela.</span></div>
+      </div>
+    )}
     <aside className="at-ajuda-p" aria-label="Ajuda do Atlas">
       <header className="at-ajuda-p__topo">
         <span className="at-ajuda-p__logo"><Icone nome="ajuda" tamanho={22} /></span>
@@ -122,5 +129,6 @@ export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
         {!suportado && <span className="at-ajuda-p__dica">Este navegador não escuta a sua voz. Pode digitar normalmente.</span>}
       </footer>
     </aside>
+    </>
   )
 }

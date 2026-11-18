@@ -110,3 +110,13 @@ export const ajudaIndisponivel: PonteAjuda & { readonly indisponivel: true } = {
   async tirarPrint() { return null },
   async anexarImagem() { return null },
 }
+
+/** "Não consegui fazer este passo": o print do passo (o quadro do site que ele via) e onde ele parou. */
+export function contextoDoPasso(p: PedidoAjudaPasso): ContextoAjuda {
+  return {
+    origem: 'passo',
+    onde: p.origem === 'F13b' ? 'a publicação' : 'as contas',
+    passo: p,
+    print: { url: p.print.url, titulo: p.print.titulo, detalhe: p.print.botaoCerto ? `O botão certo aqui é "${p.print.botaoCerto}".` : undefined },
+  }
+}
