@@ -14,7 +14,7 @@ async function montarAdmin() {
   const admin = { ...m.deps, autenticarPortal: m.deps.autenticarPortal, emailsAdmin: lerEmailsAdmin('luiz@atlas.com') }
   const em = (dias: number) => new Date(m.deps.agora().getTime() + dias * DIA).toISOString()
   const liberar = (corpo: object) => chamar(m.ctx({ admin }), '/admin/cortesia', JWT_LUIZ, corpo)
-  return { ...m, em, liberar }
+  return { ...m, admin, em, liberar }
 }
 
 describe('cortesia — liberar pelo painel', () => {
@@ -72,7 +72,7 @@ describe('cortesia — liberar pelo painel', () => {
     const depois = a.store.licencas.find((l) => l.id === ana.id)!
     expect(depois.tipo).toBeUndefined()
     expect(depois.validade_em).toBeUndefined()
-    expect((await chamar(a.ctx(), '/admin/cortesia', JWT_ANA, { email: 'z@z.com', validade_em: a.em(5) })).status).toBe(403)
+    expect((await chamar(a.ctx({ admin: a.admin }), '/admin/cortesia', JWT_ANA, { email: 'z@z.com', validade_em: a.em(5) })).status).toBe(403)
   })
 })
 
