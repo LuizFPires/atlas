@@ -67,7 +67,7 @@ tela: prototipo/F15Portal.dc.html
 - [ ] Implementar troca de computador por e-mail + código (independe da máquina antiga)
 - [ ] Implementar cancelar compra e cancelar mensalidade
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): auth própria do portal via Supabase Auth (independente do login do Claude), em /conta; o portal só lê/age sobre os dados do cliente logado (RLS, sem cross-tenant; não expor refs do gateway nem token_hash). Reaproveita M2 (licença, troca por e-mail+código) e M3 (cancelar compra CDC art.49 / cancelar mensalidade). Troca de computador independe da máquina antiga (roubo/perda), limite 1/7 dias. Ações de pagamento passam pela conta Stripe do cliente. Modo fixture, sem deploy.
 
 ## Milestone 7 — Painel do administrador
 peso: 2
