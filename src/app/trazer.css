@@ -1,0 +1,35 @@
+/* F06c Trazer um protótipo pronto (prototipo/F06cTrazer.dc.html). Só tokens do Atlas. */
+.at-trazer { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 26px; min-width: 0; }
+.at-trazer h1 { margin: 0; font-size: 28px; letter-spacing: -0.01em; }
+.at-trazer__col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.at-trazer__cab { display: flex; flex-direction: column; gap: 6px; }
+.at-trazer__cab > span:last-child { font-size: 15px; line-height: 1.5; color: var(--mute); }
+.at-trazer__rotulo { font: 500 12px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2); }
+.at-trazer__card { background: var(--card); border: 1px solid var(--card-b); border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.at-trazer__passo { display: flex; align-items: center; gap: 10px; }
+.at-trazer__passo b { font-size: 16px; }
+.at-trazer__bola { width: 26px; height: 26px; border-radius: 13px; background: var(--lime); color: var(--on-lime); font: 700 13px var(--font-mono); display: flex; align-items: center; justify-content: center; flex: none; }
+.at-trazer__recado { max-height: 200px; overflow: auto; border-radius: 12px; background: var(--input); border: 1px solid var(--card-b); padding: 12px 14px; font: 13px/1.55 var(--font-mono); color: var(--mute); white-space: pre-line; margin: 0; }
+.at-trazer__linha { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.at-trazer__linha > span { font-size: 13px; color: var(--mute); }
+.at-trazer__copiar { height: 42px; padding: 0 16px; border-radius: 10px; border: none; background: var(--lime); color: var(--on-lime); font: 700 14px var(--font-text); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.at-trazer__dois { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.at-trazer__caixa { border: 1px solid var(--lime); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; min-width: 0; background: transparent; color: var(--text); text-align: left; font-family: var(--font-text); cursor: pointer; }
+.at-trazer__caixa--zip { border-width: 2px; border-style: dashed; }
+.at-trazer__caixa--vazia { border-color: var(--card-b); }
+.at-trazer__caixa-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.at-trazer__caixa-txt b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.at-trazer__caixa-txt span { font-size: 12px; color: var(--lime-txt); }
+.at-trazer__caixa--vazia .at-trazer__caixa-txt span { color: var(--mute); }
+.at-trazer__rodape { display: flex; align-items: center; gap: 10px; margin-top: auto; flex-wrap: wrap; }
+.at-trazer__lado { background: var(--card); border: 1px solid var(--card-b); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 12px; min-width: 0; align-self: start; }
+.at-trazer__check { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); list-style: none; }
+.at-trazer__check-ic { width: 22px; height: 22px; flex: none; border-radius: 11px; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; background: var(--lime); color: var(--on-lime); }
+.at-trazer__check-ic--aviso { background: var(--aviso); color: var(--on-lime); }
+.at-trazer__check > div { display: flex; flex-direction: column; gap: 2px; }
+.at-trazer__check b { font-size: 14px; }
+.at-trazer__check span { font-size: 13px; line-height: 1.45; color: var(--mute); }
+.at-trazer__checks { margin: 0; padding: 0; }
+.at-trazer__guardado { background: var(--soft); border-radius: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.5; margin-top: auto; }
+.at-trazer__guardado b { font: 13px var(--font-mono); }
+@media (max-width: 1100px) { .at-trazer { grid-template-columns: 1fr; } }
