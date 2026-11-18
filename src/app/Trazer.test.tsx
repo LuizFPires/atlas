@@ -80,3 +80,35 @@ test('um .zip com programa dentro é recusado com recado calmo e nada fica "rece
   expect(screen.queryByText(/recebido ·/)).toBeNull()
   expect(importar.guardados).toHaveLength(0)
 })
+
+test('confere o que chegou: o exemplo do protótipo tem 7 telas, 12 regras e avisa do login e dos dados de mentirinha', async () => {
+  const { user } = montar()
+  await user.type(screen.getByLabelText(/Nome da obra/), 'Agenda do Zé')
+  await user.click(screen.getByRole('button', { name: /prototipo-atlas.zip: escolher arquivo/ }))
+  expect(await screen.findByText('7 telas encontradas')).toBeInTheDocument()
+  expect(screen.getByText('Design system')).toBeInTheDocument()
+  expect(screen.getByText(/12 regras/)).toBeInTheDocument()
+  expect(screen.getByText('Faltou a tela de entrar (login)')).toBeInTheDocument()
+  expect(screen.getByText('Dados de mentirinha')).toBeInTheDocument()
+  expect(screen.getByText('Falta o link do protótipo')).toBeInTheDocument()
+  expect(screen.getByText((_, el) => el?.tagName === 'B' && el.textContent === String.raw`Atlas\Obras\agenda-do-ze`)).toBeInTheDocument()
+})
+
+test('antes do .zip mostra a lista do que ele deve conter, e o botão de seguir fica desligado', () => {
+  montar()
+  for (const n of ['telas/', 'design-system.md', 'telas.md', 'regras.md', 'imagens/ (opcional)']) expect(screen.getByText(n)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Abrir no Atlas e ajustar/ })).toBeDisabled()
+})
+
+test('um .zip sem design-system.md nem regras.md aponta o que falta para o Claude completar', async () => {
+  const importar = criarImportarFixture()
+  importar.fila.push({ nome: 'prototipo-atlas.zip', tamanho: 1000, entradas: [arquivoZip('telas/login.html'), arquivoZip('telas.md', 50, '- a')] })
+  const { user } = montar(importar)
+  await user.type(screen.getByLabelText(/Nome da obra/), 'X')
+  await user.click(screen.getByRole('button', { name: /prototipo-atlas.zip: escolher arquivo/ }))
+  expect(await screen.findByText('Faltou o design-system.md')).toBeInTheDocument()
+  expect(screen.getByText('Faltou o regras.md')).toBeInTheDocument()
+  expect(screen.getByText('Sem imagens nem logomarca')).toBeInTheDocument()
+  expect(screen.queryByText('Faltou a tela de entrar (login)')).toBeNull()
+  expect(screen.getByRole('button', { name: /Abrir no Atlas e ajustar/ })).toBeEnabled()
+})

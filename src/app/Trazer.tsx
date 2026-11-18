@@ -3,13 +3,15 @@ import { Botao, CampoFalado, Icone } from '../ui'
 import { linkCurto } from './estilo-dados'
 import { normalizarLinkPrototipo, type PonteImportar, type Recebido, type ZipEscolhido } from './ponte-importar'
 import type { PonteObras } from './ponte-obras'
-import { RECADO } from './trazer-dados'
+import { conferirPacote, LISTA_VERIFICACAO, RECADO } from './trazer-dados'
 import './trazer.css'
 
 interface Props {
   obras: PonteObras
   importar: PonteImportar
   onVoltar: () => void
+  /** Depois de conferido. A tela de ajustar o protótipo (F07) é do M16; até lá volta às obras. */
+  onConcluir?: () => void
 }
 
 const MB = (n: number) => `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} MB`
@@ -31,7 +33,7 @@ const recadoDoErro = (e: unknown) => {
 }
 
 /** F06c: trazer um protótipo feito em outra IA. Passo 1: recado para copiar. Passo 2: o .zip e o link que a IA devolveu. */
-export function TrazerPrototipo({ obras, importar, onVoltar }: Props) {
+export function TrazerPrototipo({ obras, importar, onVoltar, onConcluir }: Props) {
   const [copiado, setCopiado] = useState(false)
   const [aviso, setAviso] = useState('')
   const [nome, setNome] = useState('')
@@ -69,6 +71,8 @@ export function TrazerPrototipo({ obras, importar, onVoltar }: Props) {
       setErro(recadoDoErro(e))
     } finally { setOcupado(false) }
   }
+
+  const conferencia = recebido ? conferirPacote(recebido, link) : []
 
   const anotarLink = () => {
     if (!linkTxt.trim()) return
@@ -127,8 +131,37 @@ export function TrazerPrototipo({ obras, importar, onVoltar }: Props) {
 
         <div className="at-trazer__rodape">
           <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
+          <Botao disabled={!recebido} onClick={() => onConcluir ? onConcluir() : onVoltar()}>Abrir no Atlas e ajustar →</Botao>
         </div>
       </div>
+
+      <aside className="at-trazer__lado" aria-label="Passo 3: o Atlas conferiu">
+        <div className="at-trazer__passo"><span className="at-trazer__bola">3</span><b>{recebido ? 'O Atlas conferiu o que chegou' : 'O Atlas confere o que chegou'}</b></div>
+        {recebido ? (
+          <ul className="at-trazer__checks" aria-label="O que chegou">
+            {conferencia.map((c) => (
+              <li key={c.id} className="at-trazer__check">
+                <span className={`at-trazer__check-ic ${c.tipo === 'falta' ? 'at-trazer__check-ic--aviso' : ''}`} aria-label={c.tipo === 'ok' ? 'Tudo certo' : 'Atenção'}>{c.tipo === 'ok' ? <Icone nome="check" tamanho={14} /> : '!'}</span>
+                <div><b>{c.titulo}</b><span>{c.txt}</span></div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <>
+            <span className="at-trazer__vazio">Assim que o .zip chegar, eu confiro aqui o que veio e o que falta. O que faltar, o Claude completa no mesmo estilo. O .zip precisa ter:</span>
+            <ul className="at-trazer__checks" aria-label="O que o .zip deve ter">
+              {LISTA_VERIFICACAO.map((i) => (
+                <li key={i.id} className="at-trazer__check"><div><b>{i.nome}{i.obrigatorio ? '' : ' (opcional)'}</b><span>{i.desc}</span></div></li>
+              ))}
+            </ul>
+          </>
+        )}
+        <div className="at-trazer__guardado">
+          {recebido
+            ? <>Tudo foi guardado na pasta da obra: <b>Atlas\Obras\{recebido.pasta}</b>. Você não precisa mexer nela.</>
+            : <>O que chegar fica guardado na pasta da obra, dentro de <b>Atlas\Obras</b>. Você não precisa mexer nela.</>}
+        </div>
+      </aside>
     </div>
   )
 }
