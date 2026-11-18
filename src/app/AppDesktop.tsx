@@ -156,7 +156,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const pontePublicar = useMemo<PontePublicar>(() => publicar ?? (modoFixture() ? criarPublicarFixture() : publicarIndisponivel), [publicar])
 
   // Pós-obra (F14): sem adaptador real, não finge que entendeu nem que mexeu na obra.
-  const pontePosObra = useMemo<PontePosObra>(() => posobra ?? (modoFixture() ? criarPosObraFixture() : posObraIndisponivel), [posobra])
+  const pontePosObra = useMemo<PontePosObra>(() => posobra ?? (modoFixture() ? criarPosObraFixture() : (ponte.posobra ?? posObraIndisponivel)), [posobra, ponte])
 
   // Licença em dia (S4 /verificar) é exigida ANTES de qualquer correção. Sem adaptador/endereço, nega (fail-closed); nunca finge licença fora do fixture.
   const ponteLicenca = useMemo<PonteLicenca>(() => {

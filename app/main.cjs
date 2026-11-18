@@ -18,6 +18,8 @@ const { criarEstilo } = require('./adaptadores/estilo.cjs')
 const { criarPrototipo } = require('./adaptadores/prototipo.cjs')
 const { criarBatismo } = require('./adaptadores/batismo.cjs')
 const { criarNomes } = require('./adaptadores/nomes.cjs')
+const { criarPosObra } = require('./adaptadores/posobra.cjs')
+const { criarLicenca } = require('./adaptadores/licenca.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -39,6 +41,10 @@ const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
 const batismo = criarBatismo({ raiz: obras.raiz(), disparo })
 const nomes = criarNomes()
+// Pós-obra: roda pela MESMA linha da obra (construcao.linha) e só com licença em dia, conferida AQUI no processo principal (token do cofre).
+// O endereço da API vem de ATLAS_API_URL (https); sem ele a licença nega (fail-closed) e o pós-obra não executa.
+const licenca = criarLicenca({ cofre, hashComputador: async () => hash() })
+const posobra = criarPosObra({ raiz: obras.raiz(), disparo, construcao, licenca })
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -115,6 +121,11 @@ handle('atlas:batismo:batizar', (pasta, marca) => batismo.batizar(String(pasta),
 
 // Nomes: conferir endereço livre (.app / .com.br) só por RDAP oficial, anti-SSRF (host fixo, IP público, sem redirect, timeout).
 handle('atlas:nomes:conferir', (nome) => nomes.conferir(String(nome)))
+
+// Pós-obra (F14): entender (só explica) e executar (exige licença em dia; mesmo pipeline da obra).
+handle('atlas:posobra:entender', (pasta, pedido) => posobra.entender(String(pasta), pedido))
+handle('atlas:posobra:executar', (pasta, pedido, plano) => posobra.executar(String(pasta), pedido, plano))
+handle('atlas:posobra:historico', (pasta) => posobra.historico(String(pasta)))
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois).
 app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })

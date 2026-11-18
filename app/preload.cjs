@@ -76,6 +76,12 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     // só o NOME vai ao processo principal; o host e o caminho da consulta são fixos lá (anti-SSRF, ver adaptadores/nomes.cjs).
     conferir: (nome) => chamar('atlas:nomes:conferir', String(nome)),
   },
+  posobra: {
+    // pedido/plano viram dados puros (texto); o processo principal revalida tudo e CONFERE A LICENÇA de novo antes de executar.
+    entender: (pasta, pedido) => chamar('atlas:posobra:entender', String(pasta), JSON.parse(JSON.stringify(pedido ?? {}))),
+    executar: (pasta, pedido, plano) => chamar('atlas:posobra:executar', String(pasta), JSON.parse(JSON.stringify(pedido ?? {})), JSON.parse(JSON.stringify(plano ?? {}))),
+    historico: (pasta) => chamar('atlas:posobra:historico', String(pasta)),
+  },
   construcao: {
     planejar: (pasta, obraNome) => chamar('atlas:construcao:planejar', String(pasta), String(obraNome)),
     // etapas: só n/nome/desc/tela como texto; o processo principal revalida tudo.
