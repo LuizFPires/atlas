@@ -18,6 +18,7 @@ export type Executor = {
 
 export const TELA_ATIVACAO = 'F02'
 export const TELA_OBRAS = 'F05'
+export const TELA_RETOMAR = 'F12'
 
 /** Id do plugin Atlas dentro do marketplace local empacotado. PLACEHOLDER: ids reais vêm do M9. */
 export const PLUGIN_MARKETPLACE = 'atlas-local'
@@ -127,9 +128,11 @@ export async function rodarInstalacao(
   return 0
 }
 
-/** Tela inicial do app: a flag manda; sem flag, já ativado cai em "minhas obras" (F05), senão na ativação (F02). */
-export function telaInicial(argv: string[], jaAtivado = false): string {
+/** Tela inicial do app: a flag manda; sem flag, não ativado cai na ativação (F02); ativado com obra em andamento abre
+ *  Retomar (F12); ativado sem obra em andamento cai em "minhas obras" (F05). */
+export function telaInicial(argv: string[], jaAtivado = false, obraEmAndamento = false): string {
   const a = argv.find((x) => x.startsWith('--tela='))
   if (a) return a.slice('--tela='.length)
-  return jaAtivado ? TELA_OBRAS : TELA_ATIVACAO
+  if (!jaAtivado) return TELA_ATIVACAO
+  return obraEmAndamento ? TELA_RETOMAR : TELA_OBRAS
 }

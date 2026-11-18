@@ -14,6 +14,8 @@ import { Prototipo } from './Prototipo'
 import { Batismo } from './Batismo'
 import { Aprovar } from './Aprovar'
 import { Painel } from './Painel'
+import { Retomar } from './Retomar'
+import { criarRetomarFixture, retomarIndisponivel, religarLinha, type ObraParada, type PonteRetomar } from './ponte-retomar'
 import { criarPainelFixture, painelIndisponivel, type PontePainel } from './ponte-painel'
 import { criarOcorrenciasFixture, ocorrenciasIndisponivel, type PonteOcorrencias } from './ponte-ocorrencia'
 import { cotaIndisponivel, criarCotaFixture, type PonteCota } from './ponte-cota'
@@ -30,7 +32,7 @@ import { contasIndisponivel, criarContasFixture, type PonteContas } from './pont
 import { claudeIndisponivel, criarClaudeFixture, type PonteClaude } from './ponte-claude'
 import { criarAtivacaoApi, criarAtivacaoFixture, lerAtivacao, modoFixture, type AtivacaoApi } from './ativacao-api'
 import { criarPonteFixture, ponteDoAmbiente, type PonteDesktop } from './ponte'
-import { flag, telaInicial, TELA_ATIVACAO, TELA_CELULAR, TELA_CLAUDE, TELA_CONTAS } from './tela'
+import { flag, telaInicial, TELA_ATIVACAO, TELA_CELULAR, TELA_CLAUDE, TELA_CONTAS, TELA_RETOMAR } from './tela'
 import { useImpedirSono } from './sono'
 
 /** Estamos dentro do app desktop (Electron) ou no modo fixture de desenvolvimento (?app=1)? */
@@ -62,13 +64,14 @@ function Obras({ ativo, onNavegar, pedido, children }: { ativo: IdTela; onNavega
 let ponteFixture: PonteDesktop | null = null
 const ponteInicial = () => ponteDoAmbiente() ?? (ponteFixture ??= criarPonteFixture())
 
-export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo, nomes, construcao, modos, painel, cota, ocorrencias }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo; nomes?: PonteNomes; construcao?: PonteConstrucao; modos?: PonteModoObra; painel?: PontePainel; cota?: PonteCota; ocorrencias?: PonteOcorrencias }) {
+export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo, nomes, construcao, modos, painel, cota, ocorrencias, retomar }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo; nomes?: PonteNomes; construcao?: PonteConstrucao; modos?: PonteModoObra; painel?: PontePainel; cota?: PonteCota; ocorrencias?: PonteOcorrencias; retomar?: PonteRetomar }) {
   const [tela, setTela] = useState<string | null>(null)
   const [ativo, setAtivo] = useState<IdTela>('obras')
   const [instalando, setInstalando] = useState(false)
   const [pedidoAjuda, setPedidoAjuda] = useState<PedidoAjudaPasso | null>(null)
   const [computador, setComputador] = useState('')
   const [dono, setDono] = useState('')
+  const [paradaF12, setParadaF12] = useState<ObraParada | null>(null)
   // Dentro de Minhas obras: lista (F05), nova obra (F06) ou trazer protótipo (F06c, do M15).
   const [fluxo, setFluxo] = useState<'lista' | 'nova' | 'trazer' | 'estilo' | 'telas' | 'batismo' | 'aprovar' | 'publicar'>('lista')
   const [ideia, setIdeia] = useState('')
@@ -128,6 +131,14 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteCota = pontesObra.cota
   const ponteOcorrencias = pontesObra.ocorrencias
 
+  // Retomar (F12): detecta a obra em andamento e religa a linha por PontePainel/PonteCota. No fixture, sem obra informada, não há nada em andamento.
+  const ponteRetomar = useMemo<PonteRetomar>(() => {
+    if (retomar) return retomar
+    if (!modoFixture()) return retomarIndisponivel
+    const base = criarRetomarFixture(null)
+    return { obraEmAndamento: base.obraEmAndamento, continuar: (o) => religarLinha({ painel: pontePainel, cota: ponteCota }, o.pasta) }
+  }, [retomar, pontePainel, ponteCota])
+
   const ponteNomes = useMemo<PonteNomes>(() => nomes ?? (modoFixture() ? criarNomesFixture() : nomesIndisponivel), [nomes])
 
   const ativacao = useMemo<AtivacaoApi>(
@@ -147,10 +158,17 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
       if (!vivo) return
       setComputador(desc)
       setDono(ativ?.nome ?? '')
-      setTela(telaInicial(ponte.argv, ativ !== null))
+      // Ativado: confere se há obra em andamento (ligou o computador no meio da obra => Retomar, F12). Falha ao conferir => Minhas obras.
+      let parada: ObraParada | null = null
+      if (ativ !== null) parada = await ponteRetomar.obraEmAndamento().catch(() => null)
+      if (!vivo) return
+      const inicial = telaInicial(ponte.argv, ativ !== null, parada !== null)
+      // Pedir Retomar (--tela=F12) sem obra em andamento não tem o que mostrar: cai em Minhas obras.
+      setParadaF12(parada)
+      setTela(inicial === TELA_RETOMAR && parada === null ? 'F05' : inicial)
     })()
     return () => { vivo = false }
-  }, [ponte])
+  }, [ponte, ponteRetomar])
 
   if (tela === null) return null
   if (tela === TELA_ATIVACAO) {
@@ -159,6 +177,17 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   if (tela === TELA_CLAUDE) return <Claude claude={ponteClaude} onContinuar={() => setTela(TELA_CONTAS)} onPedirAjuda={() => { setAtivo('ajuda'); setTela('F05') }} />
   if (tela === TELA_CONTAS) return <Contas contas={ponteContas} onContinuar={() => setTela(TELA_CELULAR)} onPedirAjuda={(p) => { setPedidoAjuda(p); setAtivo('ajuda'); setTela('F05') }} />
   if (tela === TELA_CELULAR) return <Celular celular={ponteCelular} onVoltar={() => setTela(TELA_CONTAS)} onConcluir={() => setTela('F05')} />
+  if (tela === TELA_RETOMAR && paradaF12) {
+    return (
+      <Retomar
+        obra={paradaF12}
+        nome={dono || undefined}
+        retomar={ponteRetomar}
+        onContinuou={(o) => { setObraAtual({ nome: o.nome, pasta: o.pasta }); setFluxo('lista'); setAtivo('obra'); setTela('F05') }}
+        onAgoraNao={() => setTela('F05')}
+      />
+    )
+  }
   // Demais telas (F05+ vêm nos próximos milestones): por ora cai em Obras.
   let conteudo: ReactNode
   if (ativo === 'obras' && fluxo === 'trazer') conteudo = <TrazerPrototipo obras={ponteObras} importar={ponteImportar} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} />

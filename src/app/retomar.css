@@ -1,0 +1,16 @@
+/* F12 Retomar a obra (prototipo/F12Retomar.dc.html). Só tokens do Atlas. */
+.at-rt { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; min-height: 100vh; padding: 24px; box-sizing: border-box; background: var(--bg); color: var(--text); font-family: var(--font-text); }
+.at-rt__marca { display: flex; align-items: center; gap: 12px; }
+.at-rt__card { width: 100%; max-width: 880px; background: var(--card); border: 1px solid var(--card-b); border-radius: 26px; overflow: hidden; display: grid; grid-template-columns: 340px minmax(0, 1fr); }
+.at-rt__cena { width: 340px; height: 420px; object-fit: cover; display: block; }
+.at-rt__corpo { padding: 36px; display: flex; flex-direction: column; gap: 16px; }
+.at-rt__rotulo { font: 500 12px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2); }
+.at-rt h1 { margin: 0; font-size: 30px; line-height: 1.2; letter-spacing: -0.01em; }
+.at-rt__info { display: flex; flex-direction: column; gap: 6px; font-size: 15px; color: var(--mute); }
+.at-rt__info b { color: var(--text); }
+.at-rt__ok { display: inline-flex; align-items: center; gap: 6px; }
+.at-rt__btn { margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 10px; height: 62px; border-radius: 14px; font-weight: 700; font-size: 19px; }
+.at-rt__link { align-self: center; background: none; border: 0; padding: 0; font: 15px var(--font-text); color: var(--mute); cursor: pointer; text-decoration: underline; }
+.at-rt__nota { margin: 0; font-size: 14px; color: var(--mute2); }
+.at-rt__rodape { font-size: 14px; color: var(--mute2); text-align: center; }
+@media (max-width: 760px) { .at-rt__card { grid-template-columns: 1fr; } .at-rt__cena { width: 100%; height: 220px; } }
