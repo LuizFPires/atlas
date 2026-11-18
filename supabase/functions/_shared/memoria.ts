@@ -195,7 +195,8 @@ export class StoreMemoria implements Store {
   /** Espelha a RPC excluir_conta (0012): anonimiza o cliente e apaga o que é só dele; mantém pagamentos (obrigação fiscal). */
   async excluirConta(clienteId: string, quando: Date) {
     const cli = this.clientes.find((x) => x.id === clienteId)
-    if (!cli || cli.excluido_em) return false
+    if (!cli) return false
+    if (cli.excluido_em) return true // idempotente, como a RPC
     const email = cli.email_compra
     const lics = this.licencas.filter((l) => l.cliente_id === clienteId).map((l) => l.id)
     Object.assign(cli, { email_compra: `excluido+${clienteId}@anonimo.invalid`, nome_tratamento: 'Conta excluída', empresa: null, ramo: null, excluido_em: quando })

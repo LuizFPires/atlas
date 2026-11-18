@@ -17,8 +17,10 @@ export function montarPortal(status: 'ativa' | 'atrasada' | 'pausada' | 'cancela
   // Segundo cliente (Beto), com licença, pagamento e computador PRÓPRIOS: serve para provar que um não vê/age no outro.
   m.store.clientes.push({ id: 'c2', email_compra: 'beto@outra.com', nome_tratamento: 'Beto' })
   m.store.licencas.push({ id: 'l2', cliente_id: 'c2', status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null, conta_gateway_id: CONTA, gateway_cliente_ref: 'cus_beto', gateway_assinatura_ref: 'sub_beto', comprada_em: m.deps.agora() })
+  const removidosAuth: string[] = []
+  const falhaAuth = { ligado: false }
   const boasVindas: Array<{ email: string; token: string }> = []
-  const deps: DepsPortal = { ...m.deps, enviarBoasVindas: async (email, d) => { boasVindas.push({ email, token: d.token }) }, autenticarPortal: async (jwt) => sessoes.get(jwt) ?? null }
+  const deps: DepsPortal = { ...m.deps, enviarBoasVindas: async (email, d) => { boasVindas.push({ email, token: d.token }) }, autenticarPortal: async (jwt) => sessoes.get(jwt) ?? null, removerUsuarioAuth: async (id) => { if (falhaAuth.ligado) throw new Error('auth fora'); removidosAuth.push(id); for (const [j, i] of sessoes) if (i.auth_user_id === id) sessoes.delete(j) } }
   const ctx = (extra: Partial<Contexto> = {}): Contexto => ({
     deps: m.deps,
     pagamento: m.deps,
@@ -27,7 +29,7 @@ export function montarPortal(status: 'ativa' | 'atrasada' | 'pausada' | 'cancela
     autorizarServico: () => false,
     ...extra,
   })
-  return { ...m, sessoes, deps, ctx, boasVindas }
+  return { ...m, sessoes, deps, ctx, boasVindas, removidosAuth, falhaAuth }
 }
 
 export const chamar = (ctx: Contexto, rota: string, jwt: string | null, corpo: object = {}) =>

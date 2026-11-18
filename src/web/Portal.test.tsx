@@ -234,3 +234,53 @@ describe('cancelar compra e mensalidade (item 4)', () => {
     expect(screen.queryByText('Cancelamento')).toBeNull()
   })
 })
+
+describe('excluir minha conta (LGPD)', () => {
+  const abrir = (extra: Record<string, (corpo: unknown) => Response> = {}) => {
+    const s = sessaoAberta({ '/portal/eu': () => resp(CONTA.perfil), '/portal/conta': () => resp(CONTA), ...extra })
+    render(<TemaProvider><Portal api={s.api} /></TemaProvider>)
+    return s
+  }
+  const chamadasExcluir = (f: ReturnType<typeof sessaoAberta>['f']) => (f.mock.calls as unknown as Array<[string, RequestInit]>).filter(([u]) => u.endsWith('/portal/conta/excluir'))
+
+  test('pede confirmação dizendo o que some; "voltar" não chama o servidor', async () => {
+    const { f } = abrir()
+    await userEvent.click(await screen.findByRole('button', { name: 'Excluir minha conta' }))
+    const dialogo = screen.getByRole('alertdialog')
+    expect(dialogo).toHaveTextContent(/apagado, para sempre/)
+    expect(dialogo).toHaveTextContent(/pagamentos/)
+    await userEvent.click(screen.getByRole('button', { name: 'Não, voltar' }))
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    expect(chamadasExcluir(f)).toHaveLength(0)
+  })
+
+  test('confirmando: chama o servidor com o token (sem id/e-mail no corpo), encerra a sessão e avisa', async () => {
+    const { f, api } = abrir({ '/portal/conta/excluir': () => resp({ ok: true }) })
+    await userEvent.click(await screen.findByRole('button', { name: 'Excluir minha conta' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, excluir tudo' }))
+    expect(await screen.findByText(/A sua conta foi excluída/)).toBeInTheDocument()
+    const [c] = chamadasExcluir(f)
+    expect(c[1].headers).toMatchObject({ Authorization: 'Bearer jwt-ze' })
+    expect(JSON.parse(String(c[1].body))).toEqual({ confirmar: true })
+    expect(api.logado()).toBe(false)
+    expect(sessionStorage.getItem(CHAVE_SESSAO)).toBeNull()
+  })
+
+  test('fail-closed: se o servidor falha, mostra o erro e NÃO diz que apagou nem derruba a sessão', async () => {
+    const { api } = abrir({ '/portal/conta/excluir': () => resp({ erro: 'gateway_nao_configurado', mensagem: 'Não deu para parar a cobrança. Nada foi apagado.' }, 503) })
+    await userEvent.click(await screen.findByRole('button', { name: 'Excluir minha conta' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, excluir tudo' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Nada foi apagado')
+    expect(screen.queryByText(/A sua conta foi excluída/)).toBeNull()
+    expect(api.logado()).toBe(true)
+  })
+
+  test('sem rede também não finge', async () => {
+    const s = abrir()
+    s.f.mockImplementation(async (url: string) => { if (url.endsWith('/excluir')) throw new Error('offline'); return resp(url.endsWith('/eu') ? CONTA.perfil : CONTA) })
+    await userEvent.click(await screen.findByRole('button', { name: 'Excluir minha conta' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, excluir tudo' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Sem conexão')
+    expect(screen.queryByText(/A sua conta foi excluída/)).toBeNull()
+  })
+})

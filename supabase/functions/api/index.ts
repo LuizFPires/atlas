@@ -34,7 +34,13 @@ Deno.serve(async (req) => {
     const u = await r.json()
     return u?.id && u?.email && u?.email_confirmed_at ? { auth_user_id: u.id, email: u.email } : null
   }
-  const portal = { ...pagamento, ...cadastro, autenticarPortal }
+  // LGPD: exclusão do login no Auth com a service_role (só no servidor). Falhou = lança, e a exclusão não finge que acabou.
+  const removerUsuarioAuth = async (id) => {
+    const chave = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const r = await fetch(`${Deno.env.get('SUPABASE_URL')}/auth/v1/admin/users/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${chave}`, apikey: chave } })
+    if (!r.ok && r.status !== 404) throw new Error(`auth admin delete: ${r.status}`)
+  }
+  const portal = { ...pagamento, ...cadastro, autenticarPortal, removerUsuarioAuth }
   // Painel do admin (M7): mesma validação de JWT do portal + allowlist ATLAS_ADMIN_EMAILS (vazia = ninguém entra).
   const admin = { ...deps, autenticarPortal, emailsAdmin: lerEmailsAdmin(Deno.env.get('ATLAS_ADMIN_EMAILS')) }
   return tratar(
