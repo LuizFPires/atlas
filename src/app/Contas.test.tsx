@@ -72,6 +72,21 @@ test('ao abrir, retoma da primeira conta que ainda não está pronta', async () 
   expect(await screen.findByText('CONTA 2 DE 4 · SUPABASE')).toBeInTheDocument()
 })
 
+test('se as três contas já estão prontas ao abrir, mostra o "Pronto!" da última', async () => {
+  const { onContinuar } = montar(criarContasFixture(['github', 'supabase', 'hosp']), { sondagemMs: 10 })
+  expect(await screen.findByRole('status')).toHaveTextContent('está pronta')
+  await clicar('Último passo →')
+  expect(onContinuar).toHaveBeenCalled()
+})
+
+test('"Próxima conta →" sem sinal de pronta não marca a conta como feita', async () => {
+  montar()
+  await clicar('Abrir o site →')
+  for (let i = 0; i < 3; i++) await clicar('Fiz isso →')
+  await clicar('Próxima conta →')
+  expect(screen.getByRole('button', { name: /GitHub/ })).not.toHaveClass('at-contas__aba--feita')
+})
+
 test('sem detecção (adaptador indisponível) nada é dado como pronto', async () => {
   const c = criarContasFixture()
   c.pronta = async () => { throw new Error('x') }

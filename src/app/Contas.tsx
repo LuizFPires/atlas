@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Botao, Icone } from '../ui'
 import { LateralPassos } from './Ativacao'
 import type { PedidoAjudaPasso } from './ajuda-passo'
@@ -28,8 +28,11 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
   const [ajuda, setAjuda] = useState(false)
   const [detectada, setDetectada] = useState<IdConta | null>(null)
 
+  const contaRef = useRef(0) // conta atual, sempre em dia: resultados de outra conta são ignorados
+  const trocarConta = (n: number) => { contaRef.current = n; setConta(n) }
+
   const c = CONTAS[conta]
-  const p = c.passos[passo]
+  const p = c.passos[Math.min(passo, c.passos.length - 1)]
   const ultimo = passo === c.passos.length - 1
   const fim = ultimo && conta === CONTAS.length - 2 // última conta obrigatória (Vercel)
 
@@ -42,7 +45,11 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
       if (!vivo || !CONTAS_OBRIGATORIAS.some((id) => prontas[id])) return
       setFeitas((f) => ({ ...f, ...prontas }))
       const primeira = CONTAS.findIndex((x) => !x.opcional && !prontas[x.id])
-      if (primeira >= 0) { setConta(primeira); setPasso(0) }
+      if (primeira >= 0) { trocarConta(primeira); setPasso(0) }
+      else { // tudo pronto: mostra o "Pronto!" da última conta obrigatória
+        const ult = CONTAS_OBRIGATORIAS.length - 1
+        trocarConta(ult); setPasso(CONTAS[ult].passos.length - 1); setDetectada(CONTAS[ult].id)
+      }
     })()
     return () => { vivo = false }
   }, [contas])
@@ -54,7 +61,7 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
     let vivo = true
     const id = setInterval(() => {
       void contas.pronta(idAtual as ContaObrigatoria).then((ok) => {
-        if (!vivo || !ok) return
+        if (!vivo || !ok || contaRef.current !== conta) return
         setFeitas((f) => ({ ...f, [idAtual]: true }))
         setDetectada(idAtual)
         setPasso(CONTAS[conta].passos.length - 1)
@@ -63,7 +70,7 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
     return () => { vivo = false; clearInterval(id) }
   }, [conta, idAtual, jaFeita, contas, sondagemMs])
 
-  const ir = (nova: number) => { setConta(nova); setPasso(0); setAviso(''); setDetectada(null); setAjuda(false) }
+  const ir = (nova: number) => { trocarConta(nova); setPasso(0); setAviso(''); setDetectada(null); setAjuda(false) }
 
   const avancar = async () => {
     setAviso('')
@@ -71,7 +78,9 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
       try { await contas.abrirSite(c.id as ContaObrigatoria) } catch { setAviso(`Não consegui abrir o site do ${c.nome} agora. Abra ele no seu navegador e siga os passos daqui mesmo.`) }
     }
     if (!ultimo) { setPasso(passo + 1); setAjuda(false); return }
-    setFeitas({ ...feitas, [c.id]: true })
+    // só marca como feita se o Atlas viu sinal de que a conta está pronta
+    const ok = c.opcional ? false : await contas.pronta(c.id as ContaObrigatoria).catch(() => false)
+    if (ok) setFeitas((f) => ({ ...f, [c.id]: true }))
     ir(conta + 1)
   }
   const voltar = () => {
@@ -101,7 +110,7 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
                 <span className="at-ativ__txt">{c.porque}</span>
               </div>
 
-              {!c.opcional && (
+              {!c.opcional && p && (
                 <>
                   <CartaoPasso passo={p} n={passo + 1} total={c.passos.length} />
                   {detectada === c.id && <p className="at-contas__detectada" role="status"><Icone nome="check" tamanho={16} /> O Atlas viu sozinho: a sua conta do {c.nome} está pronta.</p>}
@@ -136,7 +145,7 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
                 </>
               )}
             </div>
-            <PreviaSite site={p.site} />
+            {p && <PreviaSite site={p.site} />}
           </div>
         </section>
       </div>
