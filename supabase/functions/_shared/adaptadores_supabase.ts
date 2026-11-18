@@ -30,6 +30,10 @@
 //   licencasAtrasadas / licencasEncerramentoVencido   SELECT licencas WHERE status='atrasada' / status<>'cancelada' AND mensalidade_encerra_em<=agora
 //   criarCompra                RPC criar_compra (0010)
 //   criarCortesia              RPC criar_cortesia (0013)
+//   configDegustacao           SELECT config_degustacao (ativa,dias) WHERE id=1 (0016)
+//   definirConfigDegustacao    UPDATE config_degustacao SET ativa,dias,atualizada_em,atualizada_por WHERE id=1
+//   dominioBloqueado           SELECT dominios_bloqueados WHERE dominio
+//   pedirDegustacao / criarDegustacao   RPC pedir_degustacao / criar_degustacao (0016)
 //   inserirLink / linkPorHash  INSERT / SELECT links_instalacao (id,cliente_id,token_hash,expira_em,usado_em) WHERE token_hash
 //   consumirLink               RPC consumir_link (0002)
 //   invalidarLinks             UPDATE links_instalacao SET usado_em WHERE cliente_id AND usado_em IS NULL
@@ -74,7 +78,7 @@
 // marca d'água e aviso de licença são do /entregar-kit (kit.ts), não daqui.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { montarBoasVindas } from './emails.ts'
+import { montarBoasVindas, montarConfirmacaoDegustacao } from './emails.ts'
 import { montarAvisoAtraso, montarCodigoAtivacao } from './emails-avisos.ts'
 
 function env(nome: string): string {
@@ -198,6 +202,25 @@ export function criarStoreSupabase() {
     async criarCortesia(c: any) {
       const r = await rpc('criar_cortesia', { p_email: c.email, p_nome: c.nome, p_validade: iso(c.validade_em), p_agora: iso(c.agora) })
       return { resultado: r.resultado, licenca: licenca(r.licenca) }
+    },
+    // Degustação (0016)
+    async configDegustacao() {
+      const r = ok(await t('config_degustacao').select('ativa,dias').eq('id', 1).maybeSingle(), 'configDegustacao')
+      return r ? { ativa: !!r.ativa, dias: r.dias } : { ativa: false, dias: 5 }
+    },
+    async definirConfigDegustacao(c: any) {
+      const linha: Record<string, any> = { ativa: c.ativa, atualizada_em: iso(c.agora), atualizada_por: c.por }
+      if (c.dias !== undefined) linha.dias = c.dias
+      const r = ok(await t('config_degustacao').update(linha).eq('id', 1).select('ativa,dias'), 'definirConfigDegustacao')
+      return { ativa: !!r[0].ativa, dias: r[0].dias }
+    },
+    async dominioBloqueado(d: string) { return !!ok(await t('dominios_bloqueados').select('dominio').eq('dominio', d).limit(1).maybeSingle(), 'dominioBloqueado') },
+    async pedirDegustacao(p: any) {
+      return await rpc('pedir_degustacao', { p_email: p.email, p_norm: p.email_normalizado, p_token_hash: p.token_hash, p_ip: p.ip, p_expira: iso(p.expira_em), p_agora: iso(p.agora) })
+    },
+    async criarDegustacao(p: any) {
+      const r = await rpc('criar_degustacao', { p_token_hash: p.token_hash, p_dias: p.dias, p_agora: iso(p.agora) })
+      return { resultado: r.resultado, email: r.email, licenca: r.licenca ? licenca(r.licenca) : undefined }
     },
     async criarCompra(c: any) {
       const r = await rpc('criar_compra', { p_email: c.email, p_nome: c.nome, p_valor: c.valor, p_conta: c.conta_gateway_id, p_cliente_ref: c.gateway_cliente_ref, p_agora: iso(c.agora) })
@@ -392,5 +415,11 @@ export async function enviarAvisoAtraso(email: string, aviso: { n: 1 | 2 | 3; pa
 export async function enviarBoasVindas(email: string, d: { nome: string; empresa: string; ramo: string; token: string; expira_em: Date }) {
   const base = Deno.env.get('ATLAS_INSTALAR_URL') ?? 'https://atlas-ia.app.br/instalar'
   const m = montarBoasVindas({ nome: d.nome, empresa: d.empresa, ramo: d.ramo, expira_em: d.expira_em, link_instalacao: `${base}?t=${encodeURIComponent(d.token)}` })
+  await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
+}
+
+export async function enviarConfirmacaoDegustacao(email: string, d: { token: string; expira_em: Date; dias: number }) {
+  const base = Deno.env.get('ATLAS_DEGUSTACAO_URL') ?? 'https://atlas-ia.app.br/degustacao'
+  const m = montarConfirmacaoDegustacao({ dias: d.dias, expira_em: d.expira_em, link: `${base}?t=${encodeURIComponent(d.token)}` })
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }

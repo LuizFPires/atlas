@@ -196,6 +196,18 @@ export interface Store {
   /** RPC criar_cortesia (0013): acha/cria o cliente e cria/renova a licença de cortesia. 'ja_tem_paga' = nada foi alterado. */
   criarCortesia(c: { email: string; nome: string; validade_em: Date; agora: Date }): Promise<{ resultado: 'criada' | 'atualizada' | 'ja_tem_paga'; licenca: Licenca }>
 
+  // ── Bloco B: degustação self-service (0016) ──
+  /** config_degustacao (1 linha). Nasce desligada. */
+  configDegustacao(): Promise<ConfigDegustacao>
+  /** Só o painel admin chama. `dias` ausente = mantém. */
+  definirConfigDegustacao(c: { ativa: boolean; dias?: number; por: string; agora: Date }): Promise<ConfigDegustacao>
+  /** dominios_bloqueados (lista extensível, além da lista base em código). `dominio` já em minúsculas. */
+  dominioBloqueado(dominio: string): Promise<boolean>
+  /** RPC pedir_degustacao: grava/renova o pedido PENDENTE (não cria licença). 'ja_usada' = esse e-mail normalizado já confirmou. */
+  pedirDegustacao(p: { email: string; email_normalizado: string; token_hash: string; ip: string; expira_em: Date; agora: Date }): Promise<'criado' | 'reenviado' | 'ja_usada'>
+  /** RPC criar_degustacao: o token confirmado vira licença de teste (cortesia), com o mesmo lock por e-mail de criar_compra/criar_cortesia. */
+  criarDegustacao(p: { token_hash: string; dias: number; agora: Date }): Promise<{ resultado: 'criada' | 'token_invalido' | 'expirada' | 'ja_usada' | 'ja_tem_licenca'; email?: string; licenca?: Licenca }>
+
   // ── M6: portal do cliente (login próprio via Supabase Auth) ──
   clientePorAuthUser(authUserId: string): Promise<Cliente | null>
   /** Atômico: UPDATE clientes SET auth_user_id WHERE id AND auth_user_id IS NULL. false = já ligado a alguém. */
@@ -238,6 +250,8 @@ export interface Store {
   /** entregas_kit WHERE marca_dagua = $1 (índice já existe): rastrear de quem veio um arquivo vazado. */
   entregasPorMarca(marca: string): Promise<Entrega[]>
 }
+
+export interface ConfigDegustacao { ativa: boolean; dias: number }
 
 export interface Deps {
   store: Store

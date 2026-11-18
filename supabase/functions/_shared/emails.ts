@@ -125,3 +125,37 @@ export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
     html,
   }
 }
+
+export interface DadosConfirmacaoDegustacao { dias: number; expira_em: Date; /** Endereço de confirmação com o token de uso único. */ link: string }
+
+/** Confirmação da degustação: só o clique libera o teste. Sem promessa de atendimento humano. */
+export function montarConfirmacaoDegustacao(d: DadosConfirmacaoDegustacao): EmailMontado {
+  const link = linkSeguro(d.link)
+  const ate = quando(d.expira_em)
+  const html = moldura({
+    titulo: `Falta um clique para liberar o seu teste de ${d.dias} dias.`,
+    subtitulo: 'Confirme que este e-mail é seu e eu libero o Atlas para você experimentar.',
+    preheader: 'Clique no botão para liberar o seu teste grátis do Atlas.',
+    corpo: [
+      p('Alguém (espero que você) pediu um teste grátis do Atlas com este e-mail. Para liberar, clique no botão abaixo.'),
+      link ? botao(link, 'Liberar o meu teste') : '',
+      caixa('Como funciona', [`O teste vale ${d.dias} dias, contados a partir do clique.`, 'Quando acabar, o acesso fecha sozinho. Nada é cobrado.']),
+      rodape(`O botão funciona uma vez só e vale até ${esc(ate)}. Se não foi você, é só ignorar este e-mail: nada acontece.`),
+      `<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:${COR.claro}">${esc(AJUDA)}</p>`,
+    ].join(''),
+  })
+  return {
+    assunto: 'Confirme o seu e-mail para liberar o teste do Atlas',
+    texto: [
+      `Oi! Alguém (espero que você) pediu um teste grátis de ${d.dias} dias do Atlas com este e-mail.`,
+      '',
+      'Para liberar, abra o link abaixo:',
+      d.link,
+      '',
+      `O link funciona uma vez e vale até ${ate}. Se não foi você, ignore: nada acontece e nada é cobrado.`,
+      '',
+      AJUDA,
+    ].join('\n'),
+    html,
+  }
+}

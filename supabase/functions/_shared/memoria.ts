@@ -1,6 +1,6 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
-import type { Ativacao, CondicaoLicenca, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
+import type { Ativacao, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
   clientes: Cliente[] = []
@@ -166,6 +166,33 @@ export class StoreMemoria implements Store {
       return { resultado: 'atualizada' as const, licenca: this.licencas[i] }
     }
     return { resultado: 'ja_tem_paga' as const, licenca: this.licencas[i] }
+  }
+  // ── Bloco B: degustação (espelha a migration 0016) ──
+  config: ConfigDegustacao = { ativa: false, dias: 5 }
+  dominiosExtras = new Set<string>()
+  degustacoes: Array<{ email: string; email_normalizado: string; token_hash: string; status: 'pendente' | 'confirmada' | 'expirada'; ip: string; expira_em: Date; criado_em: Date; confirmado_em: Date | null }> = []
+  async configDegustacao() { return { ...this.config } }
+  async definirConfigDegustacao(c: { ativa: boolean; dias?: number }) { this.config = { ativa: c.ativa, dias: c.dias ?? this.config.dias }; return { ...this.config } }
+  async dominioBloqueado(d: string) { return this.dominiosExtras.has(d) }
+  async pedirDegustacao(p: { email: string; email_normalizado: string; token_hash: string; ip: string; expira_em: Date; agora: Date }) {
+    const ex = this.degustacoes.find((x) => x.email_normalizado === p.email_normalizado)
+    if (!ex) { this.degustacoes.push({ email: p.email, email_normalizado: p.email_normalizado, token_hash: p.token_hash, status: 'pendente', ip: p.ip, expira_em: p.expira_em, criado_em: p.agora, confirmado_em: null }); return 'criado' as const }
+    if (ex.status === 'confirmada') return 'ja_usada' as const
+    Object.assign(ex, { email: p.email, token_hash: p.token_hash, ip: p.ip, expira_em: p.expira_em, criado_em: p.agora, status: 'pendente' })
+    return 'reenviado' as const
+  }
+  async criarDegustacao(p: { token_hash: string; dias: number; agora: Date }) {
+    const d = this.degustacoes.find((x) => x.token_hash === p.token_hash)
+    if (!d) return { resultado: 'token_invalido' as const }
+    if (d.status === 'confirmada') return { resultado: 'ja_usada' as const }
+    if (d.status === 'expirada' || d.expira_em <= p.agora) { d.status = 'expirada'; return { resultado: 'expirada' as const } }
+    let cli = this.clientes.find((x) => x.email_compra === d.email)
+    if (!cli) { cli = { id: this.id(), email_compra: d.email, nome_tratamento: 'Convidado' }; this.clientes.push(cli) }
+    if (this.licencas.some((l) => l.cliente_id === cli.id)) return { resultado: 'ja_tem_licenca' as const, email: d.email }
+    const licenca: Licenca = { id: this.id(), cliente_id: cli.id, status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null, comprada_em: null, avisos_atraso: 0, tipo: 'cortesia', validade_em: new Date(p.agora.getTime() + p.dias * 24 * 3600_000) }
+    this.licencas.push(licenca)
+    Object.assign(d, { status: 'confirmada', confirmado_em: p.agora })
+    return { resultado: 'criada' as const, email: d.email, licenca }
   }
   async gravarPagamento(p: Pagamento) {
     const i = this.pagamentos.findIndex((x) => x.conta_gateway_id === p.conta_gateway_id && x.gateway_ref === p.gateway_ref)
