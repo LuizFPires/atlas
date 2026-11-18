@@ -16,10 +16,16 @@ export function montarPag(status: 'ativa' | 'atrasada' | 'pausada' | 'cancelada'
   const chamadas: ChamadaStripe[] = []
   const avisos: Array<{ email: string; aviso: AvisoAtraso }> = []
   const falhar = { proxima: false }
+  const sessoesPorChave = new Map<string, string>()
   const fetchFalso: FetchFn = async (url, init) => {
     chamadas.push({ url, ...init })
     if (falhar.proxima) { falhar.proxima = false; return { status: 500, json: async () => ({ error: { code: 'api_error' } }) } }
-    if (url.endsWith('/v1/checkout/sessions')) return { status: 200, json: async () => ({ id: 'cs_test_1', url: 'https://checkout.stripe.com/c/pay/cs_test_1' }) }
+    if (url.endsWith('/v1/checkout/sessions')) {
+      const chave = String((init as { headers?: Record<string, string> } | undefined)?.headers?.['Idempotency-Key'] ?? '')
+      if (!sessoesPorChave.has(chave)) sessoesPorChave.set(chave, `cs_test_${sessoesPorChave.size + 1}`)
+      const id = sessoesPorChave.get(chave)!
+      return { status: 200, json: async () => ({ id, url: `https://checkout.stripe.com/c/pay/${id}` }) }
+    }
     if (url.includes('/v1/subscriptions/')) return { status: 200, json: async () => ({ id: 'sub_1', current_period_end: Math.floor(Date.parse('2026-12-05T00:00:00Z') / 1000) }) }
     return { status: 200, json: async () => ({ id: 'ok' }) }
   }

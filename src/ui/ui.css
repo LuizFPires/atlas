@@ -31,3 +31,13 @@
   100% { box-shadow: 0 0 0 14px rgb(240 90 79 / 0); }
 }
 @media (prefers-reduced-motion: reduce) { .at-mic--gravando { animation: none; } }
+
+.at-campo { display: flex; flex-direction: column; gap: 6px; }
+.at-campo-rotulo { font-size: 15px; font-weight: 600; }
+.at-campo-rotulo span { font-weight: 400; color: var(--mute); }
+.at-campo-linha { display: flex; gap: 8px; }
+.at-campo-linha input { flex: 1; min-width: 0; height: 50px; border-radius: 12px; border: 1px solid var(--card-b); background: var(--input); color: var(--text); padding: 0 14px; font: 16px var(--font-text); }
+.at-campo-linha input:focus-visible { outline: 2px solid var(--lime); outline-offset: 1px; }
+.at-campo-ajuda { font-size: 13px; color: var(--mute2); }
+.at-mic--campo { width: 50px; height: 50px; border-radius: 12px; background: var(--lime); border: none; color: var(--on-lime); }
+.at-mic--campo.at-mic--gravando { background: var(--gravando); color: #fff; }

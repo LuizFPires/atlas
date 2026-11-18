@@ -41,12 +41,12 @@ Notas: ⏩ Auto (recomendado): gateway = Stripe (decidido 18/11). Invariante: a 
 peso: 3
 spec: S7, S21
 tela: prototipo/F00Vendas.dc.html
-- [ ] Montar a página de vendas (hero com vídeo 16:9, o que dá para construir, canteiro 3D, como funciona, você não precisa digitar, o que você recebe, preço, para quem é/não é, dúvidas, depoimentos reservados, chamada final)
-- [ ] Implementar o botão de compra ligado ao gateway e o banner de cookies
-- [ ] Construir o cadastro pós-pagamento (F00bCadastro) com as 4 respostas por microfone
-- [ ] Ligar o cadastro ao POST /cadastro e ao disparo do e-mail de boas-vindas
-- [ ] Conferir fidelidade com o protótipo (F00Vendas e F00bCadastro)
-Notas:
+- [x] Montar a página de vendas (hero com vídeo 16:9, o que dá para construir, canteiro 3D, como funciona, você não precisa digitar, o que você recebe, preço, para quem é/não é, dúvidas, depoimentos reservados, chamada final)
+- [x] Implementar o botão de compra ligado ao gateway e o banner de cookies
+- [x] Construir o cadastro pós-pagamento (F00bCadastro) com as 4 respostas por microfone
+- [x] Ligar o cadastro ao POST /cadastro e ao disparo do e-mail de boas-vindas
+- [x] Conferir fidelidade com o protótipo (F00Vendas e F00bCadastro)
+Notas: ⏩ Auto (recomendado): frontend derivado do protótipo (F00Vendas, F00bCadastro) e do design system. Preço confirmado R$4.800. Botão de compra liga no Stripe Checkout do M3; POST /cadastro e e-mail de boas-vindas (S10) implementados em modo fixture (envio real fica p/ /entregar). Microfone em toda entrada de texto (as 4 respostas do cadastro). Banner de cookies: opção mais privada por padrão. Divergências do protótipo (aceitas): "Quero construir" abre modal de e-mail → Stripe Checkout → cadastro; VIDEO_URL vazia com espaço reservado (nota u00); emojis → SVG. Vendas aprovada. Cadastro reprovou na segurança — decisões (auto — recomendado): vincular o cadastro ao session_id do Stripe (success_url ganha ?session_id=...; cliente derivado do session_id; e-mail do corpo vira só confirmação, acesso vai sempre ao e-mail da compra); resposta genérica única sem prova válida (anti-enumeração); allowlist em nome/empresa/ramo no e-mail de boas-vindas; invalidar links antigos ao reemitir; Pix pendente ("espere") só com prova válida. Pendente p/ /entregar ou go-live: adaptadores_supabase.ts (salvarCadastro atômico, reabrirCadastro, envio real), migration 0006, envs (ATLAS_WEB_ORIGEM, VITE_API_URL, VITE_CONTA_ID) em .env.example; conteúdo do rodapé: Termos/Licença/Privacidade/Contato, CNPJ, URL do vídeo, depoimentos reais (a política de privacidade precisa existir antes do go-live, por LGPD).
 
 ## Milestone 5 — E-mails do Atlas
 peso: 1
@@ -188,9 +188,10 @@ spec: S14, S20
 tela: prototipo/F08Aprovar.dc.html
 - [ ] Mostrar etapas, prazo no plano do cliente e consumo da cota
 - [ ] Mostrar o aviso das lojas (D-U-N-S, 12 testadores/14 dias)
-- [ ] Gerar o PLAN.md da obra do cliente (formato obrigatório) e iniciar a construção
+- [ ] Oferecer a escolha do modo da obra: "automático do começo ao fim, sem me chamar" (destaque/recomendado) ou "me chamar para aprovar cada etapa"; guardar a escolha na obra e explicar em linguagem de leigo
+- [ ] Gerar o PLAN.md da obra do cliente (formato obrigatório) e iniciar a construção no modo escolhido
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: Decisão do usuário (18/11): o Atlas deve deixar o cliente escolher entre AUTOMÁTICO (roda do M1 ao fim sem intervenção — o grande valor do negócio, opção em destaque) e PASSO A PASSO (aprova cada etapa). A engine do kit já tem os dois modos (manual × roteiro automático/recomendado.json); falta a escolha na UI. O automático só para nas travas reais: ocorrência que exige o cliente (F11), pausa por cota (F10) e billing/credencial. Dá para trocar o modo depois (no painel da obra). Isto estende o protótipo F08Aprovar (registrar a divergência; a UI segue o design system).
 
 ## Milestone 19 — App: painel da obra (canteiro)
 peso: 3
@@ -199,9 +200,10 @@ tela: prototipo/F09Painel.dc.html
 - [ ] Integrar o canteiro 3D (cena real de .claude/canteiro) ao painel
 - [ ] Mostrar % ponderado (lido do PLAN), prazo restante e "agora na obra"
 - [ ] Esconder detalhes técnicos atrás de "ver detalhes"
+- [ ] Respeitar o modo da obra (M18): no automático, seguir etapa após etapa sem pedir aprovação (parar só em ocorrência/pausa/billing); no passo a passo, parar ao fim de cada etapa e pedir o OK; permitir trocar o modo aqui a qualquer momento
 - [ ] Mostrar "Publicar o sistema" ao concluir
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: Ver decisão do modo automático × passo a passo no M18. O painel honra a escolha e deixa trocar a qualquer momento.
 
 ## Milestone 20 — App: pausa por cota e ocorrência
 peso: 2

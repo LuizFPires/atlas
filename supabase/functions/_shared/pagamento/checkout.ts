@@ -30,10 +30,10 @@ function urlsDeRetorno(base: string | null | undefined) {
   if (!u || u.protocol !== 'https:' || u.username || u.password || u.origin === 'null') {
     throw new ErroRegra('retorno_nao_configurado', 'O endereço de retorno do pagamento ainda não está configurado.', 503)
   }
-  return { success_url: `${u.origin}/compra/sucesso`, cancel_url: `${u.origin}/compra/cancelada` }
+  return { success_url: `${u.origin}/compra/sucesso?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${u.origin}/compra/cancelada` }
 }
 
-export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promise<{ url: string; sessao_id: string }> {
+export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promise<{ url: string }> {
   const { conta, api } = await apiDaConta(d, p.conta_id)
   const meta = { atlas_conta: conta.id, atlas_tipo: p.tipo }
   const base = { ...urlsDeRetorno(conta.base_retorno), locale: 'pt-BR' }
@@ -52,9 +52,10 @@ export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promis
         metadata: meta,
         payment_intent_data: { metadata: meta },
       },
-      `checkout-impl-${conta.id}-${email}-${Math.floor(d.agora().getTime() / 600_000)}`,
+      `checkout-impl-${crypto.randomUUID()}`,
     )
-    return { url: s.url, sessao_id: s.id }
+    await d.store.registrarSessao(conta.id, s.id, email) // prova da compra: o cadastro só abre com este id. Nunca sai na resposta pública; só o redirect da Stripe a entrega
+    return { url: s.url }
   }
 
   // mensalidade: só para licença existente da MESMA conta (cliente Stripe já criado na implantação)
@@ -72,7 +73,7 @@ export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promis
       metadata: { ...meta, atlas_licenca: lic.id },
       subscription_data: { metadata: { ...meta, atlas_licenca: lic.id } },
     },
-    `checkout-mens-${lic.id}-${Math.floor(d.agora().getTime() / 600_000)}`,
+    `checkout-mens-${crypto.randomUUID()}`,
   )
-  return { url: s.url, sessao_id: s.id }
+  return { url: s.url }
 }

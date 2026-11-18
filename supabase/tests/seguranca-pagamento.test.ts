@@ -81,7 +81,7 @@ describe('D — URL de retorno vem do servidor', () => {
     }))
     expect(r.status).toBe(200)
     const f = new URLSearchParams(m.chamadas[0].body)
-    expect(f.get('success_url')).toBe('https://loja.atlas.test/compra/sucesso')
+    expect(f.get('success_url')).toBe('https://loja.atlas.test/compra/sucesso?session_id={CHECKOUT_SESSION_ID}')
     expect(f.get('cancel_url')).toBe('https://loja.atlas.test/compra/cancelada')
     expect(m.chamadas[0].body).not.toContain('evil')
   })
@@ -97,7 +97,7 @@ describe('D — URL de retorno vem do servidor', () => {
     const m = montarPag()
     m.store.contas[0].base_retorno = 'https://loja.test/qualquer?x=1'
     await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co' })
-    expect(new URLSearchParams(m.chamadas[0].body).get('success_url')).toBe('https://loja.test/compra/sucesso')
+    expect(new URLSearchParams(m.chamadas[0].body).get('success_url')).toBe('https://loja.test/compra/sucesso?session_id={CHECKOUT_SESSION_ID}')
   })
 })
 

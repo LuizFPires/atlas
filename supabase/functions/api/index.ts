@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   const sk = Deno.env.get('ATLAS_SIGN_SK')
   if (!segredo || !servico || !sk) return new Response('configuração ausente', { status: 503 })
   const { criarStoreSupabase, criarCarregarKit, enviarCodigo } = await import('../_shared/adaptadores_supabase.ts')
-  const { enviarAvisoAtraso } = await import('../_shared/adaptadores_supabase.ts')
+  const { enviarAvisoAtraso, enviarBoasVindas } = await import('../_shared/adaptadores_supabase.ts')
   const deps = { store: criarStoreSupabase(), agora: () => new Date(), enviarCodigoPorEmail: enviarCodigo, segredo, chaveAssinatura: await importarChavePrivada(sk) }
   // Pagamento: a conta Stripe é SEMPRE do cliente. Chaves por conta (STRIPE_<ref>_SK / STRIPE_<ref>_WHSEC) vêm dos
   // segredos do Supabase, resolvidas por referência guardada em contas_gateway. Nunca uma conta central do Luiz.
@@ -23,10 +23,14 @@ Deno.serve(async (req) => {
     segredoWebhook: async (ref: string) => Deno.env.get(`STRIPE_${ref}_WHSEC`) ?? null,
   }
   const pagamento = { ...deps, segredos, stripe: (chave: string) => criarStripeApi(chave, fetch), enviarAvisoAtraso }
+  // Cadastro pós-pagamento (M4). enviarBoasVindas monta o texto com montarBoasVindas (_shared/emails.ts); o envio real é do /entregar.
+  const cadastro = { ...deps, enviarBoasVindas }
   return tratar(
     {
       deps,
       pagamento,
+      cadastro,
+      origemWeb: Deno.env.get('ATLAS_WEB_ORIGEM') ?? undefined,
       carregarKit: criarCarregarKit(),
       autorizarServico: (r) => r.headers.get('Authorization') === `Bearer ${servico}`,
     },
