@@ -147,6 +147,21 @@ export class StoreMemoria implements Store {
     this.licencas.push(licenca)
     return { licenca, nova: true }
   }
+  async criarCortesia(c: { email: string; nome: string; validade_em: Date; agora: Date }) {
+    let cli = this.clientes.find((x) => x.email_compra === c.email)
+    if (!cli) { cli = { id: this.id(), email_compra: c.email, nome_tratamento: c.nome }; this.clientes.push(cli) }
+    const i = this.licencas.findIndex((l) => l.cliente_id === cli.id)
+    if (i < 0) {
+      const licenca: Licenca = { id: this.id(), cliente_id: cli.id, status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null, comprada_em: null, avisos_atraso: 0, tipo: 'cortesia', validade_em: c.validade_em }
+      this.licencas.push(licenca)
+      return { resultado: 'criada' as const, licenca }
+    }
+    if (this.licencas[i].tipo === 'cortesia') {
+      this.licencas[i] = { ...this.licencas[i], status: 'ativa', validade_em: c.validade_em }
+      return { resultado: 'atualizada' as const, licenca: this.licencas[i] }
+    }
+    return { resultado: 'ja_tem_paga' as const, licenca: this.licencas[i] }
+  }
   async gravarPagamento(p: Pagamento) {
     const i = this.pagamentos.findIndex((x) => x.conta_gateway_id === p.conta_gateway_id && x.gateway_ref === p.gateway_ref)
     if (i < 0) { this.pagamentos.push({ ...p }); return null }

@@ -77,6 +77,9 @@ export interface LinhaCliente {
   empresa: string
   ramo: string
   situacao: SituacaoCliente
+  tipo: 'paga' | 'cortesia'
+  /** Cortesia: até quando vale. Nulo nas pagas. */
+  validade_em: Date | null
   /** Obras diferentes que o kit entregou a este cliente. */
   obras: number
   ultimo_sinal_em: Date | null
@@ -125,7 +128,9 @@ export async function painel(d: DepsAdmin, jwt: string) {
       nome: c.nome_tratamento,
       empresa: c.empresa ?? '',
       ramo: c.ramo ?? '',
-      situacao: l.status === 'ativa' ? (ativs.length === 0 ? 'ativando' : 'em_dia') : l.status === 'atrasada' ? 'atrasada' : l.status === 'pausada' ? 'pausada' : 'cancelada',
+      tipo: l.tipo === 'cortesia' ? 'cortesia' : 'paga',
+      validade_em: l.tipo === 'cortesia' ? (l.validade_em ?? null) : null,
+      situacao: cortesiaVencida(l, agora) ? 'cancelada' : l.status === 'ativa' ? (ativs.length === 0 ? 'ativando' : 'em_dia') : l.status === 'atrasada' ? 'atrasada' : l.status === 'pausada' ? 'pausada' : 'cancelada',
       obras: new Set(entregasL.map((e) => e.obra_id)).size,
       ultimo_sinal_em: sinal,
       travado_em: travado ? (c.cadastro_em ? 'instalacao' : 'cadastro') : null,
@@ -180,6 +185,36 @@ export async function resolverOcorrencia(d: DepsAdmin, jwt: string, id: unknown)
   if (!(await d.store.resolverOcorrencia(id, adm.email, d.agora()))) throw new ErroRegra('ocorrencia_nao_encontrada', 'Essa ocorrência não existe ou já foi resolvida.', 404)
   return { ok: true }
 }
+
+// ── cortesia manual ────────────────────────────────────────────────────────────
+export const CORTESIA_MAX_DIAS = 180
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/**
+ * Libera (ou renova) uma cortesia para um e-mail, com a data de vencimento escolhida pelo gestor.
+ * Tudo é validado AQUI: e-mail válido, vencimento no futuro e até CORTESIA_MAX_DIAS dias. Idempotente (mesmo e-mail renova a cortesia).
+ * E-mail que já tem licença paga não é alterado. Fica registrado em ocorrencias_admin (quem, quando, até quando).
+ */
+export async function liberarCortesia(d: DepsAdmin, jwt: string, a: { email: unknown; validade_em: unknown; nome?: unknown }) {
+  const adm = await adminLogado(d, jwt)
+  const email = typeof a.email === 'string' ? norm(a.email) : ''
+  if (email.length > 254 || !EMAIL_RE.test(email)) throw new ErroRegra('email_invalido', 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.', 400)
+  const bruto = typeof a.validade_em === 'string' ? a.validade_em.trim() : ''
+  const validade = new Date(bruto)
+  if (!bruto || Number.isNaN(validade.getTime())) throw new ErroRegra('validade_invalida', 'Escolha a data de vencimento da cortesia.', 400)
+  const agora = d.agora()
+  if (validade.getTime() <= agora.getTime()) throw new ErroRegra('validade_no_passado', 'A data de vencimento precisa ser no futuro.', 400)
+  if (validade.getTime() > agora.getTime() + CORTESIA_MAX_DIAS * 24 * 3600_000) throw new ErroRegra('validade_longe_demais', `A cortesia pode durar no máximo ${CORTESIA_MAX_DIAS} dias.`, 400)
+  const nome = limparMotivo(a.nome).slice(0, 80) || 'Convidado'
+  const r = await d.store.criarCortesia({ email, nome, validade_em: validade, agora })
+  if (r.resultado === 'ja_tem_paga') throw new ErroRegra('ja_tem_licenca_paga', 'Essa pessoa já tem uma licença paga. Não precisa de cortesia.', 409)
+  await d.store.inserirOcorrencia({ cliente_id: r.licenca.cliente_id, tipo: 'cortesia', descricao: `Cortesia ${r.resultado === 'criada' ? 'liberada' : 'renovada'} até ${validade.toISOString()}`, autor: adm.email, resolvida: true, criada_em: agora })
+  return { ok: true, nova: r.resultado === 'criada', licenca_id: r.licenca.id, validade_em: validade }
+}
+
+/** Cortesia cujo prazo passou (status ainda 'ativa' no banco até alguém verificar). Cortesia sem prazo conta como vencida (fail-closed). */
+export const cortesiaVencida = (l: { tipo?: string; validade_em?: Date | null }, agora: Date) =>
+  l.tipo === 'cortesia' && (!l.validade_em || l.validade_em.getTime() <= agora.getTime())
 
 // ── ações ──────────────────────────────────────────────────────────────────────
 const ID_RE = /^[\w-]{1,64}$/

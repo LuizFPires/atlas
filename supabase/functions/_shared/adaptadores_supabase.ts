@@ -29,6 +29,7 @@
 //   licencaPorGateway          SELECT licencas WHERE conta_gateway_id AND (gateway_assinatura_ref | gateway_cliente_ref)
 //   licencasAtrasadas / licencasEncerramentoVencido   SELECT licencas WHERE status='atrasada' / status<>'cancelada' AND mensalidade_encerra_em<=agora
 //   criarCompra                RPC criar_compra (0010)
+//   criarCortesia              RPC criar_cortesia (0013)
 //   inserirLink / linkPorHash  INSERT / SELECT links_instalacao (id,cliente_id,token_hash,expira_em,usado_em) WHERE token_hash
 //   consumirLink               RPC consumir_link (0002)
 //   invalidarLinks             UPDATE links_instalacao SET usado_em WHERE cliente_id AND usado_em IS NULL
@@ -113,7 +114,7 @@ async function ler(mk: () => any, limite = Infinity): Promise<any[]> {
 
 // Colunas lidas (só o que o servidor precisa).
 const C_CLIENTE = 'id,email_compra,nome_tratamento,empresa,ramo,cadastro_em,auth_user_id,excluido_em'
-const C_LICENCA = 'id,cliente_id,status,pausa_prevista_em,troca_liberada_em,comprada_em,avisos_atraso,conta_gateway_id,gateway_cliente_ref,gateway_assinatura_ref,mensalidade_encerra_em'
+const C_LICENCA = 'id,cliente_id,status,pausa_prevista_em,troca_liberada_em,comprada_em,avisos_atraso,conta_gateway_id,gateway_cliente_ref,gateway_assinatura_ref,mensalidade_encerra_em,tipo,validade_em'
 const C_ATIVACAO = 'id,licenca_id,computador_hash,token_hash,ativo,ativado_em,desativado_em'
 const C_ATIVACAO_ADMIN = 'id,licenca_id,computador_hash,ativo,ativado_em,desativado_em'
 const C_PAGAMENTO = 'licenca_id,conta_gateway_id,tipo,valor,status,gateway_ref,gateway_pi,pago_em'
@@ -125,6 +126,7 @@ const licenca = (r: any) => r && {
   id: r.id, cliente_id: r.cliente_id, status: r.status, pausa_prevista_em: dt(r.pausa_prevista_em), troca_liberada_em: dt(r.troca_liberada_em),
   comprada_em: dt(r.comprada_em), avisos_atraso: r.avisos_atraso ?? 0, conta_gateway_id: r.conta_gateway_id ?? null,
   gateway_cliente_ref: r.gateway_cliente_ref ?? null, gateway_assinatura_ref: r.gateway_assinatura_ref ?? null, mensalidade_encerra_em: dt(r.mensalidade_encerra_em),
+  tipo: r.tipo === 'cortesia' ? 'cortesia' : 'paga', validade_em: dt(r.validade_em),
 }
 const ativacao = (r: any) => r && { id: r.id, licenca_id: r.licenca_id, computador_hash: r.computador_hash, token_hash: r.token_hash ?? null, ativo: r.ativo, ativado_em: new Date(r.ativado_em), desativado_em: dt(r.desativado_em) }
 const pagamento = (r: any) => r && { licenca_id: r.licenca_id, conta_gateway_id: r.conta_gateway_id ?? '', tipo: r.tipo, valor: Number(r.valor), status: r.status, gateway_ref: r.gateway_ref ?? '', gateway_pi: r.gateway_pi ?? null, pago_em: dt(r.pago_em) }
@@ -192,6 +194,10 @@ export function criarStoreSupabase() {
     async licencasAtrasadas() { return (await ler(() => t('licencas').select(C_LICENCA).eq('status', 'atrasada').order('id'))).map(licenca) },
     async licencasEncerramentoVencido(agora: Date) {
       return (await ler(() => t('licencas').select(C_LICENCA).neq('status', 'cancelada').not('mensalidade_encerra_em', 'is', null).lte('mensalidade_encerra_em', agora.toISOString()).order('id'))).map(licenca)
+    },
+    async criarCortesia(c: any) {
+      const r = await rpc('criar_cortesia', { p_email: c.email, p_nome: c.nome, p_validade: iso(c.validade_em), p_agora: iso(c.agora) })
+      return { resultado: r.resultado, licenca: licenca(r.licenca) }
     },
     async criarCompra(c: any) {
       const r = await rpc('criar_compra', { p_email: c.email, p_nome: c.nome, p_valor: c.valor, p_conta: c.conta_gateway_id, p_cliente_ref: c.gateway_cliente_ref, p_agora: iso(c.agora) })

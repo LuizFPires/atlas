@@ -32,6 +32,10 @@ export interface Licenca {
   gateway_assinatura_ref?: string | null
   /** Mensalidade cancelada: a licença segue até aqui e então vira 'cancelada'. */
   mensalidade_encerra_em?: Date | null
+  /** Cortesia manual do gestor. Ausente = 'paga' (caminho de sempre). */
+  tipo?: 'paga' | 'cortesia'
+  /** Cortesia: até quando vale (obrigatório nela). Nulo = sem prazo. */
+  validade_em?: Date | null
 }
 export interface Ativacao {
   id: string
@@ -189,6 +193,8 @@ export interface Store {
   /** Mensalidade cancelada cujo período pago já acabou (mensalidade_encerra_em <= agora) e ainda não 'cancelada'. */
   licencasEncerramentoVencido(agora: Date): Promise<Licenca[]>
   clientePorId(id: string): Promise<Cliente | null>
+  /** RPC criar_cortesia (0013): acha/cria o cliente e cria/renova a licença de cortesia. 'ja_tem_paga' = nada foi alterado. */
+  criarCortesia(c: { email: string; nome: string; validade_em: Date; agora: Date }): Promise<{ resultado: 'criada' | 'atualizada' | 'ja_tem_paga'; licenca: Licenca }>
 
   // ── M6: portal do cliente (login próprio via Supabase Auth) ──
   clientePorAuthUser(authUserId: string): Promise<Cliente | null>
