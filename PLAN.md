@@ -104,11 +104,11 @@ Notas: ⏩ Auto (recomendado): app Electron que reaproveita o front (vite) servi
 peso: 2
 spec: S13, S20
 tela: prototipo/F03Claude.dc.html
-- [ ] Montar o passo a passo de login no Claude (claude.ai, e-mail, código, Authorize)
-- [ ] Detectar e explicar o plano (Pro/Max) ao conectar
-- [ ] Reconhecer upgrade sozinho ou com o botão "Já fiz o upgrade" (1 clique)
-- [ ] Conferir fidelidade com o protótipo
-Notas:
+- [x] Montar o passo a passo de login no Claude (claude.ai, e-mail, código, Authorize)
+- [x] Detectar e explicar o plano (Pro/Max) ao conectar
+- [x] Reconhecer upgrade sozinho ou com o botão "Já fiz o upgrade" (1 clique)
+- [x] Conferir fidelidade com o protótipo
+Notas: ⏩ Auto (recomendado): login guiado do Claude (F03): passo a passo abrindo claude.ai, e-mail, código, Authorize — é o login DO PRÓPRIO CLIENTE, sem OAuth de assinatura (regra Anthropic). O Atlas só DETECTA o plano (Pro/Max) e explica; nunca escolhe plano; upgrade é no site do Claude. Reconhece o upgrade sozinho (polling leve) ou com "Já fiz o upgrade" (1 clique). A interação real com o Claude Code CLI fica atrás de um port (PonteClaude) com mock em fixture; o adaptador real (rodar o CLI, ler o plano) fica p/ /entregar. Cada palavra em inglês vem traduzida; "Não consegui" abre ajuda do passo. QA aprovou (invariantes ponto a ponto: sem campo de senha/token na F03; PonteClaude só abrirLogin/abrirSite sem URL de dado; Atlas só detecta). Baixa p/ /entregar: try/catch no claude.estado() do adaptador real; shell.openExternal só com URLs fixas do claude.ai.
 
 ## Milestone 11 — App: abrir as contas
 peso: 2

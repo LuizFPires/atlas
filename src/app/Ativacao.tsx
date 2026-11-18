@@ -43,6 +43,28 @@ interface Props {
   onInstalando?: (instalando: boolean) => void
 }
 
+/** Lateral escura com os 5 passos de começar (F02 e F03 usam a mesma). `agora` é o passo atual (1 a 5). */
+export function LateralPassos({ agora }: { agora: number }) {
+  return (
+    <aside className="at-ativ__lado">
+      <div className="at-ativ__marca"><Monograma fundo="escuro" largura={40} altura={22} /><NomeAtlas fundo="escuro" largura={96} altura={14} /></div>
+      <ol className="at-ativ__passos">
+        {PASSOS.map((p, i) => {
+          const n = i + 1
+          const feito = n < agora
+          const atual = n === agora
+          return (
+            <li key={p} className={`at-ativ__passo ${atual ? 'at-ativ__passo--atual' : ''}`} aria-current={atual ? 'step' : undefined}>
+              <span className={`at-ativ__bola ${feito || atual ? 'at-ativ__bola--on' : ''}`}>{feito ? <Icone nome="check" tamanho={16} /> : n}</span>
+              {p}
+            </li>
+          )
+        })}
+      </ol>
+    </aside>
+  )
+}
+
 /** F02: instalar e ativar. E-mail da compra -> código de 6 números -> instalação com as 3 dicas (prototipo/F02Ativacao). */
 export function Ativacao({ api, computador, faseInicial = 'email', emailInicial = '', progresso = null, onContinuar, onInstalando }: Props) {
   const [fase, setFase] = useState<FaseAtivacao>(faseInicial)
@@ -83,22 +105,8 @@ export function Ativacao({ api, computador, faseInicial = 'email', emailInicial 
   return (
     <div className="at-ativ-fundo">
       <div className="at-ativ">
-        <aside className="at-ativ__lado">
-          <div className="at-ativ__marca"><Monograma fundo="escuro" largura={40} altura={22} /><NomeAtlas fundo="escuro" largura={96} altura={14} /></div>
-          <ol className="at-ativ__passos">
-            {PASSOS.map((p, i) => {
-              const n = i + 1
-              const feito = n < agora
-              const atual = n === agora
-              return (
-                <li key={p} className={`at-ativ__passo ${atual ? 'at-ativ__passo--atual' : ''}`} aria-current={atual ? 'step' : undefined}>
-                  <span className={`at-ativ__bola ${feito || atual ? 'at-ativ__bola--on' : ''}`}>{feito ? <Icone nome="check" tamanho={16} /> : n}</span>
-                  {p}
-                </li>
-              )
-            })}
-          </ol>
-        </aside>
+        <LateralPassos agora={agora} />
+
 
         <section className="at-ativ__corpo">
           {fase === 'email' && (

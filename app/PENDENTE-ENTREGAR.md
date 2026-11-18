@@ -9,3 +9,10 @@ O CI (ubuntu) só roda eslint, tsc, vitest e o build do front. `electron` e `ele
 - **Progresso da instalação.** `Ativacao` aceita `progresso` (percentual/restante); falta o instalador (M8) publicar o andamento real para o app.
 - **Ids reais do plugin e PLUGIN_SHA256** (`instalador/passos.ts`): seguem placeholder (empacotamento do kit como plugin fica para o M26); o instalador falha fechado.
 - **Bloqueio de sono na obra.** `useImpedirSono` está ligado durante a instalação; o M-da-obra deve chamá-lo enquanto houver obra rodando.
+
+## M10 — Conectar o Claude (F03)
+- **Adaptador real do `PonteClaude`** (`src/app/ponte-claude.ts`): hoje só existe o mock `criarClaudeFixture` (modo fixture) e `claudeIndisponivel` (produção sem adaptador: não finge conexão). Falta, no Electron (preload + main), implementar: `abrirLogin` (abrir claude.ai/login no navegador do cliente e iniciar o login do Claude Code do PRÓPRIO cliente; o Atlas nunca vê senha, código nem token), `abrirSite('criar-conta'|'planos')` (`shell.openExternal` só com URLs fixas do claude.ai), `estado` (rodar o CLI do Claude e ler conta e plano Pro/Max), `renovarConexao` (reentrar/renovar a sessão para o plano novo aparecer). Expor em `window.atlasDesktop.claude`/injetar em `AppDesktop` (prop `claude`). NÃO guardar segredo em arquivo; o CLI guarda a credencial no cofre dele.
+- **Confirmar como o CLI expõe o plano** (comando/arquivo de estado) e se o upgrade só aparece após reentrar; o app já trata os dois casos (polling de 15 s + botão "Já fiz o upgrade").
+- **Vídeo "Ver este passo em vídeo (40 s)"**: o botão existe, falta gravar/hospedar os vídeos por passo e ligá-lo.
+- **"Pedir ajuda ao Atlas (mande um print)"** leva hoje à tela Ajuda do shell (F17 ainda não existe).
+- **Links** "Criar no site do Claude" e "Ver os planos" dependem do `abrirSite` real (URLs a confirmar).
