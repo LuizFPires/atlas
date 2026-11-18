@@ -1,0 +1,98 @@
+/* Tokens do design system (docs/design-system.md). Escuro A é o padrão; claro B via [data-theme='claro']. */
+:root,
+[data-theme='escuro'] {
+  --bg: #141619;
+  --card: #1e2125;
+  --card-b: #2c3036;
+  --card2: #22262b;
+  --text: #edefea;
+  --mute: #b4bbb2;
+  --mute2: #8e968c;
+  --lime: #c6f135;
+  --on-lime: #141619;
+  --lime-txt: #c6f135;
+  --line: #2a2e33;
+  --input: #16181b;
+  --soft: #2a3a12;
+  --aviso: #f2b14a;
+  --aviso-txt: #f2b14a;
+  --erro: #e5534b;
+  --gravando: #f05a4f;
+  /* menu lateral: sempre escuro */
+  --side: #101214;
+  --side-border: #24282d;
+  --side-card: #1a1d21;
+  --side-mute: #9ba39a;
+  --side-border2: #2c3036;
+  --side-act-bg: #22262b;
+  --side-act-cor: #edefea;
+  --side-act-marca: #c6f135;
+  --side-lime: #c6f135;
+}
+
+[data-theme='claro'] {
+  --bg: #f2f3ee;
+  --card: #ffffff;
+  --card-b: #daddd3;
+  --card2: #e8eae3;
+  --text: #1b1e22;
+  --mute: #5f665c;
+  --mute2: #6b7268;
+  --lime: #b6e22e;
+  --on-lime: #1b1e22;
+  --lime-txt: #3f5600;
+  --line: #e6e8e1;
+  --input: #ffffff;
+  --soft: #ddf59a;
+  --aviso: #f6d28e;
+  --aviso-txt: #7a4e00;
+  --erro: #c4372d;
+  --side: #1f2226;
+  --side-border: #1f2226;
+  --side-card: #2a2e33;
+  --side-mute: #b9beb5;
+  --side-border2: #3a3f46;
+  --side-act-bg: #b6e22e;
+  --side-act-cor: #1b1e22;
+  --side-act-marca: #1b1e22;
+  --side-lime: #b6e22e;
+}
+
+:root {
+  --font-text: 'Geist Variable', 'Geist', system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, monospace;
+  --raio-botao: 12px;
+  --raio-cartao: 18px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-text);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.rotulo {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute2);
+}
+
+.numero {
+  font-family: var(--font-mono);
+}
