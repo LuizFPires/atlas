@@ -7,6 +7,7 @@
 // Tudo que o cliente escreveu (nome da obra) é DADO: passa por `comoDado` antes de entrar no PLAN.md.
 
 import { comoDado } from './ponte-estilo'
+import { validarPlanNovo } from '../kit/plan-obra'
 import type { Plano } from './ponte-claude'
 
 // ---- Modo da obra -------------------------------------------------------------------------------------------------------------
@@ -195,6 +196,8 @@ export function criarConstrucaoFixture(modos: PonteModoObra = criarModoObraFixtu
       if (!etapas.length) throw new Error('sem-etapas')
       if (iniciadas.some((i) => i.pasta === pasta)) throw new Error('ja-iniciada')
       const plan = montarPlanMd(obraNome, etapas)
+      // Porteiro do formato do painel: PLAN fora do formato nunca começa uma obra.
+      if (!validarPlanNovo(plan).ok) throw new Error('plan-invalido')
       await modos.gravar(pasta, modo)
       iniciadas.push({ pasta, modo, plan, recomendado: paraRecomendado(modo) })
       return { plan: `${raiz}\\${pasta}\\PLAN.md`, modo }
