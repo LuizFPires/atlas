@@ -46,7 +46,7 @@ tela: prototipo/F00Vendas.dc.html
 - [ ] Construir o cadastro pós-pagamento (F00bCadastro) com as 4 respostas por microfone
 - [ ] Ligar o cadastro ao POST /cadastro e ao disparo do e-mail de boas-vindas
 - [ ] Conferir fidelidade com o protótipo (F00Vendas e F00bCadastro)
-Notas:
+Notas: ⏩ Auto (recomendado): frontend derivado do protótipo (F00Vendas, F00bCadastro) e do design system. Preço confirmado R$4.800. Botão de compra liga no Stripe Checkout do M3; POST /cadastro e e-mail de boas-vindas (S10) implementados em modo fixture (envio real fica p/ /entregar). Microfone em toda entrada de texto (as 4 respostas do cadastro). Banner de cookies: opção mais privada por padrão.
 
 ## Milestone 5 — E-mails do Atlas
 peso: 1
