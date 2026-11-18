@@ -87,7 +87,7 @@ tela:
 - [ ] Instalar Node, Claude Code, plugin Atlas e app
 - [ ] Criar a pasta C:\Users\<nome>\Atlas\Obras e o atalho na Área de Trabalho
 - [ ] Encadear o instalador ao fluxo de ativação (abre em F02)
-Notas:
+Notas: ⏩ Auto (recomendado): NSIS via electron-builder + Azure Trusted Signing (decidido 18/11). Monta a config do electron-builder (target nsis), os scripts de instalação (Node, Claude Code CLI, plugin Atlas, app), a criação de C:\Users\<nome>\Atlas\Obras (nunca Desktop/Documentos por causa do OneDrive) + atalho na Área de Trabalho, e o encadeamento à ativação (abre F02). Lógica testável onde der. O build assinado real exige credenciais Azure Trusted Signing + runner Windows → fica p/ /entregar; o CI (ubuntu) NÃO builda o instalador, mantém lint/test/build. Nota de ordem: o app Electron é empacotado no M9; o M8 monta a infra do instalador referenciando o app que o M9 detalha.
 
 ## Milestone 9 — App: shell e ativação
 peso: 2
