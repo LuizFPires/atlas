@@ -1,6 +1,6 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
-import type { Ativacao, Cliente, Codigo, Entrega, Licenca, Link, Ocorrencia, Store, Troca, TrocaAtomica } from './tipos.ts'
+import type { Ativacao, CondicaoLicenca, Cliente, Codigo, ContaGateway, Entrega, Licenca, Link, NovaCompra, Ocorrencia, Pagamento, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
   clientes: Cliente[] = []
@@ -11,6 +11,9 @@ export class StoreMemoria implements Store {
   codigos: Codigo[] = []
   entregas: Entrega[] = []
   ocorrencias: Ocorrencia[] = []
+  contas: ContaGateway[] = []
+  pagamentos: Pagamento[] = []
+  private eventosGateway = new Set<string>()
   private eventos = new Map<string, number[]>()
   private seq = 0
   private id = () => `id-${++this.seq}`
@@ -19,6 +22,19 @@ export class StoreMemoria implements Store {
   async licencaDoCliente(id: string) { return this.licencas.find((l) => l.cliente_id === id) ?? null }
   async licencaPorId(id: string) { return this.licencas.find((l) => l.id === id) ?? null }
   async salvarLicenca(l: Licenca) { const i = this.licencas.findIndex((x) => x.id === l.id); this.licencas[i] = l }
+  /** Equivale ao UPDATE condicional: sem await, então é atômico. Troca o objeto (quem segurava o antigo continua com a cópia velha). */
+  async atualizarLicencaSe(id: string, set: Partial<Omit<Licenca, 'id' | 'cliente_id'>>, c: CondicaoLicenca) {
+    const i = this.licencas.findIndex((x) => x.id === id)
+    if (i < 0) return false
+    const l = this.licencas[i]
+    if (c.status && l.status !== c.status) return false
+    if (c.status_diferente && l.status === c.status_diferente) return false
+    if (c.avisos_atraso !== undefined && (l.avisos_atraso ?? 0) !== c.avisos_atraso) return false
+    if (c.pausa_prevista_ate && !(l.pausa_prevista_em && l.pausa_prevista_em <= c.pausa_prevista_ate)) return false
+    if (c.encerra_ate && !(l.mensalidade_encerra_em && l.mensalidade_encerra_em <= c.encerra_ate)) return false
+    this.licencas[i] = { ...l, ...set }
+    return true
+  }
   async inserirLink(l: Omit<Link, 'id' | 'usado_em'>) { this.links.push({ ...l, id: this.id(), usado_em: null }) }
   async linkPorHash(h: string) { return this.links.find((l) => l.token_hash === h) ?? null }
   async consumirLink(id: string, q: Date) {
@@ -82,4 +98,51 @@ export class StoreMemoria implements Store {
   async trocasDa(lid: string) { return this.trocas.filter((t) => t.licenca_id === lid) }
   async inserirEntrega(e: Entrega) { this.entregas.push(e) }
   async inserirOcorrencia(o: Ocorrencia) { this.ocorrencias.push(o) }
+
+  async contaGateway(id: string) { return this.contas.find((c) => c.id === id) ?? null }
+  async registrarEventoGateway(conta: string, ev: string) {
+    const k = `${conta}:${ev}`
+    if (this.eventosGateway.has(k)) return false
+    this.eventosGateway.add(k)
+    return true
+  }
+  async liberarEventoGateway(conta: string, ev: string) { this.eventosGateway.delete(`${conta}:${ev}`) }
+  async licencaPorGateway(conta: string, ref: { cliente?: string | null; assinatura?: string | null }) {
+    return (
+      this.licencas.find(
+        (l) => l.conta_gateway_id === conta && ((ref.assinatura && l.gateway_assinatura_ref === ref.assinatura) || (ref.cliente && l.gateway_cliente_ref === ref.cliente)),
+      ) ?? null
+    )
+  }
+  async criarCompra(c: NovaCompra) {
+    let cli = this.clientes.find((x) => x.email_compra === c.email)
+    if (!cli) { cli = { id: this.id(), email_compra: c.email, nome_tratamento: c.nome }; this.clientes.push(cli) }
+    const ja = this.licencas.find((l) => l.cliente_id === cli.id)
+    if (ja) return { licenca: ja, nova: false }
+    const licenca: Licenca = {
+      id: this.id(), cliente_id: cli.id, status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null,
+      comprada_em: c.agora, avisos_atraso: 0, conta_gateway_id: c.conta_gateway_id, gateway_cliente_ref: c.gateway_cliente_ref,
+      gateway_assinatura_ref: null, mensalidade_encerra_em: null,
+    }
+    this.licencas.push(licenca)
+    return { licenca, nova: true }
+  }
+  async gravarPagamento(p: Pagamento) {
+    const i = this.pagamentos.findIndex((x) => x.conta_gateway_id === p.conta_gateway_id && x.gateway_ref === p.gateway_ref)
+    if (i < 0) { this.pagamentos.push({ ...p }); return null }
+    const antes = this.pagamentos[i].status
+    if (antes === 'estornado' && p.status !== 'estornado') return antes // upsert condicional: WHERE status <> 'estornado'
+    this.pagamentos[i] = { ...p }
+    return antes
+  }
+  async pagamentoPorRef(conta: string, ref: string) { return this.pagamentos.find((p) => p.conta_gateway_id === conta && p.gateway_ref === ref) ?? null }
+  async pagamentosPorPi(conta: string, pi: string) { return this.pagamentos.filter((p) => p.conta_gateway_id === conta && p.gateway_pi === pi) }
+  async pagamentosDa(lid: string) { return this.pagamentos.filter((p) => p.licenca_id === lid) }
+  async atualizarStatusPagamento(conta: string, ref: string, status: StatusPagamento) {
+    const p = this.pagamentos.find((x) => x.conta_gateway_id === conta && x.gateway_ref === ref)
+    if (p) p.status = status
+  }
+  async licencasAtrasadas() { return this.licencas.filter((l) => l.status === 'atrasada') }
+  async licencasEncerramentoVencido(agora: Date) { return this.licencas.filter((l) => l.status !== 'cancelada' && l.mensalidade_encerra_em && l.mensalidade_encerra_em <= agora) }
+  async clientePorId(id: string) { return this.clientes.find((c) => c.id === id) ?? null }
 }
