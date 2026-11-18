@@ -25,3 +25,5 @@
 .at-proto__versoes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; justify-content: center; font-size: 13px; color: var(--mute); }
 .at-proto__versao { height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 13px var(--font-mono); cursor: pointer; }
 .at-proto__versao--on { border-color: var(--lime); background: var(--soft); }
+.at-proto__so-leitor { position: absolute; left: -9999px; }
+.at-proto__dica { padding: 0 14px 12px; font-size: 13px; color: var(--mute); }
