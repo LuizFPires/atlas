@@ -24,7 +24,11 @@
 //  Andamento: a saída `stream-json` é resumida em frases curtas (últimas 30 na memória) e o fim da linha vai para
 //  <obra>\.atlas\linha.json ({estado, motivo: concluiu|cota|pausada|erro|fechou}); nenhum texto bruto do Claude vai à tela.
 //
-//  GIT ISOLADO: o env do Claude (planejar e construir) leva GIT_CONFIG_NOSYSTEM=1, GIT_CONFIG_GLOBAL=<gitconfig do app> e
+//  GIT ISOLADO (eficaz): GIT_CONFIG_COUNT/KEY_n/VALUE_n é o nível de MAIOR precedência do git (vence até o .git/config LOCAL), então
+//  core.hooksPath (pasta vazia do app), core.fsmonitor=false, core.sshCommand vazio, core.pager=cat, core.editor=true e
+//  diff.external vazio NÃO podem ser trocados pela config da obra: hooksPath/sshCommand do .git/config da obra NÃO têm efeito.
+//  Limite: alias.* não se anula por chave única (alias só roda se o comando for permitido; 'git <alias>' não está na lista).
+//  O gitconfig global abaixo é só defesa extra. O env do Claude (planejar e construir) leva GIT_CONFIG_NOSYSTEM=1, GIT_CONFIG_GLOBAL=<gitconfig do app> e
 //  GIT_CONFIG_SYSTEM=NUL; o gitconfig do app (fora da obra, sem segredo) aponta core.hooksPath/init.templateDir para uma pasta
 //  vazia e desliga fsmonitor. Isso NEUTRALIZA hooks de .git trazidos pela obra. Além disso: Write/Edit em .git/** são negados e
 //  uma obra NOVA com .git de fora (zip importado) é recusada (o .git criado pela própria linha é aceito ao religar).
@@ -76,8 +80,14 @@ function prepararGitIsolado(dadosApp) {
 
 /** Variáveis de ambiente do git isolado (ver prepararGitIsolado). */
 function envGitIsolado(dadosApp) {
-  const { conf } = prepararGitIsolado(dadosApp)
-  return { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: conf, GIT_CONFIG_SYSTEM: process.platform === 'win32' ? 'NUL' : '/dev/null', GIT_TERMINAL_PROMPT: '0' }
+  const { conf, vazio } = prepararGitIsolado(dadosApp)
+  const url = (p) => p.split('\\').join('/')
+  const forcado = [
+    ['core.hooksPath', url(vazio)], ['core.fsmonitor', 'false'], ['core.sshCommand', ''], ['core.pager', 'cat'], ['core.editor', 'true'], ['diff.external', ''],
+  ]
+  const env = { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: conf, GIT_CONFIG_SYSTEM: process.platform === 'win32' ? 'NUL' : '/dev/null', GIT_TERMINAL_PROMPT: '0', GIT_CONFIG_COUNT: String(forcado.length) }
+  forcado.forEach(([k, v], i) => { env[`GIT_CONFIG_KEY_${i}`] = k; env[`GIT_CONFIG_VALUE_${i}`] = v })
+  return env
 }
 
 /** Só settings do usuário: ignora .claude/settings.json e CLAUDE.md da pasta da obra (o kit vem por --plugin-dir). */

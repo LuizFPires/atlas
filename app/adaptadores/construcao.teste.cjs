@@ -132,6 +132,11 @@ test('git isolado: env do Claude com config de sistema/global controlada, sem ho
   assert.match(conf, /fsmonitor = false/)
   assert.ok(!/token|password|secret|key/i.test(conf))
   assert.equal(fs.readdirSync(path.join(path.dirname(env.GIT_CONFIG_GLOBAL), 'git-vazio')).length, 0)
+  const par = {}
+  for (let i = 0; i < Number(env.GIT_CONFIG_COUNT); i++) par[env[`GIT_CONFIG_KEY_${i}`]] = env[`GIT_CONFIG_VALUE_${i}`]
+  for (const k of ['core.hooksPath', 'core.fsmonitor', 'core.sshCommand', 'core.pager', 'diff.external']) assert.ok(k in par, k)
+  assert.match(par['core.hooksPath'], /git-vazio$/)
+  assert.equal(par['core.fsmonitor'], 'false'); assert.equal(par['core.sshCommand'], ''); assert.equal(par['diff.external'], '')
   const negadas = chamadas[0].args[chamadas[0].args.indexOf('--disallowedTools') + 1].split(',')
   for (const n of ['Write(.git/**)', 'Edit(.git/**)']) assert.ok(negadas.includes(n), n)
 })
@@ -156,4 +161,18 @@ test('config suspeita ampliada: CLAUDE.local.md, aninhado e .git de fora (obra n
   fs.mkdirSync(path.join(raiz, 'obra', '.git'))
   c.linha.religar('obra')
   assert.equal(chamadas.length, 2)
+})
+
+test('integração: GIT_CONFIG_COUNT vence o .git/config local', (t) => {
+  const { spawnSync } = require('node:child_process')
+  if (spawnSync('git', ['--version']).status !== 0) return t.skip('git indisponível')
+  const { envGitIsolado } = require('./construcao.cjs')
+  const repo = tmp(); const dados = tmp()
+  spawnSync('git', ['init', '-q'], { cwd: repo })
+  spawnSync('git', ['config', 'core.hooksPath', 'MAL'], { cwd: repo })
+  spawnSync('git', ['config', 'core.sshCommand', 'MAL'], { cwd: repo })
+  const env = { ...process.env, ...envGitIsolado(dados) }
+  const ler = (k) => spawnSync('git', ['config', '--get', k], { cwd: repo, env, encoding: 'utf8' }).stdout.trim()
+  assert.match(ler('core.hooksPath'), /git-vazio$/)
+  assert.equal(ler('core.sshCommand'), '')
 })
