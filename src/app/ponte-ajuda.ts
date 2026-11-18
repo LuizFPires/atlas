@@ -73,7 +73,10 @@ export interface RespostaAjuda {
 }
 
 /** Frase que NUNCA pode sair da Ajuda: todo o suporte é o próprio Atlas. */
-const PROMETE_HUMANO = /atendente|atendimento humano|suporte humano|equipe de suporte|nossa equipe|nosso time|falar com (um |uma |o |a )?(alguém|pessoa|humano|especialista|suporte|equipe|time)|entre em contato com|fale com o suporte|ligar (para|pra)/i
+const PROMETE_HUMANO = /human|pessoa|alguem|especialista|colega|atendente|atendimento|tecnic|equipe|\btime\b|suporte|transfer|encaminh|conosco|contato|whatsapp|telefone|\bliga|\bligue|\bligar|chamar|chamo|e-?mail de|\bagente\b|operador|consultor|\bnossos?\b.*\b(time|equipe)\b/
+/** Tira acento e caixa; "sua equipe"/"seu time" falam do time do cliente e não prometem gente do Atlas. */
+const semAcento = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\b(sua|seu|suas|seus|da sua|do seu) (equipe|time)s?\b/g, '')
+const prometeHumano = (t: string) => PROMETE_HUMANO.test(semAcento(t))
 export const RECADO_SEM_HUMANO = 'Eu resolvo isto por aqui com você. Me conta com as suas palavras o que aparece na tela, ou manda outro print.'
 
 /** A resposta do Claude é DADO: vira texto simples, com tamanho limitado, e só mantém a página se estiver na lista fechada. */
@@ -81,8 +84,11 @@ export function normalizarResposta(bruto: unknown): RespostaAjuda {
   const o = (bruto && typeof bruto === 'object' ? bruto : {}) as Record<string, unknown>
   const limpa = (v: unknown, max: number) => {
     const t = textoDaObra(typeof v === 'string' ? v : '', max)
-    return PROMETE_HUMANO.test(t) ? '' : t
+    return t
   }
+  // Defesa em profundidade: qualquer sinal de gente em QUALQUER campo troca a resposta inteira.
+  const campos = [o.texto, o.depois, ...(Array.isArray(o.passos) ? o.passos : []), ...(Array.isArray(o.traducoes) ? o.traducoes.flatMap((t) => (t && typeof t === 'object' ? Object.values(t) : [])) : [])]
+  if (campos.some((c) => typeof c === 'string' && prometeHumano(c))) return { texto: RECADO_SEM_HUMANO }
   const texto = limpa(o.texto, 800) || RECADO_SEM_HUMANO
   const passos = (Array.isArray(o.passos) ? o.passos : []).slice(0, 4).map((p) => limpa(p, 220)).filter(Boolean)
   const traducoes = (Array.isArray(o.traducoes) ? o.traducoes : []).slice(0, 4)

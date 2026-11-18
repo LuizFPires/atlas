@@ -63,7 +63,10 @@ export function Ajuda({ ajuda, casos, contexto, nome, onFechar }: Props) {
       await casos.enviar(montarCaso({ ...contexto, print: prints[prints.length - 1] ?? contexto.print ?? null }, turnos, motivo))
       caso.current = 'enviado'
       if (avisar) setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: 'Anotei o seu caso, com o print e o passo onde você parou, para o Atlas estudar o que aconteceu. Você pode me contar de outro jeito ou mandar outro print a qualquer hora.' }])
-    } catch { caso.current = 'nao' }
+    } catch {
+      caso.current = 'nao'
+      if (avisar) setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: 'Não consegui anotar o seu caso agora. Sem pressa: você pode me contar de outro jeito ou mandar outro print, que eu continuo aqui com você.' }])
+    }
   }
 
   const enviar = async (mensagem: string, vindoDaVoz = false) => {

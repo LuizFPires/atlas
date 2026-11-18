@@ -54,3 +54,18 @@ test('a resposta do Claude é dado: página fora da lista e promessa de gente s�
   expect(normalizarResposta({ texto: 'Fale com o suporte', passos: ['Entre em contato com a nossa equipe'] }).passos).toBeUndefined()
   for (const url of Object.values(PAGINAS_OFICIAIS).map((p) => p.url)) expect(url).toMatch(/^https:\/\/(github\.com|vercel\.com|supabase\.com|claude\.ai|registro\.br)(\/|$)/)
 })
+
+describe('fix m25 — humano e segredo', () => {
+  it('troca a resposta inteira por qualquer promessa de gente', () => {
+    for (const f of ['Um especialista vai te ajudar', 'Vou te transferir para um colega', 'Nosso suporte responde em 1 dia', 'Alguém da equipe vai olhar', 'Chamo um humano', 'Nossos técnicos entram em contato', 'Fale conosco pelo WhatsApp'])
+      expect(normalizarResposta({ texto: 'Abra a página.', passos: [f] })).toEqual({ texto: RECADO_SEM_HUMANO })
+    expect(normalizarResposta({ texto: 'Abra a página da sua equipe e clique em Save.', passos: ['Clique em Save.'] }).passos).toEqual(['Clique em Save.'])
+  })
+  it('redige senha em frase natural', async () => {
+    const { tirarSegredos } = await import('./ponte-ajuda-casos')
+    for (const [f, v] of [['minha senha é hunter2xyz', 'hunter2xyz'], ['a senha da conta é Abc12345', 'Abc12345'], ['my password is hunter2', 'hunter2'], ['token: abc.def', 'abc'], ['cartão 4111 1111 1111 1111', '4111']])
+      expect(tirarSegredos(f)).not.toContain(v)
+    expect(tirarSegredos('Será que funciona? Vou tentar de novo')).toBe('Será que funciona? Vou tentar de novo')
+    expect(tirarSegredos('abra https://x.com/a?code=123')).not.toContain('123')
+  })
+})

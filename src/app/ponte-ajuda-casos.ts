@@ -12,11 +12,14 @@ export function tirarSegredos(t: string): string {
     .replace(/\b(?:sk|pk|rk|ghp|gho|ghu|ghs|github_pat|xox[baprs]|AKIA|EAA)[-_A-Za-z0-9]{8,}/g, '[segredo]')
     .replace(/\beyJ[\w-]{10,}(?:\.[\w-]{5,})*/g, '[segredo]')
     .replace(/\bBearer\s+\S+/gi, 'Bearer [segredo]')
-    .replace(/(senha|password|passwd|token|chave|secret|segredo|api[_ -]?key|cookie)\s*[:=]?\s*\S+/gi, '$1 [segredo]')
+    // palavra-gatilho: apaga TUDO dali até o fim da frase (melhor apagar demais do que vazar)
+    .replace(/\b(senha|password|passwd|pass|chave|key|token|segredo|secret|cpf|cnpj|cart[ãa]o|card|c[óo]digo|code|pin|cookie)\b(?:[^\n.!?]|[.!?](?!\s|$))*/gi, '$1 [segredo]')
+    .replace(/\b(?:\d[ -]?){13,19}\b/g, '[segredo]')
     .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[e-mail]')
     .replace(/\b[A-Fa-f0-9]{32,}\b/g, '[segredo]')
     .replace(/\b[A-Za-z0-9+/_=-]{40,}\b/g, '[segredo]')
-    .replace(/([?#])\S*/g, '$1…')
+    .replace(/(https?:\/\/[^\s?#]*)[?#]\S*/gi, '$1?…')
+    .replace(/[?&#][\w.-]+=\S*/g, '?…')
 }
 
 export type MotivoCaso = 'ainda-nao-deu' | 'sem-saida' | 'fechou-sem-resolver'
