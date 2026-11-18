@@ -53,10 +53,10 @@ function garantirSemConfigDeProjeto(cwd, { permitirGit = false } = {}) {
   let restante = MAX_SUBPASTAS_VARRIDAS
   try {
     for (const n1 of subpastas(cwd)) {
-      if (--restante < 0) return
+      if (--restante < 0) throw suspeito() // fail-closed: orçamento estourado => trata como suspeita (não deixa esconder config fundo)
       for (const nome of NOMES_SUSPEITOS) if (existe(path.join(n1, nome))) throw suspeito()
       for (const n2 of subpastas(n1)) {
-        if (--restante < 0) return
+        if (--restante < 0) throw suspeito() // fail-closed
         for (const nome of NOMES_SUSPEITOS) if (existe(path.join(n2, nome))) throw suspeito()
       }
     }
