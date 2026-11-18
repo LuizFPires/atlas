@@ -66,3 +66,24 @@ test('o armazém local guarda e relê; lixo volta para o padrão', () => {
   dados['atlas.celular.prefs'] = 'nao-e-json'
   expect(criarArmazemLocal(st).ler()).toEqual(PREFS_PADRAO)
 })
+
+test('escolher os avisos: começam todos ligados, desligar guarda e passa para a sessão', async () => {
+  const { celular, guardado } = montar()
+  const precisa = screen.getByRole('switch', { name: 'Me avisar quando a obra precisar de mim' })
+  const etapa = screen.getByRole('switch', { name: 'Me avisar quando uma etapa terminar' })
+  const fim = screen.getByRole('switch', { name: 'Me avisar quando a obra ficar pronta' })
+  for (const s of [precisa, etapa, fim]) expect(s).toBeChecked()
+  await userEvent.click(etapa)
+  expect(etapa).not.toBeChecked()
+  expect(guardado.at(-1)?.avisos).toEqual({ precisa: true, etapa: false, fim: true })
+  expect(celular.aplicadas.at(-1)?.avisos.etapa).toBe(false)
+  await userEvent.click(etapa)
+  expect(etapa).toBeChecked()
+})
+
+test('as preferências guardadas voltam quando a tela abre de novo', () => {
+  montar(criarCelularFixture(), { frequencia: '3h', avisos: { precisa: true, etapa: false, fim: true } })
+  expect(screen.getByRole('radio', { name: 'A cada 3 horas' })).toBeChecked()
+  expect(screen.getByRole('switch', { name: 'Me avisar quando uma etapa terminar' })).not.toBeChecked()
+  expect(screen.getByText('Próxima notícia: 18h.')).toBeInTheDocument()
+})

@@ -33,3 +33,9 @@
 .at-cel__resp { padding: 10px 12px 16px; display: flex; align-items: center; gap: 8px; border-top: 1px solid #e1e0d9; }
 .at-cel__resp > span:first-child { flex: 1; height: 36px; border-radius: 18px; background: #fff; border: 1px solid #e1e0d9; font-size: 12px; color: #8e968c; display: flex; align-items: center; padding: 0 12px; }
 .at-cel__mic { width: 36px; height: 36px; border-radius: 18px; background: #1b1e22; color: #c6f135; display: flex; align-items: center; justify-content: center; }
+.at-cel__avisos { display: flex; flex-direction: column; gap: 8px; }
+.at-cel__aviso { display: flex; align-items: center; gap: 12px; padding: 0; border: none; background: transparent; color: var(--text); font: 15px var(--font-text); cursor: pointer; text-align: left; }
+.at-cel__trilho { width: 40px; height: 22px; flex: none; border-radius: 11px; background: var(--off, #3a3f46); position: relative; }
+.at-cel__trilho::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 8px; background: #fff; }
+.at-cel__aviso[aria-checked="true"] .at-cel__trilho { background: var(--lime); }
+.at-cel__aviso[aria-checked="true"] .at-cel__trilho::after { left: 21px; background: var(--on-lime); }

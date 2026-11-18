@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Botao, Icone } from '../ui'
 import { LateralPassos } from './Ativacao'
-import { criarArmazemLocal, type ArmazemPrefs, type Frequencia, type PonteCelular, type PrefsCelular } from './ponte-celular'
+import { criarArmazemLocal, type ArmazemPrefs, type Frequencia, type IdAviso, type PonteCelular, type PrefsCelular } from './ponte-celular'
 import './app.css'
 import './claude.css'
 import './contas.css'
@@ -24,6 +24,12 @@ export const FREQUENCIAS: { id: Frequencia; nome: string; proxima: string }[] = 
   { id: '1h', nome: 'A cada 1 hora', proxima: '16h' },
   { id: '3h', nome: 'A cada 3 horas', proxima: '18h' },
   { id: 'etapa', nome: 'Só quando terminar uma etapa', proxima: 'quando a etapa 5 terminar' },
+]
+
+export const AVISOS: { id: IdAviso; nome: string }[] = [
+  { id: 'precisa', nome: 'Me avisar quando a obra precisar de mim' },
+  { id: 'etapa', nome: 'Me avisar quando uma etapa terminar' },
+  { id: 'fim', nome: 'Me avisar quando a obra ficar pronta' },
 ]
 
 /** Quadradinho de exemplo do protótipo. O QR de verdade (do endereço da ponte) é pendência de /entregar. */
@@ -75,6 +81,13 @@ export function Celular({ celular, armazem, conta = 'zé@barbeariadoze.com.br', 
               <div className="at-cel__freqs" role="radiogroup" aria-label="Frequência das notícias">
                 {FREQUENCIAS.map((f) => (
                   <button key={f.id} type="button" role="radio" aria-checked={prefs.frequencia === f.id} className={`at-cel__freq ${prefs.frequencia === f.id ? 'at-cel__freq--on' : ''}`} onClick={() => mudar({ ...prefs, frequencia: f.id })}>{f.nome}</button>
+                ))}
+              </div>
+              <div className="at-cel__avisos">
+                {AVISOS.map((a) => (
+                  <button key={a.id} type="button" role="switch" aria-checked={prefs.avisos[a.id]} className="at-cel__aviso" onClick={() => mudar({ ...prefs, avisos: { ...prefs.avisos, [a.id]: !prefs.avisos[a.id] } })}>
+                    <span className="at-cel__trilho" aria-hidden="true" />{a.nome}
+                  </button>
                 ))}
               </div>
               <span className="at-cel__nota">Pelo celular você também pode responder falando: "pausa a obra", "troca a cor do botão", "como está?".</span>
