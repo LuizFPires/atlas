@@ -21,7 +21,7 @@ function frontmatter(t: string): Record<string, string> {
 }
 
 const AGENTES = ['corretor', 'designer', 'despachante', 'escritor', 'implantador', 'implementador', 'plantonista', 'qa', 'revisor', 'vistoriador']
-const SKILLS = ['adotar', 'briefing', 'canteiro', 'construir', 'documentar', 'entregar', 'linha', 'prototipo', 'stop-recomendado']
+const SKILLS = ['adotar', 'briefing', 'canteiro', 'construir', 'documentar', 'entregar', 'linha', 'prototipo', 'stop-recomendado', 'login-usuarios', 'notificacoes', 'pagamento-cliente', 'lgpd-basico']
 
 test.each(AGENTES)('agente %s mantém nome e descrição (gatilho)', (a) => {
   const f = frontmatter(fs.readFileSync(`${raiz}/agents/${a}.md`, 'utf8'))
