@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { CampoFalado, falaParaEmail, Icone } from '../ui'
+import { CampoFalado, Icone } from '../ui'
 import { CHAVE_EMAIL_COMPRA } from './Cadastro'
-import { iniciarCompra } from './compra'
+import { iniciarCompra, juntarFalaEmail } from './compra'
 
 /** Pede só o e-mail e leva ao pagamento (Pix ou cartão) no gateway. */
 export function ModalCompra({ aberto, onFechar, abrirPagamento = (url) => window.location.assign(url) }: { aberto: boolean; onFechar: () => void; abrirPagamento?: (url: string) => void }) {
@@ -36,7 +36,7 @@ export function ModalCompra({ aberto, onFechar, abrirPagamento = (url) => window
         <h2 id="v-modal-t">Para onde mandamos o seu acesso?</h2>
         <p>Coloque o e-mail que você abre no computador onde vai construir. Em seguida você paga com Pix ou cartão, em uma página segura.</p>
         <form onSubmit={ir} noValidate>
-          <CampoFalado rotulo="Qual o seu e-mail?" type="email" autoComplete="email" valor={email} onChange={setEmail} placeholder="voce@suaempresa.com.br" juntar={(atual, falado) => falaParaEmail(atual + falado)} />
+          <CampoFalado rotulo="Qual o seu e-mail?" type="email" autoComplete="email" valor={email} onChange={setEmail} placeholder="voce@suaempresa.com.br" juntar={juntarFalaEmail} />
           {erro && <p role="alert" className="v-erro">{erro}</p>}
           <button type="submit" className="v-acao" disabled={indo}>{indo ? 'Abrindo o pagamento…' : <>Ir para o pagamento <Icone nome="seta" /></>}</button>
           <button type="button" className="v-acao v-acao--contorno" onClick={onFechar}>Agora não</button>

@@ -107,6 +107,8 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
     await d.store.atualizarStatusPagamento(contaId, pi, 'estornado') // garantia: segue estornado; reentrega de compra devolvida não reativa
     return
   }
+  // Prova da compra para o cadastro (session_id da URL de sucesso). Só depois de descartar o estorno.
+  if (str(s.id)) await d.store.marcarSessaoPaga(contaId, s.id, emailN)
   if (licenca.status === 'cancelada') {
     // Recompra depois do arrependimento/cancelamento: reativa com nova janela de 7 dias.
     if (prev !== 'pago') {

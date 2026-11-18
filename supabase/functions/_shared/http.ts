@@ -97,7 +97,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         if (!(await ctx.cadastro.store.tentarEvento(`cadastro:ip:${ipDe(req)}`, 10, 15 * 60_000, ctx.cadastro.agora()))) {
           return json({ erro: 'muitas_solicitacoes', mensagem: 'Muitas tentativas. Espere uns minutos.' }, 429)
         }
-        return json(await cadastrar(ctx.cadastro, { nome: b.nome, empresa: b.empresa, ramo: b.ramo, email: b.email }))
+        const rc = await cadastrar(ctx.cadastro, { session_id: b.session_id, nome: b.nome, empresa: b.empresa, ramo: b.ramo, email: b.email })
+        return json(rc, rc.ok ? 200 : 202)
       }
       // Portal (F15): o cliente já está autenticado lá; aqui só entra chamada de serviço.
       case '/compra/cancelar':

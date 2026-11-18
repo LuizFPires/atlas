@@ -10,13 +10,29 @@ export interface DadosBoasVindas {
   expira_em: Date
 }
 
+/** Texto livre do cliente nunca vira endereço ou link no e-mail: tira @, URLs e domínios, e quebras de linha. */
+export function neutro(v: string, max = 300): string {
+  return v
+    .replace(/https?:\/\/\S*/gi, ' ')
+    .replace(/\S*@\S*/g, ' ')
+    .replace(/\b(?:www\.)?[a-z0-9-]+\.(?:com|net|org|app|io|ly|me|co|br|info|xyz|site|link|top)\b\S*/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max)
+}
+/** Para o assunto: só letras e espaços (sem números, símbolos nem links). */
+const soLetras = (v: string) => v.replace(/[^\p{L} ]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 40)
+
 export function montarBoasVindas(d: DadosBoasVindas): { assunto: string; texto: string } {
-  const negocio = d.empresa ? `${d.empresa} (${d.ramo})` : d.ramo
+  const nomeTexto = neutro(d.nome, 60)
+  const empresa = neutro(d.empresa, 120)
+  const ramo = neutro(d.ramo)
+  const negocio = empresa ? `${empresa} (${ramo})` : ramo
   const ate = d.expira_em.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
   return {
-    assunto: `${d.nome}, o seu Atlas chegou`,
+    assunto: soLetras(d.nome) ? `${soLetras(d.nome)}, o seu Atlas chegou` : 'O seu Atlas chegou',
     texto: [
-      `Oi, ${d.nome}! Bem-vindo ao Atlas.`,
+      `Oi, ${nomeTexto}! Bem-vindo ao Atlas.`,
       '',
       `Já anotei o seu negócio: ${negocio}. Agora falta só instalar o Atlas no computador onde você vai construir.`,
       '',

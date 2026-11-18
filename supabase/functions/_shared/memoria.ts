@@ -1,6 +1,6 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
-import type { Ativacao, CondicaoLicenca, Cliente, Codigo, ContaGateway, Entrega, Licenca, Link, NovaCompra, Ocorrencia, Pagamento, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
+import type { Ativacao, CondicaoLicenca, Cliente, Codigo, ContaGateway, Entrega, Licenca, Link, NovaCompra, Ocorrencia, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
   clientes: Cliente[] = []
@@ -13,6 +13,7 @@ export class StoreMemoria implements Store {
   ocorrencias: Ocorrencia[] = []
   contas: ContaGateway[] = []
   pagamentos: Pagamento[] = []
+  sessoes: SessaoCheckout[] = []
   private eventosGateway = new Set<string>()
   private eventos = new Map<string, number[]>()
   private seq = 0
@@ -151,6 +152,18 @@ export class StoreMemoria implements Store {
     if (!cli || cli.cadastro_em) return false
     Object.assign(cli, { nome_tratamento: c.nome, empresa: c.empresa, ramo: c.ramo, cadastro_em: quando })
     return true
+  }
+  async registrarSessao(conta: string, id: string, email: string) {
+    if (!this.sessoes.some((s) => s.sessao_id === id)) this.sessoes.push({ conta_gateway_id: conta, sessao_id: id, email, paga: false })
+  }
+  async marcarSessaoPaga(conta: string, id: string, email: string) {
+    const s = this.sessoes.find((x) => x.sessao_id === id)
+    if (s) s.paga = true
+    else this.sessoes.push({ conta_gateway_id: conta, sessao_id: id, email, paga: true })
+  }
+  async sessaoPorId(id: string) { return this.sessoes.find((s) => s.sessao_id === id) ?? null }
+  async invalidarLinks(clienteId: string, quando: Date) {
+    for (const l of this.links) if (l.cliente_id === clienteId && !l.usado_em) l.usado_em = quando
   }
   async reabrirCadastro(clienteId: string) {
     const cli = this.clientes.find((x) => x.id === clienteId)

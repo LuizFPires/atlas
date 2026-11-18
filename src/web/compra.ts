@@ -1,7 +1,15 @@
 // Compra: o botão chama POST /pagamento/checkout (M3) e leva o cliente ao Stripe Checkout da conta do Luiz.
 // Nenhum dado de cartão passa por aqui; o pagamento é todo no gateway.
 
+import { falaParaEmail } from '../ui'
+
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** Junta a fala ao e-mail que já está no campo. Se o cliente fala um e-mail inteiro ("arroba"), ele substitui o antigo. */
+export function juntarFalaEmail(atual: string, falado: string): string {
+  if (atual.includes('@') && (/arroba/i.test(falado) || falado.includes('@'))) return falaParaEmail(falado)
+  return falaParaEmail(`${atual} ${falado}`)
+}
 
 export interface ConfigCompra { api: string; contaId: string }
 

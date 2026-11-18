@@ -82,6 +82,8 @@ export interface NovaCompra {
   agora: Date
 }
 export interface Troca { licenca_id: string; de_hash: string; para_hash: string; feita_em: Date; por_admin: boolean }
+/** Sessão do Stripe Checkout (prova da compra). O id `cs_…` é impossível de adivinhar e só volta ao comprador na URL de sucesso. */
+export interface SessaoCheckout { conta_gateway_id: string; sessao_id: string; email: string; paga: boolean }
 export interface Link { id: string; cliente_id: string; token_hash: string; expira_em: Date; usado_em: Date | null }
 export interface Codigo { id: string; cliente_id: string; finalidade: Finalidade; codigo_hash: string; tentativas: number; expira_em: Date; usado_em: Date | null }
 export interface Entrega { licenca_id: string; obra_id: string; marca_dagua: string; baixado_em: Date }
@@ -154,6 +156,13 @@ export interface Store {
   // ── M4: cadastro pós-pagamento ──
   /** Atômico: UPDATE clientes SET nome_tratamento, empresa, ramo, cadastro_em WHERE id AND cadastro_em IS NULL. false = já cadastrado. */
   salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string }, quando: Date): Promise<boolean>
+  /** Guarda a sessão do checkout criada (ainda não paga). Idempotente. */
+  registrarSessao(contaId: string, sessaoId: string, email: string): Promise<void>
+  /** Marca a sessão como paga (upsert: cria se o webhook chegar sem registro prévio). */
+  marcarSessaoPaga(contaId: string, sessaoId: string, email: string): Promise<void>
+  sessaoPorId(sessaoId: string): Promise<SessaoCheckout | null>
+  /** Invalida (usado_em) os links de instalação ainda abertos do cliente. */
+  invalidarLinks(clienteId: string, quando: Date): Promise<void>
   /** Desfaz o cadastro quando o e-mail de boas-vindas não saiu, para o cliente poder tentar de novo. */
   reabrirCadastro(clienteId: string): Promise<void>
 }

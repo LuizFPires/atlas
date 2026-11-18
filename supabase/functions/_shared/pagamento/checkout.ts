@@ -30,7 +30,7 @@ function urlsDeRetorno(base: string | null | undefined) {
   if (!u || u.protocol !== 'https:' || u.username || u.password || u.origin === 'null') {
     throw new ErroRegra('retorno_nao_configurado', 'O endereço de retorno do pagamento ainda não está configurado.', 503)
   }
-  return { success_url: `${u.origin}/compra/sucesso`, cancel_url: `${u.origin}/compra/cancelada` }
+  return { success_url: `${u.origin}/compra/sucesso?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${u.origin}/compra/cancelada` }
 }
 
 export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promise<{ url: string; sessao_id: string }> {
@@ -54,6 +54,7 @@ export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promis
       },
       `checkout-impl-${conta.id}-${email}-${Math.floor(d.agora().getTime() / 600_000)}`,
     )
+    await d.store.registrarSessao(conta.id, s.id, email) // prova da compra: o cadastro só abre com este id
     return { url: s.url, sessao_id: s.id }
   }
 

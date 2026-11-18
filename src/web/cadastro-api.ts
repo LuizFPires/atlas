@@ -1,17 +1,25 @@
-// Cadastro: POST /cadastro no servidor (item 4 do M4). Só texto das 4 respostas; sem segredo, sem pagamento.
+// Cadastro: POST /cadastro no servidor (item 4 do M4). Só texto das 4 respostas + o session_id da compra
+// (prova que o Stripe devolve na URL /compra/sucesso?session_id=…). Sem segredo, sem pagamento.
 import { configCompra, type ConfigCompra } from './compra'
 import type { DadosCadastro, ResultadoCadastro } from './Cadastro'
 
-export async function enviarCadastro(d: DadosCadastro, cfg: Pick<ConfigCompra, 'api'> | null = configCompra(), f: typeof fetch = fetch): Promise<ResultadoCadastro> {
+/** Lê o session_id da URL de retorno do pagamento (ou '' se não veio). */
+export function sessionIdDaUrl(busca: string = typeof window === 'undefined' ? '' : window.location.search): string {
+  const v = new URLSearchParams(busca).get('session_id') ?? ''
+  return /^cs_[A-Za-z0-9_]{8,200}$/.test(v) ? v : ''
+}
+
+export async function enviarCadastro(d: DadosCadastro, cfg: Pick<ConfigCompra, 'api'> | null = configCompra(), f: typeof fetch = fetch, sessionId: string = sessionIdDaUrl()): Promise<ResultadoCadastro> {
   if (!cfg) return { ok: false, mensagem: 'O cadastro ainda não está aberto por aqui. Volte daqui a pouco.' }
+  if (!sessionId) return { ok: false, mensagem: 'Para abrir o cadastro, volte pelo botão da página de pagamento. Esse endereço precisa vir do pagamento.' }
   try {
     const r = await f(`${cfg.api}/cadastro`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome: d.nome, empresa: d.empresa, ramo: d.faz, email: d.email }),
+      body: JSON.stringify({ session_id: sessionId, nome: d.nome, empresa: d.empresa, ramo: d.faz, email: d.email }),
     })
-    if (r.ok) return { ok: true }
-    const corpo = (await r.json().catch(() => ({}))) as { mensagem?: string }
+    const corpo = (await r.json().catch(() => ({}))) as { ok?: boolean; mensagem?: string; enviado_para?: string; email_diferente?: boolean }
+    if (r.ok && corpo.ok === true) return { ok: true, enviado_para: corpo.enviado_para, email_diferente: corpo.email_diferente }
     return { ok: false, mensagem: corpo.mensagem ?? 'Não deu para guardar as respostas agora. Tente de novo em instantes.' }
   } catch {
     return { ok: false, mensagem: 'Sem conexão com o servidor. Veja a sua internet e tente de novo.' }

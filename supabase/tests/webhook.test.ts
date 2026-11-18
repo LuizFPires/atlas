@@ -155,3 +155,24 @@ describe('integração com /verificar (M2)', () => {
     expect(r).toMatchObject({ pode_construir: true, motivo: 'ok' })
   })
 })
+
+describe('prova da compra (session_id) para o cadastro', () => {
+  it('o checkout registra a sessão pendente e o webhook de pagamento a marca como paga', async () => {
+    const m = montarPag()
+    const { criarCheckout } = await import('../functions/_shared/pagamento/checkout.ts')
+    const r = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'Bia@Padaria.com' })
+    expect(m.store.sessoes).toEqual([{ conta_gateway_id: CONTA, sessao_id: r.sessao_id, email: 'bia@padaria.com', paga: false }])
+    await enviar(m, evento('checkout.session.completed', sessaoImpl({ id: r.sessao_id, payment_status: 'unpaid' })))
+    expect(m.store.sessoes[0].paga).toBe(false) // Pix ainda não compensou
+    await enviar(m, evento('checkout.session.async_payment_succeeded', sessaoImpl({ id: r.sessao_id })))
+    expect(m.store.sessoes[0].paga).toBe(true)
+  })
+  it('sessão de pagamento estornado não vira prova', async () => {
+    const m = montarPag()
+    await enviar(m, evento('checkout.session.completed', sessaoImpl()))
+    await enviar(m, evento('charge.refunded', { payment_intent: 'pi_1', amount: 480000, amount_refunded: 480000 }))
+    const antes = m.store.sessoes.length
+    await enviar(m, evento('checkout.session.completed', sessaoImpl({ id: 'cs_reenvio' })))
+    expect(m.store.sessoes.length).toBe(antes)
+  })
+})
