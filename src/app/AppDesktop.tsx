@@ -7,6 +7,7 @@ import type { PedidoAjudaPasso } from './ajuda-passo'
 import { Celular } from './Celular'
 import { Contas } from './Contas'
 import { Obras as ListaObras } from './Obras'
+import { TrazerPrototipo } from './Trazer'
 import { criarObrasFixture, obrasIndisponivel, type PonteObras } from './ponte-obras'
 import { celularIndisponivel, criarCelularFixture, type PonteCelular } from './ponte-celular'
 import { contasIndisponivel, criarContasFixture, type PonteContas } from './ponte-contas'
@@ -52,6 +53,9 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const [pedidoAjuda, setPedidoAjuda] = useState<PedidoAjudaPasso | null>(null)
   const [computador, setComputador] = useState('')
   const [dono, setDono] = useState('')
+  // Dentro de Minhas obras: lista (F05), nova obra (F06) ou trazer protótipo (F06c, do M15).
+  const [fluxo, setFluxo] = useState<'lista' | 'nova' | 'trazer'>('lista')
+  const [ideia, setIdeia] = useState('')
   useImpedirSono(ponte, instalando)
 
   // Sem adaptador real e fora do modo fixture, o app não finge conexão (adaptador real: pendência de /entregar).
@@ -96,9 +100,9 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   if (tela === TELA_CONTAS) return <Contas contas={ponteContas} onContinuar={() => setTela(TELA_CELULAR)} onPedirAjuda={(p) => { setPedidoAjuda(p); setAtivo('ajuda'); setTela('F05') }} />
   if (tela === TELA_CELULAR) return <Celular celular={ponteCelular} onVoltar={() => setTela(TELA_CONTAS)} onConcluir={() => setTela('F05')} />
   // Demais telas (F05+ vêm nos próximos milestones): por ora cai em Obras.
-  return (
-    <Obras ativo={ativo} onNavegar={setAtivo} pedido={pedidoAjuda}>
-      {ativo === 'obras' ? <ListaObras obras={ponteObras} nome={dono || undefined} onComecar={() => {}} onTrazer={() => {}} /> : undefined}
-    </Obras>
-  )
+  let conteudo: ReactNode
+  if (ativo === 'obras' && fluxo === 'trazer') conteudo = <TrazerPrototipo onVoltar={() => setFluxo('lista')} />
+  else if (ativo === 'obras' && fluxo === 'nova') conteudo = <p>Nova obra{ideia ? `: ${ideia}` : ''}</p>
+  else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} nome={dono || undefined} onComecar={(i) => { setIdeia(i ?? ''); setFluxo('nova') }} onTrazer={() => setFluxo('trazer')} />
+  return <Obras ativo={ativo} onNavegar={setAtivo} pedido={pedidoAjuda}>{conteudo}</Obras>
 }
