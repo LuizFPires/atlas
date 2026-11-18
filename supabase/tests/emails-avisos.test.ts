@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { montarAvisoAtraso, montarCodigoAtivacao } from '../functions/_shared/emails-avisos.ts'
+import { montarBoasVindas } from '../functions/_shared/emails.ts'
 
 const semHumano = (s: string) => expect(s).not.toMatch(/whatsapp|telefone|ligue|nossa equipe|atendente|\p{Extended_Pictographic}/iu)
 
@@ -44,5 +45,20 @@ describe('e-mail de aviso de atraso', () => {
   })
   it('link perigoso não vira botão', () => {
     expect(montarAvisoAtraso({ n: 1, pausa_em: pausa, nome: 'Ana', link_pagamento: 'javascript:alert(1)' }, agora).html).not.toContain('javascript:')
+  })
+})
+
+describe('bordas de texto vazio (revisão M5)', () => {
+  it('código sem dígitos é recusado', () => {
+    expect(() => montarCodigoAtivacao({ codigo: '' })).toThrow('codigo_vazio')
+    expect(() => montarCodigoAtivacao({ codigo: 'abc' })).toThrow('codigo_vazio')
+  })
+  it('boas-vindas sem empresa ou ramo não deixa pontuação solta', () => {
+    const base = { nome: 'Ana', expira_em: new Date('2026-01-03T12:00:00Z'), link_instalacao: 'https://atlas-ia.app.br/instalar?t=x' }
+    for (const [empresa, ramo] of [['', ''], ['Loja', ''], ['', 'roupas']]) {
+      const e = montarBoasVindas({ ...base, empresa, ramo })
+      expect(e.html).not.toMatch(/: \.|\(\)/)
+      expect(e.texto).not.toMatch(/: \.|\(\)/)
+    }
   })
 })

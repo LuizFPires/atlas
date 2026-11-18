@@ -4,6 +4,7 @@ import { AJUDA, botao, caixa, destaque, esc, linkSeguro, moldura, MONO, COR, neu
 /** Código de 6 dígitos (ativação do M2). Só aceita dígitos: nada mais entra no e-mail. */
 export function montarCodigoAtivacao(d: { nome?: string; codigo: string; validade_min?: number; finalidade?: 'ativacao' | 'troca' }): EmailMontado {
   const codigo = d.codigo.replace(/\D/g, '').slice(0, 8)
+  if (!codigo) throw new Error('codigo_vazio: o código de ativação precisa ter dígitos.')
   const min = d.validade_min ?? 10
   const troca = d.finalidade === 'troca'
   const nome = neutro(d.nome ?? '', 60).split(' ')[0]

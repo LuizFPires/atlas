@@ -165,6 +165,10 @@ export class StoreMemoria implements Store {
   async invalidarLinks(clienteId: string, quando: Date) {
     for (const l of this.links) if (l.cliente_id === clienteId && !l.usado_em) l.usado_em = quando
   }
+  async trocarLinks(l: Omit<Link, 'id' | 'usado_em'>, quando: Date) {
+    for (const x of this.links) if (x.cliente_id === l.cliente_id && !x.usado_em) x.usado_em = quando
+    this.links.push({ ...l, id: this.id(), usado_em: null })
+  }
   async reabrirCadastro(clienteId: string) {
     const cli = this.clientes.find((x) => x.id === clienteId)
     if (cli) cli.cadastro_em = null

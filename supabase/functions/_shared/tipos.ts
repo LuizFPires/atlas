@@ -163,6 +163,8 @@ export interface Store {
   sessaoPorId(sessaoId: string): Promise<SessaoCheckout | null>
   /** Invalida (usado_em) os links de instalação ainda abertos do cliente. */
   invalidarLinks(clienteId: string, quando: Date): Promise<void>
+  /** Atômico: invalida os links abertos do cliente e insere o novo na mesma operação (sempre sobra um só válido). */
+  trocarLinks(l: Omit<Link, 'id' | 'usado_em'>, quando: Date): Promise<void>
   /** Desfaz o cadastro quando o e-mail de boas-vindas não saiu, para o cliente poder tentar de novo. */
   reabrirCadastro(clienteId: string): Promise<void>
 }

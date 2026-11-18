@@ -2,7 +2,7 @@
 // Abriu no celular? Mostra "abra no computador onde você vai construir" e oferece reenviar o acesso por e-mail.
 // Abrir NÃO consome o link: quem consome é a ativação confirmada (M2), então olhar no celular não queima o link.
 import { type DepsCadastro } from './cadastro.ts'
-import { gerarLink, validarLink } from './links.ts'
+import { prepararLink, validarLink } from './links.ts'
 import { ErroRegra } from './tipos.ts'
 
 const CELULAR_RE = /android|iphone|ipad|ipod|mobile|windows phone|opera mini|silk|kindle/i
@@ -32,13 +32,13 @@ export async function reenviarParaComputador(d: DepsCadastro, a: { token: string
   if (!(await d.store.tentarEvento(`reenvio:cliente:${cliente.id}`, 3, 60 * 60_000, d.agora()))) {
     throw new ErroRegra('muitas_solicitacoes', 'Você já pediu o acesso algumas vezes. Espere uns minutos e olhe o seu e-mail.', 429)
   }
-  await d.store.invalidarLinks(cliente.id, d.agora()) // só um link vale por vez
-  const { token, expira_em } = await gerarLink(d, cliente.email_compra)
+  // Gera o link novo SEM gravar; o antigo só deixa de valer depois que o e-mail saiu. Se o envio falhar, nada muda.
+  const { token, expira_em, registro } = await prepararLink(d, cliente.email_compra)
   try {
     await d.enviarBoasVindas(cliente.email_compra, { nome: cliente.nome_tratamento, empresa: cliente.empresa ?? '', ramo: cliente.ramo ?? '', token, expira_em })
   } catch {
-    await d.store.invalidarLinks(cliente.id, d.agora())
-    throw new ErroRegra('email_nao_enviado', 'Não deu para enviar o e-mail agora. Tente de novo em instantes.', 502)
+    throw new ErroRegra('email_nao_enviado', 'Não deu para enviar o e-mail agora. O seu link continua valendo: tente de novo em instantes.', 502)
   }
+  await d.store.trocarLinks(registro, d.agora()) // atômico: fecha os abertos e grava o novo; só um link vale por vez
   return { ok: true }
 }

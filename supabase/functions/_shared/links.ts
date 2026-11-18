@@ -4,13 +4,19 @@ import { type Deps, ErroRegra } from './tipos.ts'
 
 export const VALIDADE_LINK_MS = 48 * 3600_000
 
-export async function gerarLink(d: Deps, emailCompra: string) {
+/** Monta o link (token + hash + validade) sem gravar nada. */
+export async function prepararLink(d: Deps, emailCompra: string) {
   const cliente = await d.store.clientePorEmail(emailCompra.trim().toLowerCase())
   const lic = cliente && (await d.store.licencaDoCliente(cliente.id))
   if (!cliente || !lic || lic.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Não encontramos uma compra ativa para esse e-mail.', 404)
   const token = tokenAleatorio()
   const expira_em = new Date(d.agora().getTime() + VALIDADE_LINK_MS)
-  await d.store.inserirLink({ cliente_id: cliente.id, token_hash: await sha256(token), expira_em })
+  return { token, expira_em, registro: { cliente_id: cliente.id, token_hash: await sha256(token), expira_em } }
+}
+
+export async function gerarLink(d: Deps, emailCompra: string) {
+  const { token, expira_em, registro } = await prepararLink(d, emailCompra)
+  await d.store.inserirLink(registro)
   return { token, expira_em }
 }
 

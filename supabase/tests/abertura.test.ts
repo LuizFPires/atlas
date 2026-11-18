@@ -60,18 +60,31 @@ describe('Enviar para o meu computador', () => {
     await expect(abrirLink(deps, { token: enviados[0].dados.token })).resolves.toMatchObject({ valido: true })
     expect(m.store.links.filter((l) => !l.usado_em)).toHaveLength(1)
   })
-  it('limita pedidos e, se o e-mail não sai, não deixa link solto', async () => {
-    const { m, deps, enviados, falha } = pronto()
-    let token = (await gerarLink(deps, 'ana@loja.com')).token
+  it('se o e-mail não sai, o link antigo continua valendo e nada é gasto', async () => {
+    const { m, deps, falha } = pronto()
+    const { token } = await gerarLink(deps, 'ana@loja.com')
     falha.envio = true
     await expect(reenviarParaComputador(deps, { token })).rejects.toMatchObject({ codigo: 'email_nao_enviado', status: 502 })
-    expect(m.store.links.every((l) => l.usado_em)).toBe(true)
+    expect(m.store.links).toHaveLength(1)
+    expect(m.store.links[0].usado_em).toBeNull()
     falha.envio = false
-    token = (await gerarLink(deps, 'ana@loja.com')).token
+    await expect(reenviarParaComputador(deps, { token })).resolves.toEqual({ ok: true })
+  })
+  it('reenvios em paralelo deixam um único link válido', async () => {
+    const { m, deps } = pronto()
+    const { token } = await gerarLink(deps, 'ana@loja.com')
+    await Promise.all([reenviarParaComputador(deps, { token }), reenviarParaComputador(deps, { token })])
+    expect(m.store.links.filter((l) => !l.usado_em)).toHaveLength(1)
+  })
+  it('limita pedidos por hora', async () => {
+    const { deps, enviados } = pronto()
+    let token = (await gerarLink(deps, 'ana@loja.com')).token
     await reenviarParaComputador(deps, { token })
     token = enviados[0].dados.token
     await reenviarParaComputador(deps, { token })
     token = enviados[1].dados.token
+    await reenviarParaComputador(deps, { token })
+    token = enviados[2].dados.token
     await expect(reenviarParaComputador(deps, { token })).rejects.toMatchObject({ codigo: 'muitas_solicitacoes', status: 429 })
   })
 })

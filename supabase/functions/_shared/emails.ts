@@ -90,14 +90,14 @@ export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
   const nomeTexto = neutro(d.nome, 60)
   const empresa = neutro(d.empresa, 120)
   const ramo = neutro(d.ramo)
-  const negocio = empresa ? `${empresa} (${ramo})` : ramo
+  const negocio = empresa && ramo ? `${empresa} (${ramo})` : empresa || ramo
   const ate = quando(d.expira_em)
   const link = linkSeguro(d.link_instalacao)
   const primeiroNome = nomeTexto.split(' ')[0] || ''
   const titulo = primeiroNome ? `${primeiroNome}, sua licença do Atlas está pronta.` : 'Sua licença do Atlas está pronta.'
   const html = moldura({
     titulo,
-    subtitulo: `A partir de agora você constrói os sistemas da sua empresa, sem programar. Já anotei o seu negócio: ${negocio}.`,
+    subtitulo: `A partir de agora você constrói os sistemas da sua empresa, sem programar.${negocio ? ` Já anotei o seu negócio: ${negocio}.` : ''}`,
     preheader: 'Abra este e-mail no computador onde você vai trabalhar e clique no botão.',
     corpo: [
       p('Abra este e-mail <b>no computador onde você vai trabalhar</b> e clique no botão. Leva uns 10 minutos.'),
@@ -113,7 +113,7 @@ export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
     texto: [
       `Oi, ${nomeTexto}! Bem-vindo ao Atlas.`,
       '',
-      `Já anotei o seu negócio: ${negocio}. Agora falta só instalar o Atlas no computador onde você vai construir.`,
+      `${negocio ? `Já anotei o seu negócio: ${negocio}. ` : ''}Agora falta só instalar o Atlas no computador onde você vai construir.`,
       '',
       'Abra este e-mail no computador e clique no botão (ou no link abaixo):',
       d.link_instalacao,
