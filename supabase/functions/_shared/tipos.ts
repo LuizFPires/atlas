@@ -9,6 +9,16 @@ export interface Licenca {
   status: StatusLicenca
   pausa_prevista_em: Date | null
   troca_liberada_em: Date | null
+  // M3 (pagamento). Opcionais para não quebrar quem monta licenças sem cobrança.
+  /** Quando a implantação foi paga (início dos 7 dias de arrependimento). */
+  comprada_em?: Date | null
+  /** Quantos avisos de atraso já foram enviados no ciclo atual (0 a 3). */
+  avisos_atraso?: number
+  conta_gateway_id?: string | null
+  gateway_cliente_ref?: string | null
+  gateway_assinatura_ref?: string | null
+  /** Mensalidade cancelada: a licença segue até aqui e então vira 'cancelada'. */
+  mensalidade_encerra_em?: Date | null
 }
 export interface Ativacao {
   id: string
@@ -19,6 +29,34 @@ export interface Ativacao {
   ativo: boolean
   ativado_em: Date
   desativado_em: Date | null
+}
+export type TipoPagamento = 'implantacao' | 'mensalidade'
+export type StatusPagamento = 'pendente' | 'pago' | 'falhou' | 'estornado'
+export interface Pagamento {
+  licenca_id: string
+  tipo: TipoPagamento
+  valor: number
+  status: StatusPagamento
+  /** Referência do gateway DO CLIENTE (pi_… da implantação, in_… da fatura). Nunca dados de cartão. */
+  gateway_ref: string
+  /** payment_intent usado para estornar (fatura → pi_…). */
+  gateway_pi: string | null
+  pago_em: Date | null
+}
+/** Conta de pagamento do cliente. Guarda só a REFERÊNCIA dos segredos (nome no cofre/ambiente), nunca o valor. */
+export interface ContaGateway {
+  id: string
+  conta_stripe_id: string
+  segredo_ref: string
+  modo: 'teste' | 'ao_vivo'
+}
+export interface NovaCompra {
+  email: string
+  nome: string
+  valor: number
+  conta_gateway_id: string
+  gateway_cliente_ref: string | null
+  agora: Date
 }
 export interface Troca { licenca_id: string; de_hash: string; para_hash: string; feita_em: Date; por_admin: boolean }
 export interface Link { id: string; cliente_id: string; token_hash: string; expira_em: Date; usado_em: Date | null }
@@ -66,6 +104,24 @@ export interface Store {
   trocasDa(licencaId: string): Promise<Troca[]>
   inserirEntrega(e: Entrega): Promise<void>
   inserirOcorrencia(o: Ocorrencia): Promise<void>
+
+  // ── M3: pagamento (a conta Stripe é do cliente; aqui só ficam referências) ──
+  contaGateway(id: string): Promise<ContaGateway | null>
+  /** Atômico (INSERT ... ON CONFLICT DO NOTHING). false = evento já visto (idempotência do webhook). */
+  registrarEventoGateway(contaId: string, eventoId: string): Promise<boolean>
+  /** Desfaz o registro quando o processamento falhou, para o gateway poder reenviar. */
+  liberarEventoGateway(contaId: string, eventoId: string): Promise<void>
+  licencaPorGateway(contaId: string, ref: { cliente?: string | null; assinatura?: string | null }): Promise<Licenca | null>
+  /** Cria cliente+licença da compra paga; se o e-mail já tem licença, devolve a existente (idempotente). */
+  criarCompra(c: NovaCompra): Promise<{ licenca: Licenca; nova: boolean }>
+  /** Upsert por gateway_ref. Devolve o status anterior (null = não existia). */
+  gravarPagamento(p: Pagamento): Promise<StatusPagamento | null>
+  pagamentoPorRef(ref: string): Promise<Pagamento | null>
+  pagamentosPorPi(pi: string): Promise<Pagamento[]>
+  pagamentosDa(licencaId: string): Promise<Pagamento[]>
+  atualizarStatusPagamento(ref: string, status: StatusPagamento): Promise<void>
+  licencasAtrasadas(): Promise<Licenca[]>
+  clientePorId(id: string): Promise<Cliente | null>
 }
 
 export interface Deps {
