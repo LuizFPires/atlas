@@ -51,7 +51,7 @@ describe('atraso: aviso e pausa em 7 dias', () => {
     const { m, pode } = await cenario()
     await enviar(m, evento('invoice.payment_failed', fatura('in_1')))
     m.avancar(1 * DIA)
-    expect(await processarAtrasos(m.deps)).toEqual({ avisos: 0, pausadas: 0, erros: 0 })
+    expect(await processarAtrasos(m.deps)).toEqual({ avisos: 0, pausadas: 0, erros: 0, encerradas: 0 })
     m.avancar(2 * DIA) // dia 3
     expect(await processarAtrasos(m.deps)).toMatchObject({ avisos: 1 })
     expect(await processarAtrasos(m.deps)).toMatchObject({ avisos: 0 }) // rodar de novo não repete
@@ -75,7 +75,7 @@ describe('atraso: aviso e pausa em 7 dias', () => {
     await enviar(m, evento('invoice.paid', fatura('in_1')))
     expect(lic(m)).toMatchObject({ status: 'ativa', pausa_prevista_em: null, avisos_atraso: 0 })
     expect(m.store.pagamentos[0].status).toBe('pago')
-    expect(await processarAtrasos(m.deps)).toEqual({ avisos: 0, pausadas: 0, erros: 0 })
+    expect(await processarAtrasos(m.deps)).toEqual({ avisos: 0, pausadas: 0, erros: 0, encerradas: 0 })
 
     await enviar(m, evento('invoice.payment_failed', fatura('in_2')))
     m.avancar(8 * DIA)

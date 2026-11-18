@@ -37,11 +37,15 @@ async function enviarAvisosDevidos(d: DepsPagamento, lic: Licenca): Promise<void
   await d.store.salvarLicenca({ ...lic, avisos_atraso: enviados + 1 })
 }
 
-export interface ResumoAtrasos { avisos: number; pausadas: number; erros: number }
+export interface ResumoAtrasos { avisos: number; pausadas: number; erros: number; encerradas: number }
 
 /** Job diário (agendador): avisos 2 e 3 e pausa ao fim da carência. Idempotente; uma licença com erro não trava as outras. */
 export async function processarAtrasos(d: DepsPagamento): Promise<ResumoAtrasos> {
-  const r: ResumoAtrasos = { avisos: 0, pausadas: 0, erros: 0 }
+  const r: ResumoAtrasos = { avisos: 0, pausadas: 0, erros: 0, encerradas: 0 }
+  // Mensalidade cancelada pelo cliente: ao fim do período já pago a licença encerra (rede de segurança do webhook).
+  for (const l of await d.store.licencasEncerramentoVencido(d.agora())) {
+    try { await d.store.salvarLicenca({ ...l, status: 'cancelada', pausa_prevista_em: null }); r.encerradas++ } catch { r.erros++ }
+  }
   for (const l of await d.store.licencasAtrasadas()) {
     try {
       const lic = (await d.store.licencaPorId(l.id)) ?? l // relê: o webhook pode ter confirmado o pagamento agora

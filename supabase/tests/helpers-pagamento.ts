@@ -20,6 +20,7 @@ export function montarPag(status: 'ativa' | 'atrasada' | 'pausada' | 'cancelada'
     chamadas.push({ url, ...init })
     if (falhar.proxima) { falhar.proxima = false; return { status: 500, json: async () => ({ error: { code: 'api_error' } }) } }
     if (url.endsWith('/v1/checkout/sessions')) return { status: 200, json: async () => ({ id: 'cs_test_1', url: 'https://checkout.stripe.com/c/pay/cs_test_1' }) }
+    if (url.includes('/v1/subscriptions/')) return { status: 200, json: async () => ({ id: 'sub_1', current_period_end: Math.floor(Date.parse('2026-12-05T00:00:00Z') / 1000) }) }
     return { status: 200, json: async () => ({ id: 'ok' }) }
   }
   const deps: DepsPagamento = {

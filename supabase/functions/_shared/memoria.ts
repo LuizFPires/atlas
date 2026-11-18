@@ -129,5 +129,6 @@ export class StoreMemoria implements Store {
     if (p) p.status = status
   }
   async licencasAtrasadas() { return this.licencas.filter((l) => l.status === 'atrasada') }
+  async licencasEncerramentoVencido(agora: Date) { return this.licencas.filter((l) => l.status !== 'cancelada' && l.mensalidade_encerra_em && l.mensalidade_encerra_em <= agora) }
   async clientePorId(id: string) { return this.clientes.find((c) => c.id === id) ?? null }
 }

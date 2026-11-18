@@ -7,6 +7,7 @@ import { liberarTroca, trocarComputador } from './troca.ts'
 import { verificar } from './verificar.ts'
 import { criarCheckout } from './pagamento/checkout.ts'
 import type { DepsPagamento } from './pagamento/config.ts'
+import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts'
 import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 
@@ -72,6 +73,12 @@ export async function tratar(ctx: Contexto, req: Request): Promise<Response> {
         }
         return json(await criarCheckout(ctx.pagamento, { conta_id: s('conta_id'), tipo, email: s('email'), licenca_id: s('licenca_id'), url_sucesso: s('url_sucesso'), url_cancelar: s('url_cancelar') }))
       }
+      // Portal (F15): o cliente já está autenticado lá; aqui só entra chamada de serviço.
+      case '/compra/cancelar':
+      case '/mensalidade/cancelar':
+        if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
+        if (!ctx.pagamento) return json({ erro: 'pagamento_indisponivel' }, 503)
+        return json(await (rota === '/compra/cancelar' ? cancelarCompra : cancelarMensalidade)(ctx.pagamento, s('email')))
       case '/admin/processar-atrasos': // agendador diário (cron do Supabase)
         if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
         if (!ctx.pagamento) return json({ erro: 'pagamento_indisponivel' }, 503)

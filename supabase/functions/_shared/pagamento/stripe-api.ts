@@ -9,7 +9,7 @@ export interface SessaoCheckout { id: string; url: string }
 export interface StripeApi {
   criarCheckout(p: Record<string, unknown>, chaveIdempotencia: string): Promise<SessaoCheckout>
   /** imediato=false → cancela só no fim do período já pago. */
-  cancelarAssinatura(subId: string, imediato: boolean): Promise<void>
+  cancelarAssinatura(subId: string, imediato: boolean): Promise<{ encerra_em: Date | null }>
   reembolsar(paymentIntent: string, chaveIdempotencia: string): Promise<void>
 }
 
@@ -49,11 +49,14 @@ export function criarStripeApi(chaveSecreta: string, fetchFn: FetchFn, base = 'h
     },
     async cancelarAssinatura(subId, imediato) {
       try {
-        if (imediato) await chamar('DELETE', `/v1/subscriptions/${encodeURIComponent(subId)}`, null)
-        else await chamar('POST', `/v1/subscriptions/${encodeURIComponent(subId)}`, { cancel_at_period_end: true })
+        const caminho = `/v1/subscriptions/${encodeURIComponent(subId)}`
+        const s = imediato ? await chamar('DELETE', caminho, null) : await chamar('POST', caminho, { cancel_at_period_end: true })
+        // fim do período já pago: campo antigo (current_period_end) ou novo (items.data[0].current_period_end)
+        const fim = Number(s.current_period_end ?? s.items?.data?.[0]?.current_period_end)
+        return { encerra_em: !imediato && Number.isFinite(fim) && fim > 0 ? new Date(fim * 1000) : null }
       } catch (e) {
         // já cancelada/inexistente: o resultado desejado já vale (idempotente)
-        if ((e as { stripe?: string }).stripe === 'resource_missing') return
+        if ((e as { stripe?: string }).stripe === 'resource_missing') return { encerra_em: null }
         throw e
       }
     },

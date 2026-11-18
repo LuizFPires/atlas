@@ -121,6 +121,8 @@ export interface Store {
   pagamentosDa(licencaId: string): Promise<Pagamento[]>
   atualizarStatusPagamento(ref: string, status: StatusPagamento): Promise<void>
   licencasAtrasadas(): Promise<Licenca[]>
+  /** Mensalidade cancelada cujo período pago já acabou (mensalidade_encerra_em <= agora) e ainda não 'cancelada'. */
+  licencasEncerramentoVencido(agora: Date): Promise<Licenca[]>
   clientePorId(id: string): Promise<Cliente | null>
 }
 
