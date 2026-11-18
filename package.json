@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "instalador": "npx --yes electron-builder@latest --config instalador/electron-builder.json --win nsis"
+    "instalador": "npm exec --package=electron-builder@26.18.0 -- electron-builder --config instalador/electron-builder.json --win nsis"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
