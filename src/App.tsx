@@ -10,6 +10,7 @@ import { Portal } from './web/Portal'
 import { criarPortalApi } from './web/portal-api'
 import { Admin } from './web/Admin'
 import { criarAdminApi } from './web/admin-api'
+import { AppDesktop, noAppDesktop } from './app/AppDesktop'
 
 const portalApi = criarPortalApi()
 const adminApi = criarAdminApi()
@@ -39,6 +40,8 @@ function PaginaVendas() {
 
 /** Rotas por endereço: "/" é a página de vendas. */
 export default function App() {
+  // Dentro do app desktop (Electron) o endereço é um arquivo; ?desktop=1 simula isso no navegador (modo fixture).
+  if (noAppDesktop() || new URLSearchParams(window.location.search).has('desktop')) return <AppDesktop />
   const caminho = window.location.pathname.replace(/\/+$/, '') || '/'
   if (caminho.startsWith('/app')) return <Aplicativo />
   // A Stripe devolve o comprador em /compra/sucesso; /comecar é o endereço público do cadastro.
