@@ -179,7 +179,7 @@ export function Batismo({ obra, batismo, nomes: conferidor, arquivos, onVoltar, 
             <button key={n.id} type="button" role="radio" aria-checked={n.id === atual?.id} className={`at-bat__nome ${n.id === atual?.id ? 'at-bat__nome--on' : ''}`} onClick={() => setEscolhido(n.id)}>
               <span className="at-bat__amostra"><span className="at-bat__amostra-logo"><Logo id={n.logo} tamanho={26} /></span><span className="at-bat__amostra-nome">{n.nome}</span></span>
               <b>{n.nome}</b>
-              <span className="at-bat__slogan">“{n.slogan}”</span>
+              <span className="at-bat__slogan">"{n.slogan}"</span>
               <span className="at-bat__porque">{n.porque}</span>
               <Verificacao c={conferencias[n.nome]} />
             </button>
@@ -193,7 +193,7 @@ export function Batismo({ obra, batismo, nomes: conferidor, arquivos, onVoltar, 
           <form className="at-bat__ideia" onSubmit={(e) => { e.preventDefault(); if (ideia.trim() && !ocupado) void pedir({ ideia, evitar: vistos }) }}>
             <Microfone gravando={gravando} onAlternar={alternar} />
             <label htmlFor="ideia-nome" className="at-bat__so-leitor">Sua ideia de nome</label>
-            <input id="ideia-nome" value={ideia} onChange={(e) => setIdeia(e.target.value)} placeholder="Fale ou escreva uma ideia: “Barba Boa”…" autoComplete="off" />
+            <input id="ideia-nome" value={ideia} onChange={(e) => setIdeia(e.target.value)} placeholder="Fale ou escreva uma ideia: Barba Boa" autoComplete="off" />
             <Botao type="submit" disabled={!limparNome(ideia) || ocupado}>Pensar nisso</Botao>
           </form>
         )}
@@ -219,7 +219,7 @@ export function Batismo({ obra, batismo, nomes: conferidor, arquivos, onVoltar, 
 
         <div className="at-bat__rodape">
           <Botao variante="secundario" onClick={onVoltar}>← Voltar às telas</Botao>
-          <Botao disabled={(modo === 'tenho' ? !nomeLimpo : !atual) || ocupado} onClick={() => void batizar()}>Batizar como “{(modo === 'tenho' ? nomeLimpo : atual?.nome) || '…'}” →</Botao>
+          <Botao disabled={(modo === 'tenho' ? !nomeLimpo : !atual) || ocupado} onClick={() => void batizar()}>Batizar como "{(modo === 'tenho' ? nomeLimpo : atual?.nome) || '…'}" →</Botao>
         </div>
       </div>
       {modo === 'tenho'
