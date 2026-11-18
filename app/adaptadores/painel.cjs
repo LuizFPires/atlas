@@ -93,7 +93,7 @@ function paradaDeOcorrencias(obj) {
   let achada = null
   for (const o of abertas) {
     const t = `${o.servico ?? ''} ${o.motivo ?? ''}`
-    if (/cota|limite de uso|usage limit|rate.?limit/i.test(t)) return 'cota'
+    if (/(?<!\p{L})(?:cota|limite de uso|usage limit|rate.?limit)(?!\p{L})/iu.test(t)) return 'cota'
     if (/billing|cobran|pagamento|fatura|cart[aã]o/i.test(t)) achada = achada ?? 'billing'
     else if (/credencial|senha|login|autoriz|token|conta/i.test(t)) achada = achada ?? 'voce'
   }

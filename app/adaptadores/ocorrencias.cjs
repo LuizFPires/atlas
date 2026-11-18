@@ -25,7 +25,8 @@ const { caminhoSeguro } = require('../seguro.cjs')
 const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson } = require('./obra-fs.cjs')
 const { comoDado } = require('./plan-md.cjs')
 
-const RE_COTA = /cota|limite de uso|usage limit|rate.?limit/i
+// Palavra inteira para cota (não casa "cotação", "escota").
+const RE_COTA = /(?<!\p{L})(?:cota|quota|limite de uso|usage limit|rate.?limit)(?!\p{L})/iu
 const RE_COBRANCA = /billing|cobran|pagamento|fatura|cart[aã]o/i
 const MAX_SEGREDO = 4000
 
@@ -110,7 +111,10 @@ function criarOcorrencias({ raiz, cofre, canais = {}, agora = () => new Date() }
 
     async resolver(pasta, id, segredo) {
       const { o } = achar(pasta, id)
-      if (segredo !== undefined && segredo !== null && segredo !== '') {
+      const temSegredo = segredo !== undefined && segredo !== null && segredo !== ''
+      // Ocorrência com `campo` pede uma chave: sem ela NÃO fecha (senão a linha seguiria sem a credencial).
+      if (!temSegredo && o.campo && str(o.campo.rotulo)) throw new Error('segredo-obrigatorio')
+      if (temSegredo) {
         // eslint-disable-next-line no-control-regex
         if (typeof segredo !== 'string' || segredo.length > MAX_SEGREDO || /[\u0000-\u001F\u007F]/.test(segredo)) throw new Error('segredo-invalido')
         if (!(o.campo && str(o.campo.rotulo))) throw new Error('campo-inexistente')

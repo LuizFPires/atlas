@@ -13,8 +13,15 @@
 //  retomar(pasta): confere de novo (teste forçado). Se o cliente pausou à mão, respeita a pausa e não religa. Senão religa a linha
 //    do ponto em que parou por painel.continuar (tira a pausa, reafirma o modo, liga /construir) e avisa (opcional).
 //    Não renovou: lança 'cota-nao-renovou' e NADA muda.
-//  vigiar(): para o app ligado depois (ou esquecido): varre as obras cuja ÚLTIMA parada foi por cota e retoma as que renovaram,
-//    sem clique. Pausa do cliente e outras paradas (erro, ocorrência) NUNCA são retomadas por aqui.
+//  vigiar(): para o app ligado depois (ou esquecido): varre as obras que o APP registrou como paradas por cota e retoma as que
+//    renovaram, sem clique. Pausa do cliente, obra pronta (100%) e outras paradas (erro, ocorrência) NUNCA são retomadas por aqui.
+//
+//  EXIBIR x PERMITIR (confiança): a pasta da obra é escrita pelo Claude da obra; ele pode forjar linha.json/ocorrencias.json.
+//   - EXIBIÇÃO (ler/tela de cota): pode olhar linha.json e ocorrencias.json (no máximo mostra uma tela de espera a mais).
+//   - PERMISSÃO de religar SOZINHO (vigiar/automatico): vem SÓ do registro do app, FORA da obra (userData\cota\paradas.json,
+//     cota-store.cjs), escrito só pelo processo principal ao fim de uma linha que o app iniciou. O clique do cliente em "Retomar"
+//     é consentimento explícito: pode usar a fonte ampla, mas sempre passa pelo teste barato.
+//   LIMITE honesto: sem sandbox do SO o Claude poderia escrever no userData; isto tira a confiança da obra e fecha o caso comum.
 //
 //  Sinal de cota do stream (detectarCota): padrões ESTRUTURADOS do `claude -p --output-format stream-json`, não "cota" solto:
 //   (a) evento rate_limit_event com status 'rejected' (+ resetsAt); (b) resultado is_error com a frase de limite do Claude
@@ -35,8 +42,11 @@ const { caminhoSeguro, envMinimo, executarClaude, resolverClaude } = require('..
 const { NOME_PASTA, pastaDaObra, gravarAtomico, lerJson, lerTexto } = require('./obra-fs.cjs')
 const { comoDado } = require('./plan-md.cjs')
 const { lerPlanoDoTexto, paradaDeOcorrencias } = require('./painel.cjs')
+const { criarLojaDeParadas } = require('./cota-store.cjs')
 
 const MIN = 60_000
+// Palavra inteira (não casa "cotação", "escota").
+const RE_COTA = /(?<!\p{L})(?:cota|limite de uso|usage limit|rate.?limit)(?!\p{L})/iu
 const FRASES_LIMITE = [
   /^\s*claude(?: ai)? usage limit reached/i,
   /\byou(?:'|’)ve (?:hit|reached) your (?:[\w-]+ ){0,3}limit/i,
@@ -117,6 +127,7 @@ const isoValido = (s) => (typeof s === 'string' && !Number.isNaN(new Date(s).get
 function criarCota({ raiz, construcao, painel, claudeEstado, dadosApp = path.join(path.dirname(raiz), '.atlas-app'), avisar = async () => {}, agora = () => new Date(), executar = executarClaude, resolver = resolverClaude }) {
   /** pasta -> { quando: ms, estado, voltaEm } (último teste barato) */
   const testes = new Map()
+  const paradas = criarLojaDeParadas({ raiz, dadosApp }) // registro do APP (fora da obra): só ele autoriza religar sozinho
   const lerLinha = (pasta) => {
     const l = lerJson(caminhoSeguro(raiz, pasta, '.atlas', 'linha.json'))
     return l && typeof l === 'object' ? l : null
@@ -130,7 +141,7 @@ function criarCota({ raiz, construcao, painel, claudeEstado, dadosApp = path.joi
       try { e = await claudeEstado() } catch { /* sem estado: tenta assim mesmo */ }
       if (e && e.conectado === false) return { estado: 'incerto', voltaEm: null }
       fs.mkdirSync(dadosApp, { recursive: true })
-      const neutra = path.join(dadosApp, 'cota-teste')
+      const neutra = path.join(dadosApp, 'cota', 'cota-teste')
       fs.mkdirSync(neutra, { recursive: true })
       const r = await executar(ARGS_TESTE, { cwd: neutra, entrada: PEDIDO_TESTE, timeoutMs: 90_000, maxSaida: 200_000, env: envMinimo() })
       return lerResultadoDoTeste(r.saida, agora())
@@ -149,28 +160,48 @@ function criarCota({ raiz, construcao, painel, claudeEstado, dadosApp = path.joi
     return novo
   }
 
-  /** Parou por cota (e não está rodando agora)? Devolve { voltaEm } ou null. Fonte: linha.json; ocorrência aberta de cota. */
+  /** EXIBIÇÃO: parece parada por cota (e não está rodando)? Fonte ampla (linha.json, ocorrência aberta). NÃO autoriza religar sozinho. */
   function paradaPorCota(pasta) {
     if (construcao.linha.rodando(pasta)) return null
     const fim = lerLinha(pasta)
     if (fim && fim.estado === 'parou' && fim.motivo === 'cota') return { voltaEm: isoValido(fim.voltaEm) }
     const livro = lerJson(caminhoSeguro(raiz, pasta, 'docs', 'ocorrencias.json'))
     if (paradaDeOcorrencias(livro) === 'cota') {
-      const o = (livro.ocorrencias || []).find((x) => x && x.status === 'aberta' && /cota|limite de uso|usage limit|rate.?limit/i.test(`${x.servico ?? ''} ${x.motivo ?? ''}`))
+      const o = (livro.ocorrencias || []).find((x) => x && x.status === 'aberta' && RE_COTA.test(`${x.servico ?? ''} ${x.motivo ?? ''}`))
       return { voltaEm: isoValido(o && o.liberar_em) }
     }
     return null
   }
 
-  /** true se religou a linha; false se não havia o que retomar ou o cliente tinha pausado; lança 'cota-nao-renovou' (nada muda). */
-  async function religar(pasta) {
+  /** PERMISSÃO: o app registrou esta parada por cota? (e a linha não roda). Devolve { voltaEm } ou null. */
+  function registroDoApp(pasta) {
+    if (construcao.linha.rodando(pasta)) return null
+    const r = paradas.obter(pasta)
+    return r ? { voltaEm: isoValido(r.voltaEm) } : null
+  }
+
+  const pctDa = (pasta) => {
+    const t = lerTexto(path.join(pastaDaObra(raiz, pasta), 'PLAN.md'))
+    return t === null ? null : lerPlanoDoTexto(t).pct
+  }
+
+  /**
+   * true se religou a linha; false se não havia o que retomar, a obra está pronta ou o cliente tinha pausado; lança 'cota-nao-renovou'.
+   * `automatico` (vigia, sem clique): EXIGE o registro do app. Sem ele (clique do cliente), vale a fonte ampla.
+   */
+  async function religar(pasta, { automatico = false } = {}) {
     pastaDaObra(raiz, pasta)
-    if (!paradaPorCota(pasta)) return false // nada a retomar (já voltou, ou nunca foi cota)
-    const t = await testarSePrecisa(pasta, null, { forcar: true })
+    const parada = automatico ? registroDoApp(pasta) : (registroDoApp(pasta) || paradaPorCota(pasta))
+    if (!parada) return false // nada a retomar (já voltou, nunca foi cota, ou o app não registrou)
+    const pct = pctDa(pasta)
+    if (pct !== null && pct >= 100) { paradas.apagar(pasta); return false }
+    if (automatico && (await painel.ler(pasta)).pausadaPorVoce) return false
+    const t = await testarSePrecisa(pasta, null, { forcar: !automatico })
     if (t.estado !== 'renovada') throw new Error('cota-nao-renovou') // fail-closed: nada muda
     const estado = await painel.ler(pasta)
-    if (estado.pausadaPorVoce) return false // o cliente pausou à mão: a retomada automática respeita
+    if (estado.pausadaPorVoce) return false // o cliente pausou à mão: a retomada respeita
     await painel.continuar(pasta)
+    paradas.apagar(pasta)
     testes.delete(pasta)
     try { await avisar(pasta, 'A obra voltou sozinha.') } catch { /* sem canal: o painel já mostra */ }
     return true
@@ -198,11 +229,14 @@ function criarCota({ raiz, construcao, painel, claudeEstado, dadosApp = path.joi
       const feitas = []
       for (const pasta of nomes) {
         try {
-          const parada = paradaPorCota(pasta)
+          const parada = registroDoApp(pasta) // só pastas COM registro do app; linha.json/ocorrências da obra não autorizam
           if (!parada) continue
+          const pct = pctDa(pasta)
+          if (pct === null || pct >= 100) { if (pct !== null) paradas.apagar(pasta); continue }
+          if ((await painel.ler(pasta)).pausadaPorVoce) continue
           const t = await testarSePrecisa(pasta, parada.voltaEm)
           if (t.estado !== 'renovada') continue
-          if (await religar(pasta)) feitas.push(pasta)
+          if (await religar(pasta, { automatico: true })) feitas.push(pasta)
         } catch { /* uma obra com problema não derruba a vigia */ }
       }
       return feitas

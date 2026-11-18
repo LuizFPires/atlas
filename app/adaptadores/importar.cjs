@@ -146,8 +146,13 @@ function criarImportar({ raiz, dialog, janela = () => null }) {
 
     async validar(token) {
       const a = emTokens(token)
-      const { fd } = conferir(a.origem)
-      fs.closeSync(fd)
+      try {
+        const { fd } = conferir(a.origem)
+        fs.closeSync(fd)
+      } catch (e) {
+        if (e && ERROS_DA_PORTA.has(e.message)) throw e
+        throw new Error('nao-validou') // erro de fs ou desconhecido: código estável, nunca texto cru para a tela
+      }
     },
 
     async receber(pasta, token) {
@@ -181,7 +186,7 @@ function criarImportar({ raiz, dialog, janela = () => null }) {
           criadosArquivos.push(alvo)
           let cabeca = Buffer.alloc(0)
           const escrever = (buf) => {
-            if (cabeca.length < 16) cabeca = Buffer.concat([cabeca, buf.subarray(0, 16 - cabeca.length)])
+            if (cabeca.length < 64) cabeca = Buffer.concat([cabeca, buf.subarray(0, 64 - cabeca.length)])
             let off = 0
             while (off < buf.length) off += fs.writeSync(fdSaida, buf, off, buf.length - off)
           }

@@ -85,6 +85,10 @@ test('resolver: cofre indisponível NÃO fecha a ocorrência; segredo sem campo 
   await assert.rejects(c.o.resolver('obra', 1, 'a\nb'), /segredo-invalido/)
   await assert.rejects(c.o.resolver('obra', 1, 'x'.repeat(5000)), /segredo-invalido/)
   assert.equal(c.guardados.length, 0)
+  // ocorrência com `campo` não fecha sem a chave
+  await assert.rejects(c.o.resolver('obra', 1), /segredo-obrigatorio/)
+  await assert.rejects(c.o.resolver('obra', 1, ''), /segredo-obrigatorio/)
+  assert.equal((await c.o.ler('obra')).id, 1)
 })
 
 test('adiar: registra tentativa e mantém aberta', async () => {

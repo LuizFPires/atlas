@@ -7,11 +7,12 @@ const os = require('node:os')
 const path = require('node:path')
 const { criarCota, detectarCota, lerResultadoDoTeste, epochParaIso } = require('./cota.cjs')
 const { resumirLinha } = require('./construcao.cjs')
+const { criarLojaDeParadas } = require('./cota-store.cjs')
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-cota-'))
 const PLAN = '# PLAN — Obra\n\n## Milestone 1 — Base\npeso: 1\n- [x] a\n\n## Milestone 2 — Aviso de confirmação\npeso: 1\n- [ ] Enviar aviso <b>agora</b>\n- [ ] outra\n'
 
-function montar({ resposta, linha = { estado: 'parou', motivo: 'cota' }, pausada = false } = {}) {
+function montar({ resposta, linha = { estado: 'parou', motivo: 'cota' }, pausada = false, registro = true } = {}) {
   const raiz = tmp()
   fs.mkdirSync(path.join(raiz, 'obra', '.atlas'), { recursive: true })
   fs.writeFileSync(path.join(raiz, 'obra', 'PLAN.md'), PLAN)
@@ -20,8 +21,11 @@ function montar({ resposta, linha = { estado: 'parou', motivo: 'cota' }, pausada
   const construcao = { linha: { rodando: () => false } }
   const painel = { ler: async () => ({ pausadaPorVoce: pausada }), continuar: async (p) => estado.continuadas.push(p) }
   const executar = async () => { estado.testes++; return { codigo: 0, saida: typeof estado.resposta === 'string' ? estado.resposta : JSON.stringify(estado.resposta), erro: '' } }
-  const cota = criarCota({ raiz, construcao, painel, claudeEstado: async () => ({ conectado: true, plano: 'pro' }), dadosApp: tmp(), agora: () => estado.agora, executar, resolver: () => ({ cmd: 'x' }), avisar: async (p, t) => estado.avisos.push(t) })
-  return { raiz, cota, estado }
+  const dadosApp = tmp()
+  if (registro) criarLojaDeParadas({ raiz, dadosApp }).marcar('obra', { em: estado.agora.toISOString() }) // o que construcao.cjs grava no fim por cota
+  estado.executadas = 0
+  const cota = criarCota({ raiz, construcao, painel, claudeEstado: async () => ({ conectado: true, plano: 'pro' }), dadosApp, agora: () => estado.agora, executar, resolver: () => ({ cmd: 'x' }), avisar: async (p, t) => estado.avisos.push(t) })
+  return { raiz, cota, estado, dadosApp }
 }
 const OK = { type: 'result', is_error: false, result: 'ok' }
 const LIMITE = { type: 'result', is_error: true, result: 'Claude AI usage limit reached|1795010000' }
@@ -108,7 +112,7 @@ test('retomar: respeita a pausa do cliente e não faz nada se nunca foi cota', a
   const a = montar({ resposta: OK, pausada: true })
   await a.cota.retomar('obra')
   assert.deepEqual(a.estado.continuadas, [])
-  const b = montar({ resposta: OK, linha: { estado: 'parou', motivo: 'erro' } })
+  const b = montar({ resposta: OK, linha: { estado: 'parou', motivo: 'erro' }, registro: false })
   await b.cota.retomar('obra')
   assert.equal(b.estado.testes, 0)
   assert.deepEqual(b.estado.continuadas, [])
@@ -137,4 +141,41 @@ test('ocorrência aberta de cota no livro também conta, com liberar_em', async 
   const e = await cota.ler('obra')
   assert.equal(e.esgotada, true)
   assert.equal(e.voltaEm, '2026-11-18T18:00:00.000Z')
+})
+
+test('vigiar: linha.json FORJADO e SEM registro do app não retoma, não testa e nunca chama continuar', async () => {
+  const { cota, estado, raiz } = montar({ resposta: OK, registro: false })
+  fs.mkdirSync(path.join(raiz, 'obra', 'docs'))
+  fs.writeFileSync(path.join(raiz, 'obra', 'docs', 'ocorrencias.json'), JSON.stringify({ ocorrencias: [{ id: 1, status: 'aberta', servico: 'Claude', motivo: 'cota estourada' }] }))
+  assert.deepEqual(await cota.vigiar(), [])
+  assert.equal(estado.testes, 0) // nem gastou cota com o teste barato
+  assert.deepEqual(estado.continuadas, [])
+  // a tela ainda mostra a espera (exibição), mas o religar automático segue negado
+  assert.equal((await cota.ler('obra')).esgotada, true)
+  assert.deepEqual(await cota.vigiar(), [])
+  assert.deepEqual(estado.continuadas, [])
+})
+
+test('vigiar: pula obra pronta (100%) e pausa do cliente, mesmo com registro do app', async () => {
+  const a = montar({ resposta: OK })
+  fs.writeFileSync(path.join(a.raiz, 'obra', 'PLAN.md'), PLAN.replace('- [ ] Enviar aviso <b>agora</b>', '- [x] x').replace('- [ ] outra', '- [x] y'))
+  assert.deepEqual(await a.cota.vigiar(), [])
+  assert.deepEqual(a.estado.continuadas, [])
+  assert.equal(criarLojaDeParadas({ raiz: a.raiz, dadosApp: a.dadosApp }).obter('obra'), null) // registro apagado
+  const b = montar({ resposta: OK, pausada: true })
+  assert.deepEqual(await b.cota.vigiar(), [])
+  assert.deepEqual(b.estado.continuadas, [])
+})
+
+test('retomar (clique do cliente) usa a fonte ampla; religar automático exige o registro', async () => {
+  const { cota, estado } = montar({ resposta: OK, registro: false })
+  await cota.retomar('obra')
+  assert.deepEqual(estado.continuadas, ['obra'])
+})
+
+test('cota como palavra inteira: "cotação" na ocorrência não vira cota', async () => {
+  const { cota, raiz } = montar({ resposta: OK, linha: null, registro: false })
+  fs.mkdirSync(path.join(raiz, 'obra', 'docs'))
+  fs.writeFileSync(path.join(raiz, 'obra', 'docs', 'ocorrencias.json'), JSON.stringify({ ocorrencias: [{ id: 1, status: 'aberta', servico: 'Loja', motivo: 'pedido de cotação' }] }))
+  assert.equal((await cota.ler('obra')).esgotada, false)
 })
