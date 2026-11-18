@@ -25,6 +25,7 @@ const { criarOcorrencias } = require('./adaptadores/ocorrencias.cjs')
 const { criarCelular } = require('./adaptadores/celular.cjs')
 const { criarImportar } = require('./adaptadores/importar.cjs')
 const { criarAjuda, criarCasos } = require('./adaptadores/ajuda.cjs')
+const { criarPublicar } = require('./adaptadores/publicar.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -63,6 +64,9 @@ const ajuda = criarAjuda({
   capturar: async () => { if (!janelaPrincipal) throw new Error('sem-janela'); return (await janelaPrincipal.webContents.capturePage()).toPNG() },
 })
 const casos = criarCasos({ cofre, hashComputador: async () => hash() })
+// Publicação (F13a/b): sites e consultas só de hosts oficiais; o deploy (publicarNoAr) falha honesto até haver token/fluxo (ver publicar.cjs).
+const publicar = criarPublicar({ raiz: obras.raiz(), shell, cofre })
+
 if (!app.requestSingleInstanceLock()) app.quit()
 
 function idDaMaquina() {
@@ -169,6 +173,16 @@ handle('atlas:ajuda:pagina', (id) => ajuda.abrirPagina(String(id)))
 handle('atlas:ajuda:print', (pasta) => ajuda.tirarPrint(pasta ? String(pasta) : undefined))
 handle('atlas:ajuda:anexar', (pasta) => ajuda.anexarImagem(pasta ? String(pasta) : undefined))
 handle('atlas:casos:enviar', (caso) => casos.enviar(caso))
+
+// Publicação: só o NOME do destino vai ao processo principal; a URL é fixa lá dentro.
+handle('atlas:publicar:site', (destino, dominio) => publicar.abrirSite(String(destino), dominio === undefined || dominio === null ? undefined : String(dominio)))
+handle('atlas:publicar:nome', (dominio) => publicar.nomeLivre(String(dominio)))
+handle('atlas:publicar:dns', (dominio) => publicar.lerDns(String(dominio)))
+handle('atlas:publicar:dnsnoar', (dominio, registros) => publicar.dnsNoAr(String(dominio), registros))
+handle('atlas:publicar:noar', (slug) => publicar.publicarNoAr(String(slug)))
+handle('atlas:publicar:cartaz', (endereco, pasta) => publicar.gerarCartaz(String(endereco), pasta === undefined ? undefined : String(pasta)))
+handle('atlas:publicar:ler', (pasta) => publicar.lerProgresso(String(pasta)))
+handle('atlas:publicar:gravar', (pasta, p) => publicar.gravarProgresso(String(pasta), p))
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois). 
 app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })

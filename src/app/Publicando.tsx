@@ -91,7 +91,7 @@ export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, 
       publicar.publicarNoAr(slug).then((r) => { if (vivo) { setEndereco(r.endereco); setNoAr(r.endereco) } fim({ estado: 'ok', texto: `No ar: ${r.endereco}` }) }, () => erro('Não consegui colocar no ar agora. Nada se perdeu: tente de novo.'))
     } else if (autoId === 'cartaz') {
       poe({ estado: 'rodando', texto: 'O Atlas está criando o cartaz…' })
-      publicar.gerarCartaz(endereco).then((r) => fim({ estado: 'ok', texto: `Cartaz pronto na pasta da obra: ${r.arquivo}` }), () => erro('Não consegui criar o cartaz agora. Tente de novo.'))
+      publicar.gerarCartaz(endereco, obra.pasta).then((r) => fim({ estado: 'ok', texto: `Cartaz pronto na pasta da obra: ${r.arquivo}` }), () => erro('Não consegui criar o cartaz agora. Tente de novo.'))
     } else if (autoId === 'nome') {
       poe({ estado: 'rodando', texto: `O Atlas está conferindo se ${dominio} está livre…` })
       publicar.nomeLivre(dominio).catch((): SituacaoNome => 'incerto').then((s) => {

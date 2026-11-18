@@ -1,11 +1,11 @@
 // Preload do app Atlas: a ÚNICA ponte entre a tela (renderer) e o processo principal.
 //
 // O QUE FAZ: expõe window.atlasDesktop (contextIsolation ligado, sandbox ligado, SEM nodeIntegration). Só os namespaces
-// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos. Todo argumento vira String/boolean aqui e é
+// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar. Todo argumento vira String/boolean aqui e é
 // revalidado de novo no processo principal (main.cjs); o renderer nunca recebe caminho de origem, módulo Node nem Electron.
 //
 // COMO TESTAR (Windows): `npx electron app/main.cjs`, abrir as ferramentas do desenvolvedor e digitar `window.atlasDesktop`:
-// deve listar só argv, cofre, hashComputador, descricaoComputador, impedirSono, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, ... (ver a lista acima, inclui ajuda, casos). `typeof require` = 'undefined'.
+// deve listar só argv, cofre, hashComputador, descricaoComputador, impedirSono, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, ... (ver a lista acima, inclui ajuda, casos, publicar). `typeof require` = 'undefined'.
 'use strict'
 const { contextBridge, ipcRenderer } = require('electron')
 
@@ -122,6 +122,17 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
   },
   casos: {
     enviar: (caso) => chamar('atlas:casos:enviar', JSON.parse(JSON.stringify(caso ?? {}))),
+  },
+  publicar: {
+    // só o NOME do destino (nunca URL); domínio e registros são dados puros revalidados no processo principal.
+    abrirSite: (destino, dominio) => chamar('atlas:publicar:site', String(destino), dominio === undefined || dominio === null ? undefined : String(dominio)),
+    nomeLivre: (dominio) => chamar('atlas:publicar:nome', String(dominio)),
+    lerDns: (dominio) => chamar('atlas:publicar:dns', String(dominio)),
+    dnsNoAr: (dominio, registros) => chamar('atlas:publicar:dnsnoar', String(dominio), JSON.parse(JSON.stringify(registros ?? []))),
+    publicarNoAr: (slug) => chamar('atlas:publicar:noar', String(slug)),
+    gerarCartaz: (endereco, pasta) => chamar('atlas:publicar:cartaz', String(endereco), pasta === undefined ? undefined : String(pasta)),
+    lerProgresso: (pasta) => chamar('atlas:publicar:ler', String(pasta)),
+    gravarProgresso: (pasta, p) => chamar('atlas:publicar:gravar', String(pasta), JSON.parse(JSON.stringify(p ?? {}))),
   },
   construcao: {
     planejar: (pasta, obraNome) => chamar('atlas:construcao:planejar', String(pasta), String(obraNome)),

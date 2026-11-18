@@ -16,6 +16,7 @@ import type { PonteCelular } from './ponte-celular'
 import type { PonteImportar } from './ponte-importar'
 import type { PonteAjuda } from './ponte-ajuda'
 import type { PonteCasosAdmin } from './ponte-ajuda-casos'
+import type { PontePublicar } from './ponte-publicar'
 
 /** Cofre do sistema (Windows Credential Manager / DPAPI). NUNCA grava segredo em arquivo. */
 export interface Cofre {
@@ -53,6 +54,7 @@ export interface PonteDesktop {
   importar?: PonteImportar
   ajuda?: PonteAjuda
   casos?: PonteCasosAdmin
+  publicar?: PontePublicar
 }
 
 declare global {
