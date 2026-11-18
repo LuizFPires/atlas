@@ -13,6 +13,8 @@ const { criarModo } = require('./adaptadores/modo.cjs')
 const { criarConstrucao } = require('./adaptadores/construcao.cjs')
 const { criarPainel } = require('./adaptadores/painel.cjs')
 const { criarRetomar } = require('./adaptadores/retomar.cjs')
+const { criarDisparo } = require('./adaptadores/projeto-comum.cjs')
+const { criarEstilo } = require('./adaptadores/estilo.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -28,6 +30,9 @@ const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: ()
 const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
 // cota: sem adaptador real ainda (pendente); sem ele o Retomar só liga a linha por painel.continuar.
 const retomar = criarRetomar({ raiz: obras.raiz(), painel, construcao })
+// Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
+const disparo = criarDisparo({ raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
+const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -87,6 +92,10 @@ handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
 // Retomar (F12): obra em andamento ao abrir o app e "Continuar obra".
 handle('atlas:retomar:andamento', () => retomar.obraEmAndamento())
 handle('atlas:retomar:continuar', (pasta) => retomar.continuar({ pasta: String(pasta) }))
+
+// Estilo do sistema (F06b): o Claude propõe 3 estilos; materializar grava o design-system.md (nunca sobrescreve).
+handle('atlas:estilo:propor', (entrada, pasta) => estilo.propor(entrada, pasta === undefined ? undefined : String(pasta)))
+handle('atlas:estilo:materializar', (pasta, origem) => estilo.materializar(String(pasta), origem))
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois).
 app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })
