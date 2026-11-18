@@ -60,7 +60,6 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       return { ok: true, ...(c as T) }
     } catch { return { ok: false, mensagem: MSG_REDE } }
   }
-  const sem = <T extends object>(r: Resp<T>): Resp<T> => r
   return {
     logado: () => token !== '',
     async pedirCodigoLogin(email) {
@@ -95,7 +94,7 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       return { ok: true, painel: painel as unknown as PainelAdmin }
     },
     liberarTroca: (licencaId, motivo) => servidor<{ ja_liberada: boolean }>('/admin/liberar-troca', { licenca_id: licencaId, motivo }),
-    resolverOcorrencia: (id) => sem(servidor('/admin/ocorrencias/resolver', { id })),
+    resolverOcorrencia: (id) => servidor('/admin/ocorrencias/resolver', { id }),
     entregas: (filtro = {}) => servidor<{ entregas: LinhaEntrega[] }>('/admin/entregas', filtro),
     cadastros: () => servidor<{ cadastros: LinhaCadastro[] }>('/admin/cadastros'),
     sair() { token = ''; guardar('') },

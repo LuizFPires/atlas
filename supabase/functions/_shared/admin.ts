@@ -183,7 +183,7 @@ export async function resolverOcorrencia(d: DepsAdmin, jwt: string, id: unknown)
 
 // ── ações ──────────────────────────────────────────────────────────────────────
 const ID_RE = /^[\w-]{1,64}$/
-const limparMotivo = (m: unknown) => (typeof m === 'string' ? m.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim() : '')
+const limparMotivo = (m: unknown) => (typeof m === 'string' ? [...m].map((ch) => (ch.charCodeAt(0) < 32 || ch.charCodeAt(0) === 127 ? ' ' : ch)).join('').replace(/\s+/g, ' ').trim() : '')
 
 /**
  * Liberar troca urgente: ignora UMA vez o limite de 1 troca a cada 7 dias (o M2/M6 consomem o override na troca).
