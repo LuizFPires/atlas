@@ -15,6 +15,8 @@ interface Props {
   ideia?: string
   onVoltar: () => void
   onConcluir: (obra: ObraNova) => void
+  /** Segue para o estilo do sistema (F06b). Sem isto, só mostra "Ver minhas obras". */
+  onEstilo?: (obra: ObraNova) => void
 }
 
 const VAZIAS: Respostas = { nome: '', problema: '', quem: '', precisa: '', parecido: '' }
@@ -50,7 +52,7 @@ function BlocoVoz({ valor, onChange }: { valor: string; onChange: (v: string) =>
 }
 
 /** F06: nova obra com perguntas guiadas, uma por vez, cada uma com microfone (u06). Ao terminar cria a subpasta da obra em Atlas\Obras. */
-export function NovaObra({ obras, ideia = '', onVoltar, onConcluir }: Props) {
+export function NovaObra({ obras, ideia = '', onVoltar, onConcluir, onEstilo }: Props) {
   const [i, setI] = useState(0)
   const [resp, setResp] = useState<Respostas>({ ...VAZIAS, nome: ideia })
   const [quem, setQuem] = useState<string[]>(['dono'])
@@ -95,7 +97,10 @@ export function NovaObra({ obras, ideia = '', onVoltar, onConcluir }: Props) {
           <h1>Obra começada!</h1>
           <p className="at-nova__dica">Criei a pasta da sua obra aqui no computador. Tudo o que o Claude desenhar e construir vai ficar guardado nela.</p>
           <div className="at-nova__pronto"><b>{pronta.respostas.nome}</b><code>{pronta.pasta.caminho}</code></div>
-          <div className="at-nova__rodape"><Botao onClick={() => onConcluir(pronta)}>Ver minhas obras →</Botao></div>
+          <div className="at-nova__rodape">
+            {onEstilo && <Botao onClick={() => onEstilo(pronta)}>Escolher o estilo →</Botao>}
+            <Botao variante={onEstilo ? 'secundario' : 'principal'} onClick={() => onConcluir(pronta)}>Ver minhas obras →</Botao>
+          </div>
         </div>
         {lado}
       </div>
