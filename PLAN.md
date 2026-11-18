@@ -7,13 +7,13 @@ Ordem dos milestones: fundação → servidor e web do Luiz → app do cliente (
 peso: 2
 spec: S1, S2, S21, S12
 tela: prototipo/Shell.dc.html
-- [ ] Criar projeto Vite + React + TS com PWA (vite-plugin-pwa)
-- [ ] Implementar tokens de cor dos dois temas (escuro A padrão, claro B) e tipografia Geist/Geist Mono
-- [ ] Criar biblioteca de componentes base (botão, bolinha de ícone, cartão, chips, microfone)
-- [ ] Implementar o menu lateral Shell com "Falar com o Atlas" e "Ajuda do Atlas" fixos
-- [ ] Carregar a marca (monograma, nome-atlas, imagem-assinatura do canteiro) de prototipo/assets
-- [ ] Conferir fidelidade com o protótipo
-Notas: Repositório privado LuizFPires/atlas (base main). Decisão: incluir um workflow de CI básico (build/lint do Vite+React+TS) já no M1, para o merge ter checks verdes. Sem decisões de negócio pendentes para o M1 (fundação derivada do protótipo e do design system). Decisão: o emoji 💬 da "Ajuda do Atlas" no protótipo virou SVG de traço (CLAUDE.md e design system proíbem emoji). Ocorrência #1 (billing do Actions) destravada tornando o repo público temporário; CI verde no PR #1; repo volta a privado após o merge do M1. Achados aceitos sem correção (espelham o protótipo): dados fixos do card do plano/licença e microfone/Falar sem comportamento — entram nos milestones de cada tela.
+- [x] Criar projeto Vite + React + TS com PWA (vite-plugin-pwa)
+- [x] Implementar tokens de cor dos dois temas (escuro A padrão, claro B) e tipografia Geist/Geist Mono
+- [x] Criar biblioteca de componentes base (botão, bolinha de ícone, cartão, chips, microfone)
+- [x] Implementar o menu lateral Shell com "Falar com o Atlas" e "Ajuda do Atlas" fixos
+- [x] Carregar a marca (monograma, nome-atlas, imagem-assinatura do canteiro) de prototipo/assets
+- [x] Conferir fidelidade com o protótipo
+Notas: Repositório privado LuizFPires/atlas (base main). Decisão: incluir um workflow de CI básico (build/lint do Vite+React+TS) já no M1, para o merge ter checks verdes. Sem decisões de negócio pendentes para o M1 (fundação derivada do protótipo e do design system). Decisão: o emoji 💬 da "Ajuda do Atlas" no protótipo virou SVG de traço (CLAUDE.md e design system proíbem emoji). Ocorrência #1 (billing do Actions) destravada tornando o repo público temporário; CI verde no PR #1; repo volta a privado após o merge do M1. Achados aceitos sem correção (espelham o protótipo): dados fixos do card do plano/licença e microfone/Falar sem comportamento — entram nos milestones de cada tela. QA aprovou após correções (ícones PWA 192/512/maskable, monograma do tema claro via useTema, :focus-visible, aria-current, .at-bolinha com --on-lime, lateral responsiva até 768px). Baixa aberta p/ o Luiz: conferir o tema claro no olho uma vez.
 
 ## Milestone 2 — Servidor de licenças: dados e APIs
 peso: 3
