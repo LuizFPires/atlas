@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { tratar } from '../functions/_shared/http.ts'
-import { H1, montar } from './helpers.ts'
+import { H1, montar, TOKEN } from './helpers.ts'
 
 function ctx() {
   const m = montar()
@@ -22,11 +22,24 @@ describe('http', () => {
     const sem = await (await post(c, '/verificar', { email: 'ana@loja.com', computador_hash: H1 })).json()
     expect(sem).toMatchObject({ pode_construir: false, motivo: 'negado', licenca_id: null })
     expect((await post(c, '/entregar-kit', { email: 'ana@loja.com', computador_hash: H1, obra_id: 'o1' })).status).toBe(403)
-    const v = await (await post(c, '/verificar', { email: 'ana@loja.com', computador_hash: H1, token_dispositivo })).json()
+    const v = await (await post(c, '/verificar', { email: 'ana@loja.com', computador_hash: H1 }, { 'X-Atlas-Dispositivo': token_dispositivo })).json()
     expect(v.pode_construir).toBe(true)
     const k = await post(c, '/entregar-kit', { email: 'ana@loja.com', computador_hash: H1, obra_id: 'o1' }, { 'X-Atlas-Dispositivo': token_dispositivo })
     expect(k.headers.get('Cache-Control')).toBe('no-store')
     expect((await k.json()).arquivos[0].conteudo).toContain('Lei 9.609/98')
+  })
+  it('credencial no corpo é ignorada; só o cabeçalho vale', async () => {
+    const { m, c } = ctx()
+    await m.ativar()
+    const noCorpo = await (await post(c, '/verificar', { email: 'ana@loja.com', computador_hash: H1, token_dispositivo: TOKEN })).json()
+    expect(noCorpo).toMatchObject({ pode_construir: false, motivo: 'negado' })
+    const noHeader = await (await post(c, '/verificar', { email: 'ana@loja.com', computador_hash: H1 }, { 'X-Atlas-Dispositivo': TOKEN })).json()
+    expect(noHeader.pode_construir).toBe(true)
+  })
+  it('IP vem do último hop do x-forwarded-for (o primeiro é forjável)', async () => {
+    const { c } = ctx()
+    for (let i = 0; i < 3; i++) await post(c, '/ativar/solicitar-codigo', { email: `u${i}@x.com` }, { 'x-forwarded-for': `9.9.9.${i}, 1.2.3.4` })
+    expect((await post(c, '/ativar/solicitar-codigo', { email: 'o@x.com' }, { 'x-forwarded-for': '8.8.8.8, 1.2.3.4' })).status).toBe(429)
   })
   it('limite de códigos por IP vira 429', async () => {
     const { c } = ctx()

@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'vitest'
 import { solicitarCodigo } from '../functions/_shared/ativacao.ts'
 import { INTERVALO_TROCA_MS, liberarTroca, trocarComputador } from '../functions/_shared/troca.ts'
-import { H1, H2, montar } from './helpers.ts'
+import { verificar } from '../functions/_shared/verificar.ts'
+import { H1, H2, montar, TOKEN } from './helpers.ts'
 
 const H3 = 'c'.repeat(64)
 
@@ -29,6 +30,15 @@ describe('troca de computador', () => {
     expect(ativos[0].computador_hash).toBe(H2)
     expect(ativos[0].token_hash).toMatch(/^[0-9a-f]{64}$/)
     expect(m.store.trocas[0]).toMatchObject({ de_hash: H1, para_hash: H2, por_admin: false })
+  })
+  it('após a troca, o token ANTIGO é negado e o novo vale', async () => {
+    const m = await comAtivacao()
+    const arg = (h: string, t: string) => ({ email, computador_hash: h, token_dispositivo: t })
+    expect((await verificar(m.deps, arg(H1, TOKEN))).pode_construir).toBe(true)
+    const { token_dispositivo: novo } = await trocarComputador(m.deps, { email, codigo: await codigoTroca(m), novo_hash: H2 })
+    expect(await verificar(m.deps, arg(H1, TOKEN))).toMatchObject({ pode_construir: false, motivo: 'negado' })
+    expect(await verificar(m.deps, arg(H2, TOKEN))).toMatchObject({ pode_construir: false, motivo: 'negado' })
+    expect((await verificar(m.deps, arg(H2, novo))).pode_construir).toBe(true)
   })
   it('bloqueia segunda troca em menos de 7 dias e libera depois', async () => {
     const m = await comAtivacao()

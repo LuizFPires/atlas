@@ -13,8 +13,15 @@ export interface Contexto {
   autorizarServico: (req: Request) => boolean
 }
 
-/** IP do cliente conforme o proxy do Supabase/Vercel. Sem cabeçalho, todos caem no mesmo balde (mais restrito, nunca mais frouxo). */
-const ipDe = (req: Request) => (req.headers.get('x-forwarded-for')?.split(',')[0] ?? req.headers.get('x-real-ip') ?? 'desconhecido').trim()
+/**
+ * IP do cliente. Usa o ÚLTIMO valor de x-forwarded-for: é o que o proxy da plataforma anexa
+ * (o IP que ele viu de verdade); os valores anteriores vêm do cliente e podem ser forjados.
+ * Sem cabeçalho, todos caem no mesmo balde (mais restrito, nunca mais frouxo).
+ */
+const ipDe = (req: Request) => {
+  const hops = (req.headers.get('x-forwarded-for') ?? '').split(',').map((h) => h.trim()).filter(Boolean)
+  return hops[hops.length - 1] ?? 'desconhecido'
+}
 
 const json = (corpo: unknown, status = 200, extra: Record<string, string> = {}) =>
   new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...extra } })
@@ -25,8 +32,8 @@ export async function tratar(ctx: Contexto, req: Request): Promise<Response> {
   try {
     const b = (await req.json().catch(() => ({}))) as Record<string, string>
     const s = (k: string) => (typeof b[k] === 'string' ? b[k] : '')
-    // Credencial da ativação: cabeçalho X-Atlas-Dispositivo (ou campo token_dispositivo).
-    const dispositivo = req.headers.get('X-Atlas-Dispositivo') ?? s('token_dispositivo')
+    // Credencial da ativação: SOMENTE o cabeçalho X-Atlas-Dispositivo (nunca o corpo, que pode ir para log).
+    const dispositivo = req.headers.get('X-Atlas-Dispositivo') ?? ''
     switch (rota) {
       case '/link-instalacao':
         if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
