@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icone, Microfone, useVoz } from '../ui'
 import { textoDaObra } from './ponte-cota'
+import { montarCaso, type MotivoCaso, type PonteCasosAdmin } from './ponte-ajuda-casos'
 import { AINDA_NAO_DEU, ehPaginaId, normalizarResposta, saudacaoAjuda, type ContextoAjuda, type PonteAjuda, type PrintAjuda, type RespostaAjuda, type Turno } from './ponte-ajuda'
 import './ajuda.css'
 
 interface Props {
   ajuda: PonteAjuda
+  /** Para onde vão os casos que o Atlas não resolveu (painel do administrador). */
+  casos?: PonteCasosAdmin
   contexto: ContextoAjuda
   /** Primeiro nome do cliente, para o "Oi, Zé". */
   nome?: string
@@ -33,7 +36,7 @@ function QuadroPrint({ print }: { print: PrintAjuda }) {
  * F17: a Ajuda do Atlas (prototipo/F17Ajuda), painel lateral de 520 px. Todo o suporte é o próprio Atlas.
  * A conversa vai pela porta `PonteAjuda` (o Claude por baixo); o que o cliente falou, escreveu ou mostrou é DADO.
  */
-export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
+export function Ajuda({ ajuda, casos, contexto, nome, onFechar }: Props) {
   const [prints, setPrints] = useState<PrintAjuda[]>(contexto.print ? [contexto.print] : [])
   const [msgs, setMsgs] = useState<Mensagem[]>([])
   const [texto, setTexto] = useState('')
@@ -42,6 +45,7 @@ export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
   const [aviso, setAviso] = useState('')
   const [fechado, setFechado] = useState(false) // "Fiz, deu certo": a conversa terminou bem
   const proximo = useRef(1)
+  const caso = useRef<'nao' | 'enviando' | 'enviado'>('nao') // um caso por conversa
   const fim = useRef<HTMLDivElement>(null)
   const reqId = useRef(0)
   const { gravando, alternar, suportado } = useVoz((t) => { setTexto((a) => [a, t].filter(Boolean).join(' ')); setFalado(true) })
@@ -50,6 +54,17 @@ export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
 
   const ultimaAcao = [...msgs].reverse().find((m) => m.de === 'atlas')
   const historico = (): Turno[] => msgs.map((m) => ({ de: m.de, texto: m.texto }))
+
+  // Caso não resolvido: vai ao painel do administrador (uma vez), sem segredo. Se não deu para anotar, não finge que anotou.
+  const anotarCaso = async (motivo: MotivoCaso, turnos: Turno[], avisar: boolean) => {
+    if (!casos || caso.current !== 'nao') return
+    caso.current = 'enviando'
+    try {
+      await casos.enviar(montarCaso({ ...contexto, print: prints[prints.length - 1] ?? contexto.print ?? null }, turnos, motivo))
+      caso.current = 'enviado'
+      if (avisar) setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: 'Anotei o seu caso, com o print e o passo onde você parou, para o Atlas estudar o que aconteceu. Você pode me contar de outro jeito ou mandar outro print a qualquer hora.' }])
+    } catch { caso.current = 'nao' }
+  }
 
   const enviar = async (mensagem: string, vindoDaVoz = false) => {
     const t = mensagem.trim()
@@ -64,7 +79,13 @@ export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
     try {
       // A resposta do Claude é DADO: passa pelo normalizador (texto simples, sem promessa de gente, página só da lista fechada).
       const r = normalizarResposta(await ajuda.conversar({ ...contexto, print: prints[prints.length - 1] ?? null }, antes, t))
-      if (id === reqId.current) setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: r.texto, resposta: r }])
+      if (id === reqId.current) {
+        setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: r.texto, resposta: r }])
+        const turnos = [...antes, { de: 'cliente' as const, texto: t }, { de: 'atlas' as const, texto: r.texto }]
+        const vezes = turnos.filter((x) => x.de === 'cliente' && x.texto === AINDA_NAO_DEU).length
+        if (r.naoResolvido) void anotarCaso('sem-saida', turnos, true)
+        else if (vezes >= 2) void anotarCaso('ainda-nao-deu', turnos, true)
+      }
     } catch {
       if (id === reqId.current) setAviso('Não consegui responder agora. Nada se perdeu: tente de novo em instantes.')
     } finally { if (id === reqId.current) setOcupado(false) }
@@ -77,6 +98,12 @@ export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
   const deuCerto = () => {
     setFechado(true)
     setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: 'Que bom que deu certo! Se aparecer outra coisa, é só me chamar por aqui.' }])
+  }
+
+  // Fechar com a conversa aberta e sem "deu certo": o caso não resolvido também vai ao painel.
+  const fechar = () => {
+    if (!fechado && msgs.some((m) => m.de === 'cliente')) void anotarCaso('fechou-sem-resolver', historico(), false)
+    onFechar()
   }
 
   const tirar = async () => {
@@ -104,7 +131,7 @@ export function Ajuda({ ajuda, contexto, nome, onFechar }: Props) {
           <b>Ajuda do Atlas</b>
           <span>● responde na hora, a qualquer hora</span>
         </div>
-        <button type="button" className="at-ajuda-p__fechar" aria-label="Fechar a Ajuda" onClick={onFechar}><Icone nome="x" tamanho={20} /></button>
+        <button type="button" className="at-ajuda-p__fechar" aria-label="Fechar a Ajuda" onClick={fechar}><Icone nome="x" tamanho={20} /></button>
       </header>
       <div className="at-ajuda-p__conversa" role="log" aria-live="polite">
         <div className="at-ajuda-p__balao at-ajuda-p__balao--atlas">{saudacaoAjuda(contexto, nome)}</div>

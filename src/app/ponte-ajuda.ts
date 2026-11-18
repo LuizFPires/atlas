@@ -68,6 +68,8 @@ export interface RespostaAjuda {
   depois?: string
   /** Qual página oficial abrir (id da lista fechada, nunca URL). */
   pagina?: PaginaId
+  /** O Atlas não achou saída: o caso vai para o painel do administrador (ocorrencias_admin). */
+  naoResolvido?: boolean
 }
 
 /** Frase que NUNCA pode sair da Ajuda: todo o suporte é o próprio Atlas. */
@@ -87,7 +89,7 @@ export function normalizarResposta(bruto: unknown): RespostaAjuda {
     .map((t) => { const x = (t && typeof t === 'object' ? t : {}) as Record<string, unknown>; return { en: textoDaObra(typeof x.en === 'string' ? x.en : '', 40), pt: textoDaObra(typeof x.pt === 'string' ? x.pt : '', 60) } })
     .filter((t) => t.en && t.pt)
   const depois = limpa(o.depois, 200)
-  return { texto, ...(passos.length ? { passos } : {}), ...(traducoes.length ? { traducoes } : {}), ...(depois ? { depois } : {}), ...(ehPaginaId(o.pagina) ? { pagina: o.pagina } : {}) }
+  return { texto, ...(passos.length ? { passos } : {}), ...(traducoes.length ? { traducoes } : {}), ...(depois ? { depois } : {}), ...(ehPaginaId(o.pagina) ? { pagina: o.pagina } : {}), ...(o.naoResolvido === true ? { naoResolvido: true } : {}) }
 }
 
 /** O que o cliente "diz" ao apertar "Ainda não deu". */
