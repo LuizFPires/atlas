@@ -1,6 +1,6 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
-import type { Ativacao, CondicaoLicenca, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
+import type { Ativacao, CondicaoLicenca, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
   clientes: Cliente[] = []
@@ -10,7 +10,7 @@ export class StoreMemoria implements Store {
   links: Link[] = []
   codigos: Codigo[] = []
   entregas: Entrega[] = []
-  ocorrencias: Ocorrencia[] = []
+  ocorrencias: OcorrenciaAdmin[] = []
   contas: ContaGateway[] = []
   pagamentos: Pagamento[] = []
   sessoes: SessaoCheckout[] = []
@@ -112,7 +112,12 @@ export class StoreMemoria implements Store {
   }
   async trocasDa(lid: string) { return this.trocas.filter((t) => t.licenca_id === lid) }
   async inserirEntrega(e: Entrega) { this.entregas.push(e) }
-  async inserirOcorrencia(o: Ocorrencia) { this.ocorrencias.push(o) }
+  async inserirOcorrencia(o: Ocorrencia) {
+    this.ocorrencias.push({
+      id: this.id(), cliente_id: o.cliente_id, tipo: o.tipo, descricao: o.descricao, autor: o.autor ?? null,
+      resolvida: o.resolvida ?? false, criada_em: o.criada_em ?? new Date(), resolvida_por: null, resolvida_em: null,
+    })
+  }
 
   async contaGateway(id: string) { return this.contas.find((c) => c.id === id) ?? null }
   async registrarEventoGateway(conta: string, ev: string) {
@@ -195,4 +200,22 @@ export class StoreMemoria implements Store {
     const cli = this.clientes.find((x) => x.id === clienteId)
     if (cli) cli.cadastro_em = null
   }
+
+  async listarClientes() { return this.clientes.map((c) => ({ ...c })) }
+  async listarLicencas() { return this.licencas.map((l) => ({ ...l })) }
+  async listarPagamentos() { return this.pagamentos.map((p) => ({ ...p })) }
+  async listarAtivacoes() { return this.ativacoes.map((a) => ({ ...a })) }
+  async listarTrocas() { return this.trocas.map((t) => ({ ...t })) }
+  async ocorrenciasAbertas(limite: number) {
+    return this.ocorrencias.filter((o) => !o.resolvida).sort((a, b) => b.criada_em.getTime() - a.criada_em.getTime()).slice(0, limite).map((o) => ({ ...o }))
+  }
+  async resolverOcorrencia(id: string, por: string, quando: Date) {
+    const o = this.ocorrencias.find((x) => x.id === id)
+    if (!o || o.resolvida) return false
+    Object.assign(o, { resolvida: true, resolvida_por: por, resolvida_em: quando })
+    return true
+  }
+  async entregasRecentes(limite: number) { return [...this.entregas].sort((a, b) => b.baixado_em.getTime() - a.baixado_em.getTime()).slice(0, limite) }
+  async entregasDaLicenca(licencaId: string, limite: number) { return (await this.entregasRecentes(Infinity)).filter((e) => e.licenca_id === licencaId).slice(0, limite) }
+  async entregasPorMarca(marca: string) { return this.entregas.filter((e) => e.marca_dagua === marca) }
 }

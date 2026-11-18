@@ -4,7 +4,7 @@ import { confirmarAtivacao, solicitarCodigo } from './ativacao.ts'
 import { entregarKit, type CarregarKit } from './kit.ts'
 import { gerarLink } from './links.ts'
 import { type Deps, ErroRegra } from './tipos.ts'
-import { liberarTroca, trocarComputador } from './troca.ts'
+import { trocarComputador } from './troca.ts'
 import { verificar } from './verificar.ts'
 import { criarCheckout } from './pagamento/checkout.ts'
 import type { DepsPagamento } from './pagamento/config.ts'
@@ -12,6 +12,7 @@ import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts
 import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
+import { adminLogado, type DepsAdmin, euAdmin, liberarTrocaUrgente, painel, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
 import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
 
 export interface Contexto {
@@ -23,6 +24,8 @@ export interface Contexto {
   cadastro?: DepsCadastro
   /** Portal do cliente (M6, login próprio). Ausente = rotas /portal/* respondem 503. */
   portal?: DepsPortal
+  /** Painel do administrador (M7, F16). Ausente = rotas /admin/* de pessoa respondem 503 (nunca ficam abertas). */
+  admin?: DepsAdmin
   /** Origem do site (ex.: https://atlas-ia.app.br). Só ela recebe CORS; ausente = nenhuma origem de navegador. */
   origemWeb?: string
   /** Chamadas de serviço/admin (gerar link pós-compra, override). Conferido contra segredo do ambiente. */
@@ -69,6 +72,31 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
     const s = (k: string) => (typeof b[k] === 'string' ? b[k] : '')
     // Credencial da ativação: SOMENTE o cabeçalho X-Atlas-Dispositivo (nunca o corpo, que pode ir para log).
     const dispositivo = req.headers.get('X-Atlas-Dispositivo') ?? ''
+    // Painel do admin (M7): SÓ pessoa admin. JWT validado no servidor + allowlist (admin.ts). O cron /admin/processar-atrasos
+    // é a única exceção: é máquina (segredo de serviço), não pessoa, e não devolve dado nenhum de cliente.
+    if (rota.startsWith('/admin/') && rota !== '/admin/processar-atrasos') {
+      if (!ctx.admin) return json({ erro: 'admin_indisponivel' }, 503)
+      const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
+      const o = b as Record<string, unknown>
+      switch (rota) {
+        case '/admin/eu':
+          return json(await euAdmin(ctx.admin, jwt))
+        case '/admin/painel':
+          return json(await painel(ctx.admin, jwt))
+        case '/admin/ocorrencias/resolver':
+          return json(await resolverOcorrencia(ctx.admin, jwt, o.id))
+        case '/admin/liberar-troca':
+          return json(await liberarTrocaUrgente(ctx.admin, jwt, { licenca_id: o.licenca_id, motivo: o.motivo }))
+        case '/admin/entregas':
+          return json(await verEntregas(ctx.admin, jwt, { licenca_id: o.licenca_id, marca: o.marca }))
+        case '/admin/cadastros':
+          return json(await verCadastros(ctx.admin, jwt))
+        default:
+          // Rota /admin/* desconhecida: ainda exige admin antes de dizer qualquer coisa (não revela o que existe).
+          await adminLogado(ctx.admin, jwt)
+          return json({ erro: 'nao_encontrado' }, 404)
+      }
+    }
     // Portal: o dono é SEMPRE o usuário do JWT (cabeçalho Authorization). Nada de id/e-mail do corpo.
     if (rota.startsWith('/portal/')) {
       if (!ctx.portal) return json({ erro: 'portal_indisponivel' }, 503)
@@ -106,10 +134,6 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         return json(await solicitarCodigo(ctx.deps, s('email'), 'troca', ipDe(req)))
       case '/trocar-computador':
         return json(await trocarComputador(ctx.deps, { email: s('email'), codigo: s('codigo'), novo_hash: s('novo_hash') }))
-      case '/admin/liberar-troca':
-        if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
-        await liberarTroca(ctx.deps, s('licenca_id'), s('motivo') || 'Override manual')
-        return json({ ok: true })
       case '/pagamento/checkout': {
         if (!ctx.pagamento) return json({ erro: 'pagamento_indisponivel' }, 503)
         const tipo = s('tipo') === 'mensalidade' ? 'mensalidade' : 'implantacao'

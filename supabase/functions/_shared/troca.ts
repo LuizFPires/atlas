@@ -5,6 +5,14 @@ import { type Deps, ErroRegra, HASH_RE } from './tipos.ts'
 
 export const INTERVALO_TROCA_MS = 7 * 24 * 3600_000
 
+/** Cliente tentou trocar antes dos 7 dias: vira "precisa de atenção" no painel (F16) — uma por cliente a cada 24 h, sem texto livre dele. */
+export async function registrarTrocaAntecipada(d: Deps, clienteId: string, proxima: Date) {
+  if (!(await d.store.tentarEvento(`ocorrencia:troca_antecipada:${clienteId}`, 1, 24 * 3600_000, d.agora()))) return
+  try {
+    await d.store.inserirOcorrencia({ cliente_id: clienteId, tipo: 'troca_antecipada', descricao: `Tentou trocar de computador antes do prazo de 7 dias (libera em ${proxima.toISOString().slice(0, 10)}).` })
+  } catch { /* o aviso ao admin nunca pode derrubar a resposta ao cliente */ }
+}
+
 export async function trocarComputador(d: Deps, a: { email: string; codigo: string; novo_hash: string }) {
   if (!HASH_RE.test(a.novo_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
   const cliente = await d.store.clientePorEmail(a.email.trim().toLowerCase())
@@ -19,6 +27,7 @@ export async function trocarComputador(d: Deps, a: { email: string; codigo: stri
     const ultima = (await d.store.trocasDa(lic.id)).reduce<Date | null>((m, t) => (!m || t.feita_em > m ? t.feita_em : m), null)
     const proxima = ultima && new Date(ultima.getTime() + INTERVALO_TROCA_MS)
     if (proxima && proxima > d.agora()) {
+      await registrarTrocaAntecipada(d, cliente.id, proxima)
       const e = new ErroRegra('troca_limite', 'Você já trocou de computador há pouco. Só dá para trocar 1 vez a cada 7 dias.', 429)
       Object.assign(e, { proxima_troca_em: proxima })
       throw e
