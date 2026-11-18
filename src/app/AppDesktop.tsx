@@ -7,6 +7,7 @@ import type { PedidoAjudaPasso } from './ajuda-passo'
 import { Celular } from './Celular'
 import { Contas } from './Contas'
 import { Obras as ListaObras } from './Obras'
+import { NovaObra } from './NovaObra'
 import { TrazerPrototipo } from './Trazer'
 import { criarObrasFixture, obrasIndisponivel, type PonteObras } from './ponte-obras'
 import { celularIndisponivel, criarCelularFixture, type PonteCelular } from './ponte-celular'
@@ -102,7 +103,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Demais telas (F05+ vêm nos próximos milestones): por ora cai em Obras.
   let conteudo: ReactNode
   if (ativo === 'obras' && fluxo === 'trazer') conteudo = <TrazerPrototipo onVoltar={() => setFluxo('lista')} />
-  else if (ativo === 'obras' && fluxo === 'nova') conteudo = <p>Nova obra{ideia ? `: ${ideia}` : ''}</p>
+  else if (ativo === 'obras' && fluxo === 'nova') conteudo = <NovaObra obras={ponteObras} ideia={ideia} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} />
   else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} nome={dono || undefined} onComecar={(i) => { setIdeia(i ?? ''); setFluxo('nova') }} onTrazer={() => setFluxo('trazer')} />
   return <Obras ativo={ativo} onNavegar={setAtivo} pedido={pedidoAjuda}>{conteudo}</Obras>
 }
