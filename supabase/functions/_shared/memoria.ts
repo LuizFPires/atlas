@@ -145,4 +145,15 @@ export class StoreMemoria implements Store {
   async licencasAtrasadas() { return this.licencas.filter((l) => l.status === 'atrasada') }
   async licencasEncerramentoVencido(agora: Date) { return this.licencas.filter((l) => l.status !== 'cancelada' && l.mensalidade_encerra_em && l.mensalidade_encerra_em <= agora) }
   async clientePorId(id: string) { return this.clientes.find((c) => c.id === id) ?? null }
+
+  async salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string }, quando: Date) {
+    const cli = this.clientes.find((x) => x.id === clienteId)
+    if (!cli || cli.cadastro_em) return false
+    Object.assign(cli, { nome_tratamento: c.nome, empresa: c.empresa, ramo: c.ramo, cadastro_em: quando })
+    return true
+  }
+  async reabrirCadastro(clienteId: string) {
+    const cli = this.clientes.find((x) => x.id === clienteId)
+    if (cli) cli.cadastro_em = null
+  }
 }

@@ -1,0 +1,31 @@
+// Textos dos e-mails (S10 / F01). Só montam o texto; o envio real é do adaptador (etapa /entregar).
+// Tom: amigo na mesa de um restaurante. Nunca promete atendimento humano: o suporte é a Ajuda do Atlas.
+
+export interface DadosBoasVindas {
+  nome: string
+  empresa: string
+  ramo: string
+  /** Endereço completo de instalação, com o token de uso único (~48 h). */
+  link_instalacao: string
+  expira_em: Date
+}
+
+export function montarBoasVindas(d: DadosBoasVindas): { assunto: string; texto: string } {
+  const negocio = d.empresa ? `${d.empresa} (${d.ramo})` : d.ramo
+  const ate = d.expira_em.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return {
+    assunto: `${d.nome}, o seu Atlas chegou`,
+    texto: [
+      `Oi, ${d.nome}! Bem-vindo ao Atlas.`,
+      '',
+      `Já anotei o seu negócio: ${negocio}. Agora falta só instalar o Atlas no computador onde você vai construir.`,
+      '',
+      'Abra este e-mail no computador e clique no botão (ou no link abaixo):',
+      d.link_instalacao,
+      '',
+      `O link vale para uma instalação e vence em ${ate}. Se abrir no celular, é só abrir de novo no computador.`,
+      '',
+      'Travou em algum passo? Dentro do Atlas tem a Ajuda do Atlas, que vê o que aconteceu e te guia.',
+    ].join('\n'),
+  }
+}

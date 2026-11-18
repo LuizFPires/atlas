@@ -10,12 +10,17 @@ import type { DepsPagamento } from './pagamento/config.ts'
 import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts'
 import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
+import { cadastrar, type DepsCadastro } from './cadastro.ts'
 
 export interface Contexto {
   deps: Deps
   carregarKit: CarregarKit
   /** Pagamento (Stripe do cliente). Ausente = rotas de pagamento respondem 503. */
   pagamento?: DepsPagamento
+  /** Cadastro pós-pagamento (M4) e e-mail de boas-vindas. Ausente = /cadastro responde 503. */
+  cadastro?: DepsCadastro
+  /** Origem do site (ex.: https://atlas-ia.app.br). Só ela recebe CORS; ausente = nenhuma origem de navegador. */
+  origemWeb?: string
   /** Chamadas de serviço/admin (gerar link pós-compra, override). Conferido contra segredo do ambiente. */
   autorizarServico: (req: Request) => boolean
 }
@@ -33,7 +38,20 @@ const ipDe = (req: Request) => {
 const json = (corpo: unknown, status = 200, extra: Record<string, string> = {}) =>
   new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...extra } })
 
+/** CORS só para a origem do site do Luiz (a página de vendas chama /pagamento/checkout e /cadastro do navegador). */
 export async function tratar(ctx: Contexto, req: Request): Promise<Response> {
+  const origem = req.headers.get('Origin')
+  const liberada = !!ctx.origemWeb && origem === ctx.origemWeb
+  const cors: Record<string, string> = liberada
+    ? { 'Access-Control-Allow-Origin': origem, Vary: 'Origin', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '600' }
+    : {}
+  if (req.method === 'OPTIONS') return new Response(null, { status: liberada ? 204 : 403, headers: cors })
+  const res = await tratarRota(ctx, req)
+  for (const [k, v] of Object.entries(cors)) res.headers.set(k, v)
+  return res
+}
+
+async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
   const rota = new URL(req.url).pathname.replace(/^\/(functions\/v1\/)?/, '/').replace(/\/+$/, '')
   if (req.method !== 'POST') return json({ erro: 'metodo', mensagem: 'Use POST.' }, 405)
   try {
@@ -72,6 +90,14 @@ export async function tratar(ctx: Contexto, req: Request): Promise<Response> {
           return json({ erro: 'muitas_solicitacoes', mensagem: 'Muitas tentativas. Espere uns minutos.' }, 429)
         }
         return json(await criarCheckout(ctx.pagamento, { conta_id: s('conta_id'), tipo, email: s('email'), licenca_id: s('licenca_id') }))
+      }
+      case '/cadastro': {
+        if (!ctx.cadastro) return json({ erro: 'cadastro_indisponivel' }, 503)
+        // pública (o cliente acabou de pagar e ainda não tem login): limite por IP
+        if (!(await ctx.cadastro.store.tentarEvento(`cadastro:ip:${ipDe(req)}`, 10, 15 * 60_000, ctx.cadastro.agora()))) {
+          return json({ erro: 'muitas_solicitacoes', mensagem: 'Muitas tentativas. Espere uns minutos.' }, 429)
+        }
+        return json(await cadastrar(ctx.cadastro, { nome: b.nome, empresa: b.empresa, ramo: b.ramo, email: b.email }))
       }
       // Portal (F15): o cliente já está autenticado lá; aqui só entra chamada de serviço.
       case '/compra/cancelar':

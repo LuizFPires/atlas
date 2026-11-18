@@ -2,7 +2,16 @@
 export type StatusLicenca = 'ativa' | 'atrasada' | 'pausada' | 'cancelada'
 export type Finalidade = 'ativacao' | 'troca'
 
-export interface Cliente { id: string; email_compra: string; nome_tratamento: string }
+export interface Cliente {
+  id: string
+  email_compra: string
+  nome_tratamento: string
+  // M4 (cadastro pós-pagamento). Opcionais para não quebrar quem monta clientes sem cadastro.
+  empresa?: string | null
+  ramo?: string | null
+  /** Quando as 4 respostas foram gravadas (nulo = cadastro ainda não feito). */
+  cadastro_em?: Date | null
+}
 export interface Licenca {
   id: string
   cliente_id: string
@@ -141,6 +150,12 @@ export interface Store {
   /** Mensalidade cancelada cujo período pago já acabou (mensalidade_encerra_em <= agora) e ainda não 'cancelada'. */
   licencasEncerramentoVencido(agora: Date): Promise<Licenca[]>
   clientePorId(id: string): Promise<Cliente | null>
+
+  // ── M4: cadastro pós-pagamento ──
+  /** Atômico: UPDATE clientes SET nome_tratamento, empresa, ramo, cadastro_em WHERE id AND cadastro_em IS NULL. false = já cadastrado. */
+  salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string }, quando: Date): Promise<boolean>
+  /** Desfaz o cadastro quando o e-mail de boas-vindas não saiu, para o cliente poder tentar de novo. */
+  reabrirCadastro(clienteId: string): Promise<void>
 }
 
 export interface Deps {
