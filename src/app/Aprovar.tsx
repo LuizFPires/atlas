@@ -81,6 +81,13 @@ export function Aprovar({ obra, construcao, claude, onVoltar }: Props) {
               <span className="at-apr__item"><Icone nome="check" tamanho={16} />Mudou de ideia? Ajustes entram no pós-obra, sem perder nada.</span>
               <span className="at-apr__item"><Icone nome="check" tamanho={16} />Depois de começar ainda dá para ajustar: é só pedir, falando, e o Atlas muda sem perder o que já está pronto.</span>
             </section>
+            <section className="at-apr__combinado" aria-label="Aviso das lojas de aplicativos">
+              <b>Quer o app na App Store ou no Google Play?</b>
+              <span>Avise já: a papelada das lojas leva alguns dias, e o Atlas adianta durante a obra. Duas coisas costumam pegar quem nunca publicou:</span>
+              <span className="at-apr__item"><Icone nome="relogio" tamanho={16} /><span><b>Apple (empresa):</b> pede o número D-U-N-S, que é um cadastro gratuito da sua empresa e pode demorar alguns dias para sair.</span></span>
+              <span className="at-apr__item"><Icone nome="pessoas" tamanho={16} /><span><b>Google Play (conta nova):</b> exige 12 pessoas testando o app por 14 dias seguidos antes de poder publicar. O Atlas te ajuda a juntar essa turma.</span></span>
+              <span>Se você só quer instalar pelo celular, sem loja, não precisa de nada disso.</span>
+            </section>
             <div className="at-apr__rodape">
               <Botao variante="secundario" onClick={onVoltar}>Voltar ao protótipo</Botao>
               <Botao className="at-apr__comecar" disabled>Começar a obra</Botao>

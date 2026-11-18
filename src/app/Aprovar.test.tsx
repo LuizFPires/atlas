@@ -54,3 +54,11 @@ test('textos de prazo e cota', () => {
   expect(textoCota(0)).toMatch(/sem parar/)
   expect(textoCota(1)).toMatch(/até o fim uma vez./)
 })
+
+test('mostra o aviso das lojas: D-U-N-S e 12 testadores por 14 dias', async () => {
+  montar()
+  const aviso = await screen.findByRole('region', { name: 'Aviso das lojas de aplicativos' })
+  expect(aviso).toHaveTextContent('D-U-N-S')
+  expect(aviso).toHaveTextContent('12 pessoas testando o app por 14 dias seguidos')
+  expect(aviso).toHaveTextContent('a papelada das lojas leva alguns dias')
+})
