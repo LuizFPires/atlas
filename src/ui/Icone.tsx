@@ -9,6 +9,7 @@ const CAMINHOS = {
     </>
   ),
   ajuda: <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" />,
+  pausa: <path d="M9 5v14M15 5v14" />,
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   seta: <path d="M5 12h14M13 6l6 6-6 6" />,
   play: <path d="M8 5l12 7-12 7z" />,

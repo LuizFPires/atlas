@@ -3,6 +3,8 @@ import { Botao, Icone } from '../ui'
 import { Canteiro3D } from './Canteiro3D'
 import { MODO_RECOMENDADO, MODOS_OBRA, PARADAS_REAIS, TEXTO_MODO, type ModoObra, type PonteModoObra } from './ponte-construcao'
 import { situacaoDaObra, type EstadoObra, type PontePainel, type Situacao } from './ponte-painel'
+import { Pausa } from './Pausa'
+import type { PonteCota } from './ponte-cota'
 import type { ObraDoEstilo } from './Estilo'
 import './painel.css'
 
@@ -13,6 +15,10 @@ interface Props {
   modos: PonteModoObra
   /** "Publicar o sistema" (F13a, do M20). */
   onPublicar?: () => void
+  /** Cota do plano (F10): quando a cota acaba, a tela de pausa calma aparece e a obra volta sozinha ao renovar. */
+  cota?: PonteCota
+  /** Abre o site do Claude nos planos (F10). */
+  onVerMax?: () => void
   /** De quanto em quanto tempo relê o andamento (ms); 0 desliga (testes). */
   sondagemMs?: number
 }
@@ -42,7 +48,7 @@ const AVISO_PARADA: Partial<Record<Situacao, string>> = {
 }
 
 /** F09: painel da obra. O prédio, o %, o prazo e o "agora na obra"; detalhes técnicos só em "ver detalhes". */
-export function Painel({ obra, painel, modos, onPublicar, sondagemMs = 5000 }: Props) {
+export function Painel({ obra, painel, modos, cota, onPublicar, onVerMax, sondagemMs = 5000 }: Props) {
   const [estado, setEstado] = useState<EstadoObra | null>(null)
   const [modo, setModo] = useState<ModoObra | null>(null)
   const [modoLido, setModoLido] = useState(false)
@@ -50,6 +56,7 @@ export function Painel({ obra, painel, modos, onPublicar, sondagemMs = 5000 }: P
   const [detalhes, setDetalhes] = useState(false)
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
+  const [dispensada, setDispensada] = useState<Situacao | null>(null)
   const liberada = useRef<number | null>(null)
 
   const atualizar = useCallback(async () => {
@@ -93,6 +100,13 @@ export function Painel({ obra, painel, modos, onPublicar, sondagemMs = 5000 }: P
       setTrocando(false)
       setAviso(novo === 'automatico' ? 'Pronto: a obra segue sozinha daqui para frente.' : 'Pronto: ao fim de cada etapa o Atlas para e espera o seu OK.')
     } catch (x) { setErro(recadoDoErroPainel(x)) }
+  }
+
+  // O cliente só "volta ao painel" enquanto a parada dura; mudou a situação, a tela dedicada vale de novo.
+  if (dispensada && sit !== dispensada) setDispensada(null)
+
+  if (sit === 'cota' && cota && dispensada !== 'cota') {
+    return <Pausa pasta={obra.pasta} cota={cota} onVoltar={() => setDispensada('cota')} onRetomou={() => { void atualizar() }} onVerMax={onVerMax} sondagemMs={sondagemMs} />
   }
 
   const concluida = sit === 'concluida'
