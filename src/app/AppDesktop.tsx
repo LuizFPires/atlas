@@ -86,7 +86,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   useImpedirSono(ponte, instalando)
 
   // Sem adaptador real e fora do modo fixture, o app não finge conexão (adaptador real: pendência de /entregar).
-  const ponteClaude = useMemo<PonteClaude>(() => claude ?? (modoFixture() ? criarClaudeFixture({ conectado: false }, { loginAutomatico: true }) : claudeIndisponivel), [claude])
+  const ponteClaude = useMemo<PonteClaude>(() => claude ?? (modoFixture() ? criarClaudeFixture({ conectado: false }, { loginAutomatico: true }) : (ponte.claude ?? claudeIndisponivel)), [claude, ponte])
 
   // Idem para as contas do cliente (GitHub, Supabase, Vercel): sem adaptador real, não finge que ficaram prontas.
   // A Ajuda do Atlas: o Claude por baixo, atrás de uma porta. Sem adaptador real, não finge que entendeu.
@@ -102,10 +102,10 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteCelular = useMemo<PonteCelular>(() => celular ?? (modoFixture() ? criarCelularFixture() : celularIndisponivel), [celular])
 
   // Idem para a pasta das obras (Atlas\Obras): sem adaptador real, não finge que criou a pasta.
-  const ponteObras = useMemo<PonteObras>(() => obras ?? (modoFixture() ? criarObrasFixture(dono || 'Zé') : obrasIndisponivel), [obras, dono])
+  const ponteObras = useMemo<PonteObras>(() => obras ?? (modoFixture() ? criarObrasFixture(dono || 'Zé') : (ponte.obras ?? obrasIndisponivel)), [obras, dono, ponte])
 
   // Idem para os arquivos que o cliente sobe para a obra (print, logo, manual): sem adaptador real, não finge que subiu.
-  const ponteArquivos = useMemo<PonteArquivos>(() => arquivos ?? (modoFixture() ? criarArquivosFixture(ponteObras.raiz()) : arquivosIndisponivel), [arquivos, ponteObras])
+  const ponteArquivos = useMemo<PonteArquivos>(() => arquivos ?? (modoFixture() ? criarArquivosFixture(ponteObras.raiz()) : (ponte.arquivos ?? arquivosIndisponivel)), [arquivos, ponteObras, ponte])
 
   // Idem para o Claude que propõe os 3 estilos e escreve o design-system.md: sem adaptador real, não finge.
   const ponteEstilo = useMemo<PonteEstilo>(() => estilo ?? (modoFixture() ? criarEstiloFixture(ponteObras.raiz()) : estiloIndisponivel), [estilo, ponteObras])

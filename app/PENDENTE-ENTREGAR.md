@@ -1,5 +1,16 @@
 # App desktop (Electron) — pendências para /entregar
 
+## Estado dos adaptadores reais do Electron (atualizado em feat/app-adaptadores-base)
+
+Código só Windows/Electron em `app/` (fora do eslint/tsc/vitest/build do CI). Cada arquivo traz no topo o que faz e como testar numa máquina Windows.
+
+- **Ligados** (via `window.atlasDesktop`, `app/preload.cjs` + `app/main.cjs`, injetados em `AppDesktop` pelas props de `PonteDesktop`):
+  - Cofre real (`app/cofre.cjs`, `electron.safeStorage` = DPAPI; só o blob cifrado em `userData\cofre`; falha fechada).
+  - Primitivas seguras (`app/seguro.cjs`): caminho dentro da raiz sem symlink, `abrirExterno` com allowlist de hosts, `executarClaude` (spawn sem shell, args fixos, timeout).
+  - `PonteArquivos` (`app/adaptadores/arquivos.cjs`), `PonteObras` (`obras.cjs`), `PonteClaude` (`claude.cjs`: login só guiado, plano via `claude auth status`).
+- **Faltam** (continuam `*Indisponivel` fora do fixture): publicar, painel, cota, ocorrencias, retomar, construcao, modo, importar, prototipo, estilo, batismo, nomes, celular, ajuda, kit, posobra. Cada um deve reaproveitar `app/seguro.cjs` e expor um namespace novo em preload/main, com o campo opcional correspondente em `PonteDesktop`.
+- **Verificar numa máquina Windows** (não há runtime Electron no CI): (a) o cofre sobrevive a fechar/abrir o app; (b) `claude auth status` devolve JSON com `loggedIn`/`subscriptionType` na versão do CLI empacotada (testado com 2.1.322); (c) o `claude` do PATH funciona sem `.cmd` (senão definir `ATLAS_CLAUDE_EXE`); (d) a lista `HOSTS_OFICIAIS` e as URLs `claude.ai/login` e `claude.ai/upgrade` em `claude.cjs`; (e) `EXTENSOES` de `arquivos.cjs` e `nomeParaPasta` de `obras.cjs` espelham `src/app/ponte-*.ts` (manter em sincronia).
+
 O CI (ubuntu) só roda eslint, tsc, vitest e o build do front. `electron` e `electron-builder` NÃO são dependências do projeto (mantém o `npm ci` leve); `app/` (main.cjs, preload.cjs, cofre.cjs) não é compilado nem linta no CI. A API do Electron fica atrás de `src/app/ponte.ts` (interface testável).
 
 - **Cofre real (Windows Credential Manager / DPAPI).** `app/cofre.cjs` só tem o cofre em memória e falha fechado sem `ATLAS_COFRE=fixture`. Falta o adaptador nativo (ex.: `@napi-rs/keyring` ou `keytar`) implementando `guardar/ler/apagar` para a chave `atlas/dispositivo`. O token do dispositivo NUNCA pode ir para arquivo, localStorage ou log. Sem ele, o app pede ativação a cada abertura.
