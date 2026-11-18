@@ -1,6 +1,7 @@
 export const TELA_ATIVACAO = 'F02'
 export const TELA_CLAUDE = 'F03'
 export const TELA_CONTAS = 'F04'
+export const TELA_CELULAR = 'F04b'
 export const TELA_OBRAS = 'F05'
 
 /** Tela inicial do app: a flag --tela= manda; sem flag, já ativado cai em Obras (F05), senão na ativação (F02).

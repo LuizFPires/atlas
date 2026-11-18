@@ -1,0 +1,12 @@
+/* F04b Acompanhar pelo celular (prototipo/F04bCelular.dc.html). Reaproveita a casca da F04 (contas.css). */
+.at-cel { min-height: 800px; }
+.at-cel__corpo { flex: 1; min-width: 0; padding: 30px 36px; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 30px; }
+.at-cel__col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.at-cel__cartao { background: var(--card); border: 1px solid var(--card-b); border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.at-cel__cartao--linha { flex-direction: row; align-items: center; gap: 16px; }
+.at-cel__cartao > b { font-size: 16px; }
+.at-cel__qr { background: #fff; border-radius: 8px; padding: 6px; flex: none; }
+.at-cel__txt { display: flex; flex-direction: column; gap: 5px; font-size: 14px; line-height: 1.5; color: var(--mute); }
+.at-cel__txt > b { font-size: 16px; color: var(--text); }
+.at-cel__txt span b { color: var(--text); }
+.at-cel__rodape { margin-top: auto; display: flex; align-items: center; gap: 12px; }
