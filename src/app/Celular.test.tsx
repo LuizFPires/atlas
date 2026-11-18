@@ -87,3 +87,10 @@ test('as preferências guardadas voltam quando a tela abre de novo', () => {
   expect(screen.getByRole('switch', { name: 'Me avisar quando uma etapa terminar' })).not.toBeChecked()
   expect(screen.getByText('Próxima notícia: 18h.')).toBeInTheDocument()
 })
+
+test('a tela mostra os textos do protótipo', () => {
+  montar()
+  for (const t of ['Deixe o computador ligado e acompanhe pelo app do Claude, de onde estiver.', '2. De quanto em quanto tempo você quer notícias da obra?', 'Assim chega no seu celular:', 'Faltam umas 9 h de obra.', 'Anotado! Faço isso logo depois desta etapa e te mostro antes de colocar no ar.']) {
+    expect(screen.getByText(t, { exact: false })).toBeInTheDocument()
+  }
+})

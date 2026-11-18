@@ -24,3 +24,11 @@ O CI (ubuntu) só roda eslint, tsc, vitest e o build do front. `electron` e `ele
 - **"Pedir ajuda ao Atlas"** entrega o `PedidoAjudaPasso` (conta, passo, URL e título do print) à tela Ajuda do shell; a F17 completa (print real da tela, conversa) ainda não existe. Captura real de tela fica para o M da Ajuda.
 - **Vídeo "Ver este passo em vídeo (40 s)"**: botão existe; falta gravar/hospedar os vídeos por conta e passo.
 - **F04b (celular)** ainda não existe: "Último passo →" cai em Obras.
+
+## M12 — Acompanhar pelo celular (F04b)
+- **Adaptador real do `PonteCelular`** (`src/app/ponte-celular.ts`): hoje só existe o mock `criarCelularFixture` (modo fixture) e `celularIndisponivel` (produção sem adaptador: `aplicar` falha e a tela mostra um recado calmo, sem fingir que o celular está ligado). Falta, no Electron (preload + main), ligar a sessão do computador ao app do Claude no celular (Remote Control do Claude Code, S20) e implementar `aplicar(prefs)`: passar a frequência e os avisos para a sessão/agendador de notícias. O protótipo (u04b) marca "como o Claude Code conecta a sessão ao app" como a confirmar: confirmar o comando e se as notificações push usam a conta claude.ai do próprio cliente. Injetar em `AppDesktop` (prop `celular`) via `window.atlasDesktop.celular`. Nada de segredo em arquivo.
+- **QR de verdade**: o quadradinho é o desenho do protótipo (fixo). Gerar o QR do `enderecoApp()` (URL de download do app do Claude, hoje `https://claude.ai/download`, a confirmar) com uma biblioteca de QR ou um SVG pré-gerado, e confirmar o endereço final com a Anthropic.
+- **E-mail da conta** mostrado na tela é o do exemplo do protótipo; ligar ao `EstadoClaude.conta` do M10 (passar como prop `conta`).
+- **Onde as preferências ficam**: `criarArmazemLocal` (localStorage do app, chave `atlas.celular.prefs`; JSON validado, lixo volta ao padrão: 1 h e todos os avisos ligados). Não é segredo. No pacote final, se o Electron usar outra origem de página por versão, migrar para um `config.json` na pasta de dados do app (`app.getPath('userData')`).
+- **Prévia do celular**: horário e obra do exemplo (15h, Agenda da Barbearia do Zé) são fixos como no protótipo; as notícias reais vêm do M da obra.
+- **Concluir** vai para Obras (F05 ainda é a tela provisória do shell).
