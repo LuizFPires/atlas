@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Botao, Icone } from '../ui'
 import { LateralPassos } from './Ativacao'
 import { PASSOS_CLAUDE, type ItemSite } from './claude-passos'
+import { explicarPlano, mostrarConviteMax, NOME_PLANO, TEXTO_CONVITE_MAX } from './claude-plano'
 import type { EstadoClaude, PonteClaude } from './ponte-claude'
 import './app.css'
 import './claude.css'
@@ -102,7 +103,18 @@ export function Claude({ claude, onContinuar, onPedirAjuda }: Props) {
 
             {estado && (
               <>
-                <div className="at-claude__ok"><span className="at-claude__ok-bola"><Icone nome="check" tamanho={16} /></span><span>Conectado! Conta <b>{estado.conta}</b></span></div>
+                <div className="at-claude__ok"><span className="at-claude__ok-bola"><Icone nome="check" tamanho={16} /></span><span>Conectado! Conta <b>{estado.conta}</b>{estado.plano && <> · plano <b>{NOME_PLANO[estado.plano]}</b></>}</span></div>
+                <div className="at-claude__explica">
+                  <span className="at-claude__explica-rotulo">{explicarPlano(estado.plano).titulo}</span>
+                  <span>{explicarPlano(estado.plano).texto}</span>
+                </div>
+                {mostrarConviteMax(estado.plano) && (
+                  <div className="at-claude__convite">
+                    <b>{TEXTO_CONVITE_MAX.titulo}</b>
+                    <span>{TEXTO_CONVITE_MAX.texto}</span>
+                    <button type="button" className="at-ativ__link at-claude__negrito" onClick={() => void claude.abrirSite('planos')}>{TEXTO_CONVITE_MAX.link}</button>
+                  </div>
+                )}
                 <div className="at-ativ__rodape at-claude__acoes">
                   <Botao variante="secundario" onClick={voltar}>← Voltar</Botao>
                   <Botao onClick={onContinuar}>Continuar →</Botao>

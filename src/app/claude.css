@@ -44,3 +44,8 @@
 .at-claude__dica-hl { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font: 700 13px var(--font-text); background: #1b1e22; color: #c6f135; padding: 5px 10px; border-radius: 8px; white-space: nowrap; }
 @keyframes at-claude-pulso { 0% { box-shadow: 0 0 0 0 rgb(198 241 53 / 0.7); } 70% { box-shadow: 0 0 0 12px rgb(198 241 53 / 0); } 100% { box-shadow: 0 0 0 0 rgb(198 241 53 / 0); } }
 @media (prefers-reduced-motion: reduce) { .at-claude__hl { animation: none; } }
+
+.at-claude__explica { border: 1px solid var(--card-b); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 8px; background: var(--card); font-size: 15px; line-height: 1.55; }
+.at-claude__explica-rotulo { font: 600 12px var(--font-mono); letter-spacing: 0.12em; color: var(--mute); }
+.at-claude__convite { border: 1px dashed var(--card-b); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.at-claude__convite span { font-size: 14px; line-height: 1.5; color: var(--mute); }

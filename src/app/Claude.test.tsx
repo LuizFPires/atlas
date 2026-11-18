@@ -80,3 +80,32 @@ test('depois de ativar, o app abre a F03; ao conectar segue', async () => {
   render(<TemaProvider><AppDesktop ponte={criarPonteFixture(['--tela=F03'])} claude={claude} api={{ pedirCodigo: async () => ({ ok: true }), confirmar: async () => ({ ok: true, nome: 'Zé' }) }} /></TemaProvider>)
   expect(await screen.findByRole('heading', { name: 'O Claude é o construtor.' })).toBeInTheDocument()
 })
+
+const conectar = async (c: ClaudeFixture) => {
+  render(<TemaProvider><Claude claude={c} onContinuar={() => {}} /></TemaProvider>)
+  for (let i = 0; i < 5; i++) await clicar(/Abrir o site →|Fiz isso →/)
+  await clicar('Ver meu plano →')
+}
+
+test('ao conectar no Pro: mostra conta, plano e explica em dias de obra, com o convite para o site do Claude', async () => {
+  const c = criarClaudeFixture({ conectado: true, conta: 'ze@barbeariadoze.com.br', plano: 'pro' })
+  await conectar(c)
+  expect(screen.getByText(/Conectado!/)).toHaveTextContent('Conectado! Conta ze@barbeariadoze.com.br · plano Pro')
+  expect(screen.getByText('COMO O ATLAS VAI TRABALHAR NO SEU PLANO PRO')).toBeInTheDocument()
+  expect(screen.getByText(/As obras ficam prontas, com pausas/)).toBeInTheDocument()
+  expect(document.body.textContent).not.toMatch(/token/i)
+  await clicar('Ver os planos no site do Claude ↗')
+  expect(c.abertos).toContain('planos')
+  expect(screen.queryByRole('button', { name: /escolher|assinar|trocar de plano/i })).not.toBeInTheDocument()
+})
+
+test('ao conectar no Max: explica o Max e não oferece upgrade', async () => {
+  await conectar(criarClaudeFixture({ conectado: true, conta: 'a@b.com', plano: 'max' }))
+  expect(screen.getByText('COMO O ATLAS VAI TRABALHAR NO SEU PLANO MAX')).toBeInTheDocument()
+  expect(screen.queryByText('Quer obras mais rápidas?')).not.toBeInTheDocument()
+})
+
+test('plano ainda não detectado: avisa com calma, sem escolher nada', async () => {
+  await conectar(criarClaudeFixture({ conectado: true, conta: 'a@b.com' }))
+  expect(screen.getByText(/Ainda não consegui ver qual é o seu plano/)).toBeInTheDocument()
+})
