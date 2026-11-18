@@ -14,8 +14,12 @@
 //  o regrava ao iniciar (e ao trocar o modo no painel); o modo.json por obra é a memória local. Uma linha por vez: iniciar
 //  outra obra com uma linha rodando falha com 'ja-rodando'.
 //
-//  SEM escrever fora da pasta da obra: o Claude roda com --permission-mode acceptEdits (edições aprovadas só dentro do cwd) e uma
-//  lista fixa de ferramentas; sem --add-dir. O kit (skills/agentes) NÃO é copiado para a obra: vem do plugin do cliente
+//  ATENÇÃO — NÃO HÁ CERCA REAL: acceptEdits só auto-aprova edições de arquivo; NÃO restringe o Bash. O que limita o Claude aqui é
+//  (1) a lista de ferramentas com SUBCOMANDOS EXATOS (FERRAMENTAS_LINHA) e a lista de negados (FERRAMENTAS_NEGADAS), que são
+//  regras de permissão (apertam, mas não são sandbox); (2) `--setting-sources user`: o .claude/settings.json e o CLAUDE.md da
+//  PASTA DA OBRA são ignorados (config de projeto não é confiável) e, antes de cada disparo, a pasta é conferida (lstat) para
+//  não ter `.claude`/`CLAUDE.md`/`.mcp.json` ('obra-com-config-suspeita'); (3) env mínimo. O isolamento de verdade (usuário
+//  restrito do Windows / AppContainer, sem rede além da API) é pendência de endurecimento (app/PENDENTE-ENTREGAR.md). O kit (skills/agentes) NÃO é copiado para a obra: vem do plugin do cliente
 //  (`pluginDir`, opcional → --plugin-dir) ou da instalação do kit do Atlas (pendência "kit" em app/PENDENTE-ENTREGAR.md).
 //  Andamento: a saída `stream-json` é resumida em frases curtas (últimas 30 na memória) e o fim da linha vai para
 //  <obra>\.atlas\linha.json ({estado, motivo: concluiu|cota|pausada|erro|fechou}); nenhum texto bruto do Claude vai à tela.
@@ -26,15 +30,33 @@
 // Testes sem Claude: `node --test app/adaptadores/*.teste.cjs`.
 'use strict'
 const fs = require('node:fs')
-const { caminhoSeguro, criarArquivoExclusivo, executarClaude, iniciarClaudeEmFluxo, resolverClaude } = require('../seguro.cjs')
-const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson } = require('./obra-fs.cjs')
+const { caminhoSeguro, criarArquivoExclusivo, envMinimo, executarClaude, iniciarClaudeEmFluxo, resolverClaude } = require('../seguro.cjs')
+const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson, garantirSemConfigDeProjeto } = require('./obra-fs.cjs')
 const { montarPlanMd, validarPlanNovo, comoDado } = require('./plan-md.cjs')
 const { ehModoObra, gravarRecomendadoGlobal } = require('./modo.cjs')
 
-/** Ferramentas permitidas à linha (lista fixa). Edições só dentro do cwd graças ao acceptEdits. */
-const FERRAMENTAS_LINHA = 'Read,Write,Edit,Glob,Grep,Task,TodoWrite,Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(npx:*),Bash(node:*)'
+/**
+ * Ferramentas permitidas à linha: SUBCOMANDOS EXATOS, sem curinga em git/gh/npm inteiros. Isto é lista de permissão do Claude,
+ * NÃO é sandbox: acceptEdits não restringe o Bash e o `cwd` não impede ler/gravar fora da obra. Sem node/npx/curl/powershell.
+ * (git -c / git config ficam negados: `git -c core.sshCommand=...` executaria comando arbitrário.)
+ */
+const FERRAMENTAS_LINHA = [
+  'Read', 'Write', 'Edit', 'Glob', 'Grep', 'Task', 'TodoWrite',
+  'Bash(npm test)', 'Bash(npm run build)', 'Bash(npm run lint)', 'Bash(npm run typecheck)',
+  'Bash(git status)', 'Bash(git log:*)', 'Bash(git diff:*)', 'Bash(git add:*)', 'Bash(git commit:*)',
+  'Bash(git checkout:*)', 'Bash(git switch:*)', 'Bash(git merge:*)', 'Bash(git push:*)',
+  'Bash(gh pr create:*)', 'Bash(gh pr view:*)', 'Bash(gh pr checks:*)', 'Bash(gh pr merge:*)', 'Bash(gh run:*)',
+].join(',')
+/** Negados explícitos (valem mesmo que uma regra de permissão mais larga apareça). Config do projeto/kit não se edita. */
+const FERRAMENTAS_NEGADAS = [
+  'Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node:*)', 'Bash(npx:*)', 'Bash(curl:*)', 'Bash(wget:*)', 'Bash(powershell:*)', 'Bash(cmd:*)',
+  'Write(.claude/**)', 'Edit(.claude/**)', 'Write(CLAUDE.md)', 'Edit(CLAUDE.md)',
+].join(',')
+/** Só settings do usuário: ignora .claude/settings.json e CLAUDE.md da pasta da obra (o kit vem por --plugin-dir). */
+const ARGS_SEM_CONFIG_DE_PROJETO = ['--setting-sources', 'user', '--strict-mcp-config']
 const MAX_ETAPAS = 20
-const RE_COTA = /usage limit|limit reached|rate.?limit|quota|limite de uso|cota/i
+// Frases de cota do Claude; "cota"/"quota" só como palavra inteira (não casa "cotação", "quotation").
+const RE_COTA = /usage limit|limit reached|rate.?limit|(?<!\p{L})quota(?!\p{L})|limite de uso|(?<!\p{L})cota(?!\p{L})/iu
 
 const PEDIDO_PLANEJAR = [
   'Leia telas.md, regras.md e design-system.md desta pasta (e a pasta prototipo/ se existir) e proponha as ETAPAS da obra.',
@@ -92,6 +114,7 @@ function resumirLinha(linha) {
 function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
   const linhas = new Map()
+  let iniciando = false // reserva durante iniciar() (há awaits entre a conferência e o religar)
 
   const claudePronto = async () => {
     if (!resolver(process.env)) throw new Error('claude-nao-instalado')
@@ -109,12 +132,13 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     const cwd = pastaDaObra(raiz, pasta)
     if (linhas.has(pasta)) return // já rodando: idempotente
     if (linhas.size > 0) throw new Error('ja-rodando')
-    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', '--allowedTools', FERRAMENTAS_LINHA]
+    garantirSemConfigDeProjeto(cwd) // config de projeto suspeita: não roda
+    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', FERRAMENTAS_LINHA, '--disallowedTools', FERRAMENTAS_NEGADAS]
     if (pluginDir) args.push('--plugin-dir', pluginDir)
     const reg = { parar: () => {}, recentes: [], desde: agora().toISOString() }
     let cota = false
     pastaAtlas(raiz, pasta)
-    const env = { ...process.env, CLAUDE_PROJECT_DIR: cwd }
+    const env = envMinimo({ CLAUDE_PROJECT_DIR: cwd })
     const r = iniciarFluxo(args, {
       cwd, env, entrada: '/construir',
       onLinha: (l) => {
@@ -138,9 +162,11 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
   return {
     async planejar(pasta, obraNome) {
       const cwd = pastaDaObra(raiz, pasta)
+      garantirSemConfigDeProjeto(cwd)
       await claudePronto()
+      garantirSemConfigDeProjeto(cwd) // de novo: a pasta pode ter mudado durante a espera
       const entrada = `${PEDIDO_PLANEJAR}\n\nNome da obra (dado):\n${comoDado(obraNome, 200).join(' ') || 'Obra'}\n`
-      const r = await executar(['-p', '--output-format', 'json', '--allowedTools', 'Read,Glob,Grep', '--disallowedTools', 'Edit,Write,Bash,Task,NotebookEdit'], { cwd, entrada, timeoutMs: 300_000, maxSaida: 1_000_000 })
+      const r = await executar(['-p', '--output-format', 'json', ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', 'Read,Glob,Grep', '--disallowedTools', `Edit,Write,Bash,Task,NotebookEdit,${FERRAMENTAS_NEGADAS}`], { cwd, entrada, timeoutMs: 300_000, maxSaida: 1_000_000, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd }) })
       if (r.codigo !== 0) throw new Error('claude-falhou')
       let texto = r.saida
       try { const j = JSON.parse(r.saida); if (j && typeof j.result === 'string') texto = j.result } catch { /* saída já era o texto */ }
@@ -151,18 +177,34 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     async iniciar(pasta, obraNome, modo, etapas) {
       if (!ehModoObra(modo)) throw new Error('modo-invalido')
       if (!Array.isArray(etapas) || etapas.length === 0 || etapas.length > MAX_ETAPAS) throw new Error('sem-etapas')
-      pastaDaObra(raiz, pasta)
+      const cwd = pastaDaObra(raiz, pasta)
+      garantirSemConfigDeProjeto(cwd)
       const arquivoPlan = caminhoSeguro(raiz, pasta, 'PLAN.md')
       if (fs.existsSync(arquivoPlan)) throw new Error('ja-iniciada')
-      if (linhas.size > 0) throw new Error('ja-rodando')
-      await claudePronto() // falha calma ANTES de gravar qualquer coisa
-      const plan = montarPlanMd(obraNome, etapas)
-      if (!validarPlanNovo(plan).ok) throw new Error('plan-invalido') // porteiro do formato do painel
-      await modos.gravar(pasta, modo)
-      gravarRecomendadoGlobal(modo, { home, agora: agora() })
-      try { criarArquivoExclusivo(arquivoPlan, plan) } catch (e) { throw new Error(e && e.code === 'EEXIST' ? 'ja-iniciada' : 'plan-nao-gravado') }
-      religar(pasta)
-      return { plan: arquivoPlan, modo }
+      if (linhas.size > 0 || iniciando) throw new Error('ja-rodando')
+      iniciando = true // reserva já aqui: duas chamadas concorrentes não passam as duas
+      try {
+        await claudePronto() // falha calma ANTES de gravar qualquer coisa
+        if (linhas.size > 0) throw new Error('ja-rodando')
+        if (fs.existsSync(arquivoPlan)) throw new Error('ja-iniciada')
+        const plan = montarPlanMd(obraNome, etapas)
+        if (!validarPlanNovo(plan).ok) throw new Error('plan-invalido') // porteiro do formato do painel
+        // PLAN primeiro (wx: nunca sobrescreve); se algo falhar depois, desfaz tudo para não deixar a obra meio-iniciada.
+        try { criarArquivoExclusivo(arquivoPlan, plan) } catch (e) { throw new Error(e && e.code === 'EEXIST' ? 'ja-iniciada' : 'plan-nao-gravado') }
+        const recomendado = caminhoSeguro(home || require('node:os').homedir(), '.claude', 'recomendado.json')
+        let antes = null
+        try { antes = fs.readFileSync(recomendado, 'utf8') } catch { /* não existia */ }
+        try {
+          await modos.gravar(pasta, modo)
+          gravarRecomendadoGlobal(modo, { home, agora: agora() })
+          religar(pasta)
+        } catch (e) {
+          for (const f of [arquivoPlan, caminhoSeguro(raiz, pasta, '.atlas', 'modo.json')]) { try { fs.unlinkSync(f) } catch { /* não existia */ } }
+          try { if (antes === null) fs.unlinkSync(recomendado); else gravarAtomico(recomendado, antes) } catch { /* melhor esforço */ }
+          throw e
+        }
+        return { plan: arquivoPlan, modo }
+      } finally { iniciando = false }
     },
 
     /** Ao fechar o app: derruba a linha em andamento (o PLAN guarda o ponto; Retomar religa na próxima abertura). */
@@ -179,4 +221,4 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
   }
 }
 
-module.exports = { criarConstrucao, etapasDoTexto, resumirLinha, previsaoPorEtapas, FERRAMENTAS_LINHA }
+module.exports = { criarConstrucao, FERRAMENTAS_NEGADAS, RE_COTA, etapasDoTexto, resumirLinha, previsaoPorEtapas, FERRAMENTAS_LINHA }

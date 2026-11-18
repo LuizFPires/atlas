@@ -11,13 +11,15 @@
 //    (a skill /construir retoma do ponto em que o PLAN parou) e reafirma o recomendado.json do modo da obra; aprovarEtapa registra
 //    o OK (passo a passo) e religa a linha se ela tinha parado esperando.
 //  aplicarModo: regrava <obra>\.atlas\modo.json e o ~/.claude/recomendado.json GLOBAL (uma obra por vez no computador).
-//  enderecoCanteiro: sobe o canteiro do kit (.claude/canteiro/server.cjs) em 127.0.0.1:<porta>, registra a obra e devolve SÓ
-//    http://127.0.0.1:<porta>/?obra=<id> (null enquanto não subiu → a tela mostra a imagem 3D de apoio).
+//  enderecoCanteiro: sobe o canteiro do kit (.claude/canteiro/server.cjs) em 127.0.0.1:<porta LIVRE ALEATÓRIA>, registra a obra e
+//    devolve SÓ http://127.0.0.1:<porta>/?obra=<id> (null enquanto não subiu → a tela mostra a imagem 3D de apoio). Contra
+//    "port squatting": o filho recebe um NONCE (env CANTEIRO_NONCE) e prova que o conhece respondendo a um desafio aleatório
+//    em /obras?desafio=...; só então o endereço é publicado. Filho que sai cedo ou porta ocupada = sem canteiro (imagem de apoio).
 //  abrirTeste: abre a versão de teste: <obra>\.atlas\teste.json {url:"http://127.0.0.1:<porta>"} (loopback, allowlist) ou, na falta,
 //    <obra>\dist\index.html; sem nenhum dos dois: erro 'sem-teste' (não finge). Quem escreve teste.json é a linha do kit (pendência).
 //
 // COMO TESTAR (Windows): com uma obra rodando, abrir o painel: % igual a `node .claude/hooks/progresso.cjs --curto` na pasta da obra;
-// "Pausar" some o processo claude no Gerenciador de Tarefas; "Continuar" o traz de volta; o canteiro 3D abre em http://127.0.0.1:4747.
+// "Pausar" some o processo claude no Gerenciador de Tarefas; "Continuar" o traz de volta; o canteiro 3D abre em http://127.0.0.1:<porta aleatória>.
 // Sem Claude/kit: `node --test app/adaptadores/*.teste.cjs`.
 'use strict'
 const fs = require('node:fs')
@@ -25,7 +27,8 @@ const http = require('node:http')
 const path = require('node:path')
 const crypto = require('node:crypto')
 const { spawn } = require('node:child_process')
-const { caminhoSeguro } = require('../seguro.cjs')
+const net = require('node:net')
+const { caminhoSeguro, envMinimo } = require('../seguro.cjs')
 const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson, lerTexto } = require('./obra-fs.cjs')
 const { comoDado } = require('./plan-md.cjs')
 const { ehModoObra, gravarRecomendadoGlobal } = require('./modo.cjs')
@@ -99,9 +102,10 @@ function paradaDeOcorrencias(obj) {
 
 /**
  * `deps`: { raiz, modos, construcao (com .linha), shell, kitDir?, porta?, home?, agora?, subir? }
- * `subir` (teste): substitui o spawn do canteiro. Padrão de kitDir (hooks/ e canteiro/): a pasta .claude do app (ATLAS_KIT_DIR).
+ * `porta` (teste): fixa a porta; padrão = porta livre aleatória a cada subida. `subir` (teste): substitui o spawn do canteiro
+ * (sem nonce: o servidor falso do teste não o conhece). Padrão de kitDir (hooks/ e canteiro/): a pasta .claude do app (ATLAS_KIT_DIR).
  */
-function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = Number(process.env.ATLAS_CANTEIRO_PORTA) || 4747, home, agora = () => new Date(), subir }) {
+function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir }) {
   const hooks = path.join(kitDir, 'hooks')
   const canteiroDir = path.join(kitDir, 'canteiro')
   const linha = construcao.linha
@@ -150,18 +154,23 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
     const servidor = path.join(canteiroDir, 'server.cjs')
     if (!subir && !fs.existsSync(servidor)) return
     const id = crypto.createHash('sha1').update(path.resolve(cwd).toLowerCase()).digest('hex').slice(0, 10) // = idDe (obras.cjs)
-    const url = `http://127.0.0.1:${porta}/?obra=${id}`
     const p = (async () => {
       try {
-        if (subir) await subir({ servidor, cwd, porta })
+        const portaUsada = porta || await portaLivre()
+        const url = `http://127.0.0.1:${portaUsada}/?obra=${id}`
+        let nonce = null
+        let saiu = false
+        if (subir) await subir({ servidor, cwd, porta: portaUsada })
         else {
+          nonce = crypto.randomBytes(24).toString('hex')
           // process.execPath no Electron = o próprio app; ELECTRON_RUN_AS_NODE faz ele rodar o script como Node puro.
-          const f = spawn(process.execPath, [servidor, String(porta)], { cwd, windowsHide: true, shell: false, stdio: 'ignore', env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', CLAUDE_PROJECT_DIR: cwd } })
-          f.on('error', () => {})
+          const f = spawn(process.execPath, [servidor, String(portaUsada)], { cwd, windowsHide: true, shell: false, stdio: 'ignore', env: envMinimo({ ELECTRON_RUN_AS_NODE: '1', CLAUDE_PROJECT_DIR: cwd, CANTEIRO_NONCE: nonce }) })
+          f.on('error', () => { saiu = true })
+          f.on('exit', () => { saiu = true })
           filhos.push(f)
         }
-        for (let i = 0; i < 15; i++) {
-          if (await responde(porta)) { prontos.set(pasta, url); return }
+        for (let i = 0; i < 15 && !saiu; i++) {
+          if (await responde(portaUsada, nonce)) { if (!saiu) prontos.set(pasta, url); return }
           await new Promise((r) => setTimeout(r, 400))
         }
       } catch { /* sem canteiro vivo: a tela usa a imagem 3D de apoio */ } finally { subindo.delete(pasta) }
@@ -265,12 +274,41 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
   return painel
 }
 
-function responde(porta) {
+/** Pede ao SO uma porta livre em 127.0.0.1 (abre na 0, lê a porta, fecha). */
+function portaLivre() {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer()
+    srv.on('error', reject)
+    srv.listen(0, '127.0.0.1', () => { const { port } = srv.address(); srv.close(() => resolve(port)) })
+  })
+}
+
+/**
+ * Confere que a porta é MESMO o nosso canteiro. Com `nonce`: manda um desafio aleatório e exige a prova
+ * HMAC-SHA256(nonce, desafio) (o nonce nunca trafega, então quem ocupou a porta antes não consegue responder). Sem nonce (teste): só 200.
+ */
+function responde(porta, nonce = null) {
   return new Promise((resolve) => {
-    const r = http.get({ host: '127.0.0.1', port: porta, path: '/obras', timeout: 1000 }, (res) => { res.resume(); resolve(res.statusCode === 200) })
+    const desafio = nonce ? crypto.randomBytes(16).toString('hex') : ''
+    const caminho = nonce ? `/obras?desafio=${desafio}` : '/obras'
+    const r = http.get({ host: '127.0.0.1', port: porta, path: caminho, timeout: 1000 }, (res) => {
+      if (res.statusCode !== 200) { res.resume(); return resolve(false) }
+      if (!nonce) { res.resume(); return resolve(true) }
+      let corpo = ''
+      res.setEncoding('utf8')
+      res.on('data', (c) => { corpo += c; if (corpo.length > 2_000_000) res.destroy() })
+      res.on('end', () => {
+        try {
+          const esperado = crypto.createHmac('sha256', nonce).update(desafio).digest('hex')
+          const prova = String(JSON.parse(corpo).prova || '')
+          resolve(prova.length === esperado.length && crypto.timingSafeEqual(Buffer.from(prova), Buffer.from(esperado)))
+        } catch { resolve(false) }
+      })
+      res.on('error', () => resolve(false))
+    })
     r.on('error', () => resolve(false))
     r.on('timeout', () => { r.destroy(); resolve(false) })
   })
 }
 
-module.exports = { criarPainel, lerPlanoDoTexto, paradaDeOcorrencias, textoRestante, textoPrevisao, RE_ENDERECO }
+module.exports = { criarPainel, portaLivre, responde, lerPlanoDoTexto, paradaDeOcorrencias, textoRestante, textoPrevisao, RE_ENDERECO }

@@ -109,3 +109,23 @@ test('endereço do canteiro só loopback; abrirTeste só por allowlist', async (
   await painel.abrirTeste('obra')
   assert.deepEqual(abertos, ['http://127.0.0.1:5173'])
 })
+
+test('canteiro real: porta aleatória + nonce; impostor na porta não passa', async () => {
+  const { spawn } = require('node:child_process')
+  const crypto = require('node:crypto')
+  const { portaLivre, responde } = require('./painel.cjs')
+  const porta = await portaLivre()
+  const nonce = crypto.randomBytes(8).toString('hex')
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-cant-'))
+  const f = spawn(process.execPath, [path.join(__dirname, '..', '..', '.claude', 'canteiro', 'server.cjs'), String(porta)], { cwd: dir, stdio: 'ignore', env: { ...process.env, CANTEIRO_NONCE: nonce, CLAUDE_PROJECT_DIR: dir, HOME: dir, USERPROFILE: dir } })
+  try {
+    let ok = false
+    for (let i = 0; i < 20 && !ok; i++) { ok = await responde(porta, nonce); if (!ok) await new Promise((r) => setTimeout(r, 200)) }
+    assert.ok(ok)
+    assert.equal(await responde(porta, 'nonce-errado'), false)
+  } finally { f.kill() }
+  const imp = http.createServer((_q, r) => { r.setHeader('content-type', 'application/json'); r.end(JSON.stringify({ obras: [], prova: 'x' })) })
+  await new Promise((r) => imp.listen(0, '127.0.0.1', r))
+  assert.equal(await responde(imp.address().port, nonce), false)
+  imp.close()
+})

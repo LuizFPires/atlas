@@ -25,6 +25,16 @@ function copiarExclusivo(origem, destino) {
   fs.copyFileSync(origem, destino, fs.constants.COPYFILE_EXCL)
 }
 
+/** Variáveis que um processo-filho (Claude, canteiro) realmente precisa. Nada de chaves/tokens do ambiente do app. */
+const ENV_PERMITIDAS = ['PATH', 'PATHEXT', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'USERPROFILE', 'HOME', 'HOMEDRIVE', 'HOMEPATH', 'APPDATA', 'LOCALAPPDATA', 'TEMP', 'TMP', 'PROGRAMDATA', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PROGRAMW6432', 'USERNAME', 'COMPUTERNAME', 'OS', 'PROCESSOR_ARCHITECTURE', 'NUMBER_OF_PROCESSORS', 'LANG', 'TERM', 'HTTPS_PROXY', 'HTTP_PROXY', 'NO_PROXY', 'SSL_CERT_FILE', 'NODE_EXTRA_CA_CERTS', 'CLAUDE_CODE_GIT_BASH_PATH', 'ATLAS_CLAUDE_EXE']
+
+/** Ambiente MÍNIMO para filhos: só ENV_PERMITIDAS (comparação sem diferenciar maiúsculas, como o Windows) + `extra`. */
+function envMinimo(extra = {}, origem = process.env) {
+  const out = {}
+  for (const k of Object.keys(origem)) if (ENV_PERMITIDAS.includes(k.toUpperCase()) && typeof origem[k] === 'string') out[k] = origem[k]
+  return { ...out, ...extra }
+}
+
 /** shell.openExternal só para host oficial. `shell` vem do chamador (facilita teste). */
 async function abrirExterno(shell, url, hosts = HOSTS_OFICIAIS) {
   await shell.openExternal(urlOficial(url, hosts))
@@ -134,4 +144,4 @@ function iniciarClaudeEmFluxo(args, { cwd, entrada, env = process.env, resolvido
   return { parar, fim }
 }
 
-module.exports = { caminhoSeguro, criarArquivoExclusivo, copiarExclusivo, HOSTS_OFICIAIS, urlOficial, abrirExterno, executarClaude, iniciarClaudeEmFluxo, resolverClaude }
+module.exports = { envMinimo, caminhoSeguro, criarArquivoExclusivo, copiarExclusivo, HOSTS_OFICIAIS, urlOficial, abrirExterno, executarClaude, iniciarClaudeEmFluxo, resolverClaude }

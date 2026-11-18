@@ -102,7 +102,11 @@ function abrir() {
   // src/app/tela.ts (telaInicial). Para desligar: Configurações → Abrir com o Windows (a tela F12 avisa o cliente).
   app.setLoginItemSettings({ openAtLogin: true })
   // Microfone liberado só para o próprio app (tudo pode ser falado).
-  session.defaultSession.setPermissionRequestHandler((_wc, permissao, ok) => ok(permissao === 'media'))
+  // Só a página do próprio app (file:// dentro de dist-app) recebe o microfone; iframes/outras origens não.
+  const origemDoApp = require('node:url').pathToFileURL(path.join(__dirname, '..', 'dist-app') + path.sep).href
+  const doApp = (url) => typeof url === 'string' && url.startsWith(origemDoApp)
+  session.defaultSession.setPermissionRequestHandler((wc, permissao, ok, detalhes) => ok(permissao === 'media' && doApp(wc.getURL()) && doApp((detalhes && detalhes.requestingUrl) || wc.getURL())))
+  session.defaultSession.setPermissionCheckHandler((wc, permissao, origem) => permissao === 'media' && doApp((wc && wc.getURL()) || '') && String(origem).startsWith('file://'))
   const janela = new BrowserWindow({
     width: 1100, height: 780, backgroundColor: '#141619', title: 'Atlas',
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },

@@ -79,3 +79,44 @@ test('resumirLinha: cota e fim', () => {
   assert.equal(resumirLinha('lixo'), null)
   assert.match(resumirLinha(JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit' }] } })).texto, /Edit/)
 })
+
+test('Claude da obra: subcomandos exatos, ignora config de projeto, env mínimo', async () => {
+  const { c, chamadas } = montar()
+  await c.iniciar('obra', 'A', 'automatico', ETAPAS)
+  const a = chamadas[0].args
+  const val = (f) => a[a.indexOf(f) + 1]
+  assert.equal(val('--setting-sources'), 'user')
+  const permitidas = val('--allowedTools'); const negadas = val('--disallowedTools')
+  for (const curinga of ['Bash(git:*)', 'Bash(gh:*)', 'Bash(npm:*)', 'Bash(npx:*)', 'Bash(node:*)']) assert.ok(!permitidas.split(',').includes(curinga))
+  for (const n of ['Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node:*)', 'Bash(curl:*)', 'Bash(powershell:*)', 'Write(.claude/**)', 'Edit(CLAUDE.md)']) assert.ok(negadas.split(',').includes(n), n)
+  assert.ok(!('ANTHROPIC_API_KEY' in chamadas[0].o.env) && chamadas[0].o.env.CLAUDE_PROJECT_DIR)
+})
+
+test('obra com .claude ou CLAUDE.md: não roda e não grava', async () => {
+  for (const nome of ['.claude', 'CLAUDE.md']) {
+    const { raiz, home, c, chamadas } = montar()
+    fs.mkdirSync(path.join(raiz, 'obra', nome))
+    await assert.rejects(c.iniciar('obra', 'A', 'automatico', ETAPAS), /obra-com-config-suspeita/)
+    await assert.rejects(c.planejar('obra', 'A'), /obra-com-config-suspeita/)
+    assert.equal(chamadas.length, 0)
+    assert.ok(!fs.existsSync(path.join(raiz, 'obra', 'PLAN.md')) && !fs.existsSync(path.join(home, '.claude')))
+  }
+})
+
+test('duas iniciar concorrentes: só uma roda; falha ao religar desfaz PLAN e modo', async () => {
+  const { raiz, c, chamadas } = montar()
+  fs.mkdirSync(path.join(raiz, 'outra'))
+  const r = await Promise.allSettled([c.iniciar('obra', 'A', 'automatico', ETAPAS), c.iniciar('outra', 'B', 'automatico', ETAPAS)])
+  assert.equal(r.filter((x) => x.status === 'fulfilled').length, 1)
+  assert.equal(chamadas.length, 1)
+  const raiz2 = tmp(); const home2 = tmp(); fs.mkdirSync(path.join(raiz2, 'obra'))
+  const c2 = criarConstrucao({ raiz: raiz2, home: home2, modos: criarModo({ raiz: raiz2 }), claudeEstado: async () => ({ conectado: true }), resolver: () => ({ cmd: 'x' }), iniciarFluxo: () => { throw new Error('spawn-falhou') } })
+  await assert.rejects(c2.iniciar('obra', 'A', 'automatico', ETAPAS), /spawn-falhou/)
+  assert.ok(!fs.existsSync(path.join(raiz2, 'obra', 'PLAN.md')) && !fs.existsSync(path.join(raiz2, 'obra', '.atlas', 'modo.json')) && !fs.existsSync(path.join(home2, '.claude', 'recomendado.json')))
+})
+
+test('RE_COTA não casa cotação', () => {
+  const { RE_COTA } = require('./construcao.cjs')
+  assert.ok(!RE_COTA.test('Pedido de cotação do fornecedor') && !RE_COTA.test('quotation'))
+  assert.ok(RE_COTA.test('Você atingiu a cota') && RE_COTA.test('Claude usage limit reached'))
+})

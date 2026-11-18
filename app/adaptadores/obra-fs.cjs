@@ -23,6 +23,17 @@ function pastaDaObra(raiz, pasta) {
   return caminho
 }
 
+/**
+ * Config de PROJETO não é confiável (a obra pode vir de um repositório de terceiros): se a pasta tem `.claude`, `CLAUDE.md`
+ * ou `.mcp.json` (existindo como arquivo, pasta ou link), NÃO se dispara o Claude. Conferido com lstat antes de CADA disparo.
+ */
+function garantirSemConfigDeProjeto(cwd) {
+  for (const nome of ['.claude', 'CLAUDE.md', '.mcp.json']) {
+    try { fs.lstatSync(path.join(cwd, nome)) } catch (e) { if (e.code === 'ENOENT') continue; throw new Error('obra-com-config-suspeita') }
+    throw new Error('obra-com-config-suspeita')
+  }
+}
+
 /** `<obra>\.atlas` (cria se faltar; mkdir sem recursive, depois de validar o caminho). */
 function pastaAtlas(raiz, pasta) {
   pastaDaObra(raiz, pasta)
@@ -59,4 +70,4 @@ function lerJson(destino) {
   try { return JSON.parse(t) } catch { return null }
 }
 
-module.exports = { NOME_PASTA, pastaDaObra, pastaAtlas, gravarAtomico, lerTexto, lerJson, path }
+module.exports = { NOME_PASTA, garantirSemConfigDeProjeto, pastaDaObra, pastaAtlas, gravarAtomico, lerTexto, lerJson, path }

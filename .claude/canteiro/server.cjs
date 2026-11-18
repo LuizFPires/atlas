@@ -3,7 +3,10 @@
 // Uso: node .claude/canteiro/server.cjs [porta]   → http://localhost:4747
 // Pode ser ligado de dentro de qualquer projeto: ele registra esse projeto e mostra a carteira inteira.
 // Se já houver um canteiro no ar, este comando só registra o projeto e avisa (não briga pela porta).
+// Subido pelo app Atlas (env CANTEIRO_NONCE): /obras?desafio=X devolve também `prova` = HMAC-SHA256(nonce, X), para o app confirmar
+// que a porta é deste processo e não de outro programa; e porta ocupada = sai com erro (não reaproveita o "outro canteiro").
 const http = require('http');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { lerPlano, lerRoteiro } = require('../hooks/plano.cjs');
@@ -11,6 +14,7 @@ const { lerObras, registrar, remover } = require('../hooks/obras.cjs');
 const { calcularPrazo } = require('../hooks/prazo.cjs');
 
 const PORTA = Number(process.argv[2] || process.env.CANTEIRO_PORTA || 4747);
+const NONCE = process.env.CANTEIRO_NONCE || '';
 const ATIVO_MS = 30000;
 const PAPEIS = ['coordenador', 'designer', 'escritor', 'revisor', 'implementador', 'qa', 'despachante', 'plantonista', 'vistoriador', 'implantador', 'corretor'];
 const ESQUECER_MS = 30 * 24 * 3600 * 1000; // obra sem movimento há 30 dias sai da carteira (volta sozinha no próximo evento)
@@ -116,7 +120,12 @@ function json(res, dados, status = 200) {
 const INDEX = path.join(__dirname, 'index.html');
 const servidor = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
-  if (url.pathname === '/obras') return json(res, carteira());
+  if (url.pathname === '/obras') {
+    const dados = carteira();
+    const desafio = url.searchParams.get('desafio');
+    if (NONCE && desafio && desafio.length <= 128) dados.prova = crypto.createHmac('sha256', NONCE).update(desafio).digest('hex');
+    return json(res, dados);
+  }
   if (url.pathname === '/estado') {
     const obras = lerObras();
     let id = url.searchParams.get('obra');
@@ -147,6 +156,7 @@ const servidor = http.createServer((req, res) => {
 
 servidor.on('error', err => {
   if (err.code !== 'EADDRINUSE') throw err;
+  if (NONCE) { console.error(`A porta ${PORTA} já está ocupada.`); process.exit(1); } // subido pelo app: nunca confiar em quem já estava lá
   // já existe algo na porta: se for um canteiro, ótimo, ele já mostra esta obra também
   http.get(`http://127.0.0.1:${PORTA}/obras`, r => {
     let s = ''; r.on('data', c => (s += c)); r.on('end', () => {
