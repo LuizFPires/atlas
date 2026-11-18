@@ -1,0 +1,6 @@
+export { Botao } from './Botao'
+export { Bolinha } from './Bolinha'
+export { Cartao } from './Cartao'
+export { Chip } from './Chip'
+export { Microfone } from './Microfone'
+export { Icone, type NomeIcone } from './Icone'

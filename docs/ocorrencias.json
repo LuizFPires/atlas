@@ -1,0 +1,21 @@
+{
+  "proximo_id": 2,
+  "ocorrencias": [
+    {
+      "id": 1,
+      "status": "resolvida",
+      "servico": "GitHub Actions",
+      "motivo": "Billing do Actions bloqueado: 'recent account payments have failed or your spending limit needs to be increased'",
+      "acao": "Rodar o CI do PR #1 (etapa de build/lint/testes) e, com verde, seguir para merge do M1",
+      "teste": "gh run list --branch feat/m1-fundacao-menu --limit 1",
+      "liberar_em": "2026-11-19T02:00:00.000Z",
+      "bloqueia": [
+        "M1:CI verde do PR #1"
+      ],
+      "criada_em": "2026-11-18T10:05:30.093Z",
+      "tentativas": [],
+      "resolvida_em": "2026-11-18T10:12:36.309Z",
+      "nota_final": ""
+    }
+  ]
+}
