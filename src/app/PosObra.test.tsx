@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { PosObra } from './PosObra'
@@ -150,4 +150,45 @@ test('adaptador real da licença: liga no /verificar com o token só no cabeçal
   expect(await comFetch(() => resposta({}, 500))).toEqual({ ok: false, motivo: 'negado' })
   expect(await comFetch(() => Promise.reject(new Error('off')))).toEqual({ ok: false, motivo: 'sem-conexao' })
   expect(await criarLicencaApi(ponteFalsa, null).verificar()).toEqual({ ok: false, motivo: 'indisponivel' })
+})
+
+const planoX = { entendi: 'plano-x', passos: ['p'], minutos: 1 }
+const comEntenderLento = () => {
+  const base = criarPosObraFixture()
+  let liberar: (p: typeof planoX) => void = () => {}
+  const posobra = { ...base, executados: base.executados, entender: () => new Promise<typeof planoX>((res) => { liberar = res }) }
+  return { posobra, liberar: (p = planoX) => liberar(p) }
+}
+
+test('durante "entendendo" os campos travam; editar o pedido no meio descarta a resposta velha', async () => {
+  const { posobra, liberar } = comEntenderLento()
+  const { user } = montar({ posobra: posobra as never })
+  await user.type(screen.getByRole('textbox'), 'pedido antigo')
+  await user.click(screen.getByRole('button', { name: 'Enviar para o Claude' }))
+  expect(screen.getByRole('textbox')).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Anexar print' })).toBeDisabled()
+  expect(screen.getByRole('button', { name: 'Algo não funciona' })).toBeDisabled()
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: 'pedido novo' } })
+  liberar()
+  await new Promise((r) => setTimeout(r, 10))
+  expect(screen.queryByText('O CLAUDE ENTENDEU ASSIM')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Pode fazer' })).not.toBeInTheDocument()
+  expect(posobra.executados).toHaveLength(0)
+})
+
+test('"Pode fazer" executa o pedido explicado (snapshot), não o texto editado depois', async () => {
+  const posobra = criarPosObraFixture()
+  const { user } = montar({ posobra })
+  await user.type(screen.getByRole('textbox'), 'texto explicado')
+  await user.click(screen.getByRole('button', { name: 'Enviar para o Claude' }))
+  await screen.findByText('O CLAUDE ENTENDEU ASSIM')
+  // Mexer no campo derruba o plano: não dá para aprovar o que não foi explicado.
+  await user.type(screen.getByRole('textbox'), ' e outra coisa')
+  expect(screen.queryByRole('button', { name: 'Pode fazer' })).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Enviar para o Claude' }))
+  await screen.findByText('O CLAUDE ENTENDEU ASSIM')
+  await user.click(screen.getByRole('button', { name: 'Pode fazer' }))
+  await screen.findByText(/Combinado! Comecei/)
+  expect(posobra.executados).toHaveLength(1)
+  expect(posobra.executados[0].texto).toBe('texto explicado e outra coisa')
 })
