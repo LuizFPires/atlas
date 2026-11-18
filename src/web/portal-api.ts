@@ -40,6 +40,10 @@ export interface PortalApi {
   pedirCodigoTroca(): Promise<Resp<{ enviado_para: string }>>
   /** Desativa o computador atual (não precisa dele) e manda o link de instalação do novo. */
   desativarComputador(codigo: string): Promise<Resp<{ enviado_para: string; proxima_troca_em: string }>>
+  /** Arrependimento (7 dias, CDC art. 49): devolve tudo e encerra a licença. */
+  cancelarCompra(): Promise<Resp<{ estornados: number }>>
+  /** Sem fidelidade: para de cobrar; a licença vale até o fim do período pago. */
+  cancelarMensalidade(): Promise<Resp<{ encerra_em: string }>>
   /** Computador já liberado e o e-mail não chegou: manda o acesso de novo. */
   reenviarAcesso(): Promise<Resp<{ enviado_para: string }>>
   sair(): void
@@ -127,6 +131,8 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
     pedirCodigoTroca: () => servidor<{ enviado_para: string }>('/portal/trocar/solicitar-codigo'),
     desativarComputador: (codigo) => servidor<{ enviado_para: string; proxima_troca_em: string }>('/portal/trocar/desativar', { codigo: codigo.replace(/\s+/g, '') }),
     reenviarAcesso: () => servidor<{ enviado_para: string }>('/portal/reenviar-acesso'),
+    cancelarCompra: () => servidor<{ estornados: number }>('/portal/compra/cancelar', { confirmar: true }),
+    cancelarMensalidade: () => servidor<{ encerra_em: string }>('/portal/mensalidade/cancelar', { confirmar: true }),
     sair() { token = ''; guardarSessao('') },
   }
 }

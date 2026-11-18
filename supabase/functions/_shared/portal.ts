@@ -5,6 +5,7 @@
 import { consumirCodigo, solicitarCodigo } from './ativacao.ts'
 import type { DepsCadastro } from './cadastro.ts'
 import { prepararLink } from './links.ts'
+import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts'
 import { type DepsPagamento, PRAZO_ARREPENDIMENTO_MS, VALOR_MENSALIDADE } from './pagamento/config.ts'
 import { type Cliente, ErroRegra, type Licenca, type StatusLicenca, type StatusPagamento, type TipoPagamento } from './tipos.ts'
 import { INTERVALO_TROCA_MS } from './troca.ts'
@@ -203,4 +204,18 @@ export async function reenviarAcesso(d: DepsPortal, jwt: string) {
   }
   await enviarNovoAcesso(d, cliente)
   return { ok: true, enviado_para: mascarar(cliente.email_compra) }
+}
+
+/**
+ * Cancelar compra (arrependimento de 7 dias, CDC art. 49) e cancelar mensalidade (sem fidelidade).
+ * O e-mail usado é o do cliente LOGADO (nunca o do corpo) e o estorno sai da conta Stripe do próprio cliente (M3).
+ * Exige `confirmar: true` explícito: um clique perdido não devolve nem cancela nada.
+ */
+export async function cancelarPeloPortal(d: DepsPortal, jwt: string, tipo: 'compra' | 'mensalidade', confirmar: unknown) {
+  const { cliente } = await clienteLogado(d, jwt)
+  if (confirmar !== true) throw new ErroRegra('confirmacao_necessaria', 'Confirme que você quer mesmo cancelar.', 400)
+  if (!(await d.store.tentarEvento(`portal:cancelar:${cliente.id}`, 5, 60 * 60_000, d.agora()))) {
+    throw new ErroRegra('muitas_solicitacoes', 'Muitas tentativas. Espere um pouco e olhe a sua conta.', 429)
+  }
+  return tipo === 'compra' ? cancelarCompra(d, cliente.email_compra) : cancelarMensalidade(d, cliente.email_compra)
 }

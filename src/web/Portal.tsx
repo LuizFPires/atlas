@@ -189,7 +189,76 @@ function ContaTela({ api, conta, erro, recarregar }: { api: PortalApi; conta: Co
           </div>
         )}
       </section>
+      <Cancelamentos api={api} conta={conta} recarregar={recarregar} />
     </main>
+  )
+}
+
+/** Cancelar compra (7 dias) e cancelar mensalidade (sem fidelidade), sempre com uma confirmação antes. */
+function Cancelamentos({ api, conta, recarregar }: { api: PortalApi; conta: ContaPortal; recarregar: () => Promise<void> }) {
+  const { licenca: l } = conta
+  const [pedindo, setPedindo] = useState<'compra' | 'mensalidade' | null>(null)
+  const [ocupado, setOcupado] = useState(false)
+  const [erro, setErro] = useState('')
+  const [feito, setFeito] = useState('')
+
+  if (l.status === 'cancelada' && !feito) {
+    return <section className="p-card" aria-labelledby="p-cn"><span className="v-mono p-rotulo" id="p-cn">Cancelamento</span><p className="p-p c-mute">Essa licença está cancelada.</p></section>
+  }
+  if (!l.pode_cancelar_compra && !l.pode_cancelar_mensalidade && !feito) return null
+
+  const confirmar = async () => {
+    if (!pedindo) return
+    setErro(''); setOcupado(true)
+    if (pedindo === 'compra') {
+      const r = await api.cancelarCompra()
+      setOcupado(false)
+      if (!r.ok) return setErro(r.mensagem)
+      setFeito('Compra cancelada. Devolvemos o que você pagou, na mesma forma de pagamento. O estorno pode levar alguns dias para aparecer na fatura ou no extrato.')
+    } else {
+      const r = await api.cancelarMensalidade()
+      setOcupado(false)
+      if (!r.ok) return setErro(r.mensagem)
+      setFeito(`Mensalidade cancelada. Não vamos cobrar mais. Sua licença continua valendo até ${dia(r.encerra_em)}.`)
+    }
+    setPedindo(null)
+    void recarregar()
+  }
+
+  return (
+    <section className="p-card" aria-labelledby="p-cn">
+      <span className="v-mono p-rotulo" id="p-cn">Cancelamento</span>
+      {feito && <p className="p-liberada" role="status">{feito}</p>}
+      {l.pode_cancelar_compra && !feito && (
+        <div className="p-cancela">
+          <div className="p-cancela-txt">
+            <b>Desistir da compra</b>
+            <span className="c-mute">Você tem 7 dias para desistir, sem dar explicação (Código de Defesa do Consumidor, art. 49). Prazo até {dia(l.arrependimento_ate)}. Devolvemos tudo o que você pagou.</span>
+          </div>
+          {pedindo !== 'compra' && <button type="button" className="p-botao p-botao--perigo" onClick={() => { setPedindo('compra'); setErro('') }}>Cancelar a compra</button>}
+        </div>
+      )}
+      {l.pode_cancelar_mensalidade && !feito && (
+        <div className="p-cancela">
+          <div className="p-cancela-txt">
+            <b>Cancelar a mensalidade</b>
+            <span className="c-mute">Sem fidelidade e sem multa. Paramos de cobrar e a licença vale até o fim do período que você já pagou. As suas obras continuam sendo suas, no seu GitHub.</span>
+          </div>
+          {pedindo !== 'mensalidade' && <button type="button" className="p-botao" onClick={() => { setPedindo('mensalidade'); setErro('') }}>Cancelar a mensalidade</button>}
+        </div>
+      )}
+      {pedindo && (
+        <div className="p-confirma" role="alertdialog" aria-label="Confirmar cancelamento">
+          <b>{pedindo === 'compra' ? 'Tem certeza que quer desistir da compra?' : 'Tem certeza que quer cancelar a mensalidade?'}</b>
+          <span className="c-mute">{pedindo === 'compra' ? 'A licença é encerrada agora e o dinheiro volta para você.' : 'Isso não pode ser desfeito por aqui.'}</span>
+          <div className="p-linha">
+            <button type="button" className="p-botao p-botao--perigo" disabled={ocupado} onClick={confirmar}>{ocupado ? 'Um instante…' : 'Sim, cancelar'}</button>
+            <button type="button" className="p-link" onClick={() => setPedindo(null)}>Não, voltar</button>
+          </div>
+        </div>
+      )}
+      {erro && <span role="alert" className="v-erro">{erro}</span>}
+    </section>
   )
 }
 

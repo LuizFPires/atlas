@@ -12,7 +12,7 @@ import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts
 import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
-import { conta, type DepsPortal, desativarComputador, eu, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
+import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
 
 export interface Contexto {
   deps: Deps
@@ -84,6 +84,10 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await desativarComputador(ctx.portal, jwt, s('codigo')))
         case '/portal/reenviar-acesso':
           return json(await reenviarAcesso(ctx.portal, jwt))
+        case '/portal/compra/cancelar':
+          return json(await cancelarPeloPortal(ctx.portal, jwt, 'compra', (b as Record<string, unknown>).confirmar))
+        case '/portal/mensalidade/cancelar':
+          return json(await cancelarPeloPortal(ctx.portal, jwt, 'mensalidade', (b as Record<string, unknown>).confirmar))
         case '/portal/forma-pagamento':
           return json(await formaDePagamento(ctx.portal, jwt))
         default:

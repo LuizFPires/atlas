@@ -174,3 +174,63 @@ describe('trocar de computador (item 3)', () => {
     expect(await screen.findByText(/Mandamos um novo link de instalação para/)).toBeInTheDocument()
   })
 })
+
+describe('cancelar compra e mensalidade (item 4)', () => {
+  test('desistir da compra pede confirmação, manda confirmar:true e mostra o resultado', async () => {
+    let conta: unknown = CONTA
+    const { api, f } = sessaoAberta({
+      '/portal/eu': () => resp(CONTA.perfil),
+      '/portal/conta': () => resp(conta),
+      '/portal/compra/cancelar': () => {
+        conta = { ...CONTA, licenca: { ...CONTA.licenca, status: 'cancelada', pode_cancelar_compra: false, pode_cancelar_mensalidade: false } }
+        return resp({ ok: true, estornados: 1 })
+      },
+    })
+    render(<TemaProvider><Portal api={api} /></TemaProvider>)
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancelar a compra' }))
+    expect(screen.getByText('Tem certeza que quer desistir da compra?')).toBeInTheDocument()
+    expect(f.mock.calls.some(([u]) => String(u).includes('/cancelar'))).toBe(false) // nada sai antes de confirmar
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, cancelar' }))
+    expect(await screen.findByText(/Compra cancelada\. Devolvemos o que você pagou/)).toBeInTheDocument()
+    const chamada = (f.mock.calls as unknown as Array<[string, RequestInit]>).find(([u]) => u.endsWith('/portal/compra/cancelar'))!
+    expect(chamada[1].body).toBe('{"confirmar":true}')
+  })
+
+  test('cancelar mensalidade: sem fidelidade, e informa até quando a licença vale', async () => {
+    const { api } = sessaoAberta({
+      '/portal/eu': () => resp(CONTA.perfil),
+      '/portal/conta': () => resp({ ...CONTA, licenca: { ...CONTA.licenca, pode_cancelar_compra: false } }),
+      '/portal/mensalidade/cancelar': () => resp({ ok: true, encerra_em: '2026-12-05T00:00:00.000Z' }),
+    })
+    render(<TemaProvider><Portal api={api} /></TemaProvider>)
+    expect(screen.queryByRole('button', { name: 'Cancelar a compra' })).toBeNull()
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancelar a mensalidade' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, cancelar' }))
+    expect(await screen.findByText(/Sua licença continua valendo até 04\/12\/2026|Sua licença continua valendo até 05\/12\/2026/)).toBeInTheDocument()
+  })
+
+  test('"Não, voltar" desiste do pedido; erro do servidor aparece em linguagem simples', async () => {
+    const { api } = sessaoAberta({
+      '/portal/eu': () => resp(CONTA.perfil),
+      '/portal/conta': () => resp(CONTA),
+      '/portal/compra/cancelar': () => resp({ mensagem: 'O prazo de 7 dias para desistir da compra já passou.' }, 409),
+    })
+    render(<TemaProvider><Portal api={api} /></TemaProvider>)
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancelar a compra' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Não, voltar' }))
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar a compra' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, cancelar' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('O prazo de 7 dias')
+  })
+
+  test('sem direito a nenhum cancelamento, a seção nem aparece', async () => {
+    const { api } = sessaoAberta({
+      '/portal/eu': () => resp(CONTA.perfil),
+      '/portal/conta': () => resp({ ...CONTA, licenca: { ...CONTA.licenca, pode_cancelar_compra: false, pode_cancelar_mensalidade: false } }),
+    })
+    render(<TemaProvider><Portal api={api} /></TemaProvider>)
+    await screen.findByRole('heading', { name: 'Minha conta' })
+    expect(screen.queryByText('Cancelamento')).toBeNull()
+  })
+})
