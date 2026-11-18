@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Shell, type IdTela } from './shell/Shell'
 import { ImagemAssinatura } from './marca/Marca'
 import { Vendas } from './web/Vendas'
+import { ModalCompra } from './web/ModalCompra'
+import { BannerCookies } from './web/Cookies'
 
 /** O aplicativo (PWA) fica em "/app". */
 function Aplicativo() {
@@ -15,9 +17,20 @@ function Aplicativo() {
   )
 }
 
+function PaginaVendas() {
+  const [comprando, setComprando] = useState(false)
+  return (
+    <>
+      <Vendas onComprar={() => setComprando(true)} />
+      <ModalCompra aberto={comprando} onFechar={() => setComprando(false)} />
+      <BannerCookies />
+    </>
+  )
+}
+
 /** Rotas por endereço: "/" é a página de vendas. */
 export default function App() {
   const caminho = window.location.pathname.replace(/\/+$/, '') || '/'
   if (caminho.startsWith('/app')) return <Aplicativo />
-  return <Vendas onComprar={() => document.getElementById('preco')?.scrollIntoView({ behavior: 'smooth' })} />
+  return <PaginaVendas />
 }

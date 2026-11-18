@@ -118,3 +118,15 @@
   .v-play { width: 72px; height: 72px; }
   .v-video-meio b { font-size: 18px; }
 }
+
+.v-fundo { position: fixed; inset: 0; z-index: 50; background: rgb(10 12 14 / 0.7); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.v-modal { width: min(480px, 100%); background: var(--card); color: var(--text); border: 1px solid var(--card-b); border-radius: 22px; padding: 28px; display: flex; flex-direction: column; gap: 14px; }
+.v-modal h2 { font-size: 26px; line-height: 1.15; }
+.v-modal p { margin: 0; color: var(--mute); line-height: 1.5; }
+.v-modal form { display: flex; flex-direction: column; gap: 14px; }
+.v-erro { color: var(--erro) !important; font-size: 14px; }
+.v-cookies { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 40; max-width: 920px; margin: 0 auto; background: var(--card); color: var(--text); border: 1px solid var(--card-b); border-radius: 18px; padding: 16px 20px; display: flex; align-items: center; gap: 20px; box-shadow: 0 20px 50px rgb(0 0 0 / 0.35); }
+.v-cookies p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--mute); }
+.v-cookies p b { color: var(--text); }
+.v-cookies-botoes { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 980px) { .v-cookies { flex-direction: column; align-items: stretch; } .v-cookies-botoes { justify-content: stretch; } }
