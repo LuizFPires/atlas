@@ -210,11 +210,11 @@ Notas: Ver decisão do modo automático × passo a passo no M18. O painel honra 
 peso: 2
 spec: S15, S20
 tela: prototipo/F10Pausa.dc.html
-- [ ] Montar a pausa por cota (tom calmo, hora de volta, nenhuma ação obrigatória)
-- [ ] Implementar a retomada sozinha quando a cota renova
-- [ ] Montar a ocorrência (F11Ocorrencia) com passo a passo e prints e aviso no celular/e-mail
-- [ ] Conferir fidelidade com o protótipo (F10Pausa e F11Ocorrencia)
-Notas: ⏩ Auto (recomendado): F10Pausa (pausa por cota: tom calmo, hora de volta, nenhuma ação obrigatória — "pausa por cota não é erro") e retomada sozinha quando a cota renova; F11Ocorrencia (único tipo de parada que exige o cliente: passo a passo com prints, aviso no celular/e-mail). Liga no sistema de ocorrências do kit (ocorrencias.cjs/docs/ocorrencias.json) e na detecção de cota do plano (M10), atrás de ports (mock em fixture; adaptador real p/ /entregar). Pausa por cota e ocorrência valem nos dois modos (automático e passo a passo). Modo fixture, sem deploy.
+- [x] Montar a pausa por cota (tom calmo, hora de volta, nenhuma ação obrigatória)
+- [x] Implementar a retomada sozinha quando a cota renova
+- [x] Montar a ocorrência (F11Ocorrencia) com passo a passo e prints e aviso no celular/e-mail
+- [x] Conferir fidelidade com o protótipo (F10Pausa e F11Ocorrencia)
+Notas: ⏩ Auto (recomendado): F10Pausa (pausa por cota: tom calmo, hora de volta, nenhuma ação obrigatória — "pausa por cota não é erro") e retomada sozinha quando a cota renova; F11Ocorrencia (único tipo de parada que exige o cliente: passo a passo com prints, aviso no celular/e-mail). Liga no sistema de ocorrências do kit (ocorrencias.cjs/docs/ocorrencias.json) e na detecção de cota do plano (M10), atrás de ports (mock em fixture; adaptador real p/ /entregar). Pausa por cota e ocorrência valem nos dois modos (automático e passo a passo). Modo fixture, sem deploy. QA aprovou (pausa calma; ocorrência para nos 2 modos; conteúdo externo como dado; chave no cofre). Baixas p/ /entregar: condicionar o aviso 'no celular' à existência do adaptador; garantir 'avisar uma vez' no adaptador real.
 
 ## Milestone 21 — App: retomar a obra
 peso: 1
