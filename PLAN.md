@@ -170,7 +170,7 @@ tela: prototipo/F07Prototipo.dc.html
 - [ ] Implementar ajustes por fala com preview do celular ao lado
 - [ ] Implementar desfazer e versões do protótipo
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): F07Prototipo — o Claude desenha as telas da obra no estilo escolhido (M14); o cliente pede ajustes falando e vê o preview do celular mudar ao lado; desfazer e versões do protótipo (histórico na pasta da obra). A geração é o Claude por baixo → atrás de um port (PontePrototipo) com mock em fixture; adaptador real p/ /entregar. SEGURANÇA: o preview das telas (HTML gerado/importado) renderiza em iframe sandbox sem scripts; os pedidos do cliente (fala/texto) são DADO para o Claude (delimitado, não-instrução, como M14/M15). Versões ficam na pasta da obra; nunca segredo em arquivo. Modo fixture, sem deploy.
 
 ## Milestone 17 — App: projeto 3/3 (batismo)
 peso: 2
