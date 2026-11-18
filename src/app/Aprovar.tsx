@@ -3,13 +3,15 @@ import { Botao, Icone } from '../ui'
 import type { ObraDoEstilo } from './Estilo'
 import type { PonteClaude, Plano } from './ponte-claude'
 import { NOME_PLANO } from './claude-plano'
-import type { Etapa, Planejamento, PonteConstrucao } from './ponte-construcao'
+import { MODO_RECOMENDADO, MODOS_OBRA, PARADAS_REAIS, TEXTO_MODO, type Etapa, type ModoObra, type Planejamento, type PonteConstrucao, type PonteModoObra } from './ponte-construcao'
 import './aprovar.css'
 
 interface Props {
   obra: ObraDoEstilo
   construcao: PonteConstrucao
   claude: PonteClaude
+  /** Preferência do modo, guardada na pasta da obra (o painel da obra, M19, lê a mesma). */
+  modos: PonteModoObra
   /** Volta ao protótipo (batismo). */
   onVoltar: () => void
 }
@@ -31,17 +33,28 @@ export function textoCota(pausas: number): string {
 }
 
 /** F08: aprovar e começar a obra. Mostra etapas, prazo no plano do cliente e consumo da cota. */
-export function Aprovar({ obra, construcao, claude, onVoltar }: Props) {
+export function Aprovar({ obra, construcao, claude, modos, onVoltar }: Props) {
   const [plano, setPlano] = useState<Plano | undefined>()
   const [plan, setPlan] = useState<Planejamento | null>(null)
   const [erro, setErro] = useState('')
+  const [modo, setModo] = useState<ModoObra>(MODO_RECOMENDADO)
+  const [guardado, setGuardado] = useState(false)
 
   useEffect(() => {
     let vivo = true
     construcao.planejar(obra.pasta, obra.nome).then((p) => { if (vivo) setPlan(p) }, (x) => { if (vivo) setErro(recadoDoErroAprovar(x)) })
     claude.estado().then((s) => { if (vivo) setPlano(s.plano) }, () => undefined)
+    // Se o cliente já tinha escolhido antes (voltou a esta tela), respeita a escolha dele.
+    modos.ler(obra.pasta).then((m) => { if (vivo && m) { setModo(m); setGuardado(true) } }, () => undefined)
     return () => { vivo = false }
-  }, [construcao, claude, obra.pasta, obra.nome])
+  }, [construcao, claude, modos, obra.pasta, obra.nome])
+
+  const escolher = async (novo: ModoObra) => {
+    const anterior = modo
+    setModo(novo)
+    setErro('')
+    try { await modos.gravar(obra.pasta, novo); setGuardado(true) } catch (x) { setModo(anterior); setErro(recadoDoErroAprovar(x)) }
+  }
 
   const etapas: Etapa[] = plan?.etapas ?? []
   const meu = plano ?? 'pro'
@@ -74,6 +87,25 @@ export function Aprovar({ obra, construcao, claude, onVoltar }: Props) {
                 <span className="at-apr__texto">{textoCota(previsao.pausas)}</span>
               </section>
             )}
+            <section className="at-apr__card at-apr__modos" aria-label="Como você quer a obra">
+              <span className="at-apr__rotulo">COMO VOCÊ QUER A OBRA</span>
+              <div role="radiogroup" aria-label="Modo da obra" className="at-apr__opcoes">
+                {MODOS_OBRA.map((m) => (
+                  <button key={m} type="button" role="radio" aria-checked={modo === m} className={`at-apr__modo ${modo === m ? 'at-apr__modo--on' : ''} ${m === MODO_RECOMENDADO ? 'at-apr__modo--destaque' : ''}`} onClick={() => void escolher(m)}>
+                    <span className="at-apr__modo-cab"><b>{TEXTO_MODO[m].titulo}</b>{m === MODO_RECOMENDADO && <span className="at-apr__selo">RECOMENDADO</span>}</span>
+                    <span className="at-apr__texto">{TEXTO_MODO[m].explica}</span>
+                  </button>
+                ))}
+              </div>
+              {modo === 'automatico' && (
+                <div className="at-apr__paradas">
+                  <b>O Atlas só vai te chamar nas paradas de verdade:</b>
+                  {PARADAS_REAIS.map((t) => <span key={t} className="at-apr__item"><Icone nome="check" tamanho={16} />{t}</span>)}
+                  <span className="at-apr__texto">Fora isso, ele segue sozinho do começo ao fim.</span>
+                </div>
+              )}
+              <span className="at-apr__texto" role="status">{guardado ? 'Escolha guardada na pasta da obra. ' : ''}Você pode trocar de modo depois, no painel da obra, sem perder nada.</span>
+            </section>
             <section className="at-apr__combinado" aria-label="Combinado antes de começar">
               <b>Combinado antes de começar</b>
               <span className="at-apr__item"><Icone nome="check" tamanho={16} />Você pode pausar quando quiser.</span>

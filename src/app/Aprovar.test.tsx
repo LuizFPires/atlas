@@ -3,13 +3,13 @@ import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Aprovar, textoCota, textoDias } from './Aprovar'
 import { criarClaudeFixture, type PonteClaude } from './ponte-claude'
-import { construcaoIndisponivel, criarConstrucaoFixture, type PonteConstrucao } from './ponte-construcao'
+import { ARQUIVO_MODO, construcaoIndisponivel, criarConstrucaoFixture, criarModoObraFixture, lerModoDoTexto, paraRecomendado, serializarModo, type PonteConstrucao, type PonteModoObra } from './ponte-construcao'
 
 const obra = { nome: 'Agenda da Barbearia do Zé', pasta: 'agenda-da-barbearia-do-ze' }
-const montar = (construcao: PonteConstrucao = criarConstrucaoFixture(), claude: PonteClaude = criarClaudeFixture({ conectado: true, plano: 'pro' })) => {
+const montar = (construcao: PonteConstrucao = criarConstrucaoFixture(), claude: PonteClaude = criarClaudeFixture({ conectado: true, plano: 'pro' }), modos: PonteModoObra = criarModoObraFixture()) => {
   const user = userEvent.setup()
   const onVoltar = vi.fn()
-  render(<TemaProvider><Aprovar obra={obra} construcao={construcao} claude={claude} onVoltar={onVoltar} /></TemaProvider>)
+  render(<TemaProvider><Aprovar obra={obra} construcao={construcao} claude={claude} modos={modos} onVoltar={onVoltar} /></TemaProvider>)
   return { user, onVoltar }
 }
 
@@ -61,4 +61,51 @@ test('mostra o aviso das lojas: D-U-N-S e 12 testadores por 14 dias', async () =
   expect(aviso).toHaveTextContent('D-U-N-S')
   expect(aviso).toHaveTextContent('12 pessoas testando o app por 14 dias seguidos')
   expect(aviso).toHaveTextContent('a papelada das lojas leva alguns dias')
+})
+
+test('escolha do modo: automático vem em destaque, explica em linguagem de leigo e as paradas reais', async () => {
+  montar()
+  const auto = await screen.findByRole('radio', { name: /Automático do começo ao fim, sem me chamar/ })
+  const passo = screen.getByRole('radio', { name: /Me chamar para aprovar cada etapa/ })
+  expect(auto).toHaveAttribute('aria-checked', 'true')
+  expect(auto).toHaveTextContent('RECOMENDADO')
+  expect(passo).toHaveAttribute('aria-checked', 'false')
+  expect(auto).toHaveTextContent(/toca a obra inteira sozinho/)
+  expect(passo).toHaveTextContent(/A próxima só começa quando você disser que pode/)
+  expect(screen.getByText(/só vai te chamar nas paradas de verdade/)).toBeInTheDocument()
+  expect(screen.getByText(/só você pode resolver/)).toBeInTheDocument()
+  expect(screen.getByText(/a cota do seu plano do Claude acaba/)).toBeInTheDocument()
+  expect(screen.getByText(/cobrança, senha que venceu/)).toBeInTheDocument()
+})
+
+test('a escolha é guardada na pasta da obra e o passo a passo some com a lista de paradas', async () => {
+  const modos = criarModoObraFixture()
+  const { user } = montar(undefined, undefined, modos)
+  await user.click(await screen.findByRole('radio', { name: /Me chamar para aprovar cada etapa/ }))
+  expect(modos.gravados[obra.pasta]).toBe('passo-a-passo')
+  expect(screen.getByRole('radio', { name: /Me chamar para aprovar/ })).toHaveAttribute('aria-checked', 'true')
+  expect(screen.queryByText(/só vai te chamar nas paradas de verdade/)).not.toBeInTheDocument()
+  expect(screen.getByText(/Escolha guardada na pasta da obra/)).toBeInTheDocument()
+})
+
+test('ao voltar a esta tela, respeita a escolha que o cliente já tinha feito', async () => {
+  montar(undefined, undefined, criarModoObraFixture({ [obra.pasta]: 'passo-a-passo' }))
+  expect(await screen.findByRole('radio', { name: /Me chamar para aprovar/ })).toHaveAttribute('aria-checked', 'true')
+})
+
+test('se não conseguir guardar, volta à escolha anterior e avisa', async () => {
+  const { user } = montar(undefined, undefined, { ler: async () => null, gravar: async () => { throw new Error('indisponivel') } })
+  await user.click(await screen.findByRole('radio', { name: /Me chamar para aprovar/ }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(/ainda não está ligado/)
+  expect(screen.getByRole('radio', { name: /Automático/ })).toHaveAttribute('aria-checked', 'true')
+})
+
+test('o formato da preferência é lido de volta e liga o recomendado.json', () => {
+  expect(lerModoDoTexto(serializarModo('passo-a-passo'))).toBe('passo-a-passo')
+  expect(lerModoDoTexto(serializarModo('automatico'))).toBe('automatico')
+  expect(lerModoDoTexto('{"versao":1,"modo":"qualquer"}')).toBeNull()
+  expect(lerModoDoTexto('lixo')).toBeNull()
+  expect(paraRecomendado('automatico')).toEqual({ ativo: true })
+  expect(paraRecomendado('passo-a-passo')).toEqual({ ativo: false })
+  expect(ARQUIVO_MODO).toBe('.atlas/modo.json')
 })
