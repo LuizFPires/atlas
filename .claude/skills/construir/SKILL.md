@@ -5,7 +5,7 @@ description: Etapa 6 da linha de produção. Conduz o projeto milestone por mile
 
 # Construir — roteiro de milestone com subagentes
 
-Cada milestone passa pelas mesmas quatro etapas do roteiro. A diferença é **quem faz**: você é o **mestre de obras** (coordenador) e não escreve nem lê código. O trabalho pesado roda em subagentes, que nascem com o contexto vazio; é o `/clear` automático. Você recebe só relatórios curtos, e o estado vive no PLAN, no git, no PR e no `roteiro.json`, nunca na conversa.
+Em palavras simples: a obra é feita em etapas pequenas (milestones), sempre do mesmo jeito: planejar, fazer, conferir e só então juntar ao projeto. Cada milestone passa pelas mesmas quatro etapas do roteiro. A diferença é **quem faz**: você é o **mestre de obras** (coordenador) e não escreve nem lê código. O trabalho pesado roda em subagentes, que nascem com o contexto vazio; é o `/clear` automático. Você recebe só relatórios curtos, e o estado vive no PLAN, no git, no PR e no `roteiro.json`, nunca na conversa.
 
 | Etapa | Quem faz | Resultado |
 |---|---|---|

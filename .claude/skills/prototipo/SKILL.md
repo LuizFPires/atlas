@@ -5,7 +5,7 @@ description: Etapa 3 da linha de produção. Constrói com o usuário um protót
 
 # Protótipo navegável
 
-O protótipo aprovado vira a **fonte da verdade** de todo o projeto. Capriche.
+Em palavras simples: o protótipo é o desenho da casa, que o dono pode clicar e ver antes de construir. Depois de aprovado, ele vira a **fonte da verdade**: se houver dúvida, vale o que está nele. Capriche.
 
 ## Antes de começar
 1. Rode `node .claude/hooks/etapa.cjs prototipo`.

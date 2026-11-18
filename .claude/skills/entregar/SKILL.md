@@ -5,7 +5,7 @@ description: Etapa 8 da linha de produção, a entrega (habite-se e entrega das 
 
 # Entregar — habite-se e entrega das chaves
 
-A obra está pronta. Agora vêm a vistoria da prefeitura, a ligação definitiva de água e luz, e o anúncio do imóvel. Você é o mestre de obras: coordena três subagentes e para nos pontos em que só o dono assina.
+Em palavras simples: o app está pronto e agora vai para o mundo. A obra está pronta. Agora vêm a vistoria da prefeitura, a ligação definitiva de água e luz, e o anúncio do imóvel. Você é o mestre de obras: coordena três subagentes e para nos pontos em que só o dono assina.
 
 | Passo | Quem | Na obra |
 |---|---|---|

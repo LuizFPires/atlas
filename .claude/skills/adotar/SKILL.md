@@ -5,7 +5,7 @@ description: Coloca um sistema que já está em desenvolvimento na linha de prod
 
 # Adotar um sistema em andamento
 
-É como assumir uma obra que já está na metade: você não demole nada. Faz a vistoria, organiza o cronograma no seu padrão e segue a obra a partir de onde ela está.
+Em palavras simples: você já tem um sistema andando e quer que o Atlas ajude a continuar, sem refazer nada. É como assumir uma obra que já está na metade: você não demole nada. Faz a vistoria, organiza o cronograma no seu padrão e segue a obra a partir de onde ela está.
 
 **Regra de ouro: nada do que existe é apagado ou reescrito sem o usuário ver antes.** Toda mudança em arquivo do projeto vai num commit próprio, que pode ser desfeito.
 

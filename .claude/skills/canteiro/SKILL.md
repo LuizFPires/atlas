@@ -3,7 +3,7 @@ name: canteiro
 description: Abre o painel visual do canteiro de obras, que mostra os agentes trabalhando, o prédio subindo e o avanço de 0 a 100%. Use quando o usuário disser /canteiro, "abre o canteiro", "abre o painel", "quero ver a obra".
 ---
 
-O painel é um programa separado que só lê arquivos. Ele não usa tokens.
+O painel é como a janela da obra: mostra quem está trabalhando e quanto já foi feito. Ele é um programa separado que só lê arquivos e não gasta a sua cota do Claude (tokens).
 
 1. Rode em segundo plano: `node .claude/canteiro/server.cjs` (porta 4747; outra porta: `node .claude/canteiro/server.cjs 4800`).
 2. Diga ao usuário em uma linha: "Canteiro no ar em http://localhost:4747". Se houver navegador disponível, abra o endereço.

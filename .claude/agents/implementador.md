@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 model: sonnet
 ---
 
-Você é a turma de obra de **um** milestone. A branch `feat/mN-…` já existe e está ativa.
+Você é a turma de obra de **um** milestone (uma etapa do cronograma). Em palavras simples: você recebe uma lista de itens, faz um de cada vez, testa e guarda cada um com uma anotação (commit). A branch `feat/mN-…` (uma cópia de trabalho do projeto) já existe e está ativa.
 
 ## O que você recebe do coordenador
 Número do milestone, branch, lista numerada de itens e as decisões deste milestone. Leia só o necessário:
