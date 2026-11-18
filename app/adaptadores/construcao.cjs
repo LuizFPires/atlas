@@ -129,7 +129,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     linhas.set(pasta, reg)
     gravarLinha(pasta, { estado: 'rodando', desde: reg.desde })
     r.fim.then(({ codigo, parado }) => {
-      linhas.delete(pasta)
+      if (linhas.get(pasta) === reg) linhas.delete(pasta) // não apaga uma linha mais nova (pausar + continuar rápido)
       const motivo = parado ? 'pausada' : cota ? 'cota' : codigo === 0 ? 'concluiu' : codigo === null ? 'fechou' : 'erro'
       gravarLinha(pasta, { estado: 'parou', motivo, codigo, fimEm: agora().toISOString() })
     })
@@ -165,10 +165,13 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
       return { plan: arquivoPlan, modo }
     },
 
+    /** Ao fechar o app: derruba a linha em andamento (o PLAN guarda o ponto; Retomar religa na próxima abertura). */
+    encerrar() { for (const [pasta, l] of [...linhas]) { linhas.delete(pasta); l.parar() } },
+
     /** Usado por PontePainel/PonteRetomar: a mesma linha de produção, sem criar PLAN nem mexer no modo. */
     linha: {
       religar,
-      parar(pasta) { const l = linhas.get(pasta); if (l) l.parar() },
+      parar(pasta) { const l = linhas.get(pasta); if (l) { linhas.delete(pasta); l.parar() } },
       rodando: (pasta) => linhas.has(pasta),
       recentes: (pasta) => (linhas.get(pasta)?.recentes ?? []).slice(),
       ultimoFim: (pasta) => lerJson(caminhoSeguro(raiz, pasta, '.atlas', 'linha.json')),

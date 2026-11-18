@@ -129,9 +129,9 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Cota do plano (F10) e ocorrências (F11) andam junto do painel: no fixture, esgotar a cota ou abrir uma ocorrência liga e desliga
   // a parada correspondente do mesmo painel. Sem adaptador real, nada é fingido.
   const pontesObra = useMemo(() => {
-    if (painel || !modoFixture()) {
+    if (painel || ponte.painel || !modoFixture()) {
       const fixture = modoFixture()
-      return { painel: painel ?? painelIndisponivel, cota: cota ?? (fixture ? criarCotaFixture() : cotaIndisponivel), ocorrencias: ocorrencias ?? (fixture ? criarOcorrenciasFixture() : ocorrenciasIndisponivel) }
+      return { painel: painel ?? ponte.painel ?? painelIndisponivel, cota: cota ?? (fixture ? criarCotaFixture() : cotaIndisponivel), ocorrencias: ocorrencias ?? (fixture ? criarOcorrenciasFixture() : ocorrenciasIndisponivel) }
     }
     const fx = criarPainelFixture()
     return {
@@ -139,7 +139,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
       cota: cota ?? criarCotaFixture((esgotada) => fx.simular.pararPor(esgotada ? 'cota' : null)),
       ocorrencias: ocorrencias ?? criarOcorrenciasFixture((precisa) => fx.simular.pararPor(precisa ? 'voce' : null)),
     }
-  }, [painel, cota, ocorrencias])
+  }, [painel, cota, ocorrencias, ponte])
   const pontePainel = pontesObra.painel
   const ponteCota = pontesObra.cota
   const ponteOcorrencias = pontesObra.ocorrencias

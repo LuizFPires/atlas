@@ -11,6 +11,7 @@ const { criarArquivos } = require('./adaptadores/arquivos.cjs')
 const { criarClaude } = require('./adaptadores/claude.cjs')
 const { criarModo } = require('./adaptadores/modo.cjs')
 const { criarConstrucao } = require('./adaptadores/construcao.cjs')
+const { criarPainel } = require('./adaptadores/painel.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -23,6 +24,7 @@ const arquivos = criarArquivos({ raiz: obras.raiz(), dialog, janela: () => janel
 const claude = criarClaude({ shell })
 const modos = criarModo({ raiz: obras.raiz() })
 const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: process.env.ATLAS_KIT_PLUGIN || null })
+const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -69,6 +71,18 @@ handle('atlas:modos:gravar', (pasta, modo) => modos.gravar(String(pasta), String
 // Planejar e iniciar a construção (PLAN.md + linha de produção do kit na pasta da obra).
 handle('atlas:construcao:planejar', (pasta, nome) => construcao.planejar(String(pasta), String(nome)))
 handle('atlas:construcao:iniciar', (pasta, nome, modo, etapas) => construcao.iniciar(String(pasta), String(nome), String(modo), Array.isArray(etapas) ? etapas : []))
+
+// Painel da obra: andamento, pausa/continua, OK da etapa, modo, canteiro 3D (só 127.0.0.1) e versão de teste.
+handle('atlas:painel:ler', (pasta) => painel.ler(String(pasta)))
+handle('atlas:painel:pausar', (pasta) => painel.pausar(String(pasta)))
+handle('atlas:painel:continuar', (pasta) => painel.continuar(String(pasta)))
+handle('atlas:painel:aprovar', (pasta) => painel.aprovarEtapa(String(pasta)))
+handle('atlas:painel:modo', (pasta, modo) => painel.aplicarModo(String(pasta), String(modo)))
+ipcMain.on('atlas:painel:endereco', (e, pasta) => { e.returnValue = confiavel(e) ? painel.enderecoCanteiro(String(pasta)) : null })
+handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
+
+// Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois).
+app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })
 
 // O computador é o canteiro: durante a obra ele não pode dormir.
 handle('atlas:sono', (ligado) => {

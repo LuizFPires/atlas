@@ -1,0 +1,111 @@
+// Teste do painel (node --test app/adaptadores/*.teste.cjs). Sem Claude real: a linha de produção é simulada.
+'use strict'
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const http = require('node:http')
+const os = require('node:os')
+const path = require('node:path')
+const { criarPainel, lerPlanoDoTexto, paradaDeOcorrencias } = require('./painel.cjs')
+const { criarConstrucao } = require('./construcao.cjs')
+const { criarModo } = require('./modo.cjs')
+const { lerPlano } = require('../../.claude/hooks/plano.cjs')
+
+const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-painel-'))
+const ETAPAS = [{ n: 'M1', nome: 'Base', desc: 'a' }, { n: 'M2', nome: 'Agenda', desc: 'b' }, { n: 'M3', nome: 'Pagamento', desc: 'c' }]
+
+function montar() {
+  const raiz = tmp(); const home = tmp()
+  fs.mkdirSync(path.join(raiz, 'obra'))
+  const chamadas = []
+  const modos = criarModo({ raiz })
+  const c = criarConstrucao({
+    raiz, home, modos, claudeEstado: async () => ({ conectado: true }), resolver: () => ({ cmd: 'x' }),
+    iniciarFluxo: () => { let t; chamadas.push('religar'); return { parar: () => { chamadas.push('parar'); t({ codigo: null, parado: true }) }, fim: new Promise((r) => { t = r }) } },
+  })
+  const abertos = []
+  const painel = criarPainel({ raiz, home, modos, construcao: c, shell: { openExternal: async (u) => abertos.push(u), openPath: async (u) => { abertos.push(u); return '' } }, kitDir: path.join(__dirname, '..', '..', '.claude'), subir: async () => {}, porta: 1 })
+  return { raiz, home, c, painel, chamadas, abertos, modos }
+}
+const marcar = (raiz, ate) => {
+  const arq = path.join(raiz, 'obra', 'PLAN.md')
+  let md = fs.readFileSync(arq, 'utf8'); let ms = 0
+  md = md.split('\n').map((l) => { if (/^## Milestone/.test(l)) ms++; return ms && ms <= ate && /^- \[ \]/.test(l) ? l.replace('[ ]', '[x]') : l }).join('\n')
+  fs.writeFileSync(arq, md)
+}
+
+test('% ponderado igual ao plano.cjs do kit (e à porta local)', async () => {
+  const { raiz, c, painel } = montar()
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  marcar(raiz, 1)
+  const e = await painel.ler('obra')
+  const k = lerPlano(path.join(raiz, 'obra'))
+  assert.equal(e.pct, k.pct)
+  assert.equal(lerPlanoDoTexto(fs.readFileSync(path.join(raiz, 'obra', 'PLAN.md'), 'utf8')).pct, k.pct)
+  assert.deepEqual(e.etapa, { n: 2, nome: 'Agenda' })
+  assert.equal(e.agora.length, 1) // linha rodando
+  assert.equal(e.parada, null)
+})
+
+test('pausar derruba a linha; continuar religa e reafirma o recomendado do modo', async () => {
+  const { home, c, painel, chamadas } = montar()
+  await c.iniciar('obra', 'B', 'passo-a-passo', ETAPAS)
+  await painel.pausar('obra')
+  assert.ok(chamadas.includes('parar'))
+  assert.equal((await painel.ler('obra')).pausadaPorVoce, true)
+  fs.writeFileSync(path.join(home, '.claude', 'recomendado.json'), JSON.stringify({ ativo: true }))
+  await painel.continuar('obra')
+  assert.equal((await painel.ler('obra')).pausadaPorVoce, false)
+  assert.equal(chamadas.filter((x) => x === 'religar').length, 2)
+  assert.equal(JSON.parse(fs.readFileSync(path.join(home, '.claude', 'recomendado.json'), 'utf8')).ativo, false)
+})
+
+test('passo a passo: etapa pronta espera o OK; aprovarEtapa libera', async () => {
+  const { raiz, c, painel } = montar()
+  await c.iniciar('obra', 'B', 'passo-a-passo', ETAPAS)
+  marcar(raiz, 1)
+  assert.deepEqual((await painel.ler('obra')).etapaPronta, { n: 1, nome: 'Base' })
+  await painel.aprovarEtapa('obra')
+  assert.equal((await painel.ler('obra')).etapaPronta, null)
+})
+
+test('aplicarModo regrava modo.json e recomendado.json; modo inválido é recusado', async () => {
+  const { home, c, painel, modos } = montar()
+  await c.iniciar('obra', 'B', 'automatico', ETAPAS)
+  await painel.aplicarModo('obra', 'passo-a-passo')
+  assert.equal(await modos.ler('obra'), 'passo-a-passo')
+  assert.equal(JSON.parse(fs.readFileSync(path.join(home, '.claude', 'recomendado.json'), 'utf8')).ativo, false)
+  await assert.rejects(painel.aplicarModo('obra', 'x'), /modo-invalido/)
+})
+
+test('parada por cota: linha.json e ocorrências abertas', async () => {
+  const { raiz, c, painel, chamadas } = montar()
+  await c.iniciar('obra', 'B', 'automatico', ETAPAS)
+  await painel.pausar('obra')
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ estado: 'parou', motivo: 'cota' }))
+  assert.equal((await painel.ler('obra')).parada, 'cota')
+  assert.equal(paradaDeOcorrencias({ ocorrencias: [{ status: 'aberta', servico: 'Stripe', motivo: 'cobrança recusada' }] }), 'billing')
+  assert.equal(paradaDeOcorrencias({ ocorrencias: [{ status: 'resolvida', servico: 'x', motivo: 'cota' }] }), null)
+  assert.ok(chamadas.length)
+})
+
+test('endereço do canteiro só loopback; abrirTeste só por allowlist', async () => {
+  const srv = http.createServer((_q, r) => { r.statusCode = 200; r.end('{}') })
+  await new Promise((r) => srv.listen(0, '127.0.0.1', r))
+  const porta = srv.address().port
+  const { raiz, c, painel, abertos } = montar()
+  const p2 = criarPainel({ raiz, modos: criarModo({ raiz }), construcao: c, shell: { openExternal: async (u) => abertos.push(u), openPath: async () => '' }, subir: async () => {}, porta })
+  await c.iniciar('obra', 'B', 'automatico', ETAPAS)
+  assert.equal(p2.enderecoCanteiro('obra'), null)
+  await p2.ler('obra')
+  await new Promise((r) => setTimeout(r, 300))
+  assert.match(p2.enderecoCanteiro('obra'), new RegExp(`^http://127\\.0\\.0\\.1:${porta}/\\?obra=[0-9a-f]{10}$`))
+  assert.equal(p2.enderecoCanteiro('../x'), null)
+  srv.close()
+  await assert.rejects(painel.abrirTeste('obra'), /sem-teste/)
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'teste.json'), JSON.stringify({ url: 'https://evil.example/x' }))
+  await assert.rejects(painel.abrirTeste('obra'), /sem-teste/)
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'teste.json'), JSON.stringify({ url: 'http://127.0.0.1:5173' }))
+  await painel.abrirTeste('obra')
+  assert.deepEqual(abertos, ['http://127.0.0.1:5173'])
+})
