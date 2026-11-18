@@ -25,7 +25,7 @@ tela:
 - [ ] Implementar troca de computador com limite 1/7 dias e override manual
 - [ ] Implementar /verificar (licença em dia + computador ativado) com tolerância curta offline
 - [ ] Implementar /entregar-kit com marca d'água por cliente, sem persistir no disco
-Notas:
+Notas: ⏩ Auto (recomendado): sem decisões de negócio pendentes — regras vêm dos invariantes (1 licença = 1 computador, link uso único ~48h, troca 1/7 dias, marca d'água por cliente, nunca persistir segredo no disco) e de S3/S4/S5. Implementação como migrations Supabase + edge functions com fixtures/testes, sem deploy em produção (deploy é da etapa /entregar).
 
 ## Milestone 3 — Pagamento e cobrança recorrente
 peso: 2
