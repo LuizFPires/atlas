@@ -11,6 +11,50 @@ const CAMINHOS = {
   ajuda: <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" />,
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   seta: <path d="M5 12h14M13 6l6 6-6 6" />,
+  play: <path d="M8 5l12 7-12 7z" />,
+  lua: <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />,
+  x: <path d="M6 6l12 12M18 6 6 18" />,
+  tesoura: (
+    <>
+      <circle cx="6" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <path d="M8.1 8.1 20 20M8.1 15.9 20 4" />
+    </>
+  ),
+  moeda: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M14.5 9a2.5 2 0 0 0-2.5-1.5c-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2A2.7 2 0 0 1 9.4 15M12 6v1.5M12 16.5V18" />
+    </>
+  ),
+  caixa: <path d="M3 8l9-5 9 5v8l-9 5-9-5V8zM3 8l9 5 9-5M12 13v8" />,
+  haltere: <path d="M6 7v10M3 9.5v5M18 7v10M21 9.5v5M6 12h12" />,
+  aperto: <path d="M3 12l4-4 4 1 3-2 6 5-5 5-3-1-2 2-3-3M7 8l-4 4" />,
+  prato: (
+    <>
+      <path d="M5 3v8a2 2 0 0 0 2 2v8M9 3v8a2 2 0 0 1-2 2M7 3v6" />
+      <path d="M17 21V3c-2.5 1.5-3 5-3 8h3" />
+    </>
+  ),
+  brilho: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z" />,
+  celular: (
+    <>
+      <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
+      <path d="M11 18.5h2" />
+    </>
+  ),
+  computador: (
+    <>
+      <rect x="3" y="4" width="18" height="12" rx="2" />
+      <path d="M8 20h8M12 16v4" />
+    </>
+  ),
+  pessoas: (
+    <>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3 20a6 6 0 0 1 12 0M16 5a3.2 3.2 0 0 1 0 6M18 14a6 6 0 0 1 3 6" />
+    </>
+  ),
   obra: <path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />,
 } as const
 

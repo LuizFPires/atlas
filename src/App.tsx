@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Shell, type IdTela } from './shell/Shell'
 import { ImagemAssinatura } from './marca/Marca'
+import { Vendas } from './web/Vendas'
 
-export default function App() {
+/** O aplicativo (PWA) fica em "/app". */
+function Aplicativo() {
   const [ativo, setAtivo] = useState<IdTela>('obras')
   return (
     <Shell ativo={ativo} onNavegar={setAtivo} onFalar={() => {}}>
@@ -11,4 +13,11 @@ export default function App() {
       <ImagemAssinatura />
     </Shell>
   )
+}
+
+/** Rotas por endereço: "/" é a página de vendas. */
+export default function App() {
+  const caminho = window.location.pathname.replace(/\/+$/, '') || '/'
+  if (caminho.startsWith('/app')) return <Aplicativo />
+  return <Vendas onComprar={() => document.getElementById('preco')?.scrollIntoView({ behavior: 'smooth' })} />
 }
