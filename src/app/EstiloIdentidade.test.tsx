@@ -45,7 +45,7 @@ test('logo e cores sobem pelo port para estilo/identidade e viram o design-syste
   expect(onConcluir).toHaveBeenCalled()
 })
 
-test('design-system.md pronto vai para a raiz da obra e vale do jeito que veio', async () => {
+test('design-system.md pronto vai para a raiz da obra, prevalece e nenhum esqueleto é gravado por cima', async () => {
   const { arquivos, est } = montar()
   await clicar('Já tenho a minha identidade visual')
   arquivos.fila.push({ nome: 'design-system.md', tamanho: 3000 })
@@ -54,7 +54,29 @@ test('design-system.md pronto vai para a raiz da obra e vale do jeito que veio',
   expect(arquivos.guardados[0].endsWith([OBRA.pasta, 'design-system.md'].join(BS))).toBe(true)
   await clicar(/Usar a minha identidade/)
   await screen.findByText('Identidade visual guardada!')
-  expect(est.escritos[0].texto).toContain('vale do jeito que veio')
+  expect(est.escritos).toHaveLength(0)
+  expect(screen.getByText(/design-system\.md$/, { selector: 'code' })).toBeInTheDocument()
+})
+
+test('se já havia um design-system.md na raiz, o do cliente é rastreado pelo nome realmente gravado', async () => {
+  const { arquivos, est } = montar()
+  await clicar('Já tenho a minha identidade visual')
+  arquivos.fila.push({ nome: 'design-system.md', tamanho: 10 }, { nome: 'design-system.md', tamanho: 10 })
+  await clicar('Manual da marca ou design system pronto: escolher arquivo')
+  await clicar('Manual da marca ou design system pronto: escolher arquivo')
+  expect(await screen.findByText('design-system-2.md')).toBeInTheDocument()
+  await clicar(/Usar a minha identidade/)
+  await screen.findByText('Identidade visual guardada!')
+  expect(est.escritos).toHaveLength(0)
+})
+
+test('logo em SVG é recusada', async () => {
+  const { arquivos } = montar()
+  await clicar('Já tenho a minha identidade visual')
+  arquivos.fila.push({ nome: 'logo.svg', tamanho: 10 })
+  await clicar('Logomarca: escolher arquivo')
+  expect(await screen.findByRole('alert')).toHaveTextContent('não consigo ler')
+  expect(arquivos.guardados).toEqual([])
 })
 
 test('arquivo de tipo errado recebe recado calmo; desistir do diálogo não faz nada', async () => {

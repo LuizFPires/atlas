@@ -10,6 +10,8 @@ export type Destino = 'estilo/referencias' | 'estilo/identidade' | 'raiz'
 export interface ArquivoEscolhido {
   nome: string
   tamanho: number
+  /** Alça opaca do arquivo escolhido. O renderer só devolve este token; o conteúdo e o caminho de origem ficam atrás da porta. */
+  token: string
 }
 
 export interface ArquivoGuardado {
@@ -22,13 +24,17 @@ export interface ArquivoGuardado {
 export interface PonteArquivos {
   /** Abre o "Escolher arquivo" do computador, já filtrado pelo tipo. Devolve null se o cliente desistir. */
   escolher(tipo: TipoArquivo): Promise<ArquivoEscolhido | null>
-  /** Copia o arquivo escolhido para a subpasta da obra. Nunca sai da raiz e nunca sobrescreve. */
-  guardar(pasta: string, destino: Destino, arquivo: ArquivoEscolhido): Promise<ArquivoGuardado>
+  /**
+   * Copia o arquivo escolhido (pelo token que `escolher` devolveu) para a subpasta da obra. Nunca sai da raiz e nunca sobrescreve.
+   * Revalida extensão (do tipo em que foi escolhido) e os 20 MB; o destino 'raiz' só aceita .md. Token desconhecido: 'token-invalido'.
+   */
+  guardar(pasta: string, destino: Destino, token: string): Promise<ArquivoGuardado>
 }
 
 export const EXTENSOES: Record<TipoArquivo, readonly string[]> = {
   imagem: ['png', 'jpg', 'jpeg', 'webp'],
-  logo: ['png', 'svg', 'pdf', 'jpg', 'jpeg', 'webp'],
+  // SVG fica fora da logo: pode carregar script. Política: só formatos que não executam nada.
+  logo: ['png', 'pdf', 'jpg', 'jpeg', 'webp'],
   cores: ['png', 'jpg', 'jpeg', 'webp', 'txt', 'pdf'],
   manual: ['pdf', 'md', 'txt', 'png', 'jpg', 'jpeg', 'webp'],
   'design-system': ['md'],
@@ -80,7 +86,9 @@ export interface ArquivosFixture extends PonteArquivos {
   /** Arquivos "guardados" (só na memória): caminho completo. */
   readonly guardados: string[]
   /** Próximos arquivos que o "Escolher arquivo" devolve (null = cliente desistiu). Sem fila, devolve um exemplo do tipo. */
-  fila: (ArquivoEscolhido | null)[]
+  fila: (Omit<ArquivoEscolhido, 'token'> | null)[]
+  /** Só para teste: registra um arquivo SEM validar (como um renderer forjado faria) e devolve o token. */
+  registrar(tipo: TipoArquivo, arquivo: Omit<ArquivoEscolhido, 'token'>): string
 }
 
 const EXEMPLO: Record<TipoArquivo, string> = {
@@ -94,23 +102,38 @@ const EXEMPLO: Record<TipoArquivo, string> = {
 /** Mock do modo fixture: não toca no disco. */
 export function criarArquivosFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): ArquivosFixture {
   const guardados: string[] = []
-  const fila: (ArquivoEscolhido | null)[] = []
+  const fila: ArquivosFixture['fila'] = []
+  const emAberto = new Map<string, { tipo: TipoArquivo; nome: string; tamanho: number }>()
+  let n = 0
+  const registrar: ArquivosFixture['registrar'] = (tipo, a) => {
+    const token = `tok-${++n}`
+    emAberto.set(token, { tipo, nome: a.nome, tamanho: a.tamanho })
+    return token
+  }
   return {
     guardados,
     fila,
+    registrar,
     async escolher(tipo) {
       const a = fila.length ? fila.shift()! : { nome: EXEMPLO[tipo], tamanho: 120_000 }
       if (a === null) return null
       if (!extensaoPermitida(tipo, a.nome)) throw new Error('tipo-nao-aceito')
       if (a.tamanho > TAMANHO_MAXIMO) throw new Error('grande-demais')
-      return a
+      return { ...a, token: registrar(tipo, a) }
     },
-    async guardar(pasta, destino, arquivo) {
+    async guardar(pasta, destino, token) {
+      const a = emAberto.get(token)
+      if (!a) throw new Error('token-invalido')
+      // Revalida: o que vale é o que a porta guardou ao escolher, nunca o que o renderer diz.
+      if (!extensaoPermitida(a.tipo, a.nome)) throw new Error('tipo-nao-aceito')
+      if (a.tamanho > TAMANHO_MAXIMO) throw new Error('grande-demais')
+      if (destino === 'raiz' && extensaoDe(a.nome) !== 'md') throw new Error('tipo-nao-aceito')
       const prefixo = caminhoNaObra(raiz, pasta, destino, 'x').slice(0, -1)
       const existentes = guardados.filter((g) => g.startsWith(prefixo)).map((g) => g.slice(prefixo.length))
-      const nome = nomeLivre(nomeArquivoSeguro(arquivo.nome), existentes)
+      const nome = nomeLivre(nomeArquivoSeguro(a.nome), existentes)
       const caminho = caminhoNaObra(raiz, pasta, destino, nome)
       guardados.push(caminho)
+      emAberto.delete(token)
       return { nome, caminho }
     },
   }

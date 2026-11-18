@@ -27,8 +27,8 @@ test('o caminho nunca sai da subpasta da obra', () => {
 test('nunca sobrescreve: logo.png, logo-2.png', async () => {
   expect(nomeLivre('logo.png', ['logo.png'])).toBe('logo-2.png')
   const f = criarArquivosFixture()
-  const a = await f.guardar('obra', 'estilo/identidade', { nome: 'Logo.png', tamanho: 1 })
-  const b = await f.guardar('obra', 'estilo/identidade', { nome: 'logo.png', tamanho: 1 })
+  const a = await f.guardar('obra', 'estilo/identidade', f.registrar('logo', { nome: 'Logo.png', tamanho: 1 }))
+  const b = await f.guardar('obra', 'estilo/identidade', f.registrar('logo', { nome: 'logo.png', tamanho: 1 }))
   expect([a.nome, b.nome]).toEqual(['logo.png', 'logo-2.png'])
 })
 
@@ -37,4 +37,28 @@ test('desistir do diálogo devolve null; arquivo grande demais é recusado', asy
   f.fila.push(null, { nome: 'a.png', tamanho: 50 * 1024 * 1024 })
   expect(await f.escolher('imagem')).toBeNull()
   await expect(f.escolher('imagem')).rejects.toThrow('grande-demais')
+})
+
+test('guardar só aceita o token que escolher devolveu e revalida tipo, tamanho e destino', async () => {
+  const f = criarArquivosFixture()
+  await expect(f.guardar('obra', 'estilo/identidade', 'tok-forjado')).rejects.toThrow('token-invalido')
+  // Descritor forjado com extensão fora do tipo, grande demais, ou fora do .md na raiz.
+  await expect(f.guardar('obra', 'estilo/identidade', f.registrar('logo', { nome: 'x.exe', tamanho: 1 }))).rejects.toThrow('tipo-nao-aceito')
+  await expect(f.guardar('obra', 'estilo/identidade', f.registrar('logo', { nome: 'x.png', tamanho: 50 * 1024 * 1024 }))).rejects.toThrow('grande-demais')
+  await expect(f.guardar('obra', 'raiz', f.registrar('manual', { nome: 'manual.pdf', tamanho: 1 }))).rejects.toThrow('tipo-nao-aceito')
+  expect(f.guardados).toEqual([])
+  const ok = await f.guardar('obra', 'raiz', f.registrar('manual', { nome: 'design-system.md', tamanho: 1 }))
+  expect(ok.nome).toBe('design-system.md')
+})
+
+test('o token vale uma vez só', async () => {
+  const f = criarArquivosFixture()
+  const a = (await f.escolher('imagem'))!
+  await f.guardar('obra', 'estilo/referencias', a.token)
+  await expect(f.guardar('obra', 'estilo/referencias', a.token)).rejects.toThrow('token-invalido')
+})
+
+test('SVG não é aceito como logo (pode carregar script)', () => {
+  expect(extensaoPermitida('logo', 'logo.svg')).toBe(false)
+  expect(extensaoPermitida('logo', 'logo.webp')).toBe(true)
 })

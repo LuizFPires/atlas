@@ -17,7 +17,7 @@ export const MODOS = [
 ] as const
 
 export const UPLOADS = [
-  { id: 'logo', icone: 'imagem', nome: 'Logomarca', desc: 'PNG, SVG ou PDF' },
+  { id: 'logo', icone: 'imagem', nome: 'Logomarca', desc: 'PNG, JPG, WebP ou PDF' },
   { id: 'cores', icone: 'paleta', nome: 'Cores', desc: 'Os códigos das cores ou uma foto da fachada' },
   { id: 'manual', icone: 'livro', nome: 'Manual da marca ou design system pronto', desc: 'PDF, link do Figma ou o arquivo design-system.md que outra IA gerou' },
 ] as const

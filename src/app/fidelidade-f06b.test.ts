@@ -11,6 +11,8 @@ test('fases, modos, sentimentos e envios batem com o protótipo', () => {
   for (const m of MODOS) expect(proto).toContain(`['${m.id}', '${m.nome}']`)
   expect(proto).toContain(`const S = [${SENTIMENTOS.map((s) => `'${s}'`).join(', ')}]`)
   for (const u of UPLOADS) {
+    // Divergência consciente: a logo não aceita SVG (pode carregar script), então a descrição não cita SVG.
+    if (u.id === 'logo') { expect(proto).toContain(`nome: '${u.nome}'`); continue }
     expect(proto).toContain(`nome: '${u.nome}', desc: '${u.desc}'`)
   }
 })

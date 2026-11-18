@@ -19,19 +19,14 @@ interface Props {
 
 interface Ref { tipo: 'link' | 'print'; valor: string; texto: string }
 
-const recadoUpload = (e: unknown) => {
+const recado = (e: unknown, aceita: string, maior: string) => {
   const m = e instanceof Error ? e.message : ''
-  if (m === 'tipo-nao-aceito') return 'Esse tipo de arquivo eu não consigo ler. Pode ser PNG, SVG, JPG, PDF ou o design-system.md.'
-  if (m === 'grande-demais') return 'Esse arquivo é grande demais. Tente um menor, de até 20 MB.'
+  if (m === 'tipo-nao-aceito') return `Esse tipo de arquivo eu não consigo ler. Pode ser ${aceita}.`
+  if (m === 'grande-demais') return `Esse arquivo é grande demais. Tente ${maior}, de até 20 MB.`
   return 'Não consegui pegar esse arquivo agora. Tente de novo em instantes.'
 }
-
-const recado = (e: unknown) => {
-  const m = e instanceof Error ? e.message : ''
-  if (m === 'tipo-nao-aceito') return 'Esse tipo de arquivo eu não consigo ler. Pode ser PNG, JPG ou WEBP.'
-  if (m === 'grande-demais') return 'Esse arquivo é grande demais. Tente um print menor, de até 20 MB.'
-  return 'Não consegui pegar esse arquivo agora. Tente de novo em instantes.'
-}
+const recadoPrint = (e: unknown) => recado(e, 'PNG, JPG ou WEBP', 'um print menor')
+const recadoUpload = (e: unknown) => recado(e, 'PNG, JPG, WEBP, PDF ou o design-system.md', 'um menor')
 
 /** F06b: estilo do sistema (projeto 1/3). Referências (link, print ou fala) e o sentimento desejado. */
 export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) {
@@ -51,7 +46,8 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
   const [enviados, setEnviados] = useState<Record<string, string[]>>({})
   const [coresTxt, setCoresTxt] = useState('')
   const [figma, setFigma] = useState('')
-  const [prontoDS, setProntoDS] = useState(false)
+  // Nome REALMENTE gravado na raiz da obra do design-system.md pronto ('' = não veio nenhum).
+  const [prontoDS, setProntoDS] = useState('')
 
   const { gravando, alternar, suportado } = useVoz((falado) => setFala((v) => [v, falado].filter(Boolean).join(' ')))
   const total = refs.length + (fala.trim() ? 1 : 0)
@@ -73,10 +69,10 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
     try {
       const a = await arquivos.escolher('imagem')
       if (!a) return
-      const g = await arquivos.guardar(obra.pasta, 'estilo/referencias', a)
+      const g = await arquivos.guardar(obra.pasta, 'estilo/referencias', a.token)
       setAviso('')
       setRefs((r) => [...r, { tipo: 'print', valor: g.nome, texto: `Print: ${g.nome}` }])
-    } catch (e) { setAviso(recado(e)) }
+    } catch (e) { setAviso(recadoPrint(e)) }
   }
 
   const entrada = (): EntradaEstilo => ({
@@ -118,15 +114,15 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
       if (!a) return
       // Um design-system.md pronto vai direto para a raiz da obra; o resto fica em estilo/identidade.
       const pronto = id === 'manual' && a.nome.toLowerCase() === 'design-system.md'
-      const g = await arquivos.guardar(obra.pasta, pronto ? 'raiz' : 'estilo/identidade', a)
+      const g = await arquivos.guardar(obra.pasta, pronto ? 'raiz' : 'estilo/identidade', a.token)
       setAviso('')
-      if (pronto) setProntoDS(true)
+      if (pronto) setProntoDS(g.nome)
       setEnviados((e) => ({ ...e, [id]: [...(e[id] ?? []), g.nome] }))
     } catch (e) { setAviso(recadoUpload(e)) }
   }
   const tirarEnvio = (id: string, nome: string) => {
     setEnviados((e) => ({ ...e, [id]: (e[id] ?? []).filter((n) => n !== nome) }))
-    if (nome === 'design-system.md') setProntoDS(false)
+    if (nome === prontoDS) setProntoDS('')
   }
   const figmaOk = figma.trim() ? normalizarLink(figma) : null
   const todosArquivos = Object.values(enviados).flat()
@@ -140,7 +136,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
     try {
       const { caminho } = await estilo.materializar(obra.pasta, {
         tipo: 'identidade',
-        identidade: { arquivos: todosArquivos.filter((n) => !(prontoDS && n === 'design-system.md')), cores: [coresTxt.trim(), figmaOk ?? ''].filter(Boolean).join(String.fromCharCode(10)), prontoDS },
+        identidade: { arquivos: todosArquivos.filter((n) => n !== prontoDS), cores: [coresTxt.trim(), figmaOk ?? ''].filter(Boolean).join(String.fromCharCode(10)), prontoDS: prontoDS || undefined },
       })
       setGuardado({ estilo: null, caminho })
     } catch { setErro('Não consegui guardar o design system na pasta da obra agora. O que você mandou continua aqui; tente de novo em instantes.') }
@@ -232,7 +228,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
                 {nomes.length > 0 && (
                   <ul className="at-estilo__enviados" aria-label={`Arquivos de ${u.nome}`}>
                     {nomes.map((n) => (
-                      <li key={n}><Icone nome="check" tamanho={14} /> {n}{u.id === 'manual' && n === 'design-system.md' && <em> · design system pronto</em>}
+                      <li key={n}><Icone nome="check" tamanho={14} /> {n}{u.id === 'manual' && n === prontoDS && <em> · design system pronto</em>}
                         <button type="button" className="at-estilo__tirar" aria-label={`Tirar ${n}`} onClick={() => tirarEnvio(u.id, n)}><Icone nome="x" tamanho={14} /></button>
                       </li>
                     ))}
@@ -253,7 +249,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
           <div className="at-estilo__vazio">
             <span>Eu leio a logo, as cores e o manual e escrevo o design system do seu sistema na pasta da obra.</span>
             <span>Se você mandar um <b>design-system.md</b> pronto, eu uso ele do jeito que veio.</span>
-            <span>Seus arquivos ficam só no seu computador, na pasta da obra.</span>
+            <span>Seus arquivos ficam na pasta da obra, no seu computador. O Atlas e o Claude leem esses arquivos para criar o seu estilo.</span>
           </div>
         </section>
       )}
