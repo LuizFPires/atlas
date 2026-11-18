@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 02 Instalar e ativar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:#2B2F35;font-family:'Geist',system-ui,sans-serif;display:flex;align-items:center;justify-content:center">
+ <div style="width:980px;height:720px;background:{{t.bg}};color:{{t.text}};border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.45);display:flex;overflow:hidden">
+  <div style="width:250px;background:{{t.panel}};padding:32px 26px;box-sizing:border-box;display:flex;flex-direction:column;gap:26px">
+   <div style="display:flex;align-items:center;gap:8px"><img src="{{t.mono}}" alt="" style="width:40px;height:22px;object-fit:contain"><img src="/_blob/a8a1f7c17882253fc0bb950b7874b2c2" alt="Atlas" style="width:96px;height:14px;object-fit:contain"></div>
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="5">
+    <div style="display:flex;align-items:center;gap:12px;font-size:15px;color:{{p.cor}};font-weight:{{p.peso}}"><span style="width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font:600 13px 'Geist Mono',monospace;background:{{p.bolaBg}};color:{{p.bolaCor}}">{{p.n}}</span>{{p.nome}}</div>
+   </sc-for>
+  </div>
+  <div style="flex:1;padding:44px 48px;box-sizing:border-box;display:flex;flex-direction:column;gap:22px">
+   <sc-if value="{{naCodigo}}" hint-placeholder-val="{{ true }}">
+    <h1 style="margin:0;font-size:30px;letter-spacing:-0.01em">Confirme que é você</h1>
+    <p style="margin:0;font-size:16px;line-height:1.55;color:{{t.mute}}">Mandamos um código de 6 números para <b style="color:{{t.text}}">zé@barbeariadoze.com.br</b>. Ele vale por 10 minutos.</p>
+    <div style="display:flex;gap:10px">
+     <sc-for list="{{digitos}}" as="d" hint-placeholder-count="6"><div style="width:56px;height:68px;border-radius:12px;border:2px solid {{d.borda}};background:{{t.input}};display:flex;align-items:center;justify-content:center;font:600 30px 'Geist Mono',monospace">{{d.v}}</div></sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:14px;color:{{t.mute}};background:{{t.card}};border:1px solid {{t.cardB}};border-radius:12px;padding:14px 16px">
+     <b style="color:{{t.text}};font-size:15px">Este computador vai ficar com a sua licença</b>
+     <span>DESKTOP-ZE · Windows 11. Trocou de computador? Você muda isso depois, no portal.</span>
+    </div>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:16px">
+     <button onClick="{{confirmar}}" style="height:52px;padding:0 26px;border-radius:12px;border:none;background:{{t.lime}};color:{{t.onLime}};font:700 16px 'Geist',sans-serif;cursor:pointer">Confirmar e instalar</button>
+     <a href="#" style="font-size:15px;color:{{t.limeTxt}}">Reenviar código</a>
+    </div>
+   </sc-if>
+   <sc-if value="{{naInstalacao}}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;align-items:center;gap:14px;background:{{t.card}};border:1px solid {{t.cardB}};border-radius:12px;padding:12px 16px">
+     <span style="font-size:14px;font-weight:600;white-space:nowrap">Instalando o Atlas</span>
+     <div style="flex:1;height:8px;border-radius:4px;background:{{t.barBg}}"><div style="width:78%;height:8px;border-radius:4px;background:{{t.lime}}"></div></div>
+     <span style="font:500 13px 'Geist Mono',monospace;color:{{t.mute}};white-space:nowrap">faltam ~2 min</span>
+    </div>
+    <h1 style="margin:0;font-size:28px;letter-spacing:-0.01em">Enquanto instala, 3 coisas para saber, Zé.</h1>
+    <sc-for list="{{dicas}}" as="d" hint-placeholder-count="3">
+     <div style="display:flex;gap:14px;align-items:flex-start;background:{{d.bg}};border:1px solid {{d.borda}};border-radius:14px;padding:16px 18px">
+      <span style="width:42px;height:42px;flex:none;border-radius:21px;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.ic}}"/></svg></span>
+      <div style="display:flex;flex-direction:column;gap:3px"><b style="font-size:16px">{{d.titulo}}</b><span style="font-size:15px;line-height:1.5;color:{{t.mute}}">{{d.txt}}</span></div>
+     </div>
+    </sc-for>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:16px">
+     <a href="F03Claude.dc.html" style="display:inline-flex;align-items:center;justify-content:center;height:52px;min-height:52px;box-sizing:border-box;padding:0 26px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font-weight:700;font-size:16px;text-decoration:none;white-space:nowrap;flex:none">Continuar →</a>
+     <span style="font-size:14px;color:{{t.mute}}">O antivírus pediu permissão? Clique em "Permitir".</span>
+    </div>
+   </sc-if>
+  </div>
+ </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', panel: '#101214', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', line: '#2A2E33', soft: '#2A3A12', input: '#16181B', barBg: '#2C3036', off: '#3A3F46', mono: '/_blob/3ffac3c67d7d512dd74d51dc13a52fb7' },
+  claro: { bg: '#F2F3EE', panel: '#1F2226', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', line: '#E6E8E1', soft: '#DDF59A', input: '#FFFFFF', barBg: '#E6E8E1', off: '#C4C8BD', mono: '/_blob/0f7fdc2ab38162a05663832cd15a027d' }
+};
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { fase: 'codigo' }; }
+  renderVals() {
+    const t = T[this.props.tema ?? 'escuro'] || T.escuro;
+    const f = this.state.fase;
+    const atual = f === 'codigo' ? 1 : 2;
+    const nomes = ['Confirmar e-mail', 'Instalar', 'Conectar o Claude', 'Abrir as contas', 'Acompanhar pelo celular'];
+    const passos = nomes.map((nome, i) => {
+      const n = i + 1, feito = n < atual, agora = n === atual;
+      return { n: feito ? '✓' : String(n), nome, cor: agora ? '#EDEFEA' : '#9BA39A', peso: agora ? 600 : 400,
+        bolaBg: feito || agora ? t.lime : '#2A2E33', bolaCor: feito || agora ? '#141619' : '#9BA39A' };
+    });
+    const digitos = ['4', '8', '2', '0', '7', '1'].map(v => ({ v, borda: t.lime }));
+    const itens = [
+      { nome: 'Programas de base', st: 'pronto', icone: '✓', bg: t.lime },
+      { nome: 'Claude Code (oficial)', st: 'pronto', icone: '✓', bg: t.lime },
+      { nome: 'Plugin Atlas e painel', st: 'instalando…', icone: '', bg: t.off },
+      { nome: 'Abrir junto com o Windows', st: 'aguardando', icone: '', bg: t.off }
+    ];
+    const dicas = [
+      { ic: 'M9 3h6v11H9zM5 11a7 7 0 0 0 14 0M12 18v3', titulo: 'Aqui tudo pode ser falado.', txt: 'Em qualquer pergunta, aperte o microfone e converse como se estivesse com um amigo na mesa de um restaurante. Não precisa falar certo.', bg: t.card, borda: t.cardB },
+      { ic: 'M3 4h18v12H3zM8 20h8M12 16v4', titulo: 'Este computador é o seu canteiro.', txt: 'É nele que a obra acontece. Deixe ligado durante a obra e acompanhe tudo pelo app do Claude no celular.', bg: t.card, borda: t.cardB },
+      { ic: 'M3 6h6l2 2h10v11H3z', titulo: 'Suas obras ficam numa pasta só.', txt: 'O Atlas criou a pasta Atlas\\Obras e um atalho na Área de Trabalho. Você não precisa mexer em nada lá.', bg: t.card, borda: t.cardB }
+    ];
+    return { t, passos, digitos, itens, dicas, naCodigo: f === 'codigo', naInstalacao: f === 'instalando', confirmar: () => this.setState({ fase: 'instalando' }) };
+  }
+}
+</script>
+</body>
+</html>

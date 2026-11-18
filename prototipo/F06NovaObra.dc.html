@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 06 Nova obra</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} @keyframes pulsoMic{0%{box-shadow:0 0 0 0 rgba(240,90,79,.6)}70%{box-shadow:0 0 0 16px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;box-sizing:border-box;padding:40px 48px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:28px">
+  <div style="display:flex;flex-direction:column;gap:22px">
+   <div style="display:flex;flex-direction:column;gap:6px">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA · PERGUNTA 3 DE 5</span>
+    <div style="height:6px;border-radius:3px;background:{{t.barBg}}"><div style="width:60%;height:6px;border-radius:3px;background:{{t.lime}}"></div></div>
+   </div>
+   <h1 style="margin:0;font-size:32px;line-height:1.2;letter-spacing:-0.01em">Quem vai usar o sistema?</h1>
+   <p style="margin:0;font-size:16px;line-height:1.55;color:{{t.mute}}">Toque em todos que valem. Depois, se quiser, conte mais pelo microfone.</p>
+   <div style="display:flex;flex-wrap:wrap;gap:12px">
+    <sc-for list="{{opcoes}}" as="o" hint-placeholder-count="5">
+     <button onClick="{{o.alternar}}" style="height:52px;padding:0 20px;border-radius:14px;border:2px solid {{o.borda}};background:{{o.bg}};color:{{o.cor}};font:600 16px 'Geist',sans-serif;cursor:pointer">{{o.marca}} {{o.nome}}</button>
+    </sc-for>
+   </div>
+   <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:18px">
+     <button onClick="{{mic}}" aria-label="{{micLabel}}" style="width:76px;height:76px;flex:none;border-radius:38px;border:none;background:{{micBg}};color:{{micCor}};display:flex;align-items:center;justify-content:center;cursor:pointer;animation:{{micAnim}}"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+     <div style="display:flex;flex-direction:column;gap:4px">
+      <b style="font-size:19px">{{micTitulo}}</b>
+      <span style="font-size:15px;line-height:1.5;color:{{t.mute}}">{{micTexto}}</span>
+     </div>
+    </div>
+    <sc-if value="{{gravando}}" hint-placeholder-val="{{ false }}">
+     <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;background:{{t.input}}">
+      <span style="width:10px;height:10px;border-radius:5px;background:#F05A4F"></span>
+      <span style="font:600 14px 'Geist Mono',monospace">Ouvindo… 0:42</span>
+      <div style="flex:1;display:flex;align-items:center;gap:3px;height:28px"><sc-for list="{{onda}}" as="w" hint-placeholder-count="40"><span style="width:4px;border-radius:2px;background:{{t.lime}};height:{{w}}px"></span></sc-for></div>
+      <span style="font-size:13px;color:{{t.mute}}">Aperte de novo para terminar</span>
+     </div>
+    </sc-if>
+    <sc-if value="{{temTexto}}" hint-placeholder-val="{{ true }}">
+     <div style="display:flex;flex-direction:column;gap:6px">
+      <label for="obs" style="font-size:14px;font-weight:600;color:{{t.mute}}">O Atlas escreveu assim. Pode corrigir se quiser:</label>
+      <textarea id="obs" rows="3" style="border-radius:12px;border:1px solid {{t.cardB}};background:{{t.input}};color:{{t.text}};padding:12px 14px;font:16px/1.5 'Geist',sans-serif;resize:none">Olha, os clientes iam marcar pelo celular, né? Aí eu confirmo pelo WhatsApp. E cada barbeiro só vê a agenda dele, pra não dar confusão.</textarea>
+     </div>
+    </sc-if>
+    <span style="font-size:13px;color:{{t.mute2}}">Prefere escrever? <a href="#" style="color:{{t.limeTxt}}">Digitar em vez de falar</a></span>
+   </div>
+   <div style="margin-top:auto;display:flex;gap:12px">
+    <a href="F05Obras.dc.html" style="display:inline-flex;align-items:center;height:52px;padding:0 22px;border-radius:12px;border:1px solid {{t.cardB}};color:{{t.text}};font-weight:600;font-size:16px;text-decoration:none">Voltar</a>
+    <a href="F06bEstilo.dc.html" style="display:inline-flex;align-items:center;height:52px;padding:0 26px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font-weight:700;font-size:16px;text-decoration:none">Próxima pergunta</a>
+   </div>
+  </div>
+  <aside style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:16px">
+   <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">O QUE O ATLAS JÁ ENTENDEU</span>
+   <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;color:{{t.mute}}">Nome da obra</span><b style="font-size:18px">Agenda da Barbearia do Zé</b></div>
+   <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;color:{{t.mute}}">O problema</span><span style="font-size:16px;line-height:1.5">Marcação de horário por WhatsApp, com esquecimentos e horários duplicados.</span></div>
+   <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;color:{{t.mute}}">Quem usa</span><span style="font-size:16px;line-height:1.5">{{quem}}</span></div>
+   <div style="margin-top:auto;font-size:14px;line-height:1.5;color:{{t.mute}};border-top:1px solid {{t.line}};padding-top:14px">Nada aqui é definitivo. No protótipo você vê as telas e muda o que quiser.</div>
+  </aside>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', input: '#16181B', line: '#2A2E33', barBg: '#2C3036', soft: '#2A3A12' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', input: '#FFFFFF', line: '#E6E8E1', barBg: '#E6E8E1', soft: '#DDF59A' }
+};
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sel: { dono: true, barbeiros: true, clientes: true }, voz: 'pronto' }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    const sel = this.state.sel;
+    const base = [
+      { id: 'dono', nome: 'Eu, o dono' }, { id: 'barbeiros', nome: 'Os barbeiros' }, { id: 'recepcao', nome: 'Recepção' },
+      { id: 'clientes', nome: 'Os clientes da barbearia' }, { id: 'contador', nome: 'Contador' }
+    ];
+    const opcoes = base.map(o => {
+      const on = !!sel[o.id];
+      return { ...o, marca: on ? '✓' : '+', bg: on ? t.soft : 'transparent', borda: on ? t.lime : t.cardB, cor: t.text,
+        alternar: () => this.setState({ sel: { ...sel, [o.id]: !on } }) };
+    });
+    const quem = base.filter(o => sel[o.id]).map(o => o.nome).join(', ') || 'Ainda não definido';
+    const voz = this.state.voz, grav = voz === 'gravando';
+    const onda = [8,14,22,12,26,18,10,24,16,28,12,20,9,22,26,14,18,11,24,16,20,13,27,10,18,22,12,25,15,9,21,17,26,11,19,23,13,16,10,8];
+    return { tema, t, opcoes, quem, onda, gravando: grav, temTexto: voz === 'pronto',
+      micBg: grav ? '#F05A4F' : t.lime, micCor: grav ? '#FFFFFF' : t.onLime, micAnim: grav ? 'pulsoMic 1.4s infinite' : 'none',
+      micLabel: grav ? 'Parar de gravar' : 'Falar',
+      micTitulo: grav ? 'Pode falar, estou ouvindo.' : 'Aperte e fale, como se contasse para um amigo na mesa de um restaurante.',
+      micTexto: grav ? 'Fale do seu jeito, sem pressa, como num papo de restaurante. Pode errar e voltar atrás: o Atlas entende.' : 'Não precisa falar bonito. Conte como funciona hoje e o que te incomoda. O Atlas escreve tudo para você.',
+      mic: () => this.setState({ voz: grav ? 'pronto' : 'gravando' }) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+.canteiro/
+.claude/roteiro.json
+node_modules/
+.env
+.env.*
+*.pem
+*.key
+.claude/*.log

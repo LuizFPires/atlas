@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 10 Pausa pela cota do Claude</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex">
+ <dc-import name="Shell" ativo="obra" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;box-sizing:border-box;padding:40px 48px;display:flex;align-items:center;justify-content:center">
+  <div style="width:720px;background:{{t.card}};border:1px solid {{t.cardB}};border-radius:24px;padding:44px;display:flex;flex-direction:column;gap:22px">
+   <div style="display:flex;align-items:center;gap:14px">
+    <span style="width:56px;height:56px;border-radius:28px;background:{{t.soft}};display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="{{t.limeTxt}}" stroke-width="2.4" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg></span>
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">OBRA EM PAUSA · NADA A FAZER</span>
+   </div>
+   <h1 style="margin:0;font-size:34px;line-height:1.15;letter-spacing:-0.01em">A cota do seu plano Claude acabou por agora. A obra volta sozinha às 14h.</h1>
+   <p style="margin:0;font-size:17px;line-height:1.55;color:{{t.mute}}">Isso é normal no plano Pro. Tudo o que foi feito está salvo: a obra parou no M5, no meio da tarefa "aviso de confirmação", e continua dali.</p>
+   <div style="display:flex;align-items:center;gap:18px;background:{{t.card2}};border-radius:16px;padding:18px 20px">
+    <span style="font:600 40px 'Geist Mono',monospace;color:{{t.limeTxt}}">2:47</span>
+    <div style="display:flex;flex-direction:column;gap:3px"><b style="font-size:16px">horas até a cota renovar</b><span style="font-size:14px;color:{{t.mute}}">Pode desligar o computador. Ao ligar depois das 14h, clique em Continuar obra.</span></div>
+   </div>
+   <div style="display:flex;gap:12px;align-items:center">
+    <a href="F09Painel.dc.html" style="display:inline-flex;align-items:center;height:50px;padding:0 22px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font-weight:700;font-size:16px;text-decoration:none">Voltar ao painel</a>
+    <a href="#" style="font-size:15px;color:{{t.limeTxt}}">Quero terminar mais rápido (ver o plano Max)</a>
+   </div>
+   <span style="font-size:14px;color:{{t.mute2}}">Avisamos no seu celular quando a obra voltar.</span>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', card2: '#22262B', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', soft: '#2A3A12' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', card2: '#E8EAE3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', soft: '#DDF59A' }
+};
+class Component extends DCLogic {
+  renderVals() { const tema = this.props.tema ?? 'escuro'; return { tema, t: T[tema] || T.escuro }; }
+}
+</script>
+</body>
+</html>

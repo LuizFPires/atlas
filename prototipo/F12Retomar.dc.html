@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 12 Retomar a obra</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px">
+ <div style="display:flex;align-items:center;gap:12px"><img src="{{t.mono}}" alt="" style="width:62px;height:34px;object-fit:contain"><img src="/_blob/a8a1f7c17882253fc0bb950b7874b2c2" alt="Atlas" style="width:150px;height:22px;object-fit:contain;filter:{{t.wordFiltro}}"></div>
+ <div style="width:880px;background:{{t.card}};border:1px solid {{t.cardB}};border-radius:26px;overflow:hidden;display:grid;grid-template-columns:340px minmax(0,1fr)">
+  <img src="/_blob/bfb9db5689c302bc51beabc3a8ef1062" alt="Canteiro 3D da obra, parado onde ficou" style="width:340px;height:420px;object-fit:cover;display:block">
+  <div style="padding:36px;display:flex;flex-direction:column;gap:16px">
+   <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">BOM DIA, ZÉ</span>
+   <h1 style="margin:0;font-size:30px;line-height:1.2;letter-spacing:-0.01em">Sua obra parou ontem às 22h14, quando o computador foi desligado.</h1>
+   <div style="display:flex;flex-direction:column;gap:6px;font-size:15px;color:{{t.mute}}">
+    <span><b style="color:{{t.text}}">Agenda da Barbearia do Zé</b> · 62% · M5 Confirmação por WhatsApp</span>
+    <span>✓ Nada se perdeu. Ela continua exatamente dali.</span>
+   </div>
+   <a href="F09Painel.dc.html" style="margin-top:auto;display:flex;align-items:center;justify-content:center;gap:10px;height:62px;border-radius:14px;background:{{t.lime}};color:{{t.onLime}};font-weight:700;font-size:19px;text-decoration:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>Continuar obra</a>
+   <a href="F05Obras.dc.html" style="align-self:center;font-size:15px;color:{{t.mute}}">Agora não</a>
+  </div>
+ </div>
+ <span style="font-size:14px;color:{{t.mute2}}">O Atlas abre sozinho quando você liga o computador. Para desligar isso: Configurações → Abrir com o Windows.</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', mono: '/_blob/3ffac3c67d7d512dd74d51dc13a52fb7', wordFiltro: 'none' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', mono: '/_blob/0f7fdc2ab38162a05663832cd15a027d', wordFiltro: 'brightness(0.12)' }
+};
+class Component extends DCLogic {
+  renderVals() { const tema = this.props.tema ?? 'escuro'; return { tema, t: T[tema] || T.escuro }; }
+}
+</script>
+</body>
+</html>

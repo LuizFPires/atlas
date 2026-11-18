@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 11 Precisa de você</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex">
+ <dc-import name="Shell" ativo="obra" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;box-sizing:border-box;padding:36px 44px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:26px">
+  <div style="display:flex;flex-direction:column;gap:18px">
+   <span style="align-self:flex-start;font-size:13px;font-weight:700;color:{{t.onWarn}};background:{{t.warn}};padding:6px 12px;border-radius:999px">● A obra precisa de você · 5 minutos</span>
+   <h1 style="margin:0;font-size:32px;line-height:1.2;letter-spacing:-0.01em">Conecte o WhatsApp da barbearia</h1>
+   <p style="margin:0;font-size:16px;line-height:1.55;color:{{t.mute}}">Para mandar a confirmação dos horários, o sistema precisa de uma chave do WhatsApp Business. Só você pode criar, porque é a sua conta. O resto da obra continua enquanto isso.</p>
+   <div style="display:flex;flex-direction:column;gap:10px">
+    <sc-for list="{{passos}}" as="p" hint-placeholder-count="4">
+     <button onClick="{{p.marcar}}" style="display:flex;align-items:flex-start;gap:14px;text-align:left;background:{{t.card}};border:1px solid {{p.borda}};border-radius:14px;padding:14px 16px;color:{{t.text}};font-family:'Geist',sans-serif;cursor:pointer">
+      <span style="width:28px;height:28px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;font:600 13px 'Geist Mono',monospace;background:{{p.bolaBg}};color:{{p.bolaCor}}">{{p.n}}</span>
+      <span style="display:flex;flex-direction:column;gap:3px"><b style="font-size:16px">{{p.titulo}}</b><span style="font-size:14px;line-height:1.45;color:{{t.mute}}">{{p.desc}}</span></span>
+     </button>
+    </sc-for>
+   </div>
+   <div style="margin-top:auto;display:flex;gap:12px;align-items:center">
+    <a href="F09Painel.dc.html" style="display:inline-flex;align-items:center;height:52px;padding:0 24px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font-weight:700;font-size:16px;text-decoration:none">Já colei a chave: continuar</a>
+    <a href="F09Painel.dc.html" style="font-size:15px;color:{{t.limeTxt}}">Fazer depois (a obra segue sem o WhatsApp)</a>
+   </div>
+  </div>
+  <aside style="display:flex;flex-direction:column;gap:16px">
+   <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:12px">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">ONDE COLAR A CHAVE</span>
+    <label for="chave" style="font-size:15px;font-weight:600">Chave do WhatsApp Business</label>
+    <input id="chave" placeholder="Cole aqui" style="height:48px;border-radius:12px;border:1px solid {{t.cardB}};background:{{t.input}};color:{{t.text}};padding:0 14px;font:15px 'Geist Mono',monospace">
+    <span style="font-size:13px;color:{{t.mute}}">Fica guardada só no seu computador e na sua conta. O Atlas não vê.</span>
+   </div>
+   <div style="background:{{t.card2}};border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:10px;font-size:15px;line-height:1.5">
+    <b style="font-size:16px">Travou em algum passo?</b>
+    <span style="color:{{t.mute}}">Assista ao vídeo de 2 minutos ou mande um print. O Claude olha e diz o que fazer.</span>
+    <a href="#" style="color:{{t.limeTxt}};font-weight:600">▶ Ver o vídeo</a>
+   </div>
+   <span style="font-size:14px;color:{{t.mute2}}">Também mandamos este passo a passo para o seu e-mail e celular.</span>
+  </aside>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', card2: '#22262B', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', input: '#16181B', warn: '#F2B14A', onWarn: '#1E1606', off: '#2C3036', offTxt: '#B4BBB2' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', card2: '#E8EAE3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', input: '#FFFFFF', warn: '#F6D28E', onWarn: '#4A3000', off: '#E6E8E1', offTxt: '#4A5048' }
+};
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { feito: 1 }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    const feito = this.state.feito;
+    const base = [
+      ['Abra o Meta Business', 'O Atlas já abriu a página certa no seu navegador.'],
+      ['Entre com o Facebook da barbearia', 'Use a mesma conta da página da barbearia.'],
+      ['Toque em "Criar chave de acesso"', 'Escolha "WhatsApp" e confirme o número da barbearia.'],
+      ['Copie a chave e cole ao lado', 'É um texto longo que começa com "EAA".']
+    ];
+    const passos = base.map(([titulo, desc], i) => {
+      const ok = i < feito;
+      return { titulo, desc, n: ok ? '✓' : String(i + 1), bolaBg: ok ? t.lime : t.off, bolaCor: ok ? t.onLime : t.offTxt, borda: i === feito ? t.lime : t.cardB, marcar: () => this.setState({ feito: i + 1 }) };
+    });
+    return { tema, t, passos };
+  }
+}
+</script>
+</body>
+</html>

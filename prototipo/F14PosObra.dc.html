@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 14 Pós-obra</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex">
+ <dc-import name="Shell" ativo="posobra" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;box-sizing:border-box;padding:36px 44px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:26px">
+  <div style="display:flex;flex-direction:column;gap:18px">
+   <div style="display:flex;flex-direction:column;gap:6px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">PÓS-OBRA · AGENDA DA BARBEARIA DO ZÉ</span><h1 style="margin:0;font-size:32px;letter-spacing:-0.01em">O que você quer mudar?</h1></div>
+   <div style="display:flex;gap:10px">
+    <sc-for list="{{tipos}}" as="k" hint-placeholder-count="2"><button onClick="{{k.ir}}" style="height:46px;padding:0 18px;border-radius:12px;border:2px solid {{k.borda}};background:{{k.bg}};color:{{t.text}};font:600 15px 'Geist',sans-serif;cursor:pointer">{{k.nome}}</button></sc-for>
+   </div>
+   <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:14px"><button aria-label="Falar o pedido" style="width:56px;height:56px;flex:none;border-radius:28px;border:none;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button><div style="display:flex;flex-direction:column;gap:2px"><label for="pedido" style="font-size:16px;font-weight:600">Aperte e fale, como se contasse para um amigo no restaurante</label><span style="font-size:14px;color:{{t.mute}}">Ou escreva, se preferir. O Atlas escreve o que você falar aqui embaixo.</span></div></div>
+    <textarea id="pedido" rows="3" style="border-radius:12px;border:1px solid {{t.cardB}};background:{{t.input}};color:{{t.text}};padding:14px;font:16px 'Geist',sans-serif;resize:none">{{texto}}</textarea>
+    <div style="display:flex;gap:10px;align-items:center"><button style="height:42px;padding:0 14px;border-radius:10px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font:600 14px 'Geist',sans-serif">Anexar print</button><button onClick="{{enviar}}" style="margin-left:auto;height:44px;padding:0 20px;border-radius:12px;border:none;background:{{t.lime}};color:{{t.onLime}};font:700 15px 'Geist',sans-serif;cursor:pointer">Enviar para o Claude</button></div>
+   </div>
+   <sc-if value="{{temPlano}}" hint-placeholder-val="{{ true }}">
+    <div style="background:{{t.card2}};border:1px solid {{t.lime}};border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:12px">
+     <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">O CLAUDE ENTENDEU ASSIM</span>
+     <span style="font-size:16px;line-height:1.55">Você quer bloquear a agenda nos feriados, para os clientes não marcarem. Vou:</span>
+     <span style="font-size:15px;line-height:1.6;color:{{t.mute}}">1. Criar uma lista de feriados que você edita no seu painel.<br>2. Esconder esses dias na tela de marcar horário.<br>3. Testar e publicar numa versão de teste para você conferir.</span>
+     <span style="font-size:14px;color:{{t.mute}}">Leva cerca de 30 minutos. O sistema no ar só muda quando você aprovar.</span>
+     <div style="display:flex;gap:10px"><a href="F09Painel.dc.html" style="display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font-weight:700;font-size:15px;text-decoration:none">Pode fazer</a><button style="height:46px;padding:0 18px;border-radius:12px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font:600 15px 'Geist',sans-serif">Não é isso</button></div>
+    </div>
+   </sc-if>
+  </div>
+  <aside style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:6px">
+   <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}};padding-bottom:8px">PEDIDOS ANTERIORES</span>
+   <sc-for list="{{historico}}" as="h" hint-placeholder-count="3">
+    <div style="display:flex;flex-direction:column;gap:4px;padding:12px 0;border-top:1px solid {{t.line}}"><div style="display:flex;justify-content:space-between;gap:10px"><b style="font-size:15px">{{h.nome}}</b><span style="font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:{{h.bg}};color:{{h.cor}}">{{h.st}}</span></div><span style="font-size:13px;color:{{t.mute}}">{{h.data}}</span></div>
+   </sc-for>
+   <span style="margin-top:auto;font-size:14px;line-height:1.5;color:{{t.mute}}">Todo pedido gera uma versão de teste antes de ir para o ar. Se algo der errado, dá para voltar para a versão anterior com um clique.</span>
+  </aside>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', card2: '#1B2210', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', input: '#16181B', line: '#2A2E33', soft: '#2A3A12', chip: '#2C3036' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', card2: '#F4FADF', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', input: '#FFFFFF', line: '#E6E8E1', soft: '#DDF59A', chip: '#E6E8E1' }
+};
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tipo: 'mudar', enviado: true }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    const tipo = this.state.tipo;
+    const tipos = [['mudar', 'Quero mudar algo'], ['quebrou', 'Algo não funciona']].map(([id, nome]) => ({ nome, bg: id === tipo ? t.soft : 'transparent', borda: id === tipo ? t.lime : t.cardB, ir: () => this.setState({ tipo: id }) }));
+    const texto = tipo === 'mudar' ? 'Nos feriados a barbearia fecha. Os clientes não podem conseguir marcar nesses dias.' : 'Ontem um cliente marcou e não recebeu a confirmação no WhatsApp.';
+    const historico = [
+      { nome: 'Cor do botão de marcar', data: '12/11 · 18 min', st: 'No ar', bg: t.soft, cor: t.limeTxt },
+      { nome: 'Lembrete 2 h antes', data: '09/11 · 41 min', st: 'No ar', bg: t.soft, cor: t.limeTxt },
+      { nome: 'Relatório de comissão', data: '05/11 · aguardando você', st: 'Para conferir', bg: t.chip, cor: t.text }
+    ];
+    return { tema, t, tipos, texto, historico, temPlano: this.state.enviado, enviar: () => this.setState({ enviado: true }) };
+  }
+}
+</script>
+</body>
+</html>

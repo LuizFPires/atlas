@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 07b Batismo: nome e marca</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;family=Fraunces:wght@600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} .acao{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:50px;min-height:50px;padding:0 22px;box-sizing:border-box;border-radius:12px;font-family:'Geist',sans-serif;font-size:16px;font-weight:700;line-height:1;white-space:nowrap;flex:none;text-decoration:none;cursor:pointer}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex">
+ <dc-import name="Shell" ativo="prototipo" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;box-sizing:border-box;padding:28px 40px;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:30px;min-width:0">
+  <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+   <div style="display:flex;align-items:center;gap:10px">
+    <sc-for list="{{fases}}" as="f" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:999px;border:1px solid {{f.borda}};background:{{f.bg}};font-size:14px;font-weight:600;color:{{f.cor}}"><span style="font-family:'Geist Mono',monospace">{{f.n}}</span>{{f.nome}}</div></sc-for>
+   </div>
+   <div style="display:flex;flex-direction:column;gap:6px">
+    <h1 style="margin:0;font-size:30px;letter-spacing:-0.01em">Hora do batismo.</h1>
+    <span style="font-size:15px;line-height:1.5;color:{{t.mute}}">Agora o Atlas já sabe o que o sistema faz, para quem é e qual é a cara dele. Por isso o nome vem no final: ele nasce de tudo o que vocês construíram.</span>
+   </div>
+   <div style="display:flex;gap:10px">
+    <sc-for list="{{modos}}" as="m" hint-placeholder-count="2"><button onClick="{{m.ir}}" style="height:44px;padding:0 18px;border-radius:12px;border:2px solid {{m.borda}};background:{{m.bg}};color:{{t.text}};font:600 15px 'Geist',sans-serif;cursor:pointer;white-space:nowrap">{{m.nome}}</button></sc-for>
+   </div>
+   <sc-if value="{{sugerir}}" hint-placeholder-val="{{ true }}">
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+     <sc-for list="{{nomes}}" as="n" hint-placeholder-count="3">
+      <button onClick="{{n.ir}}" style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;border:2px solid {{n.borda}};background:{{t.card}};color:{{t.text}};cursor:pointer;text-align:left;font-family:'Geist',sans-serif;min-width:0">
+       <div style="height:110px;border-radius:12px;background:#FBF7F2;display:flex;align-items:center;justify-content:center;gap:10px">
+        <span style="width:46px;height:46px;border-radius:12px;background:#2B211B;display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D9A066" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="{{n.svg}}"/></svg></span>
+        <span style="font:600 22px 'Fraunces',serif;color:#2B211B">{{n.nome}}</span>
+       </div>
+       <b style="font-size:17px">{{n.nome}}</b>
+       <span style="font-size:13px;font-style:italic;color:{{t.limeTxt}}">"{{n.slogan}}"</span>
+       <span style="font-size:13px;line-height:1.45;color:{{t.mute}}">{{n.porque}}</span>
+       <span style="font-size:12px;color:{{t.mute2}}">{{n.check}}</span>
+      </button>
+     </sc-for>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+     <button style="height:42px;padding:0 16px;border-radius:10px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font:600 14px 'Geist',sans-serif">↻ Sugerir outros</button>
+     <button style="display:flex;align-items:center;gap:6px;height:42px;padding:0 16px;border-radius:10px;border:none;background:{{t.lime}};color:{{t.onLime}};font:600 14px 'Geist',sans-serif"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Falar uma ideia de nome</button>
+     <span style="font-size:13px;color:{{t.mute}}">Antes de você decidir, o Atlas procura nomes parecidos e confere se o endereço na internet está livre.</span>
+    </div>
+   </sc-if>
+   <sc-if value="{{tenho}}" hint-placeholder-val="{{ false }}">
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px">
+     <div style="display:flex;flex-direction:column;gap:6px"><label for="nomeSis" style="font-size:15px;font-weight:600">Qual o nome do sistema?</label><input id="nomeSis" placeholder="Ex.: Agenda do Zé" style="height:46px;box-sizing:border-box;border-radius:10px;border:1px solid {{t.cardB}};background:{{t.input}};color:{{t.text}};padding:0 14px;font:16px 'Geist',sans-serif"></div>
+     <div style="display:flex;align-items:center;gap:14px;border:2px dashed {{t.cardB}};border-radius:14px;padding:16px"><span style="font-size:22px">🖼</span><div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">Logomarca</b><span style="font-size:13px;color:{{t.mute}}">PNG, SVG ou PDF. O Atlas cria o ícone do app a partir dela.</span></div><span style="margin-left:auto;font-size:13px;font-weight:600;color:{{t.limeTxt}}">Escolher arquivo</span></div>
+    </div>
+   </sc-if>
+   <div style="margin-top:auto;display:flex;align-items:center;gap:12px">
+    <a class="acao" href="F07Prototipo.dc.html" style="padding:0 18px;border:1px solid {{t.cardB}};color:{{t.text}};font-weight:600;font-size:15px">← Voltar às telas</a>
+    <a class="acao" href="F08Aprovar.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Batizar como "{{escolhido}}" →</a>
+   </div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+   <span style="font-size:13px;color:{{t.mute2}}">Assim fica no celular dos seus clientes:</span>
+   <div style="width:310px;height:640px;border-radius:42px;background:#0B0C0D;padding:11px;box-sizing:border-box;box-shadow:0 20px 50px rgba(0,0,0,.35)">
+    <div style="width:100%;height:100%;border-radius:32px;overflow:hidden;display:flex;flex-direction:column;background:linear-gradient(160deg,#6E5A4A,#2B211B)">
+     <div style="padding:16px 18px 0;display:flex;justify-content:space-between;font:600 12px 'Geist',sans-serif;color:#FBF7F2"><span>9:41</span><span>●●● 5G</span></div>
+     <div style="padding:26px 22px;display:grid;grid-template-columns:repeat(4,1fr);gap:18px 10px">
+      <sc-for list="{{apps}}" as="a" hint-placeholder-count="8"><div style="display:flex;flex-direction:column;align-items:center;gap:5px"><span style="width:54px;height:54px;border-radius:14px;background:{{a.bg}};display:flex;align-items:center;justify-content:center;box-shadow:{{a.sombra}}"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D9A066" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="{{a.svg}}"/></svg></span><span style="font-size:10px;color:#FBF7F2;font-weight:{{a.peso}}">{{a.nome}}</span></div></sc-for>
+     </div>
+     <div style="margin:auto 14px 16px;background:#FBF7F2;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:8px;color:#2B211B">
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:36px;height:36px;border-radius:10px;background:#2B211B;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D9A066" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="{{logo}}"/></svg></span><b style="font:600 20px 'Fraunces',serif">{{escolhido}}</b></div>
+      <span style="font-size:13px;font-style:italic;color:#7A6A5E">{{slogan}}</span>
+      <span style="height:40px;border-radius:10px;background:#B5651D;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">Marcar horário</span>
+     </div>
+    </div>
+   </div>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', input: '#16181B', soft: '#2A3A12' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', input: '#FFFFFF', soft: '#DDF59A' }
+};
+const L = {
+  cadeira: 'M7 3v9h10V3M5 12h14M7 12v9M17 12v9',
+  navalha: 'M4 20L20 4M14 4h6v6',
+  hora: 'M20 12a8 8 0 1 1-16 0a8 8 0 1 1 16 0M12 7v5l3 2'
+};
+const NOMES = [
+  { id: 'cadeira', nome: 'Cadeira 1', slogan: 'Sua vez, sem fila.', porque: 'Lembra a cadeira do barbeiro e a ideia de ser o próximo. Curto e fácil de falar.', check: '✓ nome livre · cadeira1.app livre' },
+  { id: 'navalha', nome: 'Navalha', slogan: 'Agenda afiada.', porque: 'Forte, tem cara de barbearia e combina com o estilo clássico que você escolheu.', check: '⚠ existe um salão com nome parecido em SP' },
+  { id: 'hora', nome: 'Horinha', slogan: 'Marcou, tá marcado.', porque: 'Leve e simpático, do jeito que o cliente fala: "marca uma horinha pra mim?".', check: '✓ nome livre · horinha.app livre' }
+];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { modo: 'sugerir', nome: 'cadeira' }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    const { modo, nome } = this.state;
+    const fases = [['✓', 'Estilo', 'ok'], ['✓', 'Telas', 'ok'], ['3', 'Nome e marca', 'agora']].map(([n, nm, st]) => ({ n, nome: nm, bg: st === 'agora' ? t.lime : 'transparent', cor: st === 'agora' ? t.onLime : t.text, borda: st === 'agora' ? t.lime : t.lime }));
+    const modos = [['sugerir', 'Quero sugestões do Atlas'], ['tenho', 'Já tenho nome e logomarca']].map(([id, nm]) => ({ nome: nm, bg: id === modo ? t.soft : 'transparent', borda: id === modo ? t.lime : t.cardB, ir: () => this.setState({ modo: id }) }));
+    const nomes = NOMES.map(n => ({ ...n, svg: L[n.id], borda: n.id === nome ? t.lime : t.cardB, ir: () => this.setState({ nome: n.id }) }));
+    const e = NOMES.find(n => n.id === nome) || NOMES[0];
+    const cinza = (nm, bg) => ({ nome: nm, bg, svg: '', sombra: 'none', peso: 400 });
+    const apps = [cinza('Fotos', '#E9E3DA'), cinza('Mapas', '#CFE3D2'), cinza('Banco', '#D7CDE8'), cinza('Música', '#F2C9C4'), { nome: e.nome, bg: '#2B211B', svg: L[e.id], sombra: '0 0 0 3px #D9A066', peso: 700 }, cinza('Câmera', '#DADDD3'), cinza('Clima', '#C9DDF0'), cinza('Notas', '#F4E7B5')];
+    return { tema, t, fases, modos, sugerir: modo === 'sugerir', tenho: modo === 'tenho', nomes, apps, escolhido: e.nome, slogan: e.slogan, logo: L[e.id] };
+  }
+}
+</script>
+</body>
+</html>

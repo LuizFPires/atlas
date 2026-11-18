@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas — três direções visuais</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#C6F135}a:hover{color:#E2FF8A}
+.op{display:flex;flex-direction:column;gap:18px;text-decoration:none;border-radius:20px;padding:28px;box-sizing:border-box;min-height:470px}
+.op:hover{outline:2px solid #C6F135}
+.sw{width:56px;height:56px;border-radius:14px}
+</style>
+</helmet>
+<div style="width:1440px;height:900px;box-sizing:border-box;padding:64px 72px;background:#141619;color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;display:flex;flex-direction:column;gap:40px">
+  <div style="display:flex;align-items:center;gap:16px">
+    <img src="/_blob/3ffac3c67d7d512dd74d51dc13a52fb7" alt="" style="width:73px;height:40px;object-fit:contain">
+    <img src="/_blob/a8a1f7c17882253fc0bb950b7874b2c2" alt="Atlas" style="width:188px;height:28px;object-fit:contain">
+    <span style="font-family:'Geist Mono',monospace;font-size:13px;letter-spacing:.14em;color:#9BA39A;margin-left:12px">TRÊS DIREÇÕES VISUAIS · 18/11/2026</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;max-width:980px">
+    <h1 style="margin:0;font-size:48px;line-height:1.08;letter-spacing:-0.02em;font-weight:700">Mesma base do PACE. Três jeitos de vestir o Atlas em grafite e verde-limão.</h1>
+    <p style="margin:0;font-size:18px;line-height:1.55;color:#B4BBB2">Cada opção mostra a tela principal, o painel da obra, com dados de exemplo (a agenda de uma barbearia). Escolha uma direção. Em seguida eu monto o fluxo completo, do instalador ao pós-obra, nela.</p>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px">
+    <a class="op" href="OpcaoA.dc.html" style="background:#1E2125;border:1px solid #2E3238;color:#EDEFEA">
+      <span style="font-family:'Geist Mono',monospace;font-size:12px;letter-spacing:.14em;color:#C6F135">OPÇÃO A</span>
+      <b style="font-size:26px">Grafite + Lima</b>
+      <span style="font-size:15px;line-height:1.5;color:#B4BBB2">Escuro inteiro, cartões em grafite, o limão só onde há ação ou avanço. A irmã noturna do PACE.</span>
+      <div style="display:flex;gap:10px;margin-top:auto"><div class="sw" style="background:#16181B"></div><div class="sw" style="background:#22262B"></div><div class="sw" style="background:#C6F135"></div><div class="sw" style="background:#EDEFEA"></div></div>
+      <span style="font-size:15px;font-weight:600;color:#C6F135">Ver opção A →</span>
+    </a>
+    <a class="op" href="OpcaoB.dc.html" style="background:#F2F3EE;border:1px solid #DADDD3;color:#1B1E22">
+      <span style="font-family:'Geist Mono',monospace;font-size:12px;letter-spacing:.14em;color:#4F6B00">OPÇÃO B</span>
+      <b style="font-size:26px">Concreto claro + Lima</b>
+      <span style="font-size:15px;line-height:1.5;color:#4A5048">Menu lateral em grafite, área de trabalho clara como concreto. Mais leve para quem passa o dia no app.</span>
+      <div style="display:flex;gap:10px;margin-top:auto"><div class="sw" style="background:#1F2226"></div><div class="sw" style="background:#F2F3EE;border:1px solid #CFD3C8;box-sizing:border-box"></div><div class="sw" style="background:#B6E22E"></div><div class="sw" style="background:#4F6B00"></div></div>
+      <span style="font-size:15px;font-weight:600;color:#3F5600">Ver opção B →</span>
+    </a>
+    <a class="op" href="OpcaoC.dc.html" style="background:#0D0E10;border:1px solid #26292D;color:#F1F3EC">
+      <span style="font-family:'Geist Mono',monospace;font-size:12px;letter-spacing:.14em;color:#D4FF3A">OPÇÃO C</span>
+      <b style="font-size:26px;font-family:'Space Grotesk',sans-serif">Noite de canteiro</b>
+      <span style="font-size:15px;line-height:1.5;color:#A9AFA6">Quase preto, limão neon, títulos em Space Grotesk e números em mono. Visual técnico, de painel de obra.</span>
+      <div style="display:flex;gap:10px;margin-top:auto"><div class="sw" style="background:#0D0E10;border:1px solid #2C3034;box-sizing:border-box"></div><div class="sw" style="background:#1A1C1F"></div><div class="sw" style="background:#D4FF3A"></div><div class="sw" style="background:#7A8075"></div></div>
+      <span style="font-size:15px;font-weight:600;color:#D4FF3A">Ver opção C →</span>
+    </a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

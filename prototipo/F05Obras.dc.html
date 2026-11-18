@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 05 Minhas obras</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} .acao{display:inline-flex;align-items:center;justify-content:center;height:52px;min-height:52px;padding:0 26px;box-sizing:border-box;border-radius:12px;font-family:'Geist',sans-serif;font-size:16px;font-weight:700;line-height:1;white-space:nowrap;flex:none;text-decoration:none}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;box-sizing:border-box;padding:34px 44px;display:flex;flex-direction:column;gap:22px;min-width:0">
+  <div style="display:flex;flex-direction:column;gap:6px">
+   <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">MINHAS OBRAS</span>
+   <h1 style="margin:0;font-size:32px;letter-spacing:-0.01em">Tudo pronto, Zé. Agora vamos construir.</h1>
+  </div>
+  <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;padding:24px 26px;display:flex;flex-direction:column;gap:18px">
+   <div style="display:flex;flex-direction:column;gap:4px">
+    <h2 style="margin:0;font-size:22px">Fazer um sistema é igual construir uma casa.</h2>
+    <span style="font-size:15px;color:{{t.mute}}">Por isso aqui a gente chama de <b style="color:{{t.text}}">obra</b>. Veja como é parecido:</span>
+   </div>
+   <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px">
+    <sc-for list="{{etapas}}" as="e" hint-placeholder-count="5">
+     <div style="background:{{t.card2}};border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="width:30px;height:30px;border-radius:15px;background:{{t.lime}};color:{{t.onLime}};font:700 14px 'Geist Mono',monospace;display:flex;align-items:center;justify-content:center;flex:none">{{e.n}}</span><b style="font-size:17px">{{e.nome}}</b></div>
+      <div style="display:flex;flex-direction:column;gap:3px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">NUMA CASA</span><span style="font-size:14px;line-height:1.45;color:{{t.mute}}">{{e.casa}}</span></div>
+      <div style="height:1px;background:{{t.cardB}}"></div>
+      <div style="display:flex;flex-direction:column;gap:3px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.limeTxt}}">NO ATLAS</span><span style="font-size:14px;line-height:1.45">{{e.atlas}}</span></div>
+     </div>
+    </sc-for>
+   </div>
+   <span style="font-size:14px;color:{{t.mute}}">Quem trabalha na obra é o <b style="color:{{t.text}}">Claude</b>: um constrói, outro confere, outro fiscaliza. Você só decide e acompanha.</span>
+  </div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:22px;flex:1;min-height:0">
+   <div style="background:{{t.card}};border:1px solid {{t.lime}};border-radius:20px;padding:26px;display:flex;flex-direction:column;gap:12px">
+    <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">PRIMEIRO PASSO: O PROJETO</span>
+    <h2 style="margin:0;font-size:24px">Comece a sua primeira obra</h2>
+    <p style="margin:0;font-size:15px;line-height:1.55;color:{{t.mute}}">Conte, com as suas palavras, o que a sua barbearia precisa. O Claude desenha as telas junto com você. Nada é construído antes de você aprovar.</p>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><a class="acao" href="F06NovaObra.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Começar do zero →</a><a class="acao" href="F06cTrazer.dc.html" style="border:1px solid {{t.cardB}};color:{{t.text}};font-weight:600;font-size:15px">Já tenho um protótipo</a></div>
+   </div>
+   <div style="background:{{t.card2}};border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:12px">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">IDEIAS PARA BARBEARIAS · ESCOLHA UMA PARA COMEÇAR</span>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+     <sc-for list="{{ideias}}" as="i" hint-placeholder-count="4">
+      <a href="F06NovaObra.dc.html" style="display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:14px;background:{{t.card}};border:1px solid {{t.cardB}};text-decoration:none;color:{{t.text}}"><b style="font-size:16px">{{i.nome}}</b><span style="font-size:14px;color:{{t.mute}}">{{i.desc}}</span></a>
+     </sc-for>
+    </div>
+    <span style="margin-top:auto;font-size:14px;line-height:1.5;color:{{t.mute}}">Cada obra vira um sistema separado, com o seu próprio endereço. Todas ficam guardadas na pasta <b style="color:{{t.text}};font-family:'Geist Mono',monospace;font-size:13px">Atlas\Obras</b>, no seu computador. <a href="#" style="color:{{t.limeTxt}};font-weight:600">Abrir a pasta</a></span>
+   </div>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', card2: '#191C20', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', soft: '#2A3A12' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', card2: '#E8EAE3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', soft: '#DDF59A' }
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    return { tema, t: T[tema] || T.escuro,
+      etapas: [
+        { n: '1', nome: 'Projeto', casa: 'O arquiteto desenha a planta antes de levantar uma parede.', atlas: 'Você escolhe o estilo, o Claude desenha as telas com você e, no fim, vocês dão o nome.' },
+        { n: '2', nome: 'Orçamento', casa: 'Você vê as etapas e o prazo, e só então aprova.', atlas: 'O Atlas mostra as etapas e quanto tempo leva. Você aprova.' },
+        { n: '3', nome: 'Obra', casa: 'A equipe trabalha e o prédio vai subindo, andar por andar.', atlas: 'O Claude constrói sozinho. Você vê o prédio subir na tela.' },
+        { n: '4', nome: 'Chaves', casa: 'A casa fica pronta e você recebe as chaves.', atlas: 'Você recebe o endereço do seu sistema, pronto para usar no celular.' },
+        { n: '5', nome: 'Reforma', casa: 'Quer mudar algo depois? Chama para uma reforma.', atlas: 'Pede uma mudança com as suas palavras, quando quiser.' }
+      ],
+      ideias: [
+        { nome: 'Agenda online', desc: 'Clientes marcam horário pelo celular' },
+        { nome: 'Fidelidade', desc: 'Cartão de pontos e cortes grátis' },
+        { nome: 'Caixa do dia', desc: 'Entradas, saídas e comissão dos barbeiros' },
+        { nome: 'Estoque', desc: 'Produtos, validade e reposição' }
+      ] };
+  }
+}
+</script>
+</body>
+</html>

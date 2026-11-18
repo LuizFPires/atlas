@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 13b Publicando, passo a passo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} @keyframes pulso{0%{box-shadow:0 0 0 0 rgba(198,241,53,.7)}70%{box-shadow:0 0 0 12px rgba(198,241,53,0)}100%{box-shadow:0 0 0 0 rgba(198,241,53,0)}} .acao{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:50px;min-height:50px;padding:0 22px;box-sizing:border-box;border-radius:12px;font-family:'Geist',sans-serif;font-size:16px;font-weight:700;line-height:1;white-space:nowrap;flex:none;text-decoration:none;cursor:pointer}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex">
+ <dc-import name="Shell" ativo="obra" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;box-sizing:border-box;padding:26px 36px;display:flex;flex-direction:column;gap:16px;min-width:0">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+   <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}};margin-right:6px">PUBLICANDO · CADEIRA 1 · TOQUE PARA VER CADA GUIA</span>
+   <sc-for list="{{tarefas}}" as="a" hint-placeholder-count="4"><button onClick="{{a.ir}}" style="display:flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;border:1px solid {{a.borda}};background:{{a.bg}};color:{{t.text}};font:600 14px 'Geist',sans-serif;white-space:nowrap;cursor:pointer"><span style="width:18px;height:18px;border-radius:9px;background:{{a.bola}};color:{{t.onLime}};font-size:11px;display:flex;align-items:center;justify-content:center">{{a.ic}}</span>{{a.nome}}</button></sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:26px;flex:1;min-height:0">
+   <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+    <div style="display:flex;flex-direction:column;gap:6px">
+     <h1 style="margin:0;font-size:27px;line-height:1.2;letter-spacing:-0.01em">{{g.titulo}}</h1>
+     <span style="font-size:15px;line-height:1.5;color:{{t.mute}}">{{g.intro}}</span>
+    </div>
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px">
+     <div style="display:flex;align-items:center;gap:10px"><span style="font:600 13px 'Geist Mono',monospace;color:{{t.limeTxt}};white-space:nowrap">PASSO {{num}} DE {{tot}}</span><span style="font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:{{quemBg}};color:{{quemCor}};white-space:nowrap">{{quem}}</span><div style="flex:1;height:6px;border-radius:3px;background:{{t.trilho}};overflow:hidden"><div style="width:{{pct}}%;height:100%;background:{{t.lime}}"></div></div></div>
+     <span style="font-size:21px;line-height:1.4;font-weight:600">{{p.faca}}</span>
+     <sc-if value="{{temDados}}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:8px">
+       <sc-for list="{{p.dados}}" as="d" hint-placeholder-count="2">
+        <div style="display:grid;grid-template-columns:80px 70px minmax(0,1fr) auto;gap:10px;align-items:center;background:{{t.input}};border:1px solid {{t.cardB}};border-radius:10px;padding:8px 8px 8px 12px;font:14px 'Geist Mono',monospace"><span style="color:{{t.mute}}">{{d.tipo}}</span><span>{{d.nome}}</span><b style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{d.valor}}</b><button style="height:32px;padding:0 12px;border-radius:8px;border:none;background:{{t.lime}};color:{{t.onLime}};font:700 13px 'Geist',sans-serif">Copiar</button></div>
+       </sc-for>
+      </div>
+     </sc-if>
+     <sc-if value="{{temPalavra}}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;font-size:14px;background:{{t.soft}};border-radius:10px;padding:8px 12px">📖 <b>{{p.en}}</b> quer dizer <b>"{{p.pt}}"</b></span></sc-if>
+     <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">{{p.calma}}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+     <button class="acao" onClick="{{voltar}}" style="padding:0 18px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font-weight:600;font-size:15px">← Voltar</button>
+     <button class="acao" onClick="{{avancar}}" style="display:{{dispBtn}};border:none;background:{{t.lime}};color:{{t.onLime}}">{{btn}}</button>
+     <button class="acao" onClick="{{proximoGuia}}" style="display:{{dispProx}};border:none;background:{{t.lime}};color:{{t.onLime}}">{{btnProx}}</button>
+     <a class="acao" href="F13Entrega.dc.html" style="display:{{dispFim}};background:{{t.lime}};color:{{t.onLime}}">Ver a entrega das chaves →</a>
+    </div>
+    <a href="F17Ajuda.dc.html" style="align-self:flex-start;font-size:15px;font-weight:600;color:{{t.limeTxt}}">Não consegui fazer este passo</a>
+    <span style="margin-top:auto;font-size:13px;color:{{t.mute2}}">Pode fechar o Atlas a qualquer momento. Quando voltar, ele continua deste passo.</span>
+   </div>
+   <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+    <span style="font-size:13px;color:{{t.mute2}}">É assim que vai aparecer na sua tela:</span>
+    <div style="flex:1;border-radius:14px;overflow:hidden;border:1px solid {{t.cardB}};background:#FFFFFF;display:flex;flex-direction:column;color:#1B1E22">
+     <div style="height:40px;background:#E9EBE6;display:flex;align-items:center;gap:8px;padding:0 12px;flex:none"><span style="width:10px;height:10px;border-radius:5px;background:#E46A5E"></span><span style="width:10px;height:10px;border-radius:5px;background:#E8BE4F"></span><span style="width:10px;height:10px;border-radius:5px;background:#69C25B"></span><span style="margin-left:10px;flex:1;height:24px;border-radius:6px;background:#FFFFFF;font:12px 'Geist Mono',monospace;color:#5F665C;display:flex;align-items:center;padding:0 10px">🔒 {{m.url}}</span></div>
+     <div style="flex:1;padding:28px 30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center">
+      <b style="font-size:19px;line-height:1.35;max-width:330px">{{m.titulo}}</b>
+      <sc-for list="{{m.itens}}" as="i" hint-placeholder-count="2">
+       <div style="width:270px;display:flex;flex-direction:column;align-items:center">
+        <div style="width:100%;box-sizing:border-box;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:{{i.alinhar}};padding:0 14px;font-size:14px;font-weight:{{i.peso}};background:{{i.bg}};color:{{i.cor}};border:{{i.borda}};animation:{{i.anim}}">{{i.txt}}</div>
+        <sc-if value="{{i.hl}}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;margin-top:8px;font:700 13px 'Geist',sans-serif;background:#1B1E22;color:#C6F135;padding:5px 10px;border-radius:8px;white-space:nowrap">👆 {{i.dica}}</span></sc-if>
+       </div>
+      </sc-for>
+     </div>
+    </div>
+   </div>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', input: '#16181B', soft: '#2A3A12', trilho: '#2C3036', off: '#3A3F46', warn: '#F2B14A', onWarn: '#1E1606' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', input: '#F7F8F4', soft: '#DDF59A', trilho: '#E6E8E1', off: '#C4C8BD', warn: '#F6D28E', onWarn: '#4A3000' }
+};
+const B = (txt, hl, dica) => ({ tipo: 'btn', txt, hl: !!hl, dica: dica || 'clique aqui' });
+const C = (txt, hl, dica) => ({ tipo: 'campo', txt, hl: !!hl, dica: dica || 'escreva aqui' });
+const S = (txt) => ({ tipo: 'status', txt, hl: false, dica: '' });
+const DOM = [
+  { quem: 'A', faca: 'O Atlas conferiu: cadeira1.com.br está livre. Clique no botão verde para abrir o Registro.br já com o nome pesquisado.', calma: 'O Registro.br é o site oficial dos endereços .com.br no Brasil.', m: { url: 'registro.br', titulo: 'cadeira1.com.br está disponível', itens: [B('Registrar', true)] } },
+  { quem: 'V', faca: 'Clique em Registrar. Depois entre com a sua conta. Não tem? Clique em Criar conta e use o seu CPF ou o CNPJ da empresa.', calma: 'O domínio fica no seu nome, para sempre seu. O Atlas nunca vê a sua senha.', m: { url: 'registro.br/login', titulo: 'Entre para continuar', itens: [C('CPF ou CNPJ', true, 'seu CPF ou CNPJ'), C('Senha'), B('Entrar'), B('Criar conta')] } },
+  { quem: 'V', faca: 'Escolha por quantos anos quer o endereço e pague com Pix.', calma: 'Custa cerca de R$ 40 por ano. O Pix confirma em minutos; o boleto pode levar até 3 dias. O Atlas espera e te avisa.', m: { url: 'registro.br/pagamento', titulo: 'Pagamento', itens: [B('1 ano'), B('Pagar com Pix', true)] } },
+  { quem: 'V', faca: 'Pagamento confirmado! Agora vamos ligar o endereço ao seu sistema. Abra o domínio cadeira1.com.br e clique em DNS.', calma: 'DNS é a "placa" que mostra para a internet onde fica o seu sistema.', m: { url: 'registro.br/painel', titulo: 'Meus domínios', itens: [B('cadeira1.com.br', true, 'abra este'), B('DNS', false)] } },
+  { quem: 'V', faca: 'Clique em Editar zona e crie estas duas linhas. Use os botões Copiar e cole lá, uma de cada vez.', calma: 'Não precisa entender o que é: o Atlas já preparou tudo. É só copiar e colar.', dados: [{ tipo: 'A', nome: '@', valor: '76.76.21.21' }, { tipo: 'CNAME', nome: 'www', valor: 'cname.vercel-dns.com' }], m: { url: 'registro.br/painel/dns', titulo: 'Editar zona', itens: [C('Tipo: A · Dados: 76.76.21.21', true, 'cole a 1ª linha'), C('Tipo: CNAME · Dados: cname.vercel-dns.com', true, 'cole a 2ª linha')] } },
+  { quem: 'V', faca: 'Clique em Salvar. Pronto, a sua parte acabou!', calma: 'Daqui pra frente o Atlas faz o resto sozinho.', m: { url: 'registro.br/painel/dns', titulo: 'Editar zona', itens: [B('Salvar alterações', true)] } },
+  { quem: 'A', faca: 'O Atlas está esperando a internet reconhecer o novo endereço.', calma: 'Pode levar de alguns minutos a algumas horas. Pode fechar e fazer outra coisa: o Atlas avisa no celular quando estiver no ar.', m: { url: 'cadeira1.com.br', titulo: 'Procurando o seu endereço na internet…', itens: [S('⏳ Conferindo a cada 5 minutos')] } },
+  { quem: 'A', faca: 'Pronto! cadeira1.com.br está no ar, com cadeado de segurança. ✓', calma: 'O endereço grátis (cadeira1.vercel.app) continua funcionando e leva para o mesmo lugar.', m: { url: 'cadeira1.com.br', titulo: 'Cadeira 1 · Sua vez, sem fila.', itens: [S('🔒 Conexão segura'), B('Marcar horário')] } }
+];
+const GRATIS = [
+  { quem: 'A', faca: 'Vistoria final: o Atlas usa o sistema como se fosse um cliente, tela por tela, antes de abrir as portas.', calma: 'Se achar algum problema, ele mesmo corrige e testa de novo.', m: { url: 'vistoria do Atlas', titulo: 'Vistoria final', itens: [S('✓ 50 testes aprovados'), S('✓ Celular e computador conferidos')] } },
+  { quem: 'V', faca: 'Confirme o endereço grátis do seu sistema. Se quiser outro nome, é só falar.', calma: 'Este endereço é de graça e continua funcionando mesmo se depois você comprar um domínio.', m: { url: 'vercel.com', titulo: 'Endereço do sistema', itens: [C('cadeira1.vercel.app', true, 'confira o nome'), B('Confirmar')] } },
+  { quem: 'A', faca: 'O Atlas está colocando o sistema no ar, na sua conta da Vercel.', calma: 'Leva poucos minutos. O banco de dados de verdade é ligado agora, vazio e pronto para uso.', m: { url: 'vercel.com/cadeira1', titulo: 'Publicando…', itens: [S('⏳ Montando o sistema'), S('✓ Banco de dados ligado')] } },
+  { quem: 'V', faca: 'Abra no seu celular e faça um teste de verdade: marque um horário.', calma: 'Aponte a câmera para o QR code que aparece no Atlas. Achou algo estranho? Fale com a Ajuda do Atlas.', m: { url: 'cadeira1.vercel.app', titulo: 'Cadeira 1 · Sua vez, sem fila.', itens: [B('Marcar horário', true, 'teste aqui')] } },
+  { quem: 'A', faca: 'Pronto! cadeira1.vercel.app está no ar, com cadeado de segurança. ✓', calma: 'Já pode mandar o endereço para a equipe e para os clientes.', m: { url: 'cadeira1.vercel.app', titulo: 'No ar', itens: [S('🔒 Conexão segura'), S('✓ Funcionando no celular e no computador')] } }
+];
+const PWA = [
+  { quem: 'A', faca: 'O Atlas prepara o ícone do app (a sua logomarca) e o nome que aparece na tela do celular.', calma: 'É o que faz o sistema parecer um aplicativo de verdade quando o cliente instala.', m: { url: 'cadeira1.com.br', titulo: 'Ícone e nome do app', itens: [S('✓ Ícone Cadeira 1 em todos os tamanhos'), S('✓ Abre em tela cheia, sem barra do navegador')] } },
+  { quem: 'V', faca: 'Teste no Android: abra o endereço no Chrome, toque nos três pontinhos e depois em Instalar app.', calma: 'Em alguns celulares o nome é "Adicionar à tela inicial".', m: { url: 'cadeira1.com.br', titulo: 'Chrome no Android', itens: [B('⋮  (três pontinhos)'), B('Instalar app', true)] } },
+  { quem: 'V', faca: 'Teste no iPhone: abra o endereço no Safari, toque em Compartilhar (o quadrado com a setinha) e depois em Adicionar à Tela de Início.', calma: 'No iPhone tem que ser pelo Safari. O Atlas avisa isso para os seus clientes.', m: { url: 'cadeira1.com.br', titulo: 'Safari no iPhone', itens: [B('Compartilhar'), B('Adicionar à Tela de Início', true)] } },
+  { quem: 'A', faca: 'O Atlas cria um cartaz com QR code e as instruções, para você imprimir no balcão ou mandar no WhatsApp.', calma: 'Assim os seus clientes instalam sozinhos, sem precisar de você.', m: { url: 'cartaz do Atlas', titulo: 'Instale o app da Cadeira 1', itens: [S('▦ QR code'), S('Android: Instalar app · iPhone: Compartilhar → Tela de Início')] } },
+  { quem: 'A', faca: 'Pronto! O app instalável está funcionando no Android e no iPhone. ✓', calma: 'Não precisa de loja nem de pagamento. Quando você mudar algo no sistema, o app atualiza sozinho.', m: { url: 'tela inicial do celular', titulo: 'Cadeira 1 instalado', itens: [S('✓ Android'), S('✓ iPhone')] } }
+];
+const LOJAS = [
+  { quem: 'A', faca: 'Antes de tudo: para ir para as lojas, o Atlas transforma o seu sistema num app de celular de verdade.', calma: 'A Apple recusa app que é só um site embrulhado. Por isso o Atlas faz um app próprio, com o mesmo visual e os mesmos dados.', m: { url: 'Atlas', titulo: 'Preparando o app das lojas', itens: [S('⏳ Montando o app Cadeira 1')] } },
+  { quem: 'V', faca: 'Crie a sua conta de desenvolvedor da Apple. Clique em Start Your Enrollment e entre com o seu Apple ID.', calma: 'Custa US$ 99 por ano. Se for no nome da empresa, a Apple pede o número D-U-N-S, que é grátis mas pode levar alguns dias. O Atlas te ajuda a pedir.', en: 'Start Your Enrollment', pt: 'Começar a inscrição', m: { url: 'developer.apple.com/programs/enroll', titulo: 'Apple Developer Program', itens: [B('Start Your Enrollment', true)] } },
+  { quem: 'V', faca: 'Crie a sua conta no Google Play Console e pague a taxa única.', calma: 'Custa US$ 25, uma vez só. O Google pede um documento com foto para confirmar quem você é.', en: 'Create account', pt: 'Criar conta', m: { url: 'play.google.com/console/signup', titulo: 'Google Play Console', itens: [B('Create account', true)] } },
+  { quem: 'A', faca: 'Enquanto as contas são aprovadas, o Atlas prepara tudo o que as lojas pedem: textos, telas de exemplo, ícone e política de privacidade.', calma: 'Você só vai conferir. Ninguém precisa escrever nada do zero.', m: { url: 'Atlas', titulo: 'Material das lojas', itens: [S('✓ Textos e descrição'), S('✓ 6 telas de exemplo'), S('✓ Política de privacidade')] } },
+  { quem: 'V', faca: 'Crie o app no App Store Connect: clique no + e em New App. Copie e cole o que o Atlas preparou.', calma: 'O identificador nunca mais muda depois de publicado. Por isso o Atlas já escolheu um bom.', en: 'New App', pt: 'Novo app', dados: [{ tipo: 'Nome', nome: '', valor: 'Cadeira 1' }, { tipo: 'ID', nome: '', valor: 'br.com.cadeira1.app' }], m: { url: 'appstoreconnect.apple.com/apps', titulo: 'Apps', itens: [B('+', true, 'comece aqui'), B('New App')] } },
+  { quem: 'V', faca: 'Na primeira vez, o Atlas vai pedir para você entrar com o seu Apple ID. Confirme com o código que aparece no seu iPhone.', calma: 'É só desta vez. Nas próximas versões o Atlas envia sozinho.', m: { url: 'Atlas', titulo: 'Entrar com o Apple ID', itens: [C('seu Apple ID', true, 'seu e-mail da Apple'), C('código de 6 números')] } },
+  { quem: 'A', faca: 'O Atlas monta o app na nuvem e envia para teste: TestFlight (Apple) e teste interno (Google).', calma: 'Funciona no seu computador com Windows. Não precisa de Mac.', m: { url: 'Atlas', titulo: 'Enviando para teste', itens: [S('✓ iPhone: no TestFlight'), S('✓ Android: no teste interno')] } },
+  { quem: 'V', faca: 'Teste no seu celular: instale o app TestFlight no iPhone e abra o convite que chegou no seu e-mail.', calma: 'No Android, o convite de teste abre direto na Play Store.', m: { url: 'TestFlight', titulo: 'Cadeira 1 · Teste', itens: [B('Instalar', true)] } },
+  { quem: 'V', faca: 'Só no Google, para conta pessoal nova: chame 12 pessoas para testar o app por 14 dias.', calma: 'É uma regra do Google. O Atlas prepara a mensagem pronta para você mandar no WhatsApp e conta os dias.', m: { url: 'play.google.com/console', titulo: 'Teste fechado', itens: [S('Testadores: 12 de 12'), S('Dias de teste: 3 de 14')] } },
+  { quem: 'V', faca: 'Confira e copie as respostas de privacidade e de classificação etária que o Atlas já preencheu.', calma: 'São formulários das lojas. O Atlas respondeu com base no que o seu app realmente faz.', m: { url: 'appstoreconnect.apple.com', titulo: 'App Privacy', itens: [C('Rascunho do Atlas colado', true, 'confira'), B('Save')] } },
+  { quem: 'V', faca: 'Aperte Enviar para revisão, na Apple e no Google.', calma: 'Esse botão é sempre seu: é você quem decide publicar.', en: 'Submit for Review', pt: 'Enviar para revisão', m: { url: 'appstoreconnect.apple.com', titulo: 'Cadeira 1 · 1.0', itens: [B('Submit for Review', true)] } },
+  { quem: 'A', faca: 'O Atlas acompanha a revisão e avisa no celular. Se a loja pedir alguma mudança, ele explica, ajusta e reenvia.', calma: 'A Apple costuma responder em alguns dias. O Google também.', m: { url: 'Atlas', titulo: 'Em revisão', itens: [S('⏳ Apple: em revisão'), S('⏳ Google: em revisão')] } },
+  { quem: 'A', faca: 'Publicado! A Cadeira 1 está na App Store e no Google Play. ✓', calma: 'Os seus clientes já encontram pelo nome na busca das lojas.', m: { url: 'App Store · Google Play', titulo: 'Cadeira 1 · Sua vez, sem fila.', itens: [S('✓ App Store'), S('✓ Google Play')] } }
+];
+const GUIAS = [
+  { id: 'gratis', nome: 'Endereço grátis', titulo: 'Endereço grátis: cadeira1.vercel.app', intro: 'O jeito mais rápido de colocar no ar. É de graça e fica pronto em minutos.', passos: GRATIS },
+  { id: 'dominio', nome: 'Seu domínio', titulo: 'Seu próprio endereço: cadeira1.com.br', intro: 'O Registro.br é o cartório dos endereços .com.br. O domínio fica no seu nome e o Atlas te acompanha até ele estar no ar.', passos: DOM },
+  { id: 'pwa', nome: 'App instalável', titulo: 'App instalável, sem loja', intro: 'Seus clientes instalam pelo navegador e o ícone fica na tela do celular, igual a um aplicativo.', passos: PWA },
+  { id: 'lojas', nome: 'App Store e Google Play', titulo: 'Nas lojas: App Store e Google Play', intro: 'O caminho mais longo: tem contas, pagamentos e revisão das lojas. O Atlas acompanha cada passo até o app aparecer na busca.', passos: LOJAS }
+];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { guia: 1, passo: 0, feitos: { gratis: true } }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    const { guia, passo, feitos } = this.state;
+    const g = GUIAS[guia], PASSOS = g.passos;
+    const ult = PASSOS.length - 1, p = PASSOS[passo], fim = passo === ult;
+    const tarefas = GUIAS.map((x, i) => { const ok = !!feitos[x.id] || (i === guia && fim), ag = i === guia; return { nome: x.nome, ic: ok ? '✓' : String(i + 1), bola: ok || ag ? t.lime : t.off, borda: ag ? t.lime : t.cardB, bg: ag ? t.soft : 'transparent', ir: () => this.setState({ guia: i, passo: 0 }) }; });
+    const m = { ...p.m, itens: p.m.itens.map(i => i.tipo === 'btn'
+      ? { ...i, alinhar: 'center', peso: 600, bg: i.hl ? '#1B1E22' : '#F2F3EE', cor: i.hl ? '#FFFFFF' : '#1B1E22', borda: i.hl ? '3px solid #C6F135' : '1px solid #DADDD3', anim: i.hl ? 'pulso 1.6s infinite' : 'none' }
+      : i.tipo === 'campo'
+      ? { ...i, alinhar: 'flex-start', peso: 400, bg: '#FFFFFF', cor: i.hl ? '#1B1E22' : '#8E968C', borda: i.hl ? '3px solid #C6F135' : '1px solid #C4C8BD', anim: i.hl ? 'pulso 1.6s infinite' : 'none' }
+      : { ...i, alinhar: 'center', peso: 600, bg: '#EEF6D6', cor: '#3F5600', borda: '1px solid #C9E37A', anim: 'none' }) };
+    const souEu = p.quem === 'V';
+    const ultimoGuia = guia === GUIAS.length - 1;
+    return { tema, t, tarefas, g, p, m, num: passo + 1, tot: PASSOS.length, pct: Math.round((passo + 1) / PASSOS.length * 100),
+      quem: souEu ? 'VOCÊ' : 'O ATLAS', quemBg: souEu ? t.warn : t.lime, quemCor: souEu ? t.onWarn : t.onLime,
+      temDados: !!p.dados, temPalavra: !!p.en,
+      btn: p.quem === 'A' ? 'Continuar →' : 'Fiz isso →',
+      dispBtn: fim ? 'none' : 'inline-flex', dispProx: fim && !ultimoGuia ? 'inline-flex' : 'none', dispFim: fim && ultimoGuia ? 'inline-flex' : 'none',
+      btnProx: ultimoGuia ? '' : 'Próximo: ' + GUIAS[guia + 1].nome + ' →',
+      proximoGuia: () => this.setState({ feitos: { ...feitos, [g.id]: true }, guia: Math.min(guia + 1, GUIAS.length - 1), passo: 0 }),
+      avancar: () => this.setState({ passo: Math.min(passo + 1, ult) }), voltar: () => this.setState({ passo: Math.max(passo - 1, 0) }) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 06b Estilo do sistema</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;family=Fraunces:wght@600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} .acao{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:50px;min-height:50px;padding:0 22px;box-sizing:border-box;border-radius:12px;font-family:'Geist',sans-serif;font-size:16px;font-weight:700;line-height:1;white-space:nowrap;flex:none;text-decoration:none;cursor:pointer}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex">
+ <dc-import name="Shell" ativo="prototipo" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;box-sizing:border-box;padding:28px 40px;display:flex;flex-direction:column;gap:18px;min-width:0">
+  <div style="display:flex;align-items:center;gap:10px">
+   <sc-for list="{{fases}}" as="f" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:999px;border:1px solid {{f.borda}};background:{{f.bg}};font-size:14px;font-weight:600;color:{{f.cor}}"><span style="font-family:'Geist Mono',monospace">{{f.n}}</span>{{f.nome}}</div></sc-for>
+   <span style="margin-left:auto;font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">PROJETO · AGENDA DA BARBEARIA DO ZÉ</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+   <h1 style="margin:0;font-size:30px;letter-spacing:-0.01em">Qual é a cara do seu sistema?</h1>
+   <span style="font-size:15px;color:{{t.mute}}">Antes de desenhar as telas, vamos escolher as cores, as letras e o jeito dos botões. Assim o protótipo já nasce com a cara da sua barbearia.</span>
+  </div>
+  <div style="display:flex;gap:10px">
+   <sc-for list="{{modos}}" as="m" hint-placeholder-count="2"><button onClick="{{m.ir}}" style="height:44px;padding:0 18px;border-radius:12px;border:2px solid {{m.borda}};background:{{m.bg}};color:{{t.text}};font:600 15px 'Geist',sans-serif;cursor:pointer;white-space:nowrap">{{m.nome}}</button></sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr);gap:22px;flex:1;min-height:0">
+   <sc-if value="{{criar}}" hint-placeholder-val="{{ true }}">
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0">
+     <b style="font-size:17px">Mande 2 ou 3 sites ou apps que você acha bonitos</b>
+     <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">Pode ser de qualquer ramo: uma loja, um banco, um restaurante. Vale link ou print da tela.</span>
+     <sc-for list="{{refs}}" as="r" hint-placeholder-count="3">
+      <div style="display:flex;align-items:center;gap:10px;height:48px;box-sizing:border-box;border-radius:12px;border:1px solid {{r.borda}};background:{{t.input}};padding:0 8px 0 14px">
+       <span style="font-size:15px;color:{{r.cor}};flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">{{r.txt}}</span>
+       <span style="font-size:12px;font-weight:600;color:{{t.limeTxt}};white-space:nowrap">{{r.st}}</span>
+      </div>
+     </sc-for>
+     <div style="display:flex;gap:8px"><button style="height:40px;padding:0 14px;border-radius:10px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font:600 14px 'Geist',sans-serif">📎 Mandar print</button><button style="display:flex;align-items:center;gap:6px;height:40px;padding:0 14px;border-radius:10px;border:none;background:{{t.lime}};color:{{t.onLime}};font:600 14px 'Geist',sans-serif"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Falar o que você gosta</button></div>
+     <b style="font-size:15px;margin-top:4px">O que o seu cliente deve sentir ao abrir o sistema?</b>
+     <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <sc-for list="{{sentir}}" as="s" hint-placeholder-count="6"><button onClick="{{s.ir}}" style="height:38px;padding:0 14px;border-radius:999px;border:1px solid {{s.borda}};background:{{s.bg}};color:{{t.text}};font:600 14px 'Geist',sans-serif;cursor:pointer">{{s.nome}}</button></sc-for>
+     </div>
+    </div>
+   </sc-if>
+   <sc-if value="{{tenho}}" hint-placeholder-val="{{ false }}">
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0">
+     <b style="font-size:17px">Mande o que você já tem</b>
+     <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">O Atlas lê tudo e monta o design system do seu sistema a partir disso.</span>
+     <sc-for list="{{uploads}}" as="u" hint-placeholder-count="3">
+      <div style="display:flex;align-items:center;gap:14px;border:2px dashed {{t.cardB}};border-radius:14px;padding:14px 16px"><span style="font-size:22px">{{u.ic}}</span><div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">{{u.nome}}</b><span style="font-size:13px;color:{{t.mute}}">{{u.desc}}</span></div><span style="margin-left:auto;font-size:13px;font-weight:600;color:{{t.limeTxt}}">Escolher arquivo</span></div>
+     </sc-for>
+    </div>
+   </sc-if>
+   <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+    <div style="display:flex;align-items:baseline;gap:10px"><b style="font-size:17px">O Atlas montou 3 estilos para você</b><span style="font-size:13px;color:{{t.mute}}">toque para escolher</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;flex:1;min-height:0">
+     <sc-for list="{{estilos}}" as="e" hint-placeholder-count="3">
+      <button onClick="{{e.ir}}" style="display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;border:2px solid {{e.borda}};background:{{t.card}};color:{{t.text}};cursor:pointer;text-align:left;font-family:'Geist',sans-serif;min-width:0">
+       <div style="width:100%;height:250px;border-radius:12px;overflow:hidden;background:{{e.fundo}};display:flex;flex-direction:column">
+        <div style="background:{{e.topo}};color:{{e.topoTxt}};padding:14px 12px;font-family:{{e.fonte}};font-size:17px;font-weight:600">Marcar horário</div>
+        <div style="padding:12px;display:flex;flex-direction:column;gap:8px">
+         <div style="display:flex;gap:6px"><span style="flex:1;height:26px;border-radius:{{e.raio}};background:{{e.topo}}"></span><span style="flex:1;height:26px;border-radius:{{e.raio}};border:1px solid {{e.linha}}"></span><span style="flex:1;height:26px;border-radius:{{e.raio}};border:1px solid {{e.linha}}"></span></div>
+         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"><span style="height:22px;border-radius:{{e.raio}};border:1px solid {{e.linha}}"></span><span style="height:22px;border-radius:{{e.raio}};border:1px solid {{e.linha}}"></span><span style="height:22px;border-radius:{{e.raio}};border:1px solid {{e.linha}}"></span><span style="height:22px;border-radius:{{e.raio}};border:1px solid {{e.linha}}"></span><span style="height:22px;border-radius:{{e.raio}};background:{{e.destaque}}"></span><span style="height:22px;border-radius:{{e.raio}};border:1px solid {{e.linha}}"></span></div>
+         <span style="margin-top:6px;height:36px;border-radius:{{e.raio}};background:{{e.destaque}};color:{{e.destTxt}};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">Marcar</span>
+        </div>
+       </div>
+       <div style="display:flex;gap:4px"><span style="width:18px;height:18px;border-radius:9px;background:{{e.topo}};border:1px solid {{t.cardB}}"></span><span style="width:18px;height:18px;border-radius:9px;background:{{e.destaque}};border:1px solid {{t.cardB}}"></span><span style="width:18px;height:18px;border-radius:9px;background:{{e.fundo}};border:1px solid {{t.cardB}}"></span></div>
+       <b style="font-size:15px">{{e.nome}}</b>
+       <span style="font-size:13px;line-height:1.4;color:{{t.mute}}">{{e.de}}</span>
+      </button>
+     </sc-for>
+    </div>
+   </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+   <a class="acao" href="F06NovaObra.dc.html" style="padding:0 18px;border:1px solid {{t.cardB}};color:{{t.text}};font-weight:600;font-size:15px">← Voltar</a>
+   <a class="acao" href="F07Prototipo.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Usar "{{escolhido}}" e desenhar as telas →</a>
+   <span style="font-size:14px;color:{{t.mute}}">Vira o design system do seu sistema. Dá para ajustar depois.</span>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', input: '#16181B', soft: '#2A3A12' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', input: '#FFFFFF', soft: '#DDF59A' }
+};
+const ESTILOS = [
+  { id: 'couro', nome: 'Couro e madeira', de: 'Inspirado no site da Aesop: tons quentes e letras clássicas.', fundo: '#FBF7F2', topo: '#2B211B', topoTxt: '#FBF7F2', destaque: '#B5651D', destTxt: '#FFFFFF', linha: '#D9CFC4', raio: '10px', fonte: "'Fraunces',serif" },
+  { id: 'navalha', nome: 'Navalha', de: 'Preto e dourado. Elegante, cara de barbearia premium.', fundo: '#141414', topo: '#000000', topoTxt: '#D8B45A', destaque: '#D8B45A', destTxt: '#141414', linha: '#3A3A3A', raio: '4px', fonte: "'Geist',sans-serif" },
+  { id: 'leve', nome: 'Leve e moderno', de: 'Inspirado no app do Nubank: limpo, botões redondos.', fundo: '#FFFFFF', topo: '#5B2C83', topoTxt: '#FFFFFF', destaque: '#5B2C83', destTxt: '#FFFFFF', linha: '#E3DDEB', raio: '18px', fonte: "'Geist',sans-serif" }
+];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { modo: 'criar', estilo: 'couro', sentir: { Confiança: true, Tradição: true } }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    const { modo, estilo, sentir } = this.state;
+    const fases = [['1', 'Estilo', 'agora'], ['2', 'Telas', ''], ['3', 'Nome e marca', '']].map(([n, nome, st]) => ({ n, nome, bg: st ? t.lime : 'transparent', cor: st ? t.onLime : t.mute, borda: st ? t.lime : t.cardB }));
+    const modos = [['criar', 'Me ajude a criar'], ['tenho', 'Já tenho a minha identidade visual']].map(([id, nome]) => ({ nome, bg: id === modo ? t.soft : 'transparent', borda: id === modo ? t.lime : t.cardB, ir: () => this.setState({ modo: id }) }));
+    const refs = [
+      { txt: 'aesop.com', st: '✓ lido', cor: t.text, borda: t.lime },
+      { txt: 'nubank.com.br', st: '✓ lido', cor: t.text, borda: t.lime },
+      { txt: 'Cole um terceiro link (opcional)', st: '', cor: t.mute2, borda: t.cardB }
+    ];
+    const S = ['Confiança', 'Tradição', 'Elegância', 'Alegria', 'Rapidez', 'Modernidade'];
+    const sentirL = S.map(nome => { const on = !!sentir[nome]; return { nome, bg: on ? t.soft : 'transparent', borda: on ? t.lime : t.cardB, ir: () => this.setState({ sentir: { ...sentir, [nome]: !on } }) }; });
+    const uploads = [
+      { ic: '🖼', nome: 'Logomarca', desc: 'PNG, SVG ou PDF' },
+      { ic: '🎨', nome: 'Cores', desc: 'Os códigos das cores ou uma foto da fachada' },
+      { ic: '📘', nome: 'Manual da marca ou design system pronto', desc: 'PDF, link do Figma ou o arquivo design-system.md que outra IA gerou' }
+    ];
+    const estilos = ESTILOS.map(e => ({ ...e, borda: e.id === estilo ? t.lime : t.cardB, ir: () => this.setState({ estilo: e.id }) }));
+    const escolhido = (ESTILOS.find(e => e.id === estilo) || ESTILOS[0]).nome;
+    return { tema, t, fases, modos, criar: modo === 'criar', tenho: modo === 'tenho', refs, sentir: sentirL, uploads, estilos, escolhido };
+  }
+}
+</script>
+</body>
+</html>

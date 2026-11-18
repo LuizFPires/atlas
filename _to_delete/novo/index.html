@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canteiro de Obras</title>
+<style>
+:root{
+  --bg:#0e1116; --painel:#161b22; --painel2:#1c232c; --linha:#2a323d;
+  --texto:#e8e3d9; --suave:#9aa3ad; --fraco:#6b7480;
+  --ambar:#f2a33a; --ok:#3fbf7f; --azul:#4a9be8; --erro:#e5604f;
+  --coordenador:#f4f1ea; --designer:#9b7bff; --escritor:#f5c542; --revisor:#ff8a3d; --implementador:#4a9be8; --qa:#3fbf7f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--texto);font:14px/1.45 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+.topo{display:flex;align-items:center;gap:20px;padding:14px 20px;border-bottom:1px solid var(--linha);flex-wrap:wrap}
+.marca{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.08em;font-size:13px}
+.marca i{width:26px;height:26px;border-radius:6px;background:repeating-linear-gradient(135deg,var(--ambar) 0 6px,#1a1a1a 6px 12px);display:block}
+.nome{font-size:17px;font-weight:600}
+.nome small{display:block;color:var(--suave);font-size:12px;font-weight:400}
+.etapas{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.etapas span{font-size:11px;padding:5px 10px;border-radius:99px;background:var(--painel2);color:var(--fraco);border:1px solid var(--linha);white-space:nowrap}
+.etapas span.feita{color:var(--ok);border-color:#24533b}
+.etapas span.atual{color:#1a1206;background:var(--ambar);border-color:var(--ambar);font-weight:600}
+.grade{display:grid;grid-template-columns:calc(310px * var(--z,1)) 1fr calc(420px * var(--z,1));gap:14px;padding:14px 20px 20px}
+.card{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:14px}
+.card h3{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--suave);font-weight:600;margin-bottom:10px}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.pct{font-size:44px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.pct small{font-size:18px;color:var(--suave);font-weight:500}
+.barra{height:10px;background:var(--painel2);border-radius:99px;overflow:hidden;border:1px solid var(--linha)}
+.barra b{display:block;height:100%;background:linear-gradient(90deg,#c97d1e,var(--ambar));border-radius:99px;transition:width .8s ease}
+.barra.linha b{background:linear-gradient(90deg,#2c6fb0,var(--azul))}
+.rotulo{display:flex;justify-content:space-between;color:var(--suave);font-size:12px;margin:12px 0 6px}
+.rotulo b{color:var(--texto);font-weight:600;font-variant-numeric:tabular-nums}
+.prazo{margin:12px 0 4px;padding:10px 12px;border-radius:10px;background:var(--painel2);border:1px solid var(--linha);display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:baseline}
+.prazo span{color:var(--suave);font-size:12px}.prazo b{font-size:16px;font-variant-numeric:tabular-nums;text-align:right}
+.prazo em{grid-column:1/-1;font-style:normal;color:var(--suave);font-size:11.5px;line-height:1.45}
+.prazo.est b{color:var(--ambar)}
+.equipe{display:flex;flex-direction:column;gap:8px}
+.pessoa{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;background:var(--painel2)}
+.pessoa .cap{width:22px;height:22px;border-radius:50% 50% 30% 30%;flex:none;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25)}
+.pessoa div{min-width:0;flex:1}
+.pessoa b{display:block;font-size:13px;font-weight:600}
+.pessoa em{display:block;font-style:normal;color:var(--fraco);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pessoa .st{font-size:10px;padding:2px 7px;border-radius:99px;background:#232a33;color:var(--fraco);flex:none}
+.pessoa.ativo .st{background:#16382a;color:var(--ok)}
+.pessoa.ativo em{color:var(--suave)}
+.palco{position:relative;padding:0;overflow:hidden;min-height:520px}
+canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+.cena3d{position:absolute;inset:0;display:block;cursor:grab}.cena3d:active{cursor:grabbing}
+.balao3d{position:absolute;left:0;top:0;display:none;pointer-events:none;z-index:2;margin-top:-10px}
+.balao3d .bx{position:relative;font-size:12px;font-weight:500;color:#1b1e22;background:#fffdf7;border:2px solid var(--cor);padding:5px 10px;border-radius:12px;white-space:nowrap;max-width:340px;overflow:hidden;text-overflow:ellipsis;box-shadow:0 6px 18px rgba(0,0,0,.35);animation:bpop .35s cubic-bezier(.2,1.4,.4,1),bflut 2.6s ease-in-out infinite;transform-origin:50% 100%}
+.balao3d.fala .bx::after{content:'';position:absolute;left:50%;bottom:-8px;margin-left:-6px;border:6px solid transparent;border-top-color:var(--cor);border-bottom:0}
+.balao3d.pensa .bx{font-style:italic;color:#4a5048;background:#f2f1ec;border-style:dashed;border-radius:16px;opacity:.95}
+.balao3d.pensa::after,.balao3d.pensa::before{content:'';position:absolute;left:50%;border-radius:50%;background:#f2f1ec;border:2px dashed var(--cor)}
+.balao3d.pensa::before{width:9px;height:9px;bottom:-8px;margin-left:-6px}.balao3d.pensa::after{width:5px;height:5px;bottom:-16px;margin-left:-1px}
+.balao3d.espera .bx{background:#1e2330;color:#ffd99a;border-color:#f2a33a}
+.balao3d .pts{display:none;margin-left:3px}.balao3d.espera .pts,.balao3d.pensa .pts{display:inline-flex;gap:2px}
+.balao3d .pts b{width:3px;height:3px;border-radius:50%;background:currentColor;display:inline-block;animation:bpts 1.2s infinite}
+.balao3d .pts b:nth-child(2){animation-delay:.2s}.balao3d .pts b:nth-child(3){animation-delay:.4s}
+@keyframes bpop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes bflut{0%,100%{translate:0 0}50%{translate:0 -3px}}
+@keyframes bpts{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+@media (prefers-reduced-motion:reduce){.balao3d .bx,.balao3d .pts b{animation:none}}
+.pessoa{cursor:pointer;transition:background .15s}.pessoa:hover{background:#232a33}
+.ficha-fundo{position:fixed;inset:0;background:rgba(5,7,10,.6);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
+.ficha-fundo.on{display:flex}
+.ficha{width:min(560px,100%);max-height:90vh;overflow:auto;background:#151a21;border:1px solid var(--linha);border-radius:18px;padding:22px 24px;box-shadow:0 30px 80px rgba(0,0,0,.5);animation:bpop .25s ease-out}
+.ficha .topo{display:flex;align-items:center;gap:14px}
+.ficha .cap{width:44px;height:44px;border-radius:50% 50% 30% 30%;box-shadow:inset 0 -7px 0 rgba(0,0,0,.25);flex:none}
+.ficha h3{margin:0;font-size:20px}.ficha .agora{font-size:13px;color:var(--suave);margin-top:2px}
+.ficha .fechar{all:unset;cursor:pointer;margin-left:auto;font-size:22px;color:var(--fraco);padding:0 6px}
+.ficha .resumo{font-size:16px;line-height:1.5;margin:16px 0 6px}
+.ficha .bl{background:#1c222b;border-radius:12px;padding:12px 14px;margin-top:10px}
+.ficha .bl small{display:block;font-size:11px;letter-spacing:.1em;color:var(--fraco);font-weight:600;margin-bottom:4px}
+.ficha .bl p{margin:0;font-size:14px;line-height:1.55;color:#d9d4ca}
+.ficha .junto{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.ficha .junto button{all:unset;cursor:pointer;font-size:12px;padding:5px 10px;border-radius:99px;background:#232a33;color:var(--suave)}
+.ficha .junto button:hover{color:#fff}
+.modos{position:absolute;right:12px;top:12px;display:flex;background:rgba(14,17,22,.8);border:1px solid var(--linha);border-radius:8px;padding:3px;z-index:3}
+.modos button{all:unset;cursor:pointer;font-size:12px;font-weight:600;padding:5px 12px;border-radius:6px;color:var(--suave)}
+.modos button[aria-pressed=true]{background:var(--ambar);color:#1a1206}
+.legenda{z-index:2;position:absolute;left:14px;bottom:12px;font-size:11px;color:var(--suave);background:rgba(14,17,22,.7);padding:6px 10px;border-radius:8px}
+.feed{display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto;padding-right:10px;scrollbar-gutter:stable}
+.feed div{display:grid;grid-template-columns:58px 8px 1fr;gap:8px;align-items:baseline;font-size:12px;padding:4px 0;border-bottom:1px solid #1f262f}
+.feed time{color:var(--fraco);font-variant-numeric:tabular-nums}
+.feed i{width:8px;height:8px;border-radius:50%;display:block;transform:translateY(1px)}
+.feed span{color:var(--suave);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.feed span b{color:var(--texto);font-weight:600}
+.ms{display:flex;flex-direction:column;gap:9px;max-height:calc(100vh - 470px * var(--z,1));min-height:300px;overflow:auto;padding-right:10px;scrollbar-gutter:stable}
+.ms div{font-size:12px}
+.ms .t{display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}
+.ms .t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--suave)}
+.ms .t b{font-weight:600;color:var(--texto);flex:none;font-variant-numeric:tabular-nums}
+.ms .barra{height:5px}
+.ms .concluido .barra b{background:var(--ok)}
+.ms .concluido .t span{color:var(--texto)}
+.passos{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.passos span{font-size:10px;text-align:center;padding:4px 0;border-radius:6px;background:var(--painel2);color:var(--fraco);border:1px solid var(--linha)}.passos span.feita{color:var(--ok);border-color:#24533b}.passos span.atual{color:#1a1206;background:var(--ambar);border-color:var(--ambar);font-weight:600}
+.ocorr{border-color:#6b3a2a}.ocorr h3{color:#ff9a7a}.lista-oc{display:flex;flex-direction:column;gap:8px}.lista-oc div{font-size:12px;padding:8px 10px;border-radius:8px;background:var(--painel2);border-left:3px solid var(--erro)}.lista-oc b{display:block;font-size:13px}.lista-oc span{color:var(--suave)}
+.vazio{color:var(--fraco);font-size:12px}
+.voltar{display:none;align-items:center;gap:8px;text-decoration:none;color:var(--texto);background:var(--painel2);border:1px solid var(--linha);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600}
+.voltar.on{display:inline-flex}.voltar:hover{border-color:var(--ambar)}
+.voltar i{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(63,191,127,.6);animation:pulso 1.6s infinite;display:none}.voltar.mov i{display:block}
+@keyframes pulso{0%{box-shadow:0 0 0 0 rgba(63,191,127,.55)}70%{box-shadow:0 0 0 8px rgba(63,191,127,0)}100%{box-shadow:0 0 0 0 rgba(63,191,127,0)}}
+.carteira{padding:20px;display:flex;flex-direction:column;gap:18px}
+.carteira header h2{font-size:22px;margin:0}.carteira header p{color:var(--suave);margin:4px 0 0;font-size:13px}
+.lotes{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.lote{display:grid;grid-template-columns:86px minmax(0,1fr);gap:14px;text-decoration:none;color:var(--texto);background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:14px;position:relative}
+.lote:hover{border-color:var(--ambar)}
+.lote.mov{border-color:#24533b}
+.lote svg{width:86px;height:110px;display:block}
+.lote .info{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lote h4{margin:0;font-size:16px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lote .cam{font-size:11px;color:var(--fraco);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lote .pc{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}.lote .pc small{font-size:14px;color:var(--suave)}
+.lote .chips{display:flex;flex-wrap:wrap;gap:4px}
+.lote .chips span{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--painel2);color:var(--suave);border:1px solid var(--linha)}
+.lote .chips .oc{color:#ffb4a3;border-color:#6b3a2a}
+.lote .st{font-size:12px;color:var(--fraco)}.lote.mov .st{color:var(--ok)}
+.lote .tirar{all:unset;position:absolute;right:10px;bottom:8px;cursor:pointer;font-size:11px;color:var(--fraco)}
+.lote .tirar:hover{color:var(--erro)}
+.vazio-c{color:var(--suave);background:var(--painel);border:1px dashed var(--linha);border-radius:12px;padding:20px;font-size:14px}
+.off{position:fixed;right:16px;bottom:16px;background:var(--erro);color:#fff;font-size:12px;padding:8px 12px;border-radius:8px;display:none}
+@media (max-width:1100px){.grade{grid-template-columns:1fr 1fr}.palco{grid-column:1/-1;order:-1;min-height:420px}}
+@media (max-width:680px){.grade{grid-template-columns:1fr;padding:12px 16px}.topo{padding:12px 16px}.etapas{margin-left:0}.palco{min-height:340px}}
+.topo,.col,.carteira{zoom:var(--z,1)}
+@media (min-width:1101px){.palco{align-self:start;position:sticky;top:12px;height:calc(100vh - 24px - 92px * var(--z,1))}}
+.tam{display:flex;gap:2px;background:var(--painel2);border:1px solid var(--linha);border-radius:8px;padding:2px}
+.tam button{all:unset;cursor:pointer;font-size:12px;font-weight:700;padding:4px 9px;border-radius:6px;color:var(--suave)}
+.tam button:hover{background:var(--linha);color:var(--texto)}
+</style>
+<script>/* tamanho dos textos: automático pela largura da tela, ajustável em A− / A+ (o painel lembra) */
+(function(){let z=null;try{z=parseFloat(localStorage.getItem('canteiro-z'))}catch{}
+if(!z){const w=innerWidth;z=w>=2600?1.6:w>=2200?1.45:w>=1800?1.3:w>=1500?1.15:1}
+document.documentElement.style.setProperty('--z',z);
+window.mudarTamanho=d=>{z=Math.min(1.8,Math.max(.8,Math.round((z+d)*100)/100));document.documentElement.style.setProperty('--z',z);try{localStorage.setItem('canteiro-z',z)}catch{};dispatchEvent(new Event('resize'))};})();</script>
+</head>
+<body>
+<header class="topo">
+  <div class="marca"><i></i>CANTEIRO</div>
+  <a class="voltar" id="voltar" href="?carteira"><i></i>← Carteira de obras <b id="nObras"></b></a>
+  <div class="nome" id="nome">—<small>linha de produção de software</small></div>
+  <nav class="etapas" id="etapas"></nav>
+  <div class="tam" title="Tamanho dos textos"><button type="button" onclick="mudarTamanho(-.1)">A−</button><button type="button" onclick="mudarTamanho(.1)">A+</button></div>
+</header>
+
+<main class="carteira" id="carteira" hidden>
+  <header><h2>Carteira de obras</h2><p>Todos os projetos que usam a linha de produção neste computador. As que estão com equipe trabalhando aparecem primeiro.</p></header>
+  <div class="lotes" id="lotes"></div>
+</main>
+<main class="grade" id="grade">
+  <section class="col">
+    <div class="card">
+      <h3 id="tituloAvanco">Avanço da construção</h3>
+      <div class="pct" id="pct">0<small>%</small></div>
+      <div class="barra"><b id="barraObra" style="width:0"></b></div>
+      <div class="rotulo"><span>Tarefas medidas</span><b id="tarefas">0 de 0</b></div>
+      <div class="rotulo" id="linhaTotal" hidden><span>Obra inteira</span><b id="pctTotal">—</b></div>
+      <div class="prazo" id="prazo"><span>Prazo restante</span><b id="prazoTxt">—</b><em id="prazoDet"></em></div>
+      <div class="rotulo"><span>Milestone atual</span><b id="msAtual">—</b></div>
+      <div class="passos" id="passos"></div>
+      <div class="rotulo"><span>Etapa da linha</span><b id="etapaTxt">—</b></div>
+      <div class="barra linha"><b id="barraLinha" style="width:0"></b></div>
+    </div>
+    <div class="card">
+      <h3>Equipe</h3>
+      <div class="equipe" id="equipe"></div>
+    </div>
+  </section>
+
+  <section class="card palco" id="palco"><canvas id="cv"></canvas><div class="modos" role="group" aria-label="Visualização"><button id="b3d" aria-pressed="false">3D</button><button id="b2d" aria-pressed="false">2D</button></div><div class="legenda" id="legenda">O prédio sobe conforme as tarefas são aprovadas pelo QA</div></section>
+
+  <section class="col">
+    <div class="card">
+      <h3>Rádio da obra</h3>
+      <div class="feed" id="feed"><p class="vazio">Aguardando a primeira movimentação…</p></div>
+    </div>
+    <div class="card ocorr" id="ocorrCard" hidden>
+      <h3>Livro de ocorrências</h3>
+      <div class="lista-oc" id="ocorr"></div>
+    </div>
+    <div class="card">
+      <h3>Cronograma</h3>
+      <div class="ms" id="ms"><p class="vazio">Sem PLAN.md ainda.</p></div>
+    </div>
+  </section>
+</main>
+<div class="off" id="off">Servidor do canteiro fora do ar</div>
+
+<script>
+const ETAPAS=[['briefing','Briefing'],['design','Design'],['prototipo','Protótipo'],['documentacao','Documentos'],['revisao','Revisão'],['construcao','Construção'],['lancamento','Habite-se'],['entregue','Entregue']];
+const EQUIPE={
+  coordenador:{nome:'Mestre de obras',funcao:'coordenador',cor:'#f4f1ea',colete:'#2b3a55'},
+  designer:{nome:'Arquiteta',funcao:'designer',cor:'#9b7bff',colete:'#3d3466'},
+  escritor:{nome:'Eng. de planejamento',funcao:'escritor',cor:'#f5c542',colete:'#5a4a1c'},
+  revisor:{nome:'Fiscal',funcao:'revisor',cor:'#ff8a3d',colete:'#5b3218'},
+  implementador:{nome:'Equipe de execução',funcao:'implementador',cor:'#4a9be8',colete:'#e8762d'},
+  qa:{nome:'Inspetor de qualidade',funcao:'qa',cor:'#3fbf7f',colete:'#1d4a35'},
+  despachante:{nome:'Despachante (GitHub)',funcao:'despachante',cor:'#b8c0c8',colete:'#3b4652'},
+  plantonista:{nome:'Plantonista (ocorrências)',funcao:'plantonista',cor:'#e5604f',colete:'#4a2420'},
+  vistoriador:{nome:'Vistoriador (habite-se)',funcao:'vistoriador',cor:'#e8e2d0',colete:'#6b5d2e'},
+  implantador:{nome:'Implantador (produção)',funcao:'implantador',cor:'#ffd36b',colete:'#2c4a6b'},
+  corretor:{nome:'Corretor (lojas)',funcao:'corretor',cor:'#ff6fa8',colete:'#4a2440'}
+};
+const FUNCAO={
+  coordenador:{resumo:'É o chefe do canteiro. Conversa com você e coordena todo o time.',obra:'Comanda a obra: decide quem trabalha em quê, confere o serviço de cada um e presta contas ao dono.',sistema:'Lê o plano, chama cada especialista na hora certa, junta o trabalho aprovado e te avisa quando precisa de você.',quando:'O tempo todo, do começo ao fim.',junto:['implementador','qa','despachante']},
+  designer:{resumo:'Cuida da cara do seu sistema.',obra:'Desenha a fachada, escolhe as cores e os acabamentos.',sistema:'Monta o design system: cores, letras, botões e o jeito das telas, a partir das referências que você gosta.',quando:'Na etapa de Design, antes do protótipo.',junto:['coordenador','escritor']},
+  escritor:{resumo:'Transforma a ideia em um plano de obra.',obra:'Faz o caderno de obra e o cronograma: o que construir, em que ordem e quanto tempo leva.',sistema:'Escreve os documentos do sistema (PRD, SPEC, PLAN e CLAUDE): as regras, as telas e as etapas (milestones) com cada tarefa.',quando:'Na etapa de Documentos, depois do protótipo aprovado.',junto:['revisor','coordenador']},
+  revisor:{resumo:'Confere o plano antes de a obra começar.',obra:'Revisa o projeto para não ter erro, nem coisa repetida, nem parede faltando.',sistema:'Lê os documentos do planejamento, tira repetições e confere se tudo bate com o protótipo aprovado.',quando:'Na etapa de Revisão, antes da construção.',junto:['escritor','coordenador']},
+  implementador:{resumo:'São os pedreiros: quem levanta as paredes.',obra:'Executa o serviço, tijolo por tijolo, seguindo o projeto.',sistema:'Escreve o código de cada tarefa, uma etapa (milestone) por vez, e faz os testes da própria tarefa.',quando:'Na Construção. É ele que faz o prédio subir.',junto:['qa','coordenador']},
+  qa:{resumo:'Só deixa o prédio subir se estiver tudo certo.',obra:'Inspeciona cada parede antes de liberar o próximo andar.',sistema:'Roda os testes e revisa o código. Se achar problema, devolve para a equipe corrigir e só aprova quando estiver certo.',quando:'Na Construção, depois de cada tarefa.',junto:['implementador','despachante']},
+  despachante:{resumo:'Cuida da papelada e do cartório.',obra:'Leva os documentos ao cartório e espera a aprovação.',sistema:'Guarda o código no GitHub, abre o pedido para juntar o trabalho (PR), espera a vistoria automática (CI) e junta o que foi aprovado.',quando:'No fim de cada etapa da Construção.',junto:['qa','coordenador']},
+  plantonista:{resumo:'Resolve imprevistos, até de madrugada.',obra:'É chamado quando falta luz, chove ou um fornecedor atrasa.',sistema:'Quando algo de fora trava a obra (um serviço fora do ar, a cota do Claude acabou), anota a ocorrência, tenta de novo e só te chama se precisar.',quando:'Só quando aparece um problema.',junto:['coordenador']},
+  vistoriador:{resumo:'Faz a vistoria final antes de abrir as portas.',obra:'É a vistoria do habite-se: confere o prédio inteiro.',sistema:'Usa o sistema inteiro como se fosse um cliente, no celular e no computador, antes de publicar.',quando:'Na Entrega, antes de ir para o ar.',junto:['implantador','coordenador']},
+  implantador:{resumo:'Liga o sistema na internet.',obra:'Faz a ligação de água, luz e esgoto.',sistema:'Coloca o sistema no ar (Vercel e Supabase), liga o banco de dados de verdade e configura o seu endereço.',quando:'Na Entrega, depois da vistoria.',junto:['vistoriador','corretor']},
+  corretor:{resumo:'Coloca o app nas lojas.',obra:'Anuncia o imóvel e cuida da papelada da venda.',sistema:'Prepara o app, os textos e as telas para a App Store e o Google Play e envia para teste e revisão.',quando:'Na Entrega, se você quiser o app nas lojas.',junto:['implantador','coordenador']}
+};
+function abrirFicha(k){const p=EQUIPE[k],f=FUNCAO[k];if(!p||!f)return;const a=(window.canteiroEstado&&window.canteiroEstado.agentes&&window.canteiroEstado.agentes[k])||{};
+  document.getElementById('ficha').innerHTML=`<div class="topo"><span class="cap" style="background:${p.cor}"></span><div><h3 id="fichaNome">${esc(p.nome)}</h3><div class="agora">${a.ativo?'● agora: '+esc(acao(a)||'trabalhando'):'esperando a vez dele'}</div></div><button class="fechar" aria-label="Fechar" data-fechar>×</button></div>
+  <p class="resumo">${esc(f.resumo)}</p>
+  <div class="bl"><small>NA OBRA DE VERDADE</small><p>${esc(f.obra)}</p></div>
+  <div class="bl"><small>NO SEU SISTEMA</small><p>${esc(f.sistema)}</p></div>
+  <div class="bl"><small>QUANDO ENTRA EM CAMPO</small><p>${esc(f.quando)}</p></div>
+  <div class="junto"><span style="font-size:12px;color:var(--fraco);align-self:center">Trabalha junto com:</span>${f.junto.map(j=>`<button data-ag="${j}">${esc(EQUIPE[j].nome)}</button>`).join('')}</div>`;
+  document.getElementById('fichaFundo').classList.add('on');}
+function fecharFicha(){document.getElementById('fichaFundo').classList.remove('on')}
+let desceuNoFundo=false;document.addEventListener('pointerdown',ev=>{desceuNoFundo=ev.target.id==='fichaFundo'},true);
+document.addEventListener('click',ev=>{const t=ev.target;if(t.closest('[data-fechar]')||(t.id==='fichaFundo'&&desceuNoFundo))return fecharFicha();const j=t.closest('.ficha [data-ag]');if(j)abrirFicha(j.dataset.ag)});
+document.addEventListener('pointerdown',ev=>{const j=ev.target.closest('.pessoa[data-ag]');if(j)abrirFicha(j.dataset.ag)}); // a lista é redesenhada a cada atualização; pointerdown não perde o clique
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape')return fecharFicha();const j=ev.target.closest&&ev.target.closest('.pessoa[data-ag]');if(j&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();abrirFicha(j.dataset.ag)}});
+window.addEventListener('canteiro:agente',ev=>abrirFicha(ev.detail));
+const VERBO={Read:'lendo',Edit:'construindo',MultiEdit:'construindo',Write:'construindo',Bash:'rodando',Grep:'procurando',Glob:'procurando',Task:'chamando equipe',Agent:'chamando equipe',WebSearch:'pesquisando',WebFetch:'pesquisando',NotebookEdit:'construindo'};
+const fmt=n=>Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:1});
+const acao=a=>{const v=VERBO[a.ferramenta]||a.ferramenta||'';return (v+(a.alvo?' '+a.alvo:'')).trim()};
+
+/* ---------- estado ---------- */
+let E={nome:'—',etapa:'briefing',plano:null,agentes:{},feed:[]};
+const Q=new URLSearchParams(location.search);
+const demo=Q.has('demo');
+let OBRA=Q.get('obra'), MODO=Q.has('carteira')?'carteira':(OBRA?'obra':null), OBRAS=[];
+
+function render(){
+  window.canteiroEstado=E;
+  document.getElementById('nome').innerHTML=`${esc(E.nome)}<small>linha de produção de software</small>`;
+  const ie=Math.max(0,ETAPAS.findIndex(e=>e[0]===E.etapa));
+  document.getElementById('etapas').innerHTML=ETAPAS.map((e,i)=>`<span class="${i<ie?'feita':i===ie?'atual':''}">${i<ie?'✓ ':''}${e[1]}</span>`).join('');
+  const pct=E.plano?E.plano.pct:0;
+  document.getElementById('pct').innerHTML=`${fmt(pct)}<small>%</small>`;
+  const rod=E.plano&&E.plano.rodada;
+  document.getElementById('tituloAvanco').textContent=rod?'Avanço · rodada '+rod.nome:'Avanço da construção';
+  document.getElementById('linhaTotal').hidden=!rod;
+  if(rod)document.getElementById('pctTotal').textContent=fmt(rod.pctTotal)+'% · '+rod.feitasTotal+' de '+rod.tarefasTotal;
+  document.getElementById('barraObra').style.width=pct+'%';
+  const pz=E.prazo||{status:'sem-plano',texto:'aparece na construção'};
+  const elP=document.getElementById('prazo');elP.className='prazo'+(pz.status==='estimado'?' est':'');
+  if(pz.status==='estimado'){
+    document.getElementById('prazoTxt').textContent='≈ '+pz.restante;
+    document.getElementById('prazoDet').innerHTML=`${pz.dataTxt?'Previsão de conclusão: <b>'+esc(pz.dataTxt)+'</b>'+(pz.baseData?' ('+esc(pz.baseData)+')':'')+'<br>':''}Entre ${esc(pz.faixa)} de trabalho · confiança ${esc(pz.confianca)}<br>Ritmo ${esc(pz.ritmo)} · ${esc(pz.trabalhado)} trabalhadas${pz.porDia?' · ~'+esc(pz.porDia)+'/dia':''}`;
+  }else{document.getElementById('prazoTxt').textContent=pz.status==='concluido'?'concluída':'—';document.getElementById('prazoDet').textContent=pz.status==='concluido'?'':pz.texto;}
+  document.getElementById('tarefas').textContent=E.plano?`${E.plano.feitas} de ${E.plano.tarefas}`:'—';
+  document.getElementById('etapaTxt').textContent=`${ETAPAS[ie][1]} · ${ie+1}/${ETAPAS.length}`;
+  document.getElementById('barraLinha').style.width=(ie/(ETAPAS.length-1)*100)+'%';
+  const r=E.roteiro;const ec=r?Number(r.etapa_concluida||0):-1;
+  document.getElementById('msAtual').textContent=r?`${r.milestone||'—'}${r.pr?' · PR #'+r.pr:''}`:(E.plano&&E.plano.proximo?'M'+E.plano.proximo:'—');
+  document.getElementById('passos').innerHTML=['Planejar','Implementar','Revisar','Merge'].map((n,i)=>`<span class="${r&&i<ec?'feita':r&&i===ec%4?'atual':''}">${n}</span>`).join('');
+
+  document.getElementById('equipe').innerHTML=Object.keys(EQUIPE).map(k=>{
+    const a=E.agentes[k]||{};const p=EQUIPE[k];
+    const co=E.agentes.coordenador||{};const ci=!co.ativo&&/\bCI\b/.test(((E.roteiro&&E.roteiro.pendencias)||[]).join(' '));
+    const min=co.ts?Math.max(0,Math.round((Date.now()-co.ts)/60000)):0;
+    const esp=ci&&(k==='coordenador'||k==='despachante');
+    const txt=a.ativo?esc(acao(a))||'trabalhando':esp?(k==='coordenador'?`esperando a vistoria do GitHub (CI) · ${min} min`:'levou a obra para a vistoria do GitHub'):(a.ferramenta==='aguardando você'?'aguardando você':k==='coordenador'?'no escritório':'no almoxarifado');
+    return `<div class="pessoa ${a.ativo||esp?'ativo':''}" data-ag="${k}" role="button" tabindex="0" title="O que faz o ${esc(p.nome)}?"><span class="cap" style="background:${p.cor}"></span><div><b>${p.nome}</b><em>${txt}</em></div><span class="st">${a.ativo?'em campo':esp?'esperando CI':'na vez'}</span></div>`;
+  }).join('');
+
+  const f=document.getElementById('feed');
+  if(E.feed.length){
+    f.innerHTML=E.feed.map(e=>{
+      const p=EQUIPE[e.agente]||EQUIPE.implementador;const h=new Date(e.ts).toLocaleTimeString('pt-BR');
+      let t;
+      if(e.ev==='SubagentStart')t=`<b>${p.nome}</b> chegou ao canteiro`;
+      else if(e.ev==='SubagentStop')t=`<b>${p.nome}</b> entregou o serviço`;
+      else if(e.ev==='Etapa')t=`Etapa iniciada: <b>${esc(e.alvo)}</b>`;
+      else if(e.ev==='UserPromptSubmit')t=`<b>Você</b> passou uma instrução`;
+      else if(e.despacho)t=`<b>${p.nome}</b> chamou ${esc((EQUIPE[e.alvo]||{nome:e.alvo}).nome)}`;
+      else t=`<b>${p.nome}</b> ${esc(acao(e))}`;
+      return `<div><time>${h}</time><i style="background:${p.cor}"></i><span>${t}</span></div>`;
+    }).join('');
+  }
+  const oc=E.ocorrencias||[];document.getElementById('ocorrCard').hidden=!oc.length;
+  document.getElementById('ocorr').innerHTML=oc.map(o=>`<div><b>Pausado · #${o.id} ${esc(o.servico)} · ${esc(o.motivo)}</b><span>Quando liberar: ${esc(o.acao)}<br>Libera: ${o.liberar_em?new Date(o.liberar_em).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'sem horário'}${o.bloqueia&&o.bloqueia.length?' · bloqueia '+esc(o.bloqueia.join(', ')):''}</span></div>`).join('');
+  const ms=document.getElementById('ms');
+  if(E.plano&&E.plano.milestones.length){
+    ms.innerHTML=E.plano.milestones.map(m=>`<div class="${m.status}"><div class="t"><span>${m.status==='concluido'?'✓ ':''}M${m.n} · ${esc(m.titulo)}</span><b>${m.feitas}/${m.total}</b></div><div class="barra"><b style="width:${m.pct}%"></b></div></div>`).join('');
+  }
+}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+function mostrar(m){
+  MODO=m;
+  document.getElementById('carteira').hidden=m!=='carteira';
+  document.getElementById('grade').hidden=m!=='obra';
+  document.getElementById('etapas').style.visibility=m==='obra'?'visible':'hidden';
+  if(m==='carteira')document.getElementById('nome').innerHTML=`${OBRAS.length} obra${OBRAS.length===1?'':'s'}<small>linha de produção de software</small>`;
+  if(m==='obra'&&window.iniciarVisual)window.iniciarVisual();
+}
+async function buscarObras(){
+  try{const d=demo?demoCarteira():await (await fetch('/obras',{cache:'no-store'})).json();OBRAS=d.obras||[];document.getElementById('off').style.display='none'}
+  catch{document.getElementById('off').style.display='block';return}
+  if(!MODO)mostrar(OBRAS.length>1?'carteira':'obra');
+  const outras=OBRAS.filter(o=>o.id!==(E.id||OBRA));
+  const v=document.getElementById('voltar');
+  v.classList.toggle('on',MODO==='obra'&&OBRAS.length>1);
+  v.classList.toggle('mov',outras.some(o=>o.ativos.length));
+  document.getElementById('nObras').textContent=`(${OBRAS.length})`;
+  if(MODO==='carteira')renderCarteira();
+}
+function predioSVG(pct,mov){
+  const n=10,h=9,cheio=pct/100*n;let r='';
+  for(let i=0;i<n;i++){const f=Math.max(0,Math.min(1,cheio-i)),y=100-(i+1)*h;
+    if(f>=1)r+=`<rect x="18" y="${y}" width="50" height="${h-1}" fill="#cfc8bb"/><rect x="22" y="${y+2}" width="42" height="${h-5}" fill="#3b5f80"/>`;
+    else if(f>0)r+=`<rect x="18" y="${y+h-2}" width="50" height="2" fill="#a39c90"/>`+[18,42,66].map(x=>`<rect x="${x}" y="${y+(h-1)*(1-f)}" width="2" height="${(h-1)*f}" fill="#8f8a80"/>`).join('')+`<rect x="14" y="${y}" width="58" height="${h}" fill="none" stroke="#f2a33a" stroke-width="1" opacity=".8"/>`;}
+  const flag=pct>=100?'<line x1="60" y1="10" x2="60" y2="0" stroke="#ddd"/><path d="M60 0 L72 3 L60 6Z" fill="#3fbf7f"/>':'';
+  return `<svg viewBox="0 0 86 110" aria-hidden="true"><rect x="0" y="100" width="86" height="10" fill="#7a5d3e"/><rect x="12" y="99" width="62" height="2" fill="#8d8a84"/>${r}${flag}${mov?'<circle cx="78" cy="8" r="4" fill="#3fbf7f"/>':''}</svg>`;
+}
+const atras=ts=>{if(!ts)return'sem movimento';const m=Math.round((Date.now()-ts)/60000);return m<1?'agora':m<60?`há ${m} min`:m<1440?`há ${Math.round(m/60)} h`:`há ${Math.round(m/1440)} dia(s)`};
+const NOME_ETAPA=Object.fromEntries(ETAPAS);
+function renderCarteira(){
+  mostrar('carteira');
+  const el=document.getElementById('lotes');
+  if(!OBRAS.length){el.innerHTML='<div class="vazio-c">Nenhuma obra ainda. Abra o Claude Code dentro da pasta de um projeto que tenha a pasta .claude do kit: ele entra aqui sozinho no primeiro comando.</div>';return}
+  el.innerHTML=OBRAS.map(o=>{const mov=o.ativos.length>0;const r=o.roteiro;
+    return `<a class="lote ${mov?'mov':''}" href="?obra=${o.id}${demo?'&demo':''}">${predioSVG(o.pct,mov)}<div class="info"><h4>${esc(o.nome)}</h4><div class="cam">${esc(o.raiz)}</div><div class="pc">${fmt(o.pct)}<small>%</small></div><div class="chips"><span>${esc(NOME_ETAPA[o.etapa]||o.etapa)}</span>${r&&r.milestone?`<span>${esc(r.milestone)} · ${Number(r.etapa_concluida||0)>=4?'concluído':['Planejar','Implementar','Revisar','Merge'][Number(r.etapa_concluida||0)]}${r.pr?' · PR #'+r.pr:''}</span>`:''}${o.prazo?`<span>⏱ ≈ ${esc(o.prazo.restante)}${o.prazo.dataTxt?' · '+esc(o.prazo.dataTxt):''}</span>`:''}${o.ocorrencias?`<span class="oc">${o.ocorrencias} ocorrência${o.ocorrencias>1?'s':''}</span>`:''}</div><div class="st">${mov?'● trabalhando agora · '+o.ativos.map(a=>(EQUIPE[a]||{nome:a}).nome).join(', '):'parado · último movimento '+atras(o.ultimo)}</div></div>${demo?'':`<button class="tirar" type="button" data-id="${o.id}" title="Tirar esta obra da carteira (volta sozinha no próximo uso)">tirar</button>`}</a>`}).join('');
+  el.querySelectorAll('.tirar').forEach(b=>b.addEventListener('click',async ev=>{ev.preventDefault();ev.stopPropagation();
+    if(b.dataset.conf!=='1'){b.dataset.conf='1';b.textContent='confirmar?';setTimeout(()=>{b.dataset.conf='';b.textContent='tirar'},3000);return}
+    await fetch('/remover?obra='+b.dataset.id,{method:'POST'});buscarObras()}));
+}
+async function buscar(){
+  if(MODO!=='obra')return;
+  if(demo){E=demoEstado();render();return}
+  try{const r=await fetch('/estado'+(OBRA?'?obra='+encodeURIComponent(OBRA):''),{cache:'no-store'});E=await r.json();document.getElementById('off').style.display='none';if(!E.vazio)render()}
+  catch{document.getElementById('off').style.display='block'}
+}
+setInterval(buscar,1500);setInterval(buscarObras,4000);
+buscarObras().then(buscar);
+if(MODO)mostrar(MODO);
+
+/* ---------- demonstração (abrir com ?demo) ---------- */
+function demoCarteira(){const t=Date.now();return{obras:[
+  {id:'d1',nome:'BID · Equalizador de propostas',raiz:'C:\\Users\\Luiz Felipe\\Desktop\\Claude\\BID',etapa:'construcao',pct:62.5,roteiro:{milestone:'M8',etapa_concluida:2,pr:31},ativos:['coordenador','qa'],ocorrencias:0,ultimo:t-20000,prazo:{restante:'11 h',dataTxt:'sex 14/11'}},
+  {id:'d2',nome:'Almox',raiz:'C:\\Users\\Luiz Felipe\\Desktop\\Claude\\almox',etapa:'construcao',pct:34,roteiro:{milestone:'M4',etapa_concluida:1,pr:12},ativos:['implementador'],ocorrencias:1,ultimo:t-5000,prazo:{restante:'26 h',dataTxt:'qua 19/11'}},
+  {id:'d3',nome:'Revel · Diário de obra',raiz:'C:\\Users\\Luiz Felipe\\Desktop\\Claude\\revel',etapa:'prototipo',pct:0,roteiro:null,ativos:[],ocorrencias:0,ultimo:t-3*3600e3},
+  {id:'d4',nome:'Qualidade FULL',raiz:'C:\\Users\\Luiz Felipe\\Desktop\\Claude\\qualidade-full',etapa:'entregue',pct:100,roteiro:{milestone:'M12',etapa_concluida:4,pr:58},ativos:[],ocorrencias:0,ultimo:t-2*86400e3}]}}
+function demoEstado(){
+  const t=Math.floor(Date.now()/2500);const tot=24;const feitas=Math.min(tot,Math.floor(t%70*tot/55)+9);
+  const ms=['Base e autenticação','Cadastro de obras','Lançamento diário','Painel de custos','Relatórios em PDF','Ajustes finais'].map((n,i)=>{
+    const f=Math.max(0,Math.min(4,feitas-i*4));return{n:i+1,titulo:n,peso:1,total:4,feitas:f,pct:f*25,status:f===4?'concluido':f?'andamento':'pendente'}});
+  const papeis=['implementador','qa','coordenador'];const ativo=papeis[t%3];
+  const ag={};Object.keys(EQUIPE).forEach(k=>ag[k]={ativo:false,ferramenta:'',alvo:''});
+  ag.coordenador={ativo:true,ferramenta:ativo==='coordenador'?'Read':'Agent',alvo:ativo==='coordenador'?'PLAN.md':ativo};
+  if(ativo!=='coordenador')ag[ativo]={ativo:true,ferramenta:ativo==='qa'?'Bash':'Edit',alvo:ativo==='qa'?'npm test':'src/telas/Obra.tsx'};
+  const agora=Date.now();
+  const feed=Array.from({length:12},(_,i)=>{const k=papeis[(t-i+30)%3];return{ts:agora-i*2500,ev:'PreToolUse',agente:k,ferramenta:k==='qa'?'Bash':k==='coordenador'?'Read':'Edit',alvo:k==='qa'?'npm test':k==='coordenador'?'PLAN.md':'src/telas/Obra.tsx'}});
+  return{roteiro:{milestone:'M'+Math.min(6,Math.floor(feitas/4)+1),etapa_concluida:t%4,pr:Math.floor(feitas/4)+3},nome:'Diário de Obra',etapa:feitas>=tot?'entregue':'construcao',agentes:ag,feed,plano:{milestones:ms,tarefas:tot,feitas,pct:Math.round(feitas/tot*1000)/10},
+    prazo:feitas>=tot?{status:'concluido'}:{status:'estimado',restante:`${Math.max(1,Math.round((tot-feitas)*0.6))} h`,faixa:'—',confianca:'média',ritmo:'4,2% por hora',trabalhado:'9 h 30',porDia:'5 h',dataTxt:'sex 14/11'}};
+}
+
+/* ---------- canteiro isométrico ---------- */
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+let W=0,H=0,TW=56,TH=28,OX=0,OY=0,DPR=1;
+function medir(){
+  const r=cv.parentElement.getBoundingClientRect();DPR=window.devicePixelRatio||1;
+  W=r.width;H=r.height;if(!W||!H)return;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  const k=Math.min(W/13.6/56,H/12.4/28*0.86);TW=56*k;TH=28*k;
+  OX=W/2+TW*.3;OY=H*0.2;
+}
+addEventListener('resize',medir);new ResizeObserver(medir).observe(cv.parentElement);medir();
+
+const iso=(x,y,z=0)=>[OX+(x-y)*TW/2,OY+(x+y)*TH/2-z*TH];
+function poli(pts,fill,stroke){cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));cx.closePath();if(fill){cx.fillStyle=fill;cx.fill()}if(stroke){cx.strokeStyle=stroke;cx.lineWidth=1;cx.stroke()}}
+function caixa(x,y,z,w,d,h,topo,esq,dir,linha){
+  poli([iso(x,y+d,z),iso(x+w,y+d,z),iso(x+w,y+d,z+h),iso(x,y+d,z+h)],esq,linha);
+  poli([iso(x+w,y,z),iso(x+w,y+d,z),iso(x+w,y+d,z+h),iso(x+w,y,z+h)],dir,linha);
+  poli([iso(x,y,z+h),iso(x+w,y,z+h),iso(x+w,y+d,z+h),iso(x,y+d,z+h)],topo,linha);
+}
+const N=12,GX=13,GY=12;
+
+/* prédio: 4x4 tiles em (5,3), 10 pavimentos */
+const PB={x:5,y:3,w:4,d:4,pav:10,ph:0.62};
+function predio(pct,t){
+  const {x,y,w,d,pav,ph}=PB;
+  caixa(x-.25,y-.25,0,w+.5,d+.5,.12,'#8d8a84','#6f6c66','#5f5c57');
+  if(pct<=0){ // gabarito / estacas
+    for(let i=0;i<=w;i+=w)for(let j=0;j<=d;j+=d){const a=iso(x+i,y+j,.12),b=iso(x+i,y+j,.6);cx.strokeStyle='#d9b16a';cx.lineWidth=2;cx.beginPath();cx.moveTo(...a);cx.lineTo(...b);cx.stroke()}
+  }
+  const cheio=pct/100*pav;
+  for(let i=0;i<pav;i++){
+    const f=Math.max(0,Math.min(1,cheio-i));if(f<=0)break;const z=.12+i*ph;
+    if(f>=1){
+      caixa(x,y,z,w,d,ph,'#cfc8bb','#b9b2a5','#a39c90');
+      janelas(x,y,z,w,d,ph);
+    }else{
+      caixa(x,y,z,w,d,.08,'#bdb6a9','#a7a094','#938c81');
+      const hc=ph*Math.max(.25,f);
+      for(const [i2,j2] of [[0,d],[w,d],[w,0],[w/2,d],[w,d/2],[0,0]]){const a=iso(x+i2,y+j2,z),b=iso(x+i2,y+j2,z+hc);cx.strokeStyle='#8f8a80';cx.lineWidth=Math.max(2,TW*.07);cx.beginPath();cx.moveTo(...a);cx.lineTo(...b);cx.stroke()}
+      // andaime
+      cx.strokeStyle='rgba(242,163,58,.75)';cx.lineWidth=1;
+      for(let k=0;k<=w;k+=1){const a=iso(x+k,y+d+.25,z-ph*.0),b=iso(x+k,y+d+.25,z+hc+.15);cx.beginPath();cx.moveTo(...a);cx.lineTo(...b);cx.stroke()}
+      const a1=iso(x,y+d+.25,z+hc*.5),a2=iso(x+w,y+d+.25,z+hc*.5);cx.beginPath();cx.moveTo(...a1);cx.lineTo(...a2);cx.stroke();
+      PB.topo=z+hc;return;
+    }
+  }
+  const topo=.12+Math.min(cheio,pav)*ph;PB.topo=topo;
+  if(pct>=100){
+    caixa(x,y,topo,w,d,.12,'#e7e1d4','#d2cbbd','#bdb6a8');
+    const a=iso(x+w-.4,y+.4,topo+.12),b=iso(x+w-.4,y+.4,topo+1.3);cx.strokeStyle='#ddd';cx.lineWidth=2;cx.beginPath();cx.moveTo(...a);cx.lineTo(...b);cx.stroke();
+    const o=Math.sin(t/300)*3;poli([b,[b[0]+TW*.45,b[1]+6+o],[b[0],b[1]+TW*.25]],'#3fbf7f');
+  }
+}
+function janelas(x,y,z,w,d,h){
+  const vid='rgba(64,110,150,.85)';
+  for(let k=0;k<w;k++){const u0=x+k+.18,u1=x+k+.82;poli([iso(u0,y+d,z+h*.25),iso(u1,y+d,z+h*.25),iso(u1,y+d,z+h*.8),iso(u0,y+d,z+h*.8)],vid)}
+  for(let k=0;k<d;k++){const v0=y+k+.18,v1=y+k+.82;poli([iso(x+w,v0,z+h*.25),iso(x+w,v1,z+h*.25),iso(x+w,v1,z+h*.8),iso(x+w,v0,z+h*.8)],'rgba(48,84,118,.9)')}
+}
+function grua(t,ativa){
+  const gx=10.2,gy=2.4,alt=8.4;
+  for(let z=0;z<alt;z+=.5){const a=iso(gx,gy,z),b=iso(gx,gy,z+.5);cx.strokeStyle='#e0a02f';cx.lineWidth=Math.max(2,TW*.08);cx.beginPath();cx.moveTo(...a);cx.lineTo(...b);cx.stroke()}
+  const ang=ativa?Math.sin(t/2200)*.7-1.9:-1.9;const L=3.6;
+  const ponta=[gx+Math.cos(ang)*L,gy+Math.sin(ang)*L],tras=[gx-Math.cos(ang)*1.6,gy-Math.sin(ang)*1.6];
+  const a=iso(...tras,alt),b=iso(...ponta,alt);cx.strokeStyle='#f2b443';cx.lineWidth=Math.max(2,TW*.06);cx.beginPath();cx.moveTo(...a);cx.lineTo(...b);cx.stroke();
+  const c=iso(...tras,alt);cx.fillStyle='#555';cx.fillRect(c[0]-5,c[1]-2,10,8);
+  const m=.62,pg=[gx+Math.cos(ang)*L*m,gy+Math.sin(ang)*L*m];const p1=iso(...pg,alt),zc=alt-2.2-(ativa?Math.sin(t/700)*.8:0),p2=iso(...pg,zc);
+  cx.strokeStyle='#bbb';cx.lineWidth=1;cx.beginPath();cx.moveTo(...p1);cx.lineTo(...p2);cx.stroke();cx.fillStyle='#8a6a3c';cx.fillRect(p2[0]-7,p2[1],14,6);
+}
+function container(x,y,cor,rot){caixa(x,y,0,2.2,1,.85,'#d8d4cc',cor,shade(cor,-18),'rgba(0,0,0,.25)');const p=iso(x+1.1,y+1,.95);if(rot){cx.font=`600 ${Math.max(9,TW*.17)}px system-ui`;cx.textAlign='center';cx.fillStyle='rgba(255,255,255,.9)';cx.fillText(rot,p[0],p[1]-4)}}
+function shade(h,a){const n=parseInt(h.slice(1),16);let r=(n>>16)+a,g=(n>>8&255)+a,b=(n&255)+a;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));return`rgb(${r},${g},${b})`}
+
+/* personagens */
+const LUGAR={
+  coordenador:{ativo:[4.2,7.8],parado:[3.2,6.6]},
+  designer:{ativo:[11.4,8.4],parado:[4.5,10.3]},
+  escritor:{ativo:[1.2,7.1],parado:[4.9,10.9]},
+  revisor:{ativo:[2.4,7.2],parado:[5.4,10.4]},
+  implementador:{ativo:'obra',parado:[4.6,11.5]},
+  qa:{ativo:[10.9,10.4],parado:[5.3,11.4]},
+  despachante:{ativo:[7.2,11.6],parado:[5.9,10.9]},
+  plantonista:{ativo:[3.4,6.4],parado:[6.2,11.5]},
+  vistoriador:{ativo:[8.6,8.2],parado:[6.6,11.1]},
+  implantador:{ativo:[10.6,3.2],parado:[7,11.6]},
+  corretor:{ativo:[6,11.8],parado:[7.4,11.2]},
+};
+const P={};Object.keys(EQUIPE).forEach(k=>{const l=LUGAR[k].parado;P[k]={x:l[0],y:l[1],z:0,fase:Math.random()*6}});
+function alvoDe(k,ativo){const l=LUGAR[k][ativo?'ativo':'parado'];if(l==='obra')return[PB.x+1.6,PB.y+2.2,PB.topo||.12];return[l[0],l[1],0]}
+function boneco(k,p,t,ativo,txt){
+  const e=EQUIPE[k];const [sx,sy]=iso(p.x,p.y,p.z);const s=Math.max(.7,TW/56);
+  const andando=p.andando;const bal=andando?Math.sin(t/90+p.fase)*3*s:0;
+  cx.fillStyle='rgba(0,0,0,.28)';cx.beginPath();cx.ellipse(sx,sy,7*s,3.2*s,0,0,7);cx.fill();
+  cx.strokeStyle='#2c2a28';cx.lineWidth=3*s;cx.lineCap='round';
+  cx.beginPath();cx.moveTo(sx-2.5*s,sy-9*s);cx.lineTo(sx-2.5*s+bal,sy-1*s);cx.moveTo(sx+2.5*s,sy-9*s);cx.lineTo(sx+2.5*s-bal,sy-1*s);cx.stroke();
+  const trab=ativo&&!andando?Math.sin(t/160+p.fase)*2*s:0;
+  cx.fillStyle=e.colete;cx.beginPath();cx.roundRect(sx-6*s,sy-21*s,12*s,13*s,3*s);cx.fill();
+  cx.fillStyle='rgba(255,240,180,.85)';cx.fillRect(sx-6*s,sy-14*s,12*s,1.6*s);
+  cx.strokeStyle=e.colete;cx.lineWidth=2.6*s;cx.beginPath();cx.moveTo(sx+6*s,sy-19*s);cx.lineTo(sx+9*s,sy-12*s-trab);cx.stroke();
+  cx.fillStyle='#d9a77c';cx.beginPath();cx.arc(sx,sy-25*s,4.2*s,0,7);cx.fill();
+  cx.fillStyle=e.cor;cx.beginPath();cx.arc(sx,sy-26.5*s,5*s,Math.PI,0);cx.fill();cx.fillRect(sx-6.5*s,sy-26.8*s,13*s,1.8*s);
+  if(ativo&&!andando&&k==='implementador'&&Math.sin(t/120)>.3){cx.fillStyle='#ffd36b';for(let i=0;i<3;i++){cx.fillRect(sx+9*s+Math.random()*8*s,sy-14*s-Math.random()*8*s,2,2)}}
+  if(txt){
+    cx.font=`500 ${Math.max(10,11*s)}px system-ui`;const tw=Math.min(cx.measureText(txt).width,190);
+    const bx=sx-tw/2-7,by=sy-50*s;cx.fillStyle='rgba(14,17,22,.88)';cx.beginPath();cx.roundRect(bx,by,tw+14,19,6);cx.fill();
+    cx.fillStyle=e.cor;cx.fillRect(bx,by+4,2,11);cx.fillStyle='#e8e3d9';cx.textAlign='left';cx.save();cx.beginPath();cx.rect(bx,by,tw+12,19);cx.clip();cx.fillText(txt,bx+8,by+13.5);cx.restore();
+  }
+}
+
+let ultimo=performance.now();
+let modo='2d';
+function quadro(t){
+  if(modo!=='2d'||MODO!=='obra'){requestAnimationFrame(quadro);return}
+  const dt=Math.min(.05,(t-ultimo)/1000);ultimo=t;
+  cx.setTransform(DPR,0,0,DPR,0,0);
+  const g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#1d2633');g.addColorStop(1,'#141920');cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  // terreno
+  poli([iso(0,0),iso(GX,0),iso(GX,GY),iso(0,GY)],'#7a5d3e');
+  for(let i=0;i<GX;i++)for(let j=0;j<GY;j++)if((i+j)%2)poli([iso(i,j),iso(i+1,j),iso(i+1,j+1),iso(i,j+1)],'rgba(0,0,0,.05)');
+  poli([iso(0,9.4),iso(GX,9.4),iso(GX,9.9),iso(0,9.9)],'rgba(40,30,20,.25)');
+  // tapume
+  cx.strokeStyle='rgba(230,225,215,.35)';cx.lineWidth=1;
+  for(const [a,b] of [[[0,0],[GX,0]],[[0,0],[0,GY]]]){const p=iso(...a,0),q=iso(...b,0),p2=iso(...a,.5),q2=iso(...b,.5);poli([p,q,q2,p2],'rgba(242,163,58,.18)','rgba(242,163,58,.35)')}
+  // zonas
+  const pct=E.plano?E.plano.pct:0;const ag=E.agentes||{};
+  const objs=[];
+  objs.push({d:6.5,f:()=>container(.5,5.3,'#2f5f8f','PLAN.md')});
+  objs.push({d:12,f:()=>{caixa(.7,9.9,0,3.2,1.6,.7,'#c9c2b4','#8a7a62','#76684f','rgba(0,0,0,.2)');for(let i=0;i<4;i++)caixa(1+i*.7,10.1,.7,.5,.5,.25+((i*7)%3)*.1,'#d1a35b','#a97d3c','#936b31')}});
+  objs.push({d:18.4,f:()=>{caixa(11,7.2,0,1.2,.8,.45,'#ece7dc','#7e6a52','#6b5944');poli([iso(11.2,7.35,.47),iso(12,7.35,.47),iso(12,7.85,.47),iso(11.2,7.85,.47)],'#9fc3e6')}});
+  objs.push({d:20,f:()=>{caixa(10.3,9.4,0,1.4,.6,.5,'#bfc7cf','#55606b','#47515b')}});
+  objs.push({d:PB.x+PB.y+PB.w+PB.d-1,f:()=>predio(pct,t)});
+  objs.push({d:12.4,f:()=>grua(t,ag.implementador&&ag.implementador.ativo)});
+  for(const k of Object.keys(EQUIPE)){
+    const a=ag[k]||{};const p=P[k];const [ax,ay,az]=alvoDe(k,!!a.ativo);
+    const dx=ax-p.x,dy=ay-p.y,dist=Math.hypot(dx,dy);
+    if(dist>.05){const v=Math.min(dist,2.6*dt);p.x+=dx/dist*v;p.y+=dy/dist*v;p.andando=true}else p.andando=false;
+    p.z+=(az-p.z)*Math.min(1,dt*3);
+    const txt=a.ativo?(acao(a)||'trabalhando'):'';
+    const prof=k==='implementador'&&a.ativo?99:p.x+p.y;
+    objs.push({d:prof,f:()=>boneco(k,p,t,!!a.ativo,txt)});
+  }
+  objs.sort((a,b)=>a.d-b.d).forEach(o=>o.f());
+  rotulo(1.0,7.9,'escritório');rotulo(2.3,12.1,'almoxarifado');rotulo(12.2,8.6,'prancheta');rotulo(11.6,10.7,'vistoria');
+  requestAnimationFrame(quadro);
+}
+function rotulo(x,y,t){const p=iso(x,y);cx.font=`600 ${Math.max(9,TW*.15)}px system-ui`;cx.textAlign='center';cx.fillStyle='rgba(255,240,215,.55)';cx.fillText(t.toUpperCase(),p[0],p[1])}
+requestAnimationFrame(quadro);
+</script>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js"}}</script>
+<script type="module">
+const legenda=document.getElementById('legenda');
+let cena=null;
+const lerModo=()=>{try{return localStorage.getItem('canteiro-modo')}catch{return null}};
+const gravarModo=m=>{try{localStorage.setItem('canteiro-modo',m)}catch{}};
+const temWebGL=(()=>{try{const c=document.createElement('canvas');return !!(c.getContext('webgl2')||c.getContext('webgl'))}catch{return false}})();
+async function usar(m){
+  if(m==='3d'&&!temWebGL)m='2d';
+  document.getElementById('b3d').setAttribute('aria-pressed',m==='3d');
+  document.getElementById('b2d').setAttribute('aria-pressed',m==='2d');
+  gravarModo(m);
+  if(m==='3d'){
+    if(!cena){
+      try{const {iniciar}=await import('./cena3d.js');cena=iniciar(document.getElementById('palco'),()=>window.canteiroEstado)}
+      catch(e){console.error(e);legenda.textContent='Não foi possível abrir o 3D neste navegador. Mostrando o 2D.';return usar('2d')}
+    }
+    document.getElementById('cv').style.visibility='hidden';modo='3d';
+    legenda.textContent='Arraste para girar · role para aproximar · clique num trabalhador para saber o que ele faz';
+  }else{
+    if(cena){cena.parar();cena=null}
+    document.getElementById('cv').style.visibility='visible';modo='2d';
+    legenda.textContent='O prédio sobe conforme as tarefas são aprovadas pelo QA';
+  }
+}
+document.getElementById('b3d').onclick=()=>usar('3d');
+document.getElementById('b2d').onclick=()=>usar('2d');
+const pedido=new URLSearchParams(location.search).get('modo');
+window.iniciarVisual=()=>{if(window.visualIniciado)return;window.visualIniciado=true;usar(pedido||lerModo()||'3d')};
+if(MODO==='obra')window.iniciarVisual();
+</script>
+<div class="ficha-fundo" id="fichaFundo" role="dialog" aria-modal="true" aria-labelledby="fichaNome"><div class="ficha" id="ficha"></div></div>
+</body>
+</html>

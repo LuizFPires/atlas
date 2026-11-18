@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 16 Painel do administrador</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex">
+ <aside style="width:232px;box-sizing:border-box;padding:24px 16px;background:{{t.side}};border-right:1px solid {{t.sideB}};display:flex;flex-direction:column;gap:6px">
+  <div style="display:flex;align-items:center;gap:8px;padding:4px 10px 6px"><img src="{{t.mono}}" alt="" style="width:40px;height:22px;object-fit:contain"><img src="/_blob/a8a1f7c17882253fc0bb950b7874b2c2" alt="Atlas" style="width:96px;height:14px;object-fit:contain"></div>
+  <span style="padding:0 10px 16px;font:600 11px 'Geist Mono',monospace;letter-spacing:.14em;color:{{t.lime}}">ADMINISTRADOR</span>
+  <sc-for list="{{menu}}" as="m" hint-placeholder-count="5"><a href="#" style="padding:10px 14px;border-radius:12px;font-size:15px;text-decoration:none;background:{{m.bg}};color:{{m.cor}};font-weight:{{m.peso}}">{{m.nome}}</a></sc-for>
+ </aside>
+ <main style="flex:1;box-sizing:border-box;padding:30px 36px;display:flex;flex-direction:column;gap:20px">
+  <div style="display:flex;align-items:baseline;gap:14px"><h1 style="margin:0;font-size:30px;letter-spacing:-0.01em">Visão geral</h1><span style="font-size:14px;color:{{t.mute2}}">novembro de 2026 · dados de exemplo</span></div>
+  <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px">
+   <sc-for list="{{kpis}}" as="k" hint-placeholder-count="5">
+    <div style="background:{{t.card}};border:1px solid {{k.borda}};border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px"><span style="font-size:13px;color:{{t.mute}}">{{k.nome}}</span><span style="font-size:28px;font-weight:700;letter-spacing:-0.02em;color:{{k.cor}}">{{k.v}}</span><span style="font-size:13px;color:{{t.mute2}}">{{k.sub}}</span></div>
+   </sc-for>
+  </div>
+  <div style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:18px;flex:1;min-height:0">
+   <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:20px 22px;display:flex;flex-direction:column;overflow:hidden">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}};padding-bottom:10px">CLIENTES</span>
+    <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1.2fr;gap:10px;font-size:12px;font-weight:600;color:{{t.mute2}};padding:8px 0;border-bottom:1px solid {{t.line}}"><span>Cliente</span><span>Licença</span><span>Obras</span><span>Último sinal</span></div>
+    <sc-for list="{{clientes}}" as="c" hint-placeholder-count="6">
+     <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1.2fr;gap:10px;align-items:center;font-size:14px;padding:11px 0;border-bottom:1px solid {{t.line}}"><div style="display:flex;flex-direction:column"><b>{{c.nome}}</b><span style="font-size:12px;color:{{t.mute}}">{{c.cidade}}</span></div><span style="justify-self:start;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:{{c.stBg}};color:{{c.stCor}}">{{c.st}}</span><span>{{c.obras}}</span><span style="color:{{t.mute}}">{{c.sinal}}</span></div>
+    </sc-for>
+   </div>
+   <div style="display:flex;flex-direction:column;gap:18px">
+    <div style="background:{{t.card}};border:1px solid {{t.warn}};border-radius:18px;padding:20px 22px;display:flex;flex-direction:column;gap:10px">
+     <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.warnTxt}}">PRECISAM DE ATENÇÃO</span>
+     <sc-for list="{{alertas}}" as="a" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:2px;padding:8px 0;border-top:1px solid {{t.line}}"><b style="font-size:14px">{{a.quem}}</b><span style="font-size:13px;color:{{t.mute}}">{{a.oque}}</span></div></sc-for>
+    </div>
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:20px 22px;display:flex;flex-direction:column;gap:8px">
+     <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">VERSÃO DO KIT</span>
+     <b style="font-size:16px">Atlas 1.4 · enviada a 100% dos clientes</b>
+     <span style="font-size:13px;color:{{t.mute}}">Próxima: 1.5 (modelo pronto de fidelidade) · em teste com 3 clientes</span>
+    </div>
+   </div>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', side: '#101214', sideB: '#24282D', sideMute: '#9BA39A', actBg: '#22262B', actCor: '#EDEFEA', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', line: '#2A2E33', soft: '#2A3A12', warn: '#F2B14A', warnTxt: '#F2B14A', warnBg: '#3A2C10', chip: '#2C3036', mono: '/_blob/3ffac3c67d7d512dd74d51dc13a52fb7' },
+  claro: { bg: '#F2F3EE', side: '#1F2226', sideB: '#1F2226', sideMute: '#B9BEB5', actBg: '#B6E22E', actCor: '#1B1E22', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', line: '#E6E8E1', soft: '#DDF59A', warn: '#E0A23A', warnTxt: '#7A4E00', warnBg: '#F6E3C2', chip: '#E6E8E1', mono: '/_blob/0f7fdc2ab38162a05663832cd15a027d' }
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    const menu = ['Visão geral', 'Clientes', 'Licenças', 'Cobranças', 'Atualizações do kit'].map((nome, i) => ({ nome, bg: i === 0 ? t.actBg : 'transparent', cor: i === 0 ? t.actCor : t.sideMute, peso: i === 0 ? 600 : 400 }));
+    const kpis = [
+      { nome: 'Clientes ativos', v: '[nº]', sub: 'licenças em dia', cor: t.text, borda: t.cardB },
+      { nome: 'Receita recorrente', v: 'R$ [__]', sub: 'por mês', cor: t.limeTxt, borda: t.lime },
+      { nome: 'Implantações no mês', v: '[nº]', sub: 'meta: 100', cor: t.text, borda: t.cardB },
+      { nome: 'Mensalidade atrasada', v: '[nº]', sub: 'licença pausa em 7 dias', cor: t.warnTxt, borda: t.warn },
+      { nome: 'Obras rodando agora', v: '[nº]', sub: 'em todo o Brasil', cor: t.text, borda: t.cardB }
+    ];
+    const ok = { stBg: t.soft, stCor: t.limeTxt, st: 'Em dia' };
+    const atraso = { stBg: t.warnBg, stCor: t.warnTxt, st: 'Atrasada' };
+    const nova = { stBg: t.chip, stCor: t.text, st: 'Ativando' };
+    const clientes = [
+      { nome: 'Barbearia do Zé', cidade: 'Belo Horizonte, MG', obras: '1 no ar', sinal: 'agora · obra rodando', ...ok },
+      { nome: 'Box Força Total', cidade: 'Contagem, MG', obras: '2 no ar', sinal: 'há 3 h', ...ok },
+      { nome: 'Salão Bella', cidade: 'Curitiba, PR', obras: '1 em obra', sinal: 'ontem', ...atraso },
+      { nome: 'Pet Shop Amigo', cidade: 'Recife, PE', obras: '—', sinal: 'travado em: abrir contas', ...nova },
+      { nome: 'Clínica Sorriso', cidade: 'Campinas, SP', obras: '3 no ar', sinal: 'há 2 dias', ...ok },
+      { nome: 'Oficina do Beto', cidade: 'Goiânia, GO', obras: '1 em protótipo', sinal: 'há 5 h', ...ok }
+    ];
+    const alertas = [
+      { quem: 'Pet Shop Amigo', oque: 'Parado há 2 dias em "Abrir as contas" (Supabase). Mandar o vídeo?' },
+      { quem: 'Salão Bella', oque: 'Mensalidade atrasada há 4 dias. Lembrete automático enviado.' },
+      { quem: 'Box Força Total', oque: 'Tentou trocar de computador antes do prazo de 7 dias. Liberar?' }
+    ];
+    return { tema, t, menu, kpis, clientes, alertas };
+  }
+}
+</script>
+</body>
+</html>

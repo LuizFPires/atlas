@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 00 Página de vendas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} .acao{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:56px;min-height:56px;padding:0 28px;box-sizing:border-box;border-radius:14px;font-family:'Geist',sans-serif;font-size:17px;font-weight:700;line-height:1;white-space:nowrap;flex:none;text-decoration:none;cursor:pointer}</style>
+</helmet>
+<div style="width:1440px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;flex-direction:column">
+ <header style="height:76px;box-sizing:border-box;padding:0 96px;display:flex;align-items:center;gap:32px">
+  <div style="display:flex;align-items:center;gap:10px"><img src="{{t.mono}}" alt="" style="width:46px;height:26px;object-fit:contain"><img src="/_blob/a8a1f7c17882253fc0bb950b7874b2c2" alt="Atlas" style="width:112px;height:16px;object-fit:contain;filter:{{t.wordFiltro}}"></div>
+  <nav style="display:flex;gap:28px;margin-left:24px;font-size:15px;color:{{t.mute}}"><a href="#" style="color:inherit;text-decoration:none">Como funciona</a><a href="#" style="color:inherit;text-decoration:none">O que você recebe</a><a href="#" style="color:inherit;text-decoration:none">Preço</a><a href="#" style="color:inherit;text-decoration:none">Dúvidas</a></nav>
+  <a class="acao" href="F00bCadastro.dc.html" style="margin-left:auto;height:46px;min-height:46px;padding:0 20px;font-size:15px;background:{{t.lime}};color:{{t.onLime}}">Quero o meu</a>
+ </header>
+
+ <section style="padding:48px 96px 64px;display:flex;flex-direction:column;align-items:center;gap:26px;text-align:center">
+  <span style="font:600 13px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}};border:1px solid {{t.lime}};padding:7px 12px;border-radius:999px">SISTEMAS SOB MEDIDA, FEITOS PELA IA</span>
+  <h1 style="margin:0;max-width:1000px;font-size:60px;line-height:1.04;letter-spacing:-0.03em">O sistema que a sua empresa precisa, do seu jeito. Sem saber programar.</h1>
+  <p style="margin:0;max-width:820px;font-size:20px;line-height:1.5;color:{{t.mute}}">Você conta o que precisa, como se falasse com um amigo. O Atlas desenha, constrói e entrega o sistema pronto, para usar no celular e no computador.</p>
+  <div style="position:relative;width:1040px;height:585px;border-radius:24px;overflow:hidden;border:1px solid {{t.cardB}};background:linear-gradient(135deg,#1E2125,#0E1012);box-shadow:0 30px 80px rgba(0,0,0,.35)">
+   <img src="/_blob/bfb9db5689c302bc51beabc3a8ef1062" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.35">
+   <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px">
+    <span style="width:104px;height:104px;border-radius:52px;background:#C6F135;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 14px rgba(198,241,53,.18)"><svg width="40" height="40" viewBox="0 0 24 24" fill="#141619" aria-hidden="true"><path d="M8 5l12 7-12 7z"/></svg></span>
+    <b style="font-size:24px;color:#EDEFEA">Assista: o Atlas em 2 minutos</b>
+    <span style="font:500 13px 'Geist Mono',monospace;color:#B4BBB2;border:1px dashed #5F665C;padding:6px 10px;border-radius:8px">[ espaço do seu vídeo · 16:9 ]</span>
+   </div>
+   <span style="position:absolute;left:18px;bottom:16px;font:600 13px 'Geist Mono',monospace;color:#EDEFEA;background:rgba(10,12,14,.75);padding:6px 10px;border-radius:8px">2:00</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px"><a class="acao" href="F00bCadastro.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Quero construir o meu →</a><a class="acao" href="#" style="border:1px solid {{t.cardB}};color:{{t.text}};font-weight:600">Ver o que dá para construir</a></div>
+ </section>
+
+ <section style="padding:0 96px 72px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center"><h2 style="margin:0;font-size:56px;line-height:1.05;letter-spacing:-0.03em">Você faz 3 passos. <span style="color:{{t.limeTxt}}">A IA faz o resto.</span></h2><span style="font-size:20px;color:{{t.mute}}">É só isso. Depois, pode ir dormir.</span></div>
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.5fr);gap:14px;align-items:stretch">
+   <sc-for list="{{tres}}" as="p" hint-placeholder-count="3">
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:22px;display:flex;flex-direction:column;justify-content:center;gap:12px"><span style="width:44px;height:44px;border-radius:22px;background:{{t.lime}};color:{{t.onLime}};font:700 20px 'Geist Mono',monospace;display:flex;align-items:center;justify-content:center">{{p.n}}</span><b style="font-size:23px;line-height:1.25">{{p.nome}}</b></div>
+   </sc-for>
+   <div style="background:{{t.lime}};color:{{t.onLime}};border-radius:18px;padding:22px;display:flex;gap:16px;align-items:center">
+    <span style="width:56px;height:56px;flex:none;border-radius:28px;background:#141619;color:#C6F135;display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></span>
+    <div style="display:flex;flex-direction:column;gap:6px"><span style="font:700 13px 'Geist Mono',monospace;letter-spacing:.08em">DEPOIS · A IA</span><b style="font-size:22px;line-height:1.2">Constrói sozinha, dia e noite. Inclusive enquanto você dorme.</b><span style="font-size:15px;line-height:1.45">Você acorda com notícias da obra no celular.</span></div>
+   </div>
+  </div>
+ </section>
+
+ <section style="padding:72px 96px;background:{{t.band}};display:flex;flex-direction:column;gap:28px">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:860px"><span style="font:600 13px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">O QUE DÁ PARA CONSTRUIR</span><h2 style="margin:0;font-size:40px;letter-spacing:-0.02em">Se dá para explicar, dá para construir.</h2><span style="font-size:18px;line-height:1.5;color:{{t.mute}}">Um sistema financeiro, um app de controle de obra, a agenda da barbearia. Cada obra vira um sistema seu, com o seu nome, que funciona no celular e no computador.</span></div>
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px">
+   <sc-for list="{{exemplos}}" as="x" hint-placeholder-count="8">
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:8px"><span style="font-size:26px">{{x.ic}}</span><b style="font-size:18px">{{x.nome}}</b><span style="font-size:15px;line-height:1.5;color:{{t.mute}}">{{x.txt}}</span></div>
+   </sc-for>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;font-size:15px;color:{{t.mute}}"><span style="padding:8px 14px;border-radius:999px;border:1px solid {{t.cardB}}">📱 No celular, como aplicativo</span><span style="padding:8px 14px;border-radius:999px;border:1px solid {{t.cardB}}">💻 No computador, pelo navegador</span><span style="padding:8px 14px;border-radius:999px;border:1px solid {{t.cardB}}">👥 Com login para a sua equipe e os seus clientes</span></div>
+ </section>
+
+ <section style="padding:72px 96px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:56px;align-items:center">
+  <div style="display:flex;flex-direction:column;gap:14px">
+   <span style="font:600 13px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">VOCÊ VÊ A OBRA SUBIR</span>
+   <h2 style="margin:0;font-size:40px;letter-spacing:-0.02em">Enquanto a IA trabalha, o seu sistema sobe andar por andar.</h2>
+   <span style="font-size:18px;line-height:1.55;color:{{t.mute}}">Cada etapa pronta vira um andar do prédio. Você acompanha de onde estiver e recebe notícias da obra no celular.</span>
+  </div>
+  <div style="height:440px;border-radius:24px;overflow:hidden;border:1px solid {{t.cardB}}"><img src="/_blob/bfb9db5689c302bc51beabc3a8ef1062" alt="Prédio em construção no canteiro 3D do Atlas" style="width:100%;height:100%;object-fit:cover;display:block"></div>
+ </section>
+
+ <section style="padding:72px 96px;background:{{t.band}};display:flex;flex-direction:column;gap:28px">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:760px"><span style="font:600 13px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">COMO FUNCIONA</span><h2 style="margin:0;font-size:40px;letter-spacing:-0.02em">Fazer um sistema é igual construir uma casa.</h2><span style="font-size:18px;line-height:1.5;color:{{t.mute}}">Por isso no Atlas cada sistema é uma obra. Você decide, a IA constrói.</span></div>
+  <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px">
+   <sc-for list="{{etapas}}" as="e" hint-placeholder-count="5">
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:10px"><span style="width:34px;height:34px;border-radius:17px;background:{{t.lime}};color:{{t.onLime}};font:700 15px 'Geist Mono',monospace;display:flex;align-items:center;justify-content:center">{{e.n}}</span><b style="font-size:19px">{{e.nome}}</b><span style="font-size:15px;line-height:1.5;color:{{t.mute}}">{{e.txt}}</span></div>
+   </sc-for>
+  </div>
+ </section>
+
+ <section style="padding:72px 96px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:center">
+  <div style="display:flex;flex-direction:column;gap:14px">
+   <span style="font:600 13px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">VOCÊ NÃO PRECISA DIGITAR</span>
+   <h2 style="margin:0;font-size:40px;letter-spacing:-0.02em">Fale como se estivesse com um amigo na mesa de um restaurante.</h2>
+   <span style="font-size:18px;line-height:1.55;color:{{t.mute}}">Tudo no Atlas pode ser falado: o que você quer, o que mudar, o que não ficou bom. Ele entende, escreve e mostra para você conferir.</span>
+  </div>
+  <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:22px;padding:26px;display:flex;flex-direction:column;gap:14px">
+   <div style="display:flex;align-items:center;gap:14px"><span style="width:60px;height:60px;border-radius:30px;background:#F05A4F;color:#FFF;display:flex;align-items:center;justify-content:center;flex:none"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span style="font:600 15px 'Geist Mono',monospace">Ouvindo… 0:18</span></div>
+   <span style="font-size:17px;line-height:1.55;font-style:italic">"Olha, hoje o pessoal marca pelo WhatsApp e vira uma bagunça. Queria que o cliente escolhesse o barbeiro e o horário sozinho, e que eu visse tudo no meu celular."</span>
+   <span style="font-size:14px;color:{{t.limeTxt}}">✓ O Atlas entendeu: agenda online com escolha de barbeiro e painel do dono.</span>
+  </div>
+ </section>
+
+ <section style="padding:72px 96px;background:{{t.band}};display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px">
+  <div style="display:flex;flex-direction:column;gap:18px">
+   <span style="font:600 13px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">O QUE VOCÊ RECEBE</span>
+   <h2 style="margin:0;font-size:40px;letter-spacing:-0.02em">Tudo o que precisa para construir quantos sistemas quiser.</h2>
+   <sc-for list="{{recebe}}" as="r" hint-placeholder-count="6"><div style="display:flex;gap:12px;align-items:flex-start;font-size:17px;line-height:1.5"><span style="width:24px;height:24px;flex:none;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px">✓</span><span><b>{{r.t}}</b> <span style="color:{{t.mute}}">{{r.d}}</span></span></div></sc-for>
+  </div>
+  <div style="background:{{t.card}};border:2px solid {{t.lime}};border-radius:24px;padding:32px;display:flex;flex-direction:column;gap:16px;align-self:start">
+   <span style="font:600 13px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">PREÇO</span>
+   <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;color:{{t.mute}}">Implantação, uma vez só</span><span style="font-size:52px;font-weight:700;letter-spacing:-0.03em">R$ 4.800</span><span style="font-size:15px;color:{{t.mute}}">em Pix ou parcelado no cartão</span></div>
+   <div style="height:1px;background:{{t.cardB}}"></div>
+   <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:17px">Manutenção mensal</span><b style="font-size:24px">R$ 200<span style="font-size:15px;font-weight:400;color:{{t.mute}}">/mês</span></b></div>
+   <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">Inclui as atualizações do Atlas e o portal da sua conta.</span>
+   <div style="background:{{t.input}};border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.5;color:{{t.mute}}"><b style="color:{{t.text}}">Você também vai precisar de uma assinatura do Claude</b>, paga direto à Anthropic. Ela é a força de trabalho da obra: no plano Pro a obra tem pausas, no Max ela termina mais rápido.</div>
+   <a class="acao" href="F00bCadastro.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Quero construir o meu →</a>
+  </div>
+ </section>
+
+ <section style="padding:72px 96px;display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:8px"><span style="font:600 13px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">PARA QUEM É</span><h2 style="margin:0;font-size:40px;letter-spacing:-0.02em">Sejamos sinceros: o Atlas não é para todo mundo.</h2></div>
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px">
+   <div style="background:{{t.card}};border:2px solid {{t.lime}};border-radius:22px;padding:26px;display:flex;flex-direction:column;gap:14px"><b style="font-size:22px">✓ É para você se…</b><sc-for list="{{eh}}" as="e" hint-placeholder-count="5"><div style="display:flex;gap:12px;font-size:17px;line-height:1.5"><span style="color:{{t.limeTxt}};font-weight:700">✓</span><span>{{e.txt}}</span></div></sc-for></div>
+   <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:22px;padding:26px;display:flex;flex-direction:column;gap:14px"><b style="font-size:22px">✕ Não é para você se…</b><sc-for list="{{naoEh}}" as="e" hint-placeholder-count="5"><div style="display:flex;gap:12px;font-size:17px;line-height:1.5;color:{{t.mute}}"><span style="color:#E5534B;font-weight:700">✕</span><span>{{e.txt}}</span></div></sc-for></div>
+  </div>
+ </section>
+
+ <section style="padding:72px 96px;display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:8px"><span style="font:600 13px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">DÚVIDAS</span><h2 style="margin:0;font-size:40px;letter-spacing:-0.02em">Perguntas de quem nunca programou</h2></div>
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+   <sc-for list="{{faq}}" as="q" hint-placeholder-count="6"><div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:20px 22px;display:flex;flex-direction:column;gap:8px"><b style="font-size:18px">{{q.p}}</b><span style="font-size:16px;line-height:1.55;color:{{t.mute}}">{{q.r}}</span></div></sc-for>
+  </div>
+  <div style="border:2px dashed {{t.cardB}};border-radius:18px;padding:22px;font-size:15px;color:{{t.mute2}};text-align:center">[Espaço para depoimentos reais dos primeiros clientes, com nome, empresa e foto autorizados]</div>
+ </section>
+
+ <section style="margin:0 96px 72px;border-radius:28px;background:{{t.lime}};color:{{t.onLime}};padding:56px;display:flex;align-items:center;gap:40px">
+  <div style="display:flex;flex-direction:column;gap:10px;flex:1"><h2 style="margin:0;font-size:44px;letter-spacing:-0.02em;line-height:1.08">A sua ideia merece sair do papel.</h2><span style="font-size:19px;line-height:1.5">Comece hoje. A primeira obra começa no mesmo dia.</span></div>
+  <a class="acao" href="F00bCadastro.dc.html" style="background:#141619;color:#C6F135">Quero construir o meu →</a>
+ </section>
+
+ <footer style="padding:28px 96px 40px;border-top:1px solid {{t.cardB}};display:flex;align-items:center;gap:20px;font-size:14px;color:{{t.mute2}}">
+  <img src="{{t.mono}}" alt="" style="width:34px;height:19px;object-fit:contain"><span>Atlas · PL Engenharia · CNPJ [__.___.___/____-__]</span><span style="margin-left:auto">Termos de uso</span><span>Licença do software</span><span>Privacidade</span><span>Contato</span>
+ </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":5260}}'>
+const T = {
+  escuro: { bg: '#141619', band: '#101214', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', input: '#16181B', mono: '/_blob/3ffac3c67d7d512dd74d51dc13a52fb7', wordFiltro: 'none' },
+  claro: { bg: '#F2F3EE', band: '#E8EAE3', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', input: '#F2F3EE', mono: '/_blob/0f7fdc2ab38162a05663832cd15a027d', wordFiltro: 'brightness(0.12)' }
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    return { tema, t: T[tema] || T.escuro,
+      etapas: [
+        { n: '1', nome: 'Projeto', txt: 'Você escolhe o estilo, conta o que quer e vê as telas no celular antes de tudo.' },
+        { n: '2', nome: 'Orçamento', txt: 'O Atlas mostra as etapas e o prazo. Nada começa sem você aprovar.' },
+        { n: '3', nome: 'Obra', txt: 'A IA constrói, testa e confere sozinha. Você acompanha pelo celular.' },
+        { n: '4', nome: 'Chaves', txt: 'O sistema fica no ar, com o seu nome e endereço, no celular e no computador.' },
+        { n: '5', nome: 'Reforma', txt: 'Quer mudar algo? É só pedir, falando, quando quiser.' }
+      ],
+      recebe: [
+        { t: 'O Atlas instalado no seu computador.', d: 'Com ele você faz quantas obras quiser.' },
+        { t: 'Curso e treinamento.', d: 'Para você usar com segurança desde o primeiro dia.' },
+        { t: 'Guia de mão dada na configuração.', d: 'Passo a passo, em português simples.' },
+        { t: 'O código é seu, para sempre.', d: 'Fica guardado na sua conta, no seu nome.' },
+        { t: 'Sistemas para celular e computador.', d: 'Cada obra funciona como aplicativo no celular e como site no computador.' },
+        { t: 'Acompanhamento de onde você estiver.', d: 'Notícias da obra no app do Claude, no celular.' },
+        { t: 'Ajuda a qualquer hora.', d: 'Travou? O próprio Atlas vê o que aconteceu e te guia, passo a passo.' }
+      ],
+      tres: [
+        { n: '1', nome: 'Mostre o que você gosta.' },
+        { n: '2', nome: 'Explique como você quer.' },
+        { n: '3', nome: 'Escolha um nome.' }
+      ],
+      exemplos: [
+        { ic: '💈', nome: 'Agenda de barbearia', txt: 'Clientes marcam horário sozinhos e você vê tudo do celular.' },
+        { ic: '🏗', nome: 'Controle de obra', txt: 'Diário, medições, equipes e fotos de cada obra num lugar só.' },
+        { ic: '💰', nome: 'Sistema financeiro', txt: 'Contas a pagar e receber, fluxo de caixa e relatórios.' },
+        { ic: '📦', nome: 'Estoque', txt: 'Entradas, saídas, validade e aviso de reposição.' },
+        { ic: '🏋', nome: 'App de treinos', txt: 'Treino do dia, check-in e evolução de cada aluno.' },
+        { ic: '🤝', nome: 'Vendas e clientes', txt: 'Funil de vendas, propostas e histórico de cada cliente.' },
+        { ic: '🍔', nome: 'Pedidos e cardápio', txt: 'Cardápio online, pedidos e cozinha conectados.' },
+        { ic: '✨', nome: 'A sua ideia', txt: 'Qualquer processo da sua empresa que hoje vive no papel ou no WhatsApp.' }
+      ],
+      eh: [
+        { txt: 'Você tem uma empresa ou uma ideia e sabe explicar como ela funciona.' },
+        { txt: 'Hoje você controla as coisas no papel, em planilhas ou no WhatsApp.' },
+        { txt: 'Quer um sistema do seu jeito, e não se adaptar a um sistema pronto.' },
+        { txt: 'Topa conversar com o Atlas, aprovar as etapas e testar o resultado.' },
+        { txt: 'Quer que o sistema seja seu, sem mensalidade por usuário.' }
+      ],
+      naoEh: [
+        { txt: 'Você quer que alguém faça tudo sem você participar.' },
+        { txt: 'Precisa de um sistema pronto amanhã, sem tempo para o projeto.' },
+        { txt: 'Não tem um computador com Windows para deixar ligado durante a obra.' },
+        { txt: 'Procura um site institucional simples, só de vitrine.' },
+        { txt: 'Não quer assinar o Claude, que é a força de trabalho da obra.' }
+      ],
+      faq: [
+        { p: 'Preciso saber programar?', r: 'Não. Você conversa, aprova e acompanha. Quem escreve o código é a IA.' },
+        { p: 'Quanto tempo leva uma obra?', r: 'Um sistema simples costuma ficar pronto em poucos dias. O Atlas mostra a previsão antes de começar.' },
+        { p: 'O computador precisa ficar ligado?', r: 'Sim, durante a obra. Ele é o canteiro. Você acompanha tudo pelo celular.' },
+        { p: 'O sistema é meu?', r: 'Sim. O código fica na sua conta e continua seu mesmo se um dia você parar de usar o Atlas.' },
+        { p: 'E se eu quiser mudar algo depois?', r: 'Você pede com as suas palavras. O Atlas mostra o que vai mudar e só publica quando você aprovar.' },
+        { p: 'Funciona no meu computador?', r: 'Funciona em computadores com Windows 10 ou 11 e internet. O instalador confere tudo para você.' }
+      ] };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 04b Acompanhar pelo celular</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} .acao{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:50px;min-height:50px;padding:0 22px;box-sizing:border-box;border-radius:12px;font-family:'Geist',sans-serif;font-size:16px;font-weight:700;line-height:1;white-space:nowrap;flex:none;text-decoration:none;cursor:pointer}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:#2B2F35;font-family:'Geist',system-ui,sans-serif;display:flex;align-items:center;justify-content:center">
+ <div style="width:1220px;height:800px;background:{{t.bg}};color:{{t.text}};border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.45);display:flex;overflow:hidden">
+  <div style="width:230px;background:{{t.panel}};padding:32px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:26px;flex:none">
+   <div style="display:flex;align-items:center;gap:8px"><img src="{{t.mono}}" alt="" style="width:40px;height:22px;object-fit:contain"><img src="/_blob/a8a1f7c17882253fc0bb950b7874b2c2" alt="Atlas" style="width:96px;height:14px;object-fit:contain"></div>
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="5">
+    <div style="display:flex;align-items:center;gap:12px;font-size:15px;color:{{p.cor}};font-weight:{{p.peso}}"><span style="width:28px;height:28px;flex:none;border-radius:14px;display:flex;align-items:center;justify-content:center;font:600 13px 'Geist Mono',monospace;background:{{p.bolaBg}};color:{{p.bolaCor}}">{{p.n}}</span>{{p.nome}}</div>
+   </sc-for>
+  </div>
+  <div style="flex:1;padding:30px 36px;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:30px;min-width:0">
+   <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+    <div style="display:flex;flex-direction:column;gap:8px">
+     <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">ÚLTIMO PASSO</span>
+     <h1 style="margin:0;font-size:27px;line-height:1.2;letter-spacing:-0.01em">Deixe o computador ligado e acompanhe pelo app do Claude, de onde estiver.</h1>
+     <span style="font-size:15px;line-height:1.55;color:{{t.mute}}">O computador é o <b style="color:{{t.text}}">canteiro</b>: é nele que ficam os arquivos e as ferramentas do seu sistema. Por isso ele precisa ficar ligado durante a obra. Mas você não precisa ficar na frente dele. Pelo <b style="color:{{t.text}}">app do Claude no celular</b> você vê tudo e dá ordens, de onde estiver.</span>
+    </div>
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:16px">
+     <svg width="84" height="84" viewBox="0 0 21 21" role="img" aria-label="QR code para baixar o app do Claude" style="background:#FFFFFF;border-radius:8px;padding:6px;flex:none"><path d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0z" fill="#141619"/><path d="M1 1h5v5H1zM15 1h5v5h-5zM1 15h5v5H1z" fill="#FFFFFF"/><path d="M2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2zM9 1h2v2H9zM8 8h3v2H8zM12 10h2v1h-2zM15 9h1v3h-1zM18 8h2v1h-2zM8 13h1v3H8zM11 12h3v1h-3zM16 14h3v2h-3zM10 16h2v2h-2zM14 17h1v3h-1zM17 18h3v1h-3zM9 19h3v1H9z" fill="#141619"/></svg>
+     <div style="display:flex;flex-direction:column;gap:5px">
+      <b style="font-size:16px">1. Baixe o app do Claude no celular</b>
+      <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">Aponte a câmera para o quadradinho. Entre com a mesma conta: <b style="color:{{t.text}}">zé@barbeariadoze.com.br</b>. Pronto: suas obras aparecem lá sozinhas.</span>
+     </div>
+    </div>
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:12px">
+     <b style="font-size:16px">2. De quanto em quanto tempo você quer notícias da obra?</b>
+     <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <sc-for list="{{freqs}}" as="f" hint-placeholder-count="4"><button onClick="{{f.ir}}" style="height:40px;padding:0 14px;border-radius:999px;border:1px solid {{f.borda}};background:{{f.bg}};color:{{t.text}};font:600 14px 'Geist',sans-serif;cursor:pointer;white-space:nowrap">{{f.nome}}</button></sc-for>
+     </div>
+     <div style="display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{avisos}}" as="a" hint-placeholder-count="3">
+       <button onClick="{{a.ir}}" style="display:flex;align-items:center;gap:12px;padding:0;border:none;background:transparent;color:{{t.text}};font:15px 'Geist',sans-serif;cursor:pointer;text-align:left"><span style="width:40px;height:22px;flex:none;border-radius:11px;background:{{a.trilho}};position:relative"><span style="position:absolute;top:3px;left:{{a.x}}px;width:16px;height:16px;border-radius:8px;background:{{a.bola}}"></span></span>{{a.nome}}</button>
+      </sc-for>
+     </div>
+     <span style="font-size:13px;color:{{t.mute2}}">Pelo celular você também pode responder falando: "pausa a obra", "troca a cor do botão", "como está?".</span>
+    </div>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:12px">
+     <a class="acao" href="F04Contas.dc.html" style="padding:0 18px;border:1px solid {{t.cardB}};color:{{t.text}};font-weight:600;font-size:15px">← Voltar</a>
+     <a class="acao" href="F05Obras.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Concluir e ir para as obras →</a>
+    </div>
+   </div>
+   <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+    <span style="font-size:13px;color:{{t.mute2}}">Assim chega no seu celular:</span>
+    <div style="width:310px;height:660px;border-radius:42px;background:#0B0C0D;padding:11px;box-sizing:border-box;box-shadow:0 20px 50px rgba(0,0,0,.35)">
+     <div style="width:100%;height:100%;border-radius:32px;background:#F5F4EF;color:#1B1E22;overflow:hidden;display:flex;flex-direction:column">
+      <div style="padding:16px 14px 10px;display:flex;flex-direction:column;gap:8px;background:#E9E8E2">
+       <div style="display:flex;justify-content:space-between;font:600 12px 'Geist',sans-serif;color:#3E443C"><span>15:00</span><span>●●● 5G</span></div>
+       <div style="background:rgba(255,255,255,.92);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;box-shadow:0 4px 14px rgba(0,0,0,.08)">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#6B7268"><b style="color:#1B1E22">Claude</b><span>agora</span></div>
+        <span style="font-size:13px;line-height:1.4"><b>Notícia das 15h</b> · Agenda da Barbearia do Zé: 62% pronta.</span>
+       </div>
+      </div>
+      <div style="padding:10px 14px;font:600 13px 'Geist',sans-serif;border-bottom:1px solid #E1E0D9">Agenda da Barbearia do Zé</div>
+      <div style="flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;overflow:hidden">
+       <div style="align-self:flex-start;max-width:88%;background:#FFFFFF;border:1px solid #E1E0D9;border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.45"><b>Notícia das {{hora}}</b><br>✓ Tela de marcar horário pronta e testada.<br>🔨 Agora: confirmação pelo WhatsApp (etapa 5 de 8).<br>⏱ Faltam umas 9 h de obra.<br>Próxima notícia: {{proxima}}.</div>
+       <div style="align-self:flex-end;max-width:80%;background:#DDF59A;border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.45"><span style="font-size:11px;color:#3F5600">🎤 falado</span><br>Beleza. Coloca o botão de marcar em marrom, igual a fachada.</div>
+       <div style="align-self:flex-start;max-width:88%;background:#FFFFFF;border:1px solid #E1E0D9;border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.45">Anotado! Faço isso logo depois desta etapa e te mostro antes de colocar no ar.</div>
+      </div>
+      <div style="padding:10px 12px 16px;display:flex;align-items:center;gap:8px;border-top:1px solid #E1E0D9">
+       <span style="flex:1;height:36px;border-radius:18px;background:#FFFFFF;border:1px solid #E1E0D9;font-size:12px;color:#8E968C;display:flex;align-items:center;padding:0 12px">Responder…</span>
+       <span style="width:36px;height:36px;border-radius:18px;background:#1B1E22;color:#C6F135;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', panel: '#101214', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', soft: '#2A3A12', off: '#3A3F46', mono: '/_blob/3ffac3c67d7d512dd74d51dc13a52fb7' },
+  claro: { bg: '#F2F3EE', panel: '#1F2226', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', soft: '#DDF59A', off: '#C4C8BD', mono: '/_blob/0f7fdc2ab38162a05663832cd15a027d' }
+};
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { freq: '1h', avisos: { precisa: true, etapa: true, fim: true } }; }
+  renderVals() {
+    const t = T[this.props.tema ?? 'escuro'] || T.escuro;
+    const nomes = ['Confirmar e-mail', 'Instalar', 'Conectar o Claude', 'Abrir as contas', 'Acompanhar pelo celular'];
+    const passos = nomes.map((nome, i) => {
+      const n = i + 1, feito = n < 5, agora = n === 5;
+      return { n: feito ? '✓' : String(n), nome, cor: agora ? '#EDEFEA' : '#9BA39A', peso: agora ? 600 : 400, bolaBg: feito || agora ? t.lime : '#2A2E33', bolaCor: feito || agora ? '#141619' : '#9BA39A' };
+    });
+    const { freq, avisos } = this.state;
+    const F = [['30m', 'A cada 30 min', '15h30'], ['1h', 'A cada 1 hora', '16h'], ['3h', 'A cada 3 horas', '18h'], ['etapa', 'Só quando terminar uma etapa', 'quando a etapa 5 terminar']];
+    const freqs = F.map(([id, nome]) => ({ nome, bg: id === freq ? t.soft : 'transparent', borda: id === freq ? t.lime : t.cardB, ir: () => this.setState({ freq: id }) }));
+    const A = [['precisa', 'Me avisar quando a obra precisar de mim'], ['etapa', 'Me avisar quando uma etapa terminar'], ['fim', 'Me avisar quando a obra ficar pronta']];
+    const lista = A.map(([id, nome]) => { const on = !!avisos[id]; return { nome, trilho: on ? t.lime : t.off, bola: on ? t.onLime : '#FFFFFF', x: on ? 21 : 3, ir: () => this.setState({ avisos: { ...avisos, [id]: !on } }) }; });
+    const prox = (F.find(f => f[0] === freq) || F[1])[2];
+    return { t, passos, freqs, avisos: lista, hora: '15h', proxima: prox };
+  }
+}
+</script>
+</body>
+</html>

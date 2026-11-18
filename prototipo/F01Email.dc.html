@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 01 E-mail de boas-vindas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:#E9EAE6;font-family:'Geist',system-ui,sans-serif;display:flex;flex-direction:column">
+ <div style="height:52px;background:#FFFFFF;border-bottom:1px solid #D7D9D2;display:flex;align-items:center;padding:0 24px;gap:12px;color:#5F665C;font-size:14px">
+  <span style="font-weight:600;color:#1B1E22">Caixa de entrada</span><span>·</span><span>zé@barbeariadoze.com.br</span>
+ </div>
+ <div style="flex:1;display:flex;justify-content:center;padding:36px 0;overflow:hidden">
+  <div style="width:680px;background:#FFFFFF;border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.08);display:flex;flex-direction:column">
+   <div style="background:{{t.hero}};padding:36px 44px;display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:center;gap:10px"><img src="{{t.mono}}" alt="" style="width:52px;height:28px;object-fit:contain"><img src="/_blob/a8a1f7c17882253fc0bb950b7874b2c2" alt="Atlas" style="width:130px;height:19px;object-fit:contain"></div>
+    <h1 style="margin:0;color:#EDEFEA;font-size:34px;line-height:1.15;letter-spacing:-0.01em">Zé, sua licença do Atlas está pronta.</h1>
+    <p style="margin:0;color:#B4BBB2;font-size:16px;line-height:1.5">A partir de agora você constrói os sistemas da sua barbearia, sem programar.</p>
+   </div>
+   <div style="padding:32px 44px;display:flex;flex-direction:column;gap:22px;color:#1B1E22">
+    <p style="margin:0;font-size:16px;line-height:1.6">Abra este e-mail <b>no computador onde você vai trabalhar</b> e clique no botão. Leva uns 10 minutos.</p>
+    <a href="F02Ativacao.dc.html" style="align-self:flex-start;display:inline-flex;align-items:center;height:52px;padding:0 26px;border-radius:12px;background:{{t.lime}};color:#141619;font-weight:700;font-size:17px;text-decoration:none">Instalar o Atlas neste computador</a>
+    <div style="display:flex;flex-direction:column;gap:10px;background:#F2F3EE;border-radius:12px;padding:18px 20px;font-size:15px;line-height:1.5;color:#3E443C">
+     <b style="color:#1B1E22">O que vai acontecer</b>
+     <span>1. O instalador pede um código que chega neste e-mail.</span>
+     <span>2. Você conecta a sua conta do Claude.</span>
+     <span>3. O Atlas te ajuda a abrir as contas que o seu sistema vai usar.</span>
+    </div>
+    <div style="display:flex;gap:14px;align-items:flex-start;border:2px solid {{t.lime}};border-radius:12px;padding:16px 18px">
+     <span style="width:40px;height:40px;flex:none;border-radius:20px;background:{{t.lime}};color:#141619;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+     <span style="font-size:15px;line-height:1.5;color:#3E443C"><b style="color:#1B1E22">Você não vai precisar digitar.</b> No Atlas, tudo pode ser falado. É só apertar o microfone e conversar como se estivesse com um amigo na mesa de um restaurante.</span>
+    </div>
+    <p style="margin:0;font-size:13px;color:#6B7268;line-height:1.5">O botão funciona uma vez só e vale por 48 horas. Abriu no celular? Toque em "Enviar para o meu computador".</p>
+   </div>
+  </div>
+ </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const claro = (this.props.tema ?? 'escuro') === 'claro';
+    return { t: claro
+      ? { hero: '#1F2226', lime: '#B6E22E', mono: '/_blob/0f7fdc2ab38162a05663832cd15a027d' }
+      : { hero: '#141619', lime: '#C6F135', mono: '/_blob/3ffac3c67d7d512dd74d51dc13a52fb7' } };
+  }
+}
+</script>
+</body>
+</html>

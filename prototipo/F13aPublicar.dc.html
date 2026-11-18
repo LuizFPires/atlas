@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 13a Onde o sistema vai morar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} .acao{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:52px;min-height:52px;padding:0 24px;box-sizing:border-box;border-radius:12px;font-family:'Geist',sans-serif;font-size:16px;font-weight:700;line-height:1;white-space:nowrap;flex:none;text-decoration:none;cursor:pointer}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex">
+ <dc-import name="Shell" ativo="obra" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;box-sizing:border-box;padding:30px 40px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:26px;min-width:0">
+  <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+   <div style="display:flex;flex-direction:column;gap:6px">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">OBRA PRONTA · CADEIRA 1</span>
+    <h1 style="margin:0;font-size:30px;letter-spacing:-0.01em">Onde o seu sistema vai morar?</h1>
+    <span style="font-size:15px;line-height:1.5;color:{{t.mute}}">Toque em tudo o que você quer. Dá para começar simples e acrescentar depois, a qualquer momento.</span>
+   </div>
+   <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+    <sc-for list="{{opcoes}}" as="o" hint-placeholder-count="4">
+     <button onClick="{{o.ir}}" style="display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:18px;border:2px solid {{o.borda}};background:{{o.bg}};color:{{t.text}};cursor:pointer;text-align:left;font-family:'Geist',sans-serif;min-width:0">
+      <div style="display:flex;align-items:center;gap:12px"><span style="width:42px;height:42px;flex:none;border-radius:21px;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{o.ic}}"/></svg></span><b style="font-size:17px;flex:1">{{o.nome}}</b><span style="width:24px;height:24px;flex:none;border-radius:7px;border:2px solid {{o.caixa}};background:{{o.caixaBg}};color:{{t.onLime}};font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">{{o.marca}}</span></div>
+      <span style="font:600 14px 'Geist Mono',monospace;color:{{t.limeTxt}}">{{o.exemplo}}</span>
+      <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">{{o.txt}}</span>
+      <span style="font-size:13px;font-weight:600;color:{{t.text}}">{{o.custo}}</span>
+     </button>
+    </sc-for>
+   </div>
+   <div style="margin-top:auto;display:flex;align-items:center;gap:12px">
+    <a class="acao" href="F13bPublicando.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Publicar agora →</a>
+    <span style="font-size:14px;color:{{t.mute}}">O que for pagamento ou assinatura, quem faz é você. O Atlas mostra o botão certo e espera.</span>
+   </div>
+  </div>
+  <aside style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:12px;min-width:0">
+   <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">O QUE VAI ACONTECER</span>
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="5">
+    <div style="display:flex;gap:10px;padding:8px 0;border-top:1px solid {{t.line}}"><span style="width:22px;height:22px;flex:none;border-radius:11px;background:{{p.bg}};color:{{p.cor}};font:700 11px 'Geist Mono',monospace;display:flex;align-items:center;justify-content:center">{{p.quem}}</span><span style="font-size:14px;line-height:1.45">{{p.txt}}</span></div>
+   </sc-for>
+   <div style="display:flex;gap:14px;font-size:12px;color:{{t.mute}}"><span><b style="color:{{t.limeTxt}}">A</b> o Atlas faz</span><span><b style="color:{{t.warnTxt}}">V</b> é com você</span></div>
+   <div style="margin-top:auto;background:{{t.input}};border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;color:{{t.mute}}">Custo extra para publicar</span><b style="font-size:18px">{{custoTotal}}</b><span style="font-size:12px;color:{{t.mute2}}">Pago direto a quem cobra. O Atlas não cobra nada a mais.</span></div>
+  </aside>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', input: '#16181B', line: '#2A2E33', soft: '#2A3A12', warn: '#F2B14A', warnTxt: '#F2B14A', onWarn: '#1E1606' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', input: '#F2F3EE', line: '#E6E8E1', soft: '#DDF59A', warn: '#F6D28E', warnTxt: '#7A4E00', onWarn: '#4A3000' }
+};
+const OP = [
+  { id: 'gratis', nome: 'Endereço grátis', ic: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18', exemplo: 'cadeira1.vercel.app', txt: 'No ar em poucos minutos, com cadeado de segurança. Ótimo para começar e testar com a equipe.', custo: 'Grátis', valor: 0 },
+  { id: 'dominio', nome: 'Seu próprio endereço', ic: 'M4 7h16v10H4zM8 7V5h8v2M9 12h6', exemplo: 'cadeira1.com.br', txt: 'O Atlas confere se o nome está livre, te leva ao Registro.br para comprar e depois configura tudo sozinho.', custo: 'Cerca de R$ 40 por ano (.com.br)', valor: 40 },
+  { id: 'pwa', nome: 'App instalável, sem loja', ic: 'M7 2h10v20H7zM11 18h2M12 6v7M9 10l3 3 3-3', exemplo: '"Adicionar à tela inicial"', txt: 'Seus clientes instalam pelo navegador, no Android e no iPhone. O ícone fica igual ao de um aplicativo.', custo: 'Grátis', valor: 0 },
+  { id: 'lojas', nome: 'App Store e Google Play', ic: 'M6 3h12l2 5H4zM5 8v13h14V8M10 13h4', exemplo: 'Na busca das lojas', txt: 'O Atlas prepara o app, os textos e as telas da loja. A Apple revisa em alguns dias. No Google, conta pessoal nova testa antes com 12 pessoas por 14 dias.', custo: 'Apple US$ 99/ano · Google US$ 25 uma vez', valor: 0 }
+];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sel: { gratis: true, pwa: true } }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    const sel = this.state.sel;
+    const opcoes = OP.map(o => { const on = !!sel[o.id]; return { ...o, borda: on ? t.lime : t.cardB, bg: on ? t.soft : t.card, caixa: on ? t.lime : t.cardB, caixaBg: on ? t.lime : 'transparent', marca: on ? '✓' : '', ir: () => this.setState({ sel: { ...sel, [o.id]: !on } }) }; });
+    const A = txt => ({ quem: 'A', txt, bg: t.lime, cor: t.onLime });
+    const V = txt => ({ quem: 'V', txt, bg: t.warn, cor: t.onWarn });
+    const passos = [A('Vistoria final: testa tudo antes de abrir as portas.')];
+    if (sel.gratis || sel.dominio || sel.pwa) passos.push(A('Coloca o sistema no ar, com cadeado de segurança.'));
+    if (sel.dominio) { passos.push(V('Pagar o domínio no Registro.br (o Atlas abre a página certa).')); passos.push(A('Liga o domínio ao sistema. Leva até algumas horas para funcionar.')); }
+    if (sel.pwa) passos.push(A('Prepara o ícone e o "Adicionar à tela inicial".'));
+    if (sel.lojas) { passos.push(V('Criar as contas de desenvolvedor da Apple e do Google e pagar.')); passos.push(A('Prepara o app, os textos, as telas e envia para teste.')); passos.push(V('Testar no celular e apertar "Enviar para revisão".')); }
+    passos.push(A('Entrega as chaves: endereço, QR code e versão.'));
+    const partes = [];
+    if (sel.dominio) partes.push('~R$ 40/ano');
+    if (sel.lojas) partes.push('US$ 99/ano + US$ 25');
+    return { tema, t, opcoes, passos, custoTotal: partes.length ? partes.join(' + ') : 'Nenhum' };
+  }
+}
+</script>
+</body>
+</html>

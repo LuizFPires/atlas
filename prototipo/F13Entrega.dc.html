@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 13 Entrega do sistema</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex">
+ <dc-import name="Shell" ativo="obra" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;box-sizing:border-box;padding:36px 44px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:26px">
+  <div style="display:flex;flex-direction:column;gap:18px">
+   <span style="align-self:flex-start;font-size:13px;font-weight:700;color:{{t.onLime}};background:{{t.lime}};padding:6px 12px;border-radius:999px">✓ Obra entregue</span>
+   <h1 style="margin:0;font-size:40px;line-height:1.1;letter-spacing:-0.02em">A agenda da sua barbearia está no ar.</h1>
+   <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:4px"><span style="font-size:28px;font-weight:700">8</span><span style="font-size:14px;color:{{t.mute}}">etapas</span></div>
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:4px"><span style="font-size:28px;font-weight:700">50</span><span style="font-size:14px;color:{{t.mute}}">tarefas testadas</span></div>
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:4px"><span style="font-size:28px;font-weight:700">1d 20h</span><span style="font-size:14px;color:{{t.mute}}">de obra</span></div>
+   </div>
+   <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:20px;display:flex;align-items:center;gap:18px">
+    <svg width="120" height="120" viewBox="0 0 21 21" role="img" aria-label="QR code para abrir o sistema no celular" style="background:#FFFFFF;border-radius:10px;padding:8px;flex:none"><path d="M0 0h7v7H0zM14 0h7v7h-7zM0 14h7v7H0z" fill="#141619"/><path d="M1 1h5v5H1zM15 1h5v5h-5zM1 15h5v5H1z" fill="#FFFFFF"/><path d="M2 2h3v3H2zM16 2h3v3h-3zM2 16h3v3H2zM8 1h1v2H8zM10 2h2v1h-2zM8 8h2v2H8zM11 9h2v1h-2zM14 8h1v3h-1zM17 9h3v1h-3zM9 12h1v3H9zM12 12h3v1h-3zM16 13h2v2h-2zM11 15h2v2h-2zM14 16h1v4h-1zM16 17h4v1h-4zM8 18h3v1H8zM18 19h2v1h-2zM19 11h1v1h-1z" fill="#141619"/></svg>
+    <div style="display:flex;flex-direction:column;gap:8px">
+     <b style="font-size:17px">Aponte a câmera do celular</b>
+     <span style="font-size:15px;color:{{t.mute}};line-height:1.5">Abre o sistema. Toque em "Adicionar à tela inicial" e ele vira um aplicativo.</span>
+     <span style="font:600 15px 'Geist Mono',monospace;color:{{t.limeTxt}}">[endereço-da-barbearia].app</span>
+    </div>
+   </div>
+   <div style="display:flex;gap:12px">
+    <a href="#" style="display:inline-flex;align-items:center;height:52px;padding:0 22px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font-weight:700;font-size:16px;text-decoration:none">Mandar para a equipe pelo WhatsApp</a>
+    <a href="F14PosObra.dc.html" style="display:inline-flex;align-items:center;height:52px;padding:0 22px;border-radius:12px;border:1px solid {{t.cardB}};color:{{t.text}};font-weight:600;font-size:16px;text-decoration:none">Quero mudar algo</a>
+   </div>
+  </div>
+  <div style="border-radius:20px;overflow:hidden;position:relative;border:1px solid {{t.cardB}}">
+   <img src="/_blob/bfb9db5689c302bc51beabc3a8ef1062" alt="Prédio concluído no canteiro 3D" style="width:100%;height:100%;object-fit:cover;display:block">
+   <span style="position:absolute;left:16px;bottom:16px;right:16px;font-size:15px;color:#EDEFEA;background:rgba(10,12,14,.72);padding:12px 14px;border-radius:12px">Prédio pronto. O código é seu, guardado no seu GitHub, para sempre.</span>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600' }
+};
+class Component extends DCLogic {
+  renderVals() { const tema = this.props.tema ?? 'escuro'; return { tema, t: T[tema] || T.escuro }; }
+}
+</script>
+</body>
+</html>
