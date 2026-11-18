@@ -7,6 +7,7 @@ import type { PonteConstrucao, PonteModoObra } from './ponte-construcao'
 import type { PontePainel } from './ponte-painel'
 import type { PonteEstilo } from './ponte-estilo'
 import type { PontePrototipo } from './ponte-prototipo'
+import type { PonteBatismo } from './ponte-batismo'
 import type { PonteRetomar } from './ponte-retomar'
 
 /** Cofre do sistema (Windows Credential Manager / DPAPI). NUNCA grava segredo em arquivo. */
@@ -36,6 +37,7 @@ export interface PonteDesktop {
   retomar?: PonteRetomar
   estilo?: PonteEstilo
   prototipo?: PontePrototipo
+  batismo?: PonteBatismo
 }
 
 declare global {

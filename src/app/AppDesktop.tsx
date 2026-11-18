@@ -117,7 +117,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const pontePrototipo = useMemo<PontePrototipo>(() => prototipo ?? (modoFixture() ? criarPrototipoFixture(ponteObras.raiz()) : (ponte.prototipo ?? prototipoIndisponivel)), [prototipo, ponteObras, ponte])
 
   // Idem para o Claude que sugere os nomes e grava a marca na pasta da obra: sem adaptador real, não finge.
-  const ponteBatismo = useMemo<PonteBatismo>(() => batismo ?? (modoFixture() ? criarBatismoFixture(ponteObras.raiz()) : batismoIndisponivel), [batismo, ponteObras])
+  const ponteBatismo = useMemo<PonteBatismo>(() => batismo ?? (modoFixture() ? criarBatismoFixture(ponteObras.raiz()) : (ponte.batismo ?? batismoIndisponivel)), [batismo, ponteObras, ponte])
   // Idem para conferir nomes parecidos e endereço livre (consulta pública): sem adaptador real, não finge que conferiu.
   // Idem para o plano da obra e o modo (automático ou passo a passo): o mesmo armazém de preferências é o que o painel da obra (M19) lê.
   const pontesModo = useMemo(() => {

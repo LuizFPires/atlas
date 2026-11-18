@@ -68,6 +68,10 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     ajustar: (pasta, pedido) => chamar('atlas:prototipo:ajustar', String(pasta), String(pedido)),
     voltar: (pasta, numero) => chamar('atlas:prototipo:voltar', String(pasta), Number(numero)),
   },
+  batismo: {
+    sugerir: (pasta, obraNome, pedido) => chamar('atlas:batismo:sugerir', String(pasta), String(obraNome), JSON.parse(JSON.stringify(pedido ?? {}))),
+    batizar: (pasta, marca) => chamar('atlas:batismo:batizar', String(pasta), JSON.parse(JSON.stringify(marca ?? {}))),
+  },
   construcao: {
     planejar: (pasta, obraNome) => chamar('atlas:construcao:planejar', String(pasta), String(obraNome)),
     // etapas: só n/nome/desc/tela como texto; o processo principal revalida tudo.

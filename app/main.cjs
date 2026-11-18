@@ -16,6 +16,7 @@ const { criarRetomar } = require('./adaptadores/retomar.cjs')
 const { criarDisparo } = require('./adaptadores/projeto-comum.cjs')
 const { criarEstilo } = require('./adaptadores/estilo.cjs')
 const { criarPrototipo } = require('./adaptadores/prototipo.cjs')
+const { criarBatismo } = require('./adaptadores/batismo.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -35,6 +36,7 @@ const retomar = criarRetomar({ raiz: obras.raiz(), painel, construcao })
 const disparo = criarDisparo({ raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
+const batismo = criarBatismo({ raiz: obras.raiz(), disparo })
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -104,6 +106,10 @@ handle('atlas:prototipo:estado', (pasta) => prototipo.estado(String(pasta)))
 handle('atlas:prototipo:desenhar', (pasta, nome, estilo) => prototipo.desenhar(String(pasta), String(nome), estilo))
 handle('atlas:prototipo:ajustar', (pasta, pedido) => prototipo.ajustar(String(pasta), String(pedido)))
 handle('atlas:prototipo:voltar', (pasta, numero) => prototipo.voltar(String(pasta), Number(numero)))
+
+// Batismo (F07b): 3 nomes (logo só de lista fechada) e marca/marca.md sem sobrescrever.
+handle('atlas:batismo:sugerir', (pasta, nome, pedido) => batismo.sugerir(String(pasta), String(nome), pedido))
+handle('atlas:batismo:batizar', (pasta, marca) => batismo.batizar(String(pasta), marca))
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois).
 app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })
