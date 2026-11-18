@@ -4,6 +4,8 @@ import { Canteiro3D } from './Canteiro3D'
 import { MODO_RECOMENDADO, MODOS_OBRA, PARADAS_REAIS, TEXTO_MODO, type ModoObra, type PonteModoObra } from './ponte-construcao'
 import { situacaoDaObra, type EstadoObra, type PontePainel, type Situacao } from './ponte-painel'
 import { Pausa } from './Pausa'
+import { Ocorrencia } from './Ocorrencia'
+import type { PonteOcorrencias } from './ponte-ocorrencia'
 import type { PonteCota } from './ponte-cota'
 import type { ObraDoEstilo } from './Estilo'
 import './painel.css'
@@ -17,6 +19,10 @@ interface Props {
   onPublicar?: () => void
   /** Cota do plano (F10): quando a cota acaba, a tela de pausa calma aparece e a obra volta sozinha ao renovar. */
   cota?: PonteCota
+  /** Ocorrências (F11): a única parada que exige o cliente; vale nos dois modos. */
+  ocorrencias?: PonteOcorrencias
+  /** Abre a Ajuda do Atlas (F11). */
+  onPedirAjuda?: () => void
   /** Abre o site do Claude nos planos (F10). */
   onVerMax?: () => void
   /** De quanto em quanto tempo relê o andamento (ms); 0 desliga (testes). */
@@ -48,7 +54,7 @@ const AVISO_PARADA: Partial<Record<Situacao, string>> = {
 }
 
 /** F09: painel da obra. O prédio, o %, o prazo e o "agora na obra"; detalhes técnicos só em "ver detalhes". */
-export function Painel({ obra, painel, modos, cota, onPublicar, onVerMax, sondagemMs = 5000 }: Props) {
+export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onVerMax, onPedirAjuda, sondagemMs = 5000 }: Props) {
   const [estado, setEstado] = useState<EstadoObra | null>(null)
   const [modo, setModo] = useState<ModoObra | null>(null)
   const [modoLido, setModoLido] = useState(false)
@@ -107,6 +113,10 @@ export function Painel({ obra, painel, modos, cota, onPublicar, onVerMax, sondag
 
   if (sit === 'cota' && cota && dispensada !== 'cota') {
     return <Pausa pasta={obra.pasta} cota={cota} onVoltar={() => setDispensada('cota')} onRetomou={() => { void atualizar() }} onVerMax={onVerMax} sondagemMs={sondagemMs} />
+  }
+
+  if (sit === 'precisa-de-voce' && ocorrencias && dispensada !== 'precisa-de-voce') {
+    return <Ocorrencia pasta={obra.pasta} ocorrencias={ocorrencias} onResolvida={() => { void atualizar() }} onAdiada={() => { setDispensada('precisa-de-voce'); void atualizar() }} onPedirAjuda={onPedirAjuda} />
   }
 
   const concluida = sit === 'concluida'
