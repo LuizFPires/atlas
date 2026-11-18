@@ -265,7 +265,7 @@ tela: prototipo/F17Ajuda.dc.html
 - [ ] Implementar passos curtos, tradução, "Abrir a página certa" e "Fiz/Ainda não deu"
 - [ ] Enviar casos não resolvidos ao painel admin
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): F17Ajuda — painel lateral de 520px (print do erro, conversa, botões, microfone); abre SOZINHO ao dar erro (com print e registro), pelo menu "Ajuda do Atlas" e pelo "Não consegui" de cada passo; passos curtos, tradução do inglês, "Abrir a página certa" e "Fiz / Ainda não deu"; casos não resolvidos vão ao painel admin (ocorrencias_admin, M7). Todo suporte é o PRÓPRIO Atlas (o Claude por dentro, com a cara do Atlas) — NUNCA promete atendimento humano. A conversa é o Claude por baixo (port, fixture); mensagem do cliente como DADO; "Abrir a página certa" só URLs fixas/oficiais, nunca de dado. Mock em fixture; adaptador real p/ /entregar.
 
 ## Milestone 26 — Kit: endurecimento para leigo e lacunas
 peso: 3
