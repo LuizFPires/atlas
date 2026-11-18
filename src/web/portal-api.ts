@@ -7,12 +7,35 @@ export type Resp<T = object> = ({ ok: true } & T) | { ok: false; mensagem: strin
 
 export interface PerfilPortal { nome: string; empresa: string; email: string }
 
+/** O que a tela de /conta mostra (datas em ISO). Só campos seguros: o servidor nunca manda hash, ref do gateway nem dados de outro cliente. */
+export interface ContaPortal {
+  perfil: PerfilPortal
+  licenca: {
+    status: 'ativa' | 'atrasada' | 'pausada' | 'cancelada'
+    comprada_em: string | null
+    mensalidade_valor: number
+    mensalidade_ativa: boolean
+    mensalidade_encerra_em: string | null
+    proxima_cobranca_em: string | null
+    arrependimento_ate: string | null
+    pode_cancelar_compra: boolean
+    pode_cancelar_mensalidade: boolean
+    pode_mudar_pagamento: boolean
+  }
+  computador: { ativado_em: string } | null
+  troca: { pode_agora: boolean; proxima_troca_em: string | null }
+  pagamentos: Array<{ data: string | null; descricao: string; valor: number; status: 'pendente' | 'pago' | 'falhou' | 'estornado'; tipo: 'implantacao' | 'mensalidade' }>
+}
+
 export interface PortalApi {
   /** Já existe uma sessão aberta nesta aba? */
   logado(): boolean
   pedirCodigoLogin(email: string): Promise<Resp>
   entrar(email: string, codigo: string): Promise<Resp>
   eu(): Promise<Resp<{ perfil: PerfilPortal }>>
+  conta(): Promise<Resp<{ conta: ContaPortal }>>
+  /** Endereço (https) do portal de cobrança do cliente para trocar a forma de pagamento. */
+  formaPagamento(): Promise<Resp<{ url: string }>>
   sair(): void
 }
 
@@ -44,6 +67,17 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
     const r = await f(`${cfg!.authUrl}${caminho}`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: cfg!.anonKey }, body: JSON.stringify(corpo) })
     return { r, d: (await r.json().catch(() => ({}))) as Record<string, unknown> }
   }
+  /** POST autenticado. 401 = sessão vencida: derruba a sessão local para a tela voltar ao login. */
+  const servidor = async <T extends object>(rota: string, corpo: object = {}): Promise<Resp<T>> => {
+    if (!cfg || !token) return { ok: false, mensagem: MSG_OFF }
+    try {
+      const r = await f(`${cfg.api}${rota}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(corpo) })
+      const c = (await r.json().catch(() => ({}))) as Record<string, unknown> & { mensagem?: string }
+      if (r.status === 401) { token = ''; guardarSessao(''); return { ok: false, mensagem: c.mensagem ?? 'Entre de novo na sua conta.' } }
+      if (!r.ok) return { ok: false, mensagem: c.mensagem ?? 'Não deu certo agora. Tente de novo em instantes.' }
+      return { ok: true, ...(c as T) }
+    } catch { return { ok: false, mensagem: MSG_REDE } }
+  }
   return {
     logado: () => token !== '',
     async pedirCodigoLogin(email) {
@@ -71,14 +105,18 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },
     async eu() {
-      if (!cfg || !token) return { ok: false, mensagem: MSG_OFF }
-      try {
-        const r = await f(`${cfg.api}/portal/eu`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: '{}' })
-        const c = (await r.json().catch(() => ({}))) as Partial<PerfilPortal> & { mensagem?: string; erro?: string }
-        if (r.status === 401) { token = ''; guardarSessao(''); return { ok: false, mensagem: c.mensagem ?? 'Entre de novo na sua conta.' } }
-        if (!r.ok) return { ok: false, mensagem: c.mensagem ?? 'Não deu para abrir a sua conta agora.' }
-        return { ok: true, perfil: { nome: c.nome ?? '', empresa: c.empresa ?? '', email: c.email ?? '' } }
-      } catch { return { ok: false, mensagem: MSG_REDE } }
+      const r = await servidor<PerfilPortal>('/portal/eu')
+      return r.ok ? { ok: true, perfil: { nome: r.nome ?? '', empresa: r.empresa ?? '', email: r.email ?? '' } } : r
+    },
+    async conta() {
+      const r = await servidor<ContaPortal>('/portal/conta')
+      if (!r.ok) return r
+      const conta: Record<string, unknown> = { ...r }; delete conta.ok
+      return { ok: true, conta: conta as unknown as ContaPortal }
+    },
+    async formaPagamento() {
+      const r = await servidor<{ url: string }>('/portal/forma-pagamento')
+      return r.ok && !String(r.url).startsWith('https://') ? { ok: false, mensagem: 'O endereço do pagamento veio estranho. Tente de novo.' } : r
     },
     sair() { token = ''; guardarSessao('') },
   }

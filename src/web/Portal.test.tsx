@@ -14,6 +14,7 @@ describe('login do portal', () => {
     const f = vi.fn(async (url: string) => {
       if (url.endsWith('/otp')) return resp({})
       if (url.endsWith('/verify')) return resp({ access_token: 'jwt-ana' })
+      if (url.endsWith('/portal/conta')) return resp(CONTA)
       return resp({ nome: 'Zé', empresa: 'Barbearia do Zé', email: 'ze@barbearia.com' })
     })
     const api = criarPortalApi(cfg, f as unknown as typeof fetch)
@@ -65,5 +66,58 @@ describe('login do portal', () => {
     await userEvent.type(screen.getByLabelText(/Qual o seu e-mail/), 'ze@barbearia.com')
     await userEvent.click(screen.getByRole('button', { name: /Receber o código/ }))
     expect(await screen.findByRole('alert')).toHaveTextContent('ainda não está aberto')
+  })
+})
+
+const CONTA = {
+  perfil: { nome: 'Zé', empresa: 'Barbearia do Zé', email: 'ze@barbearia.com' },
+  licenca: {
+    status: 'ativa', comprada_em: '2026-11-18T12:00:00.000Z', mensalidade_valor: 200, mensalidade_ativa: true, mensalidade_encerra_em: null,
+    proxima_cobranca_em: '2026-12-18T12:00:00.000Z', arrependimento_ate: '2026-11-25T12:00:00.000Z',
+    pode_cancelar_compra: true, pode_cancelar_mensalidade: true, pode_mudar_pagamento: true,
+  },
+  computador: { ativado_em: '2026-11-18T12:00:00.000Z' },
+  troca: { pode_agora: true, proxima_troca_em: null },
+  pagamentos: [{ data: '2026-11-18T12:00:00.000Z', descricao: 'Implantação do Atlas (curso, treinamento e licença)', valor: 4800, status: 'pago', tipo: 'implantacao' }],
+}
+
+/** Servidor falso já com sessão aberta nesta aba. */
+export function sessaoAberta(rotas: Record<string, (corpo: unknown) => Response>) {
+  sessionStorage.setItem(CHAVE_SESSAO, 'jwt-ze')
+  const f = vi.fn(async (url: string, init?: RequestInit) => {
+    const rota = url.replace('https://api.test', '')
+    return (rotas[rota] ?? (() => resp({ erro: 'nao_encontrado' }, 404)))(init?.body ? JSON.parse(String(init.body)) : {})
+  })
+  return { f, api: criarPortalApi(cfg, f as unknown as typeof fetch) }
+}
+
+describe('tela da conta (item 2)', () => {
+  test('mostra licença, mensalidade, computador e pagamentos como no protótipo', async () => {
+    const { api } = sessaoAberta({ '/portal/eu': () => resp(CONTA.perfil), '/portal/conta': () => resp(CONTA) })
+    render(<TemaProvider><Portal api={api} /></TemaProvider>)
+    expect(await screen.findByRole('heading', { name: 'Minha conta' })).toBeInTheDocument()
+    expect(screen.getByText('● Ativa')).toBeInTheDocument()
+    expect(screen.getByText(/Implantação paga em 18\/11\/2026/)).toBeInTheDocument()
+    expect(screen.getByText(/R\$\s*200,00\/mês/)).toBeInTheDocument()
+    expect(screen.getByText(/Próxima cobrança: 18\/12\/2026/)).toBeInTheDocument()
+    expect(screen.getByText('Computador com a licença')).toBeInTheDocument()
+    expect(screen.getByText(/Ativado em 18\/11\/2026/)).toBeInTheDocument()
+    expect(screen.getByText('Implantação do Atlas (curso, treinamento e licença)')).toBeInTheDocument()
+    expect(screen.getByText(/R\$\s*4\.800,00/)).toBeInTheDocument()
+    expect(screen.getByText('Agendado')).toBeInTheDocument()
+  })
+
+  test('trocar forma de pagamento leva ao portal de cobrança (https) do cliente', async () => {
+    const { api } = sessaoAberta({ '/portal/eu': () => resp(CONTA.perfil), '/portal/conta': () => resp(CONTA), '/portal/forma-pagamento': () => resp({ url: 'http://evil.test' }) })
+    render(<TemaProvider><Portal api={api} /></TemaProvider>)
+    await userEvent.click(await screen.findByRole('button', { name: 'Trocar forma de pagamento' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('estranho') // só aceita https
+  })
+
+  test('sessão vencida no servidor: pede para entrar de novo', async () => {
+    const { api } = sessaoAberta({ '/portal/eu': () => resp({ mensagem: 'Entre de novo na sua conta para continuar.' }, 401) })
+    render(<TemaProvider><Portal api={api} /></TemaProvider>)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Entre de novo')
+    expect(api.logado()).toBe(false)
   })
 })

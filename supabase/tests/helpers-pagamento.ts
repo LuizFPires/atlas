@@ -26,6 +26,7 @@ export function montarPag(status: 'ativa' | 'atrasada' | 'pausada' | 'cancelada'
       const id = sessoesPorChave.get(chave)!
       return { status: 200, json: async () => ({ id, url: `https://checkout.stripe.com/c/pay/${id}` }) }
     }
+    if (url.endsWith('/v1/billing_portal/sessions')) return { status: 200, json: async () => ({ id: 'bps_1', url: 'https://billing.stripe.com/p/session/bps_1' }) }
     if (url.includes('/v1/subscriptions/')) return { status: 200, json: async () => ({ id: 'sub_1', current_period_end: Math.floor(Date.parse('2026-12-05T00:00:00Z') / 1000) }) }
     return { status: 200, json: async () => ({ id: 'ok' }) }
   }

@@ -12,7 +12,7 @@ import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts
 import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
-import { type DepsPortal, eu } from './portal.ts'
+import { conta, type DepsPortal, eu, formaDePagamento } from './portal.ts'
 
 export interface Contexto {
   deps: Deps
@@ -76,6 +76,10 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
       switch (rota) {
         case '/portal/eu':
           return json(await eu(ctx.portal, jwt))
+        case '/portal/conta':
+          return json(await conta(ctx.portal, jwt))
+        case '/portal/forma-pagamento':
+          return json(await formaDePagamento(ctx.portal, jwt))
         default:
           return json({ erro: 'nao_encontrado' }, 404)
       }
