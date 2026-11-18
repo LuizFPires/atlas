@@ -1,0 +1,72 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "br.com.atlas.app",
+  "productName": "Atlas",
+  "copyright": "Atlas",
+  "directories": {
+    "output": "release",
+    "buildResources": "instalador/recursos"
+  },
+  "files": [
+    "app/**/*",
+    "dist/**/*"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "artifactName": "Atlas-Instalador-${version}.${ext}",
+    "azureSignOptions": {
+      "publisherName": "${env.AZURE_PUBLISHER_NAME}",
+      "endpoint": "${env.AZURE_TS_ENDPOINT}",
+      "certificateProfileName": "${env.AZURE_TS_PROFILE}",
+      "codeSigningAccountName": "${env.AZURE_TS_ACCOUNT}"
+    }
+  },
+  "nsis": {
+    "oneClick": true,
+    "perMachine": false,
+    "allowElevation": false,
+    "runAfterFinish": false,
+    "createDesktopShortcut": false,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Atlas",
+    "include": "instalador/atlas-install.nsh",
+    "language": "1046"
+  },
+  "protocols": [
+    {
+      "name": "Atlas",
+      "schemes": [
+        "atlas"
+      ]
+    }
+  ],
+  "extraResources": [
+    {
+      "from": "instalador/instalar.ps1",
+      "to": "instalador/instalar.ps1"
+    },
+    {
+      "from": "instalador/executar.mjs",
+      "to": "instalador/executar.mjs"
+    },
+    {
+      "from": "instalador/passos.ts",
+      "to": "instalador/passos.ts"
+    },
+    {
+      "from": "instalador/caminhos.ts",
+      "to": "instalador/caminhos.ts"
+    },
+    {
+      "from": "instalador/plugin-atlas",
+      "to": "instalador/plugin-atlas"
+    }
+  ]
+}

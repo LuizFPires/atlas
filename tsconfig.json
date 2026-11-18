@@ -14,5 +14,5 @@
     "allowImportingTsExtensions": true,
     "types": ["vite/client", "vite-plugin-pwa/client", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "include": ["src", "vite.config.ts", "supabase/functions/_shared", "supabase/tests"]
+  "include": ["src", "vite.config.ts", "supabase/functions/_shared", "supabase/tests", "instalador/*.ts"]
 }
