@@ -62,12 +62,12 @@ Notas: ⏩ Auto (recomendado): reusa e consolida supabase/functions/_shared/emai
 peso: 2
 spec: S8, S4
 tela: prototipo/F15Portal.dc.html
-- [ ] Implementar auth própria do portal (independente do Claude) em /conta
-- [ ] Mostrar licença, mensalidade/pagamentos e computador ativo
-- [ ] Implementar troca de computador por e-mail + código (independe da máquina antiga)
-- [ ] Implementar cancelar compra e cancelar mensalidade
-- [ ] Conferir fidelidade com o protótipo
-Notas: ⏩ Auto (recomendado): auth própria do portal via Supabase Auth (independente do login do Claude), em /conta; o portal só lê/age sobre os dados do cliente logado (RLS, sem cross-tenant; não expor refs do gateway nem token_hash). Reaproveita M2 (licença, troca por e-mail+código) e M3 (cancelar compra CDC art.49 / cancelar mensalidade). Troca de computador independe da máquina antiga (roubo/perda), limite 1/7 dias. Ações de pagamento passam pela conta Stripe do cliente. Modo fixture, sem deploy.
+- [x] Implementar auth própria do portal (independente do Claude) em /conta
+- [x] Mostrar licença, mensalidade/pagamentos e computador ativo
+- [x] Implementar troca de computador por e-mail + código (independe da máquina antiga)
+- [x] Implementar cancelar compra e cancelar mensalidade
+- [x] Conferir fidelidade com o protótipo
+Notas: ⏩ Auto (recomendado): auth própria do portal via Supabase Auth (independente do login do Claude), em /conta; o portal só lê/age sobre os dados do cliente logado (RLS, sem cross-tenant; não expor refs do gateway nem token_hash). Reaproveita M2 (licença, troca por e-mail+código) e M3 (cancelar compra CDC art.49 / cancelar mensalidade). Troca de computador independe da máquina antiga (roubo/perda), limite 1/7 dias. Ações de pagamento passam pela conta Stripe do cliente. Modo fixture, sem deploy. QA aprovou (sem alto/médio; IDOR/cross-tenant/anti-enumeração conferidos). Divergências do protótipo (auto — recomendado): computador mostrado como "Seu computador · Ativado em dd/mm" (guardamos só o hash, mais privado) em vez do nome "DESKTOP-ZE"; forma de pagamento e última atividade não exibidas por ora — nome amigável do PC e forma de pagamento ficam p/ quando o app capturar (M9/M18) ou ler da Stripe; cancelar compra segue só com confirmação (CDC pede cancelamento fácil). Migration 0008 tira gateway_ref/pi do RLS do portal. Baixas p/ /entregar/go-live: restringir a coluna computador_hash no REST; rate-limit do OTP e limpeza de usuários Auth sem cliente; CSP p/ o token em sessionStorage; teste de integração do adaptador real. Env novas: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (.env.example).
 
 ## Milestone 7 — Painel do administrador
 peso: 2
