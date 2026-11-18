@@ -30,7 +30,7 @@ test('computador sem ativação abre na ativação (F02)', async () => {
 
 test('computador já ativado abre em Minhas obras (F05)', async () => {
   montar(criarPonteFixture([], criarCofreMemoria({ [CHAVE_COFRE]: JSON.stringify({ token: 't', email: 'a@b.co', nome: 'Zé' }) })))
-  expect(await screen.findByRole('heading', { name: /Bem-vindo ao Atlas/ })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: /Tudo pronto, Zé/ })).toBeInTheDocument()
 })
 
 test('--tela=F02 manda, mesmo já ativado', async () => {
