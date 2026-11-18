@@ -139,4 +139,14 @@ O CI (ubuntu) só roda eslint, tsc, vitest e o build do front. `electron` e `ele
 - **Validação**: `enderecoDoSistema` (`src/app/entrega-dados.ts`) só aceita http/https de `*.vercel.app` ou `*.com.br`, sem usuário, porta, caminho nem IP. O QR é gerado local (`qrcode-generator`, dependência nova); nenhum serviço externo.
 - **WhatsApp**: hoje é um `<a target="_blank">` para `https://wa.me/?text=…` (host fixo). No Electron, abrir pelo navegador do sistema (`shell.openExternal` só para `wa.me`, via `setWindowOpenHandler`); `app/main.cjs` ainda não trata janelas externas.
 - **Números**: etapas e tarefas vêm de `PontePainel.ler`; a duração da obra ("de obra") não existe na porta ainda, então o cartão some em vez de inventar.
-- **"Quero mudar algo"** volta para Minhas obras até o pós-obra (F14, M24) existir. **Cartaz com QR** (`gerarCartaz`) segue do M22.
+- **"Quero mudar algo"** leva ao Pós-obra (F14, M24). **Cartaz com QR** (`gerarCartaz`) segue do M22.
+
+
+## M24 — Pós-obra (F14)
+- **Adaptador real do `PontePosObra`** (`src/app/ponte-posobra.ts`): hoje só existem o mock `criarPosObraFixture` e `posObraIndisponivel` (produção sem adaptador: não finge que entendeu nem que mexeu). Falta, no Electron (preload + main), `entender` (o Claude lê o pedido e devolve entendi/passos/minutos, SEM alterar nada), `executar` (roda a correção pelo MESMO pipeline da obra: teste, revisão e versão de teste; o sistema no ar só muda quando o cliente aprovar, e a entrega do kit passa por `/entregar-kit`) e `historico` (ler os pedidos da pasta da obra). Injetar em `AppDesktop` (prop `posobra`).
+- **Pedido do cliente é DADO**: o adaptador DEVE montar o pedido com `montarPedidoPosObra` (regra no topo + `blocoDoCliente`), sem concatenar o texto cru. O print é imagem guardada em `<obra>\posobra\prints` (PonteArquivos, SVG recusado); o Claude só olha a imagem, nunca executa nem abre link vindo de dado.
+- **Licença em dia é obrigatória** e a tela só executa por `executarComLicenca`. Adaptador real pronto: `criarLicencaApi` (POST `{VITE_API_URL}/verificar` com e-mail da compra + hash do computador; token do dispositivo só no cabeçalho `X-Atlas-Dispositivo`, vindo do cofre). Fail-closed: erro, rede fora, sem endereço ou resposta fora de `pode_construir=true` + `motivo=ok` não libera. Falta: embutir a chave pública Ed25519 do `/verificar` (`verificar-publico.ts`) e conferir a `assinatura` da resposta, e guardar a última resposta válida (tolerância offline de 30 min) em vez de exigir internet a cada pedido.
+- **Portal**: o recado de licença manda "regularizar no portal"; falta o botão que abre o portal (URL fixa do Atlas, via `shell.openExternal`; nunca URL vinda de dado).
+- **Reconhecimento de voz**: o campo do pedido usa `useVoz`; no Electron precisa do motor de transcrição (ver M9).
+- **Histórico e "voltar para a versão anterior com um clique"**: o texto do protótipo está na tela, mas o botão de voltar a versão depende do adaptador real (pipeline de versões de teste); hoje o histórico é só leitura.
+
