@@ -198,13 +198,13 @@ Notas: Decisão do usuário (18/11): o Atlas deve deixar o cliente escolher entr
 peso: 3
 spec: S15, S19
 tela: prototipo/F09Painel.dc.html
-- [ ] Integrar o canteiro 3D (cena real de .claude/canteiro) ao painel
-- [ ] Mostrar % ponderado (lido do PLAN), prazo restante e "agora na obra"
-- [ ] Esconder detalhes técnicos atrás de "ver detalhes"
-- [ ] Respeitar o modo da obra (M18): no automático, seguir etapa após etapa sem pedir aprovação (parar só em ocorrência/pausa/billing); no passo a passo, parar ao fim de cada etapa e pedir o OK; permitir trocar o modo aqui a qualquer momento
-- [ ] Mostrar "Publicar o sistema" ao concluir
-- [ ] Conferir fidelidade com o protótipo
-Notas: Ver decisão do modo automático × passo a passo no M18. O painel honra a escolha e deixa trocar a qualquer momento.
+- [x] Integrar o canteiro 3D (cena real de .claude/canteiro) ao painel
+- [x] Mostrar % ponderado (lido do PLAN), prazo restante e "agora na obra"
+- [x] Esconder detalhes técnicos atrás de "ver detalhes"
+- [x] Respeitar o modo da obra (M18): no automático, seguir etapa após etapa sem pedir aprovação (parar só em ocorrência/pausa/billing); no passo a passo, parar ao fim de cada etapa e pedir o OK; permitir trocar o modo aqui a qualquer momento
+- [x] Mostrar "Publicar o sistema" ao concluir
+- [x] Conferir fidelidade com o protótipo
+Notas: Ver decisão do modo automático × passo a passo no M18. O painel honra a escolha e deixa trocar a qualquer momento. QA aprovou. Canteiro por iframe (127.0.0.1, origem distinta => allow-same-origin seguro); % com paridade testada com plano.cjs; sem modo.json o painel pede a escolha. Baixas p/ /entregar: reverter modo.json se aplicarModo falhar; retry/ignorar liberacao em parada no aprovarEtapa; fluxo 'publicar' ao sair pelo menu.
 
 ## Milestone 20 — App: pausa por cota e ocorrência
 peso: 2
