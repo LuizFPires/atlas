@@ -41,11 +41,11 @@ Notas: ⏩ Auto (recomendado): gateway = Stripe (decidido 18/11). Invariante: a 
 peso: 3
 spec: S7, S21
 tela: prototipo/F00Vendas.dc.html
-- [ ] Montar a página de vendas (hero com vídeo 16:9, o que dá para construir, canteiro 3D, como funciona, você não precisa digitar, o que você recebe, preço, para quem é/não é, dúvidas, depoimentos reservados, chamada final)
-- [ ] Implementar o botão de compra ligado ao gateway e o banner de cookies
-- [ ] Construir o cadastro pós-pagamento (F00bCadastro) com as 4 respostas por microfone
-- [ ] Ligar o cadastro ao POST /cadastro e ao disparo do e-mail de boas-vindas
-- [ ] Conferir fidelidade com o protótipo (F00Vendas e F00bCadastro)
+- [x] Montar a página de vendas (hero com vídeo 16:9, o que dá para construir, canteiro 3D, como funciona, você não precisa digitar, o que você recebe, preço, para quem é/não é, dúvidas, depoimentos reservados, chamada final)
+- [x] Implementar o botão de compra ligado ao gateway e o banner de cookies
+- [x] Construir o cadastro pós-pagamento (F00bCadastro) com as 4 respostas por microfone
+- [x] Ligar o cadastro ao POST /cadastro e ao disparo do e-mail de boas-vindas
+- [x] Conferir fidelidade com o protótipo (F00Vendas e F00bCadastro)
 Notas: ⏩ Auto (recomendado): frontend derivado do protótipo (F00Vendas, F00bCadastro) e do design system. Preço confirmado R$4.800. Botão de compra liga no Stripe Checkout do M3; POST /cadastro e e-mail de boas-vindas (S10) implementados em modo fixture (envio real fica p/ /entregar). Microfone em toda entrada de texto (as 4 respostas do cadastro). Banner de cookies: opção mais privada por padrão. Divergências do protótipo (aceitas): "Quero construir" abre modal de e-mail → Stripe Checkout → cadastro; VIDEO_URL vazia com espaço reservado (nota u00); emojis → SVG. Vendas aprovada. Cadastro reprovou na segurança — decisões (auto — recomendado): vincular o cadastro ao session_id do Stripe (success_url ganha ?session_id=...; cliente derivado do session_id; e-mail do corpo vira só confirmação, acesso vai sempre ao e-mail da compra); resposta genérica única sem prova válida (anti-enumeração); allowlist em nome/empresa/ramo no e-mail de boas-vindas; invalidar links antigos ao reemitir; Pix pendente ("espere") só com prova válida. Pendente p/ /entregar ou go-live: adaptadores_supabase.ts (salvarCadastro atômico, reabrirCadastro, envio real), migration 0006, envs (ATLAS_WEB_ORIGEM, VITE_API_URL, VITE_CONTA_ID) em .env.example; conteúdo do rodapé: Termos/Licença/Privacidade/Contato, CNPJ, URL do vídeo, depoimentos reais (a política de privacidade precisa existir antes do go-live, por LGPD).
 
 ## Milestone 5 — E-mails do Atlas
