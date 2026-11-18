@@ -16,7 +16,7 @@ interface Props {
   selecao: Selecao
   publicar: PontePublicar
   /** Último passo do último guia: segue para a entrega das chaves (F13). */
-  onConcluir: () => void
+  onConcluir: (noAr: string | null) => void
   /** "Não consegui fazer este passo": abre a Ajuda do Atlas (F17) com o print do passo. */
   onPedirAjuda?: (pedido: PedidoAjudaPasso) => void
   onVoltar?: () => void
@@ -37,6 +37,7 @@ export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, 
   const [nomeBase, setNomeBase] = useState(slug) // o que o cliente está digitando
   const [nomeAlvo, setNomeAlvo] = useState(slug) // o nome já confirmado (só muda em "Conferir de novo")
   const [endereco, setEndereco] = useState(`${slug}.vercel.app`)
+  const [noAr, setNoAr] = useState<string | null>(null) // só preenche quando o adaptador de verdade publicou (a entrega F13 não finge)
   const [dns, setDns] = useState<RegistroDns[] | null>(null)
   const dominio = `${slugDaObra(nomeAlvo)}.com.br`
   const [gi, setGi] = useState(0)
@@ -85,7 +86,7 @@ export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, 
         : { estado: 'erro', texto: 'Essa parte ainda não está ligada neste computador. Ainda não publiquei de verdade, então não vou dizer que deu certo.' })
     } else if (autoId === 'publicar') {
       poe({ estado: 'rodando', texto: 'O Atlas está colocando o sistema no ar…' })
-      publicar.publicarNoAr(slug).then((r) => { if (vivo) setEndereco(r.endereco); fim({ estado: 'ok', texto: `No ar: ${r.endereco}` }) }, () => erro('Não consegui colocar no ar agora. Nada se perdeu: tente de novo.'))
+      publicar.publicarNoAr(slug).then((r) => { if (vivo) { setEndereco(r.endereco); setNoAr(r.endereco) } fim({ estado: 'ok', texto: `No ar: ${r.endereco}` }) }, () => erro('Não consegui colocar no ar agora. Nada se perdeu: tente de novo.'))
     } else if (autoId === 'cartaz') {
       poe({ estado: 'rodando', texto: 'O Atlas está criando o cartaz…' })
       publicar.gerarCartaz(endereco).then((r) => fim({ estado: 'ok', texto: `Cartaz pronto na pasta da obra: ${r.arquivo}` }), () => erro('Não consegui criar o cartaz agora. Tente de novo.'))
@@ -141,7 +142,7 @@ export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, 
     }
     if (!ultimo) { setPasso(passo + 1); return }
     setFeitos((f) => ({ ...f, [g.id]: true }))
-    if (ultimoGuia) onConcluir(); else ir(gi + 1)
+    if (ultimoGuia) onConcluir(noAr); else ir(gi + 1)
   }
   const voltar = () => { setAviso(''); if (passo > 0) setPasso(passo - 1); else if (gi > 0) ir(gi - 1, guias[gi - 1].passos.length - 1) }
   const rotuloBotao = p.abre ? 'Abrir o site →' : ultimo ? (ultimoGuia ? 'Ver a entrega das chaves →' : `Próximo: ${guias[gi + 1].nome} →`) : p.quem === 'atlas' ? 'Continuar →' : 'Fiz isso →'

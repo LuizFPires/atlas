@@ -132,3 +132,11 @@ O CI (ubuntu) só roda eslint, tsc, vitest e o build do front. `electron` e `ele
 - **Progresso do guia** ("pode fechar o Atlas, ele continua deste passo"): guardar só `{ guia, passo }` por obra (ex.: `<obra>\.atlas\publicar.json`), nunca segredo.
 - **Depois do último passo** o app volta ao painel da obra: a entrega das chaves (F13) é de outro milestone.
 - **Reconhecimento de voz**: o único campo de texto é "Outro nome para o endereço" (nome ocupado), com microfone; os dados para copiar (DNS, nome e ID do app) são só leitura.
+
+
+## M23 — Entrega do sistema (F13)
+- **Endereço do sistema**: vem de `PontePublicar.publicarNoAr` (M22), repassado por `Publicando.onConcluir(noAr)`. Sem adaptador real ou se a publicação falhar, `noAr` é `null` e a tela mostra o estado honesto (sem QR nem link). O adaptador real de `publicarNoAr` continua pendência do M22; quando o domínio próprio entrar no ar, preferir `https://<dominio>` ao `.vercel.app`.
+- **Validação**: `enderecoDoSistema` (`src/app/entrega-dados.ts`) só aceita http/https de `*.vercel.app` ou `*.com.br`, sem usuário, porta, caminho nem IP. O QR é gerado local (`qrcode-generator`, dependência nova); nenhum serviço externo.
+- **WhatsApp**: hoje é um `<a target="_blank">` para `https://wa.me/?text=…` (host fixo). No Electron, abrir pelo navegador do sistema (`shell.openExternal` só para `wa.me`, via `setWindowOpenHandler`); `app/main.cjs` ainda não trata janelas externas.
+- **Números**: etapas e tarefas vêm de `PontePainel.ler`; a duração da obra ("de obra") não existe na porta ainda, então o cartão some em vez de inventar.
+- **"Quero mudar algo"** volta para Minhas obras até o pós-obra (F14, M24) existir. **Cartaz com QR** (`gerarCartaz`) segue do M22.
