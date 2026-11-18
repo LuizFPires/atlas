@@ -121,3 +121,56 @@ describe('tela da conta (item 2)', () => {
     expect(api.logado()).toBe(false)
   })
 })
+
+describe('trocar de computador (item 3)', () => {
+  test('desativar pede código por e-mail, confirma e mostra "Licença liberada"', async () => {
+    let conta: unknown = CONTA
+    const { api, f } = sessaoAberta({
+      '/portal/eu': () => resp(CONTA.perfil),
+      '/portal/conta': () => resp(conta),
+      '/portal/trocar/solicitar-codigo': () => resp({ ok: true, enviado_para: 'z***@barbearia.com' }),
+      '/portal/trocar/desativar': (corpo) => {
+        if ((corpo as { codigo: string }).codigo !== '123456') return resp({ mensagem: 'Código incorreto.' }, 400)
+        conta = { ...CONTA, computador: null, troca: { pode_agora: false, proxima_troca_em: '2026-11-25T12:00:00.000Z' } }
+        return resp({ ok: true, enviado_para: 'z***@barbearia.com', proxima_troca_em: '2026-11-25T12:00:00.000Z' })
+      },
+    })
+    render(<TemaProvider><Portal api={api} /></TemaProvider>)
+    expect(await screen.findByText(/Não precisa do computador antigo/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Desativar este computador' }))
+    expect(await screen.findByText(/z\*\*\*@barbearia\.com/)).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Falar' }).length).toBeGreaterThan(0) // código também pode ser falado
+    await userEvent.type(screen.getByLabelText(/Código que chegou/), '999999')
+    await userEvent.click(screen.getByRole('button', { name: /Desativar e liberar/ }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Código incorreto.')
+    await userEvent.clear(screen.getByLabelText(/Código que chegou/))
+    await userEvent.type(screen.getByLabelText(/Código que chegou/), '123456')
+    await userEvent.click(screen.getByRole('button', { name: /Desativar e liberar/ }))
+    expect(await screen.findByText('Licença liberada.')).toBeInTheDocument()
+    expect(screen.getByText(/Próxima troca possível a partir de 25\/11\/2026/)).toBeInTheDocument()
+    // nenhuma chamada leva id/e-mail no corpo: só o código
+    const corpos = (f.mock.calls as unknown as Array<[string, RequestInit]>).filter(([u]) => u.includes('/trocar/')).map(([, i]) => String(i.body))
+    expect(corpos.every((b) => !/email|licenca|cliente/.test(b))).toBe(true)
+  })
+
+  test('dentro dos 7 dias o botão fica travado e explica quando libera', async () => {
+    const { api } = sessaoAberta({
+      '/portal/eu': () => resp(CONTA.perfil),
+      '/portal/conta': () => resp({ ...CONTA, troca: { pode_agora: false, proxima_troca_em: '2026-11-25T12:00:00.000Z' } }),
+    })
+    render(<TemaProvider><Portal api={api} /></TemaProvider>)
+    expect(await screen.findByRole('button', { name: 'Desativar este computador' })).toBeDisabled()
+    expect(screen.getByText(/1 vez a cada 7 dias: próxima troca possível a partir de 25\/11\/2026/)).toBeInTheDocument()
+  })
+
+  test('sem computador ativo: oferece reenviar o acesso', async () => {
+    const { api } = sessaoAberta({
+      '/portal/eu': () => resp(CONTA.perfil),
+      '/portal/conta': () => resp({ ...CONTA, computador: null }),
+      '/portal/reenviar-acesso': () => resp({ ok: true, enviado_para: 'z***@barbearia.com' }),
+    })
+    render(<TemaProvider><Portal api={api} /></TemaProvider>)
+    await userEvent.click(await screen.findByRole('button', { name: /Enviar o acesso de novo/ }))
+    expect(await screen.findByText(/Mandamos um novo link de instalação para/)).toBeInTheDocument()
+  })
+})

@@ -116,6 +116,10 @@ function Conta({ api }: { api: PortalApi }) {
   const [erro, setErro] = useState('')
   const [fora, setFora] = useState(false)
 
+  const recarregar = async () => {
+    const r = await api.conta()
+    if (r.ok) { setConta(r.conta); setErro('') } else { setErro(r.mensagem); setFora(!api.logado()) }
+  }
   useEffect(() => {
     let vivo = true
     api.conta().then((r) => {
@@ -127,10 +131,10 @@ function Conta({ api }: { api: PortalApi }) {
 
   if (fora) return <main className="p-main"><p role="alert" className="v-erro">{erro} Atualize a página para entrar de novo.</p></main>
   if (!conta) return <main className="p-main">{erro ? <p role="alert" className="v-erro">{erro}</p> : <p className="c-lead" role="status">Abrindo a sua conta…</p>}</main>
-  return <ContaTela api={api} conta={conta} erro={erro} />
+  return <ContaTela api={api} conta={conta} erro={erro} recarregar={recarregar} />
 }
 
-function ContaTela({ api, conta, erro }: { api: PortalApi; conta: ContaPortal; erro: string }) {
+function ContaTela({ api, conta, erro, recarregar }: { api: PortalApi; conta: ContaPortal; erro: string; recarregar: () => Promise<void> }) {
   const { licenca: l } = conta
   const [msgPag, setMsgPag] = useState('')
   const mudarPagamento = async () => {
@@ -161,14 +165,7 @@ function ContaTela({ api, conta, erro }: { api: PortalApi; conta: ContaPortal; e
 
         <section className="p-card p-larga" aria-labelledby="p-pc">
           <span className="v-mono p-rotulo" id="p-pc">Computador com a licença</span>
-          {conta.computador ? (
-            <div className="p-pc">
-              <span className="p-pc-icone"><Icone nome="computador" tamanho={26} /></span>
-              <div className="p-pc-txt"><b>Seu computador</b><span className="c-mute">Ativado em {dia(conta.computador.ativado_em)}</span></div>
-            </div>
-          ) : (
-            <p className="c-mute p-p">Nenhum computador está com a licença agora.</p>
-          )}
+          <Computador api={api} conta={conta} recarregar={recarregar} />
         </section>
       </div>
 
@@ -193,5 +190,82 @@ function ContaTela({ api, conta, erro }: { api: PortalApi; conta: ContaPortal; e
         )}
       </section>
     </main>
+  )
+}
+
+/** Troca de computador por e-mail + código: não precisa da máquina antiga (roubo, perda, quebra). 1 troca a cada 7 dias. */
+function Computador({ api, conta, recarregar }: { api: PortalApi; conta: ContaPortal; recarregar: () => Promise<void> }) {
+  const [etapa, setEtapa] = useState<'inicio' | 'codigo' | 'pronto'>('inicio')
+  const [codigo, setCodigo] = useState('')
+  const [erro, setErro] = useState('')
+  const [ocupado, setOcupado] = useState(false)
+  const [email, setEmail] = useState('')
+  const [proxima, setProxima] = useState<string | null>(null)
+  const [reenviado, setReenviado] = useState(false)
+
+  const pedir = async () => {
+    setErro(''); setOcupado(true)
+    const r = await api.pedirCodigoTroca()
+    setOcupado(false)
+    if (r.ok) { setEmail(r.enviado_para); setEtapa('codigo') } else setErro(r.mensagem)
+  }
+  const desativar = async (ev: React.FormEvent) => {
+    ev.preventDefault()
+    setErro(''); setOcupado(true)
+    const r = await api.desativarComputador(codigo)
+    setOcupado(false)
+    if (!r.ok) return setErro(r.mensagem)
+    setEmail(r.enviado_para); setProxima(r.proxima_troca_em); setEtapa('pronto'); setCodigo('')
+    void recarregar()
+  }
+  const reenviar = async () => {
+    setErro(''); setOcupado(true)
+    const r = await api.reenviarAcesso()
+    setOcupado(false)
+    if (r.ok) { setEmail(r.enviado_para); setReenviado(true) } else setErro(r.mensagem)
+  }
+
+  if (etapa === 'pronto' || (!conta.computador && conta.licenca.status !== 'cancelada')) {
+    return (
+      <>
+        <div className="p-liberada" role="status">
+          <b>Licença liberada.</b>
+          <span>
+            {reenviado || etapa === 'pronto'
+              ? <>Mandamos um novo link de instalação para <b>{email || conta.perfil.email}</b>. Abra no computador novo. As suas obras continuam no seu GitHub e voltam lá sozinhas.</>
+              : <>Nenhum computador está com a licença agora. Abra o link de instalação que mandamos para o seu e-mail no computador novo.</>}
+          </span>
+          {(proxima ?? conta.troca.proxima_troca_em) && <small className="c-mute">Próxima troca possível a partir de {dia(proxima ?? conta.troca.proxima_troca_em)}.</small>}
+        </div>
+        <button type="button" className="p-link" disabled={ocupado} onClick={reenviar}>Não chegou? Enviar o acesso de novo</button>
+        {erro && <span role="alert" className="v-erro">{erro}</span>}
+      </>
+    )
+  }
+  if (!conta.computador) return <p className="c-mute p-p">Nenhum computador está com a licença agora.</p>
+  const bloqueada = !conta.troca.pode_agora
+  return (
+    <>
+      <div className="p-pc">
+        <span className="p-pc-icone"><Icone nome="computador" tamanho={26} /></span>
+        <div className="p-pc-txt"><b>Seu computador</b><span className="c-mute">Ativado em {dia(conta.computador.ativado_em)}</span></div>
+        {etapa === 'inicio' && (
+          <button type="button" className="p-botao p-pc-acao" disabled={bloqueada || ocupado} onClick={pedir}>Desativar este computador</button>
+        )}
+      </div>
+      <span className="c-mute p-p">Trocou de computador, ele foi roubado ou estragou? Desative aqui e ative no novo pelo e-mail. Não precisa do computador antigo.</span>
+      {bloqueada && <span className="c-mute p-p" role="status">Você já trocou há pouco. Só dá para trocar 1 vez a cada 7 dias: próxima troca possível a partir de {dia(conta.troca.proxima_troca_em)}.</span>}
+      {etapa === 'codigo' && (
+        <form className="p-troca" onSubmit={desativar} noValidate>
+          <p className="p-p">Mandamos um código de 6 números para <b>{email}</b>. Digite aqui para confirmar que é você.</p>
+          <CampoFalado rotulo="Código que chegou no e-mail" valor={codigo} onChange={(v) => setCodigo(v.replace(/[^\d\s]/g, ''))} placeholder="000000" autoComplete="one-time-code" />
+          <div className="p-linha">
+            <button type="submit" className="v-acao v-acao--pequeno" disabled={ocupado}>{ocupado ? 'Um instante…' : 'Desativar e liberar a licença'}</button>
+            <button type="button" className="p-link" onClick={() => { setEtapa('inicio'); setCodigo(''); setErro('') }}>Agora não</button>
+          </div>
+        </form>
+      )}
+      {erro && <span role="alert" className="v-erro">{erro}</span>}
+    </>
   )
 }

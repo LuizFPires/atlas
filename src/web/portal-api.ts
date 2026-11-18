@@ -36,6 +36,12 @@ export interface PortalApi {
   conta(): Promise<Resp<{ conta: ContaPortal }>>
   /** Endereço (https) do portal de cobrança do cliente para trocar a forma de pagamento. */
   formaPagamento(): Promise<Resp<{ url: string }>>
+  /** Manda o código de 6 dígitos para o e-mail da compra (começo da troca de computador). */
+  pedirCodigoTroca(): Promise<Resp<{ enviado_para: string }>>
+  /** Desativa o computador atual (não precisa dele) e manda o link de instalação do novo. */
+  desativarComputador(codigo: string): Promise<Resp<{ enviado_para: string; proxima_troca_em: string }>>
+  /** Computador já liberado e o e-mail não chegou: manda o acesso de novo. */
+  reenviarAcesso(): Promise<Resp<{ enviado_para: string }>>
   sair(): void
 }
 
@@ -118,6 +124,9 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
       const r = await servidor<{ url: string }>('/portal/forma-pagamento')
       return r.ok && !String(r.url).startsWith('https://') ? { ok: false, mensagem: 'O endereço do pagamento veio estranho. Tente de novo.' } : r
     },
+    pedirCodigoTroca: () => servidor<{ enviado_para: string }>('/portal/trocar/solicitar-codigo'),
+    desativarComputador: (codigo) => servidor<{ enviado_para: string; proxima_troca_em: string }>('/portal/trocar/desativar', { codigo: codigo.replace(/\s+/g, '') }),
+    reenviarAcesso: () => servidor<{ enviado_para: string }>('/portal/reenviar-acesso'),
     sair() { token = ''; guardarSessao('') },
   }
 }

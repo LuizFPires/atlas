@@ -2,7 +2,9 @@
 // Regra de ouro: TUDO aqui parte do cliente AUTENTICADO. Nenhuma função recebe id de cliente, licença,
 // pagamento ou e-mail do corpo da requisição: o dono é sempre descoberto pelo login (anti-IDOR).
 // O portal também nunca devolve token_hash, refs do gateway (cus_/sub_/pi_/in_), conta do gateway nem hash do computador.
+import { consumirCodigo, solicitarCodigo } from './ativacao.ts'
 import type { DepsCadastro } from './cadastro.ts'
+import { prepararLink } from './links.ts'
 import { type DepsPagamento, PRAZO_ARREPENDIMENTO_MS, VALOR_MENSALIDADE } from './pagamento/config.ts'
 import { type Cliente, ErroRegra, type Licenca, type StatusLicenca, type StatusPagamento, type TipoPagamento } from './tipos.ts'
 import { INTERVALO_TROCA_MS } from './troca.ts'
@@ -132,4 +134,73 @@ export async function formaDePagamento(d: DepsPortal, jwt: string): Promise<{ ur
   const sk = await d.segredos.chaveSecreta(contaGw.segredo_ref)
   if (!sk) throw new ErroRegra('gateway_nao_configurado', 'O pagamento ainda não está configurado.', 503)
   return { url: await d.stripe(sk).criarPortalCobranca(l.gateway_cliente_ref, `${new URL(contaGw.base_retorno).origin}/conta`) }
+}
+
+const mascarar = (e: string) => {
+  const [u, dom] = e.split('@')
+  return `${u.slice(0, 1)}***@${dom}`
+}
+
+/** Pede o código de 6 dígitos para trocar de computador. Vai SEMPRE para o e-mail da compra (o do login confirmado). */
+export async function pedirCodigoTroca(d: DepsPortal, jwt: string, ip: string) {
+  const { cliente, licenca: l } = await clienteLogado(d, jwt)
+  if (l.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Essa licença está cancelada.', 409)
+  const bloqueada = await proximaTroca(d, l)
+  if (bloqueada) throw erroLimite(bloqueada)
+  await solicitarCodigo(d, cliente.email_compra, 'troca', ip)
+  return { ok: true, enviado_para: mascarar(cliente.email_compra) }
+}
+
+function erroLimite(proxima: Date) {
+  const e = new ErroRegra('troca_limite', 'Você já trocou de computador há pouco. Só dá para trocar 1 vez a cada 7 dias.', 429)
+  return Object.assign(e, { proxima_troca_em: proxima })
+}
+
+/** Gera o link novo e manda para o e-mail da compra. O link antigo só deixa de valer depois que o e-mail saiu. */
+async function enviarNovoAcesso(d: DepsPortal, cliente: Cliente) {
+  const { token, expira_em, registro } = await prepararLink(d, cliente.email_compra)
+  try {
+    await d.enviarBoasVindas(cliente.email_compra, { nome: cliente.nome_tratamento, empresa: cliente.empresa ?? '', ramo: cliente.ramo ?? '', token, expira_em })
+  } catch {
+    throw new ErroRegra('email_nao_enviado', 'Não deu para enviar o e-mail agora. Use "Enviar o acesso de novo" daqui a pouco.', 502)
+  }
+  await d.store.trocarLinks(registro, d.agora())
+}
+
+/**
+ * Desativa o computador atual SEM precisar dele (roubo, perda, quebra): vale o e-mail + código.
+ * Depois manda o link de instalação para o computador novo. Limite: 1 troca a cada 7 dias (override do admin respeitado).
+ */
+export async function desativarComputador(d: DepsPortal, jwt: string, codigo: string) {
+  const { cliente, licenca: l } = await clienteLogado(d, jwt)
+  if (l.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Essa licença está cancelada.', 409)
+  const atual = await d.store.ativacaoAtiva(l.id)
+  if (!atual) throw new ErroRegra('sem_ativacao', 'Nenhum computador está com a licença agora.', 409)
+  const bloqueada = await proximaTroca(d, l)
+  if (bloqueada) throw erroLimite(bloqueada)
+  await consumirCodigo(d, cliente.id, 'troca', typeof codigo === 'string' ? codigo : '')
+  const override = l.troca_liberada_em !== null
+  const feita = await d.store.liberarAtivacao({
+    licenca_id: l.id,
+    ativacao_atual_id: atual.id,
+    de_hash: atual.computador_hash,
+    quando: d.agora(),
+    por_admin: override,
+    intervalo_ms: override ? 0 : INTERVALO_TROCA_MS,
+  })
+  if (!feita) throw new ErroRegra('troca_conflito', 'A troca não pôde ser concluída agora. Peça um novo código e tente de novo.', 409)
+  await enviarNovoAcesso(d, cliente)
+  return { ok: true, enviado_para: mascarar(cliente.email_compra), proxima_troca_em: new Date(d.agora().getTime() + INTERVALO_TROCA_MS) }
+}
+
+/** Computador já liberado e o e-mail não chegou: manda o acesso de novo (só sem computador ativo; 3 por hora). */
+export async function reenviarAcesso(d: DepsPortal, jwt: string) {
+  const { cliente, licenca: l } = await clienteLogado(d, jwt)
+  if (l.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Essa licença está cancelada.', 409)
+  if (await d.store.ativacaoAtiva(l.id)) throw new ErroRegra('ja_ativo', 'Já existe um computador com a licença. Para trocar, desative-o primeiro.', 409)
+  if (!(await d.store.tentarEvento(`reenvio:cliente:${cliente.id}`, 3, 60 * 60_000, d.agora()))) {
+    throw new ErroRegra('muitas_solicitacoes', 'Você já pediu o acesso algumas vezes. Espere uns minutos e olhe o seu e-mail.', 429)
+  }
+  await enviarNovoAcesso(d, cliente)
+  return { ok: true, enviado_para: mascarar(cliente.email_compra) }
 }
