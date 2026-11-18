@@ -176,11 +176,12 @@ Notas: ⏩ Auto (recomendado): F07Prototipo — o Claude desenha as telas da obr
 peso: 2
 spec: S14
 tela: prototipo/F07bBatismo.dc.html
-- [ ] Sugerir 3 nomes com logo, slogan e motivo
-- [ ] Conferir nomes parecidos e se o endereço .app está livre
-- [ ] Implementar subir nome e logo próprios
-- [ ] Conferir fidelidade com o protótipo
-Notas: ⏩ Auto (recomendado): F07bBatismo (no fim do projeto, com todo o contexto): o Claude sugere 3 nomes com logo, slogan e motivo (PonteBatismo, mock em fixture). Conferir nomes parecidos e se o endereço (.app/.com.br) está livre — checagem de domínio atrás de um port (mock em fixture; adaptador real p/ /entregar, resolvendo via serviço oficial, sem SSRF). Quem já tem nome/logo sobe os arquivos (PonteArquivos do M14; SVG recusado como logo). Nomes sugeridos e entrada do cliente tratados com cuidado; nunca segredo em arquivo. Modo fixture, sem deploy.
+- [x] Sugerir 3 nomes com logo, slogan e motivo
+- [x] Conferir nomes parecidos e se o endereço .app está livre
+- [x] Implementar subir nome e logo próprios
+- [x] Conferir fidelidade com o protótipo
+Notas: ⏩ Auto (recomendado): F07bBatismo (no fim do projeto, com todo o contexto): o Claude sugere 3 nomes com logo, slogan e motivo (PonteBatismo, mock em fixture). Conferir nomes parecidos e se o endereço (.app/.com.br) está livre — checagem de domínio atrás de um port (mock em fixture; adaptador real p/ /entregar, resolvendo via serviço oficial, sem SSRF). Quem já tem nome/logo sobe os arquivos (PonteArquivos do M14; SVG recusado como logo). Nomes sugeridos e entrada do cliente tratados com cuidado; nunca segredo em arquivo. Modo fixture, sem deploy. QA aprovou (sem alto/médio). Baixas p/ /entregar/hardening: revalidar logo.arquivo no batizar (sem 
+/separador); usar hasOwnProperty (não `in`) ao aceitar o id da logo vinda do Claude; enderecos vazio = livre:null; limite de tamanho de slogan/porque no PENDENTE.
 
 ## Milestone 18 — App: aprovar e começar a obra
 peso: 2
