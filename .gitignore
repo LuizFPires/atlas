@@ -6,3 +6,7 @@ node_modules/
 *.pem
 *.key
 .claude/*.log
+
+dist
+dev-dist
+*.tsbuildinfo
