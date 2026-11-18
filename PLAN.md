@@ -56,7 +56,7 @@ tela: prototipo/F01Email.dc.html
 - [ ] Implementar o link de uso único e o aviso "abra no computador" quando aberto no celular
 - [ ] Montar os e-mails de código de ativação e de aviso de atraso antes da pausa
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): reusa e consolida supabase/functions/_shared/emails.ts (montarBoasVindas do M4), mantendo a sanitização de texto livre. E-mails em HTML fiéis ao protótipo F01Email; link de uso único (~48h) com aviso "abra no computador onde vai construir" quando aberto no celular; e-mail de código de ativação (liga no M2) e de aviso de atraso antes da pausa (liga no M3). Nunca promete atendimento humano. Modo fixture: envio real fica p/ /entregar.
 
 ## Milestone 6 — Portal do cliente (web)
 peso: 2
