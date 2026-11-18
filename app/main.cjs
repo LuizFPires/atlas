@@ -22,6 +22,7 @@ const { criarPosObra } = require('./adaptadores/posobra.cjs')
 const { criarLicenca } = require('./adaptadores/licenca.cjs')
 const { criarCota } = require('./adaptadores/cota.cjs')
 const { criarOcorrencias } = require('./adaptadores/ocorrencias.cjs')
+const { criarCelular } = require('./adaptadores/celular.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -39,6 +40,8 @@ const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
 const cota = criarCota({ raiz: obras.raiz(), construcao, painel, claudeEstado: () => claude.estado(), dadosApp: require('node:path').join(app.getPath('userData'), 'cota') })
 // Ocorrências (F11): livro do kit da obra (docs\ocorrencias.json). A chave colada vai SÓ ao cofre (DPAPI). Canais de aviso: pendência (ver ocorrencias.cjs).
 const ocorrencias = criarOcorrencias({ raiz: obras.raiz(), cofre })
+// Celular (F04b): endereço do app do Claude + preferências guardadas; a CONEXÃO (Remote Control) é pendência e não é fingida (celular.cjs).
+const celular = criarCelular({ dados: require('node:path').join(app.getPath('userData'), 'celular') })
 const retomar = criarRetomar({ raiz: obras.raiz(), painel, cota, construcao })
 // Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
 const disparo = criarDisparo({ raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
@@ -119,6 +122,10 @@ handle('atlas:ocorrencias:ler', (pasta) => ocorrencias.ler(String(pasta)))
 handle('atlas:ocorrencias:avisar', (pasta, id) => ocorrencias.avisar(String(pasta), Number(id)))
 handle('atlas:ocorrencias:resolver', (pasta, id, segredo) => ocorrencias.resolver(String(pasta), Number(id), segredo === undefined || segredo === null ? undefined : String(segredo)))
 handle('atlas:ocorrencias:adiar', (pasta, id) => ocorrencias.adiar(String(pasta), Number(id)))
+
+// Celular (F04b): o endereço é fixo (síncrono, como obras.raiz); aplicar guarda as preferências e diz a verdade sobre a conexão.
+ipcMain.on('atlas:celular:endereco', (e) => { e.returnValue = confiavel(e) ? celular.enderecoApp() : '' })
+handle('atlas:celular:aplicar', (prefs) => celular.aplicar(prefs))
 
 // Estilo do sistema (F06b): o Claude propõe 3 estilos; materializar grava o design-system.md (nunca sobrescreve).
 handle('atlas:estilo:propor', (entrada, pasta) => estilo.propor(entrada, pasta === undefined ? undefined : String(pasta)))

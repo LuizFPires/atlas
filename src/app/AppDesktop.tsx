@@ -99,7 +99,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteContas = useMemo<PonteContas>(() => contas ?? (modoFixture() ? criarContasFixture() : contasIndisponivel), [contas])
 
   // Idem para o celular (Remote Control): sem adaptador real, não finge que o celular está ligado.
-  const ponteCelular = useMemo<PonteCelular>(() => celular ?? (modoFixture() ? criarCelularFixture() : celularIndisponivel), [celular])
+  const ponteCelular = useMemo<PonteCelular>(() => celular ?? (modoFixture() ? criarCelularFixture() : (ponte.celular ?? celularIndisponivel)), [celular, ponte])
 
   // Idem para a pasta das obras (Atlas\Obras): sem adaptador real, não finge que criou a pasta.
   const ponteObras = useMemo<PonteObras>(() => obras ?? (modoFixture() ? criarObrasFixture(dono || 'Zé') : (ponte.obras ?? obrasIndisponivel)), [obras, dono, ponte])
