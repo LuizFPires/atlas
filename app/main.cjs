@@ -1,15 +1,24 @@
 // Processo principal do app Atlas (Electron). Reaproveita o front (dist-app/, gerado por `npm run build:app`).
 'use strict'
-const { app, BrowserWindow, ipcMain, powerSaveBlocker, session } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain, powerSaveBlocker, session, shell } = require('electron')
 const crypto = require('node:crypto')
 const os = require('node:os')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const { criarCofre } = require('./cofre.cjs')
+const { criarObras } = require('./adaptadores/obras.cjs')
+const { criarArquivos } = require('./adaptadores/arquivos.cjs')
+const { criarClaude } = require('./adaptadores/claude.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
 let bloqueio = null
+let janelaPrincipal = null
+
+// Adaptadores reais (um por porta do front). Pendentes: ver app/PENDENTE-ENTREGAR.md.
+const obras = criarObras({ shell })
+const arquivos = criarArquivos({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
+const claude = criarClaude({ shell })
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -25,14 +34,32 @@ function idDaMaquina() {
 // Impressão digital: o id da máquina nunca sai em claro, só o SHA-256.
 const hash = () => crypto.createHash('sha256').update(`atlas:${idDaMaquina()}`).digest('hex')
 
+// Só a nossa janela (página local do app) pode falar com o processo principal.
+const confiavel = (e) => janelaPrincipal !== null && e.sender === janelaPrincipal.webContents && String(e.senderFrame?.url ?? '').startsWith('file://')
+const protegido = (fn) => (e, ...a) => { if (!confiavel(e)) throw new Error('remetente-nao-confiavel'); return fn(...a) }
+const handle = (canal, fn) => ipcMain.handle(canal, (e, ...a) => protegido(fn)(e, ...a))
+
 ipcMain.on('atlas:argv', (e) => { e.returnValue = argv })
-ipcMain.handle('atlas:cofre:guardar', (_e, c, v) => cofre.guardar(String(c), String(v)))
-ipcMain.handle('atlas:cofre:ler', (_e, c) => cofre.ler(String(c)))
-ipcMain.handle('atlas:cofre:apagar', (_e, c) => cofre.apagar(String(c)))
-ipcMain.handle('atlas:hash', () => hash())
-ipcMain.handle('atlas:descricao', () => `${os.hostname().toUpperCase()} · Windows ${Number(os.release().split('.')[2]) >= 22000 ? '11' : '10'}`)
+handle('atlas:cofre:guardar', (c, v) => cofre.guardar(String(c), String(v)))
+handle('atlas:cofre:ler', (c) => cofre.ler(String(c)))
+handle('atlas:cofre:apagar', (c) => cofre.apagar(String(c)))
+handle('atlas:hash', () => hash())
+handle('atlas:descricao', () => `${os.hostname().toUpperCase()} · Windows ${Number(os.release().split('.')[2]) >= 22000 ? '11' : '10'}`)
+
+// Arquivos da obra, pasta das obras e Claude (portas de base).
+handle('atlas:arquivos:escolher', (tipo) => arquivos.escolher(String(tipo)))
+handle('atlas:arquivos:guardar', (pasta, destino, token) => arquivos.guardar(String(pasta), String(destino), String(token)))
+ipcMain.on('atlas:obras:raiz', (e) => { e.returnValue = confiavel(e) ? obras.raiz() : '' })
+handle('atlas:obras:listar', () => obras.listar())
+handle('atlas:obras:criar', (nome) => obras.criarSubpasta(String(nome)))
+handle('atlas:obras:abrir', () => obras.abrirPasta())
+handle('atlas:claude:login', () => claude.abrirLogin())
+handle('atlas:claude:site', (alvo) => claude.abrirSite(String(alvo)))
+handle('atlas:claude:estado', () => claude.estado())
+handle('atlas:claude:renovar', () => claude.renovarConexao())
+
 // O computador é o canteiro: durante a obra ele não pode dormir.
-ipcMain.handle('atlas:sono', (_e, ligado) => {
+handle('atlas:sono', (ligado) => {
   if (ligado && bloqueio === null) bloqueio = powerSaveBlocker.start('prevent-app-suspension')
   if (!ligado && bloqueio !== null) { powerSaveBlocker.stop(bloqueio); bloqueio = null }
 })
@@ -47,6 +74,11 @@ function abrir() {
     width: 1100, height: 780, backgroundColor: '#141619', title: 'Atlas',
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   })
+  janelaPrincipal = janela
+  janela.on('closed', () => { janelaPrincipal = null })
+  // Links e janelas novas nunca abrem dentro do app nem fora da allowlist.
+  janela.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  janela.webContents.on('will-navigate', (ev) => ev.preventDefault())
   janela.loadFile(path.join(__dirname, '..', 'dist-app', 'index.html'))
 }
 
