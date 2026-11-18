@@ -26,6 +26,7 @@ const { criarCelular } = require('./adaptadores/celular.cjs')
 const { criarImportar } = require('./adaptadores/importar.cjs')
 const { criarAjuda, criarCasos } = require('./adaptadores/ajuda.cjs')
 const { criarPublicar } = require('./adaptadores/publicar.cjs')
+const { criarKit } = require('./adaptadores/kit.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -37,7 +38,9 @@ const obras = criarObras({ shell })
 const arquivos = criarArquivos({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
 const claude = criarClaude({ shell })
 const modos = criarModo({ raiz: obras.raiz() })
-const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: process.env.ATLAS_KIT_PLUGIN || null, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
+// Kit por obra (PonteKit): plugin numa pasta temporária do app (fora da obra e do repositório), descartado ao fechar. Sem API configurada, vale ATLAS_KIT_PLUGIN.
+const kit = criarKit({ dadosApp: app.getPath('userData'), cofre, hashComputador: async () => hash() })
+const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
 const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
 const cota = criarCota({ raiz: obras.raiz(), construcao, painel, claudeEstado: () => claude.estado(), dadosApp: app.getPath('userData') })
@@ -111,12 +114,12 @@ handle('atlas:modos:gravar', (pasta, modo) => modos.gravar(String(pasta), String
 
 // Planejar e iniciar a construção (PLAN.md + linha de produção do kit na pasta da obra).
 handle('atlas:construcao:planejar', (pasta, nome) => construcao.planejar(String(pasta), String(nome)))
-handle('atlas:construcao:iniciar', (pasta, nome, modo, etapas) => construcao.iniciar(String(pasta), String(nome), String(modo), Array.isArray(etapas) ? etapas : []))
+handle('atlas:construcao:iniciar', async (pasta, nome, modo, etapas) => { await kit.garantir(String(pasta)); return construcao.iniciar(String(pasta), String(nome), String(modo), Array.isArray(etapas) ? etapas : []) })
 
 // Painel da obra: andamento, pausa/continua, OK da etapa, modo, canteiro 3D (só 127.0.0.1) e versão de teste.
 handle('atlas:painel:ler', (pasta) => painel.ler(String(pasta)))
 handle('atlas:painel:pausar', (pasta) => painel.pausar(String(pasta)))
-handle('atlas:painel:continuar', (pasta) => painel.continuar(String(pasta)))
+handle('atlas:painel:continuar', async (pasta) => { await kit.garantir(String(pasta)); return painel.continuar(String(pasta)) })
 handle('atlas:painel:aprovar', (pasta) => painel.aprovarEtapa(String(pasta)))
 handle('atlas:painel:modo', (pasta, modo) => painel.aplicarModo(String(pasta), String(modo)))
 ipcMain.on('atlas:painel:endereco', (e, pasta) => { e.returnValue = confiavel(e) ? painel.enderecoCanteiro(String(pasta)) : null })
@@ -124,11 +127,11 @@ handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
 
 // Retomar (F12): obra em andamento ao abrir o app e "Continuar obra".
 handle('atlas:retomar:andamento', () => retomar.obraEmAndamento())
-handle('atlas:retomar:continuar', (pasta) => retomar.continuar({ pasta: String(pasta) }))
+handle('atlas:retomar:continuar', async (pasta) => { await kit.garantir(String(pasta)); return retomar.continuar({ pasta: String(pasta) }) })
 
 // Cota do plano (F10): ler o estado, retomar quando o Claude voltou a responder. A vigia retoma sozinha (sem clique) as obras paradas por cota.
 handle('atlas:cota:ler', (pasta) => cota.ler(String(pasta)))
-handle('atlas:cota:retomar', (pasta) => cota.retomar(String(pasta)))
+handle('atlas:cota:retomar', async (pasta) => { await kit.garantir(String(pasta)); return cota.retomar(String(pasta)) })
 
 // Ocorrências (F11): o único tipo de parada que exige o cliente. resolver recebe a chave (se houver) e a entrega direto ao cofre.
 handle('atlas:ocorrencias:ler', (pasta) => ocorrencias.ler(String(pasta)))
@@ -164,7 +167,7 @@ handle('atlas:nomes:conferir', (nome) => nomes.conferir(String(nome)))
 
 // Pós-obra (F14): entender (só explica) e executar (exige licença em dia; mesmo pipeline da obra).
 handle('atlas:posobra:entender', (pasta, pedido) => posobra.entender(String(pasta), pedido))
-handle('atlas:posobra:executar', (pasta, pedido, plano) => posobra.executar(String(pasta), pedido, plano))
+handle('atlas:posobra:executar', async (pasta, pedido, plano) => { await kit.garantir(String(pasta)); return posobra.executar(String(pasta), pedido, plano) })
 handle('atlas:posobra:historico', (pasta) => posobra.historico(String(pasta)))
 
 // Ajuda do Atlas (F17): conversar (Claude só leitor), print da janela do Atlas, anexar imagem, abrir página da lista fechada; casos -> API.
@@ -184,9 +187,13 @@ handle('atlas:publicar:cartaz', (endereco, pasta) => publicar.gerarCartaz(String
 handle('atlas:publicar:ler', (pasta) => publicar.lerProgresso(String(pasta)))
 handle('atlas:publicar:gravar', (pasta, p) => publicar.gravarProgresso(String(pasta), p))
 
-// Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois). 
-app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })
+// Kit por obra: a tela só recebe { ok, obraId, marca }; o caminho do plugin nunca sai do processo principal.
+handle('atlas:kit:entregar', (obraId) => kit.entregar(String(obraId)))
+handle('atlas:kit:descartar', (obraId) => kit.descartar(String(obraId)))
 
+// Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois). O kit é apagado.
+app.on('before-quit', () => { construcao.encerrar(); painel.encerrar(); kit.descartarTudo() })
+kit.descartarTudo() // sobra de uma queda anterior
 
 // O computador é o canteiro: durante a obra ele não pode dormir.
 handle('atlas:sono', (ligado) => {

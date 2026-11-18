@@ -1,11 +1,11 @@
 // Preload do app Atlas: a ÚNICA ponte entre a tela (renderer) e o processo principal.
 //
 // O QUE FAZ: expõe window.atlasDesktop (contextIsolation ligado, sandbox ligado, SEM nodeIntegration). Só os namespaces
-// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar. Todo argumento vira String/boolean aqui e é
+// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar, kit. Todo argumento vira String/boolean aqui e é
 // revalidado de novo no processo principal (main.cjs); o renderer nunca recebe caminho de origem, módulo Node nem Electron.
 //
 // COMO TESTAR (Windows): `npx electron app/main.cjs`, abrir as ferramentas do desenvolvedor e digitar `window.atlasDesktop`:
-// deve listar só argv, cofre, hashComputador, descricaoComputador, impedirSono, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, ... (ver a lista acima, inclui ajuda, casos, publicar). `typeof require` = 'undefined'.
+// deve listar só argv, cofre, hashComputador, descricaoComputador, impedirSono, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, ... (ver a lista acima, inclui ajuda, casos, publicar, kit). `typeof require` = 'undefined'.
 'use strict'
 const { contextBridge, ipcRenderer } = require('electron')
 
@@ -133,6 +133,15 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     gerarCartaz: (endereco, pasta) => chamar('atlas:publicar:cartaz', String(endereco), pasta === undefined ? undefined : String(pasta)),
     lerProgresso: (pasta) => chamar('atlas:publicar:ler', String(pasta)),
     gravarProgresso: (pasta, p) => chamar('atlas:publicar:gravar', String(pasta), JSON.parse(JSON.stringify(p ?? {}))),
+  },
+  kit: {
+    // o kit fica no processo principal (pasta temporária do app); aqui só volta { ok, obraId, marca } e a tela pode pedir para descartar.
+    entregar: async (obraId) => {
+      const r = await chamar('atlas:kit:entregar', String(obraId))
+      if (!r || r.ok !== true) return { ok: false, mensagem: String((r && r.mensagem) || 'Não foi possível liberar o kit agora.') }
+      const id = String(r.obraId)
+      return { ok: true, kit: { obraId: id, marca: String(r.marca), arquivos: () => [], descartar: () => { void chamar('atlas:kit:descartar', id).catch(() => {}) } } }
+    },
   },
   construcao: {
     planejar: (pasta, obraNome) => chamar('atlas:construcao:planejar', String(pasta), String(obraNome)),

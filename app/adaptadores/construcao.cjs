@@ -153,7 +153,7 @@ function resumirLinha(linha) {
 }
 
 /**
- * `deps`: { raiz, modos (PonteModoObra real), claudeEstado (async () => {conectado}), pluginDir?, home?, agora?,
+ * `deps`: { raiz, modos (PonteModoObra real), claudeEstado (async () => {conectado}), pluginDir? (string ou (pasta) => string|null), home?, agora?,
  *           iniciarFluxo?, executar?, resolver? }  — os três últimos existem para teste (padrão: seguro.cjs).
  */
 function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude }) {
@@ -183,7 +183,8 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     if (linhas.size > 0) throw new Error('ja-rodando')
     garantirSemConfigDeProjeto(cwd, { permitirGit: !nova }) // config de projeto suspeita: não roda (obra nova: .git de fora também não)
     const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', FERRAMENTAS_LINHA, '--disallowedTools', FERRAMENTAS_NEGADAS]
-    if (pluginDir) args.push('--plugin-dir', pluginDir)
+    const plugin = typeof pluginDir === 'function' ? pluginDir(pasta) : pluginDir // função: kit por obra (kit.cjs), sem gravar na obra
+    if (plugin) args.push('--plugin-dir', plugin)
     const reg = { parar: () => {}, recentes: [], desde: agora().toISOString() }
     let cota = false
     let cotaFraca = false

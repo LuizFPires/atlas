@@ -1,0 +1,197 @@
+// Adaptador real do PonteKit (src/kit/entrega-kit.ts) — processo principal do Electron (só Windows).
+// Espelha em CommonJS a validação de montarKitDaObra/avisoNoTopo/caminhoSeguro do kit (manter em sincronia; o teste compara com o TypeScript).
+//
+// O QUE FAZ
+//  entregar(obraId): baixa o kit DAQUELA obra do servidor de licenças (POST {ATLAS_API_URL}/entregar-kit, token do dispositivo SÓ do
+//    cofre, https, sem redirect, timeout), confere que TODO arquivo tem o aviso de licença (Lei 9.609/98) e a mesma marca do cliente
+//    no topo e que cada caminho é seguro, e monta um PLUGIN do Claude Code numa pasta TEMPORÁRIA do app: <userData>\kit-temp\<hash>\
+//    (fora do repositório e da pasta da obra do cliente). `.claude/agents|skills|hooks|commands/x` vira `<plugin>/agents|skills|hooks|
+//    commands/x`; qualquer outro caminho derruba a entrega (falha fechada). O app escreve só `.claude-plugin/plugin.json`.
+//  diretorio(obraId): caminho do plugin (síncrono) ou null. É o que a linha de produção recebe em `--plugin-dir` (construcao.cjs).
+//    O caminho NUNCA vai ao renderer; a tela só recebe { ok, obraId, marca } e `descartar`.
+//  garantir(obraId): usado ANTES de ligar/religar a linha (o app pode ter fechado e o kit foi descartado): baixa de novo se faltar.
+//    Sem ATLAS_API_URL devolve null (modo antigo: ATLAS_KIT_PLUGIN); com API e falha lança 'kit-indisponivel' (não roda sem kit).
+//  descartar(obraId) / descartarTudo(): apagam a pasta. descartarTudo roda ao abrir e ao fechar o app (sobra de queda de energia).
+//
+// LIMITE HONESTO: o Claude Code só carrega agentes/skills de uma PASTA, então o kit precisa existir em disco enquanto a linha roda
+// (pasta do app, apagada ao fechar). Não existe "só em memória" nem plugin sem arquivo. Isto NÃO impede o cliente de abrir essa pasta
+// enquanto a obra roda; a proteção real é a marca d'água HMAC por cliente + aviso em cada arquivo (Lei 9.609/98).
+//
+// COMO TESTAR: `node --test app/adaptadores/*.teste.cjs` (kit.teste.cjs: servidor simulado). No Windows (pendência de máquina real):
+// com ATLAS_API_URL e o app ativado, iniciar uma obra deve criar <userData>\kit-temp\<hash>\ com agents/skills/hooks e, ao fechar o
+// app, a pasta some; a pasta da obra continua sem .claude.
+'use strict'
+const fs = require('node:fs')
+const path = require('node:path')
+const crypto = require('node:crypto')
+const { caminhoSeguro } = require('../seguro.cjs')
+
+const LEI = 'Lei 9.609/98'
+const CHAVE_COFRE = 'atlas/dispositivo' // igual a CHAVE_COFRE de src/app/ativacao-api.ts
+const OBRA_ID = /^[\w.-]{1,80}$/
+const RAIZES = ['agents', 'skills', 'hooks', 'commands']
+const LIM = { arquivos: 400, arquivo: 1_000_000, total: 8_000_000, resposta: 12_000_000, profundidade: 6 }
+const RESERVADO = /^(con|prn|aux|nul|com\d|lpt\d)(\.|$)/i
+const NOME_OK = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/
+
+/** Espelho de avisoNoTopo (src/kit/entrega-kit.ts). */
+function avisoNoTopo(caminho, conteudo, marca) {
+  if (caminho.toLowerCase().endsWith('.json')) {
+    try {
+      const o = JSON.parse(conteudo)
+      return typeof o._licenca === 'string' && o._licenca.includes(LEI) && o._marca === marca && Object.keys(o)[0] === '_licenca'
+    } catch { return false }
+  }
+  const topo = conteudo.split(/\r?\n/).slice(0, 4).join('\n')
+  return topo.includes(LEI) && topo.includes(marca)
+}
+
+/** `.claude/<raiz>/...` -> partes dentro do plugin (`[raiz, ...]`) ou null. Rígido: o kit nunca escreve fora do lugar combinado. */
+function destinoNoPlugin(caminho) {
+  if (typeof caminho !== 'string' || !caminho || caminho.length > 300 || /[\\\0:]/.test(caminho) || caminho.startsWith('/')) return null
+  const partes = caminho.split('/')
+  if (partes.length < 3 || partes.length > LIM.profundidade + 2 || partes[0] !== '.claude' || !RAIZES.includes(partes[1])) return null
+  const resto = partes.slice(1)
+  for (const p of resto) if (!NOME_OK.test(p) || p.endsWith('.') || RESERVADO.test(p)) return null
+  return resto
+}
+
+/** Valida a resposta do servidor. Devolve { marca, arquivos:[{partes, conteudo}] } ou lança 'kit-invalido'. */
+function validarResposta(resp) {
+  const invalido = () => new Error('kit-invalido')
+  if (!resp || typeof resp.marca_dagua !== 'string' || resp.marca_dagua.length < 8 || resp.marca_dagua.length > 200 || !Array.isArray(resp.arquivos) || !resp.arquivos.length || resp.arquivos.length > LIM.arquivos) throw invalido()
+  const marca = resp.marca_dagua
+  const vistos = new Set()
+  let total = 0
+  const arquivos = []
+  for (const a of resp.arquivos) {
+    if (!a || typeof a.caminho !== 'string' || typeof a.conteudo !== 'string') throw invalido()
+    const partes = destinoNoPlugin(a.caminho)
+    if (!partes) throw invalido()
+    const tam = Buffer.byteLength(a.conteudo, 'utf8')
+    total += tam
+    if (tam > LIM.arquivo || total > LIM.total) throw invalido()
+    const chave = partes.join('/').toLowerCase()
+    if (vistos.has(chave)) throw invalido()
+    vistos.add(chave)
+    if (!avisoNoTopo(a.caminho, a.conteudo, marca)) throw invalido()
+    arquivos.push({ partes, conteudo: a.conteudo })
+  }
+  // Arquivo x pasta com o mesmo nome (a/b e a/b/c) quebraria a gravação: recusa antes.
+  for (const c of vistos) for (const d of vistos) if (c !== d && d.startsWith(`${c}/`)) throw invalido()
+  return { marca, arquivos }
+}
+
+function enderecoDaApi(bruto) {
+  if (typeof bruto !== 'string' || !bruto) return null
+  let u
+  try { u = new URL(bruto) } catch { return null }
+  if (u.protocol !== 'https:' || u.username || u.password) return null
+  return u.toString().replace(/\/+$/, '')
+}
+
+const MSG = {
+  fora: 'A entrega do kit ainda não está aberta por aqui. Volte daqui a pouco.',
+  ativar: 'Ative este computador antes de começar a obra.',
+  incompleto: 'O kit chegou incompleto. Tente de novo em instantes; nada foi guardado.',
+  rede: 'Sem internet no momento. Confira a conexão e tente de novo.',
+  negado: 'Não foi possível liberar o kit agora. Confira a sua licença.',
+}
+
+/** `deps`: { dadosApp, cofre, hashComputador (async () => hex), api (string|null), buscar? (fetch) }. */
+function criarKit({ dadosApp, cofre, hashComputador, api = process.env.ATLAS_API_URL, buscar = globalThis.fetch }) {
+  const base = path.join(dadosApp, 'kit-temp')
+  const dirs = new Map() // obraId -> pasta do plugin (só memória)
+  const nomeDir = (obraId) => crypto.createHash('sha256').update(`kit:${obraId}`).digest('hex').slice(0, 24)
+  const limpar = (dir) => { try { fs.rmSync(dir, { recursive: true, force: true }) } catch { /* melhor esforço */ } }
+
+  function montarPlugin(obraId, { arquivos }) {
+    fs.mkdirSync(base, { recursive: true })
+    const baseReal = caminhoSeguro(dadosApp, 'kit-temp') // sem link no caminho
+    const dir = path.join(baseReal, nomeDir(obraId))
+    limpar(dir)
+    fs.mkdirSync(dir)
+    try {
+      const gravar = (partes, conteudo) => {
+        let atual = dir
+        for (const p of partes.slice(0, -1)) {
+          atual = path.join(atual, p)
+          try { fs.mkdirSync(atual) } catch (e) { if (e.code !== 'EEXIST') throw e }
+          if (!fs.lstatSync(atual).isDirectory()) throw new Error('kit-invalido')
+        }
+        fs.writeFileSync(path.join(atual, partes[partes.length - 1]), conteudo, { flag: 'wx' })
+      }
+      gravar(['.claude-plugin', 'plugin.json'], JSON.stringify({ name: 'atlas-kit', version: '1.0.0', description: `Kit do Atlas entregue por obra. Software proprietário (${LEI}).` }, null, 2) + '\n')
+      for (const a of arquivos) gravar(a.partes, a.conteudo)
+    } catch (e) { limpar(dir); throw e }
+    return dir
+  }
+
+  const api0 = enderecoDaApi(api)
+
+  const self = {
+    /** true se há endereço de servidor configurado (senão a linha usa só ATLAS_KIT_PLUGIN, se houver). */
+    configurado: () => api0 !== null,
+
+    async entregar(obraId) {
+      if (typeof obraId !== 'string' || !OBRA_ID.test(obraId)) return { ok: false, mensagem: MSG.incompleto }
+      if (!api0 || typeof buscar !== 'function') return { ok: false, mensagem: MSG.fora }
+      let ativ = null
+      try {
+        const g = JSON.parse((await cofre.ler(CHAVE_COFRE)) ?? 'null')
+        if (g && typeof g.token === 'string' && g.token) ativ = { token: g.token, email: typeof g.email === 'string' ? g.email : '' }
+      } catch { /* cofre indisponível = sem licença */ }
+      if (!ativ) return { ok: false, mensagem: MSG.ativar }
+      let texto
+      let ok
+      try {
+        const r = await buscar(`${api0}/entregar-kit`, {
+          method: 'POST', redirect: 'error', signal: AbortSignal.timeout(30_000),
+          headers: { 'Content-Type': 'application/json', 'X-Atlas-Dispositivo': ativ.token },
+          body: JSON.stringify({ email: ativ.email, computador_hash: await hashComputador(), obra_id: obraId }),
+        })
+        ok = r.ok
+        texto = await r.text()
+      } catch { return { ok: false, mensagem: MSG.rede } }
+      if (texto.length > LIM.resposta) return { ok: false, mensagem: MSG.incompleto }
+      let d = null
+      try { d = JSON.parse(texto) } catch { /* resposta estranha */ }
+      if (!ok) return { ok: false, mensagem: d && typeof d.mensagem === 'string' ? d.mensagem.slice(0, 300) : MSG.negado }
+      let v
+      try { v = validarResposta(d) } catch { return { ok: false, mensagem: MSG.incompleto } }
+      try {
+        const dir = montarPlugin(obraId, v)
+        dirs.set(obraId, dir)
+      } catch { return { ok: false, mensagem: MSG.incompleto } }
+      return { ok: true, obraId, marca: v.marca }
+    },
+
+    diretorio(obraId) {
+      const d = dirs.get(String(obraId))
+      return d && fs.existsSync(d) ? d : null
+    },
+
+    async garantir(obraId) {
+      if (self.diretorio(obraId)) return self.diretorio(obraId)
+      if (!api0) return null
+      const r = await self.entregar(String(obraId))
+      if (!r.ok) throw new Error('kit-indisponivel')
+      return self.diretorio(obraId)
+    },
+
+    descartar(obraId) {
+      const d = dirs.get(String(obraId))
+      dirs.delete(String(obraId))
+      if (d) limpar(d)
+    },
+
+    /** Apaga o kit de todas as obras e qualquer sobra de uma queda (ao abrir e ao fechar o app). */
+    descartarTudo() {
+      dirs.clear()
+      limpar(base)
+    },
+  }
+  return self
+}
+
+module.exports = { criarKit, validarResposta, destinoNoPlugin, avisoNoTopo, enderecoDaApi, LEI }
