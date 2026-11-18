@@ -111,6 +111,7 @@ test('disparo real: Claude só lê (Write/Edit/Bash/WebFetch negados), configura
   for (const f of ['Write', 'Edit', 'Bash', 'Task', 'WebFetch', 'WebSearch']) assert.ok(visto.args[visto.args.indexOf('--disallowedTools') + 1].includes(f), f)
   assert.equal(visto.o.entrada.includes('oi'), true)
   assert.ok(visto.o.env.GIT_CONFIG_COUNT)
+  assert.ok(!a.includes('--add-dir'), 'sem print, nenhuma pasta extra')
   // obra com .claude de fora => a Ajuda não dispara com a pasta; cai sem ferramentas
   fs.mkdirSync(path.join(raiz, 'obra', '.claude'))
   await ajuda.conversar({ origem: 'menu', pasta: 'obra' }, [], 'oi')
@@ -125,34 +126,40 @@ test('abrirPagina: só id da lista fechada; URL nunca', async () => {
   assert.equal(abertos.length, 1)
 })
 
-test('tirarPrint: grava PNG na pasta da obra; sem obra vai ao userData; não-PNG e falha => null', async () => {
+test('tirarPrint: grava PNG em userData (FORA da obra, que é o repositório do cliente); não-PNG e falha => null', async () => {
   const a = montar({ capturar: async () => PNG })
+  const achar = (nome) => { const base = path.join(a.dados, 'ajuda', 'prints'); for (const g of fs.readdirSync(base)) for (const id of fs.readdirSync(path.join(base, g))) if (fs.existsSync(path.join(base, g, id, nome))) return path.join(base, g, id, nome); return null }
   const p = await a.ajuda.tirarPrint('obra')
   assert.ok(p && /^imagem print-[a-z0-9-]+\.png$/.test(p.detalhe))
-  const nome = p.detalhe.slice(7)
-  assert.deepEqual(fs.readFileSync(path.join(a.raiz, 'obra', 'ajuda', 'prints', nome)), PNG)
+  assert.deepEqual(fs.readFileSync(achar(p.detalhe.slice(7))), PNG)
+  assert.deepEqual(fs.readdirSync(path.join(a.raiz, 'obra')), [], 'nada pode ser gravado dentro da obra')
   const q = await a.ajuda.tirarPrint(undefined)
-  assert.ok(fs.existsSync(path.join(a.dados, 'ajuda', 'prints', q.detalhe.slice(7))))
+  assert.ok(achar(q.detalhe.slice(7)))
   const r = await a.ajuda.tirarPrint('../fora')
-  assert.ok(fs.existsSync(path.join(a.dados, 'ajuda', 'prints', r.detalhe.slice(7))))
+  assert.ok(achar(r.detalhe.slice(7)))
   assert.equal(await montar({ capturar: async () => Buffer.from('<svg onload=alert(1)>') }).ajuda.tirarPrint('obra'), null)
   assert.equal(await montar({ capturar: async () => { throw new Error('x') } }).ajuda.tirarPrint('obra'), null)
   assert.equal(await montar({}).ajuda.tirarPrint('obra'), null)
 })
 
-test('o Claude só recebe o arquivo do print que ESTE adaptador gravou nesta obra', async () => {
+test('o Claude só recebe (--add-dir) a pasta do print que ESTE adaptador gravou para esta obra', async () => {
   const a = montar({ capturar: async () => PNG })
   const p = await a.ajuda.tirarPrint('obra')
   await a.ajuda.conversar({ origem: 'menu', pasta: 'obra', print: p }, [], 'olha')
-  assert.match(a.chamadas[0].pedido, /Arquivo na pasta da obra.*ajuda\/prints\/print-/)
+  const c = a.chamadas[0]
+  assert.match(c.pedido, /Arquivo do print.*print-/)
+  assert.equal(c.opts.addDirs.length, 1)
+  assert.ok(c.opts.addDirs[0].startsWith(path.join(a.dados, 'ajuda', 'prints')) && !c.opts.addDirs[0].startsWith(a.raiz))
+  assert.deepEqual(fs.readdirSync(c.opts.addDirs[0]), [p.detalhe.slice(7)], 'a pasta liberada tem só aquele arquivo')
   // nome inventado pela tela, ou caminho com ..: nada de arquivo no pedido
   await a.ajuda.conversar({ origem: 'menu', pasta: 'obra', print: { url: 'x', titulo: 'x', detalhe: 'imagem print-falso.png' } }, [], 'olha')
   await a.ajuda.conversar({ origem: 'menu', pasta: 'obra', print: { url: 'x', titulo: 'x', detalhe: 'imagem ../../segredo.png' } }, [], 'olha')
-  assert.ok(!a.chamadas[1].pedido.includes('Arquivo na pasta') && !a.chamadas[2].pedido.includes('Arquivo na pasta'))
-  // print gravado fora da obra (userData) nunca é oferecido ao Read
+  assert.ok(!a.chamadas[1].pedido.includes('Arquivo do print') && !a.chamadas[2].pedido.includes('Arquivo do print'))
+  assert.deepEqual(a.chamadas[1].opts.addDirs, []); assert.deepEqual(a.chamadas[2].opts.addDirs, [])
+  // print de OUTRA obra / sem obra nunca é liberado
   const fora = await a.ajuda.tirarPrint(undefined)
   await a.ajuda.conversar({ origem: 'menu', pasta: 'obra', print: fora }, [], 'olha')
-  assert.ok(!a.chamadas[3].pedido.includes('Arquivo na pasta'))
+  assert.deepEqual(a.chamadas[3].opts.addDirs, [])
 })
 
 test('anexarImagem: só imagem de verdade (SVG, HTML e exe renomeados são recusados)', async () => {
@@ -165,7 +172,7 @@ test('anexarImagem: só imagem de verdade (SVG, HTML e exe renomeados são recus
   escolha = f('a.png', PNG)
   const ok = await a.ajuda.anexarImagem('obra')
   assert.ok(ok && /^imagem anexo-[a-z0-9-]+\.png$/.test(ok.detalhe))
-  assert.deepEqual(fs.readFileSync(path.join(a.raiz, 'obra', 'ajuda', 'prints', ok.detalhe.slice(7))), PNG)
+  assert.deepEqual(fs.readFileSync((() => { const base = path.join(a.dados, 'ajuda', 'prints'); for (const g of fs.readdirSync(base)) for (const id of fs.readdirSync(path.join(base, g))) if (fs.existsSync(path.join(base, g, id, ok.detalhe.slice(7)))) return path.join(base, g, id, ok.detalhe.slice(7)) })()), PNG)
   for (const [n, c] of [['b.png', '<svg xmlns="http://www.w3.org/2000/svg"><script>1</script></svg>'], ['c.svg', PNG], ['d.jpg', '<html><script>alert(1)</script></html>'], ['e.png', 'MZ\x90\x00\x03\x00\x00\x00\x04\x00\x00\x00\xff\xff']]) {
     escolha = f(n, c)
     assert.equal(await a.ajuda.anexarImagem('obra'), null, n)

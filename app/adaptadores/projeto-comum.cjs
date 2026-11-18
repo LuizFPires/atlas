@@ -98,14 +98,14 @@ function criarDisparo({ raiz, dadosApp, claudeEstado, executar = executarClaude,
   }
   return {
     claudePronto,
-    async perguntar(pasta, pedido, { timeoutMs = 300_000, maxSaida = 4_000_000, permitirGit = false } = {}) {
+    async perguntar(pasta, pedido, { timeoutMs = 300_000, maxSaida = 4_000_000, permitirGit = false, addDirs = [] } = {}) {
       let cwd
       if (pasta === null) { cwd = path.join(dadosApp, 'claude-vazio'); fs.mkdirSync(cwd, { recursive: true }) } else cwd = pastaDaObra(raiz, pasta)
       garantirSemConfigDeProjeto(cwd, { permitirGit })
       await claudePronto()
       garantirSemConfigDeProjeto(cwd, { permitirGit }) // de novo: a pasta pode ter mudado durante a espera
       const negadas = [...(pasta === null ? ['Read', 'Glob', 'Grep'] : []), 'Edit', 'Write', 'Bash', 'Task', 'NotebookEdit', 'WebFetch', 'WebSearch', FERRAMENTAS_NEGADAS]
-      const args = ['-p', '--output-format', 'json', ...ARGS_SEM_CONFIG_DE_PROJETO, ...(pasta === null ? [] : ['--allowedTools', 'Read,Glob,Grep']), '--disallowedTools', negadas.join(',')]
+      const args = ['-p', '--output-format', 'json', ...ARGS_SEM_CONFIG_DE_PROJETO, ...(pasta === null ? [] : ['--allowedTools', 'Read,Glob,Grep']), ...(pasta === null ? [] : addDirs.flatMap((d) => ['--add-dir', d])), '--disallowedTools', negadas.join(',')]
       const r = await executar(args, { cwd, entrada: pedido, timeoutMs, maxSaida, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dadosApp) }) })
       let texto = r.saida
       let j = null

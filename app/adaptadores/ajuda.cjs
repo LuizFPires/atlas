@@ -11,7 +11,7 @@
 //    simples, página só da lista fechada, qualquer promessa de atendimento humano troca a resposta inteira). Resposta que não é JSON
 //    vira só `texto` (também normalizado). Uma conversa por vez.
 //  tirarPrint(pasta): captura SÓ a janela do Atlas (`capturar` = webContents.capturePage no main), confere que é PNG e grava em
-//    <obra>\ajuda\prints (sem pasta de obra válida: userData\ajuda\prints, fora de qualquer obra). Nada sai do computador por aqui: o
+//    userData/ajuda/prints/(hash da obra)/(id) — NUNCA dentro da obra (ela é o repositório GitHub do cliente e a linha faz git push). Nada sai do computador por aqui: o
 //    print só aparece para o cliente na tela; o Claude só o lê (Read) se o cliente seguir a conversa com ele.
 //  anexarImagem(pasta): diálogo do Windows filtrado a png/jpg/webp; confere assinatura da imagem (SVG/HTML/exe renomeado é recusado),
 //    tamanho (20 MB) e que não é link; copia com COPYFILE_EXCL para o mesmo lugar do print.
@@ -21,14 +21,14 @@
 //    NÃO EXISTE no servidor (pendência); sem ele falha honesto (a tela diz que não anotou).
 //
 // COMO TESTAR: `node --test app/adaptadores/*.teste.cjs` (ajuda.teste.cjs: Claude, captura, diálogo e rede simulados). No Windows:
-// abrir a Ajuda do Atlas, "Tirar print" cria <obra>\ajuda\prints\print-*.png; escrever uma dúvida devolve passos em português.
+// abrir a Ajuda do Atlas, "Tirar print" cria userData/ajuda/prints/.../print-*.png (fora da obra); escrever uma dúvida devolve passos em português.
 'use strict'
 const fs = require('node:fs')
 const path = require('node:path')
 const crypto = require('node:crypto')
 const { caminhoSeguro, abrirExterno } = require('../seguro.cjs')
 const { pastaDaObra } = require('./obra-fs.cjs')
-const { REGRA_CONTEUDO_CLIENTE, blocoDoCliente, comoDado, garantirSubpasta, extrairJson } = require('./projeto-comum.cjs')
+const { REGRA_CONTEUDO_CLIENTE, blocoDoCliente, comoDado, extrairJson } = require('./projeto-comum.cjs')
 
 // ---- espelho de PAGINAS_OFICIAIS -------------------------------------------------------------------------------------------
 const PAGINAS_OFICIAIS = Object.freeze({
@@ -152,20 +152,22 @@ const CHAVE_COFRE = 'atlas/dispositivo'
  * Só `raiz`, `dadosApp`, `disparo` e `shell` são obrigatórios; sem `capturar`/`dialog` o print e o anexo devolvem null (a tela já trata).
  */
 function criarAjuda({ raiz, dadosApp, disparo, shell, dialog = null, janela = () => null, capturar = null }) {
-  /** nome do arquivo -> { dentroDaObra, pasta } (só o que ESTE adaptador gravou nesta sessão). */
+  /** nome do arquivo -> { dir, pasta } (só o que ESTE adaptador gravou nesta sessão). */
   const emitidos = new Map()
   let conversando = false
 
-  /** Pasta onde o print vai: <obra>\ajuda\prints (obra válida) ou userData\ajuda\prints. */
+  /** Pasta do print: SEMPRE em userData\ajuda\prints\<hash da obra>\<id>, FORA da obra (a obra é o repositório GitHub do cliente e a
+   *  linha de produção faz git add/commit/push: um print com dado sensível nunca pode cair lá). Uma subpasta por print, para o Claude
+   *  receber --add-dir só daquele arquivo. */
   function pastaDePrints(pasta) {
-    if (typeof pasta === 'string' && pasta) {
-      try { return { dir: garantirSubpasta(raiz, pasta, 'ajuda', 'prints'), pasta, dentroDaObra: true } } catch { /* cai no userData */ }
-    }
-    const dir = path.join(dadosApp, 'ajuda', 'prints')
+    let obra = null
+    if (typeof pasta === 'string' && pasta) { try { pastaDaObra(raiz, pasta); obra = pasta } catch { obra = null } }
+    const grupo = crypto.createHash('sha256').update(obra ?? '').digest('hex').slice(0, 16)
+    const dir = path.join(dadosApp, 'ajuda', 'prints', grupo, crypto.randomBytes(6).toString('hex'))
     fs.mkdirSync(dir, { recursive: true })
-    return { dir, pasta: null, dentroDaObra: false }
+    return { dir, pasta: obra }
   }
-  const registrar = (nome, dest) => { emitidos.set(nome, { pasta: dest.pasta, dentroDaObra: dest.dentroDaObra }); if (emitidos.size > 200) emitidos.delete(emitidos.keys().next().value) }
+  const registrar = (nome, dest) => { emitidos.set(nome, { pasta: dest.pasta, dir: dest.dir }); if (emitidos.size > 200) emitidos.delete(emitidos.keys().next().value) }
   const retorno = (nome, titulo, url) => ({ url, titulo, detalhe: `imagem ${nome}` })
 
   return {
@@ -181,15 +183,19 @@ function criarAjuda({ raiz, dadosApp, disparo, shell, dialog = null, janela = ()
       // Imagem do print: só se FOI este adaptador que a gravou nesta sessão, dentro desta obra (nome conferido por padrão fixo).
       const m = ctx.print && typeof ctx.print.detalhe === 'string' ? RE_IMAGEM_DO_PRINT.exec(ctx.print.detalhe) : null
       const e = m ? emitidos.get(m[1]) : null
-      if (pasta && m && e && e.dentroDaObra && e.pasta === pasta) pedido += `\n\n## Imagem do print\nArquivo na pasta da obra (é só uma imagem; abra com Read): ajuda/prints/${m[1]}`
+      const addDirs = []
+      if (pasta && m && e && e.pasta === pasta && fs.existsSync(path.join(e.dir, m[1]))) {
+        addDirs.push(e.dir) // só a pasta daquele print (leitura); fica fora da obra
+        pedido += `\n\n## Imagem do print\nArquivo do print (é só uma imagem; abra com Read): ${path.join(e.dir, m[1])}`
+      }
       pedido += `\n\n${INSTRUCAO_JSON}`
       conversando = true
       try {
         let texto
-        try { texto = await disparo.perguntar(pasta, pedido, { timeoutMs: 120_000, maxSaida: 400_000, permitirGit: true }) } catch (err) {
+        try { texto = await disparo.perguntar(pasta, pedido, { timeoutMs: 120_000, maxSaida: 400_000, permitirGit: true, addDirs }) } catch (err) {
           // Obra com config suspeita/sumida não derruba a Ajuda: pergunta sem pasta (nenhuma ferramenta).
           if (pasta && err && (err.message === 'obra-com-config-suspeita' || err.message === 'obra-inexistente' || err.message === 'obra-invalida')) {
-            texto = await disparo.perguntar(null, pedido.replace(/\n\n## Imagem do print\n[^\n]*\n[^\n]*/, ''), { timeoutMs: 120_000, maxSaida: 400_000 })
+            texto = await disparo.perguntar(null, pedido.replace(/\n\n## Imagem do print\n[^\n]*/, ''), { timeoutMs: 120_000, maxSaida: 400_000 })
           } else throw err
         }
         let bruto
