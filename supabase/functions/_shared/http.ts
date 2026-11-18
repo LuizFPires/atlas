@@ -5,10 +5,15 @@ import { gerarLink } from './links.ts'
 import { type Deps, ErroRegra } from './tipos.ts'
 import { liberarTroca, trocarComputador } from './troca.ts'
 import { verificar } from './verificar.ts'
+import { criarCheckout } from './pagamento/checkout.ts'
+import type { DepsPagamento } from './pagamento/config.ts'
+import { processarWebhook } from './pagamento/webhook.ts'
 
 export interface Contexto {
   deps: Deps
   carregarKit: CarregarKit
+  /** Pagamento (Stripe do cliente). Ausente = rotas de pagamento respondem 503. */
+  pagamento?: DepsPagamento
   /** Chamadas de serviço/admin (gerar link pós-compra, override). Conferido contra segredo do ambiente. */
   autorizarServico: (req: Request) => boolean
 }
@@ -30,6 +35,12 @@ export async function tratar(ctx: Contexto, req: Request): Promise<Response> {
   const rota = new URL(req.url).pathname.replace(/^\/(functions\/v1\/)?/, '/').replace(/\/+$/, '')
   if (req.method !== 'POST') return json({ erro: 'metodo', mensagem: 'Use POST.' }, 405)
   try {
+    // Webhook: precisa do corpo BRUTO (a assinatura cobre os bytes exatos), por isso antes do req.json().
+    const wh = rota.match(/^\/webhook\/stripe\/([\w-]+)$/)
+    if (wh) {
+      if (!ctx.pagamento) return json({ erro: 'pagamento_indisponivel' }, 503)
+      return json(await processarWebhook(ctx.pagamento, wh[1], await req.text(), req.headers.get('Stripe-Signature')))
+    }
     const b = (await req.json().catch(() => ({}))) as Record<string, string>
     const s = (k: string) => (typeof b[k] === 'string' ? b[k] : '')
     // Credencial da ativação: SOMENTE o cabeçalho X-Atlas-Dispositivo (nunca o corpo, que pode ir para log).
@@ -50,6 +61,16 @@ export async function tratar(ctx: Contexto, req: Request): Promise<Response> {
         if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
         await liberarTroca(ctx.deps, s('licenca_id'), s('motivo') || 'Override manual')
         return json({ ok: true })
+      case '/pagamento/checkout': {
+        if (!ctx.pagamento) return json({ erro: 'pagamento_indisponivel' }, 503)
+        const tipo = s('tipo') === 'mensalidade' ? 'mensalidade' : 'implantacao'
+        // compra inicial é pública (com limite por IP); mensalidade é de serviço (portal já autenticado).
+        if (tipo === 'mensalidade' && !ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
+        if (tipo === 'implantacao' && !(await ctx.pagamento.store.tentarEvento(`checkout:ip:${ipDe(req)}`, 10, 15 * 60_000, ctx.pagamento.agora()))) {
+          return json({ erro: 'muitas_solicitacoes', mensagem: 'Muitas tentativas. Espere uns minutos.' }, 429)
+        }
+        return json(await criarCheckout(ctx.pagamento, { conta_id: s('conta_id'), tipo, email: s('email'), licenca_id: s('licenca_id'), url_sucesso: s('url_sucesso'), url_cancelar: s('url_cancelar') }))
+      }
       case '/verificar':
         return json(await verificar(ctx.deps, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo }))
       case '/entregar-kit': {
