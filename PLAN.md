@@ -129,7 +129,7 @@ tela: prototipo/F04bCelular.dc.html
 - [ ] Implementar a escolha de frequência de notícias (30 min / 1 h / 3 h / por etapa)
 - [ ] Implementar a escolha dos avisos (precisa de você, etapa terminou, obra pronta)
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): tela F04bCelular — "computador ligado, acompanhe pelo celular" com QR para o app do Claude; escolha da frequência de notícias (30 min / 1 h / 3 h / por etapa) e dos avisos (precisa de você, etapa terminou, obra pronta), preferências guardadas. A conexão real da sessão do computador com o app do celular (Remote Control) o próprio protótipo marca como "a confirmar na implementação" → fica atrás de um port com mock em fixture; adaptador real p/ /entregar. Modo fixture, sem deploy.
 
 ## Milestone 13 — App: minhas obras e nova obra
 peso: 2
