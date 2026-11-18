@@ -1,10 +1,9 @@
 // @vitest-environment node
 // M5 item 4 — fidelidade com prototipo/F01Email.dc.html: os textos fixos do protótipo têm de estar no e-mail.
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import proto from '../../prototipo/F01Email.dc.html?raw'
 import { montarBoasVindas } from '../functions/_shared/emails.ts'
 
-const proto = readFileSync(new URL('../../prototipo/F01Email.dc.html', import.meta.url), 'utf8')
 const { html } = montarBoasVindas({ nome: 'Zé', empresa: 'Barbearia do Zé', ramo: 'barbearia', link_instalacao: 'https://atlas-ia.app.br/instalar?t=x', expira_em: new Date('2026-11-20T15:00:00Z') })
 const plano = (s: string) => s.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/\s+/g, ' ')
 
