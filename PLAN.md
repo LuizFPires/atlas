@@ -220,10 +220,10 @@ Notas: ⏩ Auto (recomendado): F10Pausa (pausa por cota: tom calmo, hora de volt
 peso: 1
 spec: S15
 tela: prototipo/F12Retomar.dc.html
-- [ ] Abrir o Atlas nesta tela ao ligar o computador
-- [ ] Implementar "Continuar obra" (retomar em até 2 cliques)
-- [ ] Conferir fidelidade com o protótipo
-Notas: ⏩ Auto (recomendado): F12Retomar — ao ligar o computador o Atlas abre sozinho nesta tela (liga no login item do M9/setLoginItemSettings e no telaInicial: se há obra em andamento, abre F12); "Continuar obra" retoma em até 2 cliques (religa a linha de produção via PonteConstrucao/PonteCota). Desligar o auto-início: Configurações → Abrir com o Windows (nota do protótipo). Mock em fixture; adaptador real p/ /entregar. Modo fixture, sem deploy.
+- [x] Abrir o Atlas nesta tela ao ligar o computador
+- [x] Implementar "Continuar obra" (retomar em até 2 cliques)
+- [x] Conferir fidelidade com o protótipo
+Notas: ⏩ Auto (recomendado): F12Retomar — ao ligar o computador o Atlas abre sozinho nesta tela (liga no login item do M9/setLoginItemSettings e no telaInicial: se há obra em andamento, abre F12); "Continuar obra" retoma em até 2 cliques (religa a linha de produção via PonteConstrucao/PonteCota). Desligar o auto-início: Configurações → Abrir com o Windows (nota do protótipo). Mock em fixture; adaptador real p/ /entregar. Modo fixture, sem deploy. QA aprovou (telaInicial com paridade instalador/app; Continuar em 1 clique; religar nao contorna ocorrencia). Baixas p/ /entregar: F12 so em fixture ate o adaptador; tela de Configuracoes 'Abrir com o Windows'.
 
 ## Milestone 22 — App: publicação (escolha e guias)
 peso: 3
