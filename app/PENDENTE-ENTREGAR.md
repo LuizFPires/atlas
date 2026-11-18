@@ -32,3 +32,10 @@ O CI (ubuntu) só roda eslint, tsc, vitest e o build do front. `electron` e `ele
 - **Onde as preferências ficam**: `criarArmazemLocal` (localStorage do app, chave `atlas.celular.prefs`; JSON validado, lixo volta ao padrão: 1 h e todos os avisos ligados). Não é segredo. No pacote final, se o Electron usar outra origem de página por versão, migrar para um `config.json` na pasta de dados do app (`app.getPath('userData')`).
 - **Prévia do celular**: horário e obra do exemplo (15h, Agenda da Barbearia do Zé) são fixos como no protótipo; as notícias reais vêm do M da obra.
 - **Concluir** vai para Obras (F05 ainda é a tela provisória do shell).
+
+## M13 — Minhas obras e nova obra (F05, F06)
+- **Adaptador real do `PonteObras`** (`src/app/ponte-obras.ts`): hoje só existe o mock `criarObrasFixture` (modo fixture, só memória) e `obrasIndisponivel` (produção sem adaptador: não finge que criou a pasta; a tela mostra um recado calmo). Falta, no Electron (preload + main), implementar `raiz` (`C:\Users\<nome>\Atlas\Obras` a partir de `os.homedir()`; nunca Desktop/Documentos por causa do OneDrive), `listar` (subpastas), `criarSubpasta(nome)` (`fs.mkdir` recursivo, SEMPRE com `nomeParaPasta`/`pastaLivre` e conferindo que o caminho final continua dentro da raiz; nunca sobrescrever) e `abrirPasta` (`shell.openPath` só na raiz). Injetar em `AppDesktop` (prop `obras`) via `window.atlasDesktop.obras`. A subpasta é só o diretório da obra: nenhum segredo, token ou instrução de agente vai para ela.
+- **Reconhecimento de voz** nas perguntas da nova obra usa o `useVoz` (mesma pendência do M9: motor de transcrição no Electron).
+- **F06c "Já tenho um protótipo"**: o botão encaminha para uma tela provisória (`src/app/Trazer.tsx`); o fluxo real é do M15.
+- **Depois da nova obra**: o fim das perguntas cria a pasta e mostra "Obra começada"; o botão para o estilo (F06b, M14) está desligado até a tela existir. As respostas ficam só na memória do app até o M14 guardá-las com a obra.
+- **u06 (UX a validar)**: quantas perguntas antes de cansar? Começamos com 5, como o protótipo; ajustar com o uso real.

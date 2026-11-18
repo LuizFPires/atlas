@@ -1,3 +1,4 @@
+import userEvent from '@testing-library/user-event'
 import { render, renderHook, screen, waitFor } from '@testing-library/react'
 import { telaInicial as telaDoInstalador } from '../../instalador/passos.ts'
 import { TemaProvider } from '../tema/tema'
@@ -30,7 +31,7 @@ test('computador sem ativação abre na ativação (F02)', async () => {
 
 test('computador já ativado abre em Minhas obras (F05)', async () => {
   montar(criarPonteFixture([], criarCofreMemoria({ [CHAVE_COFRE]: JSON.stringify({ token: 't', email: 'a@b.co', nome: 'Zé' }) })))
-  expect(await screen.findByRole('heading', { name: /Bem-vindo ao Atlas/ })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: /Tudo pronto, Zé/ })).toBeInTheDocument()
 })
 
 test('--tela=F02 manda, mesmo já ativado', async () => {
@@ -46,4 +47,14 @@ test('impede o computador de dormir enquanto ativo e solta ao sair', async () =>
   await waitFor(() => expect(impedirSono).toHaveBeenLastCalledWith(true))
   unmount()
   expect(impedirSono).toHaveBeenLastCalledWith(false)
+})
+
+const ativado = () => criarPonteFixture([], criarCofreMemoria({ [CHAVE_COFRE]: JSON.stringify({ token: 't', email: 'a@b.co', nome: 'Zé' }) }))
+
+test('em Minhas obras, "Já tenho um protótipo" leva ao encaminhamento do F06c e dá para voltar', async () => {
+  montar(ativado())
+  await userEvent.click(await screen.findByRole('button', { name: 'Já tenho um protótipo' }))
+  expect(screen.getByRole('heading', { name: /Que bom que você já começou/ })).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: /Voltar/ }))
+  expect(screen.getByRole('heading', { name: /Tudo pronto, Zé/ })).toBeInTheDocument()
 })
