@@ -110,12 +110,12 @@ export function Ajuda({ ajuda, casos, contexto, nome, onFechar }: Props) {
   }
 
   const tirar = async () => {
-    const p = await ajuda.tirarPrint().catch(() => null)
+    const p = await ajuda.tirarPrint(contexto.pasta).catch(() => null)
     if (p) setPrints((l) => [...l, p])
     else setAviso('Não consegui tirar o print agora. Você pode anexar uma imagem ou contar com palavras.')
   }
   const anexar = async () => {
-    const p = await ajuda.anexarImagem().catch(() => null)
+    const p = await ajuda.anexarImagem(contexto.pasta).catch(() => null)
     if (p) setPrints((l) => [...l, p])
   }
 

@@ -30,6 +30,8 @@ export interface ContextoAjuda {
   /** Onde o cliente estava ("a publicação"). */
   onde?: string
   passo?: PedidoAjudaPasso
+  /** Pasta da obra (nome da subpasta em Atlas\Obras); o adaptador revalida. Onde guardar o print e o que o Claude pode ler. */
+  pasta?: string
   erro?: ErroAjuda
   print?: PrintAjuda | null
 }
@@ -108,9 +110,9 @@ export interface PonteAjuda {
   /** "Abrir a página certa": abre SÓ uma página da lista fechada (`PAGINAS_OFICIAIS`), pelo id. Nunca recebe URL. */
   abrirPagina(id: PaginaId): Promise<void>
   /** "Tirar print da tela": o adaptador real captura a janela do Atlas. null = não deu. */
-  tirarPrint(): Promise<PrintAjuda | null>
+  tirarPrint(pasta?: string): Promise<PrintAjuda | null>
   /** "Anexar imagem": o cliente escolhe uma imagem (só imagem; SVG recusado). null = desistiu. */
-  anexarImagem(): Promise<PrintAjuda | null>
+  anexarImagem(pasta?: string): Promise<PrintAjuda | null>
 }
 
 const nomeDoPrint = (p: PrintAjuda) => [textoDaObra(p.titulo, 100), textoDaObra(p.url, 120), textoDaObra(p.detalhe, 300)].filter(Boolean).join(' | ')

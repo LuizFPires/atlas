@@ -1,11 +1,11 @@
 // Preload do app Atlas: a ÚNICA ponte entre a tela (renderer) e o processo principal.
 //
 // O QUE FAZ: expõe window.atlasDesktop (contextIsolation ligado, sandbox ligado, SEM nodeIntegration). Só os namespaces
-// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar. Todo argumento vira String/boolean aqui e é
+// que o front usa (src/app/ponte.ts): cofre, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos. Todo argumento vira String/boolean aqui e é
 // revalidado de novo no processo principal (main.cjs); o renderer nunca recebe caminho de origem, módulo Node nem Electron.
 //
 // COMO TESTAR (Windows): `npx electron app/main.cjs`, abrir as ferramentas do desenvolvedor e digitar `window.atlasDesktop`:
-// deve listar só argv, cofre, hashComputador, descricaoComputador, impedirSono, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra. `typeof require` = 'undefined'.
+// deve listar só argv, cofre, hashComputador, descricaoComputador, impedirSono, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, ... (ver a lista acima, inclui ajuda, casos). `typeof require` = 'undefined'.
 'use strict'
 const { contextBridge, ipcRenderer } = require('electron')
 
@@ -111,6 +111,17 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     // a chave (se houver) só vai ao processo principal, que a entrega ao cofre; nunca a arquivo.
     resolver: (pasta, id, segredo) => chamar('atlas:ocorrencias:resolver', String(pasta), Number(id), segredo === undefined || segredo === null ? undefined : String(segredo)),
     adiar: (pasta, id) => chamar('atlas:ocorrencias:adiar', String(pasta), Number(id)),
+  },
+  ajuda: {
+    // contexto/histórico viram dados puros (texto); o processo principal revalida tudo e monta o pedido com a regra do conteúdo do cliente.
+    conversar: (contexto, historico, mensagem) => chamar('atlas:ajuda:conversar', JSON.parse(JSON.stringify(contexto ?? {})), JSON.parse(JSON.stringify(historico ?? [])), String(mensagem ?? '')),
+    // só o ID da lista fechada; a URL é fixa no processo principal.
+    abrirPagina: (id) => chamar('atlas:ajuda:pagina', String(id)),
+    tirarPrint: (pasta) => chamar('atlas:ajuda:print', pasta ? String(pasta) : undefined),
+    anexarImagem: (pasta) => chamar('atlas:ajuda:anexar', pasta ? String(pasta) : undefined),
+  },
+  casos: {
+    enviar: (caso) => chamar('atlas:casos:enviar', JSON.parse(JSON.stringify(caso ?? {}))),
   },
   construcao: {
     planejar: (pasta, obraNome) => chamar('atlas:construcao:planejar', String(pasta), String(obraNome)),

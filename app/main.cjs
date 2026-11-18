@@ -24,6 +24,7 @@ const { criarCota } = require('./adaptadores/cota.cjs')
 const { criarOcorrencias } = require('./adaptadores/ocorrencias.cjs')
 const { criarCelular } = require('./adaptadores/celular.cjs')
 const { criarImportar } = require('./adaptadores/importar.cjs')
+const { criarAjuda, criarCasos } = require('./adaptadores/ajuda.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -56,7 +57,12 @@ const nomes = criarNomes()
 // O endereço da API vem de ATLAS_API_URL (https); sem ele a licença nega (fail-closed) e o pós-obra não executa.
 const licenca = criarLicenca({ cofre, hashComputador: async () => hash() })
 const posobra = criarPosObra({ raiz: obras.raiz(), disparo, construcao, licenca })
-
+// Ajuda do Atlas (F17): o Claude só lê; o print é SÓ da janela do Atlas; páginas só da lista fechada. Casos não resolvidos vão à API (endpoint ainda pendente).
+const ajuda = criarAjuda({
+  raiz: obras.raiz(), dadosApp: app.getPath('userData'), disparo, shell, dialog, janela: () => janelaPrincipal,
+  capturar: async () => { if (!janelaPrincipal) throw new Error('sem-janela'); return (await janelaPrincipal.webContents.capturePage()).toPNG() },
+})
+const casos = criarCasos({ cofre, hashComputador: async () => hash() })
 if (!app.requestSingleInstanceLock()) app.quit()
 
 function idDaMaquina() {
@@ -157,8 +163,16 @@ handle('atlas:posobra:entender', (pasta, pedido) => posobra.entender(String(past
 handle('atlas:posobra:executar', (pasta, pedido, plano) => posobra.executar(String(pasta), pedido, plano))
 handle('atlas:posobra:historico', (pasta) => posobra.historico(String(pasta)))
 
-// Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois).
+// Ajuda do Atlas (F17): conversar (Claude só leitor), print da janela do Atlas, anexar imagem, abrir página da lista fechada; casos -> API.
+handle('atlas:ajuda:conversar', (contexto, historico, mensagem) => ajuda.conversar(contexto, historico, mensagem))
+handle('atlas:ajuda:pagina', (id) => ajuda.abrirPagina(String(id)))
+handle('atlas:ajuda:print', (pasta) => ajuda.tirarPrint(pasta ? String(pasta) : undefined))
+handle('atlas:ajuda:anexar', (pasta) => ajuda.anexarImagem(pasta ? String(pasta) : undefined))
+handle('atlas:casos:enviar', (caso) => casos.enviar(caso))
+
+// Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois). 
 app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })
+
 
 // O computador é o canteiro: durante a obra ele não pode dormir.
 handle('atlas:sono', (ligado) => {
