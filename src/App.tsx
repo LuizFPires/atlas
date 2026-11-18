@@ -4,6 +4,8 @@ import { ImagemAssinatura } from './marca/Marca'
 import { Vendas } from './web/Vendas'
 import { ModalCompra } from './web/ModalCompra'
 import { BannerCookies } from './web/Cookies'
+import { Cadastro } from './web/Cadastro'
+import { enviarCadastro } from './web/cadastro-api'
 
 /** O aplicativo (PWA) fica em "/app". */
 function Aplicativo() {
@@ -32,5 +34,7 @@ function PaginaVendas() {
 export default function App() {
   const caminho = window.location.pathname.replace(/\/+$/, '') || '/'
   if (caminho.startsWith('/app')) return <Aplicativo />
+  // A Stripe devolve o comprador em /compra/sucesso; /comecar é o endereço público do cadastro.
+  if (caminho === '/comecar' || caminho === '/compra/sucesso') return <Cadastro onEnviar={enviarCadastro} />
   return <PaginaVendas />
 }

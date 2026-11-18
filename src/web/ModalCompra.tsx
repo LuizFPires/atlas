@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { CampoFalado, falaParaEmail, Icone } from '../ui'
+import { CHAVE_EMAIL_COMPRA } from './Cadastro'
 import { iniciarCompra } from './compra'
 
 /** Pede só o e-mail e leva ao pagamento (Pix ou cartão) no gateway. */
@@ -23,7 +24,10 @@ export function ModalCompra({ aberto, onFechar, abrirPagamento = (url) => window
     setErro('')
     setIndo(true)
     const r = await iniciarCompra(email)
-    if (r.ok) abrirPagamento(r.url)
+    if (r.ok) {
+      try { sessionStorage.setItem(CHAVE_EMAIL_COMPRA, email.trim().toLowerCase()) } catch { /* sem armazenamento: o e-mail é pedido de novo */ }
+      abrirPagamento(r.url)
+    }
     else { setErro(r.mensagem); setIndo(false) }
   }
   return (
