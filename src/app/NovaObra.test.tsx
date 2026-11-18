@@ -81,3 +81,13 @@ test('Voltar na primeira pergunta sai; nas outras volta uma pergunta', async () 
   await clicar('Voltar')
   expect(onVoltar).toHaveBeenCalledTimes(1)
 })
+
+test('com o estilo ligado, "Escolher o estilo" leva a obra criada para o F06b', async () => {
+  const onEstilo = vi.fn()
+  montar(criarObrasFixture('Zé'), { ideia: 'Agenda da Barbearia do Zé', onEstilo })
+  for (let i = 0; i < 4; i++) await clicar('Próxima pergunta')
+  await clicar('Começar a obra')
+  await clicar('Escolher o estilo →')
+  expect(onEstilo.mock.calls[0][0].pasta.pasta).toBe('agenda-da-barbearia-do-ze')
+  expect(onEstilo.mock.calls[0][0].respostas.nome).toBe('Agenda da Barbearia do Zé')
+})
