@@ -73,11 +73,11 @@ Notas: ⏩ Auto (recomendado): auth própria do portal via Supabase Auth (indepe
 peso: 2
 spec: S9
 tela: prototipo/F16Admin.dc.html
-- [ ] Montar os indicadores (receita, inadimplência, ativações, clientes travados)
-- [ ] Montar a lista "precisam de atenção" a partir de ocorrencias_admin
-- [ ] Implementar ações do admin (liberar troca urgente, ver entregas/marca d'água, cadastros)
-- [ ] Conferir fidelidade com o protótipo
-Notas: ⏩ Auto (recomendado): painel só do admin (Luiz) — todas as rotas /admin/* exigem identidade de admin (papel/allowlist configurável, nunca um cliente comum; JWT validado no servidor). Lê os dados do PRÓPRIO Atlas (vendas do Atlas: receita, inadimplência, ativações, clientes travados; ocorrencias_admin), não os pagamentos das obras dos clientes (esses são do gateway do cliente). Ações: liberar troca urgente (override 1/7 dias), ver entregas/marca d'água, ver cadastros. Modo fixture, sem deploy. Nunca expor segredo; admin vê agregados e dados operacionais, não chaves.
+- [x] Montar os indicadores (receita, inadimplência, ativações, clientes travados)
+- [x] Montar a lista "precisam de atenção" a partir de ocorrencias_admin
+- [x] Implementar ações do admin (liberar troca urgente, ver entregas/marca d'água, cadastros)
+- [x] Conferir fidelidade com o protótipo
+Notas: ⏩ Auto (recomendado): painel só do admin (Luiz) — todas as rotas /admin/* exigem identidade de admin (papel/allowlist configurável, nunca um cliente comum; JWT validado no servidor). Lê os dados do PRÓPRIO Atlas (vendas do Atlas: receita, inadimplência, ativações, clientes travados; ocorrencias_admin), não os pagamentos das obras dos clientes (esses são do gateway do cliente). Ações: liberar troca urgente (override 1/7 dias), ver entregas/marca d'água, ver cadastros. Modo fixture, sem deploy. Nunca expor segredo; admin vê agregados e dados operacionais, não chaves. QA aprovou (sem alto/médio; gate de admin, não-vazamento e auditoria conferidos). Decisão (auto — recomendado): a mensalidade de licença atrasada conta no recorrente_mensal. Baixas p/ /entregar/scale: paginação/RPC de agregação acima de 5000 registros; condição troca_liberada_em is null no liberar (evita 2ª linha de auditoria em clique simultâneo); rate-limit de JWT inválido. Env: ATLAS_ADMIN_EMAILS (.env.example).
 
 ## Milestone 8 — Instalador para Windows
 peso: 3
