@@ -31,3 +31,18 @@
 .at-plano__sub { font-size: 13px; color: var(--side-mute); }
 .at-licenca { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--side-mute); padding: 0 6px; }
 .at-licenca__ponto { width: 8px; height: 8px; border-radius: 4px; background: var(--side-lime); }
+
+.at-item:focus-visible, .at-falar:focus-visible, .at-ajuda:focus-visible { outline: 2px solid var(--side-lime); outline-offset: 2px; }
+.at-ajuda--ativo { background: var(--side-act-bg); color: var(--side-act-cor); border-color: transparent; }
+
+/* Celular: a lateral vira uma barra no topo, com rolagem horizontal do menu. */
+@media (max-width: 768px) {
+  .at-shell { flex-direction: column; }
+  .at-conteudo { padding: 20px 16px; }
+  .at-lateral { width: auto; height: auto; position: static; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 12px; border-right: none; border-bottom: 1px solid var(--side-border); }
+  .at-lateral__marca { padding: 0 6px; }
+  .at-lateral__nav { order: 3; flex-direction: row; width: 100%; overflow-x: auto; }
+  .at-item { white-space: nowrap; padding: 9px 12px; }
+  .at-lateral__fixo { margin: 0 0 0 auto; flex-direction: row; align-items: center; }
+  .at-plano, .at-licenca { display: none; }
+}

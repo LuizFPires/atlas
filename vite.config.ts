@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['monograma-fundo-escuro.png'],
+      includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
       manifest: {
         name: 'Atlas',
         short_name: 'Atlas',
@@ -17,7 +17,11 @@ export default defineConfig({
         theme_color: '#141619',
         background_color: '#141619',
         display: 'standalone',
-        icons: [{ src: 'monograma-fundo-escuro.png', sizes: 'any', type: 'image/png', purpose: 'any' }],
+        icons: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
       },
     }),
   ],

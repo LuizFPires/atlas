@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Icone } from '../ui'
+import { useTema } from '../tema/tema'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import './shell.css'
 
@@ -22,11 +23,12 @@ type Props = {
 
 /** Menu lateral sempre escuro, com "Falar com o Atlas" e "Ajuda do Atlas" fixos (prototipo/Shell.dc.html). */
 export function Shell({ ativo, onNavegar, onFalar, children }: Props) {
+  const { tema } = useTema()
   return (
     <div className="at-shell">
       <aside className="at-lateral">
         <div className="at-lateral__marca">
-          <Monograma fundo="escuro" />
+          <Monograma fundo={tema === 'claro' ? 'claro' : 'escuro'} />
           <NomeAtlas fundo="escuro" />
         </div>
         <nav className="at-lateral__nav" aria-label="Menu principal">
@@ -43,7 +45,7 @@ export function Shell({ ativo, onNavegar, onFalar, children }: Props) {
             <Icone nome="microfone" />
             Falar com o Atlas
           </button>
-          <a href="#/ajuda" className="at-ajuda" onClick={(e) => { e.preventDefault(); onNavegar('ajuda') }}>
+          <a href="#/ajuda" className={`at-ajuda ${ativo === 'ajuda' ? 'at-ajuda--ativo' : ''}`} aria-current={ativo === 'ajuda' ? 'page' : undefined} onClick={(e) => { e.preventDefault(); onNavegar('ajuda') }}>
             <Icone nome="ajuda" tamanho={18} />
             Ajuda do Atlas
           </a>

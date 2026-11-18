@@ -9,7 +9,7 @@
 
 .at-bolinha {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  border-radius: 50%; background: var(--lime); color: #141619;
+  border-radius: 50%; background: var(--lime); color: var(--on-lime);
 }
 
 .at-cartao { background: var(--card); border: 1px solid var(--card-b); border-radius: var(--raio-cartao); padding: 20px; }
