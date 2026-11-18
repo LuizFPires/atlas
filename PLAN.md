@@ -146,10 +146,10 @@ Notas: ⏩ Auto (recomendado): F05Obras (lista com analogia da casa + exemplos; 
 peso: 2
 spec: S14, S21
 tela: prototipo/F06bEstilo.dc.html
-- [ ] Receber 2–3 referências (link, print ou fala) e o sentimento desejado
-- [ ] Propor 3 estilos e transformar o escolhido no design system
-- [ ] Implementar "Já tenho identidade visual" (subir logo, cores, manual ou design-system.md)
-- [ ] Conferir fidelidade com o protótipo
+- [x] Receber 2–3 referências (link, print ou fala) e o sentimento desejado
+- [x] Propor 3 estilos e transformar o escolhido no design system
+- [x] Implementar "Já tenho identidade visual" (subir logo, cores, manual ou design-system.md)
+- [x] Conferir fidelidade com o protótipo
 Notas: ⏩ Auto (recomendado): F06bEstilo — receber 2-3 referências (link, print ou fala) + o sentimento desejado; o Atlas propõe 3 estilos e o escolhido vira o design system da obra. "Já tenho identidade visual": subir logo, cores, manual ou um design-system.md pronto. A geração dos 3 estilos é o Claude por baixo → atrás de um port (PonteEstilo/PonteClaude) com mock em fixture; adaptador real p/ /entregar. Upload de arquivos (logo/manual) atrás do port de filesystem; nunca segredo em arquivo. Modo fixture, sem deploy. QA reprovou (3 médios). Decisões (auto — recomendado): (1) o design-system.md PRONTO do cliente PREVALECE — é copiado como veio, o esqueleto só é gerado quando se cria do zero; nunca sobrescrever (prontoDS rastreado pelo nome realmente gravado); (2) PonteArquivos.guardar passa a receber um token/handle do arquivo escolhido (não um descritor do renderer) e revalida extensão/20MB no adaptador; destino 'raiz' só aceita .md; (3) conteúdo do cliente (design-system.md pronto, cores, sentimento) é tratado como DADO não confiável quando o Claude ler (delimitado, sem seguir instruções, sem invocar ferramentas) — risco de injeção; o texto livre entra escapado/delimitado no .md. Baixas: rejeitar SVG como logo (ou sanitizar); corrigir o texto "ficam só no seu computador" (o Claude lê); path.resolve/symlink/COPYFILE_EXCL + teste de contrato (traversal/ADS) p/ o adaptador real.
 
 ## Milestone 15 — App: trazer protótipo de outra IA
