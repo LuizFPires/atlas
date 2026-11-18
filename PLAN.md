@@ -114,12 +114,12 @@ Notas: ⏩ Auto (recomendado): login guiado do Claude (F03): passo a passo abrin
 peso: 2
 spec: S13, S21
 tela: prototipo/F04Contas.dc.html
-- [ ] Montar o guia de mão dada (imagem com botão piscando, inglês traduzido, VOCÊ/O ATLAS)
-- [ ] Implementar o fluxo GitHub, Supabase e Vercel, uma conta por vez
-- [ ] Detectar sozinho quando cada conta ficou pronta
-- [ ] Ligar "Não consegui" à Ajuda do Atlas
-- [ ] Conferir fidelidade com o protótipo
-Notas:
+- [x] Montar o guia de mão dada (imagem com botão piscando, inglês traduzido, VOCÊ/O ATLAS)
+- [x] Implementar o fluxo GitHub, Supabase e Vercel, uma conta por vez
+- [x] Detectar sozinho quando cada conta ficou pronta
+- [x] Ligar "Não consegui" à Ajuda do Atlas
+- [x] Conferir fidelidade com o protótipo
+Notas: ⏩ Auto (recomendado): guia de mão dada (F04Contas) para o cliente abrir as contas DELE — GitHub, Supabase e Vercel, uma por vez, com imagem do site, botão certo piscando, inglês traduzido e selo VOCÊ/O ATLAS por passo. O Atlas NÃO cria conta nem digita credencial do cliente; ele guia e DETECTA sozinho quando cada conta ficou pronta (port de detecção, mock em fixture; adaptador real p/ /entregar). "Não consegui" abre a Ajuda do Atlas com o print do passo. Os nomes dos botões dos sites reais precisam ser conferidos no /entregar. QA reprovou por 1 médio: corrida retomada×polling usa conta velha → passo undefined → crash da F04 (teste intermitente; CI passou por sorte). Fix: checar id da conta atual no then do polling (ref) e proteger passo com Math.min; cobrir o caso "3 contas já prontas" (primeira=-1); conferir pronta antes de marcar feita.
 
 ## Milestone 12 — App: acompanhar pelo celular
 peso: 1

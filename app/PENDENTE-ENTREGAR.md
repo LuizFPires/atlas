@@ -16,3 +16,11 @@ O CI (ubuntu) só roda eslint, tsc, vitest e o build do front. `electron` e `ele
 - **Vídeo "Ver este passo em vídeo (40 s)"**: o botão existe, falta gravar/hospedar os vídeos por passo e ligá-lo.
 - **"Pedir ajuda ao Atlas (mande um print)"** leva hoje à tela Ajuda do shell (F17 ainda não existe).
 - **Links** "Criar no site do Claude" e "Ver os planos" dependem do `abrirSite` real (URLs a confirmar).
+
+## M11 — Abrir as contas (F04)
+- **Adaptador real do `PonteContas`** (`src/app/ponte-contas.ts`): hoje só existe o mock `criarContasFixture` (modo fixture) e `contasIndisponivel` (produção sem adaptador: não finge conta pronta). Falta, no Electron (preload + main), implementar `abrirSite(conta)` (`shell.openExternal` SÓ com URLs fixas dos sites oficiais: github.com, supabase.com, vercel.com; nunca URL vinda de dado) e `pronta(conta)` (ver se a conta/projeto do cliente existe, sem chamar nada com senha dele e sem guardar token em arquivo; o cliente autoriza no site dele). Injetar em `AppDesktop` (prop `contas`) via `window.atlasDesktop.contas`. O Atlas NÃO cria conta, NÃO digita credencial, NÃO guarda senha.
+- **Como detectar de verdade**: confirmar o método por conta (GitHub: usuário autenticado no `gh`/login do cliente; Supabase e Vercel: login via CLI/token criado pelo próprio cliente, guardado no cofre do SO, nunca em arquivo). O app já olha a cada 5 s (`sondagemMs`) e, ao detectar, pula para o "Pronto!".
+- **Conferir os nomes reais dos botões e telas** dos sites (Sign up, Continue with GitHub, Authorize, Start your project, Hobby etc.) e as URLs mostradas na imagem: os sites mudam. A imagem do site é desenhada em HTML (`PreviaSite`); trocar por captura real se quiser.
+- **"Pedir ajuda ao Atlas"** entrega o `PedidoAjudaPasso` (conta, passo, URL e título do print) à tela Ajuda do shell; a F17 completa (print real da tela, conversa) ainda não existe. Captura real de tela fica para o M da Ajuda.
+- **Vídeo "Ver este passo em vídeo (40 s)"**: botão existe; falta gravar/hospedar os vídeos por conta e passo.
+- **F04b (celular)** ainda não existe: "Último passo →" cai em Obras.
