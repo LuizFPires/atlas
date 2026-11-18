@@ -72,6 +72,10 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     sugerir: (pasta, obraNome, pedido) => chamar('atlas:batismo:sugerir', String(pasta), String(obraNome), JSON.parse(JSON.stringify(pedido ?? {}))),
     batizar: (pasta, marca) => chamar('atlas:batismo:batizar', String(pasta), JSON.parse(JSON.stringify(marca ?? {}))),
   },
+  nomes: {
+    // só o NOME vai ao processo principal; o host e o caminho da consulta são fixos lá (anti-SSRF, ver adaptadores/nomes.cjs).
+    conferir: (nome) => chamar('atlas:nomes:conferir', String(nome)),
+  },
   construcao: {
     planejar: (pasta, obraNome) => chamar('atlas:construcao:planejar', String(pasta), String(obraNome)),
     // etapas: só n/nome/desc/tela como texto; o processo principal revalida tudo.

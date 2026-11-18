@@ -166,7 +166,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     return url ? criarLicencaApi(ponte, url) : licencaIndisponivel
   }, [licenca, ponte])
 
-  const ponteNomes = useMemo<PonteNomes>(() => nomes ?? (modoFixture() ? criarNomesFixture() : nomesIndisponivel), [nomes])
+  const ponteNomes = useMemo<PonteNomes>(() => nomes ?? (modoFixture() ? criarNomesFixture() : (ponte.nomes ?? nomesIndisponivel)), [nomes, ponte])
 
   const ativacao = useMemo<AtivacaoApi>(
     () => {

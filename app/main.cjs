@@ -17,6 +17,7 @@ const { criarDisparo } = require('./adaptadores/projeto-comum.cjs')
 const { criarEstilo } = require('./adaptadores/estilo.cjs')
 const { criarPrototipo } = require('./adaptadores/prototipo.cjs')
 const { criarBatismo } = require('./adaptadores/batismo.cjs')
+const { criarNomes } = require('./adaptadores/nomes.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -37,6 +38,7 @@ const disparo = criarDisparo({ raiz: obras.raiz(), dadosApp: require('node:path'
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
 const batismo = criarBatismo({ raiz: obras.raiz(), disparo })
+const nomes = criarNomes()
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -110,6 +112,9 @@ handle('atlas:prototipo:voltar', (pasta, numero) => prototipo.voltar(String(past
 // Batismo (F07b): 3 nomes (logo só de lista fechada) e marca/marca.md sem sobrescrever.
 handle('atlas:batismo:sugerir', (pasta, nome, pedido) => batismo.sugerir(String(pasta), String(nome), pedido))
 handle('atlas:batismo:batizar', (pasta, marca) => batismo.batizar(String(pasta), marca))
+
+// Nomes: conferir endereço livre (.app / .com.br) só por RDAP oficial, anti-SSRF (host fixo, IP público, sem redirect, timeout).
+handle('atlas:nomes:conferir', (nome) => nomes.conferir(String(nome)))
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois).
 app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })
