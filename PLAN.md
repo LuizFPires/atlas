@@ -150,7 +150,7 @@ tela: prototipo/F06bEstilo.dc.html
 - [ ] Propor 3 estilos e transformar o escolhido no design system
 - [ ] Implementar "Já tenho identidade visual" (subir logo, cores, manual ou design-system.md)
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): F06bEstilo — receber 2-3 referências (link, print ou fala) + o sentimento desejado; o Atlas propõe 3 estilos e o escolhido vira o design system da obra. "Já tenho identidade visual": subir logo, cores, manual ou um design-system.md pronto. A geração dos 3 estilos é o Claude por baixo → atrás de um port (PonteEstilo/PonteClaude) com mock em fixture; adaptador real p/ /entregar. Upload de arquivos (logo/manual) atrás do port de filesystem; nunca segredo em arquivo. Modo fixture, sem deploy.
 
 ## Milestone 15 — App: trazer protótipo de outra IA
 peso: 2
