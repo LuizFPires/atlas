@@ -244,7 +244,7 @@ tela: prototipo/F13Entrega.dc.html
 - [ ] Montar a entrega das chaves (momento de comemorar)
 - [ ] Gerar o QR para instalar no celular e o link para a equipe
 - [ ] Conferir fidelidade com o protótipo
-Notas:
+Notas: ⏩ Auto (recomendado): F13Entrega — momento de comemorar a entrega das chaves; QR para instalar no celular e link para mandar à equipe (usa o endereço do sistema no ar do M22; sem endereço real/adaptador, não finge — mostra estado honesto). QR gerado localmente; link só http/https do próprio sistema, nunca URL de dado. Mock em fixture; adaptador real p/ /entregar. Modo fixture, sem deploy.
 
 ## Milestone 24 — App: pós-obra
 peso: 2
