@@ -114,7 +114,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteImportar = useMemo<PonteImportar>(() => importar ?? (modoFixture() ? criarImportarFixture(ponteObras.raiz()) : importarIndisponivel), [importar, ponteObras])
 
   // Idem para o Claude que desenha e ajusta as telas (HTML não confiável: só em iframe sandbox): sem adaptador real, não finge.
-  const pontePrototipo = useMemo<PontePrototipo>(() => prototipo ?? (modoFixture() ? criarPrototipoFixture(ponteObras.raiz()) : prototipoIndisponivel), [prototipo, ponteObras])
+  const pontePrototipo = useMemo<PontePrototipo>(() => prototipo ?? (modoFixture() ? criarPrototipoFixture(ponteObras.raiz()) : (ponte.prototipo ?? prototipoIndisponivel)), [prototipo, ponteObras, ponte])
 
   // Idem para o Claude que sugere os nomes e grava a marca na pasta da obra: sem adaptador real, não finge.
   const ponteBatismo = useMemo<PonteBatismo>(() => batismo ?? (modoFixture() ? criarBatismoFixture(ponteObras.raiz()) : batismoIndisponivel), [batismo, ponteObras])

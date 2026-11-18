@@ -15,6 +15,7 @@ const { criarPainel } = require('./adaptadores/painel.cjs')
 const { criarRetomar } = require('./adaptadores/retomar.cjs')
 const { criarDisparo } = require('./adaptadores/projeto-comum.cjs')
 const { criarEstilo } = require('./adaptadores/estilo.cjs')
+const { criarPrototipo } = require('./adaptadores/prototipo.cjs')
 
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
@@ -33,6 +34,7 @@ const retomar = criarRetomar({ raiz: obras.raiz(), painel, construcao })
 // Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
 const disparo = criarDisparo({ raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
+const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -96,6 +98,12 @@ handle('atlas:retomar:continuar', (pasta) => retomar.continuar({ pasta: String(p
 // Estilo do sistema (F06b): o Claude propõe 3 estilos; materializar grava o design-system.md (nunca sobrescreve).
 handle('atlas:estilo:propor', (entrada, pasta) => estilo.propor(entrada, pasta === undefined ? undefined : String(pasta)))
 handle('atlas:estilo:materializar', (pasta, origem) => estilo.materializar(String(pasta), origem))
+
+// Protótipo (F07): o Claude devolve as telas, o app grava versões imutáveis em <obra>/prototipo/versoes/vNNN; desfazer = ponteiro.
+handle('atlas:prototipo:estado', (pasta) => prototipo.estado(String(pasta)))
+handle('atlas:prototipo:desenhar', (pasta, nome, estilo) => prototipo.desenhar(String(pasta), String(nome), estilo))
+handle('atlas:prototipo:ajustar', (pasta, pedido) => prototipo.ajustar(String(pasta), String(pedido)))
+handle('atlas:prototipo:voltar', (pasta, numero) => prototipo.voltar(String(pasta), Number(numero)))
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois).
 app.on('before-quit', () => { construcao.encerrar(); painel.encerrar() })
