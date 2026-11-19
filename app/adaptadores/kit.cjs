@@ -82,6 +82,31 @@ function validarResposta(resp) {
   return { marca, arquivos }
 }
 
+/**
+ * Lê o corpo da resposta com TETO de bytes (não deixa um corpo gigante/malicioso estourar a memória). Passou do teto: lança 'kit-grande'.
+ * Usa o stream quando existe; sem stream (ex.: teste), cai em text() e confere o tamanho depois.
+ */
+async function lerComTeto(r, max) {
+  const cl = Number(r.headers && typeof r.headers.get === 'function' ? r.headers.get('content-length') : NaN)
+  if (Number.isFinite(cl) && cl > max) throw new Error('kit-grande')
+  if (!r.body || typeof r.body.getReader !== 'function') {
+    const t = await r.text()
+    if (Buffer.byteLength(t, 'utf8') > max) throw new Error('kit-grande')
+    return t
+  }
+  const leitor = r.body.getReader()
+  const partes = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await leitor.read()
+    if (done) break
+    total += value.byteLength
+    if (total > max) { try { await leitor.cancel() } catch { /* já encerrado */ } throw new Error('kit-grande') }
+    partes.push(Buffer.from(value))
+  }
+  return Buffer.concat(partes).toString('utf8')
+}
+
 function enderecoDaApi(bruto) {
   if (typeof bruto !== 'string' || !bruto) return null
   let u
@@ -151,9 +176,8 @@ function criarKit({ dadosApp, cofre, hashComputador, api = process.env.ATLAS_API
           body: JSON.stringify({ email: ativ.email, computador_hash: await hashComputador(), obra_id: obraId }),
         })
         ok = r.ok
-        texto = await r.text()
+        try { texto = await lerComTeto(r, LIM.resposta) } catch (e) { if (e && e.message === 'kit-grande') return { ok: false, mensagem: MSG.incompleto }; throw e }
       } catch { return { ok: false, mensagem: MSG.rede } }
-      if (texto.length > LIM.resposta) return { ok: false, mensagem: MSG.incompleto }
       let d = null
       try { d = JSON.parse(texto) } catch { /* resposta estranha */ }
       if (!ok) return { ok: false, mensagem: d && typeof d.mensagem === 'string' ? d.mensagem.slice(0, 300) : MSG.negado }
@@ -194,4 +218,4 @@ function criarKit({ dadosApp, cofre, hashComputador, api = process.env.ATLAS_API
   return self
 }
 
-module.exports = { criarKit, validarResposta, destinoNoPlugin, avisoNoTopo, enderecoDaApi, LEI }
+module.exports = { lerComTeto, criarKit, validarResposta, destinoNoPlugin, avisoNoTopo, enderecoDaApi, LEI }

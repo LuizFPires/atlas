@@ -180,3 +180,13 @@ test('a linha de produção recebe --plugin-dir do kit da obra (função), e nad
   assert.ok(!args.includes('--plugin-dir'))
   c.encerrar(); c2.encerrar()
 })
+
+test('lerComTeto: para de ler no teto (stream) e recusa pelo content-length', async () => {
+  const { lerComTeto } = require('./kit.cjs')
+  let lidos = 0
+  const corpo = new ReadableStream({ pull(c) { lidos++; c.enqueue(new Uint8Array(1000)); if (lidos > 1000) c.close() } })
+  await assert.rejects(lerComTeto({ body: corpo }, 5000), /kit-grande/)
+  assert.ok(lidos < 20)
+  await assert.rejects(lerComTeto({ headers: new Headers({ 'content-length': '99' }), text: async () => 'x' }, 10), /kit-grande/)
+  assert.equal(await lerComTeto({ body: new Response('ola').body }, 10), 'ola')
+})

@@ -1,5 +1,6 @@
 // Roteador das APIs S4 (sem dependência de Deno: testável com Request/Response padrão).
 import { abrirLink, reenviarParaComputador } from './abertura.ts'
+import { registrarCasoAjuda } from './ajuda-caso.ts'
 import { confirmarAtivacao, solicitarCodigo } from './ativacao.ts'
 import { entregarKit, type CarregarKit } from './kit.ts'
 import { gerarLink } from './links.ts'
@@ -206,6 +207,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         return json(await processarAtrasos(ctx.pagamento))
       case '/verificar':
         return json(await verificar(ctx.deps, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo }))
+      case '/ajuda-caso':
+        return json(await registrarCasoAjuda(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, tipo: b.tipo, descricao: b.descricao }))
       case '/entregar-kit': {
         const r = await entregarKit(ctx.deps, ctx.carregarKit, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, obra_id: s('obra_id') })
         const { cabecalhos, ...corpo } = r
