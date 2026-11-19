@@ -51,6 +51,7 @@ Deno.serve(async (req) => {
       pagamento,
       cadastro,
       portal,
+      degustacao,
       origemWeb: Deno.env.get('ATLAS_WEB_ORIGEM') ?? undefined,
       carregarKit: criarCarregarKit(),
       autorizarServico: (r) => r.headers.get('Authorization') === `Bearer ${servico}`,
