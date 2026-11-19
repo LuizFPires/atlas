@@ -221,7 +221,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
   } catch (e) {
     if (e instanceof ErroRegra) return json({ erro: e.codigo, mensagem: e.message, ...e.extra() }, e.status)
     const id = crypto.randomUUID()
-    console.error(id, e)
+    // Nunca logar o objeto de erro bruto (pode, um dia, carregar algo sensível): só o rastro de Error ou uma string segura.
+    console.error(id, e instanceof Error ? (e.stack ?? `${e.name}: ${e.message}`) : String(e))
     return json({ erro: 'interno', mensagem: 'Algo deu errado do nosso lado. Tente de novo em instantes.', id }, 500)
   }
 }
