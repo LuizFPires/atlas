@@ -17,8 +17,8 @@
 //    tamanho (20 MB) e que não é link; copia com COPYFILE_EXCL para o mesmo lugar do print.
 //  abrirPagina(id): shell.openExternal SÓ de PAGINAS_OFICIAIS (id da lista fechada, URL fixa aqui dentro). Nunca recebe URL.
 //  casos.enviar(caso): POST {ATLAS_API_URL}/ajuda-caso com o token do dispositivo (cofre) — o servidor grava em ocorrencias_admin.
-//    O cliente_id vem da licença NO SERVIDOR. Tira segredo de novo (defesa em profundidade), https sem redirect, timeout. ENDPOINT AINDA
-//    NÃO EXISTE no servidor (pendência); sem ele falha honesto (a tela diz que não anotou).
+//    O cliente_id vem da licença NO SERVIDOR. Tira segredo de novo (defesa em profundidade), https sem redirect, timeout. Endpoint no servidor:
+//    supabase/functions/_shared/ajuda-caso.ts; se falhar, falha honesto (a tela diz que não anotou).
 //
 // COMO TESTAR: `node --test app/adaptadores/*.teste.cjs` (ajuda.teste.cjs: Claude, captura, diálogo e rede simulados). No Windows:
 // abrir a Ajuda do Atlas, "Tirar print" cria userData/ajuda/prints/.../print-*.png (fora da obra); escrever uma dúvida devolve passos em português.
