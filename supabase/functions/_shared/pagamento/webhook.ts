@@ -4,7 +4,7 @@
 import type { Licenca, Pagamento, TipoPagamento } from '../tipos.ts'
 import { ErroRegra } from '../tipos.ts'
 import { verificarAssinaturaStripe } from './assinatura-stripe.ts'
-import { type DepsPagamento, planoImplantacao, VALOR_IMPLANTACAO } from './config.ts'
+import { type DepsPagamento, MAX_PARCELAS, planoImplantacao, VALOR_IMPLANTACAO } from './config.ts'
 import { marcarAtraso, sairDoAtraso } from './atraso.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -93,6 +93,8 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   const conta = await d.store.contaGateway(contaId)
   const sk = conta ? await d.segredos.chaveSecreta(conta.segredo_ref) : null
   const parcelasUsadas = (sk && (await d.stripe(sk).parcelasDoPagamento(pi))) || 1
+  // Acima do máximo permitido: recusa direto (não arredonda para o teto; fail-closed, sem subcobrança).
+  if (parcelasUsadas > MAX_PARCELAS) return
   if (Number(s.amount_total) < Math.round(planoImplantacao(parcelasUsadas).total * 100)) return
   const valor = reais(s.amount_total)
   const emailN = email.trim().toLowerCase()

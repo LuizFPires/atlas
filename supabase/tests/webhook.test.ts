@@ -65,6 +65,13 @@ describe('webhook: implantação', () => {
     expect(m.store.licencas).toHaveLength(1) // só a fixture: a compra foi recusada (fail-closed)
     expect(m.store.pagamentos).toHaveLength(0)
   })
+  it('trava de parcelamento: acima do máximo (12x) NÃO concede, mesmo pagando valor alto', async () => {
+    const m = montarPag()
+    m.parcelasPorPi.set('pi_1', 12) // acima de MAX_PARCELAS (10)
+    await enviar(m, evento('checkout.session.completed', sessaoImpl({ amount_total: 600000 })))
+    expect(m.store.licencas).toHaveLength(1) // recusada: não arredonda para o teto
+    expect(m.store.pagamentos).toHaveLength(0)
+  })
   it('trava de parcelamento: 4x pagando o total com juros (R$ 5.042,40) concede normalmente', async () => {
     const m = montarPag()
     m.parcelasPorPi.set('pi_1', 4)
