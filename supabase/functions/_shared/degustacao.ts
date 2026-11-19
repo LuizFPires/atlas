@@ -20,15 +20,25 @@ export interface DepsDegustacao extends Deps {
   enviarConfirmacaoDegustacao: (email: string, dados: { token: string; expira_em: Date; dias: number }) => Promise<void>
 }
 
-/** lower/trim; em gmail/googlemail tira pontos e tudo depois do '+' do começo, e unifica o domínio. Chave anti-repetição. */
+/** Tira o ponto final do domínio ("gmail.com." é o mesmo domínio que "gmail.com"). */
+export function semPontoFinal(email: string): string {
+  return email.replace(/\.+$/, '')
+}
+
+/**
+ * lower/trim, sem ponto final no domínio; em TODOS os domínios tira o '+tag' do local; só em gmail/googlemail
+ * tira também os pontos e unifica o domínio. Chave anti-repetição.
+ */
 export function normalizarEmail(bruto: string): string {
-  const e = bruto.trim().toLowerCase()
+  const e = semPontoFinal(bruto.trim().toLowerCase())
   const arroba = e.lastIndexOf('@')
   if (arroba < 1) return e
   let local = e.slice(0, arroba)
   let dominio = e.slice(arroba + 1)
+  const base = local.split('+')[0]
+  if (base) local = base // '+x@dom' (local só de tag) fica como está
   if (GMAIL.has(dominio)) {
-    local = local.split('+')[0].replace(/\./g, '')
+    local = local.replace(/\./g, '')
     dominio = 'gmail.com'
   }
   return `${local}@${dominio}`
@@ -62,7 +72,8 @@ export async function estadoDegustacao(d: Deps) {
  * quem já tem conta) e manda o e-mail de confirmação. NÃO cria licença.
  */
 export async function pedirDegustacao(d: DepsDegustacao, a: { email: unknown; ip: string }) {
-  const email = typeof a.email === 'string' ? a.email.trim().toLowerCase() : ''
+  // O ponto final do domínio sai ANTES de tudo (regex, descartável, normalização, e-mail guardado).
+  const email = typeof a.email === 'string' ? semPontoFinal(a.email.trim().toLowerCase()) : ''
   if (email.length > 254 || !EMAIL_RE.test(email)) throw new ErroRegra('email_invalido', 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.', 400)
   const cfg = await d.store.configDegustacao()
   if (!cfg.ativa) throw new ErroRegra('oferta_desligada', 'O teste grátis não está aberto agora. Volte daqui a pouco.', 409)

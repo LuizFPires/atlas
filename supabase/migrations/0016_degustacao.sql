@@ -1,6 +1,7 @@
 -- Atlas · degustação self-service (bloco B): teste de N dias (padrão 5) com e-mail confirmado, anti-abuso e liga/desliga pelo painel.
 -- A licença de teste é a MESMA infra da cortesia (0013): tipo='cortesia', validade_em, plano_valor 0, sem gateway.
 -- Pagamento/assinatura não são tocados.
+-- ATENÇÃO: o desenho final está na 0017/0018 (dedup por email_hash HMAC; lock 'degustacao:<hash>' no pedido e na confirmação; coluna licencas.origem).
 
 -- 1) Config: UMA linha. Nasce DESLIGADA; só o gestor liga (rota /admin/degustacao, service_role).
 create table config_degustacao (

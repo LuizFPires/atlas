@@ -7,21 +7,25 @@ Como funciona: a pessoa pede pela página de vendas, confirma o e-mail pelo link
 Rotas públicas (POST): `/degustacao/estado`, `/degustacao/pedir`, `/degustacao/confirmar`. Rota admin: `/admin/degustacao`.
 Banco: migration `0016_degustacao.sql` (`config_degustacao`, `degustacoes`, `dominios_bloqueados`, RPCs `pedir_degustacao` e `criar_degustacao`,
 esta com o mesmo lock `'cliente:'||lower(trim(email))` de `criar_compra` e `criar_cortesia`).
+Correções em `0017_degustacao_corrige_revisao.sql` e `0018_degustacao_um_por_computador.sql` (esta cria `licencas.origem`).
+Locks: o pedido e a confirmação pegam `'degustacao:'||email_hash` e depois `'cliente:'||email`; `excluir_conta` pega `'conta:'||id`, depois os `'degustacao:'||hash` das degustações do cliente (em ordem de hash). Ninguém pega `conta:` depois de `degustacao:`/`cliente:`, então não há ciclo.
 
 ## Freios (anti-abuso)
 - Sem clicar no link do e-mail, nenhuma licença nasce (token de uso único, só o hash no banco, vale 48 h).
-- 1 degustação por e-mail normalizado (gmail/googlemail: sem pontos e sem `+tag`).
+- 1 degustação por e-mail normalizado: ponto final do domínio sai (`a@gmail.com.` = `a@gmail.com`), `+tag` sai em TODOS os domínios, pontos do local só no gmail/googlemail.
 - Domínios descartáveis recusados: lista base em `supabase/functions/_shared/dominios-descartaveis.ts` + tabela `dominios_bloqueados` (editável sem deploy; o bloco C alimenta).
 - Limite por IP no pedido (5/h), por e-mail (3/h) e na confirmação (20 a cada 15 min).
 - 1 computador por licença: o teste usa o mesmo caminho de ativação (`ativacoes`, índice único de 1 ativo).
+- 1 degustação por computador: a licença do teste nasce com `origem='degustacao'` (0018). Na ativação (`confirmarAtivacao`), se esse `computador_hash` já ativou OUTRA licença de degustação (ativa ou não), responde 409 `ja_testou_neste_computador` ANTES de gastar o código. Compra e cortesia manual do gestor não entram na trava. Limites: quem apaga a conta perde as ativações (LGPD) e o computador fica "limpo"; trocar de computador pelo portal não passa por essa checagem; ativações simultâneas no mesmo instante não têm lock.
 
 ## Limites honestos
 - Quem tem e-mails novos de provedores diferentes (não descartáveis) e uma máquina nova ainda consegue outro teste. O freio é custo, não impossibilidade.
 - O custo é limitado: o processamento é o login Claude do próprio usuário; o Atlas não paga por token do teste.
 - Domínios próprios (alguém com domínio e catch-all) passam; só o bloco C/lista editável reduz isso.
 - IP atrás de CGNAT/rede compartilhada pode esbarrar no limite por IP (mensagem pede para esperar).
-- O IP fica em `degustacoes.ip` só para abuso. Migration 0017: a rota de serviço `POST /degustacao/limpar-ips` (cron diário do deploy, com o segredo de serviço) zera o ip com mais de 30 dias; `excluir_conta` zera e-mail e ip, invalida o token e mantém só o hash sha256 do e-mail normalizado (quem apaga a conta não ganha outro teste; hash sem segredo é adivinhável por quem já sabe o e-mail, limite aceito).
+- O IP fica em `degustacoes.ip` só para abuso. Migration 0017: a rota de serviço `POST /degustacao/limpar-ips` (cron diário do deploy, com o segredo de serviço) zera o ip com mais de 30 dias; `excluir_conta` zera e-mail e ip, invalida o token e mantém só o hash HMAC-SHA256 do e-mail normalizado (quem apaga a conta não ganha outro teste; o HMAC com o segredo do servidor impede confirmar um e-mail só olhando a tabela).
 
+- Se `gerarLink` falhar depois de criar a licença (na confirmação), o token do e-mail já foi consumido; a pessoa ainda entra pelo fluxo normal de ativação por código (peça o link/código). Aceito.
 - Re-pedir gira o token (o link anterior morre). Limitado pelo rate limit de 3/h por e-mail; é o comportamento normal de reenvio. Aceito.
 - 409 ja_tem_conta/ja_usou_degustacao revela que o e-mail existe. Limitado por IP e por e-mail, risco baixo num teste de consumidor; resposta genérica pioraria a UX. Aceito.
 - O dedup usa HMAC-SHA256 com ATLAS_SEGREDO (`degustacao:`+e-mail normalizado). Trocar o segredo zera o anti-repetição das linhas antigas.
@@ -29,6 +33,6 @@ esta com o mesmo lock `'cliente:'||lower(trim(email))` de `criar_compra` e `cria
 
 ## Pendente de deploy
 - Agendar o cron de `/degustacao/limpar-ips`.
-- Aplicar as migrations 0016 e 0017; definir `ATLAS_DEGUSTACAO_URL` (padrão `https://atlas-ia.app.br/degustacao`), `RESEND_API_KEY` e `ATLAS_EMAIL_FROM` reais (hoje só testado com enviador de fixture).
+- Aplicar as migrations 0016, 0017 e 0018; definir `ATLAS_DEGUSTACAO_URL` (padrão `https://atlas-ia.app.br/degustacao`), `RESEND_API_KEY` e `ATLAS_EMAIL_FROM` reais (hoje só testado com enviador de fixture).
 - Confirmar a URL real da página de instalação (a página do link leva a `/instalar?t=<token>`; hoje a rota `/instalar` não existe no site, só o padrão de `ATLAS_INSTALAR_URL`).
 - Liberar o CORS: a origem do site já é a de `ATLAS_WEB_ORIGEM`.

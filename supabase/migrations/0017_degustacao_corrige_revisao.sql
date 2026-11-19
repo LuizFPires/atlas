@@ -1,7 +1,7 @@
 -- Atlas · degustação, correções da revisão de segurança (sobre 0016, já commitada).
 -- 1) Corrida: pedir_degustacao nunca mexe numa degustação CONFIRMADA. Pedir e confirmar pegam a MESMA chave de lock
 --    ('degustacao:' || email_hash) ANTES do lock por cliente ('cliente:' || email), sempre nessa ordem (sem deadlock).
--- 2) LGPD: o dedup passa a usar um HASH do e-mail normalizado (sha256 hex), não o texto cru. email e ip viram anuláveis:
+-- 2) LGPD: o dedup passa a usar um HASH do e-mail normalizado, não o texto cru (o backfill abaixo usa sha256 puro; o servidor grava HMAC-SHA256 com ATLAS_SEGREDO, então esta migration só serve em base sem linhas de degustação, como no deploy inicial). email e ip viram anuláveis:
 --    excluir_conta zera os dois (e invalida o token), e limpar_ips_degustacao zera o ip de linhas antigas (cron do deploy).
 
 alter table degustacoes add column email_hash text;

@@ -76,6 +76,10 @@ export async function confirmarAtivacao(d: Deps, a: { email: string; codigo: str
   if (atual && atual.computador_hash !== a.computador_hash) {
     throw new ErroRegra('outro_computador', 'Essa licença já está em outro computador. Use "Trocar de computador" no portal.', 409)
   }
+  // 1 degustação por computador (só teste grátis; compra e cortesia manual do gestor não entram). Antes de gastar o código.
+  if (!atual && lic.origem === 'degustacao' && (await d.store.computadorJaTestou(a.computador_hash, lic.id))) {
+    throw new ErroRegra('ja_testou_neste_computador', 'Este computador já usou o teste grátis do Atlas. Para continuar por aqui, é só assinar; seu teste fica por conta da casa, mas o próximo é pago.', 409)
+  }
   await consumirCodigo(d, cliente.id, 'ativacao', a.codigo)
   await consumirLinkOuFalha(d, link.id)
   // Segredo da ativação: devolvido uma única vez ao app; no banco fica só o hash.

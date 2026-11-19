@@ -1,13 +1,15 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { lerEmailsAdmin } from '../functions/_shared/admin.ts'
+import { confirmarAtivacao, solicitarCodigo } from '../functions/_shared/ativacao.ts'
+import { gerarLink } from '../functions/_shared/links.ts'
 import { sha256 } from '../functions/_shared/cripto.ts'
 import { hashEmail } from '../functions/_shared/degustacao.ts'
 import { type DepsDegustacao, normalizarEmail } from '../functions/_shared/degustacao.ts'
 import { tratar } from '../functions/_shared/http.ts'
 import { verificar } from '../functions/_shared/verificar.ts'
 import { chamar, comDoisClientes, JWT_ANA } from './helpers-portal.ts'
-import { H1, montar, TOKEN } from './helpers.ts'
+import { H1, H2, montar, TOKEN } from './helpers.ts'
 
 const DIA = 24 * 3600_000
 const JWT_LUIZ = 'jwt-luiz'
@@ -177,7 +179,49 @@ describe('degustação — anti-abuso', () => {
     expect(normalizarEmail('voce+1@gmail.com')).toBe('voce@gmail.com')
     expect(normalizarEmail('v.o.ce@GMAIL.com')).toBe('voce@gmail.com')
     expect(normalizarEmail('v.o.ce+x@googlemail.com')).toBe('voce@gmail.com')
-    expect(normalizarEmail(' A.B+c@Empresa.com.br ')).toBe('a.b+c@empresa.com.br')
+    expect(normalizarEmail(' A.B+c@Empresa.com.br ')).toBe('a.b@empresa.com.br') // +tag cai em qualquer domínio; pontos só no gmail
+    expect(normalizarEmail('joao+loja@empresa.com')).toBe('joao@empresa.com')
+    expect(normalizarEmail('a@gmail.com.')).toBe('a@gmail.com')
+  })
+
+  it('ponto final no domínio não fura: a@gmail.com., a.b@gmail.com e a+x@gmail.com. caem na mesma chave', async () => {
+    expect(normalizarEmail('a@gmail.com.')).toBe(normalizarEmail('a@gmail.com'))
+    expect(normalizarEmail('a+x@gmail.com.')).toBe('a@gmail.com')
+    expect(normalizarEmail('a.b@gmail.com')).toBe(normalizarEmail('ab@gmail.com.'))
+    const a = await ligada()
+    expect((await a.pedirDe('a@gmail.com.', '7.7.7.1')).status).toBe(200)
+    expect(a.enviados[0].email).toBe('a@gmail.com') // o ponto final nem chega ao e-mail guardado
+    expect((await a.pedirDe('a+x@gmail.com.', '7.7.7.2')).status).toBe(200)
+    expect(a.store.degustacoes).toHaveLength(1) // mesma chave: um pedido só
+    expect((await a.confirmar(a.enviados[1].token)).status).toBe(200)
+    a.avancar(61 * 60_000)
+    expect(await erro(await a.pedirDe('a@gmail.com', '7.7.7.3'))).toMatch(/ja_usou_degustacao|ja_tem_conta/)
+    const b = await ligada()
+    expect(await erro(await b.pedirDe('ab@gmail.com.', '7.7.7.4'))).toBeUndefined()
+    b.avancar(61 * 60_000)
+    expect(b.store.degustacoes).toHaveLength(1)
+    expect((await b.pedirDe('a.b@gmail.com', '7.7.7.5')).status).toBe(200)
+    expect(b.store.degustacoes).toHaveLength(1)
+  })
+
+  it('domínio descartável com ponto final também é barrado', async () => {
+    const a = await ligada()
+    for (const e of ['x@mailinator.com.', 'x@sub.yopmail.com.']) {
+      const r = await a.pedirDe(e, '7.8.8.1')
+      expect(r.status, e).toBe(400)
+      expect(await erro(r)).toBe('dominio_descartavel')
+    }
+    expect(a.enviados).toHaveLength(0)
+  })
+
+  it('+tag vale em qualquer domínio: joao+loja@empresa.com e joao@empresa.com dividem UM pedido', async () => {
+    const a = await ligada()
+    await a.pedirDe('joao+loja@empresa.com', '7.9.9.1')
+    await a.pedirDe('joao@empresa.com', '7.9.9.2')
+    expect(a.store.degustacoes).toHaveLength(1)
+    expect((await a.confirmar(a.enviados[1].token)).status).toBe(200)
+    a.avancar(61 * 60_000)
+    expect(['ja_usou_degustacao', 'ja_tem_conta']).toContain(await erro(await a.pedirDe('joao+outra@empresa.com', '7.9.9.3')))
   })
 
   it('1 degustação por pessoa: +tag e pontos no gmail não dão outra depois da confirmada', async () => {
@@ -243,6 +287,57 @@ describe('degustação — anti-abuso', () => {
     const lic = a.store.licencas[0]
     await a.store.inserirAtivacao(lic.id, H1, a.deps.agora(), 'h')
     await expect(a.store.inserirAtivacao(lic.id, 'c'.repeat(64), a.deps.agora(), 'h2')).rejects.toThrow()
+  })
+})
+
+describe('degustação — 1 por computador na ativação (migration 0018)', () => {
+  async function testar(a: Awaited<ReturnType<typeof ligada>>, email: string, ip: string) {
+    await a.pedirDe(email, ip)
+    const c = await (await a.confirmar(a.enviados[a.enviados.length - 1].token)).json()
+    await solicitarCodigo(a.deps, email)
+    return { token: c.link_token as string, email, codigo: a.emails[a.emails.length - 1] }
+  }
+  const ativar = (a: Awaited<ReturnType<typeof ligada>>, t: { token: string; email: string; codigo: string }, hash: string) =>
+    confirmarAtivacao(a.deps, { email: t.email, codigo: t.codigo, token: t.token, computador_hash: hash })
+
+  it('a licença nasce com origem degustacao', async () => {
+    const a = await ligada()
+    await a.pedirDe('ana@exemplo.com', '6.0.0.1')
+    await a.confirmar(a.enviados[0].token)
+    expect(a.store.licencas[0].origem).toBe('degustacao')
+  })
+
+  it('mesmo computador + outro e-mail = barrado; computador novo passa; o código não é gasto no barrado', async () => {
+    const a = await ligada()
+    await ativar(a, await testar(a, 'ana@exemplo.com', '6.0.0.2'), H1)
+    a.avancar(61 * 60_000)
+    const b = await testar(a, 'beto@exemplo.com', '6.0.0.3')
+    await expect(ativar(a, b, H1)).rejects.toMatchObject({ codigo: 'ja_testou_neste_computador', status: 409 })
+    expect(a.store.ativacoes).toHaveLength(1)
+    expect(a.store.links.find((l) => l.usado_em === null)).toBeTruthy() // link do Beto intacto
+    await expect(ativar(a, b, H2)).resolves.toMatchObject({ token_dispositivo: expect.any(String) })
+  })
+
+  it('o mesmo teste reativa no mesmo computador (não barra a si mesmo)', async () => {
+    const a = await ligada()
+    const t = await testar(a, 'ana@exemplo.com', '6.0.0.4')
+    await ativar(a, t, H1)
+    await solicitarCodigo(a.deps, 'ana@exemplo.com')
+    const l2 = await gerarLink(a.deps, 'ana@exemplo.com')
+    await expect(ativar(a, { token: l2.token, email: 'ana@exemplo.com', codigo: a.emails[a.emails.length - 1] }, H1)).resolves.toBeTruthy()
+  })
+
+  it('compra e cortesia manual NÃO são barradas no computador que já testou', async () => {
+    const a = await ligada()
+    await ativar(a, await testar(a, 'ana@exemplo.com', '6.0.0.5'), H1)
+    for (const [i, extra] of [{ tipo: 'paga' as const }, { tipo: 'cortesia' as const, validade_em: new Date(a.deps.agora().getTime() + 10 * DIA) }].entries()) {
+      const email = `cliente${i}@loja.com`
+      a.store.clientes.push({ id: `cx${i}`, email_compra: email, nome_tratamento: 'X' })
+      a.store.licencas.push({ id: `lx${i}`, cliente_id: `cx${i}`, status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null, ...extra })
+      const l = await gerarLink(a.deps, email)
+      await solicitarCodigo(a.deps, email)
+      await expect(ativar(a, { token: l.token, email, codigo: a.emails[a.emails.length - 1] }, H1), email).resolves.toBeTruthy()
+    }
   })
 })
 

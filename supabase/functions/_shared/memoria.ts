@@ -73,6 +73,9 @@ export class StoreMemoria implements Store {
   }
   async limparEventos(chave: string) { this.eventos.delete(chave) }
   async ativacaoAtiva(lid: string) { return this.ativacoes.find((a) => a.licenca_id === lid && a.ativo) ?? null }
+  async computadorJaTestou(hash: string, licencaIdAtual: string) {
+    return this.ativacoes.some((a) => a.computador_hash === hash && a.licenca_id !== licencaIdAtual && this.licencas.find((l) => l.id === a.licenca_id)?.origem === 'degustacao')
+  }
   async inserirAtivacao(lid: string, hash: string, q: Date, tokenHash: string) {
     if (this.ativacoes.some((a) => a.licenca_id === lid && a.ativo)) throw new Error('índice único: já há computador ativo')
     this.ativacoes.push({ id: this.id(), licenca_id: lid, computador_hash: hash, token_hash: tokenHash, ativo: true, ativado_em: q, desativado_em: null })
@@ -195,7 +198,7 @@ export class StoreMemoria implements Store {
     let cli = this.clientes.find((x) => x.email_compra === d.email)
     if (!cli) { cli = { id: this.id(), email_compra: d.email, nome_tratamento: 'Convidado' }; this.clientes.push(cli) }
     if (this.licencas.some((l) => l.cliente_id === cli.id)) return { resultado: 'ja_tem_licenca' as const, email: d.email }
-    const licenca: Licenca = { id: this.id(), cliente_id: cli.id, status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null, comprada_em: null, avisos_atraso: 0, tipo: 'cortesia', validade_em: new Date(p.agora.getTime() + p.dias * 24 * 3600_000) }
+    const licenca: Licenca = { id: this.id(), cliente_id: cli.id, status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null, comprada_em: null, avisos_atraso: 0, tipo: 'cortesia', origem: 'degustacao', validade_em: new Date(p.agora.getTime() + p.dias * 24 * 3600_000) }
     this.licencas.push(licenca)
     Object.assign(d, { status: 'confirmada', confirmado_em: p.agora })
     return { resultado: 'criada' as const, email: d.email, licenca }

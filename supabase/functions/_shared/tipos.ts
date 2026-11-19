@@ -34,6 +34,8 @@ export interface Licenca {
   mensalidade_encerra_em?: Date | null
   /** Cortesia manual do gestor. Ausente = 'paga' (caminho de sempre). */
   tipo?: 'paga' | 'cortesia'
+  /** 'degustacao' = teste grátis self-service (1 por computador na ativação). Ausente/nulo = compra ou cortesia manual do gestor. */
+  origem?: 'degustacao' | null
   /** Cortesia: até quando vale (obrigatório nela). Nulo = sem prazo. */
   validade_em?: Date | null
 }
@@ -164,6 +166,8 @@ export interface Store {
   limparEventos(chave: string): Promise<void>
   ativacaoAtiva(licencaId: string): Promise<Ativacao | null>
   inserirAtivacao(licencaId: string, hash: string, quando: Date, tokenHash: string): Promise<void>
+  /** Este computador já ativou (ativa ou não) OUTRA licença de degustação? Base do freio "1 degustação por computador". */
+  computadorJaTestou(hash: string, licencaIdAtual: string): Promise<boolean>
   rotacionarToken(ativacaoId: string, tokenHash: string): Promise<void>
   /** RPC transacional: desativa a atual + insere a nova + registra a troca (+ zera o override). false = a atual mudou/limite. */
   trocarAtivacao(p: TrocaAtomica): Promise<boolean>
