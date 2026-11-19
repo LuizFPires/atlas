@@ -132,6 +132,42 @@ function Painel({ api, email, onSair }: { api: AdminApi; email: string; onSair: 
   )
 }
 
+/** Liga/desliga a oferta de teste grátis da página de vendas (e o nº de dias). Quem decide é o servidor. */
+function TesteGratis({ api }: { api: AdminApi }) {
+  const [cfg, setCfg] = useState<{ ativa: boolean; dias: number } | null>(null)
+  const [dias, setDias] = useState('5')
+  const [erro, setErro] = useState('')
+  useEffect(() => {
+    let vivo = true
+    api.degustacao().then((r) => { if (!vivo) return; if (r.ok) { setCfg({ ativa: r.ativa, dias: r.dias }); setDias(String(r.dias)) } else setErro(r.mensagem) })
+    return () => { vivo = false }
+  }, [api])
+  const mudar = async (m: { ativa?: boolean; dias?: number }) => {
+    setErro('')
+    const r = await api.degustacao(m)
+    if (r.ok) { setCfg({ ativa: r.ativa, dias: r.dias }); setDias(String(r.dias)) } else setErro(r.mensagem) // erro honesto: nada mudou
+  }
+  return (
+    <section className="ad-card" aria-label="Teste grátis">
+      <span className="ad-rotulo">TESTE GRÁTIS</span>
+      <p className="ad-p">Deixa qualquer pessoa testar o Atlas por uns dias, depois de confirmar o e-mail. Desligado, o botão some da página de vendas.</p>
+      {cfg && <p className="ad-p"><b>{cfg.ativa ? 'Ligado' : 'Desligado'}</b> · {cfg.dias} dias de teste</p>}
+      {erro && <p role="alert" className="ad-erro">{erro}</p>}
+      {cfg && (
+        <>
+          <label className="ad-campo-data">Dias de teste
+            <input type="number" min={1} max={30} value={dias} onChange={(e) => setDias(e.target.value)} />
+          </label>
+          <div className="ad-linha">
+            <button type="button" className="ad-botao ad-botao--lime" onClick={() => mudar({ ativa: !cfg.ativa })}>{cfg.ativa ? 'Desligar o teste grátis' : 'Ligar o teste grátis'}</button>
+            <button type="button" className="ad-botao" disabled={Number(dias) === cfg.dias} onClick={() => mudar({ dias: Number(dias) })}>Salvar os dias</button>
+          </div>
+        </>
+      )}
+    </section>
+  )
+}
+
 function useCarga<T>(buscar: () => Promise<{ ok: true; v: T } | { ok: false; mensagem: string }>) {
   const [dado, setDado] = useState<T | null>(null)
   const [erro, setErro] = useState('')
@@ -218,6 +254,7 @@ function VisaoGeral({ api }: { api: AdminApi }) {
             {atencao.length === 0 && <p className="ad-mute">Nada pedindo atenção agora.</p>}
             {atencao.map((a) => <Atencao key={a.id} a={a} onBaixa={() => dar_baixa(a.id)} onLiberar={() => a.licenca_id && abrirLiberar(a.licenca_id, a.quem, 'Cliente pediu a troca antes do prazo de 7 dias.')} />)}
           </section>
+          <TesteGratis api={api} />
           <section className="ad-card" aria-label="Liberar cortesia">
             <span className="ad-rotulo">LIBERAR CORTESIA</span>
             <p className="ad-p">Dê um acesso de presente a alguém, por uns dias. Quando a data chegar, o acesso acaba sozinho.</p>

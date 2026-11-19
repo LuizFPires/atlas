@@ -34,6 +34,8 @@ export interface Licenca {
   mensalidade_encerra_em?: Date | null
   /** Cortesia manual do gestor. Ausente = 'paga' (caminho de sempre). */
   tipo?: 'paga' | 'cortesia'
+  /** 'degustacao' = teste grátis self-service (1 por computador na ativação). Ausente/nulo = compra ou cortesia manual do gestor. */
+  origem?: 'degustacao' | null
   /** Cortesia: até quando vale (obrigatório nela). Nulo = sem prazo. */
   validade_em?: Date | null
 }
@@ -138,6 +140,8 @@ export interface TrocaAtomica {
   por_admin: boolean
   /** 0 quando por_admin (override ignora o limite). */
   intervalo_ms: number
+  /** HMAC do computador novo, só quando a licença é teste grátis (cortesia + origem degustacao): a RPC confere/grava o ledger. */
+  dispositivo_hmac?: string | null
 }
 
 // Porta de acesso aos dados. Produção: adaptador Supabase (etapa /entregar). Testes: memória.
@@ -164,6 +168,11 @@ export interface Store {
   limparEventos(chave: string): Promise<void>
   ativacaoAtiva(licencaId: string): Promise<Ativacao | null>
   inserirAtivacao(licencaId: string, hash: string, quando: Date, tokenHash: string): Promise<void>
+  /** Este computador já ativou (ativa ou não) OUTRA licença de degustação? Base do freio "1 degustação por computador". */
+  /** Ledger durável (degustacoes_dispositivos, 0019): outro teste já usou este computador? Recebe o HMAC, nunca o hash cru. Sobrevive ao excluir-conta. */
+  computadorJaTestou(dispositivoHmac: string, licencaIdAtual: string): Promise<boolean>
+  /** Grava o computador no ledger (atômico). false = outro teste já é dono dele. */
+  registrarDispositivoTeste(dispositivoHmac: string, licencaId: string, quando: Date): Promise<boolean>
   rotacionarToken(ativacaoId: string, tokenHash: string): Promise<void>
   /** RPC transacional: desativa a atual + insere a nova + registra a troca (+ zera o override). false = a atual mudou/limite. */
   trocarAtivacao(p: TrocaAtomica): Promise<boolean>
@@ -195,6 +204,20 @@ export interface Store {
   clientePorId(id: string): Promise<Cliente | null>
   /** RPC criar_cortesia (0013): acha/cria o cliente e cria/renova a licença de cortesia. 'ja_tem_paga' = nada foi alterado. */
   criarCortesia(c: { email: string; nome: string; validade_em: Date; agora: Date }): Promise<{ resultado: 'criada' | 'atualizada' | 'ja_tem_paga'; licenca: Licenca }>
+
+  // ── Bloco B: degustação self-service (0016) ──
+  /** config_degustacao (1 linha). Nasce desligada. */
+  configDegustacao(): Promise<ConfigDegustacao>
+  /** Só o painel admin chama. `dias` ausente = mantém. */
+  definirConfigDegustacao(c: { ativa: boolean; dias?: number; por: string; agora: Date }): Promise<ConfigDegustacao>
+  /** dominios_bloqueados (lista extensível, além da lista base em código). `dominio` já em minúsculas. */
+  dominioBloqueado(dominio: string): Promise<boolean>
+  /** RPC pedir_degustacao: grava/renova o pedido PENDENTE (não cria licença). 'ja_usada' = esse e-mail normalizado já confirmou. */
+  pedirDegustacao(p: { email: string; email_hash: string; token_hash: string; ip: string; expira_em: Date; agora: Date }): Promise<'criado' | 'reenviado' | 'ja_usada'>
+  /** RPC limpar_ips_degustacao (0017): zera o ip de pedidos com mais de `dias` dias. Devolve quantas linhas. */
+  limparIpsDegustacao(agora: Date, dias: number): Promise<number>
+  /** RPC criar_degustacao: o token confirmado vira licença de teste (cortesia), com o mesmo lock por e-mail de criar_compra/criar_cortesia. */
+  criarDegustacao(p: { token_hash: string; dias: number; agora: Date }): Promise<{ resultado: 'criada' | 'token_invalido' | 'expirada' | 'ja_usada' | 'ja_tem_licenca'; email?: string; licenca?: Licenca }>
 
   // ── M6: portal do cliente (login próprio via Supabase Auth) ──
   clientePorAuthUser(authUserId: string): Promise<Cliente | null>
@@ -238,6 +261,8 @@ export interface Store {
   /** entregas_kit WHERE marca_dagua = $1 (índice já existe): rastrear de quem veio um arquivo vazado. */
   entregasPorMarca(marca: string): Promise<Entrega[]>
 }
+
+export interface ConfigDegustacao { ativa: boolean; dias: number }
 
 export interface Deps {
   store: Store

@@ -13,6 +13,12 @@ export const MAX_TENTATIVAS_JANELA = 10
 
 const norm = (e: string) => e.trim().toLowerCase()
 
+/** HMAC do computador para o ledger de teste grátis (domínio 'dispositivo:'; sem o segredo não dá para reverter). */
+export const hashDispositivo = (d: Deps, computadorHash: string) => hmac(d.segredo, `dispositivo:${computadorHash}`)
+/** A trava "1 teste por computador" vale só para teste grátis de verdade: cortesia E origem degustacao. Compra nunca entra. */
+export const ehTesteGratis = (l: { tipo?: string; origem?: string | null }) => l.tipo === 'cortesia' && l.origem === 'degustacao'
+export const MSG_JA_TESTOU = 'Este computador já usou o teste grátis do Atlas. Para continuar por aqui, é só assinar; seu teste fica por conta da casa, mas o próximo é pago.'
+
 /** Hash do código com HMAC do servidor: sem o segredo, o banco vazado não deixa testar 10^6 códigos offline. */
 const hashCodigo = (d: Deps, clienteId: string, f: Finalidade, codigo: string) => hmac(d.segredo, `codigo:${clienteId}:${f}:${codigo}`)
 
@@ -76,12 +82,20 @@ export async function confirmarAtivacao(d: Deps, a: { email: string; codigo: str
   if (atual && atual.computador_hash !== a.computador_hash) {
     throw new ErroRegra('outro_computador', 'Essa licença já está em outro computador. Use "Trocar de computador" no portal.', 409)
   }
+  // 1 degustação por computador (só teste grátis; compra e cortesia manual do gestor não entram). Antes de gastar o código.
+  const dispositivo = ehTesteGratis(lic) ? await hashDispositivo(d, a.computador_hash) : null
+  if (!atual && dispositivo && (await d.store.computadorJaTestou(dispositivo, lic.id))) {
+    throw new ErroRegra('ja_testou_neste_computador', MSG_JA_TESTOU, 409)
+  }
   await consumirCodigo(d, cliente.id, 'ativacao', a.codigo)
   await consumirLinkOuFalha(d, link.id)
   // Segredo da ativação: devolvido uma única vez ao app; no banco fica só o hash.
   const token_dispositivo = tokenAleatorio()
   const tokenHash = await sha256(token_dispositivo)
   if (atual) await d.store.rotacionarToken(atual.id, tokenHash)
-  else await d.store.inserirAtivacao(lic.id, a.computador_hash, d.agora(), tokenHash)
+  else {
+    if (dispositivo && !(await d.store.registrarDispositivoTeste(dispositivo, lic.id, d.agora()))) throw new ErroRegra('ja_testou_neste_computador', MSG_JA_TESTOU, 409)
+    await d.store.inserirAtivacao(lic.id, a.computador_hash, d.agora(), tokenHash)
+  }
   return { licenca_id: lic.id, nome_tratamento: cliente.nome_tratamento, token_dispositivo }
 }

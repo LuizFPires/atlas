@@ -1,5 +1,5 @@
 // Item 4 — troca de computador: 1 a cada 7 dias, com override manual do admin.
-import { consumirCodigo } from './ativacao.ts'
+import { consumirCodigo, ehTesteGratis, hashDispositivo, MSG_JA_TESTOU } from './ativacao.ts'
 import { sha256, tokenAleatorio } from './cripto.ts'
 import { type Deps, ErroRegra, HASH_RE } from './tipos.ts'
 
@@ -33,6 +33,9 @@ export async function trocarComputador(d: Deps, a: { email: string; codigo: stri
       throw e
     }
   }
+  // Teste grátis não lava o limite trocando de PC: mesma checagem da ativação, antes de gastar o código.
+  const dispositivo = ehTesteGratis(lic) ? await hashDispositivo(d, a.novo_hash) : null
+  if (dispositivo && (await d.store.computadorJaTestou(dispositivo, lic.id))) throw new ErroRegra('ja_testou_neste_computador', MSG_JA_TESTOU, 409)
   await consumirCodigo(d, cliente.id, 'troca', a.codigo)
   const token_dispositivo = tokenAleatorio()
   // Uma transação só (RPC trocar_computador): desativa a atual, cria a nova, registra a troca e zera o override.
@@ -45,6 +48,7 @@ export async function trocarComputador(d: Deps, a: { email: string; codigo: stri
     quando: d.agora(),
     por_admin: override,
     intervalo_ms: override ? 0 : INTERVALO_TROCA_MS,
+    dispositivo_hmac: dispositivo,
   })
   if (!feita) throw new ErroRegra('troca_conflito', 'A troca não pôde ser concluída agora. Peça um novo código e tente de novo.', 409)
   return { ok: true, token_dispositivo }

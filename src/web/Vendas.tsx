@@ -3,6 +3,8 @@ import { Bolinha, Icone } from '../ui'
 import { ImagemAssinatura, Monograma, NomeAtlas } from '../marca/Marca'
 import { useTema } from '../tema/tema'
 import { duvidas, ehParaVoce, etapas, exemplos, formas, naoEhParaVoce, PRECO, recebe, tresPassos, VIDEO_URL } from './conteudo'
+import { BlocoDegustacao } from './Degustacao'
+import type { DegustacaoApi } from './degustacao-api'
 import { LinksLegais } from './Legal'
 import './web.css'
 
@@ -11,7 +13,7 @@ function Comprar({ onComprar, className = '', children }: { onComprar: () => voi
 }
 
 /** Página de vendas (F00). `onComprar` abre a compra no gateway do cliente. */
-export function Vendas({ onComprar, extra }: { onComprar: () => void; extra?: ReactNode }) {
+export function Vendas({ onComprar, extra, degustacaoApi }: { onComprar: () => void; extra?: ReactNode; degustacaoApi?: DegustacaoApi }) {
   const { tema } = useTema()
   return (
     <div className="v">
@@ -151,6 +153,8 @@ export function Vendas({ onComprar, extra }: { onComprar: () => void; extra?: Re
         </div>
         <div className="v-depo">[Espaço para depoimentos reais dos primeiros clientes, com nome, empresa e foto autorizados]</div>
       </section>
+
+      <BlocoDegustacao api={degustacaoApi} />
 
       <section className="v-final">
         <div><h2>A sua ideia merece sair do papel.</h2><span>Comece hoje. A primeira obra começa no mesmo dia.</span></div>

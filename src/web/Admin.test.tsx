@@ -216,3 +216,33 @@ describe('cortesia manual no painel', () => {
     expect(screen.queryByText(/Cortesia liberada/)).toBeNull()
   })
 })
+
+describe('teste grátis (degustação) no painel', () => {
+  it('mostra o estado atual e liga com um clique; o servidor decide', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api, chamadas } = ambiente((url, init) => {
+      if (!url.endsWith('/admin/degustacao')) return undefined
+      const corpo = JSON.parse(String(init.body)) as { ativa?: boolean }
+      return resp({ ok: true, ativa: corpo.ativa ?? false, dias: 5 })
+    })
+    montar(api)
+    const sec = await screen.findByRole('region', { name: 'Teste grátis' })
+    expect(await within(sec).findByText('Desligado')).toBeInTheDocument()
+    await userEvent.click(within(sec).getByRole('button', { name: 'Ligar o teste grátis' }))
+    expect(await within(sec).findByText('Ligado')).toBeInTheDocument()
+    const c = chamadas.filter((x) => x.url.endsWith('/admin/degustacao')).pop()!
+    expect(JSON.parse(String(c.init.body))).toEqual({ ativa: true })
+  })
+
+  it('se o servidor recusar, mostra o erro e mantém o estado', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    let n = 0
+    const { api } = ambiente((url) => (url.endsWith('/admin/degustacao') ? (n++ === 0 ? resp({ ok: true, ativa: false, dias: 5 }) : resp({ erro: 'dias_invalidos', mensagem: 'O teste pode durar de 1 a 30 dias.' }, 400)) : undefined))
+    montar(api)
+    const sec = await screen.findByRole('region', { name: 'Teste grátis' })
+    await within(sec).findByText('Desligado')
+    await userEvent.click(within(sec).getByRole('button', { name: 'Ligar o teste grátis' }))
+    expect(await within(sec).findByRole('alert')).toHaveTextContent('1 a 30 dias')
+    expect(within(sec).getByText('Desligado')).toBeInTheDocument()
+  })
+})

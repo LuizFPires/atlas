@@ -1,6 +1,6 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
-import type { Ativacao, CondicaoLicenca, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
+import type { Ativacao, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
   clientes: Cliente[] = []
@@ -73,6 +73,16 @@ export class StoreMemoria implements Store {
   }
   async limparEventos(chave: string) { this.eventos.delete(chave) }
   async ativacaoAtiva(lid: string) { return this.ativacoes.find((a) => a.licenca_id === lid && a.ativo) ?? null }
+  /** Espelha o ledger degustacoes_dispositivos (0019): HMAC do computador -> licença dona. excluirConta NÃO mexe nele. */
+  dispositivosTeste = new Map<string, string>()
+  async computadorJaTestou(hmac: string, licencaIdAtual: string) {
+    const dono = this.dispositivosTeste.get(hmac)
+    return dono !== undefined && dono !== licencaIdAtual
+  }
+  async registrarDispositivoTeste(hmac: string, licencaId: string) {
+    if (!this.dispositivosTeste.has(hmac)) this.dispositivosTeste.set(hmac, licencaId)
+    return this.dispositivosTeste.get(hmac) === licencaId
+  }
   async inserirAtivacao(lid: string, hash: string, q: Date, tokenHash: string) {
     if (this.ativacoes.some((a) => a.licenca_id === lid && a.ativo)) throw new Error('índice único: já há computador ativo')
     this.ativacoes.push({ id: this.id(), licenca_id: lid, computador_hash: hash, token_hash: tokenHash, ativo: true, ativado_em: q, desativado_em: null })
@@ -88,6 +98,11 @@ export class StoreMemoria implements Store {
     if (p.intervalo_ms > 0) {
       const lim = p.quando.getTime() - p.intervalo_ms
       if (this.trocas.some((t) => t.licenca_id === p.licenca_id && t.feita_em.getTime() > lim)) return false
+    }
+    const lic = this.licencas.find((x) => x.id === p.licenca_id)
+    if (p.dispositivo_hmac && lic?.tipo === 'cortesia' && lic.origem === 'degustacao') { // espelha o ledger dentro de trocar_computador (0019)
+      if (await this.computadorJaTestou(p.dispositivo_hmac, p.licenca_id)) return false
+      await this.registrarDispositivoTeste(p.dispositivo_hmac, p.licenca_id)
     }
     atual.ativo = false
     atual.desativado_em = p.quando
@@ -139,8 +154,8 @@ export class StoreMemoria implements Store {
     if (!cli) { cli = { id: this.id(), email_compra: c.email, nome_tratamento: c.nome }; this.clientes.push(cli) }
     const ja = this.licencas.find((l) => l.cliente_id === cli.id)
     if (ja?.tipo === 'cortesia') {
-      // Espelha a migration 0015: a compra converte a cortesia em paga.
-      Object.assign(ja, { tipo: 'paga', validade_em: null, status: 'ativa', comprada_em: c.agora, avisos_atraso: 0, pausa_prevista_em: null, conta_gateway_id: c.conta_gateway_id, gateway_cliente_ref: c.gateway_cliente_ref, gateway_assinatura_ref: null, mensalidade_encerra_em: null })
+      // Espelha 0015/0019: a compra converte a cortesia em paga e zera a origem.
+      Object.assign(ja, { tipo: 'paga', origem: null, validade_em: null, status: 'ativa', comprada_em: c.agora, avisos_atraso: 0, pausa_prevista_em: null, conta_gateway_id: c.conta_gateway_id, gateway_cliente_ref: c.gateway_cliente_ref, gateway_assinatura_ref: null, mensalidade_encerra_em: null })
       return { licenca: ja, nova: false }
     }
     if (ja) return { licenca: ja, nova: false }
@@ -166,6 +181,39 @@ export class StoreMemoria implements Store {
       return { resultado: 'atualizada' as const, licenca: this.licencas[i] }
     }
     return { resultado: 'ja_tem_paga' as const, licenca: this.licencas[i] }
+  }
+  // ── Bloco B: degustação (espelha a migration 0016) ──
+  config: ConfigDegustacao = { ativa: false, dias: 5 }
+  dominiosExtras = new Set<string>()
+  degustacoes: Array<{ email: string | null; email_hash: string; token_hash: string; status: 'pendente' | 'confirmada' | 'expirada'; ip: string | null; expira_em: Date; criado_em: Date; confirmado_em: Date | null }> = []
+  async configDegustacao() { return { ...this.config } }
+  async definirConfigDegustacao(c: { ativa: boolean; dias?: number }) { this.config = { ativa: c.ativa, dias: c.dias ?? this.config.dias }; return { ...this.config } }
+  async dominioBloqueado(d: string) { return this.dominiosExtras.has(d) }
+  async pedirDegustacao(p: { email: string; email_hash: string; token_hash: string; ip: string; expira_em: Date; agora: Date }) {
+    const ex = this.degustacoes.find((x) => x.email_hash === p.email_hash)
+    if (!ex) { this.degustacoes.push({ email: p.email, email_hash: p.email_hash, token_hash: p.token_hash, status: 'pendente', ip: p.ip, expira_em: p.expira_em, criado_em: p.agora, confirmado_em: null }); return 'criado' as const }
+    if (ex.status === 'confirmada') return 'ja_usada' as const
+    Object.assign(ex, { email: p.email, token_hash: p.token_hash, ip: p.ip, expira_em: p.expira_em, criado_em: p.agora, status: 'pendente' })
+    return 'reenviado' as const
+  }
+  /** Espelha limpar_ips_degustacao (0017). */
+  async limparIpsDegustacao(agora: Date, dias: number) {
+    let n = 0
+    for (const d of this.degustacoes) if (d.ip !== null && d.criado_em.getTime() < agora.getTime() - dias * 24 * 3600_000) { d.ip = null; n++ }
+    return n
+  }
+  async criarDegustacao(p: { token_hash: string; dias: number; agora: Date }) {
+    const d = this.degustacoes.find((x) => x.token_hash === p.token_hash)
+    if (!d || d.email === null) return { resultado: 'token_invalido' as const }
+    if (d.status === 'confirmada') return { resultado: 'ja_usada' as const }
+    if (d.status === 'expirada' || d.expira_em <= p.agora) { d.status = 'expirada'; return { resultado: 'expirada' as const } }
+    let cli = this.clientes.find((x) => x.email_compra === d.email)
+    if (!cli) { cli = { id: this.id(), email_compra: d.email, nome_tratamento: 'Convidado' }; this.clientes.push(cli) }
+    if (this.licencas.some((l) => l.cliente_id === cli.id)) return { resultado: 'ja_tem_licenca' as const, email: d.email }
+    const licenca: Licenca = { id: this.id(), cliente_id: cli.id, status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null, comprada_em: null, avisos_atraso: 0, tipo: 'cortesia', origem: 'degustacao', validade_em: new Date(p.agora.getTime() + p.dias * 24 * 3600_000) }
+    this.licencas.push(licenca)
+    Object.assign(d, { status: 'confirmada', confirmado_em: p.agora })
+    return { resultado: 'criada' as const, email: d.email, licenca }
   }
   async gravarPagamento(p: Pagamento) {
     const i = this.pagamentos.findIndex((x) => x.conta_gateway_id === p.conta_gateway_id && x.gateway_ref === p.gateway_ref)
@@ -227,6 +275,7 @@ export class StoreMemoria implements Store {
     this.links = this.links.filter((x) => x.cliente_id !== clienteId)
     this.codigos = this.codigos.filter((x) => x.cliente_id !== clienteId)
     this.sessoes = this.sessoes.filter((s) => s.email !== email)
+    for (const d of this.degustacoes) if (d.email === email) Object.assign(d, { email: null, ip: null, token_hash: `anon-${d.email_hash}`, status: d.status === 'pendente' ? 'expirada' : d.status }) // espelha 0017
     for (const c of this.consentimentos) if (c.email === email) Object.assign(c, { email: `excluido+${clienteId}@anonimo.invalid`, cliente_id: clienteId })
     return true
   }

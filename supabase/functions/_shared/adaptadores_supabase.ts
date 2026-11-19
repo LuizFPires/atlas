@@ -30,6 +30,10 @@
 //   licencasAtrasadas / licencasEncerramentoVencido   SELECT licencas WHERE status='atrasada' / status<>'cancelada' AND mensalidade_encerra_em<=agora
 //   criarCompra                RPC criar_compra (0010)
 //   criarCortesia              RPC criar_cortesia (0013)
+//   configDegustacao           SELECT config_degustacao (ativa,dias) WHERE id=1 (0016)
+//   definirConfigDegustacao    UPDATE config_degustacao SET ativa,dias,atualizada_em,atualizada_por WHERE id=1
+//   dominioBloqueado           SELECT dominios_bloqueados WHERE dominio
+//   pedirDegustacao / criarDegustacao / limparIpsDegustacao   RPC pedir_degustacao / criar_degustacao (0016/0017) / limpar_ips_degustacao (0017)
 //   inserirLink / linkPorHash  INSERT / SELECT links_instalacao (id,cliente_id,token_hash,expira_em,usado_em) WHERE token_hash
 //   consumirLink               RPC consumir_link (0002)
 //   invalidarLinks             UPDATE links_instalacao SET usado_em WHERE cliente_id AND usado_em IS NULL
@@ -40,6 +44,8 @@
 //   consumirCodigo             RPC consumir_codigo (0002)
 //   tentarEvento / limparEventos   RPC tentar_evento / limpar_eventos (0002)
 //   ativacaoAtiva              SELECT ativacoes (inclui token_hash: o servidor confere o device token) WHERE licenca_id AND ativo
+//   computadorJaTestou         RPC computador_ja_testou: ledger degustacoes_dispositivos (HMAC), licenca_id <> atual  (0019)
+//   registrarDispositivoTeste  RPC registrar_dispositivo_teste (0019)
 //   inserirAtivacao            INSERT ativacoes (índice único parcial garante 1 ativo por licença; violação = erro)
 //   rotacionarToken            UPDATE ativacoes SET token_hash WHERE id
 //   trocarAtivacao             RPC trocar_computador (0002)
@@ -74,7 +80,7 @@
 // marca d'água e aviso de licença são do /entregar-kit (kit.ts), não daqui.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { montarBoasVindas } from './emails.ts'
+import { montarBoasVindas, montarConfirmacaoDegustacao } from './emails.ts'
 import { montarAvisoAtraso, montarCodigoAtivacao } from './emails-avisos.ts'
 
 function env(nome: string): string {
@@ -114,7 +120,7 @@ async function ler(mk: () => any, limite = Infinity): Promise<any[]> {
 
 // Colunas lidas (só o que o servidor precisa).
 const C_CLIENTE = 'id,email_compra,nome_tratamento,empresa,ramo,cadastro_em,auth_user_id,excluido_em'
-const C_LICENCA = 'id,cliente_id,status,pausa_prevista_em,troca_liberada_em,comprada_em,avisos_atraso,conta_gateway_id,gateway_cliente_ref,gateway_assinatura_ref,mensalidade_encerra_em,tipo,validade_em'
+const C_LICENCA = 'id,cliente_id,status,pausa_prevista_em,troca_liberada_em,comprada_em,avisos_atraso,conta_gateway_id,gateway_cliente_ref,gateway_assinatura_ref,mensalidade_encerra_em,tipo,origem,validade_em'
 const C_ATIVACAO = 'id,licenca_id,computador_hash,token_hash,ativo,ativado_em,desativado_em'
 const C_ATIVACAO_ADMIN = 'id,licenca_id,computador_hash,ativo,ativado_em,desativado_em'
 const C_PAGAMENTO = 'licenca_id,conta_gateway_id,tipo,valor,status,gateway_ref,gateway_pi,pago_em'
@@ -126,7 +132,7 @@ const licenca = (r: any) => r && {
   id: r.id, cliente_id: r.cliente_id, status: r.status, pausa_prevista_em: dt(r.pausa_prevista_em), troca_liberada_em: dt(r.troca_liberada_em),
   comprada_em: dt(r.comprada_em), avisos_atraso: r.avisos_atraso ?? 0, conta_gateway_id: r.conta_gateway_id ?? null,
   gateway_cliente_ref: r.gateway_cliente_ref ?? null, gateway_assinatura_ref: r.gateway_assinatura_ref ?? null, mensalidade_encerra_em: dt(r.mensalidade_encerra_em),
-  tipo: r.tipo === 'cortesia' ? 'cortesia' : 'paga', validade_em: dt(r.validade_em),
+  tipo: r.tipo === 'cortesia' ? 'cortesia' : 'paga', origem: r.origem === 'degustacao' ? 'degustacao' : null, validade_em: dt(r.validade_em),
 }
 const ativacao = (r: any) => r && { id: r.id, licenca_id: r.licenca_id, computador_hash: r.computador_hash, token_hash: r.token_hash ?? null, ativo: r.ativo, ativado_em: new Date(r.ativado_em), desativado_em: dt(r.desativado_em) }
 const pagamento = (r: any) => r && { licenca_id: r.licenca_id, conta_gateway_id: r.conta_gateway_id ?? '', tipo: r.tipo, valor: Number(r.valor), status: r.status, gateway_ref: r.gateway_ref ?? '', gateway_pi: r.gateway_pi ?? null, pago_em: dt(r.pago_em) }
@@ -199,6 +205,26 @@ export function criarStoreSupabase() {
       const r = await rpc('criar_cortesia', { p_email: c.email, p_nome: c.nome, p_validade: iso(c.validade_em), p_agora: iso(c.agora) })
       return { resultado: r.resultado, licenca: licenca(r.licenca) }
     },
+    // Degustação (0016)
+    async configDegustacao() {
+      const r = ok(await t('config_degustacao').select('ativa,dias').eq('id', 1).maybeSingle(), 'configDegustacao')
+      return r ? { ativa: !!r.ativa, dias: r.dias } : { ativa: false, dias: 5 }
+    },
+    async definirConfigDegustacao(c: any) {
+      const linha: Record<string, any> = { ativa: c.ativa, atualizada_em: iso(c.agora), atualizada_por: c.por }
+      if (c.dias !== undefined) linha.dias = c.dias
+      const r = ok(await t('config_degustacao').update(linha).eq('id', 1).select('ativa,dias'), 'definirConfigDegustacao')
+      return { ativa: !!r[0].ativa, dias: r[0].dias }
+    },
+    async dominioBloqueado(d: string) { return !!ok(await t('dominios_bloqueados').select('dominio').eq('dominio', d).limit(1).maybeSingle(), 'dominioBloqueado') },
+    async pedirDegustacao(p: any) {
+      return await rpc('pedir_degustacao', { p_email: p.email, p_hash: p.email_hash, p_token_hash: p.token_hash, p_ip: p.ip, p_expira: iso(p.expira_em), p_agora: iso(p.agora) })
+    },
+    async limparIpsDegustacao(agora: Date, dias: number) { return await rpc('limpar_ips_degustacao', { p_agora: iso(agora), p_dias: dias }) },
+    async criarDegustacao(p: any) {
+      const r = await rpc('criar_degustacao', { p_token_hash: p.token_hash, p_dias: p.dias, p_agora: iso(p.agora) })
+      return { resultado: r.resultado, email: r.email, licenca: r.licenca ? licenca(r.licenca) : undefined }
+    },
     async criarCompra(c: any) {
       const r = await rpc('criar_compra', { p_email: c.email, p_nome: c.nome, p_valor: c.valor, p_conta: c.conta_gateway_id, p_cliente_ref: c.gateway_cliente_ref, p_agora: iso(c.agora) })
       return { licenca: licenca(r.licenca), nova: !!r.nova }
@@ -231,6 +257,10 @@ export function criarStoreSupabase() {
 
     // ── ativações e trocas ──
     ativacaoAtiva: (lid: string) => um(t('ativacoes').select(C_ATIVACAO).eq('licenca_id', lid).eq('ativo', true), ativacao),
+    async computadorJaTestou(hmac: string, licencaIdAtual: string) { return (await rpc('computador_ja_testou', { p_hmac: hmac, p_licenca: licencaIdAtual })) === true },
+    async registrarDispositivoTeste(hmac: string, licencaId: string, quando: Date) {
+      return (await rpc('registrar_dispositivo_teste', { p_hmac: hmac, p_licenca: licencaId, p_quando: iso(quando) })) === true
+    },
     async inserirAtivacao(lid: string, hash: string, quando: Date, tokenHash: string) {
       ok(await t('ativacoes').insert({ licenca_id: lid, computador_hash: hash, token_hash: tokenHash, ativo: true, ativado_em: iso(quando) }), 'inserirAtivacao')
     },
@@ -238,7 +268,7 @@ export function criarStoreSupabase() {
     async trocarAtivacao(p: any) {
       return (await rpc('trocar_computador', {
         p_licenca: p.licenca_id, p_ativacao_atual: p.ativacao_atual_id, p_de: p.de_hash, p_para: p.para_hash, p_token_hash: p.token_hash,
-        p_quando: iso(p.quando), p_por_admin: p.por_admin, p_intervalo_ms: p.intervalo_ms,
+        p_quando: iso(p.quando), p_por_admin: p.por_admin, p_intervalo_ms: p.intervalo_ms, p_dispositivo_hmac: p.dispositivo_hmac ?? null,
       })) === true
     },
     async liberarAtivacao(p: any) {
@@ -392,5 +422,11 @@ export async function enviarAvisoAtraso(email: string, aviso: { n: 1 | 2 | 3; pa
 export async function enviarBoasVindas(email: string, d: { nome: string; empresa: string; ramo: string; token: string; expira_em: Date }) {
   const base = Deno.env.get('ATLAS_INSTALAR_URL') ?? 'https://atlas-ia.app.br/instalar'
   const m = montarBoasVindas({ nome: d.nome, empresa: d.empresa, ramo: d.ramo, expira_em: d.expira_em, link_instalacao: `${base}?t=${encodeURIComponent(d.token)}` })
+  await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
+}
+
+export async function enviarConfirmacaoDegustacao(email: string, d: { token: string; expira_em: Date; dias: number }) {
+  const base = Deno.env.get('ATLAS_DEGUSTACAO_URL') ?? 'https://atlas-ia.app.br/degustacao'
+  const m = montarConfirmacaoDegustacao({ dias: d.dias, expira_em: d.expira_em, link: `${base}?t=${encodeURIComponent(d.token)}` })
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }

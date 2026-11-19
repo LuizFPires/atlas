@@ -12,6 +12,7 @@ import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts
 import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
+import { configDegustacaoAdmin, confirmarDegustacao, type DepsDegustacao, estadoDegustacao, pedirDegustacao } from './degustacao.ts'
 import { adminLogado, liberarCortesia, type DepsAdmin, euAdmin, liberarTrocaUrgente, painel, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
 import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, excluirConta, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
 
@@ -22,6 +23,8 @@ export interface Contexto {
   pagamento?: DepsPagamento
   /** Cadastro pós-pagamento (M4) e e-mail de boas-vindas. Ausente = /cadastro responde 503. */
   cadastro?: DepsCadastro
+  /** Degustação self-service (bloco B). Ausente = /degustacao/* responde 503. */
+  degustacao?: DepsDegustacao
   /** Portal do cliente (M6, login próprio). Ausente = rotas /portal/* respondem 503. */
   portal?: DepsPortal
   /** Painel do administrador (M7, F16). Ausente = rotas /admin/* de pessoa respondem 503 (nunca ficam abertas). */
@@ -91,6 +94,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await verEntregas(ctx.admin, jwt, { licenca_id: o.licenca_id, marca: o.marca }))
         case '/admin/cortesia':
           return json(await liberarCortesia(ctx.admin, jwt, { email: o.email, validade_em: o.validade_em, nome: o.nome }))
+        case '/admin/degustacao':
+          return json(await configDegustacaoAdmin(ctx.admin, jwt, { ativa: o.ativa, dias: o.dias }))
         case '/admin/cadastros':
           return json(await verCadastros(ctx.admin, jwt))
         default:
@@ -130,6 +135,18 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
       case '/link-instalacao':
         if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
         return json(await gerarLink(ctx.deps, s('email')))
+      // Degustação (bloco B): públicas. O freio principal é o clique no link do e-mail; IP, e-mail e domínio têm limites próprios.
+      case '/degustacao/limpar-ips': // agendador diário (cron): zera o ip de pedidos antigos (LGPD)
+        if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
+        return json({ ok: true, limpos: await ctx.deps.store.limparIpsDegustacao(ctx.deps.agora(), 30) })
+      case '/degustacao/estado':
+        return json(await estadoDegustacao((ctx.degustacao ?? ctx.deps) as DepsDegustacao))
+      case '/degustacao/pedir':
+        if (!ctx.degustacao) return json({ erro: 'degustacao_indisponivel' }, 503)
+        return json(await pedirDegustacao(ctx.degustacao, { email: (b as Record<string, unknown>).email, ip: ipDe(req) }))
+      case '/degustacao/confirmar':
+        if (!ctx.degustacao) return json({ erro: 'degustacao_indisponivel' }, 503)
+        return json(await confirmarDegustacao(ctx.degustacao, { token: (b as Record<string, unknown>).token, ip: ipDe(req) }))
       case '/ativar/solicitar-codigo':
         return json(await solicitarCodigo(ctx.deps, s('email'), 'ativacao', ipDe(req)))
       case '/ativar/confirmar':
