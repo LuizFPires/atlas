@@ -8,8 +8,8 @@ export const MAX_DESCRICAO_CASO = 1200
 
 /** Defesa em profundidade: o app já tira segredo; aqui tiramos de novo antes de gravar. */
 export function limparDescricao(texto: string): string {
-  return texto
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '')
+  const semControle = [...texto].filter((c) => { const n = c.charCodeAt(0); return n >= 32 || n === 9 || n === 10 || n === 13 }).join('')
+  return semControle
     .replace(/\b(sk|pk|rk|whsec|ghp|gho|github_pat|sbp|xox[abp])[-_][A-Za-z0-9_-]{8,}/gi, '[segredo removido]')
     .replace(/\b(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]*)/g, '[segredo removido]')
     .replace(/(senha|password|token|secret|chave)\s*[:=]\s*\S+/gi, '$1: [removido]')
