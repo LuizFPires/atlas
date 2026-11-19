@@ -123,6 +123,11 @@
 .v-modal { width: min(480px, 100%); background: var(--card); color: var(--text); border: 1px solid var(--card-b); border-radius: 22px; padding: 28px; display: flex; flex-direction: column; gap: 14px; }
 .v-modal h2 { font-size: 26px; line-height: 1.15; }
 .v-modal p { margin: 0; color: var(--mute); line-height: 1.5; }
+.v-parcelas { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.v-parcelas > span { font-weight: 600; }
+.v-parcelas > span small { font-weight: 400; color: var(--mute); }
+.v-parcelas select { height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--card-b); background: var(--card); color: var(--text); font: inherit; }
+.v-parcelas-nota { font-size: 13px; line-height: 1.5; color: var(--mute); }
 .v-modal form { display: flex; flex-direction: column; gap: 14px; }
 .v-erro { color: var(--erro) !important; font-size: 14px; }
 .v-cookies { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 40; max-width: 920px; margin: 0 auto; background: var(--card); color: var(--text); border: 1px solid var(--card-b); border-radius: 18px; padding: 16px 20px; display: flex; align-items: center; gap: 20px; box-shadow: 0 20px 50px rgb(0 0 0 / 0.35); }

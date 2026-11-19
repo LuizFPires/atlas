@@ -14,7 +14,7 @@ describe('compra', () => {
     expect(r).toEqual({ ok: true, url: 'https://checkout.stripe.com/c/pay/cs_1' })
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe('https://api.atlas.test/functions/v1/pagamento/checkout')
-    expect(JSON.parse(init.body as string)).toEqual({ conta_id: 'conta-1', tipo: 'implantacao', email: 'ana@loja.com', aceite_termos: true, versao_termos: '1.0' })
+    expect(JSON.parse(init.body as string)).toEqual({ conta_id: 'conta-1', tipo: 'implantacao', email: 'ana@loja.com', parcelas: 1, aceite_termos: true, versao_termos: '1.0' })
   })
   test('e-mail ruim, sem configuração, erro do servidor e URL não https não vão ao pagamento', async () => {
     const f = vi.fn()

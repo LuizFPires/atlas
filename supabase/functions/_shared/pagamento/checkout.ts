@@ -2,7 +2,7 @@
 // Implantação: pagamento único, Pix + cartão. Mensalidade: assinatura recorrente (cartão; a Stripe
 // ainda não cobra Pix em modo assinatura). O dinheiro cai direto na conta do cliente.
 import { ErroRegra } from '../tipos.ts'
-import { type DepsPagamento, VALOR_IMPLANTACAO, VALOR_MENSALIDADE } from './config.ts'
+import { type DepsPagamento, planoImplantacao, VALOR_MENSALIDADE } from './config.ts'
 
 const VERSAO_RE = /^[0-9A-Za-z._-]{1,20}$/
 const centavos = (v: number) => Math.round(v * 100)
@@ -21,6 +21,8 @@ export interface PedidoCheckout {
   tipo: 'implantacao' | 'mensalidade'
   /** implantação: e-mail de quem compra. mensalidade: ignorado (vem da licença). */
   email?: string
+  /** implantação: parcelas no cartão (1–10). 1–3x sem juros; 4x+ com juros de 2% a.m. (PMT). */
+  parcelas?: number
   licenca_id?: string
   /** LGPD: versão dos Termos/Política que o comprador aceitou. Obrigatória na implantação (sem aceite, sem pagamento). */
   aceite_termos_versao?: string
@@ -48,16 +50,19 @@ export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promis
     if (!VERSAO_RE.test(versao)) throw new ErroRegra('aceite_obrigatorio', 'Para continuar, marque que você leu e aceita a Política de Privacidade e os Termos de Uso.', 400)
     // Fail-closed: se o aceite não ficou registrado, o pagamento nem é aberto.
     await d.store.registrarConsentimento(email, versao, 'checkout', d.agora())
+    // Parcelamento: o total é o preço de verdade (1–3x sem juros; 4x+ PMT a 2% a.m.). Parcelado com juros é só cartão (sem Pix).
+    const plano = planoImplantacao(p.parcelas ?? 1)
+    const nome = plano.parcelas > 1 ? `Atlas — implantação (${plano.parcelas}x)` : 'Atlas — implantação'
     const s = await api.criarCheckout(
       {
         ...base,
         mode: 'payment',
         customer_email: email,
-        payment_method_types: ['card', 'pix'],
-        payment_method_options: { pix: { expires_after_seconds: 3600 } },
-        line_items: [{ quantity: 1, price_data: { currency: 'brl', unit_amount: centavos(VALOR_IMPLANTACAO), product_data: { name: 'Atlas — implantação' } } }],
-        metadata: meta,
-        payment_intent_data: { metadata: meta },
+        payment_method_types: plano.temJuros ? ['card'] : ['card', 'pix'],
+        payment_method_options: { card: { installments: { enabled: true } }, ...(plano.temJuros ? {} : { pix: { expires_after_seconds: 3600 } }) },
+        line_items: [{ quantity: 1, price_data: { currency: 'brl', unit_amount: centavos(plano.total), product_data: { name: nome } } }],
+        metadata: { ...meta, atlas_parcelas: String(plano.parcelas) },
+        payment_intent_data: { metadata: { ...meta, atlas_parcelas: String(plano.parcelas) } },
       },
       `checkout-impl-${crypto.randomUUID()}`,
     )
