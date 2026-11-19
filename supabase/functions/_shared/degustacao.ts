@@ -2,6 +2,7 @@
 // Fluxo: pedir (público) -> e-mail com token de uso único -> confirmar (público) -> licença de teste (tipo 'cortesia').
 // Sem clicar no link, NENHUMA licença é criada. Pagamento/assinatura não são tocados.
 import { adminLogado, type DepsAdmin } from './admin.ts'
+import { DOMINIO_RE, PROVEDORES_COMUNS } from './auditoria.ts'
 import { hmac, sha256, tokenAleatorio } from './cripto.ts'
 import { DOMINIOS_DESCARTAVEIS } from './dominios-descartaveis.ts'
 import { gerarLink } from './links.ts'
@@ -149,4 +150,42 @@ export async function configDegustacaoAdmin(d: DepsAdmin, jwt: string, a: { ativ
   const novo = await d.store.definirConfigDegustacao({ ativa, dias, por: adm.email, agora: d.agora() })
   await d.store.inserirOcorrencia({ cliente_id: null, tipo: 'degustacao_config', descricao: `Teste grátis ${novo.ativa ? 'ligado' : 'desligado'} (${novo.dias} dias)`, autor: adm.email, resolvida: true, criada_em: d.agora() })
   return { ok: true, ...novo }
+}
+
+// ── Bloco C: lista de descartáveis editável pelo painel + auto-auditoria ──────────────────────────────────────────
+
+/** "  @Mailinator.COM. " -> "mailinator.com". Aceita colar um e-mail inteiro (pega o que vem depois do @). Vazio/inválido -> null. */
+export function normalizarDominio(bruto: unknown): string | null {
+  if (typeof bruto !== 'string') return null
+  let x = bruto.trim().toLowerCase()
+  if (x.includes('@')) x = x.slice(x.lastIndexOf('@') + 1)
+  x = x.replace(/\.+$/, '')
+  return DOMINIO_RE.test(x) ? x : null
+}
+
+/** Painel: lista os domínios bloqueados pelo gestor (a lista base em código não aparece aqui; é fixa). */
+export async function listarDominios(d: DepsAdmin, jwt: string) {
+  await adminLogado(d, jwt)
+  return { dominios: (await d.store.listarDominiosBloqueados()).map((x) => ({ dominio: x.dominio, motivo: x.motivo, criado_em: x.criado_em })) }
+}
+
+/** Painel: bloqueia um domínio (e os subdomínios dele). Valida o formato, normaliza e não duplica. Provedores grandes não podem ser bloqueados. */
+export async function adicionarDominio(d: DepsAdmin, jwt: string, a: { dominio: unknown }) {
+  const adm = await adminLogado(d, jwt)
+  const dominio = normalizarDominio(a.dominio)
+  if (!dominio) throw new ErroRegra('dominio_invalido', 'Esse domínio não parece certo. Escreva só a parte depois do @, por exemplo mailinator.com.', 400)
+  if (PROVEDORES_COMUNS.has(dominio)) throw new ErroRegra('dominio_protegido', 'Esse é um e-mail de uso comum (como Gmail ou Hotmail). Bloquear barraria gente de verdade.', 409)
+  const novo = await d.store.adicionarDominioBloqueado(dominio, 'descartavel', d.agora())
+  if (novo) await d.store.inserirOcorrencia({ cliente_id: null, tipo: 'degustacao_dominio', descricao: `Domínio bloqueado no teste grátis: ${dominio}`, autor: adm.email, resolvida: true, criada_em: d.agora() })
+  return { ok: true, dominio, ja_existia: !novo }
+}
+
+/** Painel: libera de volta um domínio (os pedidos dele voltam a ser aceitos). */
+export async function removerDominio(d: DepsAdmin, jwt: string, a: { dominio: unknown }) {
+  const adm = await adminLogado(d, jwt)
+  const dominio = normalizarDominio(a.dominio)
+  if (!dominio) throw new ErroRegra('dominio_invalido', 'Esse domínio não parece certo.', 400)
+  if (!(await d.store.removerDominioBloqueado(dominio))) throw new ErroRegra('dominio_nao_encontrado', 'Esse domínio não está na lista.', 404)
+  await d.store.inserirOcorrencia({ cliente_id: null, tipo: 'degustacao_dominio', descricao: `Domínio liberado no teste grátis: ${dominio}`, autor: adm.email, resolvida: true, criada_em: d.agora() })
+  return { ok: true, dominio }
 }
