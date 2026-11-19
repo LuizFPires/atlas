@@ -211,3 +211,9 @@
 .lg-rodape a, .v-rodape a, .v-consent a { color: inherit; text-decoration: underline; }
 .v-consent { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; text-align: left; }
 .v-consent input { margin-top: 3px; width: 18px; height: 18px; flex: none; accent-color: var(--lime, #c6f432); }
+
+/* Teste grátis (degustação) */
+.v-teste { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.v-teste-form { display: flex; flex-direction: column; gap: 14px; width: min(480px, 100%); }
+.v-teste-ok { display: flex; gap: 10px; align-items: flex-start; max-width: 520px; line-height: 1.5; }
+.v-confirmar { min-height: 60vh; padding: 0 16px; }

@@ -9,6 +9,7 @@ import { enviarCadastro } from './web/cadastro-api'
 import { Portal } from './web/Portal'
 import { criarPortalApi } from './web/portal-api'
 import { Admin } from './web/Admin'
+import { ConfirmarDegustacao } from './web/Degustacao'
 import { criarAdminApi } from './web/admin-api'
 import { PaginaLegal } from './web/Legal'
 import { idLegalDoCaminho } from './web/textos-legais'
@@ -50,6 +51,8 @@ export default function App() {
   if (caminho === '/comecar' || caminho === '/compra/sucesso') return <Cadastro onEnviar={enviarCadastro} />
   // Portal do cliente: login próprio do Atlas, separado do login do Claude.
   if (caminho === '/conta') return <Portal api={portalApi} />
+  // Link de confirmação do teste grátis (vem no e-mail).
+  if (caminho === '/degustacao') return <ConfirmarDegustacao />
   // Painel do administrador: o link existe para todos, mas só o servidor decide quem entra (JWT + allowlist).
   if (caminho === '/admin') return <Admin api={adminApi} />
   // Textos legais públicos: privacidade, termos e licença do software.

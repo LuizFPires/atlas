@@ -34,6 +34,8 @@ export interface AdminApi {
   resolverOcorrencia(id: string): Promise<Resp>
   /** Libera (ou renova) uma cortesia. `validadeEm` é um instante ISO; o servidor valida tudo de novo. */
   liberarCortesia(email: string, validadeEm: string, nome?: string): Promise<Resp<{ nova: boolean; validade_em: string }>>
+  /** Teste grátis: sem argumentos só lê; com `ativa`/`dias` liga, desliga ou ajusta (1 a 30 dias). O servidor valida de novo. */
+  degustacao(mudanca?: { ativa?: boolean; dias?: number }): Promise<Resp<{ ativa: boolean; dias: number }>>
   entregas(filtro?: { marca?: string; licenca_id?: string }): Promise<Resp<{ entregas: LinhaEntrega[] }>>
   cadastros(): Promise<Resp<{ cadastros: LinhaCadastro[] }>>
   sair(): void
@@ -103,6 +105,7 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       if (!EMAIL_RE.test(e)) return Promise.resolve({ ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' })
       return servidor<{ nova: boolean; validade_em: string }>('/admin/cortesia', { email: e, validade_em: validadeEm, ...(nome?.trim() ? { nome: nome.trim() } : {}) })
     },
+    degustacao: (mudanca = {}) => servidor<{ ativa: boolean; dias: number }>('/admin/degustacao', mudanca),
     resolverOcorrencia: (id) => servidor('/admin/ocorrencias/resolver', { id }),
     entregas: (filtro = {}) => servidor<{ entregas: LinhaEntrega[] }>('/admin/entregas', filtro),
     cadastros: () => servidor<{ cadastros: LinhaCadastro[] }>('/admin/cadastros'),
