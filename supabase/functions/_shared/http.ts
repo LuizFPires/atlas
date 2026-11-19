@@ -12,7 +12,7 @@ import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts
 import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
-import { adicionarDominio, configDegustacaoAdmin, confirmarDegustacao, listarDominios, removerDominio, type DepsDegustacao, estadoDegustacao, pedirDegustacao } from './degustacao.ts'
+import { adicionarDominio, auditarDegustacao, configDegustacaoAdmin, confirmarDegustacao, listarDominios, removerDominio, type DepsDegustacao, estadoDegustacao, pedirDegustacao } from './degustacao.ts'
 import { adminLogado, liberarCortesia, type DepsAdmin, euAdmin, liberarTrocaUrgente, painel, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
 import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, excluirConta, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
 
@@ -145,6 +145,9 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
       case '/degustacao/limpar-ips': // agendador diário (cron): zera o ip de pedidos antigos (LGPD)
         if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
         return json({ ok: true, limpos: await ctx.deps.store.limparIpsDegustacao(ctx.deps.agora(), 30) })
+      case '/degustacao/auditar': // agendador semanal (cron): varredura anti-fraude; só abre ocorrências no painel
+        if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
+        return json(await auditarDegustacao(ctx.deps))
       case '/degustacao/estado':
         return json(await estadoDegustacao((ctx.degustacao ?? ctx.deps) as DepsDegustacao))
       case '/degustacao/pedir':

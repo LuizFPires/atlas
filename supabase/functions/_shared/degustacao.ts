@@ -2,7 +2,7 @@
 // Fluxo: pedir (público) -> e-mail com token de uso único -> confirmar (público) -> licença de teste (tipo 'cortesia').
 // Sem clicar no link, NENHUMA licença é criada. Pagamento/assinatura não são tocados.
 import { adminLogado, type DepsAdmin } from './admin.ts'
-import { DOMINIO_RE, PROVEDORES_COMUNS } from './auditoria.ts'
+import { DOMINIO_RE, JANELA_AUDITORIA_DIAS, PROVEDORES_COMUNS } from './auditoria.ts'
 import { hmac, sha256, tokenAleatorio } from './cripto.ts'
 import { DOMINIOS_DESCARTAVEIS } from './dominios-descartaveis.ts'
 import { gerarLink } from './links.ts'
@@ -188,4 +188,11 @@ export async function removerDominio(d: DepsAdmin, jwt: string, a: { dominio: un
   if (!(await d.store.removerDominioBloqueado(dominio))) throw new ErroRegra('dominio_nao_encontrado', 'Esse domínio não está na lista.', 404)
   await d.store.inserirOcorrencia({ cliente_id: null, tipo: 'degustacao_dominio', descricao: `Domínio liberado no teste grátis: ${dominio}`, autor: adm.email, resolvida: true, criada_em: d.agora() })
   return { ok: true, dominio }
+}
+
+/** Auto-auditoria semanal (rota de serviço /degustacao/auditar, chamada pelo cron do deploy). Só abre ocorrências; não bloqueia nada sozinha. */
+export async function auditarDegustacao(d: Deps) {
+  const agora = d.agora()
+  const novos = await d.store.auditarDegustacao(agora, new Date(agora.getTime() - JANELA_AUDITORIA_DIAS * 24 * 3600_000))
+  return { ok: true, novos }
 }
