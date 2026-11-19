@@ -24,11 +24,15 @@ describe('fidelidade ao protótipo F01Email', () => {
     expect(plano(proto)).toContain(frase)
     expect(plano(html)).toContain(frase)
   })
-  it('usa as cores e o ícone do protótipo (hero #141619, lime #C6F135, microfone em SVG de traço)', () => {
-    for (const cor of ['#141619', '#C6F135', '#F2F3EE', '#3E443C']) {
+  it('usa as cores da marca e o ícone do protótipo (hero #141619, lime #C6F135, microfone em SVG de traço)', () => {
+    // Marca: hero escuro + lime estão no protótipo e no e-mail.
+    for (const cor of ['#141619', '#C6F135']) {
       expect(proto).toContain(cor)
       expect(html).toContain(cor)
     }
+    // Divergência proposital (pedido do Luiz, 19/11/2026): o e-mail é TODO escuro (tema A) para resistir à inversão
+    // do modo escuro do Gmail; não usa o corpo claro do protótipo (#F2F3EE/#3E443C) e sim o cartão escuro do tema A.
+    for (const cor of ['#1E2125', '#2C3036', '#EDEFEA']) expect(html).toContain(cor)
     expect(proto).toContain('<rect x="9" y="3" width="6" height="11" rx="3"/>')
     expect(html).toContain('<rect x="9" y="3" width="6" height="11" rx="3"/>')
   })
