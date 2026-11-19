@@ -44,7 +44,8 @@
 //   consumirCodigo             RPC consumir_codigo (0002)
 //   tentarEvento / limparEventos   RPC tentar_evento / limpar_eventos (0002)
 //   ativacaoAtiva              SELECT ativacoes (inclui token_hash: o servidor confere o device token) WHERE licenca_id AND ativo
-//   computadorJaTestou         SELECT ativacoes JOIN licencas(origem='degustacao') WHERE computador_hash AND licenca_id <> atual LIMIT 1  (0018)
+//   computadorJaTestou         RPC computador_ja_testou: ledger degustacoes_dispositivos (HMAC), licenca_id <> atual  (0019)
+//   registrarDispositivoTeste  RPC registrar_dispositivo_teste (0019)
 //   inserirAtivacao            INSERT ativacoes (índice único parcial garante 1 ativo por licença; violação = erro)
 //   rotacionarToken            UPDATE ativacoes SET token_hash WHERE id
 //   trocarAtivacao             RPC trocar_computador (0002)
@@ -256,9 +257,9 @@ export function criarStoreSupabase() {
 
     // ── ativações e trocas ──
     ativacaoAtiva: (lid: string) => um(t('ativacoes').select(C_ATIVACAO).eq('licenca_id', lid).eq('ativo', true), ativacao),
-    async computadorJaTestou(hash: string, licencaIdAtual: string) {
-      const r = await ler(() => t('ativacoes').select('id,licencas!inner(origem)').eq('computador_hash', hash).neq('licenca_id', licencaIdAtual).eq('licencas.origem', 'degustacao').order('id'), 1)
-      return r.length > 0
+    async computadorJaTestou(hmac: string, licencaIdAtual: string) { return (await rpc('computador_ja_testou', { p_hmac: hmac, p_licenca: licencaIdAtual })) === true },
+    async registrarDispositivoTeste(hmac: string, licencaId: string, quando: Date) {
+      return (await rpc('registrar_dispositivo_teste', { p_hmac: hmac, p_licenca: licencaId, p_quando: iso(quando) })) === true
     },
     async inserirAtivacao(lid: string, hash: string, quando: Date, tokenHash: string) {
       ok(await t('ativacoes').insert({ licenca_id: lid, computador_hash: hash, token_hash: tokenHash, ativo: true, ativado_em: iso(quando) }), 'inserirAtivacao')
@@ -267,7 +268,7 @@ export function criarStoreSupabase() {
     async trocarAtivacao(p: any) {
       return (await rpc('trocar_computador', {
         p_licenca: p.licenca_id, p_ativacao_atual: p.ativacao_atual_id, p_de: p.de_hash, p_para: p.para_hash, p_token_hash: p.token_hash,
-        p_quando: iso(p.quando), p_por_admin: p.por_admin, p_intervalo_ms: p.intervalo_ms,
+        p_quando: iso(p.quando), p_por_admin: p.por_admin, p_intervalo_ms: p.intervalo_ms, p_dispositivo_hmac: p.dispositivo_hmac ?? null,
       })) === true
     },
     async liberarAtivacao(p: any) {

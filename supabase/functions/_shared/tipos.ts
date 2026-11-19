@@ -140,6 +140,8 @@ export interface TrocaAtomica {
   por_admin: boolean
   /** 0 quando por_admin (override ignora o limite). */
   intervalo_ms: number
+  /** HMAC do computador novo, só quando a licença é teste grátis (cortesia + origem degustacao): a RPC confere/grava o ledger. */
+  dispositivo_hmac?: string | null
 }
 
 // Porta de acesso aos dados. Produção: adaptador Supabase (etapa /entregar). Testes: memória.
@@ -167,7 +169,10 @@ export interface Store {
   ativacaoAtiva(licencaId: string): Promise<Ativacao | null>
   inserirAtivacao(licencaId: string, hash: string, quando: Date, tokenHash: string): Promise<void>
   /** Este computador já ativou (ativa ou não) OUTRA licença de degustação? Base do freio "1 degustação por computador". */
-  computadorJaTestou(hash: string, licencaIdAtual: string): Promise<boolean>
+  /** Ledger durável (degustacoes_dispositivos, 0019): outro teste já usou este computador? Recebe o HMAC, nunca o hash cru. Sobrevive ao excluir-conta. */
+  computadorJaTestou(dispositivoHmac: string, licencaIdAtual: string): Promise<boolean>
+  /** Grava o computador no ledger (atômico). false = outro teste já é dono dele. */
+  registrarDispositivoTeste(dispositivoHmac: string, licencaId: string, quando: Date): Promise<boolean>
   rotacionarToken(ativacaoId: string, tokenHash: string): Promise<void>
   /** RPC transacional: desativa a atual + insere a nova + registra a troca (+ zera o override). false = a atual mudou/limite. */
   trocarAtivacao(p: TrocaAtomica): Promise<boolean>

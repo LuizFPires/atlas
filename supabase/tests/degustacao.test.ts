@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { lerEmailsAdmin } from '../functions/_shared/admin.ts'
 import { confirmarAtivacao, solicitarCodigo } from '../functions/_shared/ativacao.ts'
+import { trocarComputador } from '../functions/_shared/troca.ts'
 import { gerarLink } from '../functions/_shared/links.ts'
 import { sha256 } from '../functions/_shared/cripto.ts'
 import { hashEmail } from '../functions/_shared/degustacao.ts'
@@ -338,6 +339,80 @@ describe('degustação — 1 por computador na ativação (migration 0018)', () 
       await solicitarCodigo(a.deps, email)
       await expect(ativar(a, { token: l.token, email, codigo: a.emails[a.emails.length - 1] }, H1), email).resolves.toBeTruthy()
     }
+  })
+})
+
+describe('degustação — compra, troca de PC e ledger de dispositivo (migration 0019)', () => {
+  async function testar(a: Awaited<ReturnType<typeof ligada>>, email: string, ip: string) {
+    await a.pedirDe(email, ip)
+    const c = await (await a.confirmar(a.enviados[a.enviados.length - 1].token)).json()
+    await solicitarCodigo(a.deps, email)
+    return { token: c.link_token as string, email, codigo: a.emails[a.emails.length - 1] }
+  }
+  const ativar = (a: Awaited<ReturnType<typeof ligada>>, t: { token: string; email: string; codigo: string }, hash: string) =>
+    confirmarAtivacao(a.deps, { email: t.email, codigo: t.codigo, token: t.token, computador_hash: hash })
+  const trocar = async (a: Awaited<ReturnType<typeof ligada>>, email: string, novo: string) => {
+    await solicitarCodigo(a.deps, email, 'troca')
+    return trocarComputador(a.deps, { email, codigo: a.emails[a.emails.length - 1], novo_hash: novo })
+  }
+  const H3 = 'c'.repeat(64)
+
+  it('teste confirmado, não ativado, depois COMPRA: ativa no computador que outro e-mail já testou (sem 409) e a origem zera', async () => {
+    const a = await ligada()
+    await ativar(a, await testar(a, 'ana@exemplo.com', '19.0.0.1'), H1)
+    a.avancar(61 * 60_000)
+    await testar(a, 'beto@exemplo.com', '19.0.0.2')
+    await a.store.criarCompra({ email: 'beto@exemplo.com', nome: 'Beto', valor: 99, conta_gateway_id: 'cg', gateway_cliente_ref: 'cus', agora: a.deps.agora() } as never)
+    const lic = a.store.licencas.find((l) => l.cliente_id === a.store.clientes.find((c) => c.email_compra === 'beto@exemplo.com')?.id)!
+    expect(lic).toMatchObject({ tipo: 'paga', origem: null })
+    const l = await gerarLink(a.deps, 'beto@exemplo.com')
+    await solicitarCodigo(a.deps, 'beto@exemplo.com')
+    await expect(ativar(a, { token: l.token, email: 'beto@exemplo.com', codigo: a.emails[a.emails.length - 1] }, H1)).resolves.toBeTruthy()
+  })
+
+  it('mesmo com origem suja, licença paga nunca é barrada (trava só vale para cortesia + degustacao)', async () => {
+    const a = await ligada()
+    await ativar(a, await testar(a, 'ana@exemplo.com', '19.0.0.3'), H1)
+    a.store.clientes.push({ id: 'cs', email_compra: 'suja@loja.com', nome_tratamento: 'S' })
+    a.store.licencas.push({ id: 'ls', cliente_id: 'cs', status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null, tipo: 'paga', origem: 'degustacao' })
+    const l = await gerarLink(a.deps, 'suja@loja.com')
+    await solicitarCodigo(a.deps, 'suja@loja.com')
+    await expect(ativar(a, { token: l.token, email: 'suja@loja.com', codigo: a.emails[a.emails.length - 1] }, H1)).resolves.toBeTruthy()
+  })
+
+  it('trocar um TESTE para um PC que já testou = barrado (código não gasto); para PC novo = passa', async () => {
+    const a = await ligada()
+    await ativar(a, await testar(a, 'ana@exemplo.com', '19.0.0.4'), H1)
+    a.avancar(61 * 60_000)
+    await ativar(a, await testar(a, 'beto@exemplo.com', '19.0.0.5'), H2)
+    await solicitarCodigo(a.deps, 'beto@exemplo.com', 'troca')
+    const codigo = a.emails[a.emails.length - 1]
+    await expect(trocarComputador(a.deps, { email: 'beto@exemplo.com', codigo, novo_hash: H1 })).rejects.toMatchObject({ codigo: 'ja_testou_neste_computador', status: 409 })
+    expect(a.store.trocas).toHaveLength(0)
+    await expect(trocarComputador(a.deps, { email: 'beto@exemplo.com', codigo, novo_hash: H3 })).resolves.toMatchObject({ ok: true }) // mesmo código ainda valia
+    // o PC novo entrou no ledger: outro teste não ativa nele
+    a.avancar(61 * 60_000)
+    await expect(ativar(a, await testar(a, 'caio@exemplo.com', '19.0.0.6'), H3)).rejects.toMatchObject({ codigo: 'ja_testou_neste_computador' })
+  })
+
+  it('trocar uma COMPRA para qualquer PC = passa', async () => {
+    const a = await ligada()
+    await ativar(a, await testar(a, 'ana@exemplo.com', '19.0.0.7'), H1)
+    a.avancar(61 * 60_000)
+    a.store.clientes.push({ id: 'cp', email_compra: 'paga@loja.com', nome_tratamento: 'P' })
+    a.store.licencas.push({ id: 'lp', cliente_id: 'cp', status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null })
+    await a.store.inserirAtivacao('lp', H2, a.deps.agora(), 'th')
+    await expect(trocar(a, 'paga@loja.com', H1)).resolves.toMatchObject({ ok: true })
+  })
+
+  it('apagar a conta e tentar novo teste no MESMO computador = barrado (ledger sobrevive; sem dado pessoal)', async () => {
+    const a = await ligada()
+    await ativar(a, await testar(a, 'ana@exemplo.com', '19.0.0.8'), H1)
+    await a.store.excluirConta(a.store.clientes[0].id, a.deps.agora())
+    expect(a.store.ativacoes).toHaveLength(0)
+    expect(JSON.stringify([...a.store.dispositivosTeste.keys()])).not.toContain(H1) // só HMAC, nunca o hash cru
+    a.avancar(61 * 60_000)
+    await expect(ativar(a, await testar(a, 'novo@exemplo.com', '19.0.0.9'), H1)).rejects.toMatchObject({ codigo: 'ja_testou_neste_computador', status: 409 })
   })
 })
 

@@ -7,7 +7,7 @@ Como funciona: a pessoa pede pela página de vendas, confirma o e-mail pelo link
 Rotas públicas (POST): `/degustacao/estado`, `/degustacao/pedir`, `/degustacao/confirmar`. Rota admin: `/admin/degustacao`.
 Banco: migration `0016_degustacao.sql` (`config_degustacao`, `degustacoes`, `dominios_bloqueados`, RPCs `pedir_degustacao` e `criar_degustacao`,
 esta com o mesmo lock `'cliente:'||lower(trim(email))` de `criar_compra` e `criar_cortesia`).
-Correções em `0017_degustacao_corrige_revisao.sql` e `0018_degustacao_um_por_computador.sql` (esta cria `licencas.origem`).
+Correções em `0017_degustacao_corrige_revisao.sql`, `0018_degustacao_um_por_computador.sql` (cria `licencas.origem`) e `0019_degustacao_ledger_dispositivo.sql` (ledger de dispositivo, conversão zera origem, trava na troca de PC).
 Locks: o pedido e a confirmação pegam `'degustacao:'||email_hash` e depois `'cliente:'||email`; `excluir_conta` pega `'conta:'||id`, depois os `'degustacao:'||hash` das degustações do cliente (em ordem de hash). Ninguém pega `conta:` depois de `degustacao:`/`cliente:`, então não há ciclo.
 
 ## Freios (anti-abuso)
@@ -16,7 +16,11 @@ Locks: o pedido e a confirmação pegam `'degustacao:'||email_hash` e depois `'c
 - Domínios descartáveis recusados: lista base em `supabase/functions/_shared/dominios-descartaveis.ts` + tabela `dominios_bloqueados` (editável sem deploy; o bloco C alimenta).
 - Limite por IP no pedido (5/h), por e-mail (3/h) e na confirmação (20 a cada 15 min).
 - 1 computador por licença: o teste usa o mesmo caminho de ativação (`ativacoes`, índice único de 1 ativo).
-- 1 degustação por computador: a licença do teste nasce com `origem='degustacao'` (0018). Na ativação (`confirmarAtivacao`), se esse `computador_hash` já ativou OUTRA licença de degustação (ativa ou não), responde 409 `ja_testou_neste_computador` ANTES de gastar o código. Compra e cortesia manual do gestor não entram na trava. Limites: quem apaga a conta perde as ativações (LGPD) e o computador fica "limpo"; trocar de computador pelo portal não passa por essa checagem; ativações simultâneas no mesmo instante não têm lock.
+- 1 degustação por computador (0018 + 0019): a licença do teste nasce com `origem='degustacao'`. A trava vale SÓ para `tipo='cortesia' E origem='degustacao'` (compra e cortesia manual nunca entram, mesmo com origem suja). Ela roda na ativação (`confirmarAtivacao`) e na troca de computador pelo portal (`trocarComputador` e, em defesa em profundidade, a RPC `trocar_computador`), sempre ANTES de gastar o código; responde 409 `ja_testou_neste_computador`.
+- Ledger de dispositivo (0019, `degustacoes_dispositivos`): guarda só `dispositivo_hmac` (HMAC-SHA256 do `computador_hash` com `ATLAS_SEGREDO`, domínio `dispositivo:`, calculado na borda), `licenca_id` (sem FK; só deixa o MESMO teste voltar ao seu computador) e a data. A checagem olha o ledger, não `ativacoes`. `excluir_conta` NÃO apaga o ledger: é marcador pseudônimo, sem e-mail, nome ou hash cru, mantido por prevenção a fraude (legítimo interesse, LGPD art. 7º IX e 10); quem apaga a conta continua barrado no mesmo computador. RLS ligada, acesso só por service_role (RPCs `security definer`).
+- Conversão teste -> compra: `criar_compra` (SQL e `memoria.criarCompra`) zera `origem` ao virar `tipo='paga'`; a compra nunca é barrada pela trava.
+- Limites: ativações simultâneas de dois testes no mesmo computador são desempatadas pelo `unique` do ledger (o segundo recebe 409); em base com dados antigos não há backfill do ledger (hoje a base é vazia).
+- Backfill da 0018 (limitação): marcou `origem='degustacao'` em cortesias cujo e-mail tem degustação confirmada. Não há ligação licença-degustação além do e-mail, mas na prática é seguro: `criar_degustacao` recusa quem já tem licença (`ja_tem_licenca`), então uma degustação confirmada só existe para o e-mail cuja licença nasceu dela. Cortesia manual que depois pediu degustação não é marcada.
 
 ## Limites honestos
 - Quem tem e-mails novos de provedores diferentes (não descartáveis) e uma máquina nova ainda consegue outro teste. O freio é custo, não impossibilidade.

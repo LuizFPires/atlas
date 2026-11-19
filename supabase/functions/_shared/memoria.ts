@@ -73,8 +73,15 @@ export class StoreMemoria implements Store {
   }
   async limparEventos(chave: string) { this.eventos.delete(chave) }
   async ativacaoAtiva(lid: string) { return this.ativacoes.find((a) => a.licenca_id === lid && a.ativo) ?? null }
-  async computadorJaTestou(hash: string, licencaIdAtual: string) {
-    return this.ativacoes.some((a) => a.computador_hash === hash && a.licenca_id !== licencaIdAtual && this.licencas.find((l) => l.id === a.licenca_id)?.origem === 'degustacao')
+  /** Espelha o ledger degustacoes_dispositivos (0019): HMAC do computador -> licença dona. excluirConta NÃO mexe nele. */
+  dispositivosTeste = new Map<string, string>()
+  async computadorJaTestou(hmac: string, licencaIdAtual: string) {
+    const dono = this.dispositivosTeste.get(hmac)
+    return dono !== undefined && dono !== licencaIdAtual
+  }
+  async registrarDispositivoTeste(hmac: string, licencaId: string) {
+    if (!this.dispositivosTeste.has(hmac)) this.dispositivosTeste.set(hmac, licencaId)
+    return this.dispositivosTeste.get(hmac) === licencaId
   }
   async inserirAtivacao(lid: string, hash: string, q: Date, tokenHash: string) {
     if (this.ativacoes.some((a) => a.licenca_id === lid && a.ativo)) throw new Error('índice único: já há computador ativo')
@@ -91,6 +98,11 @@ export class StoreMemoria implements Store {
     if (p.intervalo_ms > 0) {
       const lim = p.quando.getTime() - p.intervalo_ms
       if (this.trocas.some((t) => t.licenca_id === p.licenca_id && t.feita_em.getTime() > lim)) return false
+    }
+    const lic = this.licencas.find((x) => x.id === p.licenca_id)
+    if (p.dispositivo_hmac && lic?.tipo === 'cortesia' && lic.origem === 'degustacao') { // espelha o ledger dentro de trocar_computador (0019)
+      if (await this.computadorJaTestou(p.dispositivo_hmac, p.licenca_id)) return false
+      await this.registrarDispositivoTeste(p.dispositivo_hmac, p.licenca_id)
     }
     atual.ativo = false
     atual.desativado_em = p.quando
@@ -142,8 +154,8 @@ export class StoreMemoria implements Store {
     if (!cli) { cli = { id: this.id(), email_compra: c.email, nome_tratamento: c.nome }; this.clientes.push(cli) }
     const ja = this.licencas.find((l) => l.cliente_id === cli.id)
     if (ja?.tipo === 'cortesia') {
-      // Espelha a migration 0015: a compra converte a cortesia em paga.
-      Object.assign(ja, { tipo: 'paga', validade_em: null, status: 'ativa', comprada_em: c.agora, avisos_atraso: 0, pausa_prevista_em: null, conta_gateway_id: c.conta_gateway_id, gateway_cliente_ref: c.gateway_cliente_ref, gateway_assinatura_ref: null, mensalidade_encerra_em: null })
+      // Espelha 0015/0019: a compra converte a cortesia em paga e zera a origem.
+      Object.assign(ja, { tipo: 'paga', origem: null, validade_em: null, status: 'ativa', comprada_em: c.agora, avisos_atraso: 0, pausa_prevista_em: null, conta_gateway_id: c.conta_gateway_id, gateway_cliente_ref: c.gateway_cliente_ref, gateway_assinatura_ref: null, mensalidade_encerra_em: null })
       return { licenca: ja, nova: false }
     }
     if (ja) return { licenca: ja, nova: false }
