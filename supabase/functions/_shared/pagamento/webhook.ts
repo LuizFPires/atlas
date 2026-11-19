@@ -4,7 +4,7 @@
 import type { Licenca, Pagamento, TipoPagamento } from '../tipos.ts'
 import { ErroRegra } from '../tipos.ts'
 import { verificarAssinaturaStripe } from './assinatura-stripe.ts'
-import { type DepsPagamento, VALOR_IMPLANTACAO } from './config.ts'
+import { type DepsPagamento, planoImplantacao, VALOR_IMPLANTACAO } from './config.ts'
 import { marcarAtraso, sairDoAtraso } from './atraso.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,6 +88,12 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   const email = str(s.customer_details?.email) ?? str(s.customer_email)
   const pi = idDe(s.payment_intent)
   if (!email || !pi) throw new ErroRegra('sessao_incompleta', 'Sessão sem e-mail ou pagamento.', 400)
+  // Trava de integridade do parcelamento: o cliente escolhe as parcelas na tela da Stripe, à parte do que pediu no site.
+  // O valor pago tem de cobrir o preço do número de parcelas REALMENTE usado (ex.: 10x pagando preço de 3x → recusa, fail-closed).
+  const conta = await d.store.contaGateway(contaId)
+  const sk = conta ? await d.segredos.chaveSecreta(conta.segredo_ref) : null
+  const parcelasUsadas = (sk && (await d.stripe(sk).parcelasDoPagamento(pi))) || 1
+  if (Number(s.amount_total) < Math.round(planoImplantacao(parcelasUsadas).total * 100)) return
   const valor = reais(s.amount_total)
   const emailN = email.trim().toLowerCase()
   const { licenca } = await d.store.criarCompra({

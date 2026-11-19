@@ -13,6 +13,8 @@ export interface StripeApi {
   reembolsar(paymentIntent: string, chaveIdempotencia: string): Promise<void>
   /** Portal de cobrança da Stripe (trocar cartão/forma de pagamento) do cliente final. Devolve a URL https. */
   criarPortalCobranca(clienteRef: string, urlRetorno: string): Promise<string>
+  /** Em quantas parcelas o cartão foi cobrado (do plano de installments). null quando à vista/sem installments. */
+  parcelasDoPagamento(paymentIntent: string): Promise<number | null>
 }
 
 /** Codifica objeto aninhado no formato form-urlencoded da Stripe: a[b][0]=c. */
@@ -74,6 +76,12 @@ export function criarStripeApi(chaveSecreta: string, fetchFn: FetchFn, base = 'h
         if ((e as { stripe?: string }).stripe === 'charge_already_refunded') return
         throw e
       }
+    },
+    async parcelasDoPagamento(pi) {
+      if (!pi) return null
+      const p = await chamar('GET', `/v1/payment_intents/${encodeURIComponent(pi)}?expand[]=latest_charge`, null)
+      const n = Number(p?.latest_charge?.payment_method_details?.card?.installments?.plan?.count)
+      return Number.isFinite(n) && n > 0 ? n : null
     },
   }
 }

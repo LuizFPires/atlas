@@ -17,9 +17,15 @@ export function montarPag(status: 'ativa' | 'atrasada' | 'pausada' | 'cancelada'
   const avisos: Array<{ email: string; aviso: AvisoAtraso }> = []
   const falhar = { proxima: false }
   const sessoesPorChave = new Map<string, string>()
+  const parcelasPorPi = new Map<string, number>() // pi → nº de parcelas usado (installments); vazio = à vista
   const fetchFalso: FetchFn = async (url, init) => {
     chamadas.push({ url, ...init })
     if (falhar.proxima) { falhar.proxima = false; return { status: 500, json: async () => ({ error: { code: 'api_error' } }) } }
+    const pim = url.match(/\/v1\/payment_intents\/([^?]+)/)
+    if (pim) {
+      const n = parcelasPorPi.get(decodeURIComponent(pim[1]))
+      return { status: 200, json: async () => (n ? { id: pim[1], latest_charge: { payment_method_details: { card: { installments: { plan: { count: n } } } } } } : { id: pim[1] }) }
+    }
     if (url.endsWith('/v1/checkout/sessions')) {
       const chave = String((init as { headers?: Record<string, string> } | undefined)?.headers?.['Idempotency-Key'] ?? '')
       if (!sessoesPorChave.has(chave)) sessoesPorChave.set(chave, `cs_test_${sessoesPorChave.size + 1}`)
@@ -39,7 +45,7 @@ export function montarPag(status: 'ativa' | 'atrasada' | 'pausada' | 'cancelada'
     stripe: (sk) => criarStripeApi(sk, fetchFalso),
     enviarAvisoAtraso: async (email, aviso) => { avisos.push({ email, aviso }) },
   }
-  return { ...m, deps, chamadas, avisos, falhar }
+  return { ...m, deps, chamadas, avisos, falhar, parcelasPorPi }
 }
 
 /** Assina um corpo como a Stripe faz: t=<ts>,v1=HMAC_SHA256(segredo, `${ts}.${corpo}`). */

@@ -58,6 +58,20 @@ describe('webhook: implantação', () => {
     expect(lic?.comprada_em).toEqual(m.deps.agora())
     expect(m.store.pagamentos[0]).toMatchObject({ tipo: 'implantacao', valor: 4800, status: 'pago', gateway_ref: 'pi_1' })
   })
+  it('trava de parcelamento: 10x pagando o preço de 3x (sem juros) NÃO concede licença', async () => {
+    const m = montarPag()
+    m.parcelasPorPi.set('pi_1', 10) // o cliente parcelou em 10x na tela da Stripe
+    await enviar(m, evento('checkout.session.completed', sessaoImpl())) // amount_total 480000 = preço de 1–3x
+    expect(m.store.licencas).toHaveLength(1) // só a fixture: a compra foi recusada (fail-closed)
+    expect(m.store.pagamentos).toHaveLength(0)
+  })
+  it('trava de parcelamento: 4x pagando o total com juros (R$ 5.042,40) concede normalmente', async () => {
+    const m = montarPag()
+    m.parcelasPorPi.set('pi_1', 4)
+    await enviar(m, evento('checkout.session.completed', sessaoImpl({ amount_total: 504240 })))
+    expect(m.store.licencas).toHaveLength(2)
+    expect(m.store.pagamentos[0]).toMatchObject({ status: 'pago', valor: 5042.4 })
+  })
   it('Pix pendente não libera; só async_payment_succeeded libera', async () => {
     const m = montarPag()
     await enviar(m, evento('checkout.session.completed', sessaoImpl({ payment_status: 'unpaid' })))
