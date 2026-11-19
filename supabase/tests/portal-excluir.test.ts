@@ -54,6 +54,18 @@ describe('portal — excluir conta (LGPD art. 18, VI)', () => {
     expect(m.store.ocorrencias.find((o) => o.tipo === 'conta_excluida')).toMatchObject({ cliente_id: null, resolvida: true })
   })
 
+  it('cliente logado SEM licença também consegue excluir a conta (sem chamar o gateway)', async () => {
+    const m = await preparar()
+    m.store.licencas = m.store.licencas.filter((l) => l.cliente_id !== 'c1')
+    // as demais rotas do portal continuam exigindo licença
+    expect((await chamar(m.ctx(), '/portal/conta', JWT_ANA)).status).toBe(404)
+    const r = await chamar(m.ctx(), '/portal/conta/excluir', JWT_ANA, { confirmar: true })
+    expect(r.status).toBe(200)
+    expect(m.store.clientes.find((c) => c.id === 'c1')).toMatchObject({ nome_tratamento: 'Conta excluída', empresa: null })
+    expect(m.chamadas).toEqual([])
+    expect(m.removidosAuth).toEqual(['auth-ana'])
+  })
+
   it('depois de excluída, o mesmo login não abre mais nada no portal', async () => {
     const m = await preparar()
     await chamar(m.ctx(), '/portal/conta/excluir', JWT_ANA, { confirmar: true })

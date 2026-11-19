@@ -30,7 +30,9 @@ export interface SessaoPortal { cliente: Cliente; licenca: Licenca }
  * Descobre o cliente dono do login. Primeiro acesso: liga o usuário do Auth ao cliente cujo e-mail de compra
  * é igual ao e-mail confirmado (uma vez só; se o cliente já está ligado a OUTRO usuário, recusa).
  */
-export async function clienteLogado(d: DepsPortal, jwt: string, opcoes: { permitirExcluido?: boolean } = {}): Promise<SessaoPortal> {
+export async function clienteLogado(d: DepsPortal, jwt: string, opcoes?: { permitirExcluido?: boolean; permitirSemLicenca?: false }): Promise<SessaoPortal>
+export async function clienteLogado(d: DepsPortal, jwt: string, opcoes: { permitirExcluido?: boolean; permitirSemLicenca: true }): Promise<{ cliente: Cliente; licenca: Licenca | null }>
+export async function clienteLogado(d: DepsPortal, jwt: string, opcoes: { permitirExcluido?: boolean; permitirSemLicenca?: boolean } = {}): Promise<{ cliente: Cliente; licenca: Licenca | null }> {
   const token = jwt.trim()
   if (!token) throw semAcesso()
   const id = await d.autenticarPortal(token)
@@ -51,7 +53,8 @@ export async function clienteLogado(d: DepsPortal, jwt: string, opcoes: { permit
   // Conta excluída (LGPD): o login não abre mais nada; só a própria exclusão pode ser repetida.
   if (cliente.excluido_em && !opcoes.permitirExcluido) throw semAcesso()
   const licenca = await d.store.licencaDoCliente(cliente.id)
-  if (!licenca) throw new ErroRegra('sem_licenca', 'Licença não encontrada.', 404)
+  // Só a exclusão de conta (LGPD) funciona sem licença; todo o resto continua exigindo uma.
+  if (!licenca && !opcoes.permitirSemLicenca) throw new ErroRegra('sem_licenca', 'Licença não encontrada.', 404)
   return { cliente, licenca }
 }
 
@@ -233,12 +236,12 @@ export async function cancelarPeloPortal(d: DepsPortal, jwt: string, tipo: 'comp
  * Não devolve dinheiro: para desistir da compra existe o "Cancelar a compra" (7 dias).
  */
 export async function excluirConta(d: DepsPortal, jwt: string, confirmar: unknown): Promise<{ ok: true }> {
-  const { cliente, licenca } = await clienteLogado(d, jwt, { permitirExcluido: true })
+  const { cliente, licenca } = await clienteLogado(d, jwt, { permitirExcluido: true, permitirSemLicenca: true })
   if (confirmar !== true) throw new ErroRegra('confirmacao_necessaria', 'Confirme que você quer mesmo excluir a sua conta.', 400)
   if (!(await d.store.tentarEvento(`portal:excluir:${cliente.id}`, 5, 60 * 60_000, d.agora()))) {
     throw new ErroRegra('muitas_solicitacoes', 'Muitas tentativas. Espere um pouco e olhe a sua conta.', 429)
   }
-  if (!cliente.excluido_em && licenca.gateway_assinatura_ref && licenca.status !== 'cancelada') {
+  if (!cliente.excluido_em && licenca && licenca.gateway_assinatura_ref && licenca.status !== 'cancelada') {
     const contaGw = licenca.conta_gateway_id ? await d.store.contaGateway(licenca.conta_gateway_id) : null
     const sk = contaGw ? await d.segredos.chaveSecreta(contaGw.segredo_ref) : null
     if (!sk) throw new ErroRegra('gateway_nao_configurado', 'Não deu para parar a cobrança da mensalidade agora, então nada foi apagado. Tente de novo em instantes.', 503)
