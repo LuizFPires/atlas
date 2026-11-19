@@ -125,7 +125,7 @@ const C_ATIVACAO = 'id,licenca_id,computador_hash,token_hash,ativo,ativado_em,de
 const C_ATIVACAO_ADMIN = 'id,licenca_id,computador_hash,ativo,ativado_em,desativado_em'
 const C_PAGAMENTO = 'licenca_id,conta_gateway_id,tipo,valor,status,gateway_ref,gateway_pi,pago_em'
 const C_ENTREGA = 'licenca_id,obra_id,marca_dagua,baixado_em'
-const C_OCORRENCIA = 'id,cliente_id,tipo,descricao,autor,resolvida,criada_em,resolvida_por,resolvida_em'
+const C_OCORRENCIA = 'id,cliente_id,tipo,descricao,autor,resolvida,criada_em,resolvida_por,resolvida_em,chave'
 
 const cliente = (r: any) => r && { id: r.id, email_compra: r.email_compra, nome_tratamento: r.nome_tratamento, empresa: r.empresa, ramo: r.ramo, cadastro_em: dt(r.cadastro_em), auth_user_id: r.auth_user_id, excluido_em: dt(r.excluido_em) }
 const licenca = (r: any) => r && {
@@ -140,7 +140,7 @@ const entrega = (r: any) => ({ licenca_id: r.licenca_id, obra_id: r.obra_id, mar
 const codigo = (r: any) => r && { id: r.id, cliente_id: r.cliente_id, finalidade: r.finalidade, codigo_hash: r.codigo_hash, tentativas: r.tentativas, expira_em: new Date(r.expira_em), usado_em: dt(r.usado_em) }
 const link = (r: any) => r && { id: r.id, cliente_id: r.cliente_id, token_hash: r.token_hash, expira_em: new Date(r.expira_em), usado_em: dt(r.usado_em) }
 const troca = (r: any) => ({ licenca_id: r.licenca_id, de_hash: r.de_hash, para_hash: r.para_hash ?? null, feita_em: new Date(r.feita_em), por_admin: r.por_admin })
-const ocorrencia = (r: any) => ({ id: r.id, cliente_id: r.cliente_id, tipo: r.tipo, descricao: r.descricao, autor: r.autor ?? null, resolvida: r.resolvida, criada_em: new Date(r.criada_em), resolvida_por: r.resolvida_por ?? null, resolvida_em: dt(r.resolvida_em) })
+const ocorrencia = (r: any) => ({ id: r.id, cliente_id: r.cliente_id, tipo: r.tipo, descricao: r.descricao, autor: r.autor ?? null, resolvida: r.resolvida, criada_em: new Date(r.criada_em), resolvida_por: r.resolvida_por ?? null, resolvida_em: dt(r.resolvida_em), chave: r.chave ?? null })
 
 /** Converte o `set` de licença (Date -> ISO). Campos undefined ficam de fora; id/cliente_id nunca são alterados. */
 function linhaLicenca(set: Record<string, any>) {
@@ -220,6 +220,16 @@ export function criarStoreSupabase() {
     async pedirDegustacao(p: any) {
       return await rpc('pedir_degustacao', { p_email: p.email, p_hash: p.email_hash, p_token_hash: p.token_hash, p_ip: p.ip, p_expira: iso(p.expira_em), p_agora: iso(p.agora) })
     },
+    async listarDominiosBloqueados() {
+      return (await ler(() => t('dominios_bloqueados').select('dominio,motivo,criado_em').order('dominio'), 5000)).map((r: any) => ({ dominio: r.dominio, motivo: r.motivo, criado_em: new Date(r.criado_em) }))
+    },
+    async adicionarDominioBloqueado(dominio: string, motivo: string, agora: Date) {
+      const r = ok(await t('dominios_bloqueados').upsert({ dominio, motivo, criado_em: iso(agora) }, { onConflict: 'dominio', ignoreDuplicates: true }).select('dominio'), 'adicionarDominioBloqueado')
+      return r.length === 1
+    },
+    async removerDominioBloqueado(dominio: string) { return ok(await t('dominios_bloqueados').delete().eq('dominio', dominio).select('dominio'), 'removerDominioBloqueado').length === 1 },
+    async auditarDegustacao(agora: Date, desde: Date) { return Number(await rpc('auditar_degustacao', { p_agora: iso(agora), p_desde: iso(desde) })) || 0 },
+    async registrarBarradaDispositivo(hmac: string, quando: Date) { await rpc('registrar_barrada_dispositivo', { p_hmac: hmac, p_quando: iso(quando) }) },
     async limparIpsDegustacao(agora: Date, dias: number) { return await rpc('limpar_ips_degustacao', { p_agora: iso(agora), p_dias: dias }) },
     async criarDegustacao(p: any) {
       const r = await rpc('criar_degustacao', { p_token_hash: p.token_hash, p_dias: p.dias, p_agora: iso(p.agora) })
@@ -283,7 +293,7 @@ export function criarStoreSupabase() {
     async inserirOcorrencia(o: any) {
       ok(await t('ocorrencias_admin').insert({
         cliente_id: o.cliente_id, tipo: o.tipo, descricao: o.descricao, autor: o.autor ?? null,
-        resolvida: o.resolvida ?? false, ...(o.criada_em ? { criada_em: iso(o.criada_em) } : {}),
+        resolvida: o.resolvida ?? false, ...(o.chave ? { chave: o.chave } : {}), ...(o.criada_em ? { criada_em: iso(o.criada_em) } : {}),
       }), 'inserirOcorrencia')
     },
 

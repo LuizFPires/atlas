@@ -95,6 +95,8 @@ export interface ItemAtencao {
   quando: Date
   /** Presente quando a ação "liberar troca urgente" faz sentido para este item. */
   licenca_id: string | null
+  /** Auditoria da degustação: domínio sugerido para bloquear (botão "Bloquear este domínio"). */
+  dominio_sugerido?: string
 }
 
 const rotuloCliente = (c: Cliente | undefined) => (c ? c.empresa?.trim() || c.nome_tratamento : 'Atlas')
@@ -174,6 +176,7 @@ export async function painel(d: DepsAdmin, jwt: string) {
     oque: o.descricao,
     quando: o.criada_em,
     licenca_id: o.tipo === 'troca_antecipada' && o.cliente_id ? (licDoCliente.get(o.cliente_id) ?? null) : null,
+    ...(o.chave?.startsWith('aud:dominio:') ? { dominio_sugerido: o.chave.slice('aud:dominio:'.length) } : {}),
   }))
   return { gerado_em: agora, indicadores, atencao, clientes: linhas.slice(0, 500) }
 }

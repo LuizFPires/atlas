@@ -106,6 +106,8 @@ export interface Ocorrencia {
   /** M7: já nasce resolvida (registro de auditoria que não precisa de atenção). Padrão: aberta. */
   resolvida?: boolean
   criada_em?: Date
+  /** Bloco C: identifica "o mesmo alerta". Só pode haver 1 ocorrência ABERTA por chave (índice único parcial); repetida = ignorada. */
+  chave?: string | null
 }
 /** M7: ocorrencias_admin como o painel lê. */
 export interface OcorrenciaAdmin {
@@ -118,6 +120,7 @@ export interface OcorrenciaAdmin {
   criada_em: Date
   resolvida_por: string | null
   resolvida_em: Date | null
+  chave?: string | null
 }
 
 /** Liberação pelo portal: desativa o computador atual sem ativar outro (o novo ativa depois, pelo link). */
@@ -216,6 +219,14 @@ export interface Store {
   pedirDegustacao(p: { email: string; email_hash: string; token_hash: string; ip: string; expira_em: Date; agora: Date }): Promise<'criado' | 'reenviado' | 'ja_usada'>
   /** RPC limpar_ips_degustacao (0017): zera o ip de pedidos com mais de `dias` dias. Devolve quantas linhas. */
   limparIpsDegustacao(agora: Date, dias: number): Promise<number>
+  /** dominios_bloqueados (bloco C): lista, adiciona (false = já existia) e remove (false = não existia). `dominio` já normalizado. */
+  listarDominiosBloqueados(): Promise<Array<{ dominio: string; motivo: string; criado_em: Date }>>
+  adicionarDominioBloqueado(dominio: string, motivo: string, agora: Date): Promise<boolean>
+  removerDominioBloqueado(dominio: string): Promise<boolean>
+  /** RPC auditar_degustacao (0020): varre a atividade desde `desde`, abre ocorrências 'auditoria_degustacao' (sem repetir alerta aberto). Devolve quantas NOVAS. */
+  auditarDegustacao(agora: Date, desde: Date): Promise<number>
+  /** RPC registrar_barrada_dispositivo (0020): conta uma tentativa barrada do computador (HMAC) que já usou outro teste. */
+  registrarBarradaDispositivo(hmac: string, quando: Date): Promise<void>
   /** RPC criar_degustacao: o token confirmado vira licença de teste (cortesia), com o mesmo lock por e-mail de criar_compra/criar_cortesia. */
   criarDegustacao(p: { token_hash: string; dias: number; agora: Date }): Promise<{ resultado: 'criada' | 'token_invalido' | 'expirada' | 'ja_usada' | 'ja_tem_licenca'; email?: string; licenca?: Licenca }>
 
