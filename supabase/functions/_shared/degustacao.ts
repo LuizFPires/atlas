@@ -2,7 +2,7 @@
 // Fluxo: pedir (público) -> e-mail com token de uso único -> confirmar (público) -> licença de teste (tipo 'cortesia').
 // Sem clicar no link, NENHUMA licença é criada. Pagamento/assinatura não são tocados.
 import { adminLogado, type DepsAdmin } from './admin.ts'
-import { DOMINIO_RE, JANELA_AUDITORIA_DIAS, PROVEDORES_COMUNS } from './auditoria.ts'
+import { DOMINIO_RE, dominioRegistravel, JANELA_AUDITORIA_DIAS, protegeProvedor } from './auditoria.ts'
 import { hmac, sha256, tokenAleatorio } from './cripto.ts'
 import { DOMINIOS_DESCARTAVEIS } from './dominios-descartaveis.ts'
 import { gerarLink } from './links.ts'
@@ -174,7 +174,8 @@ export async function adicionarDominio(d: DepsAdmin, jwt: string, a: { dominio: 
   const adm = await adminLogado(d, jwt)
   const dominio = normalizarDominio(a.dominio)
   if (!dominio) throw new ErroRegra('dominio_invalido', 'Esse domínio não parece certo. Escreva só a parte depois do @, por exemplo mailinator.com.', 400)
-  if (PROVEDORES_COMUNS.has(dominio)) throw new ErroRegra('dominio_protegido', 'Esse é um e-mail de uso comum (como Gmail ou Hotmail). Bloquear barraria gente de verdade.', 409)
+  if (!dominioRegistravel(dominio)) throw new ErroRegra('dominio_protegido', 'Esse é um final de endereço que muita gente usa (como .com.br). Bloquear barraria gente de verdade. Escreva o domínio completo, por exemplo mailinator.com.', 409)
+  if (protegeProvedor(dominio)) throw new ErroRegra('dominio_protegido', 'Esse é um e-mail de uso comum (como Gmail ou Hotmail). Bloquear barraria gente de verdade.', 409)
   const novo = await d.store.adicionarDominioBloqueado(dominio, 'descartavel', d.agora())
   if (novo) await d.store.inserirOcorrencia({ cliente_id: null, tipo: 'degustacao_dominio', descricao: `Domínio bloqueado no teste grátis: ${dominio}`, autor: adm.email, resolvida: true, criada_em: d.agora() })
   return { ok: true, dominio, ja_existia: !novo }

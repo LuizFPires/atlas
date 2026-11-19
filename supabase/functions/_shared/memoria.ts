@@ -1,6 +1,6 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
-import { LIMIARES_AUDITORIA, PROVEDORES_COMUNS } from './auditoria.ts'
+import { dominioRegistravel, LIMIARES_AUDITORIA, PROVEDORES_COMUNS, protegeProvedor } from './auditoria.ts'
 import type { Ativacao, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
@@ -223,12 +223,12 @@ export class StoreMemoria implements Store {
     const abrir = async (chave: string, descricao: string) => this.inserirOcorrencia({ cliente_id: null, tipo: 'auditoria_degustacao', descricao, autor: 'auto-auditoria', resolvida: false, criada_em: agora, chave })
     const janela = this.degustacoes.filter((d) => d.ultimo_pedido_em >= desde)
     const porDominio = new Map<string, Set<string>>()
-    for (const d of janela) {
+    for (const d of janela.filter((x) => x.status === 'confirmada')) { // só testes CONFIRMADOS contam para sugerir domínio
       const dom = d.email && d.email.includes('@') ? d.email.slice(d.email.indexOf('@') + 1) : ''
       if (dom) porDominio.set(dom, (porDominio.get(dom) ?? new Set()).add(d.email_hash))
     }
     for (const [dom, hashes] of porDominio) {
-      if (hashes.size < L.dominio || PROVEDORES_COMUNS.has(dom)) continue
+      if (hashes.size < L.dominio || PROVEDORES_COMUNS.has(dom) || !dominioRegistravel(dom) || protegeProvedor(dom)) continue
       if ([...this.dominiosExtras].some((b) => dom === b || dom.endsWith(`.${b}`))) continue
       await abrir(`aud:dominio:${dom}`, `Domínio suspeito no teste grátis: ${hashes.size} pessoas diferentes pediram o teste com e-mail @${dom} nos últimos dias. Se for e-mail temporário (daqueles que somem em minutos), clique em "Bloquear este domínio". Se for uma empresa de verdade, é só dar baixa.`)
     }

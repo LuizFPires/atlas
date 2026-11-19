@@ -178,7 +178,11 @@ function DominiosBloqueados({ api, versao }: { api: AdminApi; versao: number }) 
     const r = await api.dominios()
     if (r.ok) { setLista(r.dominios); setErro('') } else setErro(r.mensagem)
   }, [api])
-  useEffect(() => { void carregar() }, [carregar, versao])
+  useEffect(() => {
+    let vivo = true
+    api.dominios().then((r) => { if (!vivo) return; if (r.ok) { setLista(r.dominios); setErro('') } else setErro(r.mensagem) })
+    return () => { vivo = false }
+  }, [api, versao])
   const adicionar = async (ev: React.FormEvent) => {
     ev.preventDefault(); setErro(''); setMsg('')
     const r = await api.bloquearDominio(novo)
