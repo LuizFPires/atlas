@@ -18,7 +18,8 @@ export interface LinhaCliente {
   /** Cortesia do gestor (com vencimento) ou licença paga. Ausente = paga. */
   tipo?: 'paga' | 'cortesia'; validade_em?: string | null
 }
-export interface ItemAtencao { id: string; tipo: string; quem: string; oque: string; quando: string; licenca_id: string | null }
+export interface ItemAtencao { id: string; tipo: string; quem: string; oque: string; quando: string; licenca_id: string | null; dominio_sugerido?: string }
+export interface DominioBloqueado { dominio: string; motivo: string; criado_em: string }
 export interface PainelAdmin { gerado_em: string; indicadores: IndicadoresAdmin; atencao: ItemAtencao[]; clientes: LinhaCliente[] }
 export interface LinhaEntrega { licenca_id: string; cliente: string; obra_id: string; marca_dagua: string; baixado_em: string }
 export interface LinhaCadastro { licenca_id: string; nome: string; empresa: string; ramo: string; email: string; cadastro_em: string | null; comprada_em: string | null; situacao: 'feito' | 'pendente' }
@@ -36,6 +37,10 @@ export interface AdminApi {
   liberarCortesia(email: string, validadeEm: string, nome?: string): Promise<Resp<{ nova: boolean; validade_em: string }>>
   /** Teste grátis: sem argumentos só lê; com `ativa`/`dias` liga, desliga ou ajusta (1 a 30 dias). O servidor valida de novo. */
   degustacao(mudanca?: { ativa?: boolean; dias?: number }): Promise<Resp<{ ativa: boolean; dias: number }>>
+  /** Domínios de e-mail descartável bloqueados no teste grátis (a lista que o gestor edita). */
+  dominios(): Promise<Resp<{ dominios: DominioBloqueado[] }>>
+  bloquearDominio(dominio: string): Promise<Resp<{ dominio: string; ja_existia: boolean }>>
+  liberarDominio(dominio: string): Promise<Resp<{ dominio: string }>>
   entregas(filtro?: { marca?: string; licenca_id?: string }): Promise<Resp<{ entregas: LinhaEntrega[] }>>
   cadastros(): Promise<Resp<{ cadastros: LinhaCadastro[] }>>
   sair(): void
@@ -106,6 +111,9 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       return servidor<{ nova: boolean; validade_em: string }>('/admin/cortesia', { email: e, validade_em: validadeEm, ...(nome?.trim() ? { nome: nome.trim() } : {}) })
     },
     degustacao: (mudanca = {}) => servidor<{ ativa: boolean; dias: number }>('/admin/degustacao', mudanca),
+    dominios: () => servidor<{ dominios: DominioBloqueado[] }>('/admin/dominios'),
+    bloquearDominio: (dominio) => servidor<{ dominio: string; ja_existia: boolean }>('/admin/dominios/adicionar', { dominio }),
+    liberarDominio: (dominio) => servidor<{ dominio: string }>('/admin/dominios/remover', { dominio }),
     resolverOcorrencia: (id) => servidor('/admin/ocorrencias/resolver', { id }),
     entregas: (filtro = {}) => servidor<{ entregas: LinhaEntrega[] }>('/admin/entregas', filtro),
     cadastros: () => servidor<{ cadastros: LinhaCadastro[] }>('/admin/cadastros'),

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { CampoFalado, Icone } from '../ui'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
-import type { AdminApi, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, Situacao } from './admin-api'
+import type { AdminApi, DominioBloqueado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, Situacao } from './admin-api'
 import './admin.css'
 
 type Aba = 'geral' | 'cadastros' | 'entregas'
@@ -168,6 +168,58 @@ function TesteGratis({ api }: { api: AdminApi }) {
   )
 }
 
+/** Lista de e-mails temporários bloqueados no teste grátis: ver, bloquear mais um e liberar de volta. O servidor valida de novo. */
+function DominiosBloqueados({ api, versao }: { api: AdminApi; versao: number }) {
+  const [lista, setLista] = useState<DominioBloqueado[] | null>(null)
+  const [novo, setNovo] = useState('')
+  const [erro, setErro] = useState('')
+  const [msg, setMsg] = useState('')
+  const carregar = useCallback(async () => {
+    const r = await api.dominios()
+    if (r.ok) { setLista(r.dominios); setErro('') } else setErro(r.mensagem)
+  }, [api])
+  useEffect(() => {
+    let vivo = true
+    api.dominios().then((r) => { if (!vivo) return; if (r.ok) { setLista(r.dominios); setErro('') } else setErro(r.mensagem) })
+    return () => { vivo = false }
+  }, [api, versao])
+  const adicionar = async (ev: React.FormEvent) => {
+    ev.preventDefault(); setErro(''); setMsg('')
+    const r = await api.bloquearDominio(novo)
+    if (!r.ok) { setErro(r.mensagem); return }
+    setMsg(r.ja_existia ? `${r.dominio} já estava na lista.` : `${r.dominio} bloqueado.`)
+    setNovo('')
+    await carregar()
+  }
+  const liberar = async (dominio: string) => {
+    setErro(''); setMsg('')
+    const r = await api.liberarDominio(dominio)
+    if (!r.ok) setErro(r.mensagem); else setMsg(`${dominio} liberado de volta.`)
+    await carregar()
+  }
+  return (
+    <section className="ad-card" aria-label="E-mails temporários bloqueados">
+      <span className="ad-rotulo">E-MAILS TEMPORÁRIOS BLOQUEADOS</span>
+      <p className="ad-p">Domínios de e-mail que não podem pedir o teste grátis (daqueles que somem em minutos). O Atlas já vem com uma lista; aqui você acrescenta os que aparecerem.</p>
+      <form onSubmit={adicionar} noValidate>
+        <label className="ad-campo-data">Domínio para bloquear
+          <input type="text" value={novo} onChange={(e) => setNovo(e.target.value)} placeholder="mailinator.com" autoComplete="off" />
+        </label>
+        <div className="ad-linha"><button type="submit" className="ad-botao ad-botao--lime" disabled={!novo.trim()}>Bloquear domínio</button></div>
+      </form>
+      {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
+      {erro && <p role="alert" className="ad-erro">{erro}</p>}
+      {lista && lista.length === 0 && <p className="ad-mute">Nenhum domínio acrescentado por você ainda.</p>}
+      {lista?.map((x) => (
+        <div key={x.dominio} className="ad-linha">
+          <b>{x.dominio}</b><span className="ad-mute">desde {dia(x.criado_em)}</span>
+          <button type="button" className="ad-link" aria-label={`Liberar ${x.dominio}`} onClick={() => liberar(x.dominio)}>Liberar</button>
+        </div>
+      ))}
+    </section>
+  )
+}
+
 function useCarga<T>(buscar: () => Promise<{ ok: true; v: T } | { ok: false; mensagem: string }>) {
   const [dado, setDado] = useState<T | null>(null)
   const [erro, setErro] = useState('')
@@ -193,6 +245,7 @@ function VisaoGeral({ api }: { api: AdminApi }) {
   const [msg, setMsg] = useState('')
   const [cortesia, setCortesia] = useState({ email: '', data: '' })
   const [erroCortesia, setErroCortesia] = useState('')
+  const [versaoDominios, setVersaoDominios] = useState(0)
 
   if (!dado) return erro ? <p role="alert" className="ad-erro">{erro}</p> : <p role="status" className="ad-mute">Carregando os números…</p>
   const { indicadores: i, atencao, clientes } = dado
@@ -218,6 +271,15 @@ function VisaoGeral({ api }: { api: AdminApi }) {
   const dar_baixa = async (id: string) => {
     const r = await api.resolverOcorrencia(id)
     setMsg(r.ok ? '' : r.mensagem)
+    await recarregar()
+  }
+  const bloquearSugerido = async (a: ItemAtencao) => {
+    if (!a.dominio_sugerido) return
+    const r = await api.bloquearDominio(a.dominio_sugerido)
+    if (!r.ok) { setMsg(r.mensagem); return }
+    await api.resolverOcorrencia(a.id) // o alerta está atendido
+    setMsg(`${r.dominio} bloqueado. Quem pedir o teste com esse e-mail será recusado.`)
+    setVersaoDominios((v) => v + 1)
     await recarregar()
   }
   const abrirLiberar = (licencaId: string, quem: string, motivo = '') => { setMsg(''); setLiberando({ licencaId, quem, motivo }) }
@@ -252,9 +314,10 @@ function VisaoGeral({ api }: { api: AdminApi }) {
           <section className="ad-card ad-card--aviso" aria-label="Precisam de atenção">
             <span className="ad-rotulo ad-rotulo--aviso">PRECISAM DE ATENÇÃO</span>
             {atencao.length === 0 && <p className="ad-mute">Nada pedindo atenção agora.</p>}
-            {atencao.map((a) => <Atencao key={a.id} a={a} onBaixa={() => dar_baixa(a.id)} onLiberar={() => a.licenca_id && abrirLiberar(a.licenca_id, a.quem, 'Cliente pediu a troca antes do prazo de 7 dias.')} />)}
+            {atencao.map((a) => <Atencao key={a.id} a={a} onBloquear={() => bloquearSugerido(a)} onBaixa={() => dar_baixa(a.id)} onLiberar={() => a.licenca_id && abrirLiberar(a.licenca_id, a.quem, 'Cliente pediu a troca antes do prazo de 7 dias.')} />)}
           </section>
           <TesteGratis api={api} />
+          <DominiosBloqueados api={api} versao={versaoDominios} />
           <section className="ad-card" aria-label="Liberar cortesia">
             <span className="ad-rotulo">LIBERAR CORTESIA</span>
             <p className="ad-p">Dê um acesso de presente a alguém, por uns dias. Quando a data chegar, o acesso acaba sozinho.</p>
@@ -298,13 +361,14 @@ function LinhaDoCliente({ c, agora, onLiberar }: { c: LinhaCliente; agora: Date;
   )
 }
 
-function Atencao({ a, onBaixa, onLiberar }: { a: ItemAtencao; onBaixa: () => void; onLiberar: () => void }) {
+function Atencao({ a, onBaixa, onLiberar, onBloquear }: { a: ItemAtencao; onBaixa: () => void; onLiberar: () => void; onBloquear: () => void }) {
   return (
     <div className="ad-alerta">
       <b>{a.quem}</b>
       <span className="ad-mute">{a.oque}</span>
       <div className="ad-linha">
         {a.licenca_id && <button type="button" className="ad-link" onClick={onLiberar}>Liberar troca</button>}
+        {a.dominio_sugerido && <button type="button" className="ad-link" onClick={onBloquear}>Bloquear este domínio</button>}
         <button type="button" className="ad-link ad-link--mudo" onClick={onBaixa}>Já resolvi</button>
       </div>
     </div>

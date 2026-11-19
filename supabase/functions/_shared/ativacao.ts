@@ -85,6 +85,7 @@ export async function confirmarAtivacao(d: Deps, a: { email: string; codigo: str
   // 1 degustação por computador (só teste grátis; compra e cortesia manual do gestor não entram). Antes de gastar o código.
   const dispositivo = ehTesteGratis(lic) ? await hashDispositivo(d, a.computador_hash) : null
   if (!atual && dispositivo && (await d.store.computadorJaTestou(dispositivo, lic.id))) {
+    await d.store.registrarBarradaDispositivo(dispositivo, d.agora()) // alimenta a auto-auditoria (bloco C)
     throw new ErroRegra('ja_testou_neste_computador', MSG_JA_TESTOU, 409)
   }
   await consumirCodigo(d, cliente.id, 'ativacao', a.codigo)

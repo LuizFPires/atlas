@@ -12,7 +12,7 @@ import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts
 import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
-import { configDegustacaoAdmin, confirmarDegustacao, type DepsDegustacao, estadoDegustacao, pedirDegustacao } from './degustacao.ts'
+import { adicionarDominio, auditarDegustacao, configDegustacaoAdmin, confirmarDegustacao, listarDominios, removerDominio, type DepsDegustacao, estadoDegustacao, pedirDegustacao } from './degustacao.ts'
 import { adminLogado, liberarCortesia, type DepsAdmin, euAdmin, liberarTrocaUrgente, painel, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
 import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, excluirConta, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
 
@@ -96,6 +96,12 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await liberarCortesia(ctx.admin, jwt, { email: o.email, validade_em: o.validade_em, nome: o.nome }))
         case '/admin/degustacao':
           return json(await configDegustacaoAdmin(ctx.admin, jwt, { ativa: o.ativa, dias: o.dias }))
+        case '/admin/dominios':
+          return json(await listarDominios(ctx.admin, jwt))
+        case '/admin/dominios/adicionar':
+          return json(await adicionarDominio(ctx.admin, jwt, { dominio: o.dominio }))
+        case '/admin/dominios/remover':
+          return json(await removerDominio(ctx.admin, jwt, { dominio: o.dominio }))
         case '/admin/cadastros':
           return json(await verCadastros(ctx.admin, jwt))
         default:
@@ -139,6 +145,9 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
       case '/degustacao/limpar-ips': // agendador diário (cron): zera o ip de pedidos antigos (LGPD)
         if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
         return json({ ok: true, limpos: await ctx.deps.store.limparIpsDegustacao(ctx.deps.agora(), 30) })
+      case '/degustacao/auditar': // agendador semanal (cron): varredura anti-fraude; só abre ocorrências no painel
+        if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
+        return json(await auditarDegustacao(ctx.deps))
       case '/degustacao/estado':
         return json(await estadoDegustacao((ctx.degustacao ?? ctx.deps) as DepsDegustacao))
       case '/degustacao/pedir':

@@ -1,5 +1,6 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
+import { dominioRegistravel, LIMIARES_AUDITORIA, PROVEDORES_COMUNS, protegeProvedor } from './auditoria.ts'
 import type { Ativacao, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
@@ -75,6 +76,11 @@ export class StoreMemoria implements Store {
   async ativacaoAtiva(lid: string) { return this.ativacoes.find((a) => a.licenca_id === lid && a.ativo) ?? null }
   /** Espelha o ledger degustacoes_dispositivos (0019): HMAC do computador -> licença dona. excluirConta NÃO mexe nele. */
   dispositivosTeste = new Map<string, string>()
+  barradasDispositivo = new Map<string, { n: number; ultima: Date }>()
+  async registrarBarradaDispositivo(hmac: string, quando: Date) {
+    if (!this.dispositivosTeste.has(hmac)) return // UPDATE sem linha = nada
+    this.barradasDispositivo.set(hmac, { n: (this.barradasDispositivo.get(hmac)?.n ?? 0) + 1, ultima: quando })
+  }
   async computadorJaTestou(hmac: string, licencaIdAtual: string) {
     const dono = this.dispositivosTeste.get(hmac)
     return dono !== undefined && dono !== licencaIdAtual
@@ -101,7 +107,7 @@ export class StoreMemoria implements Store {
     }
     const lic = this.licencas.find((x) => x.id === p.licenca_id)
     if (p.dispositivo_hmac && lic?.tipo === 'cortesia' && lic.origem === 'degustacao') { // espelha o ledger dentro de trocar_computador (0019)
-      if (await this.computadorJaTestou(p.dispositivo_hmac, p.licenca_id)) return false
+      if (await this.computadorJaTestou(p.dispositivo_hmac, p.licenca_id)) { await this.registrarBarradaDispositivo(p.dispositivo_hmac, p.quando); return false }
       await this.registrarDispositivoTeste(p.dispositivo_hmac, p.licenca_id)
     }
     atual.ativo = false
@@ -128,7 +134,10 @@ export class StoreMemoria implements Store {
   async trocasDa(lid: string) { return this.trocas.filter((t) => t.licenca_id === lid) }
   async inserirEntrega(e: Entrega) { this.entregas.push(e) }
   async inserirOcorrencia(o: Ocorrencia) {
+    // Espelha o índice único parcial (0020): no máximo 1 ocorrência ABERTA por chave; a repetida é ignorada (ON CONFLICT DO NOTHING).
+    if (o.chave && this.ocorrencias.some((x) => x.chave === o.chave && !x.resolvida)) return
     this.ocorrencias.push({
+      chave: o.chave ?? null,
       id: this.id(), cliente_id: o.cliente_id, tipo: o.tipo, descricao: o.descricao, autor: o.autor ?? null,
       resolvida: o.resolvida ?? false, criada_em: o.criada_em ?? new Date(), resolvida_por: null, resolvida_em: null,
     })
@@ -185,16 +194,60 @@ export class StoreMemoria implements Store {
   // ── Bloco B: degustação (espelha a migration 0016) ──
   config: ConfigDegustacao = { ativa: false, dias: 5 }
   dominiosExtras = new Set<string>()
-  degustacoes: Array<{ email: string | null; email_hash: string; token_hash: string; status: 'pendente' | 'confirmada' | 'expirada'; ip: string | null; expira_em: Date; criado_em: Date; confirmado_em: Date | null }> = []
+  degustacoes: Array<{ email: string | null; email_hash: string; token_hash: string; status: 'pendente' | 'confirmada' | 'expirada'; ip: string | null; expira_em: Date; criado_em: Date; confirmado_em: Date | null; pedidos: number; variantes: number; ultimo_pedido_em: Date }> = []
   async configDegustacao() { return { ...this.config } }
   async definirConfigDegustacao(c: { ativa: boolean; dias?: number }) { this.config = { ativa: c.ativa, dias: c.dias ?? this.config.dias }; return { ...this.config } }
   async dominioBloqueado(d: string) { return this.dominiosExtras.has(d) }
   async pedirDegustacao(p: { email: string; email_hash: string; token_hash: string; ip: string; expira_em: Date; agora: Date }) {
     const ex = this.degustacoes.find((x) => x.email_hash === p.email_hash)
-    if (!ex) { this.degustacoes.push({ email: p.email, email_hash: p.email_hash, token_hash: p.token_hash, status: 'pendente', ip: p.ip, expira_em: p.expira_em, criado_em: p.agora, confirmado_em: null }); return 'criado' as const }
-    if (ex.status === 'confirmada') return 'ja_usada' as const
+    if (!ex) { this.degustacoes.push({ email: p.email, email_hash: p.email_hash, token_hash: p.token_hash, status: 'pendente', ip: p.ip, expira_em: p.expira_em, criado_em: p.agora, confirmado_em: null, pedidos: 1, variantes: 0, ultimo_pedido_em: p.agora }); return 'criado' as const }
+    if (ex.status === 'confirmada') { ex.pedidos++; ex.ultimo_pedido_em = p.agora; return 'ja_usada' as const }
+    ex.pedidos++; ex.ultimo_pedido_em = p.agora
+    if (ex.email !== p.email) ex.variantes++
     Object.assign(ex, { email: p.email, token_hash: p.token_hash, ip: p.ip, expira_em: p.expira_em, criado_em: p.agora, status: 'pendente' })
     return 'reenviado' as const
+  }
+  async listarDominiosBloqueados() { return [...this.dominiosExtras].sort().map((dominio) => ({ dominio, motivo: this.motivosDominio.get(dominio) ?? 'descartavel', criado_em: this.quandoDominio.get(dominio) ?? new Date(0) })) }
+  private motivosDominio = new Map<string, string>()
+  private quandoDominio = new Map<string, Date>()
+  async adicionarDominioBloqueado(dominio: string, motivo: string, agora: Date) {
+    if (this.dominiosExtras.has(dominio)) return false
+    this.dominiosExtras.add(dominio); this.motivosDominio.set(dominio, motivo); this.quandoDominio.set(dominio, agora)
+    return true
+  }
+  async removerDominioBloqueado(dominio: string) { return this.dominiosExtras.delete(dominio) }
+  /** Espelha auditar_degustacao (0020): mesmos sinais, limiares e chaves. Sem e-mail cru nas descrições. */
+  async auditarDegustacao(agora: Date, desde: Date) {
+    const L = LIMIARES_AUDITORIA
+    const antes = this.ocorrencias.length
+    const abrir = async (chave: string, descricao: string) => this.inserirOcorrencia({ cliente_id: null, tipo: 'auditoria_degustacao', descricao, autor: 'auto-auditoria', resolvida: false, criada_em: agora, chave })
+    const janela = this.degustacoes.filter((d) => d.ultimo_pedido_em >= desde)
+    const porDominio = new Map<string, Set<string>>()
+    for (const d of janela.filter((x) => x.status === 'confirmada')) { // só testes CONFIRMADOS contam para sugerir domínio
+      const dom = d.email && d.email.includes('@') ? d.email.slice(d.email.indexOf('@') + 1) : ''
+      if (dom) porDominio.set(dom, (porDominio.get(dom) ?? new Set()).add(d.email_hash))
+    }
+    for (const [dom, hashes] of porDominio) {
+      if (hashes.size < L.dominio || PROVEDORES_COMUNS.has(dom) || !dominioRegistravel(dom) || protegeProvedor(dom)) continue
+      if ([...this.dominiosExtras].some((b) => dom === b || dom.endsWith(`.${b}`))) continue
+      await abrir(`aud:dominio:${dom}`, `Domínio suspeito no teste grátis: ${hashes.size} pessoas diferentes pediram o teste com e-mail @${dom} nos últimos dias. Se for e-mail temporário (daqueles que somem em minutos), clique em "Bloquear este domínio". Se for uma empresa de verdade, é só dar baixa.`)
+    }
+    const porIp = new Map<string, Set<string>>()
+    for (const d of janela) if (d.ip) porIp.set(d.ip, (porIp.get(d.ip) ?? new Set()).add(d.email_hash))
+    for (const [ip, hashes] of porIp) {
+      if (hashes.size < L.ip) continue
+      const mascara = /^\d+\.\d+\.\d+\.\d+$/.test(ip) ? `${ip.split('.').slice(0, 2).join('.')}.*.*` : `${ip.slice(0, 9)}…`
+      await abrir(`aud:ip:${ip}`, `Muitos pedidos do mesmo lugar: ${hashes.size} e-mails diferentes pediram o teste grátis a partir do IP ${mascara} nos últimos dias. Pode ser uma empresa ou escola dividindo a internet (normal), ou uma pessoa tentando muitos testes. Olhe os domínios dos e-mails; se parecer abuso, bloqueie o domínio ou desligue o teste por um tempo.`)
+    }
+    for (const d of janela) {
+      if (d.variantes < L.tronco_variantes && d.pedidos < L.tronco_pedidos) continue
+      await abrir(`aud:tronco:${d.email_hash.slice(0, 12)}`, `Uma mesma pessoa tentou o teste grátis ${d.pedidos} vezes, escrevendo o e-mail de ${d.variantes + 1} jeitos diferentes (com pontos ou "+algo" no meio). O Atlas já trata tudo isso como o mesmo e-mail e libera só 1 teste, então não precisa fazer nada; é só um aviso de que tem gente tentando burlar. Dê baixa quando quiser.`)
+    }
+    for (const [hmac, b] of this.barradasDispositivo) {
+      if (b.ultima < desde || b.n < L.dispositivo_barradas) continue
+      await abrir(`aud:disp:${hmac.slice(0, 12)}`, `Um computador (final ${hmac.slice(-6)}) foi barrado ${b.n} vezes tentando usar outro teste grátis. O Atlas já recusou todas; é só um aviso de reincidência. Se essa pessoa quiser mesmo continuar, o caminho é assinar. Dê baixa quando quiser.`)
+    }
+    return this.ocorrencias.length - antes
   }
   /** Espelha limpar_ips_degustacao (0017). */
   async limparIpsDegustacao(agora: Date, dias: number) {

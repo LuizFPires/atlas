@@ -35,7 +35,10 @@ export async function trocarComputador(d: Deps, a: { email: string; codigo: stri
   }
   // Teste grátis não lava o limite trocando de PC: mesma checagem da ativação, antes de gastar o código.
   const dispositivo = ehTesteGratis(lic) ? await hashDispositivo(d, a.novo_hash) : null
-  if (dispositivo && (await d.store.computadorJaTestou(dispositivo, lic.id))) throw new ErroRegra('ja_testou_neste_computador', MSG_JA_TESTOU, 409)
+  if (dispositivo && (await d.store.computadorJaTestou(dispositivo, lic.id))) {
+    await d.store.registrarBarradaDispositivo(dispositivo, d.agora()) // alimenta a auto-auditoria (bloco C)
+    throw new ErroRegra('ja_testou_neste_computador', MSG_JA_TESTOU, 409)
+  }
   await consumirCodigo(d, cliente.id, 'troca', a.codigo)
   const token_dispositivo = tokenAleatorio()
   // Uma transação só (RPC trocar_computador): desativa a atual, cria a nova, registra a troca e zera o override.
