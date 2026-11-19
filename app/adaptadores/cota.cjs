@@ -122,9 +122,10 @@ const isoValido = (s) => (typeof s === 'string' && !Number.isNaN(new Date(s).get
 
 /**
  * `deps`: { raiz, construcao (.linha), painel (continuar/ler), claudeEstado, dadosApp, avisar?, agora?, executar?, resolver? }
+ * `garantirKit(pasta)` (kit.garantir): chamado ANTES de religar a linha (retomada sozinha incluída); se falhar, nada é religado.
  * `executar`/`resolver` existem para teste (padrão: seguro.cjs).
  */
-function criarCota({ raiz, construcao, painel, claudeEstado, dadosApp = path.join(path.dirname(raiz), '.atlas-app'), avisar = async () => {}, agora = () => new Date(), executar = executarClaude, resolver = resolverClaude }) {
+function criarCota({ raiz, construcao, painel, claudeEstado, dadosApp = path.join(path.dirname(raiz), '.atlas-app'), avisar = async () => {}, garantirKit = null, agora = () => new Date(), executar = executarClaude, resolver = resolverClaude }) {
   /** pasta -> { quando: ms, estado, voltaEm } (último teste barato) */
   const testes = new Map()
   const paradas = criarLojaDeParadas({ raiz, dadosApp }) // registro do APP (fora da obra): só ele autoriza religar sozinho
@@ -200,6 +201,7 @@ function criarCota({ raiz, construcao, painel, claudeEstado, dadosApp = path.joi
     if (t.estado !== 'renovada') throw new Error('cota-nao-renovou') // fail-closed: nada muda
     const estado = await painel.ler(pasta)
     if (estado.pausadaPorVoce) return false // o cliente pausou à mão: a retomada respeita
+    if (typeof garantirKit === 'function') await garantirKit(pasta) // sem o kit não religa (lança = nada muda, registro de parada fica)
     await painel.continuar(pasta)
     paradas.apagar(pasta)
     testes.delete(pasta)

@@ -12,7 +12,7 @@ const { criarLojaDeParadas } = require('./cota-store.cjs')
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-cota-'))
 const PLAN = '# PLAN — Obra\n\n## Milestone 1 — Base\npeso: 1\n- [x] a\n\n## Milestone 2 — Aviso de confirmação\npeso: 1\n- [ ] Enviar aviso <b>agora</b>\n- [ ] outra\n'
 
-function montar({ resposta, linha = { estado: 'parou', motivo: 'cota' }, pausada = false, registro = true } = {}) {
+function montar({ resposta, linha = { estado: 'parou', motivo: 'cota' }, pausada = false, registro = true, garantirKit } = {}) {
   const raiz = tmp()
   fs.mkdirSync(path.join(raiz, 'obra', '.atlas'), { recursive: true })
   fs.writeFileSync(path.join(raiz, 'obra', 'PLAN.md'), PLAN)
@@ -24,7 +24,10 @@ function montar({ resposta, linha = { estado: 'parou', motivo: 'cota' }, pausada
   const dadosApp = tmp()
   if (registro) criarLojaDeParadas({ raiz, dadosApp }).marcar('obra', { em: estado.agora.toISOString() }) // o que construcao.cjs grava no fim por cota
   estado.executadas = 0
-  const cota = criarCota({ raiz, construcao, painel, claudeEstado: async () => ({ conectado: true, plano: 'pro' }), dadosApp, agora: () => estado.agora, executar, resolver: () => ({ cmd: 'x' }), avisar: async (p, t) => estado.avisos.push(t) })
+  estado.ordem = []
+  if (garantirKit) { const g = garantirKit; garantirKit = async (p) => { estado.ordem.push('kit:' + p); await g(p) } }
+  painel.continuar = async (p) => { estado.ordem.push('continuar:' + p); estado.continuadas.push(p) }
+  const cota = criarCota({ raiz, construcao, painel, claudeEstado: async () => ({ conectado: true, plano: 'pro' }), dadosApp, agora: () => estado.agora, executar, resolver: () => ({ cmd: 'x' }), avisar: async (p, t) => estado.avisos.push(t), garantirKit })
   return { raiz, cota, estado, dadosApp }
 }
 const OK = { type: 'result', is_error: false, result: 'ok' }
@@ -132,6 +135,22 @@ test('vigiar: retoma sozinho só obra parada por cota que renovou', async () => 
   const feitas = await cota.vigiar()
   assert.deepEqual(feitas, ['obra'])
   assert.deepEqual(estado.continuadas, ['obra'])
+})
+
+test('vigiar: garante o kit ANTES de religar; se o kit falhar, nada é religado e o registro fica', async () => {
+  const a = montar({ resposta: OK, garantirKit: async () => {} })
+  assert.deepEqual(await a.cota.vigiar(), ['obra'])
+  assert.deepEqual(a.estado.ordem, ['kit:obra', 'continuar:obra'])
+  const b = montar({ resposta: OK, garantirKit: async () => { throw new Error('kit-indisponivel') } })
+  assert.deepEqual(await b.cota.vigiar(), [])
+  assert.deepEqual(b.estado.continuadas, [])
+  assert.equal(criarLojaDeParadas({ raiz: b.raiz, dadosApp: b.dadosApp }).obter('obra') !== null, true)
+})
+
+test('vigiar: cota não renovada não baixa o kit', async () => {
+  const a = montar({ resposta: LIMITE, garantirKit: async () => {} })
+  assert.deepEqual(await a.cota.vigiar(), [])
+  assert.deepEqual(a.estado.ordem, [])
 })
 
 test('ocorrência aberta de cota no livro também conta, com liberar_em', async () => {
