@@ -1,11 +1,11 @@
 # Política de Privacidade do Atlas
 
-**Versão 1.0 · [data de publicação]**
+**Versão 1.0 · 19 de novembro de 2026**
 
-Esta Política explica como a **PL Engenharia**, CNPJ [__.___.___/____-__], com sede em [endereço completo], trata os dados pessoais de quem visita o site atlas-ia.app.br e de quem contrata e usa o Atlas. Ela segue a Lei nº 13.709/2018, a Lei Geral de Proteção de Dados (LGPD).
+Esta Política explica como a **PL Participações LTDA**, CNPJ 30.484.256/0001-82, com sede na Avenida Guaratã, 1885, Sala 12, Calafate, Belo Horizonte/MG, CEP 30411-516, trata os dados pessoais de quem visita o site atlas-ia.app.br e de quem contrata e usa o Atlas. Ela segue a Lei nº 13.709/2018, a Lei Geral de Proteção de Dados (LGPD).
 
-**Controladora:** PL Engenharia.
-**Encarregado (DPO):** [nome] · [e-mail do encarregado].
+**Controladora:** PL Participações LTDA.
+**Encarregado (DPO):** Luiz Felipe Souza Alvarenga Pires · luizfsap@gmail.com.
 
 ## 1. Que dados tratamos e por quê
 
@@ -13,24 +13,24 @@ Esta Política explica como a **PL Engenharia**, CNPJ [__.___.___/____-__], com 
 |---|---|---|---|
 | Nome ou apelido, nome da empresa, descrição da atividade, e-mail | No cadastro, logo após a compra | Criar a conta, enviar o acesso, personalizar o Atlas (te chamar pelo nome, sugerir ideias do seu ramo) | Execução de contrato (V) |
 | Dados de cobrança: nome, CPF ou CNPJ, valores, datas e status de pagamento | Na compra e nas mensalidades | Cobrar, emitir nota fiscal e cumprir obrigações fiscais | Execução de contrato (V) e obrigação legal (II) |
-| Dados do cartão ou da conta de pagamento | Na compra | Processar o pagamento. **Ficam somente com o processador de pagamentos** ([nome do gateway]); a PL Engenharia não armazena dados de cartão | Execução de contrato (V) |
+| Dados do cartão ou da conta de pagamento | Na compra | Processar o pagamento. **Ficam somente com o processador de pagamentos** (Stripe); a PL Participações LTDA não armazena dados de cartão | Execução de contrato (V) |
 | Dados da licença: identificador do computador, nome da máquina, versão do Windows, datas de ativação e troca, último acesso | Na ativação e no uso | Validar a licença, permitir a troca de computador e evitar cópias e repasse | Execução de contrato (V) e legítimo interesse (IX), na prevenção a fraudes |
 | Dados de uso das Obras: etapa em que cada Obra está, porcentagem concluída, pausas, erros técnicos e a etapa em que o Cliente parou | Durante o uso | Mostrar o progresso, avisar quando algo travar e melhorar o Atlas | Legítimo interesse (IX) |
 | Preferências de notícias pelo celular | Na configuração | Enviar as notícias da obra na frequência escolhida | Execução de contrato (V) |
 | Dados de navegação no site: endereço IP, páginas visitadas, cookies | Ao visitar atlas-ia.app.br | Funcionamento e segurança do site e, se você aceitar, estatísticas | Legítimo interesse (IX) e consentimento (I) para cookies não essenciais |
 
-## 2. O que a PL Engenharia **não** recebe
+## 2. O que a PL Participações LTDA **não** recebe
 
-- **O código e os dados das suas Obras.** Eles ficam no seu computador e nas suas contas (GitHub, Supabase, Vercel e outras). A PL Engenharia não tem acesso.
-- **O conteúdo das suas conversas com o Atlas, os áudios do microfone e os prints de tela enviados à Ajuda do Atlas.** Eles são processados no seu computador e pelo Claude, da Anthropic, **na sua própria conta do Claude**, seguindo a política de privacidade da Anthropic. A PL Engenharia não armazena esse conteúdo.
+- **O código e os dados das suas Obras.** Eles ficam no seu computador e nas suas contas (GitHub, Supabase, Vercel e outras). A PL Participações LTDA não tem acesso.
+- **O conteúdo das suas conversas com o Atlas, os áudios do microfone e os prints de tela enviados à Ajuda do Atlas.** Eles são processados no seu computador e pelo Claude, da Anthropic, **na sua própria conta do Claude**, seguindo a política de privacidade da Anthropic. A PL Participações LTDA não armazena esse conteúdo.
 - **As suas senhas** do Claude, do GitHub, do Registro.br, das lojas de aplicativos e de outros serviços.
 
 ## 3. Com quem compartilhamos
 
 Compartilhamos dados apenas com quem precisa deles para o Atlas funcionar:
-- processador de pagamentos ([nome do gateway]);
-- serviço de envio de e-mails ([nome]);
-- provedor de hospedagem do site e do servidor de licenças ([nome]);
+- processador de pagamentos (Stripe);
+- serviço de envio de e-mails (Resend);
+- provedor de hospedagem do site e do servidor de licenças (Vercel e Supabase);
 - autoridades públicas, quando a lei exigir.
 
 Não vendemos dados pessoais.
@@ -64,7 +64,7 @@ Você pode, a qualquer momento:
 - revogar o consentimento, quando ele for a base legal;
 - se opor a tratamentos baseados em legítimo interesse.
 
-Para isso, escreva para **[e-mail do encarregado]**. Respondemos em até 15 (quinze) dias. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
+Para isso, escreva para **luizfsap@gmail.com**. Respondemos em até 15 (quinze) dias. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
 
 ## 8. Os sistemas que você cria
 

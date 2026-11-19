@@ -1,8 +1,8 @@
 # Licença de Uso do Software Atlas
 
-**Versão 1.0 · [data de publicação]**
+**Versão 1.0 · 19 de novembro de 2026**
 
-Esta Licença é concedida por **PL Engenharia**, CNPJ [__.___.___/____-__] ("Licenciante"), ao Cliente que contratou o Atlas ("Licenciado"). Ela faz parte dos Termos de Uso. O Atlas é protegido pela Lei nº 9.609/1998 (Lei do Software) e pela Lei nº 9.610/1998 (Direitos Autorais).
+Esta Licença é concedida por **PL Participações LTDA**, CNPJ 30.484.256/0001-82 ("Licenciante"), ao Cliente que contratou o Atlas ("Licenciado"). Ela faz parte dos Termos de Uso. O Atlas é protegido pela Lei nº 9.609/1998 (Lei do Software) e pela Lei nº 9.610/1998 (Direitos Autorais).
 
 ## 1. O que a licença permite
 
@@ -58,7 +58,7 @@ O Atlas é fornecido conforme descrito na página de vendas e nos Termos de Uso.
 
 ## 8. Marca
 
-"Atlas" e os elementos de identidade visual são sinais distintivos da Licenciante [pedido de registro no INPI nº ______]. Esta Licença não dá ao Licenciado nenhum direito sobre eles.
+"Atlas" e os elementos de identidade visual são sinais distintivos da Licenciante. Esta Licença não dá ao Licenciado nenhum direito sobre eles.
 
 ## 9. Disposições gerais
 

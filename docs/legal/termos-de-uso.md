@@ -1,8 +1,8 @@
 # Termos de Uso do Atlas
 
-**Versão 1.0 · [data de publicação]**
+**Versão 1.0 · 19 de novembro de 2026**
 
-Estes Termos regulam a contratação e o uso do Atlas, oferecido por **PL Engenharia**, CNPJ [__.___.___/____-__], com sede em [endereço completo] ("PL Engenharia", "nós"), pelo site **atlas-ia.app.br**. Quem contrata o Atlas é chamado aqui de "Cliente" ou "você".
+Estes Termos regulam a contratação e o uso do Atlas, oferecido por **PL Participações LTDA**, CNPJ 30.484.256/0001-82, com sede na Avenida Guaratã, 1885, Sala 12, Calafate, Belo Horizonte/MG, CEP 30411-516 ("PL Participações LTDA", "nós"), pelo site **atlas-ia.app.br**. Quem contrata o Atlas é chamado aqui de "Cliente" ou "você".
 
 Ao concluir a compra ou usar o Atlas, você declara que leu e concorda com estes Termos, com a Licença de Uso e com a Política de Privacidade.
 
@@ -13,7 +13,7 @@ Ao concluir a compra ou usar o Atlas, você declara que leu e concorda com estes
 - (b) o kit de construção, que funciona dentro do Claude Code, ferramenta oficial da Anthropic;
 - (c) o portal da conta, em atlas-ia.app.br.
 
-1.2. O trabalho de construção é feito pela inteligência artificial **Claude**, da Anthropic, usando **a assinatura do próprio Cliente**. A PL Engenharia não vende, não revende e não intermedia a assinatura do Claude.
+1.2. O trabalho de construção é feito pela inteligência artificial **Claude**, da Anthropic, usando **a assinatura do próprio Cliente**. A PL Participações LTDA não vende, não revende e não intermedia a assinatura do Claude.
 
 1.3. Os sistemas criados pelo Cliente com o Atlas são chamados de "Obras".
 
@@ -23,7 +23,7 @@ Ao concluir a compra ou usar o Atlas, você declara que leu e concorda com estes
 - (a) **Implantação**, paga uma única vez: R$ 4.800,00 (quatro mil e oitocentos reais). Inclui a licença do Atlas, o curso e o treinamento em formato digital, e a configuração guiada.
 - (b) **Manutenção mensal**: R$ 200,00 (duzentos reais) por mês, cobrada a partir do 2º mês. Inclui as atualizações do Atlas, o portal da conta e a Ajuda do Atlas.
 
-2.2. Os pagamentos são processados por [nome do gateway de pagamento]. A PL Engenharia não armazena dados de cartão.
+2.2. Os pagamentos são processados por Stripe. A PL Participações LTDA não armazena dados de cartão.
 
 2.3. **Custos de terceiros não estão incluídos** e são contratados e pagos diretamente pelo Cliente a cada fornecedor, quando ele decidir usá-los. Por exemplo:
 - assinatura do Claude (Anthropic);
@@ -35,9 +35,9 @@ Ao concluir a compra ou usar o Atlas, você declara que leu e concorda com estes
 
 ## 3. Direito de arrependimento
 
-3.1. Como a compra é feita pela internet, o Cliente pode desistir em até **7 (sete) dias corridos** contados da compra, conforme o art. 49 do Código de Defesa do Consumidor. A PL Engenharia devolverá integralmente os valores pagos, pelo mesmo meio de pagamento.
+3.1. Como a compra é feita pela internet, o Cliente pode desistir em até **7 (sete) dias corridos** contados da compra, conforme o art. 49 do Código de Defesa do Consumidor. A PL Participações LTDA devolverá integralmente os valores pagos, pelo mesmo meio de pagamento.
 
-3.2. Para desistir, basta usar o botão "Cancelar compra" no portal da conta ou escrever para [e-mail de contato]. Com a desistência, a licença é desativada.
+3.2. Para desistir, basta usar o botão "Cancelar compra" no portal da conta ou escrever para contato@atlas-ia.app.br. Com a desistência, a licença é desativada.
 
 ## 4. Manutenção mensal, atraso e cancelamento
 
@@ -71,19 +71,19 @@ Ao concluir a compra ou usar o Atlas, você declara que leu e concorda com estes
 
 6.2. Prazos e previsões mostrados pelo Atlas são **estimativas**. Eles dependem do plano do Claude, da disponibilidade de serviços de terceiros, da complexidade da Obra e da participação do Cliente.
 
-6.3. A PL Engenharia não se responsabiliza por indisponibilidade, mudanças de preço ou de regras de serviços de terceiros (Anthropic, GitHub, Supabase, Vercel, Registro.br, Apple, Google e outros), nem pela aprovação ou recusa de aplicativos pelas lojas.
+6.3. A PL Participações LTDA não se responsabiliza por indisponibilidade, mudanças de preço ou de regras de serviços de terceiros (Anthropic, GitHub, Supabase, Vercel, Registro.br, Apple, Google e outros), nem pela aprovação ou recusa de aplicativos pelas lojas.
 
 ## 7. Propriedade
 
 7.1. **As Obras são do Cliente.** O código, os dados, a marca e o nome dos sistemas criados pelo Cliente com o Atlas pertencem ao Cliente, ficam guardados nas contas dele e continuam dele para sempre, mesmo que deixe de usar o Atlas.
 
-7.2. O Atlas (aplicativo, kit, textos, modelos, imagens, marca e documentação) é de propriedade da PL Engenharia. Seu uso é regido pela **Licença de Uso**, que faz parte destes Termos.
+7.2. O Atlas (aplicativo, kit, textos, modelos, imagens, marca e documentação) é de propriedade da PL Participações LTDA. Seu uso é regido pela **Licença de Uso**, que faz parte destes Termos.
 
 ## 8. Dados pessoais
 
-8.1. O tratamento de dados pessoais do Cliente pela PL Engenharia segue a **Política de Privacidade**.
+8.1. O tratamento de dados pessoais do Cliente pela PL Participações LTDA segue a **Política de Privacidade**.
 
-8.2. Nos sistemas que o Cliente cria e publica, quem decide sobre os dados dos usuários desses sistemas é o próprio Cliente (controlador, nos termos da Lei nº 13.709/2018, a LGPD). A PL Engenharia não tem acesso a esses dados.
+8.2. Nos sistemas que o Cliente cria e publica, quem decide sobre os dados dos usuários desses sistemas é o próprio Cliente (controlador, nos termos da Lei nº 13.709/2018, a LGPD). A PL Participações LTDA não tem acesso a esses dados.
 
 ## 9. Usos proibidos
 
@@ -99,20 +99,20 @@ O descumprimento pode levar à suspensão da licença, sem prejuízo das medidas
 
 10.1. A ajuda no uso do Atlas é feita pela **Ajuda do Atlas**, dentro do aplicativo, disponível a qualquer hora.
 
-10.2. Para assuntos de contrato, cobrança, privacidade e pedidos formais, o canal é **[e-mail de contato]**, com resposta em até 5 (cinco) dias úteis.
+10.2. Para assuntos de contrato, cobrança, privacidade e pedidos formais, o canal é **contato@atlas-ia.app.br**, com resposta em até 5 (cinco) dias úteis.
 
 ## 11. Responsabilidade
 
-11.1. A PL Engenharia responde pelos danos que causar diretamente ao Cliente na forma da lei.
+11.1. A PL Participações LTDA responde pelos danos que causar diretamente ao Cliente na forma da lei.
 
-11.2. Quando o Cliente contrata para a sua atividade empresarial, e na medida permitida em lei, a responsabilidade total da PL Engenharia fica limitada ao valor pago pelo Cliente nos 12 (doze) meses anteriores ao fato. Essa limitação não se aplica a casos de dolo ou culpa grave, nem a relações de consumo em que a lei a proíba.
+11.2. Quando o Cliente contrata para a sua atividade empresarial, e na medida permitida em lei, a responsabilidade total da PL Participações LTDA fica limitada ao valor pago pelo Cliente nos 12 (doze) meses anteriores ao fato. Essa limitação não se aplica a casos de dolo ou culpa grave, nem a relações de consumo em que a lei a proíba.
 
 ## 12. Alterações destes Termos
 
-A PL Engenharia pode atualizar estes Termos e avisará o Cliente por e-mail e no aplicativo com pelo menos 30 (trinta) dias de antecedência. Se o Cliente não concordar, pode cancelar a manutenção sem custo antes da entrada em vigor.
+A PL Participações LTDA pode atualizar estes Termos e avisará o Cliente por e-mail e no aplicativo com pelo menos 30 (trinta) dias de antecedência. Se o Cliente não concordar, pode cancelar a manutenção sem custo antes da entrada em vigor.
 
 ## 13. Lei e foro
 
 Estes Termos seguem as leis do Brasil.
 - Nas relações de consumo, fica eleito o foro do domicílio do Cliente.
-- Nos demais casos, o foro da comarca de [cidade/UF da sede da PL Engenharia].
+- Nos demais casos, o foro da comarca de Belo Horizonte/MG.

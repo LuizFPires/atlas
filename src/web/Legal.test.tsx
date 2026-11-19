@@ -12,11 +12,16 @@ test('as rotas /privacidade, /termos e /licenca existem; outras não', () => {
   expect(idLegalDoCaminho('/conta')).toBeNull()
 })
 
-test('a página da política mostra o texto de docs/legal, com tabela, sem alterar placeholders', () => {
+test('a página da política mostra o texto de docs/legal, com tabela e os dados reais da empresa, sem placeholders', () => {
   render(<TemaProvider><PaginaLegal id="privacidade" /></TemaProvider>)
   expect(screen.getByRole('heading', { level: 1, name: 'Política de Privacidade do Atlas' })).toBeInTheDocument()
   expect(screen.getAllByRole('table').length).toBeGreaterThan(0)
-  expect(document.body.textContent).toContain('[data de publicação]')
+  const texto = document.body.textContent ?? ''
+  // Textos finalizados (19/11/2026): sem placeholders e com os dados da controladora.
+  expect(texto).not.toMatch(/\[__|\[nome|\[e-mail|\[endereço|\[cidade|\[data de publ|\[pedido de registro|\[nome do gateway/)
+  expect(texto).toContain('PL Participações LTDA')
+  expect(texto).toContain('30.484.256/0001-82')
+  expect(texto).toContain('luizfsap@gmail.com')
 })
 
 test('o rodapé da página de vendas leva aos três textos', () => {

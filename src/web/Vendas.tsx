@@ -163,8 +163,8 @@ export function Vendas({ onComprar, extra, degustacaoApi }: { onComprar: () => v
 
       <footer className="v-rodape">
         <Monograma fundo={tema} largura={34} altura={19} />
-        <span>Atlas · PL Engenharia · CNPJ [__.___.___/____-__]</span>
-        <span className="v-rodape-links"><LinksLegais /><span>Contato</span></span>
+        <span>Atlas · PL Participações LTDA · CNPJ 30.484.256/0001-82</span>
+        <span className="v-rodape-links"><LinksLegais /><a href="mailto:contato@atlas-ia.app.br">Contato</a></span>
       </footer>
       {extra}
     </div>
