@@ -43,7 +43,7 @@
 .v-tres-grade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.5fr); gap: 14px; }
 .v-card { background: var(--card); border: 1px solid var(--card-b); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
 .v-card b { font-size: 18px; }
-.v-card > span { font-size: 15px; line-height: 1.5; color: var(--mute); }
+.v-card > span:not(.v-num):not(.at-bolinha) { font-size: 15px; line-height: 1.5; color: var(--mute); }
 .v-passo { justify-content: center; padding: 22px; gap: 12px; }
 .v-passo b { font-size: 23px; line-height: 1.25; }
 .v-num { width: 44px; height: 44px; border-radius: 50%; background: var(--lime); color: var(--on-lime); font: 700 20px var(--font-mono); display: flex; align-items: center; justify-content: center; }
