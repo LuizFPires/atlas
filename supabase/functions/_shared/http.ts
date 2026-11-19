@@ -63,7 +63,8 @@ export async function tratar(ctx: Contexto, req: Request): Promise<Response> {
 }
 
 async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
-  const rota = new URL(req.url).pathname.replace(/^\/(functions\/v1\/)?/, '/').replace(/\/+$/, '')
+  // Tira o prefixo do Supabase (/functions/v1/) E o nome da função (api/), que vêm no caminho ao servir a edge function.
+  const rota = new URL(req.url).pathname.replace(/^\/(functions\/v1\/)?(api\/)?/, '/').replace(/\/+$/, '')
   if (req.method !== 'POST') return json({ erro: 'metodo', mensagem: 'Use POST.' }, 405)
   try {
     // Webhook: precisa do corpo BRUTO (a assinatura cobre os bytes exatos), por isso antes do req.json().
@@ -219,6 +220,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
     }
   } catch (e) {
     if (e instanceof ErroRegra) return json({ erro: e.codigo, mensagem: e.message, ...e.extra() }, e.status)
-    return json({ erro: 'interno', mensagem: 'Algo deu errado do nosso lado. Tente de novo em instantes.' }, 500)
+    const id = crypto.randomUUID()
+    console.error(id, e)
+    return json({ erro: 'interno', mensagem: 'Algo deu errado do nosso lado. Tente de novo em instantes.', id }, 500)
   }
 }
