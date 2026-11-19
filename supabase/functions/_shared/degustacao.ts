@@ -79,7 +79,7 @@ export async function pedirDegustacao(d: DepsDegustacao, a: { email: unknown; ip
   }
   const token = tokenAleatorio()
   const expira_em = new Date(d.agora().getTime() + VALIDADE_CONFIRMACAO_MS)
-  const r = await d.store.pedirDegustacao({ email, email_normalizado: norm, token_hash: await sha256(token), ip: a.ip, expira_em, agora: d.agora() })
+  const r = await d.store.pedirDegustacao({ email, email_hash: await sha256(norm), token_hash: await sha256(token), ip: a.ip, expira_em, agora: d.agora() })
   if (r === 'ja_usada') throw new ErroRegra('ja_usou_degustacao', 'Esse e-mail já usou o teste grátis. Para continuar, é só assinar o Atlas.', 409)
   try {
     await d.enviarConfirmacaoDegustacao(email, { token, expira_em, dias: cfg.dias })

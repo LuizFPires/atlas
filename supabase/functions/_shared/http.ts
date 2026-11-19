@@ -136,6 +136,9 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
         return json(await gerarLink(ctx.deps, s('email')))
       // Degustação (bloco B): públicas. O freio principal é o clique no link do e-mail; IP, e-mail e domínio têm limites próprios.
+      case '/degustacao/limpar-ips': // agendador diário (cron): zera o ip de pedidos antigos (LGPD)
+        if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
+        return json({ ok: true, limpos: await ctx.deps.store.limparIpsDegustacao(ctx.deps.agora(), 30) })
       case '/degustacao/estado':
         return json(await estadoDegustacao((ctx.degustacao ?? ctx.deps) as DepsDegustacao))
       case '/degustacao/pedir':

@@ -204,7 +204,9 @@ export interface Store {
   /** dominios_bloqueados (lista extensível, além da lista base em código). `dominio` já em minúsculas. */
   dominioBloqueado(dominio: string): Promise<boolean>
   /** RPC pedir_degustacao: grava/renova o pedido PENDENTE (não cria licença). 'ja_usada' = esse e-mail normalizado já confirmou. */
-  pedirDegustacao(p: { email: string; email_normalizado: string; token_hash: string; ip: string; expira_em: Date; agora: Date }): Promise<'criado' | 'reenviado' | 'ja_usada'>
+  pedirDegustacao(p: { email: string; email_hash: string; token_hash: string; ip: string; expira_em: Date; agora: Date }): Promise<'criado' | 'reenviado' | 'ja_usada'>
+  /** RPC limpar_ips_degustacao (0017): zera o ip de pedidos com mais de `dias` dias. Devolve quantas linhas. */
+  limparIpsDegustacao(agora: Date, dias: number): Promise<number>
   /** RPC criar_degustacao: o token confirmado vira licença de teste (cortesia), com o mesmo lock por e-mail de criar_compra/criar_cortesia. */
   criarDegustacao(p: { token_hash: string; dias: number; agora: Date }): Promise<{ resultado: 'criada' | 'token_invalido' | 'expirada' | 'ja_usada' | 'ja_tem_licenca'; email?: string; licenca?: Licenca }>
 

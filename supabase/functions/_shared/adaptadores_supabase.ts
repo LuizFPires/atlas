@@ -33,7 +33,7 @@
 //   configDegustacao           SELECT config_degustacao (ativa,dias) WHERE id=1 (0016)
 //   definirConfigDegustacao    UPDATE config_degustacao SET ativa,dias,atualizada_em,atualizada_por WHERE id=1
 //   dominioBloqueado           SELECT dominios_bloqueados WHERE dominio
-//   pedirDegustacao / criarDegustacao   RPC pedir_degustacao / criar_degustacao (0016)
+//   pedirDegustacao / criarDegustacao / limparIpsDegustacao   RPC pedir_degustacao / criar_degustacao (0016/0017) / limpar_ips_degustacao (0017)
 //   inserirLink / linkPorHash  INSERT / SELECT links_instalacao (id,cliente_id,token_hash,expira_em,usado_em) WHERE token_hash
 //   consumirLink               RPC consumir_link (0002)
 //   invalidarLinks             UPDATE links_instalacao SET usado_em WHERE cliente_id AND usado_em IS NULL
@@ -216,8 +216,9 @@ export function criarStoreSupabase() {
     },
     async dominioBloqueado(d: string) { return !!ok(await t('dominios_bloqueados').select('dominio').eq('dominio', d).limit(1).maybeSingle(), 'dominioBloqueado') },
     async pedirDegustacao(p: any) {
-      return await rpc('pedir_degustacao', { p_email: p.email, p_norm: p.email_normalizado, p_token_hash: p.token_hash, p_ip: p.ip, p_expira: iso(p.expira_em), p_agora: iso(p.agora) })
+      return await rpc('pedir_degustacao', { p_email: p.email, p_hash: p.email_hash, p_token_hash: p.token_hash, p_ip: p.ip, p_expira: iso(p.expira_em), p_agora: iso(p.agora) })
     },
+    async limparIpsDegustacao(agora: Date, dias: number) { return await rpc('limpar_ips_degustacao', { p_agora: iso(agora), p_dias: dias }) },
     async criarDegustacao(p: any) {
       const r = await rpc('criar_degustacao', { p_token_hash: p.token_hash, p_dias: p.dias, p_agora: iso(p.agora) })
       return { resultado: r.resultado, email: r.email, licenca: r.licenca ? licenca(r.licenca) : undefined }

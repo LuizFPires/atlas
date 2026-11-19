@@ -244,3 +244,55 @@ describe('degustação — anti-abuso', () => {
     await expect(a.store.inserirAtivacao(lic.id, 'c'.repeat(64), a.deps.agora(), 'h2')).rejects.toThrow()
   })
 })
+
+describe('degustação — LGPD e corrida (migration 0017)', () => {
+  it('o dedup guarda só o hash do e-mail normalizado (sem texto cru do normalizado)', async () => {
+    const a = await ligada()
+    await a.pedirDe('Voce.X+1@gmail.com', '13.0.0.1')
+    const linha = a.store.degustacoes[0]
+    expect(linha.email_hash).toBe(await sha256('vocex@gmail.com'))
+    expect(JSON.stringify(linha)).not.toContain('vocex@gmail.com')
+  })
+
+  it('confirmada nunca é reaberta por novo pedido (token e estado intactos)', async () => {
+    const a = await ligada()
+    await a.pedirDe('ana@exemplo.com', '13.0.0.2')
+    await a.confirmar(a.enviados[0].token)
+    const antes = { ...a.store.degustacoes[0] }
+    a.avancar(61 * 60_000)
+    expect((await a.pedirDe('ana@exemplo.com', '13.0.0.3')).status).toBe(409)
+    expect(a.store.degustacoes[0]).toEqual(antes)
+    expect(a.enviados).toHaveLength(1)
+  })
+
+  it('excluir a conta zera e-mail e ip da degustação, invalida o token e mantém o anti-repetição', async () => {
+    const a = await ligada()
+    await a.pedirDe('ana@exemplo.com', '13.0.0.4')
+    const token = a.enviados[0].token
+    await a.confirmar(token)
+    await a.store.excluirConta(a.store.clientes[0].id, a.deps.agora())
+    expect(a.store.degustacoes[0]).toMatchObject({ email: null, ip: null, status: 'confirmada' })
+    expect(a.store.degustacoes[0].email_hash).toBe(await sha256('ana@exemplo.com'))
+    a.avancar(61 * 60_000)
+    expect(await erro(await a.pedirDe('ana@exemplo.com', '13.0.0.5'))).toBe('ja_usou_degustacao')
+    // pendente + exclusão: token morre
+    await a.pedirDe('bia@exemplo.com', '13.0.0.6')
+    a.store.clientes.push({ id: 'cb', email_compra: 'bia@exemplo.com', nome_tratamento: 'B' })
+    await a.store.excluirConta('cb', a.deps.agora())
+    expect(await erro(await a.confirmar(a.enviados[1].token))).toBe('token_invalido')
+  })
+
+  it('limpeza periódica zera só o ip de linhas antigas e exige segredo de serviço', async () => {
+    const a = await ligada()
+    await a.pedirDe('velha@exemplo.com', '13.0.1.1')
+    a.avancar(31 * DIA)
+    await a.pedirDe('nova@exemplo.com', '13.0.1.2')
+    expect((await a.postar('/degustacao/limpar-ips', '1.1.1.1', {})).status).toBe(401)
+    expect(await a.store.limparIpsDegustacao(a.deps.agora(), 30)).toBe(1)
+    const ips = a.store.degustacoes.map((d) => d.ip)
+    expect(ips).toEqual([null, '13.0.1.2'])
+    const comServico = { ...a.ctx, autorizarServico: () => true }
+    const r = await tratar(comServico, new Request('https://x.test/degustacao/limpar-ips', { method: 'POST', body: '{}' }))
+    expect(await r.json()).toMatchObject({ ok: true, limpos: 0 })
+  })
+})

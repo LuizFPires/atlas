@@ -20,10 +20,10 @@ esta com o mesmo lock `'cliente:'||lower(trim(email))` de `criar_compra` e `cria
 - O custo é limitado: o processamento é o login Claude do próprio usuário; o Atlas não paga por token do teste.
 - Domínios próprios (alguém com domínio e catch-all) passam; só o bloco C/lista editável reduz isso.
 - IP atrás de CGNAT/rede compartilhada pode esbarrar no limite por IP (mensagem pede para esperar).
-- O IP fica em `degustacoes.ip` só para abuso (LGPD: base legal de segurança); falta rotina de limpeza e a exclusão de conta (RPC `excluir_conta`) ainda não apaga a linha de `degustacoes`.
-- Quem apaga a conta e pede de novo é barrado (a linha `confirmada` fica). Decisão a validar com a LGPD.
+- O IP fica em `degustacoes.ip` só para abuso. Migration 0017: a rota de serviço `POST /degustacao/limpar-ips` (cron diário do deploy, com o segredo de serviço) zera o ip com mais de 30 dias; `excluir_conta` zera e-mail e ip, invalida o token e mantém só o hash sha256 do e-mail normalizado (quem apaga a conta não ganha outro teste; hash sem segredo é adivinhável por quem já sabe o e-mail, limite aceito).
 
 ## Pendente de deploy
-- Aplicar a migration 0016; definir `ATLAS_DEGUSTACAO_URL` (padrão `https://atlas-ia.app.br/degustacao`), `RESEND_API_KEY` e `ATLAS_EMAIL_FROM` reais (hoje só testado com enviador de fixture).
+- Agendar o cron de `/degustacao/limpar-ips`.
+- Aplicar as migrations 0016 e 0017; definir `ATLAS_DEGUSTACAO_URL` (padrão `https://atlas-ia.app.br/degustacao`), `RESEND_API_KEY` e `ATLAS_EMAIL_FROM` reais (hoje só testado com enviador de fixture).
 - Confirmar a URL real da página de instalação (a página do link leva a `/instalar?t=<token>`; hoje a rota `/instalar` não existe no site, só o padrão de `ATLAS_INSTALAR_URL`).
 - Liberar o CORS: a origem do site já é a de `ATLAS_WEB_ORIGEM`.

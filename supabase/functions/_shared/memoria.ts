@@ -170,20 +170,26 @@ export class StoreMemoria implements Store {
   // ── Bloco B: degustação (espelha a migration 0016) ──
   config: ConfigDegustacao = { ativa: false, dias: 5 }
   dominiosExtras = new Set<string>()
-  degustacoes: Array<{ email: string; email_normalizado: string; token_hash: string; status: 'pendente' | 'confirmada' | 'expirada'; ip: string; expira_em: Date; criado_em: Date; confirmado_em: Date | null }> = []
+  degustacoes: Array<{ email: string | null; email_hash: string; token_hash: string; status: 'pendente' | 'confirmada' | 'expirada'; ip: string | null; expira_em: Date; criado_em: Date; confirmado_em: Date | null }> = []
   async configDegustacao() { return { ...this.config } }
   async definirConfigDegustacao(c: { ativa: boolean; dias?: number }) { this.config = { ativa: c.ativa, dias: c.dias ?? this.config.dias }; return { ...this.config } }
   async dominioBloqueado(d: string) { return this.dominiosExtras.has(d) }
-  async pedirDegustacao(p: { email: string; email_normalizado: string; token_hash: string; ip: string; expira_em: Date; agora: Date }) {
-    const ex = this.degustacoes.find((x) => x.email_normalizado === p.email_normalizado)
-    if (!ex) { this.degustacoes.push({ email: p.email, email_normalizado: p.email_normalizado, token_hash: p.token_hash, status: 'pendente', ip: p.ip, expira_em: p.expira_em, criado_em: p.agora, confirmado_em: null }); return 'criado' as const }
+  async pedirDegustacao(p: { email: string; email_hash: string; token_hash: string; ip: string; expira_em: Date; agora: Date }) {
+    const ex = this.degustacoes.find((x) => x.email_hash === p.email_hash)
+    if (!ex) { this.degustacoes.push({ email: p.email, email_hash: p.email_hash, token_hash: p.token_hash, status: 'pendente', ip: p.ip, expira_em: p.expira_em, criado_em: p.agora, confirmado_em: null }); return 'criado' as const }
     if (ex.status === 'confirmada') return 'ja_usada' as const
     Object.assign(ex, { email: p.email, token_hash: p.token_hash, ip: p.ip, expira_em: p.expira_em, criado_em: p.agora, status: 'pendente' })
     return 'reenviado' as const
   }
+  /** Espelha limpar_ips_degustacao (0017). */
+  async limparIpsDegustacao(agora: Date, dias: number) {
+    let n = 0
+    for (const d of this.degustacoes) if (d.ip !== null && d.criado_em.getTime() < agora.getTime() - dias * 24 * 3600_000) { d.ip = null; n++ }
+    return n
+  }
   async criarDegustacao(p: { token_hash: string; dias: number; agora: Date }) {
     const d = this.degustacoes.find((x) => x.token_hash === p.token_hash)
-    if (!d) return { resultado: 'token_invalido' as const }
+    if (!d || d.email === null) return { resultado: 'token_invalido' as const }
     if (d.status === 'confirmada') return { resultado: 'ja_usada' as const }
     if (d.status === 'expirada' || d.expira_em <= p.agora) { d.status = 'expirada'; return { resultado: 'expirada' as const } }
     let cli = this.clientes.find((x) => x.email_compra === d.email)
@@ -254,6 +260,7 @@ export class StoreMemoria implements Store {
     this.links = this.links.filter((x) => x.cliente_id !== clienteId)
     this.codigos = this.codigos.filter((x) => x.cliente_id !== clienteId)
     this.sessoes = this.sessoes.filter((s) => s.email !== email)
+    for (const d of this.degustacoes) if (d.email === email) Object.assign(d, { email: null, ip: null, token_hash: `anon-${d.email_hash}`, status: d.status === 'pendente' ? 'expirada' : d.status }) // espelha 0017
     for (const c of this.consentimentos) if (c.email === email) Object.assign(c, { email: `excluido+${clienteId}@anonimo.invalid`, cliente_id: clienteId })
     return true
   }
