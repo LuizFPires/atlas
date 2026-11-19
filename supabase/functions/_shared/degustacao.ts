@@ -2,7 +2,7 @@
 // Fluxo: pedir (público) -> e-mail com token de uso único -> confirmar (público) -> licença de teste (tipo 'cortesia').
 // Sem clicar no link, NENHUMA licença é criada. Pagamento/assinatura não são tocados.
 import { adminLogado, type DepsAdmin } from './admin.ts'
-import { sha256, tokenAleatorio } from './cripto.ts'
+import { hmac, sha256, tokenAleatorio } from './cripto.ts'
 import { DOMINIOS_DESCARTAVEIS } from './dominios-descartaveis.ts'
 import { gerarLink } from './links.ts'
 import { type Deps, ErroRegra } from './tipos.ts'
@@ -33,6 +33,9 @@ export function normalizarEmail(bruto: string): string {
   }
   return `${local}@${dominio}`
 }
+
+/** Chave anti-repetição: HMAC com o segredo do servidor e separação de domínio (sem o segredo, não dá para confirmar que um e-mail está na tabela). */
+export const hashEmail = (segredo: string, norm: string) => hmac(segredo, `degustacao:${norm}`)
 
 /** Domínio e todos os "pais" (a.b.mailinator.com -> também mailinator.com). */
 const sufixos = (dominio: string) => {
@@ -70,7 +73,8 @@ export async function pedirDegustacao(d: DepsDegustacao, a: { email: unknown; ip
     throw new ErroRegra('dominio_descartavel', 'Esse tipo de e-mail temporário não serve para o teste. Use o e-mail que você realmente abre no dia a dia.', 400)
   }
   const norm = normalizarEmail(email)
-  const cli = await d.store.clientePorEmail(email)
+  // clientePorEmail NÃO normaliza (compara o texto exato): olha o e-mail digitado e o normalizado (voce+1@gmail.com vs voce@gmail.com).
+  const cli = (await d.store.clientePorEmail(email)) ?? (norm !== email ? await d.store.clientePorEmail(norm) : null)
   if (cli && (await d.store.licencaDoCliente(cli.id))) {
     throw new ErroRegra('ja_tem_conta', 'Esse e-mail já tem um acesso ao Atlas (teste ou conta). Entre pela sua conta.', 409)
   }
@@ -79,7 +83,7 @@ export async function pedirDegustacao(d: DepsDegustacao, a: { email: unknown; ip
   }
   const token = tokenAleatorio()
   const expira_em = new Date(d.agora().getTime() + VALIDADE_CONFIRMACAO_MS)
-  const r = await d.store.pedirDegustacao({ email, email_hash: await sha256(norm), token_hash: await sha256(token), ip: a.ip, expira_em, agora: d.agora() })
+  const r = await d.store.pedirDegustacao({ email, email_hash: await hashEmail(d.segredo, norm), token_hash: await sha256(token), ip: a.ip, expira_em, agora: d.agora() })
   if (r === 'ja_usada') throw new ErroRegra('ja_usou_degustacao', 'Esse e-mail já usou o teste grátis. Para continuar, é só assinar o Atlas.', 409)
   try {
     await d.enviarConfirmacaoDegustacao(email, { token, expira_em, dias: cfg.dias })

@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { lerEmailsAdmin } from '../functions/_shared/admin.ts'
 import { sha256 } from '../functions/_shared/cripto.ts'
+import { hashEmail } from '../functions/_shared/degustacao.ts'
 import { type DepsDegustacao, normalizarEmail } from '../functions/_shared/degustacao.ts'
 import { tratar } from '../functions/_shared/http.ts'
 import { verificar } from '../functions/_shared/verificar.ts'
@@ -250,7 +251,7 @@ describe('degustação — LGPD e corrida (migration 0017)', () => {
     const a = await ligada()
     await a.pedirDe('Voce.X+1@gmail.com', '13.0.0.1')
     const linha = a.store.degustacoes[0]
-    expect(linha.email_hash).toBe(await sha256('vocex@gmail.com'))
+    expect(linha.email_hash).toBe(await hashEmail('segredo-de-teste', 'vocex@gmail.com'))
     expect(JSON.stringify(linha)).not.toContain('vocex@gmail.com')
   })
 
@@ -272,7 +273,7 @@ describe('degustação — LGPD e corrida (migration 0017)', () => {
     await a.confirmar(token)
     await a.store.excluirConta(a.store.clientes[0].id, a.deps.agora())
     expect(a.store.degustacoes[0]).toMatchObject({ email: null, ip: null, status: 'confirmada' })
-    expect(a.store.degustacoes[0].email_hash).toBe(await sha256('ana@exemplo.com'))
+    expect(a.store.degustacoes[0].email_hash).toBe(await hashEmail('segredo-de-teste', 'ana@exemplo.com'))
     a.avancar(61 * 60_000)
     expect(await erro(await a.pedirDe('ana@exemplo.com', '13.0.0.5'))).toBe('ja_usou_degustacao')
     // pendente + exclusão: token morre
@@ -294,5 +295,24 @@ describe('degustação — LGPD e corrida (migration 0017)', () => {
     const comServico = { ...a.ctx, autorizarServico: () => true }
     const r = await tratar(comServico, new Request('https://x.test/degustacao/limpar-ips', { method: 'POST', body: '{}' }))
     expect(await r.json()).toMatchObject({ ok: true, limpos: 0 })
+  })
+})
+
+describe('degustação — hash com chave e conta existente normalizada', () => {
+  it('o hash depende do segredo do servidor e é separado por domínio', async () => {
+    const h = await hashEmail('segredo-de-teste', 'vocex@gmail.com')
+    expect(h).toMatch(/^[0-9a-f]{64}$/)
+    expect(h).not.toBe(await sha256('vocex@gmail.com'))
+    expect(h).not.toBe(await hashEmail('outro-segredo', 'vocex@gmail.com'))
+  })
+
+  it('quem já tem conta em voce@gmail.com não fura com voce+1@gmail.com', async () => {
+    const a = await ligada()
+    a.store.clientes.push({ id: 'cg', email_compra: 'voce@gmail.com', nome_tratamento: 'V' })
+    a.store.licencas.push({ id: 'lg', cliente_id: 'cg', status: 'ativa', pausa_prevista_em: null, troca_liberada_em: null, tipo: 'paga' })
+    const r = await a.pedirDe('voce+1@gmail.com', '14.0.0.1')
+    expect(r.status).toBe(409)
+    expect(await erro(r)).toBe('ja_tem_conta')
+    expect(a.enviados).toHaveLength(0)
   })
 })

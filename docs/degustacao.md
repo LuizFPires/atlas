@@ -22,6 +22,11 @@ esta com o mesmo lock `'cliente:'||lower(trim(email))` de `criar_compra` e `cria
 - IP atrás de CGNAT/rede compartilhada pode esbarrar no limite por IP (mensagem pede para esperar).
 - O IP fica em `degustacoes.ip` só para abuso. Migration 0017: a rota de serviço `POST /degustacao/limpar-ips` (cron diário do deploy, com o segredo de serviço) zera o ip com mais de 30 dias; `excluir_conta` zera e-mail e ip, invalida o token e mantém só o hash sha256 do e-mail normalizado (quem apaga a conta não ganha outro teste; hash sem segredo é adivinhável por quem já sabe o e-mail, limite aceito).
 
+- Re-pedir gira o token (o link anterior morre). Limitado pelo rate limit de 3/h por e-mail; é o comportamento normal de reenvio. Aceito.
+- 409 ja_tem_conta/ja_usou_degustacao revela que o e-mail existe. Limitado por IP e por e-mail, risco baixo num teste de consumidor; resposta genérica pioraria a UX. Aceito.
+- O dedup usa HMAC-SHA256 com ATLAS_SEGREDO (`degustacao:`+e-mail normalizado). Trocar o segredo zera o anti-repetição das linhas antigas.
+- A conta existente é buscada pelo e-mail digitado e pelo normalizado; uma conta antiga guardada com outra variante de gmail (pontos/+tag) que não bata com nenhum dos dois não é achada.
+
 ## Pendente de deploy
 - Agendar o cron de `/degustacao/limpar-ips`.
 - Aplicar as migrations 0016 e 0017; definir `ATLAS_DEGUSTACAO_URL` (padrão `https://atlas-ia.app.br/degustacao`), `RESEND_API_KEY` e `ATLAS_EMAIL_FROM` reais (hoje só testado com enviador de fixture).
