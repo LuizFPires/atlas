@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 18b Configurador</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} .acao{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:52px;min-height:52px;padding:0 24px;box-sizing:border-box;border-radius:14px;font-family:'Geist',sans-serif;font-size:16px;font-weight:700;line-height:1;white-space:nowrap;flex:none;text-decoration:none;cursor:pointer} .rot{font:600 12px 'Geist Mono',monospace;letter-spacing:.08em;color:{{t.mute2}};text-transform:uppercase} .campo{background:{{t.input}};border:1px solid {{t.cardB}};border-radius:12px;padding:14px 16px;font-size:16px;color:{{t.text}}}</style>
+</helmet>
+<div style="width:1440px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;flex-direction:column">
+
+ <header style="height:76px;box-sizing:border-box;padding:0 96px;display:flex;align-items:center;gap:16px;border-bottom:1px solid {{t.cardB}}">
+  <img src="{{t.mono}}" alt="" style="width:46px;height:26px;object-fit:contain">
+  <b style="font-size:17px">Deixe com a sua cara</b>
+  <span style="margin-left:auto;font:600 13px 'Geist Mono',monospace;color:{{t.limeTxt}}">PASSO 2 · leva uns 2 minutos</span>
+ </header>
+
+ <section style="padding:48px 96px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,520px);gap:56px;align-items:start">
+
+  <div style="display:flex;flex-direction:column;gap:24px">
+   <div style="display:flex;flex-direction:column;gap:6px"><h1 style="margin:0;font-size:40px;letter-spacing:-0.02em">Sem abrir o Atlas.</h1><span style="font-size:18px;color:{{t.mute}}">Nome, logo e duas cores. O resto já vem pronto — e dá pra mudar depois.</span></div>
+
+   <div style="display:flex;flex-direction:column;gap:8px"><span class="rot">Nome do negócio</span><div class="campo">Barbearia do Zé</div></div>
+
+   <div style="display:flex;flex-direction:column;gap:8px"><span class="rot">Logomarca</span>
+    <div class="campo" style="display:flex;align-items:center;gap:12px;color:{{t.mute}};border-style:dashed;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Enviar uma imagem (ou falar e deixar pra depois)</div>
+   </div>
+
+   <div style="display:flex;flex-direction:column;gap:12px"><span class="rot">Cores</span>
+    <div style="display:flex;gap:20px">
+     <div style="flex:1;display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;color:{{t.mute}}">Principal</span>
+      <div style="display:flex;gap:8px"><span style="width:36px;height:36px;border-radius:9px;background:{{t.lime}};box-shadow:0 0 0 2px {{t.text}};cursor:pointer"></span><span style="width:36px;height:36px;border-radius:9px;background:#4ADE80;cursor:pointer"></span><span style="width:36px;height:36px;border-radius:9px;background:#38BDF8;cursor:pointer"></span><span style="width:36px;height:36px;border-radius:9px;background:#F472B6;cursor:pointer"></span><span style="width:36px;height:36px;border-radius:9px;background:conic-gradient(red,#ff0,#0f0,#0ff,#00f,#f0f,red);cursor:pointer" title="mais cores"></span></div>
+      <div style="display:flex;align-items:center;gap:0;background:{{t.input}};border:1px solid {{t.cardB}};border-radius:12px;overflow:hidden"><span style="width:40px;height:44px;flex:none;background:{{t.lime}}"></span><span style="padding:0 12px;color:{{t.mute2}};font:600 16px 'Geist Mono',monospace">#</span><span style="flex:1;padding:12px 12px 12px 0;font:600 16px 'Geist Mono',monospace;color:{{t.text}}">C6F135</span></div>
+     </div>
+     <div style="flex:1;display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;color:{{t.mute}}">De apoio</span>
+      <div style="display:flex;gap:8px"><span style="width:36px;height:36px;border-radius:9px;background:{{t.soft}};box-shadow:0 0 0 2px {{t.cardB}};cursor:pointer"></span><span style="width:36px;height:36px;border-radius:9px;background:#1E2125;cursor:pointer"></span><span style="width:36px;height:36px;border-radius:9px;background:#3A2A12;cursor:pointer"></span><span style="width:36px;height:36px;border-radius:9px;background:conic-gradient(red,#ff0,#0f0,#0ff,#00f,#f0f,red);cursor:pointer" title="mais cores"></span></div>
+      <div style="display:flex;align-items:center;gap:0;background:{{t.input}};border:1px solid {{t.cardB}};border-radius:12px;overflow:hidden"><span style="width:40px;height:44px;flex:none;background:{{t.soft}}"></span><span style="padding:0 12px;color:{{t.mute2}};font:600 16px 'Geist Mono',monospace">#</span><span style="flex:1;padding:12px 12px 12px 0;font:600 16px 'Geist Mono',monospace;color:{{t.text}}">2A3A12</span></div>
+     </div>
+    </div>
+    <span style="font-size:13px;color:{{t.mute2}};display:flex;align-items:center;gap:7px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 22 1-1h3l9-9"/><path d="M3 21v-3l9-9"/><path d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>Escolha na paleta ou escreva o código exato da sua marca (ex.: #1E7A46).</span>
+   </div>
+
+   <a class="acao" href="F18cEntrega.dc.html" style="background:{{t.lime}};color:{{t.onLime}};align-self:flex-start;margin-top:8px">Está ótimo, criar o meu app →</a>
+  </div>
+
+  <div style="background:{{t.band}};border:1px solid {{t.cardB}};border-radius:22px;padding:28px;display:flex;flex-direction:column;align-items:center;gap:16px">
+   <span class="rot">Prévia ao vivo</span>
+   <div style="width:300px;height:600px;background:{{t.bg}};border:8px solid #0E1012;border-radius:36px;overflow:hidden;display:flex;flex-direction:column">
+    <div style="padding:22px 20px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid {{t.cardB}}"><span style="width:38px;height:38px;border-radius:19px;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></span><b style="font-size:16px">Barbearia do Zé</b></div>
+    <div style="padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+     <span style="font:600 12px 'Geist Mono',monospace;color:{{t.mute2}}">HOJE · TER 20</span>
+     <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:12px;padding:12px"><b style="font-size:15px">09:00 · João</b><div style="font-size:13px;color:{{t.mute}}">Corte + barba</div></div>
+     <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:12px;padding:12px"><b style="font-size:15px">10:30 · Pedro</b><div style="font-size:13px;color:{{t.mute}}">Corte</div></div>
+     <div style="height:46px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">Agendar horário</div>
+    </div>
+   </div>
+  </div>
+ </section>
+
+ <footer style="padding:28px 96px;display:flex;justify-content:space-between;align-items:center;font-size:14px;color:{{t.mute2}};border-top:1px solid {{t.cardB}}"><span>Atlas · Comece pronto</span><span style="font-family:'Geist Mono',monospace">Tela 2 de 3 · configurador</span></footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":860}}'>
+const T = {
+  escuro: { bg: '#141619', band: '#101214', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', soft: '#2A3A12', input: '#16181B', mono: '/_blob/3ffac3c67d7d512dd74d51dc13a52fb7' },
+  claro: { bg: '#F2F3EE', band: '#E8EAE3', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', soft: '#DDF59A', input: '#FFFFFF', mono: '/_blob/0f7fdc2ab38162a05663832cd15a027d' }
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    return { tema, t: T[tema] || T.escuro };
+  }
+}
+</script>
+</body>
+</html>
