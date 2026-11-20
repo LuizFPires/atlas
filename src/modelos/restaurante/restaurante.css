@@ -1,0 +1,25 @@
+.rt { min-height: 100vh; background: var(--bg); color: var(--text); font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; }
+.rt-aviso { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--mute2); background: var(--painel); border-bottom: 1px solid var(--line); padding: 6px 16px; }
+.rt-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; background: var(--side); border-bottom: 1px solid var(--side-border); }
+.rt-nome { font-size: 18px; font-weight: 600; color: var(--text); margin: 0; }
+.rt-nav { display: flex; gap: 8px; }
+.rt-nav button { font: inherit; font-family: 'Geist Mono', monospace; text-transform: uppercase; font-size: 12px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--side-border2); background: transparent; color: var(--side-mute); cursor: pointer; }
+.rt-nav button[aria-current='page'] { background: var(--soft); border-color: var(--lime); color: var(--text); }
+.rt-main { padding: 16px; max-width: 720px; width: 100%; margin: 0 auto; flex: 1; }
+.rt-main h2 { margin: 0 0 12px; font-size: 20px; }
+.rt-cartao { background: var(--card); border: 1px solid var(--card-b); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+.rt-linha { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rt-hora { font-family: 'Geist Mono', monospace; color: var(--lime-txt); font-size: 16px; }
+.rt-mute { color: var(--mute); font-size: 14px; }
+.rt-cancelado { opacity: .55; text-decoration: line-through; }
+.rt-erro { color: var(--erro); background: var(--erro-bg); padding: 8px 10px; border-radius: 8px; margin: 8px 0; }
+.rt-form { display: grid; gap: 10px; margin-bottom: 16px; }
+.rt-form select, .rt-form input[type='time'] { background: var(--input); color: var(--text); border: 1px solid var(--card-b); border-radius: 8px; padding: 10px; font: inherit; }
+.rt-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.rt-bloqueio { margin: auto; max-width: 480px; padding: 32px 16px; text-align: center; }
+.rt-marca { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; display: flex; flex-wrap: wrap; align-content: space-around; opacity: .07; font-family: 'Geist Mono', monospace; font-size: 12px; transform: rotate(-18deg); scale: 1.4; }
+.rt-marca span { padding: 24px 36px; white-space: nowrap; }
+.rt-form input[type='number'], .rt-form select { background: var(--input); color: var(--text); border: 1px solid var(--card-b); border-radius: 8px; padding: 10px; font: inherit; }
+.rt-preco { font-family: 'Geist Mono', monospace; color: var(--lime-txt); }
+.rt-esgotado { opacity: .6; }
+.rt-etiqueta { font-family: 'Geist Mono', monospace; text-transform: uppercase; font-size: 11px; color: var(--mute); }
