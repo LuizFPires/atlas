@@ -2,6 +2,7 @@
 // independente do login do Claude. O navegador só guarda o token de sessão desta aba (nunca segredo de pagamento).
 // Todas as chamadas ao servidor vão com esse token: o servidor descobre o dono por ele, nunca por id enviado daqui.
 import { configCompra } from './compra'
+import type { ObraStatus } from './obras-status'
 
 export type Resp<T = object> = ({ ok: true } & T) | { ok: false; mensagem: string }
 
@@ -44,6 +45,8 @@ export interface PortalApi {
   cancelarCompra(): Promise<Resp<{ estornados: number }>>
   /** Sem fidelidade: para de cobrar; a licença vale até o fim do período pago. */
   cancelarMensalidade(): Promise<Resp<{ encerra_em: string }>>
+  /** Resumo das obras do dono logado (relay M30). O servidor escopa pelo login; nada de id no corpo. */
+  obras(): Promise<Resp<{ obras: ObraStatus[] }>>
   /** Computador já liberado e o e-mail não chegou: manda o acesso de novo. */
   reenviarAcesso(): Promise<Resp<{ enviado_para: string }>>
   /** LGPD: exclui a conta de forma definitiva (anonimiza os dados, para a cobrança e apaga o login). Só vale com o servidor confirmando. */
@@ -133,6 +136,10 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
     pedirCodigoTroca: () => servidor<{ enviado_para: string }>('/portal/trocar/solicitar-codigo'),
     desativarComputador: (codigo) => servidor<{ enviado_para: string; proxima_troca_em: string }>('/portal/trocar/desativar', { codigo: codigo.replace(/\s+/g, '') }),
     reenviarAcesso: () => servidor<{ enviado_para: string }>('/portal/reenviar-acesso'),
+    async obras() {
+      const r = await servidor<{ obras: ObraStatus[] }>('/portal/obras')
+      return r.ok ? { ok: true, obras: Array.isArray(r.obras) ? r.obras : [] } : r
+    },
     cancelarCompra: () => servidor<{ estornados: number }>('/portal/compra/cancelar', { confirmar: true }),
     cancelarMensalidade: () => servidor<{ encerra_em: string }>('/portal/mensalidade/cancelar', { confirmar: true }),
     async excluirConta() {

@@ -1,7 +1,7 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
 import { dominioRegistravel, LIMIARES_AUDITORIA, PROVEDORES_COMUNS, protegeProvedor } from './auditoria.ts'
-import type { Ativacao, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
+import type { Ativacao, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, StatusObraLinha, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
   clientes: Cliente[] = []
@@ -141,6 +141,14 @@ export class StoreMemoria implements Store {
       id: this.id(), cliente_id: o.cliente_id, tipo: o.tipo, descricao: o.descricao, autor: o.autor ?? null,
       resolvida: o.resolvida ?? false, criada_em: o.criada_em ?? new Date(), resolvida_por: null, resolvida_em: null,
     })
+  }
+
+  statusObras: Array<StatusObraLinha & { licenca_id: string }> = []
+  async substituirStatusObras(licencaId: string, obras: StatusObraLinha[]) {
+    this.statusObras = this.statusObras.filter((s) => s.licenca_id !== licencaId).concat(obras.map((o) => ({ ...o, licenca_id: licencaId })))
+  }
+  async statusObrasDaLicenca(licencaId: string) {
+    return this.statusObras.filter((s) => s.licenca_id === licencaId).map((s) => { const o: Record<string, unknown> = { ...s }; delete o.licenca_id; return o as unknown as StatusObraLinha })
   }
 
   async contaGateway(id: string) { return this.contas.find((c) => c.id === id) ?? null }

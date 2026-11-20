@@ -97,6 +97,23 @@ export interface SessaoCheckout { conta_gateway_id: string; sessao_id: string; e
 export interface Link { id: string; cliente_id: string; token_hash: string; expira_em: Date; usado_em: Date | null }
 export interface Codigo { id: string; cliente_id: string; finalidade: Finalidade; codigo_hash: string; tentativas: number; expira_em: Date; usado_em: Date | null }
 export interface Entrega { licenca_id: string; obra_id: string; marca_dagua: string; baixado_em: Date }
+export type EstadoObra = 'construindo' | 'pausada' | 'aguardando_aprovacao' | 'pronta' | 'no_ar'
+
+/** Resumo de uma obra (M30 relay). Nunca código, caminho de arquivo nem segredo. */
+export interface StatusObraLinha {
+  obra_id: string
+  nome: string
+  segmento: string | null
+  etapa_atual_numero: number
+  etapa_atual_rotulo: string
+  total_etapas: number
+  percentual: number
+  estado: EstadoObra
+  ativa_agora: boolean
+  ultima_noticia: string
+  ultima_noticia_em: Date
+}
+
 export interface Ocorrencia {
   cliente_id: string | null
   tipo: string
@@ -184,6 +201,12 @@ export interface Store {
   liberarAtivacao(p: LiberacaoAtomica): Promise<boolean>
   inserirEntrega(e: Entrega): Promise<void>
   inserirOcorrencia(o: Ocorrencia): Promise<void>
+
+  // ── M30: relay do status das obras ──
+  /** RPC substituir_status_obras (0022): atômico; o conjunto da licença passa a ser exatamente `obras` (upsert + remove as que sumiram). */
+  substituirStatusObras(licencaId: string, obras: StatusObraLinha[], agora: Date): Promise<void>
+  /** SELECT status_obras WHERE licenca_id (sempre filtrado pela licença do dono). */
+  statusObrasDaLicenca(licencaId: string): Promise<StatusObraLinha[]>
 
   // ── M3: pagamento (a conta Stripe é do cliente; aqui só ficam referências) ──
   contaGateway(id: string): Promise<ContaGateway | null>

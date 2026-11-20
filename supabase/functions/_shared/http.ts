@@ -2,6 +2,7 @@
 import { abrirLink, reenviarParaComputador } from './abertura.ts'
 import { registrarCasoAjuda } from './ajuda-caso.ts'
 import { confirmarAtivacao, solicitarCodigo } from './ativacao.ts'
+import { obrasDoPortal, publicarStatusObras } from './status-obras.ts'
 import { entregarKit, type CarregarKit } from './kit.ts'
 import { gerarLink } from './links.ts'
 import { type Deps, ErroRegra } from './tipos.ts'
@@ -137,6 +138,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await excluirConta(ctx.portal, jwt, (b as Record<string, unknown>).confirmar))
         case '/portal/forma-pagamento':
           return json(await formaDePagamento(ctx.portal, jwt))
+        case '/portal/obras':
+          return json(await obrasDoPortal(ctx.portal, jwt))
         default:
           return json({ erro: 'nao_encontrado' }, 404)
       }
@@ -212,6 +215,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         return json(await verificar(ctx.deps, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo }))
       case '/ajuda-caso':
         return json(await registrarCasoAjuda(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, tipo: b.tipo, descricao: b.descricao }))
+      case '/status-obras/publicar':
+        return json(await publicarStatusObras(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obras: (b as Record<string, unknown>).obras }))
       case '/entregar-kit': {
         const r = await entregarKit(ctx.deps, ctx.carregarKit, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, obra_id: s('obra_id') })
         const { cabecalhos, ...corpo } = r
