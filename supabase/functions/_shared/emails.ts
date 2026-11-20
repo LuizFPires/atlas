@@ -75,12 +75,15 @@ function bolinha(icone: keyof typeof ICONES): string {
 // Modo escuro dos apps de e-mail: tudo o que é lime (faixa do topo, botão, microfone) é IMAGEM, que o cliente
 // não inverte. Então aqui basta declarar que o e-mail suporta claro e escuro; o corpo é texto sobre o cartão,
 // que o cliente escurece de forma consistente (fundo e texto juntos), continuando legível.
-const DEFESA_ESCURO = `:root{color-scheme:light dark;supported-color-schemes:light dark}`
+// O e-mail é claro de propósito (cartão branco, texto escuro; faixa e botão escuros são IMAGEM). Travamos em modo
+// claro ("only light") para o cliente de e-mail NÃO inverter — a inversão parcial do Mail/Gmail no modo escuro
+// deixava o título escuro sobre fundo escurecido (apagado). Assim o design aparece como foi desenhado em todo lugar.
+const DEFESA_ESCURO = `:root{color-scheme:only light;supported-color-schemes:only light}`
 
 /** Moldura comum: cartão branco (tema do protótipo), faixa escura no topo com a marca ATLAS em lime. Tabelas porque e-mail não entende flex. */
 export function moldura(o: { titulo: string; subtitulo: string; corpo: string; preheader: string }): string {
   return `<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${esc(o.titulo)}</title><style>${DEFESA_ESCURO}</style></head>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>${esc(o.titulo)}</title><style>${DEFESA_ESCURO}</style></head>
 <body style="margin:0;padding:0;background:${COR.fundo};font-family:${FONTE}">
 <u></u><div class="corpo" style="background:${COR.fundo}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(o.preheader)}</div>
