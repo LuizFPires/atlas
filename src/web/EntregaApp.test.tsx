@@ -35,3 +35,8 @@ test('montando e falhou têm texto próprio', async () => {
   montar({ estado: async () => { throw new Error('x') } })
   expect(await screen.findByRole('alert')).toHaveTextContent(/Sem conexão/)
 })
+
+it('avisa que o app é de uma empresa só e que dividir o acesso divide os dados', async () => {
+  montar()
+  expect(await screen.findByText(/mesmos dados que você: clientes, vendas e agenda/)).toBeInTheDocument()
+})

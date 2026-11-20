@@ -9,6 +9,23 @@ export type { RespostaVerificar } from './verificar-publico.ts'
 /** Por quanto tempo o app pode confiar na última resposta sem internet. Curto de propósito. */
 export const TOLERANCIA_OFFLINE_MS = 30 * 60_000
 
+type LicencaStatus = NonNullable<Awaited<ReturnType<Deps['store']['licencaDoCliente']>>>
+
+/** Matriz única de status (fail-closed), usada por /verificar e /instancia/validar. Só 'ok' libera. */
+export function motivoDaLicenca(lic: Pick<LicencaStatus, 'tipo' | 'status' | 'validade_em' | 'pausa_prevista_em'>, agora: Date): RespostaVerificar['motivo'] {
+  // Cortesia: vale só até validade_em. Venceu (ou veio sem prazo): acesso cai.
+  if (lic.tipo === 'cortesia' && lic.status === 'ativa' && (!lic.validade_em || lic.validade_em.getTime() <= agora.getTime())) return 'cortesia_expirada'
+  if (lic.status === 'ativa') return 'ok'
+  // 'atrasada' constrói só dentro da carência explícita (pausa_prevista_em no futuro).
+  if (lic.status === 'atrasada') {
+    if (lic.pausa_prevista_em && lic.pausa_prevista_em > agora) return 'ok'
+    return lic.pausa_prevista_em ? 'licenca_atrasada_pausa' : 'negado'
+  }
+  if (lic.status === 'pausada') return 'licenca_pausada'
+  if (lic.status === 'cancelada') return 'licenca_cancelada'
+  return 'negado' // status desconhecido
+}
+
 async function montarResposta(d: Deps, hash: string, pode: boolean, motivo: RespostaVerificar['motivo'], licencaId: string | null) {
   const base = {
     pode_construir: pode,
@@ -33,19 +50,8 @@ export async function verificar(
   const hashToken = await sha256(a.token_dispositivo || '-')
   if (!ativa || ativa.computador_hash !== a.computador_hash || !ativa.token_hash || !iguais(hashToken, ativa.token_hash)) return negar()
 
-  // Cortesia: vale só até validade_em. Venceu (ou veio sem prazo): acesso cai e a licença é encerrada (best-effort; o bloqueio não depende disso).
-  if (lic.tipo === 'cortesia' && lic.status === 'ativa' && (!lic.validade_em || lic.validade_em.getTime() <= d.agora().getTime())) {
-    await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada' }, { status: 'ativa' })
-    return montarResposta(d, a.computador_hash, false, 'cortesia_expirada', lic.id)
-  }
-  if (lic.status === 'ativa') return montarResposta(d, a.computador_hash, true, 'ok', lic.id)
-  // 'atrasada' constrói só dentro da carência explícita (pausa_prevista_em no futuro).
-  if (lic.status === 'atrasada') {
-    if (lic.pausa_prevista_em && lic.pausa_prevista_em > d.agora()) return montarResposta(d, a.computador_hash, true, 'ok', lic.id)
-    if (lic.pausa_prevista_em) return montarResposta(d, a.computador_hash, false, 'licenca_atrasada_pausa', lic.id)
-    return negar() // atrasada sem pausa definida: fail-closed, motivo genérico
-  }
-  if (lic.status === 'pausada') return montarResposta(d, a.computador_hash, false, 'licenca_pausada', lic.id)
-  if (lic.status === 'cancelada') return montarResposta(d, a.computador_hash, false, 'licenca_cancelada', lic.id)
-  return negar() // status desconhecido
+  const motivo = motivoDaLicenca(lic, d.agora())
+  // Cortesia vencida: a licença é encerrada (best-effort; o bloqueio não depende disso).
+  if (motivo === 'cortesia_expirada') await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada' }, { status: 'ativa' })
+  return motivo === 'ok' ? montarResposta(d, a.computador_hash, true, 'ok', lic.id) : motivo === 'negado' ? negar() : montarResposta(d, a.computador_hash, false, motivo, lic.id)
 }
