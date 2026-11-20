@@ -317,4 +317,4 @@ Decisões ainda pendentes:
 - CNPJ, endereço e e-mail de contato e do encarregado de dados (LGPD);
 - cidade do foro;
 - vídeo da página de vendas.
-- Pontos que o legal exige do produto: botão "Cancelar compra" no portal (arrependimento de 7 dias, CDC art. 49), cancelamento da mensalidade sem fidelidade, aviso por e-mail antes da pausa por atraso, banner de cookies no site.
+- Pontos que o legal exige do produto: botão "Cancelar compra" no portal (arrependimento de 7 dias, CDC art. 49), cancelamento da mensalidade sem fidelidade, aviso por e-mail antes da pausa por atraso. Medição de visitas ANÔNIMA e cookieless (interesse legítimo, LGPD) — sem banner de consentimento; se entrar análise, tem de ser cookieless (ex.: Plausible).
