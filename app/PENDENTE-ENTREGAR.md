@@ -278,3 +278,10 @@ Teste sem Electron/Claude/rede: `node --test app/adaptadores/*.teste.cjs` (ajuda
 - **Cupom / impressão** (`PortaCupom` em `cupom.ts`; hoje só `criarCupomFixture`, que NÃO imprime e avisa isso na tela): ligar impressora térmica (ESC/POS, rede ou USB) e, se o cliente precisar, emissão fiscal (NFC-e/SAT, via emissor dele). O cupom do modelo é "sem valor fiscal". Falta decidir o equipamento. O botão "Imprimir cupom" só aparece se `AppMercearia` receber um `cupom`.
 - **Guardião**: mesma pendência da barbearia (cofre com e-mail + token do dispositivo; carência offline). Sem isso o app em produção bloqueia, de propósito.
 - **Avisos**: estoque mínimo e janela de validade hoje são constantes do modelo (`regrasAvisos.ts`); falta deixar o dono configurar por produto, e avisar fora do app (push/WhatsApp, conta do cliente).
+
+## M32 (e1) — orquestração do provisionamento (`src/provisionamento/`)
+- **Só simulação.** Portas (`PortaCodigo`, `PortaBanco`, `PortaHospedagem`, `PortaGuardiao`, `PortaRegistro`) e o orquestrador `provisionar()` estão prontos e testados com `criarSimulacao()`, que NÃO cria nada de verdade. Em produção a entrega segue `criarEntregaProducao()` ("preparando"); `criarEntregaProvisionada()` só deve substituí-la quando houver adaptador real.
+- **(e2) Conectar contas (OAuth)**: registrar os apps OAuth de GitHub, Supabase e Vercel e guiar o cliente (precisa do Luiz).
+- **(e3) Adaptadores reais**, um por provedor: GitHub (repo a partir do app-modelo, com marca d'água + aviso de licença), Supabase (projeto + migrations do segmento), Vercel (deploy + endereço), guardião (vínculo licença↔instância no app entregue). Credencial sempre efêmera, nunca em arquivo/log.
+- **Registro real**: implementar `PortaRegistro` sobre a tabela `provisionamentos` (migration 0025, ainda não aplicada) e um endpoint para disparar/retomar `provisionar` e para a tela de entrega consultar.
+- **Decisões em aberto** (docs/prd-provisionamento.md §6): cliente desconecta ou para de pagar; Atlas criar contas pelo cliente.
