@@ -3,7 +3,7 @@
 // só vai o que o servidor já conhece (e-mail da compra, hash do computador, token do dispositivo no cabeçalho).
 // A licença é descoberta pelo servidor; nunca mandamos id de licença. Só rede fora e 5xx entram em carência offline
 // (libera temporariamente); 429, qualquer 4xx e ok:false bloqueiam.
-// Pendência: ligar dentro do app-modelo (fatia d) — ver app/PENDENTE-ENTREGAR.md.
+// Ligado no app-modelo da barbearia (src/modelos/barbearia/AppBarbearia.tsx); falta a carência com prazo — ver app/PENDENTE-ENTREGAR.md.
 import { configCompra } from '../web/compra'
 import { lerAtivacao, modoFixture } from './ativacao-api'
 import type { PonteDesktop } from './ponte'

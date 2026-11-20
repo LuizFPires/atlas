@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Shell, type IdTela } from './shell/Shell'
 import { ImagemAssinatura } from './marca/Marca'
 import { Vendas } from './web/Vendas'
@@ -18,6 +18,8 @@ import { criarAdminApi } from './web/admin-api'
 import { PaginaLegal } from './web/Legal'
 import { idLegalDoCaminho } from './web/textos-legais'
 import { AppDesktop, noAppDesktop } from './app/AppDesktop'
+// App-modelo carregado sob demanda: não pesa no bundle principal.
+const AppBarbearia = lazy(() => import('./modelos/barbearia/AppBarbearia').then((m) => ({ default: m.AppBarbearia })))
 
 const portalApi = criarPortalApi()
 const adminApi = criarAdminApi()
@@ -67,6 +69,8 @@ export default function App() {
   if (caminho === '/degustacao') return <ConfirmarDegustacao />
   // Painel do administrador: o link existe para todos, mas só o servidor decide quem entra (JWT + allowlist).
   if (caminho === '/admin') return <Admin api={adminApi} />
+  // Demonstração do app-modelo da barbearia (M32 d1): só em modo fixture (desenvolvimento ou VITE_FIXTURE=1). Em produção a rota não existe.
+  if (caminho === '/modelo/barbearia' && modoFixture()) return <Suspense fallback={null}><AppBarbearia /></Suspense>
   // Textos legais públicos: privacidade, termos e licença do software.
   const legal = idLegalDoCaminho(caminho)
   if (legal) return <PaginaLegal id={legal} />
