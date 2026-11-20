@@ -6,6 +6,18 @@ export const VIDEO_URL = ''
 
 export const PRECO = { implantacao: 'R$ 4.800', mensalidade: 'R$ 200' }
 
+export const PRECO_PRATELEIRA = { avista: 'R$ 7.300', mensalidade: 'R$ 200' }
+
+export type SegmentoPronto = 'barbearia' | 'restaurante' | 'mercearia' | 'academia'
+
+/** Vitrine "Comece pronto" (M32): um app já feito por segmento de lançamento. */
+export const prateleira: Array<{ segmento: SegmentoPronto; icone: NomeIcone; nome: string; txt: string }> = [
+  { segmento: 'barbearia', icone: 'tesoura', nome: 'Barbearia', txt: 'Agenda online, escolha do barbeiro e caixa do dia. Seu cliente marca sozinho.' },
+  { segmento: 'restaurante', icone: 'prato', nome: 'Restaurante', txt: 'Cardápio online, pedidos e cozinha conectados, sem anotar nada no papel.' },
+  { segmento: 'mercearia', icone: 'caixa', nome: 'Mercearia', txt: 'Estoque, validade e aviso de reposição, com as vendas do dia na mão.' },
+  { segmento: 'academia', icone: 'haltere', nome: 'Academia', txt: 'Alunos, treino do dia, check-in e mensalidades num lugar só.' },
+]
+
 export const tresPassos = ['Mostre o que você gosta.', 'Explique como você quer.', 'Escolha um nome.']
 
 export const exemplos: Array<{ icone: NomeIcone; nome: string; txt: string }> = [

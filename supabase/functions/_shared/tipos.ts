@@ -63,6 +63,8 @@ export interface Pagamento {
   /** payment_intent usado para estornar (fatura → pi_…). */
   gateway_pi: string | null
   pago_em: Date | null
+  /** App pronto comprado na prateleira (M32). Ausente/nulo = implantação do zero ou mensalidade. */
+  segmento?: string | null
 }
 /** Conta de pagamento do cliente. Guarda só a REFERÊNCIA dos segredos (nome no cofre/ambiente), nunca o valor. */
 export interface ContaGateway {

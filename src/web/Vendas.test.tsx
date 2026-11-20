@@ -30,3 +30,13 @@ test('não usa emoji nem promete atendimento humano', () => {
   expect(container.textContent).not.toMatch(/\p{Extended_Pictographic}/u)
   expect(container.textContent).not.toMatch(/atendente|suporte humano|falar com (uma )?pessoa/i)
 })
+
+test('vitrine Comece pronto: 4 segmentos, preço e botão que abre a compra do segmento', async () => {
+  const onComprarPronto = vi.fn()
+  render(<TemaProvider><Vendas onComprar={vi.fn()} onComprarPronto={onComprarPronto} /></TemaProvider>)
+  for (const n of ['Barbearia', 'Restaurante', 'Mercearia', 'Academia']) expect(screen.getByRole('button', { name: `Começar pronto: ${n}` })).toBeInTheDocument()
+  expect(screen.getAllByText('R$ 7.300')).toHaveLength(4)
+  expect(screen.getByText(/de uma empresa só/)).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Começar pronto: Mercearia' }))
+  expect(onComprarPronto).toHaveBeenCalledWith('mercearia')
+})

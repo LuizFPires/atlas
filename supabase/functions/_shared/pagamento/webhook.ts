@@ -4,7 +4,7 @@
 import type { Licenca, Pagamento, TipoPagamento } from '../tipos.ts'
 import { ErroRegra } from '../tipos.ts'
 import { verificarAssinaturaStripe } from './assinatura-stripe.ts'
-import { type DepsPagamento, MAX_PARCELAS, planoImplantacao, VALOR_IMPLANTACAO } from './config.ts'
+import { type DepsPagamento, MAX_PARCELAS, planoDoTipo, SEGMENTOS_PRATELEIRA, type TipoProduto, valorBaseDoTipo } from './config.ts'
 import { marcarAtraso, sairDoAtraso } from './atraso.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,8 +83,9 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   if (s.mode !== 'payment') return
   // Só vale a sessão que NÓS criamos para esta conta, paga, em BRL e com o valor cheio da implantação.
   // Qualquer outra (outro produto, valor menor, cupom, outra conta) é ignorada: nunca concede licença.
-  if (s.payment_status !== 'paid' || meta.atlas_tipo !== 'implantacao' || meta.atlas_conta !== contaId) return
-  if (String(s.currency ?? '').toLowerCase() !== 'brl' || !(Number(s.amount_total) >= Math.round(VALOR_IMPLANTACAO * 100))) return
+  if (s.payment_status !== 'paid' || (meta.atlas_tipo !== 'implantacao' && meta.atlas_tipo !== 'prateleira') || meta.atlas_conta !== contaId) return
+  const tipoProduto: TipoProduto = meta.atlas_tipo
+  if (String(s.currency ?? '').toLowerCase() !== 'brl' || !(Number(s.amount_total) >= Math.round(valorBaseDoTipo(tipoProduto) * 100))) return
   const email = str(s.customer_details?.email) ?? str(s.customer_email)
   const pi = idDe(s.payment_intent)
   if (!email || !pi) throw new ErroRegra('sessao_incompleta', 'Sessão sem e-mail ou pagamento.', 400)
@@ -95,8 +96,10 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   const parcelasUsadas = (sk && (await d.stripe(sk).parcelasDoPagamento(pi))) || 1
   // Acima do máximo permitido: recusa direto (não arredonda para o teto; fail-closed, sem subcobrança).
   if (parcelasUsadas > MAX_PARCELAS) return
-  if (Number(s.amount_total) < Math.round(planoImplantacao(parcelasUsadas).total * 100)) return
+  if (Number(s.amount_total) < Math.round(planoDoTipo(tipoProduto, parcelasUsadas).total * 100)) return
   const valor = reais(s.amount_total)
+  // Qual app pronto foi comprado (só prateleira, e só um segmento conhecido; senão nulo).
+  const segmento = tipoProduto === 'prateleira' && (SEGMENTOS_PRATELEIRA as readonly string[]).includes(String(meta.atlas_segmento)) ? String(meta.atlas_segmento) : null
   const emailN = email.trim().toLowerCase()
   const { licenca } = await d.store.criarCompra({
     email: emailN,
@@ -110,7 +113,7 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   if (licenca.conta_gateway_id !== contaId) throw new ErroRegra('conta_divergente', 'Esse e-mail já tem licença em outra conta de pagamento.', 409)
   // gravarPagamento é atômico (upsert condicional: nunca sobrescreve 'estornado') e devolve o estado anterior.
   // A decisão de reativar usa SÓ esse resultado, não uma leitura prévia (um estorno concorrente não é desfeito).
-  const prev = await d.store.gravarPagamento({ licenca_id: licenca.id, conta_gateway_id: contaId, tipo: 'implantacao', valor, status: 'pago', gateway_ref: pi, gateway_pi: pi, pago_em: agora })
+  const prev = await d.store.gravarPagamento({ licenca_id: licenca.id, conta_gateway_id: contaId, tipo: 'implantacao', valor, status: 'pago', gateway_ref: pi, gateway_pi: pi, pago_em: agora, segmento })
   if (prev === 'estornado') {
     await d.store.atualizarStatusPagamento(contaId, pi, 'estornado') // garantia: segue estornado; reentrega de compra devolvida não reativa
     return
