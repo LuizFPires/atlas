@@ -37,10 +37,11 @@ function Aplicativo() {
 
 function PaginaVendas() {
   const [comprando, setComprando] = useState(false)
+  const [segmento, setSegmento] = useState<string | undefined>()
   return (
     <>
-      <Vendas onComprar={() => setComprando(true)} />
-      <ModalCompra aberto={comprando} onFechar={() => setComprando(false)} />
+      <Vendas onComprar={() => { setSegmento(undefined); setComprando(true) }} onComprarPronto={(s) => { setSegmento(s); setComprando(true) }} />
+      <ModalCompra aberto={comprando} segmento={segmento} onFechar={() => setComprando(false)} />
       <BannerCookies />
     </>
   )

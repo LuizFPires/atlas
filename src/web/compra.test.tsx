@@ -16,6 +16,18 @@ describe('compra', () => {
     expect(url).toBe('https://api.atlas.test/functions/v1/pagamento/checkout')
     expect(JSON.parse(init.body as string)).toEqual({ conta_id: 'conta-1', tipo: 'implantacao', email: 'ana@loja.com', parcelas: 1, aceite_termos: true, versao_termos: '1.0' })
   })
+  test('app pronto: manda tipo prateleira e o segmento ao checkout', async () => {
+    const f = vi.fn(() => resp(200, { url: 'https://checkout.stripe.com/c/pay/cs_2' }))
+    await iniciarCompra('ana@loja.com', cfg, f as unknown as typeof fetch, '1.0', 4, 'barbearia')
+    const [, init] = f.mock.calls[0] as unknown as [string, RequestInit]
+    expect(JSON.parse(init.body as string)).toMatchObject({ tipo: 'prateleira', segmento: 'barbearia', parcelas: 4 })
+  })
+  test('modal da prateleira mostra R$ 7.300 e as parcelas do app pronto', async () => {
+    render(<ModalCompra aberto segmento="academia" onFechar={() => {}} abrirPagamento={() => {}} />)
+    expect(screen.getByText(/À vista: R\$\s7\.300,00/)).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /3x de R\$\s2\.433,33 \(sem juros\)/ })).toBeInTheDocument()
+    expect(screen.getByText(/de uma empresa só/)).toBeInTheDocument()
+  })
   test('e-mail ruim, sem configuração, erro do servidor e URL não https não vão ao pagamento', async () => {
     const f = vi.fn()
     expect((await iniciarCompra('ana', cfg, f, '1.0')).ok).toBe(false)

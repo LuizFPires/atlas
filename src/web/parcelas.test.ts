@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { planoImplantacao as frente, opcoesParcelas } from './parcelas'
-import { planoImplantacao as servidor, VALOR_IMPLANTACAO } from '../../supabase/functions/_shared/pagamento/config.ts'
+import { planoImplantacao as frente, planoPrateleira as frentePr, opcoesParcelas } from './parcelas'
+import { planoImplantacao as servidor, planoPrateleira as servidorPr, VALOR_IMPLANTACAO } from '../../supabase/functions/_shared/pagamento/config.ts'
 
 describe('parcelamento da implantação', () => {
   it('frontend e servidor calculam exatamente o mesmo preço (1 a 10x)', () => {
@@ -41,5 +41,11 @@ describe('parcelamento da implantação', () => {
     expect(servidor(0).parcelas).toBe(1)
     expect(servidor(99).parcelas).toBe(10)
     expect(opcoesParcelas()).toHaveLength(10)
+  })
+})
+
+describe('parcelamento da prateleira', () => {
+  it('frontend e servidor batem (1 a 10x)', () => {
+    for (let n = 1; n <= 10; n++) expect(frentePr(n)).toEqual(servidorPr(n))
   })
 })
