@@ -54,6 +54,7 @@
 //   inserirEntrega             INSERT entregas_kit
 //   inserirOcorrencia          INSERT ocorrencias_admin (cliente_id,tipo,descricao,autor,resolvida,criada_em)
 //   substituirStatusObras / statusObrasDaLicenca   RPC substituir_status_obras (0022) / SELECT status_obras WHERE licenca_id
+//   salvarPersonalizacao / personalizacaoDaLicenca   UPSERT / SELECT personalizacao_app (0024) por licenca_id
 //   contaGateway               SELECT contas_gateway (id,conta_stripe_id,segredo_ref,modo,base_retorno) WHERE id  [só a referência do segredo]
 //   registrarEventoGateway     INSERT eventos_gateway; violação de PK (23505) = já visto = false
 //   liberarEventoGateway       DELETE eventos_gateway WHERE (conta_gateway_id, evento_id)
@@ -306,6 +307,12 @@ export function criarStoreSupabase() {
       const linhas = await ler(() => t('status_obras').select('obra_id,nome,segmento,etapa_atual_numero,etapa_atual_rotulo,total_etapas,percentual,estado,ativa_agora,ultima_noticia,ultima_noticia_em').eq('licenca_id', licencaId).order('obra_id'), 100)
       return linhas.map((r: any) => ({ ...r, segmento: r.segmento ?? null, ultima_noticia_em: new Date(r.ultima_noticia_em) }))
     },
+
+    // ── personalização do app pronto (M32 b) ──
+    async salvarPersonalizacao(licencaId: string, p: any, agora: Date) {
+      ok(await t('personalizacao_app').upsert({ licenca_id: licencaId, nome_negocio: p.nome_negocio, logo_url: p.logo_url, cor_principal: p.cor_principal, cor_apoio: p.cor_apoio, atualizado_em: iso(agora) }, { onConflict: 'licenca_id' }), 'salvarPersonalizacao')
+    },
+    personalizacaoDaLicenca: (licencaId: string) => um(t('personalizacao_app').select('nome_negocio,logo_url,cor_principal,cor_apoio').eq('licenca_id', licencaId), (r: any) => r && { nome_negocio: r.nome_negocio, logo_url: r.logo_url ?? null, cor_principal: r.cor_principal, cor_apoio: r.cor_apoio }),
 
     // ── pagamento (M3) ──
     contaGateway: (id: string) => um(t('contas_gateway').select('id,conta_stripe_id,segredo_ref,modo,base_retorno').eq('id', id), (r: any) => r && { id: r.id, conta_stripe_id: r.conta_stripe_id, segredo_ref: r.segredo_ref, modo: r.modo, base_retorno: r.base_retorno ?? null }),
