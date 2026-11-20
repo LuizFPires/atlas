@@ -37,3 +37,10 @@ test('mostra o histórico de atendimentos da ficha', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Ver ficha de Rafael Souza' }))
   expect(await screen.findByText('Ainda não teve nenhum atendimento.')).toBeInTheDocument()
 })
+
+test('quando a porta rejeita, mostra aviso amigável', async () => {
+  const dados = criarDadosFixture()
+  vi.spyOn(dados, 'listarClientes').mockRejectedValue(new Error('rede'))
+  render(<Clientes dados={dados} />)
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não deu pra carregar/salvar agora. Tente de novo.')
+})

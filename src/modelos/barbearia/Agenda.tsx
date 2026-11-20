@@ -4,6 +4,8 @@ import { Botao } from '../../ui'
 import { SERVICOS, type Cliente, type Horario, type PortaDados } from './dados'
 import { lembretesQueSairiam, type PortaEnvio } from './lembretes'
 
+const ERRO_PORTA = 'Não deu pra carregar/salvar agora. Tente de novo.'
+
 interface Props { dados: PortaDados; dia: string; nomeNegocio?: string; envio?: PortaEnvio }
 
 export function Agenda({ dados, dia, nomeNegocio = 'barbearia', envio }: Props) {
@@ -23,7 +25,9 @@ export function Agenda({ dados, dia, nomeNegocio = 'barbearia', envio }: Props) 
   }, [dados, dia])
   useEffect(() => {
     let vivo = true
-    void Promise.all([dados.listarHorarios(dia), dados.listarClientes()]).then(([h, c]) => { if (vivo) { setHorarios(h); setClientes(c) } })
+    void Promise.all([dados.listarHorarios(dia), dados.listarClientes()])
+      .then(([h, c]) => { if (vivo) { setHorarios(h); setClientes(c) } })
+      .catch(() => { if (vivo) setErro(ERRO_PORTA) })
     return () => { vivo = false }
   }, [dados, dia])
 
@@ -33,21 +37,29 @@ export function Agenda({ dados, dia, nomeNegocio = 'barbearia', envio }: Props) 
   async function salvar(e: React.FormEvent) {
     e.preventDefault()
     const n = { dia, hora, clienteId, servico }
-    const r = editando ? await dados.editarHorario(editando, n) : await dados.criarHorario(n)
-    if (!r.ok) { setErro(r.mensagem); return }
-    limpar()
-    await recarregar()
+    try {
+      const r = editando ? await dados.editarHorario(editando, n) : await dados.criarHorario(n)
+      if (!r.ok) { setErro(r.mensagem); return }
+      limpar()
+      await recarregar()
+    } catch { setErro(ERRO_PORTA) }
   }
   async function cancelar(id: string) {
-    const r = await dados.cancelarHorario(id)
-    if (!r.ok) { setErro(r.mensagem); return }
-    if (editando === id) limpar()
-    await recarregar()
+    try {
+      const r = await dados.cancelarHorario(id)
+      if (!r.ok) { setErro(r.mensagem); return }
+      if (editando === id) limpar()
+      setErro('')
+      await recarregar()
+    } catch { setErro(ERRO_PORTA) }
   }
   async function alternarLembrete(h: Horario) {
-    const r = await dados.definirLembrete(h.id, !h.lembrete)
-    if (!r.ok) { setErro(r.mensagem); return }
-    await recarregar()
+    try {
+      const r = await dados.definirLembrete(h.id, !h.lembrete)
+      if (!r.ok) { setErro(r.mensagem); return }
+      setErro('')
+      await recarregar()
+    } catch { setErro(ERRO_PORTA) }
   }
   const saindo = lembretesQueSairiam(nomeNegocio, horarios, clientes)
   async function enviarLembretes() {

@@ -7,6 +7,8 @@ const formatarDia = (d: string) => d.split('-').reverse().join('/')
 export const formatarTelefone = (t: string) =>
   t.length === 11 ? `(${t.slice(0, 2)}) ${t.slice(2, 7)}-${t.slice(7)}` : t.length === 10 ? `(${t.slice(0, 2)}) ${t.slice(2, 6)}-${t.slice(6)}` : t
 
+const ERRO_PORTA = 'Não deu pra carregar/salvar agora. Tente de novo.'
+
 export function Clientes({ dados }: { dados: PortaDados }) {
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [nome, setNome] = useState('')
@@ -18,20 +20,25 @@ export function Clientes({ dados }: { dados: PortaDados }) {
   const recarregar = useCallback(async () => setClientes(await dados.listarClientes()), [dados])
   useEffect(() => {
     let vivo = true
-    void dados.listarClientes().then((c) => { if (vivo) setClientes(c) })
+    void dados.listarClientes().then((c) => { if (vivo) setClientes(c) }).catch(() => { if (vivo) setErro(ERRO_PORTA) })
     return () => { vivo = false }
   }, [dados])
 
   async function cadastrar(e: React.FormEvent) {
     e.preventDefault()
-    const r = await dados.criarCliente({ nome, telefone })
-    if (!r.ok) { setErro(r.mensagem); return }
-    setNome(''); setTelefone(''); setErro('')
-    await recarregar()
+    try {
+      const r = await dados.criarCliente({ nome, telefone })
+      if (!r.ok) { setErro(r.mensagem); return }
+      setNome(''); setTelefone(''); setErro('')
+      await recarregar()
+    } catch { setErro(ERRO_PORTA) }
   }
   async function abrir(c: Cliente) {
     setAberto(c)
-    setHistorico(await dados.historico(c.id))
+    try {
+      setHistorico(await dados.historico(c.id))
+      setErro('')
+    } catch { setErro(ERRO_PORTA) }
   }
 
   return (

@@ -60,3 +60,22 @@ test('cancela um horário', async () => {
   expect(screen.queryByRole('button', { name: 'Cancelar 10:30' })).toBeNull()
   expect((await dados.listarHorarios(diaDeHoje()))[1].estado).toBe('cancelado')
 })
+
+test('quando a porta rejeita, mostra aviso amigável; depois de um sucesso o erro some', async () => {
+  const dados = criarDadosFixture()
+  const cancelar = vi.spyOn(dados, 'cancelarHorario')
+  render(<Agenda dados={dados} dia={diaDeHoje()} />)
+  await itensDaAgenda()
+  cancelar.mockRejectedValueOnce(new Error('rede'))
+  await userEvent.click(screen.getAllByRole('button', { name: /Cancelar/ })[0])
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não deu pra carregar/salvar agora. Tente de novo.')
+  await userEvent.click(screen.getAllByRole('button', { name: /Cancelar/ })[0])
+  await vi.waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+})
+
+test('se a carga inicial falha, mostra o aviso', async () => {
+  const dados = criarDadosFixture()
+  vi.spyOn(dados, 'listarHorarios').mockRejectedValue(new Error('rede'))
+  render(<Agenda dados={dados} dia={diaDeHoje()} />)
+  expect(await screen.findByRole('alert')).toHaveTextContent('Tente de novo.')
+})
