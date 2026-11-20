@@ -173,13 +173,13 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         return json(await trocarComputador(ctx.deps, { email: s('email'), codigo: s('codigo'), novo_hash: s('novo_hash') }))
       case '/pagamento/checkout': {
         if (!ctx.pagamento) return json({ erro: 'pagamento_indisponivel' }, 503)
-        const tipo = s('tipo') === 'mensalidade' ? 'mensalidade' : 'implantacao'
+        const tipo = s('tipo') === 'mensalidade' ? 'mensalidade' : s('tipo') === 'prateleira' ? 'prateleira' : 'implantacao'
         // compra inicial é pública (com limite por IP); mensalidade é de serviço (portal já autenticado).
         if (tipo === 'mensalidade' && !ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
-        if (tipo === 'implantacao' && !(await ctx.pagamento.store.tentarEvento(`checkout:ip:${ipDe(req)}`, 10, 15 * 60_000, ctx.pagamento.agora()))) {
+        if (tipo !== 'mensalidade' && !(await ctx.pagamento.store.tentarEvento(`checkout:ip:${ipDe(req)}`, 10, 15 * 60_000, ctx.pagamento.agora()))) {
           return json({ erro: 'muitas_solicitacoes', mensagem: 'Muitas tentativas. Espere uns minutos.' }, 429)
         }
-        return json(await criarCheckout(ctx.pagamento, { conta_id: s('conta_id'), tipo, email: s('email'), parcelas: Number((b as Record<string, unknown>).parcelas) || 1, licenca_id: s('licenca_id'), aceite_termos_versao: (b as Record<string, unknown>).aceite_termos === true ? s('versao_termos') : '' }))
+        return json(await criarCheckout(ctx.pagamento, { conta_id: s('conta_id'), tipo, segmento: s('segmento'), email: s('email'), parcelas: Number((b as Record<string, unknown>).parcelas) || 1, licenca_id: s('licenca_id'), aceite_termos_versao: (b as Record<string, unknown>).aceite_termos === true ? s('versao_termos') : '' }))
       }
       case '/cadastro': {
         if (!ctx.cadastro) return json({ erro: 'cadastro_indisponivel' }, 503)

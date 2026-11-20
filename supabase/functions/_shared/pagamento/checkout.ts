@@ -2,7 +2,7 @@
 // Implantação: pagamento único, Pix + cartão. Mensalidade: assinatura recorrente (cartão; a Stripe
 // ainda não cobra Pix em modo assinatura). O dinheiro cai direto na conta do cliente.
 import { ErroRegra } from '../tipos.ts'
-import { type DepsPagamento, planoImplantacao, VALOR_MENSALIDADE } from './config.ts'
+import { type DepsPagamento, planoDoTipo, SEGMENTOS_PRATELEIRA, type SegmentoPrateleira, VALOR_MENSALIDADE } from './config.ts'
 
 const VERSAO_RE = /^[0-9A-Za-z._-]{1,20}$/
 const centavos = (v: number) => Math.round(v * 100)
@@ -18,7 +18,9 @@ async function apiDaConta(d: DepsPagamento, contaId: string) {
 
 export interface PedidoCheckout {
   conta_id: string
-  tipo: 'implantacao' | 'mensalidade'
+  tipo: 'implantacao' | 'prateleira' | 'mensalidade'
+  /** prateleira: segmento do app pronto escolhido (obrigatório). */
+  segmento?: string
   /** implantação: e-mail de quem compra. mensalidade: ignorado (vem da licença). */
   email?: string
   /** implantação: parcelas no cartão (1–10). 1–3x sem juros; 4x+ com juros de 2% a.m. (PMT). */
@@ -40,10 +42,14 @@ function urlsDeRetorno(base: string | null | undefined) {
 
 export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promise<{ url: string }> {
   const { conta, api } = await apiDaConta(d, p.conta_id)
-  const meta = { atlas_conta: conta.id, atlas_tipo: p.tipo }
+  const meta: Record<string, string> = { atlas_conta: conta.id, atlas_tipo: p.tipo }
   const base = { ...urlsDeRetorno(conta.base_retorno), locale: 'pt-BR' }
 
-  if (p.tipo === 'implantacao') {
+  if (p.tipo === 'implantacao' || p.tipo === 'prateleira') {
+    if (p.tipo === 'prateleira') {
+      if (!(SEGMENTOS_PRATELEIRA as readonly string[]).includes(p.segmento ?? '')) throw new ErroRegra('segmento_invalido', 'Escolha um dos apps prontos da vitrine.', 400)
+      meta.atlas_segmento = p.segmento as SegmentoPrateleira
+    }
     const email = (p.email ?? '').trim().toLowerCase()
     if (!EMAIL_RE.test(email)) throw new ErroRegra('email_invalido', 'Confira o e-mail da compra.')
     const versao = typeof p.aceite_termos_versao === 'string' ? p.aceite_termos_versao.trim() : ''
@@ -51,8 +57,9 @@ export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promis
     // Fail-closed: se o aceite não ficou registrado, o pagamento nem é aberto.
     await d.store.registrarConsentimento(email, versao, 'checkout', d.agora())
     // Parcelamento: o total é o preço de verdade (1–3x sem juros; 4x+ PMT a 2% a.m.). Parcelado com juros é só cartão (sem Pix).
-    const plano = planoImplantacao(p.parcelas ?? 1)
-    const nome = plano.parcelas > 1 ? `Atlas — implantação (${plano.parcelas}x)` : 'Atlas — implantação'
+    const plano = planoDoTipo(p.tipo, p.parcelas ?? 1)
+    const rotulo = p.tipo === 'prateleira' ? `Atlas — app pronto (${p.segmento})` : 'Atlas — implantação'
+    const nome = plano.parcelas > 1 ? `${rotulo} (${plano.parcelas}x)` : rotulo
     const s = await api.criarCheckout(
       {
         ...base,

@@ -4,7 +4,7 @@
 import type { Licenca, Pagamento, TipoPagamento } from '../tipos.ts'
 import { ErroRegra } from '../tipos.ts'
 import { verificarAssinaturaStripe } from './assinatura-stripe.ts'
-import { type DepsPagamento, MAX_PARCELAS, planoImplantacao, VALOR_IMPLANTACAO } from './config.ts'
+import { type DepsPagamento, MAX_PARCELAS, planoDoTipo, type TipoProduto, valorBaseDoTipo } from './config.ts'
 import { marcarAtraso, sairDoAtraso } from './atraso.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,8 +83,9 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   if (s.mode !== 'payment') return
   // Só vale a sessão que NÓS criamos para esta conta, paga, em BRL e com o valor cheio da implantação.
   // Qualquer outra (outro produto, valor menor, cupom, outra conta) é ignorada: nunca concede licença.
-  if (s.payment_status !== 'paid' || meta.atlas_tipo !== 'implantacao' || meta.atlas_conta !== contaId) return
-  if (String(s.currency ?? '').toLowerCase() !== 'brl' || !(Number(s.amount_total) >= Math.round(VALOR_IMPLANTACAO * 100))) return
+  if (s.payment_status !== 'paid' || (meta.atlas_tipo !== 'implantacao' && meta.atlas_tipo !== 'prateleira') || meta.atlas_conta !== contaId) return
+  const tipoProduto: TipoProduto = meta.atlas_tipo
+  if (String(s.currency ?? '').toLowerCase() !== 'brl' || !(Number(s.amount_total) >= Math.round(valorBaseDoTipo(tipoProduto) * 100))) return
   const email = str(s.customer_details?.email) ?? str(s.customer_email)
   const pi = idDe(s.payment_intent)
   if (!email || !pi) throw new ErroRegra('sessao_incompleta', 'Sessão sem e-mail ou pagamento.', 400)
@@ -95,7 +96,7 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   const parcelasUsadas = (sk && (await d.stripe(sk).parcelasDoPagamento(pi))) || 1
   // Acima do máximo permitido: recusa direto (não arredonda para o teto; fail-closed, sem subcobrança).
   if (parcelasUsadas > MAX_PARCELAS) return
-  if (Number(s.amount_total) < Math.round(planoImplantacao(parcelasUsadas).total * 100)) return
+  if (Number(s.amount_total) < Math.round(planoDoTipo(tipoProduto, parcelasUsadas).total * 100)) return
   const valor = reais(s.amount_total)
   const emailN = email.trim().toLowerCase()
   const { licenca } = await d.store.criarCompra({
