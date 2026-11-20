@@ -28,7 +28,7 @@ export function EntregaApp({ porta }: { porta: PortaEntrega }) {
         {e?.estado === 'montando' && (
           <>
             <h1>Estamos montando o seu app.</h1>
-            <p className="c-lead" role="status">Isso leva só um pouquinho. Assim que ficar pronto, o link aparece aqui.</p>
+            <p className="c-lead" role="status">{e.mensagem ?? 'Isso leva só um pouquinho. Assim que ficar pronto, o link aparece aqui.'}</p>
           </>
         )}
         {e?.estado === 'falhou' && (

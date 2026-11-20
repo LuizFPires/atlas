@@ -97,7 +97,7 @@ export function Configurador({ segmento, inicial, onSalvar }: { segmento: Segmen
             <span className="cf-rot">Logomarca</span>
             <button type="button" className="cf-upload" onClick={() => arquivo.current?.click()}>
               {logo?.url ? <img src={logo.url} alt="" className="cf-upload-img" /> : <Icone nome="imagem" tamanho={22} />}
-              {logo ? logo.nome : 'Enviar uma imagem (ou deixar pra depois)'}
+              {logo ? logo.nome : 'Enviar uma imagem (ou falar e deixar pra depois)'}
             </button>
             <input ref={arquivo} type="file" accept="image/*" className="cf-nativo" aria-label="Escolher a imagem da logomarca" onChange={(e) => escolherLogo(e.target.files?.[0])} />
           </div>

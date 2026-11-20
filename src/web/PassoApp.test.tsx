@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
@@ -37,4 +38,21 @@ test('erro do servidor ao salvar fica no configurador, sem ir para a entrega', a
   await userEvent.click(screen.getByRole('button', { name: /criar o meu app/ }))
   await waitFor(() => expect(screen.getByText('Muitas alterações seguidas.')).toBeInTheDocument())
   expect(screen.queryByText(/está no ar/)).toBeNull()
+})
+
+test('em produção (fora do modo fixture) a entrega é "preparando": sem app pronto nem link de instalar', async () => {
+  vi.stubEnv('DEV', false)
+  vi.stubEnv('VITE_FIXTURE', '')
+  try {
+    montar(criarPersonalizacaoFixture('barbearia'))
+    await userEvent.type(await screen.findByLabelText('Nome do negócio'), 'Barbearia do Zé')
+    await userEvent.click(screen.getByRole('button', { name: /criar o meu app/ }))
+    expect(await screen.findByText(/Estamos preparando o seu app/)).toBeInTheDocument()
+    expect(screen.queryByText(/está no ar/)).toBeNull()
+    expect(screen.queryByRole('link', { name: /Instalar no celular/ })).toBeNull()
+    expect(screen.queryByText(/atlas-ia\.app\.br\/?$/)).toBeNull()
+    expect(document.body.innerHTML).not.toContain('barbeariadoze')
+  } finally {
+    vi.unstubAllEnvs()
+  }
 })

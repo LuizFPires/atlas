@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { Configurador } from './Configurador'
 import { EntregaApp } from './EntregaApp'
-import { criarEntregaFixture, type PortaEntrega } from './entrega'
+import { modoFixture } from '../app/ativacao-api'
+import { criarEntregaFixture, criarEntregaProducao, type PortaEntrega } from './entrega'
 import { Entrada } from './Portal'
 import type { PortalApi } from './portal-api'
 import { prateleira, type SegmentoPronto } from './conteudo'
@@ -16,9 +17,9 @@ const ehSegmento = (s: unknown): s is SegmentoPronto => prateleira.some((x) => x
 /**
  * Passo pós-compra do app pronto (rota /personalizar): login do Portal (se preciso) -> configurador -> entrega.
  * Só quem comprou um app pronto passa daqui (o servidor confere pela licença do login); a implantação do zero não usa esta rota.
- * `entrega` é a porta do provisionamento: hoje fixture (app/PENDENTE-ENTREGAR.md).
+ * `entrega` é a porta do provisionamento: fixture só no modo demo; em produção, "preparando" honesto (app/PENDENTE-ENTREGAR.md).
  */
-export function PassoApp({ api, porta, entrega = (p) => criarEntregaFixture(p.nome_negocio) }: { api: PortalApi; porta: PortaPersonalizacao; entrega?: (p: Personalizacao) => PortaEntrega }) {
+export function PassoApp({ api, porta, entrega = (p) => (modoFixture() ? criarEntregaFixture(p.nome_negocio) : criarEntregaProducao()) }: { api: PortalApi; porta: PortaPersonalizacao; entrega?: (p: Personalizacao) => PortaEntrega }) {
   const [f, setF] = useState<Fase>({ fase: api.logado() ? 'carregando' : 'entrar' })
 
   useEffect(() => {
