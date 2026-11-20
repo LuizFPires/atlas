@@ -17,6 +17,7 @@ import { ConfirmarDegustacao } from './web/Degustacao'
 import { criarAdminApi } from './web/admin-api'
 import { PaginaLegal } from './web/Legal'
 import { idLegalDoCaminho } from './web/textos-legais'
+import { AppBarbearia } from './modelos/barbearia/AppBarbearia'
 import { AppDesktop, noAppDesktop } from './app/AppDesktop'
 
 const portalApi = criarPortalApi()
@@ -67,6 +68,8 @@ export default function App() {
   if (caminho === '/degustacao') return <ConfirmarDegustacao />
   // Painel do administrador: o link existe para todos, mas só o servidor decide quem entra (JWT + allowlist).
   if (caminho === '/admin') return <Admin api={adminApi} />
+  // Demonstração do app-modelo da barbearia (M32 d1): só em modo fixture (desenvolvimento ou VITE_FIXTURE=1). Em produção a rota não existe.
+  if (caminho === '/modelo/barbearia' && modoFixture()) return <AppBarbearia />
   // Textos legais públicos: privacidade, termos e licença do software.
   const legal = idLegalDoCaminho(caminho)
   if (legal) return <PaginaLegal id={legal} />

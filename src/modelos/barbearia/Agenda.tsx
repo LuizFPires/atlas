@@ -21,7 +21,11 @@ export function Agenda({ dados, dia, nomeNegocio = 'barbearia', envio }: Props) 
     setHorarios(h)
     setClientes(c)
   }, [dados, dia])
-  useEffect(() => { void recarregar() }, [recarregar])
+  useEffect(() => {
+    let vivo = true
+    void Promise.all([dados.listarHorarios(dia), dados.listarClientes()]).then(([h, c]) => { if (vivo) { setHorarios(h); setClientes(c) } })
+    return () => { vivo = false }
+  }, [dados, dia])
 
   const nomeDe = (id: string) => clientes.find((c) => c.id === id)?.nome ?? 'Cliente'
   const limpar = () => { setEditando(null); setHora(''); setClienteId(''); setServico(SERVICOS[0]); setErro('') }

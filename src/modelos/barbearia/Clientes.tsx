@@ -16,7 +16,11 @@ export function Clientes({ dados }: { dados: PortaDados }) {
   const [historico, setHistorico] = useState<Horario[]>([])
 
   const recarregar = useCallback(async () => setClientes(await dados.listarClientes()), [dados])
-  useEffect(() => { void recarregar() }, [recarregar])
+  useEffect(() => {
+    let vivo = true
+    void dados.listarClientes().then((c) => { if (vivo) setClientes(c) })
+    return () => { vivo = false }
+  }, [dados])
 
   async function cadastrar(e: React.FormEvent) {
     e.preventDefault()
