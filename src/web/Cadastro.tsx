@@ -17,6 +17,10 @@ const emailGuardado = () => {
   // localStorage sobrevive ao ir ao Stripe e voltar (o sessionStorage, por aba, se perdia no redirect); sessionStorage como reserva.
   try { return localStorage.getItem(CHAVE_EMAIL_COMPRA) || sessionStorage.getItem(CHAVE_EMAIL_COMPRA) || '' } catch { return '' }
 }
+/** Depois que o cadastro conclui, apaga o e-mail guardado (não deixa rastro no navegador, nem em computador compartilhado). */
+const limparEmailGuardado = () => {
+  try { localStorage.removeItem(CHAVE_EMAIL_COMPRA); sessionStorage.removeItem(CHAVE_EMAIL_COMPRA) } catch { /* sem armazenamento */ }
+}
 
 /** Cadastro pós-pagamento (F00b): 4 respostas, todas podem ser faladas. */
 export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onEnviar: (d: DadosCadastro) => Promise<ResultadoCadastro>; temProva?: boolean }) {
@@ -36,7 +40,7 @@ export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onE
     setEnviando(true)
     const r = await onEnviar({ nome: d.nome.trim(), empresa: d.empresa.trim(), faz: d.faz.trim(), email: d.email.trim().toLowerCase() })
     setEnviando(false)
-    if (r.ok) setPronto({ para: r.enviado_para, diferente: r.email_diferente })
+    if (r.ok) { limparEmailGuardado(); setPronto({ para: r.enviado_para, diferente: r.email_diferente }) }
     else setErro(r.mensagem)
   }
 
