@@ -32,9 +32,11 @@ export function Vender({ dados, cupom }: { dados: PortaDados; cupom?: PortaCupom
   }
   function tirar(p: Produto) {
     const atual = (carrinho[p.id] ?? 0) - 1
-    const { [p.id]: _, ...resto } = carrinho
+    const novo = { ...carrinho }
+    if (atual > 0) novo[p.id] = atual
+    else delete novo[p.id]
     setErro('')
-    setCarrinho(atual > 0 ? { ...resto, [p.id]: atual } : resto)
+    setCarrinho(novo)
   }
   async function fechar() {
     try {
