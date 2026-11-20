@@ -1,5 +1,6 @@
 // M32 (b) — personalização do app pronto: nome, logo e duas cores. O hex é validado AQUI (servidor), nunca só na tela.
 import { limparTexto } from './status-obras.ts'
+import { clienteLogado, type DepsPortal } from './portal.ts'
 import { ErroRegra, type Personalizacao } from './tipos.ts'
 
 export const HEX_RE = /^#[0-9A-Fa-f]{6}$/
@@ -26,4 +27,30 @@ export function validarPersonalizacao(entrada: unknown): Personalizacao {
     logo_url = o.logo_url
   }
   return { nome_negocio: nome, logo_url, cor_principal, cor_apoio }
+}
+
+/** Segmento do app pronto comprado (gravado pela compra, 0023). Nulo = a licença não é de prateleira. */
+async function segmentoDaLicenca(d: DepsPortal, licencaId: string): Promise<string | null> {
+  const pags = await d.store.pagamentosDa(licencaId)
+  return pags.find((p) => p.status === 'pago' && p.segmento)?.segmento ?? null
+}
+
+/** Portal: lê a personalização do DONO logado (licença descoberta pelo login; nada de id no corpo). */
+export async function lerPersonalizacao(d: DepsPortal, jwt: string) {
+  const { licenca } = await clienteLogado(d, jwt)
+  const [segmento, personalizacao] = await Promise.all([segmentoDaLicenca(d, licenca.id), d.store.personalizacaoDaLicenca(licenca.id)])
+  return { segmento, personalizacao }
+}
+
+/** Portal: salva a personalização do DONO logado. A licença vem do login; qualquer licenca_id no corpo é ignorado. */
+export async function salvarPersonalizacaoDoPortal(d: DepsPortal, jwt: string, corpo: unknown) {
+  const { licenca } = await clienteLogado(d, jwt)
+  const segmento = await segmentoDaLicenca(d, licenca.id)
+  if (!segmento) throw new ErroRegra('sem_app_pronto', 'Essa conta não tem um app pronto para personalizar.', 403)
+  if (!(await d.store.tentarEvento(`personalizacao:${licenca.id}`, 30, 60 * 60_000, d.agora()))) {
+    throw new ErroRegra('muitas_solicitacoes', 'Muitas alterações seguidas. Tente de novo mais tarde.', 429)
+  }
+  const p = validarPersonalizacao(corpo)
+  await d.store.salvarPersonalizacao(licenca.id, p, d.agora())
+  return { ok: true, segmento, personalizacao: p }
 }
