@@ -26,3 +26,6 @@
 .ac-acoes select { background: var(--input); color: var(--text); border: 1px solid var(--card-b); border-radius: 8px; padding: 10px; font: inherit; }
 .ac-baixo { color: var(--erro); }
 .ac-form input[type='date'] { background: var(--input); color: var(--text); border: 1px solid var(--card-b); border-radius: 8px; padding: 10px; font: inherit; }
+.ac-num { font-family: 'Geist Mono', monospace; color: var(--lime-txt); }
+.ac-form input[type='date'], .ac-form select { background: var(--input); color: var(--text); border: 1px solid var(--card-b); border-radius: 8px; padding: 10px; font: inherit; }
+.ac-etiqueta { font-family: 'Geist Mono', monospace; text-transform: uppercase; font-size: 11px; color: var(--lime-txt); }
