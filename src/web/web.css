@@ -222,3 +222,22 @@
 .v-teste-form { display: flex; flex-direction: column; gap: 14px; width: min(480px, 100%); }
 .v-teste-ok { display: flex; gap: 10px; align-items: flex-start; max-width: 520px; line-height: 1.5; }
 .v-confirmar { min-height: 60vh; padding: 0 16px; }
+
+/* M30 — Minhas obras (celular primeiro) */
+.ob-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ob-item { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 14px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: inherit; cursor: pointer; min-height: 44px; }
+.ob-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 17px; }
+.ob-agora { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--lime-txt); }
+.ob-etapa { font-size: 14px; }
+.ob-barra-linha { display: flex; align-items: center; gap: 12px; }
+.ob-barra { flex: 1; height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; display: block; }
+.ob-barra > span { display: block; height: 100%; background: var(--lime); border-radius: 999px; }
+.ob-pct { font-size: 14px; color: var(--text); }
+.ob-nome { margin: 0; font-size: 24px; }
+.ob-canteiro { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; border-radius: 14px; border: 1px solid var(--card-b); background: var(--bg); }
+.ob-predio { width: min(260px, 70%); height: auto; max-height: 340px; }
+.ob-tempo { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ob-et { display: flex; align-items: center; gap: 12px; font-size: 15px; color: var(--mute); }
+.ob-et--atual { color: var(--text); font-weight: 700; }
+.ob-bola { width: 28px; height: 28px; flex: none; border-radius: 50%; border: 1px solid var(--card-b); display: flex; align-items: center; justify-content: center; font: 600 13px var(--font-mono); }
+.ob-et--feita .ob-bola, .ob-et--atual .ob-bola { background: var(--lime); color: var(--on-lime); border-color: var(--lime); }

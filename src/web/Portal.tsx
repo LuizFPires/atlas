@@ -4,10 +4,12 @@ import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
 import type { ContaPortal, PerfilPortal, PortalApi } from './portal-api'
 import { LinksLegais } from './Legal'
+import { MinhasObras } from './Obras'
+import type { PonteStatusObras } from './obras-status'
 import './web.css'
 
 /** Portal do cliente (F15) em /conta: login próprio do Atlas (e-mail + código), independente do login do Claude. */
-export function Portal({ api }: { api: PortalApi }) {
+export function Portal({ api, obras }: { api: PortalApi; obras?: PonteStatusObras }) {
   const [perfil, setPerfil] = useState<PerfilPortal | null>(null)
   const [carregando, setCarregando] = useState(api.logado())
   const [aviso, setAviso] = useState('')
@@ -39,7 +41,7 @@ export function Portal({ api }: { api: PortalApi }) {
       {carregando ? (
         <main className="p-main"><p className="c-lead" role="status">Abrindo a sua conta…</p></main>
       ) : perfil ? (
-        <Conta api={api} onExcluida={contaExcluida} />
+        <Conta api={api} obras={obras} onExcluida={contaExcluida} />
       ) : (
         <Entrada api={api} aviso={aviso} onEntrou={(p) => setPerfil(p)} />
       )}
@@ -113,7 +115,7 @@ const STATUS_LICENCA = {
 const STATUS_PAGAMENTO = { pago: 'Pago', pendente: 'Aguardando', falhou: 'Não passou', estornado: 'Devolvido' } as const
 
 /** Tela principal (F15): licença, computador com a licença e pagamentos. Tudo vem do servidor, já escopado pelo login. */
-function Conta({ api, onExcluida }: { api: PortalApi; onExcluida: () => void }) {
+function Conta({ api, obras, onExcluida }: { api: PortalApi; obras?: PonteStatusObras; onExcluida: () => void }) {
   const [conta, setConta] = useState<ContaPortal | null>(null)
   const [erro, setErro] = useState('')
   const [fora, setFora] = useState(false)
@@ -133,10 +135,10 @@ function Conta({ api, onExcluida }: { api: PortalApi; onExcluida: () => void }) 
 
   if (fora) return <main className="p-main"><p role="alert" className="v-erro">{erro} Atualize a página para entrar de novo.</p></main>
   if (!conta) return <main className="p-main">{erro ? <p role="alert" className="v-erro">{erro}</p> : <p className="c-lead" role="status">Abrindo a sua conta…</p>}</main>
-  return <ContaTela api={api} conta={conta} erro={erro} recarregar={recarregar} onExcluida={onExcluida} />
+  return <ContaTela api={api} obras={obras} conta={conta} erro={erro} recarregar={recarregar} onExcluida={onExcluida} />
 }
 
-function ContaTela({ api, conta, erro, recarregar, onExcluida }: { api: PortalApi; conta: ContaPortal; erro: string; recarregar: () => Promise<void>; onExcluida: () => void }) {
+function ContaTela({ api, obras, conta, erro, recarregar, onExcluida }: { api: PortalApi; obras?: PonteStatusObras; conta: ContaPortal; erro: string; recarregar: () => Promise<void>; onExcluida: () => void }) {
   const { licenca: l } = conta
   const [msgPag, setMsgPag] = useState('')
   const mudarPagamento = async () => {
@@ -150,6 +152,7 @@ function ContaTela({ api, conta, erro, recarregar, onExcluida }: { api: PortalAp
     <main className="p-main">
       <h1>Minha conta</h1>
       {erro && <p role="alert" className="v-erro">{erro}</p>}
+      {obras && <MinhasObras ponte={obras} />}
       <div className="p-grade">
         <section className="p-card" aria-labelledby="p-lic">
           <span className="v-mono p-rotulo" id="p-lic">Licença</span>
