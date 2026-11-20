@@ -16,6 +16,8 @@ export interface Horario {
   clienteId: string
   servico: string
   estado: EstadoHorario
+  /** Marcado para o cliente receber um lembrete antes do horário. */
+  lembrete: boolean
 }
 export interface NovoHorario { dia: string; hora: string; clienteId: string; servico: string }
 export interface NovoCliente { nome: string; telefone: string }
@@ -28,6 +30,7 @@ export interface PortaDados {
   criarHorario(n: NovoHorario): Promise<Resp<Horario>>
   editarHorario(id: string, n: NovoHorario): Promise<Resp<Horario>>
   cancelarHorario(id: string): Promise<Resp<Horario>>
+  definirLembrete(id: string, ligado: boolean): Promise<Resp<Horario>>
   criarCliente(n: NovoCliente): Promise<Resp<Cliente>>
   /** Atendimentos já feitos do cliente, do mais recente para o mais antigo. */
   historico(clienteId: string): Promise<Horario[]>
@@ -71,12 +74,12 @@ export function criarDadosFixture(agora: Date = new Date()): PortaDados {
     { id: 'c3', nome: 'Rafael Souza', telefone: '1133334444' },
   ]
   const horarios: Horario[] = [
-    { id: 'h1', dia: dia(agora, 0), hora: '09:00', clienteId: 'c1', servico: 'Corte', estado: 'marcado' },
-    { id: 'h2', dia: dia(agora, 0), hora: '10:30', clienteId: 'c2', servico: 'Corte e barba', estado: 'marcado' },
-    { id: 'h3', dia: dia(agora, 0), hora: '15:00', clienteId: 'c3', servico: 'Barba', estado: 'marcado' },
-    { id: 'h4', dia: dia(agora, -7), hora: '09:00', clienteId: 'c1', servico: 'Corte', estado: 'feito' },
-    { id: 'h5', dia: dia(agora, -21), hora: '11:00', clienteId: 'c1', servico: 'Corte e barba', estado: 'feito' },
-    { id: 'h6', dia: dia(agora, -14), hora: '16:00', clienteId: 'c2', servico: 'Barba', estado: 'feito' },
+    { id: 'h1', dia: dia(agora, 0), hora: '09:00', clienteId: 'c1', servico: 'Corte', estado: 'marcado', lembrete: true },
+    { id: 'h2', dia: dia(agora, 0), hora: '10:30', clienteId: 'c2', servico: 'Corte e barba', estado: 'marcado', lembrete: false },
+    { id: 'h3', dia: dia(agora, 0), hora: '15:00', clienteId: 'c3', servico: 'Barba', estado: 'marcado', lembrete: false },
+    { id: 'h4', dia: dia(agora, -7), hora: '09:00', clienteId: 'c1', servico: 'Corte', estado: 'feito', lembrete: false },
+    { id: 'h5', dia: dia(agora, -21), hora: '11:00', clienteId: 'c1', servico: 'Corte e barba', estado: 'feito', lembrete: false },
+    { id: 'h6', dia: dia(agora, -14), hora: '16:00', clienteId: 'c2', servico: 'Barba', estado: 'feito', lembrete: false },
   ]
   const conflito = (n: NovoHorario, ignorar?: string) =>
     horarios.some((h) => h.id !== ignorar && h.estado === 'marcado' && h.dia === n.dia && h.hora === n.hora)
@@ -95,7 +98,7 @@ export function criarDadosFixture(agora: Date = new Date()): PortaDados {
     async criarHorario(n) {
       const e = checar(n)
       if (e) return { ok: false, mensagem: e }
-      const h: Horario = { id: `h${++seq}`, ...n, estado: 'marcado' }
+      const h: Horario = { id: `h${++seq}`, ...n, estado: 'marcado', lembrete: false }
       horarios.push(h)
       return { ok: true, valor: { ...h } }
     },
@@ -113,6 +116,13 @@ export function criarDadosFixture(agora: Date = new Date()): PortaDados {
       if (!h) return { ok: false, mensagem: 'Não achei esse horário.' }
       if (h.estado === 'feito') return { ok: false, mensagem: 'Esse atendimento já foi feito.' }
       h.estado = 'cancelado'
+      return { ok: true, valor: { ...h } }
+    },
+    async definirLembrete(id, ligado) {
+      const h = horarios.find((x) => x.id === id)
+      if (!h) return { ok: false, mensagem: 'Não achei esse horário.' }
+      if (h.estado !== 'marcado') return { ok: false, mensagem: 'Só dá para lembrar de horários marcados.' }
+      h.lembrete = ligado
       return { ok: true, valor: { ...h } }
     },
     async criarCliente(n) {
