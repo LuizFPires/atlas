@@ -3,6 +3,7 @@
 // Todas as chamadas ao servidor vão com esse token: o servidor descobre o dono por ele, nunca por id enviado daqui.
 import { configCompra } from './compra'
 import type { ObraStatus } from './obras-status'
+import type { Personalizacao, PersonalizacaoLida } from './personalizacao'
 
 export type Resp<T = object> = ({ ok: true } & T) | { ok: false; mensagem: string }
 
@@ -47,6 +48,9 @@ export interface PortalApi {
   cancelarMensalidade(): Promise<Resp<{ encerra_em: string }>>
   /** Resumo das obras do dono logado (relay M30). O servidor escopa pelo login; nada de id no corpo. */
   obras(): Promise<Resp<{ obras: ObraStatus[] }>>
+  /** Personalização do app pronto do dono logado (M32 b). O servidor acha a licença pelo login; nada de id no corpo. */
+  personalizacao(): Promise<Resp<PersonalizacaoLida>>
+  salvarPersonalizacao(p: Personalizacao): Promise<Resp<PersonalizacaoLida>>
   /** Computador já liberado e o e-mail não chegou: manda o acesso de novo. */
   reenviarAcesso(): Promise<Resp<{ enviado_para: string }>>
   /** LGPD: exclui a conta de forma definitiva (anonimiza os dados, para a cobrança e apaga o login). Só vale com o servidor confirmando. */
@@ -140,6 +144,11 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
       const r = await servidor<{ obras: ObraStatus[] }>('/portal/obras')
       return r.ok ? { ok: true, obras: Array.isArray(r.obras) ? r.obras : [] } : r
     },
+    async personalizacao() {
+      const r = await servidor<PersonalizacaoLida>('/portal/personalizacao')
+      return r.ok ? { ok: true, segmento: r.segmento ?? null, personalizacao: r.personalizacao ?? null } : r
+    },
+    salvarPersonalizacao: (p) => servidor<PersonalizacaoLida>('/portal/personalizacao/salvar', { nome_negocio: p.nome_negocio, logo_url: p.logo_url, cor_principal: p.cor_principal, cor_apoio: p.cor_apoio }),
     cancelarCompra: () => servidor<{ estornados: number }>('/portal/compra/cancelar', { confirmar: true }),
     cancelarMensalidade: () => servidor<{ encerra_em: string }>('/portal/mensalidade/cancelar', { confirmar: true }),
     async excluirConta() {

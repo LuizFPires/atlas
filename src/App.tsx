@@ -5,6 +5,8 @@ import { Vendas } from './web/Vendas'
 import { ModalCompra } from './web/ModalCompra'
 import { BannerCookies } from './web/Cookies'
 import { Cadastro } from './web/Cadastro'
+import { PassoApp } from './web/PassoApp'
+import { criarPersonalizacaoFixture, criarPersonalizacaoPortal } from './web/personalizacao'
 import { enviarCadastro } from './web/cadastro-api'
 import { Portal } from './web/Portal'
 import { criarPortalApi } from './web/portal-api'
@@ -19,6 +21,8 @@ import { AppDesktop, noAppDesktop } from './app/AppDesktop'
 
 const portalApi = criarPortalApi()
 const adminApi = criarAdminApi()
+// Personalização do app pronto (M32 b): em produção grava pela rota /portal/personalizacao (escopada pelo login).
+const personalizacao = modoFixture() ? criarPersonalizacaoFixture() : criarPersonalizacaoPortal(portalApi)
 // Status das obras no celular (M30 relay): em produção lê o resumo que o computador publicou, pela rota /portal/obras
 // (escopada pelo login). Enquanto o computador não publicou, a lista vem vazia e a seção explica isso com jeito.
 const statusObras = modoFixture() ? criarStatusObrasFixture() : criarStatusObrasPortal(portalApi)
@@ -55,6 +59,8 @@ export default function App() {
   if (caminho.startsWith('/app')) return <Aplicativo />
   // A Stripe devolve o comprador em /compra/sucesso; /comecar é o endereço público do cadastro.
   if (caminho === '/comecar' || caminho === '/compra/sucesso') return <Cadastro onEnviar={enviarCadastro} />
+  // Depois da compra de um app pronto: cadastro -> /personalizar (login, configurador, entrega). A implantação do zero não passa por aqui.
+  if (caminho === '/personalizar') return <PassoApp api={portalApi} porta={personalizacao} />
   // Portal do cliente: login próprio do Atlas, separado do login do Claude.
   if (caminho === '/conta') return <Portal api={portalApi} obras={statusObras} />
   // Link de confirmação do teste grátis (vem no e-mail).

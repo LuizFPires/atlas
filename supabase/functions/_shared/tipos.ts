@@ -116,6 +116,14 @@ export interface StatusObraLinha {
   ultima_noticia_em: Date
 }
 
+/** Personalização do app pronto (M32 b). Cores sempre #RRGGBB. */
+export interface Personalizacao {
+  nome_negocio: string
+  logo_url: string | null
+  cor_principal: string
+  cor_apoio: string
+}
+
 export interface Ocorrencia {
   cliente_id: string | null
   tipo: string
@@ -209,6 +217,12 @@ export interface Store {
   substituirStatusObras(licencaId: string, obras: StatusObraLinha[], agora: Date): Promise<void>
   /** SELECT status_obras WHERE licenca_id (sempre filtrado pela licença do dono). */
   statusObrasDaLicenca(licencaId: string): Promise<StatusObraLinha[]>
+
+  // ── M32 (b): personalização do app pronto, uma por licença ──
+  /** UPSERT personalizacao_app (0024) pela licença. */
+  salvarPersonalizacao(licencaId: string, p: Personalizacao, agora: Date): Promise<void>
+  /** SELECT personalizacao_app WHERE licenca_id (sempre pela licença do dono). */
+  personalizacaoDaLicenca(licencaId: string): Promise<Personalizacao | null>
 
   // ── M3: pagamento (a conta Stripe é do cliente; aqui só ficam referências) ──
   contaGateway(id: string): Promise<ContaGateway | null>

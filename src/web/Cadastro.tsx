@@ -9,7 +9,7 @@ import { LinksLegais } from './Legal'
 import './web.css'
 
 export interface DadosCadastro { nome: string; empresa: string; faz: string; email: string }
-export type ResultadoCadastro = { ok: true; enviado_para?: string; email_diferente?: boolean } | { ok: false; mensagem: string }
+export type ResultadoCadastro = { ok: true; enviado_para?: string; email_diferente?: boolean; segmento?: string | null } | { ok: false; mensagem: string }
 
 /** E-mail da compra guardado só nesta aba, para já vir preenchido na volta do pagamento. */
 export const CHAVE_EMAIL_COMPRA = 'atlas.email_compra'
@@ -28,7 +28,7 @@ export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onE
   const [d, setD] = useState<DadosCadastro>({ nome: '', empresa: '', faz: '', email: emailGuardado() })
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
-  const [pronto, setPronto] = useState<{ para?: string; diferente?: boolean } | null>(null)
+  const [pronto, setPronto] = useState<{ para?: string; diferente?: boolean; segmento?: string | null } | null>(null)
   const mudar = (k: keyof DadosCadastro) => (v: string) => setD((x) => ({ ...x, [k]: v }))
 
   const enviar = async (ev: React.FormEvent) => {
@@ -40,7 +40,7 @@ export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onE
     setEnviando(true)
     const r = await onEnviar({ nome: d.nome.trim(), empresa: d.empresa.trim(), faz: d.faz.trim(), email: d.email.trim().toLowerCase() })
     setEnviando(false)
-    if (r.ok) { limparEmailGuardado(); setPronto({ para: r.enviado_para, diferente: r.email_diferente }) }
+    if (r.ok) { limparEmailGuardado(); setPronto({ para: r.enviado_para, diferente: r.email_diferente, segmento: r.segmento }) }
     else setErro(r.mensagem)
   }
 
@@ -74,6 +74,12 @@ export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onE
             <h2>Pronto, {d.nome.split(' ')[0]}! Olhe o seu e-mail.</h2>
             <p className="c-lead">Mandamos o seu acesso para <b>{pronto.para ?? 'o e-mail da sua compra'}</b>, o e-mail que você usou para pagar. Ele chega em até 1 minuto. Abra no computador onde você vai construir.</p>
             {pronto.diferente && <p className="c-mute">O e-mail que você digitou é diferente do da compra, então o acesso foi para o da compra.</p>}
+            {pronto.segmento && (
+              <>
+                <p className="c-lead">Agora falta pouco para o seu app ficar com a sua cara: nome, logo e duas cores.</p>
+                <a className="v-acao" href="/personalizar" data-tema={tema}>Deixar o app com a minha cara <Icone nome="seta" /></a>
+              </>
+            )}
             <p className="c-mute">Não chegou? Veja também a caixa de spam. Dentro do Atlas, a Ajuda do Atlas te guia no que precisar.</p>
           </div>
         ) : (

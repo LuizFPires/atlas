@@ -13,6 +13,7 @@ import type { DepsPagamento } from './pagamento/config.ts'
 import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts'
 import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
+import { lerPersonalizacao, salvarPersonalizacaoDoPortal } from './personalizacao.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
 import { adicionarDominio, auditarDegustacao, configDegustacaoAdmin, confirmarDegustacao, listarDominios, removerDominio, type DepsDegustacao, estadoDegustacao, pedirDegustacao } from './degustacao.ts'
 import { adminLogado, liberarCortesia, type DepsAdmin, euAdmin, liberarTrocaUrgente, painel, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
@@ -140,6 +141,10 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await formaDePagamento(ctx.portal, jwt))
         case '/portal/obras':
           return json(await obrasDoPortal(ctx.portal, jwt))
+        case '/portal/personalizacao':
+          return json(await lerPersonalizacao(ctx.portal, jwt))
+        case '/portal/personalizacao/salvar':
+          return json(await salvarPersonalizacaoDoPortal(ctx.portal, jwt, b))
         default:
           return json({ erro: 'nao_encontrado' }, 404)
       }
