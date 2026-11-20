@@ -55,6 +55,23 @@ export function criarStatusObrasFixture(obras: ObraStatus[] = OBRAS_EXEMPLO): St
   return f
 }
 
+/**
+ * Adaptador REAL (M30 relay): lê o resumo das obras na API do Atlas pela rota do portal (POST /portal/obras).
+ * O servidor decide o dono pelo login; aqui não vai id nenhum. Falha de rede/sessão lança (a tela mostra o aviso amigável);
+ * lista vazia = o computador ainda não publicou nada.
+ */
+export function criarStatusObrasPortal(api: { obras(): Promise<{ ok: true; obras: ObraStatus[] } | { ok: false; mensagem: string }> }): PonteStatusObras {
+  const todas = async () => {
+    const r = await api.obras()
+    if (!r.ok) throw new Error(r.mensagem)
+    return r.obras
+  }
+  return {
+    listarObras: todas,
+    async obra(id: string) { return (await todas()).find((o) => o.id === id) ?? null },
+  }
+}
+
 /** Sem adaptador real e fora do modo fixture: não finge ter obras. */
 export const statusObrasIndisponivel: PonteStatusObras = {
   async listarObras() { return [] },

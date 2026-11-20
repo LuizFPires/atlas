@@ -8,7 +8,7 @@ import { Cadastro } from './web/Cadastro'
 import { enviarCadastro } from './web/cadastro-api'
 import { Portal } from './web/Portal'
 import { criarPortalApi } from './web/portal-api'
-import { criarStatusObrasFixture } from './web/obras-status'
+import { criarStatusObrasFixture, criarStatusObrasPortal } from './web/obras-status'
 import { modoFixture } from './app/ativacao-api'
 import { Admin } from './web/Admin'
 import { ConfirmarDegustacao } from './web/Degustacao'
@@ -19,10 +19,9 @@ import { AppDesktop, noAppDesktop } from './app/AppDesktop'
 
 const portalApi = criarPortalApi()
 const adminApi = criarAdminApi()
-// Status das obras no celular: o adaptador real é pendência de /entregar (ver src/web/obras-status.ts).
-// Em produção (sem o adaptador real do status), NÃO passa obras: a seção "Minhas obras" fica escondida
-// até o relay computador→servidor existir (pendência de /entregar). Assim ninguém vê um "você não tem obras" enganoso.
-const statusObras = modoFixture() ? criarStatusObrasFixture() : undefined
+// Status das obras no celular (M30 relay): em produção lê o resumo que o computador publicou, pela rota /portal/obras
+// (escopada pelo login). Enquanto o computador não publicou, a lista vem vazia e a seção explica isso com jeito.
+const statusObras = modoFixture() ? criarStatusObrasFixture() : criarStatusObrasPortal(portalApi)
 
 /** O aplicativo (PWA) fica em "/app". */
 function Aplicativo() {

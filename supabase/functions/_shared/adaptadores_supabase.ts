@@ -53,6 +53,7 @@
 //   trocasDa                   SELECT trocas_computador (licenca_id,de_hash,para_hash,feita_em,por_admin) WHERE licenca_id
 //   inserirEntrega             INSERT entregas_kit
 //   inserirOcorrencia          INSERT ocorrencias_admin (cliente_id,tipo,descricao,autor,resolvida,criada_em)
+//   substituirStatusObras / statusObrasDaLicenca   RPC substituir_status_obras (0022) / SELECT status_obras WHERE licenca_id
 //   contaGateway               SELECT contas_gateway (id,conta_stripe_id,segredo_ref,modo,base_retorno) WHERE id  [só a referência do segredo]
 //   registrarEventoGateway     INSERT eventos_gateway; violação de PK (23505) = já visto = false
 //   liberarEventoGateway       DELETE eventos_gateway WHERE (conta_gateway_id, evento_id)
@@ -295,6 +296,15 @@ export function criarStoreSupabase() {
         cliente_id: o.cliente_id, tipo: o.tipo, descricao: o.descricao, autor: o.autor ?? null,
         resolvida: o.resolvida ?? false, ...(o.chave ? { chave: o.chave } : {}), ...(o.criada_em ? { criada_em: iso(o.criada_em) } : {}),
       }), 'inserirOcorrencia')
+    },
+
+    // ── status das obras (M30, relay) ──
+    async substituirStatusObras(licencaId: string, obras: any[], agora: Date) {
+      await rpc('substituir_status_obras', { p_licenca: licencaId, p_obras: obras.map((o) => ({ ...o, ultima_noticia_em: iso(o.ultima_noticia_em) })), p_agora: iso(agora) })
+    },
+    async statusObrasDaLicenca(licencaId: string) {
+      const linhas = await ler(() => t('status_obras').select('obra_id,nome,segmento,etapa_atual_numero,etapa_atual_rotulo,total_etapas,percentual,estado,ativa_agora,ultima_noticia,ultima_noticia_em').eq('licenca_id', licencaId).order('obra_id'), 100)
+      return linhas.map((r: any) => ({ ...r, segmento: r.segmento ?? null, ultima_noticia_em: new Date(r.ultima_noticia_em) }))
     },
 
     // ── pagamento (M3) ──
