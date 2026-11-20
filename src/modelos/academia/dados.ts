@@ -18,6 +18,18 @@ export interface NovoExercicio { nome: string; series: number; repeticoes: numbe
 
 export interface Presenca { id: string; alunoId: string; /** AAAA-MM-DD (dia local) */ data: string }
 
+/** Um registro de evolução do aluno numa data: peso, cintura e/ou a carga de um exercício. Pelo menos um valor. */
+export interface Medida {
+  id: string
+  alunoId: string
+  data: string
+  pesoKg: number | null
+  cinturaCm: number | null
+  exercicio: string
+  cargaKg: number | null
+}
+export interface NovaMedida { data: string; pesoKg: number | null; cinturaCm: number | null; exercicio: string; cargaKg: number | null }
+
 export type Resp<T> = { ok: true; valor: T } | { ok: false; mensagem: string }
 
 export interface PortaDados {
@@ -33,6 +45,21 @@ export interface PortaDados {
   listarPresencas(): Promise<Presenca[]>
   /** Marca a presença do aluno no dia. Não duplica: o mesmo aluno no mesmo dia só vale uma vez. */
   marcarPresenca(alunoId: string, data: string): Promise<Resp<Presenca>>
+  /** Evolução do aluno, da data mais recente para a mais antiga. */
+  listarEvolucao(alunoId: string): Promise<Medida[]>
+  registrarEvolucao(alunoId: string, n: NovaMedida): Promise<Resp<Medida>>
+  removerEvolucao(id: string): Promise<Resp<Medida>>
+}
+
+export function validarMedida(n: NovaMedida): string | null {
+  if (!dataValida(n.data)) return 'Escolha uma data válida.'
+  const bom = (v: number | null, max: number) => v === null || (Number.isFinite(v) && v > 0 && v <= max)
+  if (!bom(n.pesoKg, 500)) return 'O peso precisa ser maior que 0 (ou deixe em branco).'
+  if (!bom(n.cinturaCm, 300)) return 'A cintura precisa ser maior que 0 (ou deixe em branco).'
+  if (!bom(n.cargaKg, 1000)) return 'A carga precisa ser maior que 0 (ou deixe em branco).'
+  if (n.cargaKg !== null && n.exercicio.trim().length < 2) return 'Escolha o exercício da carga.'
+  if (n.pesoKg === null && n.cinturaCm === null && n.cargaKg === null) return 'Escreva pelo menos um valor: peso, cintura ou carga.'
+  return null
 }
 
 export function dataValida(d: string): boolean {
@@ -102,6 +129,10 @@ export function criarDadosFixture(hoje: string = hojeLocal()): PortaDados {
     { id: 'p2', alunoId: 'a2', data: somarDias(hoje, -1) },
     { id: 'p3', alunoId: 'a1', data: somarDias(hoje, -1) },
   ]
+  const medidas: Medida[] = [
+    { id: 'm1', alunoId: 'a1', data: somarDias(hoje, -30), pesoKg: 68.5, cinturaCm: 78, exercicio: 'Agachamento', cargaKg: 30 },
+    { id: 'm2', alunoId: 'a1', data: somarDias(hoje, -7), pesoKg: 67.2, cinturaCm: 76, exercicio: 'Agachamento', cargaKg: 40 },
+  ]
   const nao = (o: string) => ({ ok: false, mensagem: `Não achei ${o}.` }) as const
   const aluno = (id: string) => alunos.find((a) => a.id === id)
   return {
@@ -125,6 +156,7 @@ export function criarDadosFixture(hoje: string = hojeLocal()): PortaDados {
       const k = alunos.findIndex((x) => x.id === id)
       if (k < 0) return nao('esse aluno')
       const [a] = alunos.splice(k, 1)
+      for (let i = medidas.length - 1; i >= 0; i--) if (medidas[i].alunoId === id) medidas.splice(i, 1)
       for (let i = presencas.length - 1; i >= 0; i--) if (presencas[i].alunoId === id) presencas.splice(i, 1)
       for (let i = exercicios.length - 1; i >= 0; i--) if (exercicios[i].alunoId === id) exercicios.splice(i, 1)
       return { ok: true, valor: { ...a } }
@@ -160,6 +192,23 @@ export function criarDadosFixture(hoje: string = hojeLocal()): PortaDados {
       const p: Presenca = { id: `p${++seq}`, alunoId, data }
       presencas.push(p)
       return { ok: true, valor: { ...p } }
+    },
+    async listarEvolucao(alunoId) {
+      return medidas.filter((m) => m.alunoId === alunoId).sort((a, b) => b.data.localeCompare(a.data)).map((m) => ({ ...m }))
+    },
+    async registrarEvolucao(alunoId, n) {
+      if (!aluno(alunoId)) return nao('esse aluno')
+      const e = validarMedida(n)
+      if (e) return { ok: false, mensagem: e }
+      const m: Medida = { id: `m${++seq}`, alunoId, data: n.data, pesoKg: n.pesoKg, cinturaCm: n.cinturaCm, exercicio: n.cargaKg === null ? '' : n.exercicio.trim(), cargaKg: n.cargaKg }
+      medidas.push(m)
+      return { ok: true, valor: { ...m } }
+    },
+    async removerEvolucao(id) {
+      const k = medidas.findIndex((x) => x.id === id)
+      if (k < 0) return nao('esse registro')
+      const [m] = medidas.splice(k, 1)
+      return { ok: true, valor: { ...m } }
     },
   }
 }
