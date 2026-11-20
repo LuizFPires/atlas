@@ -21,8 +21,6 @@ test('cor inválida cai na padrão e não entra no CSS', () => {
   expect(JSON.stringify(variaveisDoTema(s))).not.toContain('body')
 })
 
-test('navega entre as 4 abas', async () => {
-  render(<Academia personalizacao={PERSONALIZACAO_EXEMPLO} telas={{ estoque: <p>t1</p>, vender: <p>t2</p>, avisos: <p>t3</p> }} />)
 test('navega entre Alunos, Treino, Check-in e Evolução', async () => {
   render(<Academia personalizacao={PERSONALIZACAO_EXEMPLO} telas={{ alunos: <p>t1</p>, treino: <p>t2</p>, checkin: <p>t3</p>, evolucao: <p>t4</p> }} />)
   expect(screen.getByText('t1')).toBeInTheDocument()
