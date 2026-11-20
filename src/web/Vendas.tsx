@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Bolinha, Icone } from '../ui'
 import { ImagemAssinatura, Monograma, NomeAtlas } from '../marca/Marca'
 import { useTema } from '../tema/tema'
-import { duvidas, ehParaVoce, etapas, exemplos, formas, naoEhParaVoce, PRECO, recebe, tresPassos, VIDEO_URL } from './conteudo'
+import { duvidas, ehParaVoce, etapas, exemplos, formas, naoEhParaVoce, PRECO, PRECO_PRATELEIRA, prateleira, recebe, tresPassos, VIDEO_URL, type SegmentoPronto } from './conteudo'
 import { BlocoDegustacao } from './Degustacao'
 import type { DegustacaoApi } from './degustacao-api'
 import { LinksLegais } from './Legal'
@@ -13,7 +13,7 @@ function Comprar({ onComprar, className = '', children }: { onComprar: () => voi
 }
 
 /** Página de vendas (F00). `onComprar` abre a compra no gateway do cliente. */
-export function Vendas({ onComprar, extra, degustacaoApi }: { onComprar: () => void; extra?: ReactNode; degustacaoApi?: DegustacaoApi }) {
+export function Vendas({ onComprar, onComprarPronto, extra, degustacaoApi }: { onComprar: () => void; onComprarPronto?: (segmento: SegmentoPronto) => void; extra?: ReactNode; degustacaoApi?: DegustacaoApi }) {
   const { tema } = useTema()
   return (
     <div className="v">
@@ -21,6 +21,7 @@ export function Vendas({ onComprar, extra, degustacaoApi }: { onComprar: () => v
         <div className="v-logo"><Monograma fundo={tema} largura={46} altura={26} /><NomeAtlas fundo={tema} largura={112} altura={16} /></div>
         <nav aria-label="Seções">
           <a href="#como-funciona">Como funciona</a>
+          <a href="#pronto">Comece pronto</a>
           <a href="#recebe">O que você recebe</a>
           <a href="#preco">Preço</a>
           <a href="#duvidas">Dúvidas</a>
@@ -85,6 +86,22 @@ export function Vendas({ onComprar, extra, degustacaoApi }: { onComprar: () => v
           <p>Cada etapa pronta vira um andar do prédio. Você acompanha de onde estiver e recebe notícias da obra no celular.</p>
         </div>
         <div className="v-canteiro"><ImagemAssinatura /></div>
+      </section>
+
+      <section id="pronto" className="v-sec">
+        <div className="v-cab"><span className="v-mono">Comece pronto</span><h2>Quer sair usando hoje? Escolha um app que já está feito.</h2><p>Se o seu negócio é um destes, você não espera construir: o app já vem pronto, com o seu nome, e você ajusta o que quiser depois, só conversando.</p></div>
+        <div className="v-grade4">
+          {prateleira.map((x) => (
+            <div key={x.segmento} className="v-card v-pronto">
+              <Bolinha icone={x.icone} tamanho={44} />
+              <b>{x.nome}</b>
+              <span>{x.txt}</span>
+              <div className="v-pronto-preco"><b>{PRECO_PRATELEIRA.avista}</b><small>+ {PRECO_PRATELEIRA.mensalidade}/mês</small></div>
+              <button type="button" className="v-acao v-acao--pequeno" aria-label={`Começar pronto: ${x.nome}`} onClick={() => (onComprarPronto ?? onComprar)(x.segmento)}>Começar pronto <Icone nome="seta" /></button>
+            </div>
+          ))}
+        </div>
+        <p className="v-pronto-aviso"><b>Uma coisa justa de dizer:</b> cada app pronto é de uma empresa só, a sua. Ele não é dividido com outros negócios e não serve para vários clientes ao mesmo tempo.</p>
       </section>
 
       <section id="como-funciona" className="v-sec v-band">

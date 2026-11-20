@@ -56,6 +56,11 @@
 .v-ia-bola { width: 56px; height: 56px; flex: none; border-radius: 50%; background: #141619; color: #c6f135; display: flex; align-items: center; justify-content: center; }
 
 .v-grade4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.v-pronto { gap: 10px; }
+.v-pronto-preco { display: flex; align-items: baseline; gap: 8px; margin-top: auto; padding-top: 6px; }
+.v-pronto-preco b { font: 700 22px var(--font-mono); color: var(--lime-txt); }
+.v-pronto-preco small { font: 600 13px var(--font-mono); color: var(--mute); }
+.v-pronto-aviso { margin: 18px 0 0; padding: 14px 18px; border-radius: 14px; background: var(--soft); border: 1px solid var(--lime); font-size: 15px; line-height: 1.5; }
 .v-grade5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .v-formas { display: flex; gap: 12px; align-items: center; font-size: 15px; color: var(--mute); flex-wrap: wrap; }
 .v-forma { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--card-b); }
