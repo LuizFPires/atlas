@@ -14,7 +14,8 @@ export type ResultadoCadastro = { ok: true; enviado_para?: string; email_diferen
 /** E-mail da compra guardado só nesta aba, para já vir preenchido na volta do pagamento. */
 export const CHAVE_EMAIL_COMPRA = 'atlas.email_compra'
 const emailGuardado = () => {
-  try { return sessionStorage.getItem(CHAVE_EMAIL_COMPRA) ?? '' } catch { return '' }
+  // localStorage sobrevive ao ir ao Stripe e voltar (o sessionStorage, por aba, se perdia no redirect); sessionStorage como reserva.
+  try { return localStorage.getItem(CHAVE_EMAIL_COMPRA) || sessionStorage.getItem(CHAVE_EMAIL_COMPRA) || '' } catch { return '' }
 }
 
 /** Cadastro pós-pagamento (F00b): 4 respostas, todas podem ser faladas. */

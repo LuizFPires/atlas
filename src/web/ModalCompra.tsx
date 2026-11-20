@@ -31,7 +31,7 @@ export function ModalCompra({ aberto, onFechar, abrirPagamento = (url) => window
     setIndo(true)
     const r = await iniciarCompra(email, undefined, undefined, VERSAO_TERMOS, parcelas)
     if (r.ok) {
-      try { sessionStorage.setItem(CHAVE_EMAIL_COMPRA, email.trim().toLowerCase()) } catch { /* sem armazenamento: o e-mail é pedido de novo */ }
+      try { localStorage.setItem(CHAVE_EMAIL_COMPRA, email.trim().toLowerCase()) } catch { /* sem armazenamento: o e-mail é pedido de novo */ }
       abrirPagamento(r.url)
     }
     else { setErro(r.mensagem); setIndo(false) }
