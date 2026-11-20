@@ -20,8 +20,8 @@ export function Vendas({ onComprar, onComprarPronto, extra, degustacaoApi }: { o
       <header className="v-topo">
         <div className="v-logo"><Monograma fundo={tema} largura={46} altura={26} /><NomeAtlas fundo={tema} largura={112} altura={16} /></div>
         <nav aria-label="Seções">
-          <a href="#como-funciona">Como funciona</a>
           <a href="#pronto">Comece pronto</a>
+          <a href="#como-funciona">Como funciona</a>
           <a href="#recebe">O que você recebe</a>
           <a href="#preco">Preço</a>
           <a href="#duvidas">Dúvidas</a>

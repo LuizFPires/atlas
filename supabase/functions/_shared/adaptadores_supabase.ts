@@ -58,7 +58,7 @@
 //   registrarEventoGateway     INSERT eventos_gateway; violação de PK (23505) = já visto = false
 //   liberarEventoGateway       DELETE eventos_gateway WHERE (conta_gateway_id, evento_id)
 //   gravarPagamento            RPC gravar_pagamento (0010)
-//   pagamentoPorRef/PorPi/Da   SELECT pagamentos (licenca_id,conta_gateway_id,tipo,valor,status,gateway_ref,gateway_pi,pago_em)
+//   pagamentoPorRef/PorPi/Da   SELECT pagamentos (licenca_id,conta_gateway_id,tipo,valor,status,gateway_ref,gateway_pi,pago_em,segmento)
 //   atualizarStatusPagamento   UPDATE pagamentos SET status WHERE conta_gateway_id AND gateway_ref
 //   registrarConsentimento     INSERT consentimentos (email,versao_termos,origem,aceito_em)  (0011)
 //   excluirConta               RPC excluir_conta (0012): anonimiza o cliente, apaga o pessoal, mantém pagamentos
@@ -124,7 +124,7 @@ const C_CLIENTE = 'id,email_compra,nome_tratamento,empresa,ramo,cadastro_em,auth
 const C_LICENCA = 'id,cliente_id,status,pausa_prevista_em,troca_liberada_em,comprada_em,avisos_atraso,conta_gateway_id,gateway_cliente_ref,gateway_assinatura_ref,mensalidade_encerra_em,tipo,origem,validade_em'
 const C_ATIVACAO = 'id,licenca_id,computador_hash,token_hash,ativo,ativado_em,desativado_em'
 const C_ATIVACAO_ADMIN = 'id,licenca_id,computador_hash,ativo,ativado_em,desativado_em'
-const C_PAGAMENTO = 'licenca_id,conta_gateway_id,tipo,valor,status,gateway_ref,gateway_pi,pago_em'
+const C_PAGAMENTO = 'licenca_id,conta_gateway_id,tipo,valor,status,gateway_ref,gateway_pi,pago_em,segmento'
 const C_ENTREGA = 'licenca_id,obra_id,marca_dagua,baixado_em'
 const C_OCORRENCIA = 'id,cliente_id,tipo,descricao,autor,resolvida,criada_em,resolvida_por,resolvida_em,chave'
 
@@ -136,7 +136,7 @@ const licenca = (r: any) => r && {
   tipo: r.tipo === 'cortesia' ? 'cortesia' : 'paga', origem: r.origem === 'degustacao' ? 'degustacao' : null, validade_em: dt(r.validade_em),
 }
 const ativacao = (r: any) => r && { id: r.id, licenca_id: r.licenca_id, computador_hash: r.computador_hash, token_hash: r.token_hash ?? null, ativo: r.ativo, ativado_em: new Date(r.ativado_em), desativado_em: dt(r.desativado_em) }
-const pagamento = (r: any) => r && { licenca_id: r.licenca_id, conta_gateway_id: r.conta_gateway_id ?? '', tipo: r.tipo, valor: Number(r.valor), status: r.status, gateway_ref: r.gateway_ref ?? '', gateway_pi: r.gateway_pi ?? null, pago_em: dt(r.pago_em) }
+const pagamento = (r: any) => r && { licenca_id: r.licenca_id, conta_gateway_id: r.conta_gateway_id ?? '', tipo: r.tipo, valor: Number(r.valor), status: r.status, gateway_ref: r.gateway_ref ?? '', gateway_pi: r.gateway_pi ?? null, pago_em: dt(r.pago_em), segmento: r.segmento ?? null }
 const entrega = (r: any) => ({ licenca_id: r.licenca_id, obra_id: r.obra_id, marca_dagua: r.marca_dagua, baixado_em: new Date(r.baixado_em) })
 const codigo = (r: any) => r && { id: r.id, cliente_id: r.cliente_id, finalidade: r.finalidade, codigo_hash: r.codigo_hash, tentativas: r.tentativas, expira_em: new Date(r.expira_em), usado_em: dt(r.usado_em) }
 const link = (r: any) => r && { id: r.id, cliente_id: r.cliente_id, token_hash: r.token_hash, expira_em: new Date(r.expira_em), usado_em: dt(r.usado_em) }
@@ -318,7 +318,7 @@ export function criarStoreSupabase() {
     async liberarEventoGateway(conta: string, ev: string) { ok(await t('eventos_gateway').delete().eq('conta_gateway_id', conta).eq('evento_id', ev), 'liberarEventoGateway') },
     async gravarPagamento(p: any) {
       const antes = await rpc('gravar_pagamento', {
-        p_licenca: p.licenca_id, p_conta: p.conta_gateway_id, p_tipo: p.tipo, p_valor: p.valor, p_status: p.status, p_ref: p.gateway_ref, p_pi: p.gateway_pi, p_pago_em: iso(p.pago_em),
+        p_licenca: p.licenca_id, p_conta: p.conta_gateway_id, p_tipo: p.tipo, p_valor: p.valor, p_status: p.status, p_ref: p.gateway_ref, p_pi: p.gateway_pi, p_pago_em: iso(p.pago_em), p_segmento: p.segmento ?? null,
       })
       return antes ?? null
     },

@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { CampoFalado, Icone } from '../ui'
 import { CHAVE_EMAIL_COMPRA } from './Cadastro'
+import { prateleira } from './conteudo'
 import { iniciarCompra, juntarFalaEmail } from './compra'
 import { opcoesParcelas, planoDoTipo, reais, rotuloParcela } from './parcelas'
 import { DOCS_LEGAIS, VERSAO_TERMOS } from './textos-legais'
-
-const NOMES_SEGMENTO: Record<string, string> = { barbearia: 'barbearia', restaurante: 'restaurante', mercearia: 'mercearia', academia: 'academia' }
 
 /** Pede só o e-mail e leva ao pagamento (Pix ou cartão) no gateway. Com `segmento`, é a compra de um app pronto da prateleira. */
 export function ModalCompra({ aberto, onFechar, segmento, abrirPagamento = (url) => window.location.assign(url) }: { aberto: boolean; onFechar: () => void; segmento?: string; abrirPagamento?: (url: string) => void }) {
@@ -43,8 +42,8 @@ export function ModalCompra({ aberto, onFechar, segmento, abrirPagamento = (url)
     <div className="v-fundo" onClick={onFechar}>
       <div ref={ref} className="v-modal" role="dialog" aria-modal="true" aria-labelledby="v-modal-t" onClick={(e) => e.stopPropagation()}>
         <h2 id="v-modal-t">Para onde mandamos o seu acesso?</h2>
-        {segmento && <p>Você escolheu o app pronto de <b>{NOMES_SEGMENTO[segmento] ?? segmento}</b>. Ele é de uma empresa só: a sua.</p>}
-        <p>Coloque o e-mail que você abre no computador onde vai construir. Em seguida você paga com Pix ou cartão, em uma página segura.</p>
+        {segmento && <p>Você escolheu o app pronto de <b>{prateleira.find((x) => x.segmento === segmento)?.nome.toLowerCase() ?? segmento}</b>. Ele é de uma empresa só: a sua.</p>}
+        <p>{segmento ? 'Coloque o e-mail que você mais usa: é nele que chega o acesso ao seu app. Em seguida' : 'Coloque o e-mail que você abre no computador onde vai construir. Em seguida'} você paga com Pix ou cartão, em uma página segura.</p>
         <form onSubmit={ir} noValidate>
           <CampoFalado rotulo="Qual o seu e-mail?" type="email" autoComplete="email" valor={email} onChange={setEmail} placeholder="voce@suaempresa.com.br" juntar={juntarFalaEmail} />
           <label className="v-parcelas">

@@ -50,7 +50,12 @@ describe('trava de integridade da prateleira (M32)', () => {
     const m = montarPag()
     await enviar(m, evento('checkout.session.completed', sessao()))
     expect(m.store.licencas).toHaveLength(2)
-    expect(m.store.pagamentos[0]).toMatchObject({ status: 'pago', valor: 7300 })
+    expect(m.store.pagamentos[0]).toMatchObject({ status: 'pago', valor: 7300, segmento: 'barbearia' })
+  })
+  it('segmento desconhecido no metadata não é gravado', async () => {
+    const m = montarPag()
+    await enviar(m, evento('checkout.session.completed', sessao({ metadata: { atlas_tipo: 'prateleira', atlas_segmento: 'xpto', atlas_conta: CONTA } })))
+    expect(m.store.pagamentos[0].segmento).toBeNull()
   })
   it('pagar o preço da implantação (R$ 4.800) numa sessão de prateleira NÃO concede', async () => {
     const m = montarPag()
