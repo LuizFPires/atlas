@@ -252,3 +252,9 @@ Teste sem Electron/Claude/rede: `node --test app/adaptadores/*.teste.cjs` (ajuda
 - **Provisionamento real** (`src/web/entrega.ts`, porta `PortaEntrega`; hoje só o `criarEntregaFixture`, que devolve um app "pronto" com link de exemplo e NÃO é um app de verdade): provisionar o app-modelo como obra do cliente (repo, deploy, marca dagua) — depende dos apps-modelo (fatia d) e de decisão de infra. Deve ler a personalização (`personalizacao_app`, nome e cores `#RRGGBB`) e o segmento (`pagamentos.segmento`) da licença; o repositório é do cliente (GitHub dele), nunca do Atlas.
 - **Envio da logomarca**: o configurador aceita a imagem e mostra na prévia, mas ainda NÃO a envia (grava `logo_url` nulo). Falta decidir onde guardar (storage por licença) e ligar junto com o provisionamento.
 - **Aplicar a migration `supabase/migrations/0024_personalizacao_app.sql`** no SQL editor do Supabase (tabela `personalizacao_app`); sem ela, `/portal/personalizacao` devolve erro 500.
+
+## M32 (c) — antipirataria: ligar o guardião (falta)
+
+- Hoje o guardião (`src/app/guardiao.ts`: porta + adaptador real + fixture) e o endpoint `POST /instancia/validar` (`supabase/functions/_shared/instancia.ts`) existem e têm teste, mas **não estão embutidos em nenhum app real**: o app-modelo só nasce na fatia (d).
+- **Falta LIGAR o guardião dentro do app-modelo** quando ele existir: chamar `guardiaoPadrao(ponte).conferir()` na carga e, se vier `bloqueado`, mostrar a mensagem e não abrir o app. O app entregue precisa guardar e-mail + token do dispositivo (mesmo cofre da ativação) para o guardião ler.
+- Limites assumidos: sem internet o dono não é bloqueado (fail-open); a trava é de licença (1 licença = 1 computador ativo), não é DRM nem telemetria.

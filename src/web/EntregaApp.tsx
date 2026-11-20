@@ -60,6 +60,11 @@ export function EntregaApp({ porta }: { porta: PortaEntrega }) {
               <div><b>Android</b><span>abra o link e toque em "Instalar".</span></div>
               <div><b>iPhone</b><span>abra no Safari, toque em Compartilhar e "Adicionar à Tela de Início".</span></div>
             </div>
+
+            <div className="en-como en-uma-empresa" role="note">
+              <span className="cf-rot">Um app, uma empresa</span>
+              <div><span>Este app é só da sua empresa. Se você dividir o acesso com outra pessoa, ela passa a ver e mexer nos mesmos dados que você: clientes, vendas e agenda. Se o app for usado em outro lugar com a mesma licença, ele para de abrir por aqui.</span></div>
+            </div>
           </>
         )}
       </main>

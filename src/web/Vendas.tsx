@@ -101,7 +101,7 @@ export function Vendas({ onComprar, onComprarPronto, extra, degustacaoApi }: { o
             </div>
           ))}
         </div>
-        <p className="v-pronto-aviso"><b>Uma coisa justa de dizer:</b> cada app pronto é de uma empresa só, a sua. Ele não é dividido com outros negócios e não serve para vários clientes ao mesmo tempo.</p>
+        <p className="v-pronto-aviso"><b>Uma coisa justa de dizer:</b> cada app pronto é de uma empresa só, a sua. Ele não é dividido com outros negócios e não serve para vários clientes ao mesmo tempo. Dividir o acesso é dividir os mesmos dados (clientes, vendas, agenda) com quem usar junto.</p>
       </section>
 
       <section id="como-funciona" className="v-sec v-band">
