@@ -11,9 +11,16 @@ const ESTADOS: EstadoObra[] = ['construindo', 'pausada', 'aguardando_aprovacao',
 /** Texto de exibição: sem controle, e-mail, link, caminho de arquivo nem cara de segredo; cortado no tamanho. */
 export function limparTexto(v: unknown, max: number): string {
   if (typeof v !== 'string') return ''
-  const semControle = [...v].map((c) => { const n = c.charCodeAt(0); return n < 32 || n === 127 ? ' ' : c }).join('')
-  return semControle
+  // Tira controle ASCII e C1, zero-width e bidi (texto enganoso na tela), virando espaço.
+  const semControle = [...v].map((c) => {
+    const n = c.codePointAt(0) ?? 0
+    const perigoso = n < 32 || n === 127 || (n >= 0x80 && n <= 0x9f) || (n >= 0x200b && n <= 0x200f) || (n >= 0x202a && n <= 0x202e) || (n >= 0x2066 && n <= 0x2069) || n === 0xfeff
+    return perigoso ? ' ' : c
+  }).join('')
+  const limpo = semControle
     .replace(/\b(sk|pk|rk|whsec|ghp|gho|github_pat|sbp|xox[abp])[-_][A-Za-z0-9_-]{8,}/gi, '')
+    .replace(/\bAKIA[0-9A-Z]{16}\b/g, '')
+    .replace(/\bBearer\s+[A-Za-z0-9._-]{8,}/gi, '')
     .replace(/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]*/g, '')
     .replace(/(senha|password|token|secret|chave)\s*[:=]\s*\S+/gi, '')
     .replace(/\b(?:https?|ftp|file):\/\/\S+|\bwww\.\S+/gi, '')
@@ -23,8 +30,8 @@ export function limparTexto(v: unknown, max: number): string {
     .replace(/\\\\\S+/g, '')
     .replace(/\s+/g, ' ')
     .trim()
-    .slice(0, max)
-    .trim()
+  // Corta por CODE POINT (não por unidade UTF-16): senão um emoji na borda vira surrogate solto e o Postgres recusa (500).
+  return [...limpo].slice(0, max).join('').trim()
 }
 
 const invalido = () => new ErroRegra('status_invalido', 'Status das obras inválido.', 400)

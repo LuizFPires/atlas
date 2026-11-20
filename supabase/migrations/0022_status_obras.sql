@@ -23,7 +23,7 @@ grant select, insert, update, delete on status_obras to service_role;
 
 -- Substitui, de forma atômica, o conjunto de obras DA licença (as que sumiram do computador somem daqui).
 create or replace function substituir_status_obras(p_licenca uuid, p_obras jsonb, p_agora timestamptz)
-returns int language plpgsql security definer set search_path = public as $$
+returns int language plpgsql security definer set search_path = public, pg_temp as $$
 declare n int;
 begin
   if jsonb_typeof(p_obras) <> 'array' then raise exception 'p_obras deve ser uma lista'; end if;
