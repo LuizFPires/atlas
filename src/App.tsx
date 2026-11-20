@@ -8,6 +8,8 @@ import { Cadastro } from './web/Cadastro'
 import { enviarCadastro } from './web/cadastro-api'
 import { Portal } from './web/Portal'
 import { criarPortalApi } from './web/portal-api'
+import { criarStatusObrasFixture, statusObrasIndisponivel } from './web/obras-status'
+import { modoFixture } from './app/ativacao-api'
 import { Admin } from './web/Admin'
 import { ConfirmarDegustacao } from './web/Degustacao'
 import { criarAdminApi } from './web/admin-api'
@@ -17,6 +19,8 @@ import { AppDesktop, noAppDesktop } from './app/AppDesktop'
 
 const portalApi = criarPortalApi()
 const adminApi = criarAdminApi()
+// Status das obras no celular: o adaptador real é pendência de /entregar (ver src/web/obras-status.ts).
+const statusObras = modoFixture() ? criarStatusObrasFixture() : statusObrasIndisponivel
 
 /** O aplicativo (PWA) fica em "/app". */
 function Aplicativo() {
@@ -50,7 +54,7 @@ export default function App() {
   // A Stripe devolve o comprador em /compra/sucesso; /comecar é o endereço público do cadastro.
   if (caminho === '/comecar' || caminho === '/compra/sucesso') return <Cadastro onEnviar={enviarCadastro} />
   // Portal do cliente: login próprio do Atlas, separado do login do Claude.
-  if (caminho === '/conta') return <Portal api={portalApi} />
+  if (caminho === '/conta') return <Portal api={portalApi} obras={statusObras} />
   // Link de confirmação do teste grátis (vem no e-mail).
   if (caminho === '/degustacao') return <ConfirmarDegustacao />
   // Painel do administrador: o link existe para todos, mas só o servidor decide quem entra (JWT + allowlist).
