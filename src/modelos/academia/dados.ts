@@ -16,6 +16,8 @@ export interface Exercicio {
 }
 export interface NovoExercicio { nome: string; series: number; repeticoes: number; cargaKg: number | null }
 
+export interface Presenca { id: string; alunoId: string; /** AAAA-MM-DD (dia local) */ data: string }
+
 export type Resp<T> = { ok: true; valor: T } | { ok: false; mensagem: string }
 
 export interface PortaDados {
@@ -28,6 +30,31 @@ export interface PortaDados {
   criarExercicio(alunoId: string, n: NovoExercicio): Promise<Resp<Exercicio>>
   editarExercicio(id: string, n: NovoExercicio): Promise<Resp<Exercicio>>
   removerExercicio(id: string): Promise<Resp<Exercicio>>
+  listarPresencas(): Promise<Presenca[]>
+  /** Marca a presença do aluno no dia. Não duplica: o mesmo aluno no mesmo dia só vale uma vez. */
+  marcarPresenca(alunoId: string, data: string): Promise<Resp<Presenca>>
+}
+
+export function dataValida(d: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false
+  const t = new Date(`${d}T00:00:00Z`)
+  return !Number.isNaN(t.getTime()) && t.toISOString().slice(0, 10) === d
+}
+
+/** Dia LOCAL (do computador de quem usa) no formato AAAA-MM-DD. Não usa UTC: à noite no Brasil (UTC-3) não adianta um dia. */
+export function hojeLocal(agora: Date = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${agora.getFullYear()}-${p(agora.getMonth() + 1)}-${p(agora.getDate())}`
+}
+/** Soma dias a uma data AAAA-MM-DD (só aritmética de calendário, sem fuso). */
+export function somarDias(d: string, dias: number): string {
+  const t = new Date(`${d}T00:00:00Z`)
+  t.setUTCDate(t.getUTCDate() + dias)
+  return t.toISOString().slice(0, 10)
+}
+export function formatarData(d: string): string {
+  const [a, m, dia] = d.split('-')
+  return `${dia}/${m}/${a}`
 }
 
 export function validarAluno(n: NovoAluno): string | null {
@@ -59,7 +86,7 @@ export function numeroDoTexto(t: string): number | null {
 export const formatarCarga = (kg: number | null): string => (kg === null ? 'sem carga' : `${String(kg).replace('.', ',')} kg`)
 
 /** Adaptador FIXTURE: dados de exemplo em memória. Não persiste nada. */
-export function criarDadosFixture(): PortaDados {
+export function criarDadosFixture(hoje: string = hojeLocal()): PortaDados {
   let seq = 100
   const alunos: Aluno[] = [
     { id: 'a1', nome: 'Carla Mendes', telefone: '(11) 91234-5678' },
@@ -69,6 +96,11 @@ export function criarDadosFixture(): PortaDados {
     { id: 'e1', alunoId: 'a1', nome: 'Agachamento', series: 4, repeticoes: 12, cargaKg: 40 },
     { id: 'e2', alunoId: 'a1', nome: 'Prancha', series: 3, repeticoes: 30, cargaKg: null },
     { id: 'e3', alunoId: 'a2', nome: 'Supino reto', series: 3, repeticoes: 10, cargaKg: 30 },
+  ]
+  const presencas: Presenca[] = [
+    { id: 'p1', alunoId: 'a1', data: somarDias(hoje, -2) },
+    { id: 'p2', alunoId: 'a2', data: somarDias(hoje, -1) },
+    { id: 'p3', alunoId: 'a1', data: somarDias(hoje, -1) },
   ]
   const nao = (o: string) => ({ ok: false, mensagem: `Não achei ${o}.` }) as const
   const aluno = (id: string) => alunos.find((a) => a.id === id)
@@ -93,6 +125,7 @@ export function criarDadosFixture(): PortaDados {
       const k = alunos.findIndex((x) => x.id === id)
       if (k < 0) return nao('esse aluno')
       const [a] = alunos.splice(k, 1)
+      for (let i = presencas.length - 1; i >= 0; i--) if (presencas[i].alunoId === id) presencas.splice(i, 1)
       for (let i = exercicios.length - 1; i >= 0; i--) if (exercicios[i].alunoId === id) exercicios.splice(i, 1)
       return { ok: true, valor: { ...a } }
     },
@@ -118,6 +151,15 @@ export function criarDadosFixture(): PortaDados {
       if (k < 0) return nao('esse exercício')
       const [x] = exercicios.splice(k, 1)
       return { ok: true, valor: { ...x } }
+    },
+    async listarPresencas() { return presencas.map((p) => ({ ...p })) },
+    async marcarPresenca(alunoId, data) {
+      if (!aluno(alunoId)) return nao('esse aluno')
+      if (!dataValida(data)) return { ok: false, mensagem: 'Essa data não é válida.' }
+      if (presencas.some((p) => p.alunoId === alunoId && p.data === data)) return { ok: false, mensagem: 'Esse aluno já marcou presença nesse dia.' }
+      const p: Presenca = { id: `p${++seq}`, alunoId, data }
+      presencas.push(p)
+      return { ok: true, valor: { ...p } }
     },
   }
 }
