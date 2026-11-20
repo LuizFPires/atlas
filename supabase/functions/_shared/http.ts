@@ -52,7 +52,9 @@ const json = (corpo: unknown, status = 200, extra: Record<string, string> = {}) 
 /** CORS só para a origem do site do Luiz (a página de vendas chama /pagamento/checkout e /cadastro do navegador). */
 export async function tratar(ctx: Contexto, req: Request): Promise<Response> {
   const origem = req.headers.get('Origin')
-  const liberada = !!ctx.origemWeb && origem === ctx.origemWeb
+  // ATLAS_WEB_ORIGEM pode ser uma LISTA separada por vírgula (domínio próprio, www e o endereço provisório da Vercel).
+  const permitidas = (ctx.origemWeb ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+  const liberada = !!origem && permitidas.includes(origem)
   const cors: Record<string, string> = liberada
     ? { 'Access-Control-Allow-Origin': origem, Vary: 'Origin', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Max-Age': '600' }
     : {}
