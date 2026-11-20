@@ -3,6 +3,7 @@
 // pelo servidor, nunca aceita do corpo (anti-IDOR). Uma licença = um computador ativo = uma instância.
 // Só confere a licença; não coleta nada além do que já existe (e-mail, hash do computador, token).
 import { iguais, sha256 } from './cripto.ts'
+import { motivoDaLicenca } from './verificar.ts'
 import { type Deps, ErroRegra, HASH_RE } from './tipos.ts'
 
 export type VereditoInstancia = { ok: true } | { ok: false; motivo: 'outra_instancia' | 'licenca_invalida' }
@@ -24,7 +25,8 @@ export async function validarInstancia(
   if (!(await d.store.tentarEvento(`instancia:${lic.id}`, 120, 60 * 60_000, d.agora()))) {
     throw new ErroRegra('muitas_solicitacoes', 'Muitas conferências seguidas. Tente de novo mais tarde.', 429)
   }
-  if (lic.status === 'cancelada') return { ok: false, motivo: 'licenca_invalida' }
+  // Mesma matriz do /verificar (M2): pausada, atrasada sem carência, cortesia vencida, cancelada etc. negam.
+  if (motivoDaLicenca(lic, d.agora()) !== 'ok') return { ok: false, motivo: 'licenca_invalida' }
   // Token certo, mas num computador que não é o ativo: cópia do app rodando em outro lugar.
   if (ativa.computador_hash !== a.computador_hash) return { ok: false, motivo: 'outra_instancia' }
   return { ok: true }

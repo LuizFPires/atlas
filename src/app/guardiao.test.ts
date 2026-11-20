@@ -31,6 +31,14 @@ describe('guardião', () => {
     const off = vi.fn(async () => { throw new Error('rede') })
     expect((await criarGuardiaoReal(ponte(), { api: 'https://api.x' }, off as never).conferir()).estado).toBe('liberado')
   })
+  it('política de falha: rede fora e 5xx liberam (carência); 429, 4xx e ok:false bloqueiam', async () => {
+    const c = (f: unknown) => criarGuardiaoReal(ponte(), { api: 'https://api.x' }, f as never).conferir()
+    expect((await c(resp(500, {}))).estado).toBe('liberado')
+    expect((await c(resp(503, {}))).estado).toBe('liberado')
+    for (const st of [400, 401, 403, 404, 429]) expect((await c(resp(st, {}))).estado).toBe('bloqueado')
+    expect((await c(resp(200, { ok: false }))).estado).toBe('bloqueado')
+    expect((await c(resp(200, { ok: true }))).estado).toBe('liberado')
+  })
   it('fixture', async () => {
     expect((await criarGuardiaoFixture().conferir()).estado).toBe('liberado')
     expect((await criarGuardiaoFixture('outra_instancia').conferir()).estado).toBe('bloqueado')

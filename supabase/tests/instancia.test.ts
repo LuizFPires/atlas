@@ -31,6 +31,29 @@ describe('/instancia/validar — trava single-tenant', () => {
     m.store.licencas[0].status = 'cancelada'
     expect(await (await validar(pedido())).json()).toEqual({ ok: false, motivo: 'licenca_invalida' })
   })
+  it('alinha ao /verificar: pausada, atrasada (sem carência / vencida) e cortesia vencida negam; atrasada na carência passa', async () => {
+    const neg = { ok: false, motivo: 'licenca_invalida' }
+    const { m, validar, pedido } = await preparar()
+    const lic = m.store.licencas[0] as unknown as Record<string, unknown>
+    const agora = m.deps.agora().getTime()
+    lic.status = 'pausada'
+    expect(await (await validar(pedido())).json()).toEqual(neg)
+    lic.status = 'atrasada'; lic.pausa_prevista_em = null
+    expect(await (await validar(pedido())).json()).toEqual(neg)
+    lic.pausa_prevista_em = new Date(agora - 60_000)
+    expect(await (await validar(pedido())).json()).toEqual(neg)
+    lic.pausa_prevista_em = new Date(agora + 86_400_000)
+    expect(await (await validar(pedido())).json()).toEqual({ ok: true })
+    lic.status = 'ativa'; lic.tipo = 'cortesia'; lic.validade_em = new Date(agora - 1000)
+    expect(await (await validar(pedido())).json()).toEqual(neg)
+    lic.validade_em = new Date(agora + 86_400_000)
+    expect(await (await validar(pedido())).json()).toEqual({ ok: true })
+  })
+  it('corpo sem e-mail string: 403', async () => {
+    const { validar, pedido } = await preparar()
+    expect((await validar(pedido({ email: 123 }))).status).toBe(403)
+    expect((await validar({ computador_hash: 'a'.repeat(64) })).status).toBe(403)
+  })
   it('anti-IDOR: licenca_id no corpo é ignorado e token de outro dono não vale', async () => {
     const { validar, pedido } = await preparar()
     expect(await (await validar(pedido({ licenca_id: 'l2' }))).json()).toEqual({ ok: true })

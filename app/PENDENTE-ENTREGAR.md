@@ -257,4 +257,5 @@ Teste sem Electron/Claude/rede: `node --test app/adaptadores/*.teste.cjs` (ajuda
 
 - Hoje o guardião (`src/app/guardiao.ts`: porta + adaptador real + fixture) e o endpoint `POST /instancia/validar` (`supabase/functions/_shared/instancia.ts`) existem e têm teste, mas **não estão embutidos em nenhum app real**: o app-modelo só nasce na fatia (d).
 - **Falta LIGAR o guardião dentro do app-modelo** quando ele existir: chamar `guardiaoPadrao(ponte).conferir()` na carga e, se vier `bloqueado`, mostrar a mensagem e não abrir o app. O app entregue precisa guardar e-mail + token do dispositivo (mesmo cofre da ativação) para o guardião ler.
-- Limites assumidos: sem internet o dono não é bloqueado (fail-open); a trava é de licença (1 licença = 1 computador ativo), não é DRM nem telemetria.
+- **Requisito da fatia (d): carência offline curta (decisão do Luiz: 3 a 7 dias) com expiração** — guardar localmente a data da última confirmação ok (sem segredo); depois do prazo, bloquear mesmo offline. Hoje o adaptador já separa "rede fora/5xx" (carência, libera) de "bloqueio" (429, 4xx, ok:false), mas a carência ainda não tem prazo.
+- Limites assumidos: só rede fora e 5xx liberam temporariamente (carência offline); a trava é de licença (1 licença = 1 computador ativo), não é DRM nem telemetria.
