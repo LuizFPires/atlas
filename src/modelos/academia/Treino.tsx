@@ -22,7 +22,6 @@ export function Treino({ dados, alunoId }: { dados: PortaDados; alunoId: string 
   }, [dados, alunoId])
   useEffect(() => {
     let vivo = true
-    setAluno(null); setTreino([]); setEditando(null)
     if (!alunoId) return
     void Promise.all([dados.listarAlunos(), dados.listarTreino(alunoId)])
       .then(([as, t]) => { if (vivo) { setAluno(as.find((a) => a.id === alunoId) ?? null); setTreino(t) } })

@@ -22,6 +22,7 @@ import { AppDesktop, noAppDesktop } from './app/AppDesktop'
 const AppBarbearia = lazy(() => import('./modelos/barbearia/AppBarbearia').then((m) => ({ default: m.AppBarbearia })))
 const AppRestaurante = lazy(() => import('./modelos/restaurante/AppRestaurante').then((m) => ({ default: m.AppRestaurante })))
 const AppMercearia = lazy(() => import('./modelos/mercearia/AppMercearia').then((m) => ({ default: m.AppMercearia })))
+const AppAcademia = lazy(() => import('./modelos/academia/AppAcademia').then((m) => ({ default: m.AppAcademia })))
 
 const portalApi = criarPortalApi()
 const adminApi = criarAdminApi()
@@ -77,6 +78,8 @@ export default function App() {
   if (caminho === '/modelo/restaurante' && modoFixture()) return <Suspense fallback={null}><AppRestaurante /></Suspense>
   // Demonstração do app-modelo da mercearia (M32 d3): mesma regra, só em modo fixture.
   if (caminho === '/modelo/mercearia' && modoFixture()) return <Suspense fallback={null}><AppMercearia /></Suspense>
+  // Demonstração do app-modelo da academia (M32 d4): mesma regra, só em modo fixture.
+  if (caminho === '/modelo/academia' && modoFixture()) return <Suspense fallback={null}><AppAcademia /></Suspense>
   // Textos legais públicos: privacidade, termos e licença do software.
   const legal = idLegalDoCaminho(caminho)
   if (legal) return <PaginaLegal id={legal} />

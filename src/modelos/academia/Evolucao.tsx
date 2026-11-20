@@ -25,7 +25,6 @@ export function Evolucao({ dados, alunoId, hoje }: { dados: PortaDados; alunoId:
   }, [dados, alunoId])
   useEffect(() => {
     let vivo = true
-    setAluno(null); setMedidas([]); setTreino([])
     if (!alunoId) return
     void Promise.all([dados.listarAlunos(), dados.listarEvolucao(alunoId), dados.listarTreino(alunoId)])
       .then(([as, m, t]) => { if (vivo) { setAluno(as.find((a) => a.id === alunoId) ?? null); setMedidas(m); setTreino(t) } })
