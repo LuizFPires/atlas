@@ -18,8 +18,8 @@ export async function enviarCadastro(d: DadosCadastro, cfg: Pick<ConfigCompra, '
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session_id: sessionId, nome: d.nome, empresa: d.empresa, ramo: d.faz, email: d.email }),
     })
-    const corpo = (await r.json().catch(() => ({}))) as { ok?: boolean; mensagem?: string; enviado_para?: string; email_diferente?: boolean }
-    if (r.ok && corpo.ok === true) return { ok: true, enviado_para: corpo.enviado_para, email_diferente: corpo.email_diferente }
+    const corpo = (await r.json().catch(() => ({}))) as { ok?: boolean; mensagem?: string; enviado_para?: string; email_diferente?: boolean; segmento?: string | null }
+    if (r.ok && corpo.ok === true) return { ok: true, enviado_para: corpo.enviado_para, email_diferente: corpo.email_diferente, segmento: corpo.segmento ?? null }
     return { ok: false, mensagem: corpo.mensagem ?? 'Não deu para guardar as respostas agora. Tente de novo em instantes.' }
   } catch {
     return { ok: false, mensagem: 'Sem conexão com o servidor. Veja a sua internet e tente de novo.' }

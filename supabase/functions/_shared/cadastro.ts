@@ -24,7 +24,7 @@ export interface DepsCadastro extends Deps {
 export interface PedidoCadastro { session_id?: unknown; nome?: unknown; empresa?: unknown; ramo?: unknown; email?: unknown }
 
 export type RespostaCadastro =
-  | { ok: true; enviado_para: string; email_diferente: boolean }
+  | { ok: true; enviado_para: string; email_diferente: boolean; segmento: string | null }
   | { ok: false; pendente: true; mensagem: string }
 
 /** Resposta única para qualquer pedido sem prova válida: não revela se o e-mail comprou, pagou ou já se cadastrou. */
@@ -45,7 +45,8 @@ export async function cadastrar(d: DepsCadastro, p: PedidoCadastro): Promise<Res
 
   const cliente = await d.store.clientePorEmail(sessao.email)
   const lic = cliente && (await d.store.licencaDoCliente(cliente.id))
-  const pago = lic && lic.conta_gateway_id === sessao.conta_gateway_id && (await d.store.pagamentosDa(lic.id)).some((x) => x.tipo === 'implantacao' && x.status === 'pago')
+  const pagamentos = lic ? await d.store.pagamentosDa(lic.id) : []
+  const pago = lic && lic.conta_gateway_id === sessao.conta_gateway_id && pagamentos.some((x) => x.tipo === 'implantacao' && x.status === 'pago')
   if (!cliente || !lic || lic.status === 'cancelada' || !pago) throw semProva()
 
   const nome = limpar(p.nome, 60)
@@ -79,5 +80,5 @@ export async function cadastrar(d: DepsCadastro, p: PedidoCadastro): Promise<Res
     if (e instanceof ErroRegra) throw e
     throw new ErroRegra('email_nao_enviado', 'Não deu para enviar o e-mail agora. Tente de novo em instantes.', 502)
   }
-  return { ok: true, enviado_para: mascarar(destino), email_diferente: !!digitado && digitado !== destino.toLowerCase() }
+  return { ok: true, enviado_para: mascarar(destino), email_diferente: !!digitado && digitado !== destino.toLowerCase(), segmento: pagamentos.find((x) => x.status === 'pago' && x.segmento)?.segmento ?? null }
 }

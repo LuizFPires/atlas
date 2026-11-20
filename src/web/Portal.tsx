@@ -49,7 +49,7 @@ export function Portal({ api, obras }: { api: PortalApi; obras?: PonteStatusObra
   )
 }
 
-function Entrada({ api, aviso, onEntrou }: { api: PortalApi; aviso: string; onEntrou: (p: PerfilPortal) => void }) {
+export function Entrada({ api, aviso, onEntrou }: { api: PortalApi; aviso: string; onEntrou: (p: PerfilPortal) => void }) {
   const [email, setEmail] = useState('')
   const [codigo, setCodigo] = useState('')
   const [etapa, setEtapa] = useState<'email' | 'codigo'>('email')

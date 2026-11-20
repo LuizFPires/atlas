@@ -152,7 +152,7 @@ export class StoreMemoria implements Store {
   }
 
   personalizacoes = new Map<string, Personalizacao>()
-  async salvarPersonalizacao(licencaId: string, p: Personalizacao, _agora?: Date) { this.personalizacoes.set(licencaId, { ...p }) }
+  async salvarPersonalizacao(licencaId: string, p: Personalizacao) { this.personalizacoes.set(licencaId, { ...p }) }
   async personalizacaoDaLicenca(licencaId: string) { const p = this.personalizacoes.get(licencaId); return p ? { ...p } : null }
 
   async contaGateway(id: string) { return this.contas.find((c) => c.id === id) ?? null }

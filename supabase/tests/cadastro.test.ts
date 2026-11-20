@@ -28,9 +28,14 @@ function pronto(pago = true, sessaoPaga = true) {
 const pedido = { session_id: SID, nome: ' Zé ', empresa: 'Barbearia do Zé', ramo: 'Barbearia: corte e barba', email: 'Ana@Loja.com' }
 
 describe('cadastro pós-pagamento', () => {
+  it('compra de app pronto: devolve o segmento comprado (leva ao configurador)', async () => {
+    const { m, deps } = pronto()
+    m.store.pagamentos[0].segmento = 'academia'
+    expect(await cadastrar(deps, pedido)).toMatchObject({ ok: true, segmento: 'academia' })
+  })
   it('grava as 4 respostas, gera link de uso único e manda o acesso para o e-mail da COMPRA', async () => {
     const { m, deps, enviados } = pronto()
-    expect(await cadastrar(deps, pedido)).toEqual({ ok: true, enviado_para: 'a***@loja.com', email_diferente: false })
+    expect(await cadastrar(deps, pedido)).toEqual({ ok: true, enviado_para: 'a***@loja.com', email_diferente: false, segmento: null })
     expect(m.store.clientes[0]).toMatchObject({ nome_tratamento: 'Zé', empresa: 'Barbearia do Zé', ramo: 'Barbearia: corte e barba' })
     expect(m.store.clientes[0].cadastro_em).toBeInstanceOf(Date)
     expect(enviados).toHaveLength(1)

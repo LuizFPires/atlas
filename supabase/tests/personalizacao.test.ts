@@ -32,7 +32,7 @@ describe('validarPersonalizacao', () => {
 describe('store: personalização por licença', () => {
   it('grava e lê só da própria licença', async () => {
     const s = new StoreMemoria()
-    await s.salvarPersonalizacao('l1', validarPersonalizacao(ok()), new Date())
+    await s.salvarPersonalizacao('l1', validarPersonalizacao(ok()))
     expect((await s.personalizacaoDaLicenca('l1'))?.nome_negocio).toBe('Barbearia do Zé')
     expect(await s.personalizacaoDaLicenca('l2')).toBeNull()
   })
