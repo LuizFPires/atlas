@@ -308,12 +308,13 @@ function VisaoGeral({ api }: { api: AdminApi }) {
 
   return (
     <>
-      <div className="ad-titulo"><h1>Visão geral</h1><span className="ad-mute">{mesAno(dado.gerado_em)}</span></div>
-      <dl className="ad-infos" aria-label="Números do negócio">
-        {infos.map((k) => (
-          <div key={k.nome} className="ad-info"><dt className="ad-info-nome">{k.nome}</dt><dd className="ad-info-v">{k.v}</dd></div>
-        ))}
-      </dl>
+      <div className="ad-titulo"><h1>Visão geral</h1><span className="ad-mute">{mesAno(dado.gerado_em)}</span>
+        <dl className="ad-infos" aria-label="Números do negócio">
+          {infos.map((k) => (
+            <div key={k.nome} className="ad-info"><dt className="ad-info-nome">{k.nome}</dt><dd className="ad-info-v">{k.v}</dd></div>
+          ))}
+        </dl>
+      </div>
       {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
       <div className="ad-kpis" role="group" aria-label="Filtrar clientes por situação">
         {cartoes.map((k) => (
