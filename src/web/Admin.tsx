@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { CampoFalado, Icone } from '../ui'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
@@ -246,6 +246,7 @@ function VisaoGeral({ api }: { api: AdminApi }) {
   const [versaoDominios, setVersaoDominios] = useState(0)
   const [filtro, setFiltro] = useState<FiltroConta>('todas')
   const [busca, setBusca] = useState('')
+  const listaRef = useRef<HTMLElement>(null)
 
   if (!dado) return erro ? <p role="alert" className="ad-erro">{erro}</p> : <p role="status" className="ad-mute">Carregando os números…</p>
   const { indicadores: i, atencao, clientes } = dado
@@ -286,29 +287,44 @@ function VisaoGeral({ api }: { api: AdminApi }) {
   const abrirLiberar = (licencaId: string, quem: string, motivo = '') => { setMsg(''); setLiberando({ licencaId, quem, motivo }) }
 
   const g = indicadoresGerenciais(i)
-  const kpis = [
-    { nome: 'Clientes ativos', v: String(i.clientes_ativos), sub: 'licenças em dia', tom: '' },
-    { nome: 'Receita recorrente (MRR)', v: dinheiro(g.mrr), sub: `por mês · ${dinheiro(i.receita.recebida_no_mes)} recebidos neste mês`, tom: 'lime' },
-    { nome: 'Ativações no mês', v: String(i.ativacoes.no_mes), sub: `meta: ${i.ativacoes.meta} · ${i.ativacoes.computadores_ativos} computadores ativos`, tom: '' },
-    { nome: 'Inadimplência', v: String(i.inadimplencia.atrasadas + i.inadimplencia.pausadas), sub: `${dinheiro(i.inadimplencia.valor_em_aberto)} em aberto · licença pausa em 7 dias`, tom: 'aviso' },
-    { nome: 'Ticket médio', v: g.ticketMedio === null ? '—' : dinheiro(g.ticketMedio), sub: 'quanto cada cliente ativo paga por mês', tom: '' },
-    { nome: 'Cancelamentos no mês', v: g.cancelamentosNoMes === null ? '—' : String(g.cancelamentosNoMes), sub: g.cancelamentosNoMes === null ? 'o servidor ainda não informa esse número' : g.cancelamentosNoMes === 0 ? 'ninguém cancelou, bom sinal' : 'clientes que pediram para sair', tom: g.cancelamentosNoMes ? 'aviso' : '' },
-    { nome: 'Clientes travados', v: String(i.travados), sub: 'parados há mais de 2 dias', tom: i.travados > 0 ? 'aviso' : '' },
+  // Linha de cima: só fatos (não clicam). Cartões de baixo: botões que filtram a lista de clientes.
+  const infos = [
+    { nome: 'Clientes ativos', v: String(i.clientes_ativos) },
+    { nome: 'Receita recorrente (MRR)', v: dinheiro(g.mrr) },
+    { nome: 'Ticket médio', v: g.ticketMedio === null ? '—' : dinheiro(g.ticketMedio) },
   ]
+  // Obs.: o número de "Ativações no mês" conta as do mês, mas a lista não tem data de ativação; o filtro mostra quem está ativando agora.
+  const cartoes: { nome: string; v: string; sub: string; tom: string; filtro: FiltroConta }[] = [
+    { nome: 'Ativações no mês', v: String(i.ativacoes.no_mes), sub: `meta: ${i.ativacoes.meta} · ${i.ativacoes.computadores_ativos} computadores ativos`, tom: '', filtro: 'ativando' },
+    { nome: 'Inadimplência', v: String(i.inadimplencia.atrasadas + i.inadimplencia.pausadas), sub: `${dinheiro(i.inadimplencia.valor_em_aberto)} em aberto · licença pausa em 7 dias`, tom: 'aviso', filtro: 'inadimplentes' },
+    { nome: 'Cancelamentos no mês', v: g.cancelamentosNoMes === null ? '—' : String(g.cancelamentosNoMes), sub: g.cancelamentosNoMes === null ? 'o servidor ainda não informa esse número' : g.cancelamentosNoMes === 0 ? 'ninguém cancelou, bom sinal' : 'clientes que pediram para sair', tom: g.cancelamentosNoMes ? 'aviso' : '', filtro: 'canceladas' },
+    { nome: 'Clientes travados', v: String(i.travados), sub: 'parados há mais de 2 dias', tom: i.travados > 0 ? 'aviso' : '', filtro: 'travados' },
+  ]
+  const alternar = (f: FiltroConta) => {
+    const novo = filtro === f ? 'todas' : f
+    setFiltro(novo)
+    if (novo !== 'todas') setTimeout(() => listaRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }), 0)
+  }
 
   return (
     <>
-      <div className="ad-titulo"><h1>Visão geral</h1><span className="ad-mute">{mesAno(dado.gerado_em)}</span></div>
+      <div className="ad-titulo"><h1>Visão geral</h1><span className="ad-mute">{mesAno(dado.gerado_em)}</span>
+        <dl className="ad-infos" aria-label="Números do negócio">
+          {infos.map((k) => (
+            <div key={k.nome} className="ad-info"><dt className="ad-info-nome">{k.nome}</dt><dd className="ad-info-v">{k.v}</dd></div>
+          ))}
+        </dl>
+      </div>
       {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
-      <div className="ad-kpis">
-        {kpis.map((k) => (
-          <div key={k.nome} className={`ad-kpi ${k.tom ? `ad-kpi--${k.tom}` : ''}`}>
+      <div className="ad-kpis" role="group" aria-label="Filtrar clientes por situação">
+        {cartoes.map((k) => (
+          <button key={k.nome} type="button" aria-pressed={filtro === k.filtro} onClick={() => alternar(k.filtro)} className={`ad-kpi ad-kpi--botao ${k.tom ? `ad-kpi--${k.tom}` : ''} ${filtro === k.filtro ? 'ad-kpi--ativo' : ''}`}>
             <span className="ad-kpi-nome">{k.nome}</span><span className="ad-kpi-v">{k.v}</span><span className="ad-mute2">{k.sub}</span>
-          </div>
+          </button>
         ))}
       </div>
       <div className="ad-grade">
-        <section className="ad-card" aria-label="Clientes">
+        <section className="ad-card" aria-label="Clientes" ref={listaRef}>
           <span className="ad-rotulo">CLIENTES</span>
           <div className="ad-tabela ad-tabela--cab" role="row"><span>Cliente</span><span>Licença</span><span>Obras</span><span>Último sinal</span><span>Ação</span></div>
           <div className="ad-filtro">
