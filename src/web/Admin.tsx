@@ -871,7 +871,7 @@ function Mapa({ api }: { api: AdminApi }) {
           <div className="ad-mapa-grade">
             <section className="ad-card" aria-label="Mapa do Brasil">
               <span className="ad-rotulo">CLIENTES POR ESTADO</span>
-              <MapaBrasil por_uf={dado.por_uf} maximo={r.maximo} ativo={destaque} onAtivo={setAtivo} onEscolher={escolher} />
+              <MapaBrasil por_uf={dado.por_uf} por_cidade={dado.por_cidade} maximo={r.maximo} ativo={destaque} onAtivo={setAtivo} onEscolher={escolher} />
               <p className="ad-mapa-info" aria-live="polite">{linhaAtiva ? `${nomeUf(linhaAtiva.uf)} — ${textoUf(linhaAtiva)}` : 'Passe o mouse (ou use a tecla Tab) sobre um estado para ver os números.'}</p>
               <LegendaMapa maximo={r.maximo} />
             </section>
