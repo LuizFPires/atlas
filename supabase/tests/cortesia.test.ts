@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { lerEmailsAdmin } from '../functions/_shared/admin.ts'
 import { montarCortesia } from '../functions/_shared/emails.ts'
 import { verificar } from '../functions/_shared/verificar.ts'
@@ -123,11 +123,19 @@ describe('cortesia — e-mail com link de instalação', () => {
 
   it('falha no envio NÃO quebra a liberação: licença criada e email_enviado: false (sem vazar o erro)', async () => {
     const a = await comEmail(true)
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
     const r = await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(10) })
     expect(r.status).toBe(200)
     const corpo = await r.json()
     expect(corpo.email_enviado).toBe(false)
     expect(JSON.stringify(corpo)).not.toContain('smtp')
+    // log: só etapa e nome do erro; nada de mensagem, token, chave ou e-mail
+    const logado = log.mock.calls.map((c) => c.join(' ')).join('\n')
+    log.mockRestore()
+    expect(logado).toContain('cortesia_email_falhou etapa=enviar erro=Error')
+    expect(logado).not.toMatch(/smtp|novo@amigo|re_|RESEND|token/i)
+    const link = a.store.links[a.store.links.length - 1] as unknown as Record<string, unknown>
+    for (const v of Object.values(link)) if (typeof v === 'string' && v.length > 20) expect(logado).not.toContain(v)
     const cli = a.store.clientes.find((c) => c.email_compra === 'novo@amigo.com')!
     expect(a.store.licencas.find((l) => l.cliente_id === cli.id)).toMatchObject({ tipo: 'cortesia', status: 'ativa' })
     const re = await a.ch('/admin/cortesia/reenviar', { email: 'novo@amigo.com' })

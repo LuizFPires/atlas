@@ -229,11 +229,16 @@ export async function liberarCortesia(d: DepsAdmin, jwt: string, a: { email: unk
  */
 async function enviarEmailCortesia(d: DepsAdmin, email: string, validade: Date): Promise<boolean> {
   if (!d.enviarCortesia) return false
+  let etapa = 'gerar_link'
   try {
     const link = await gerarLink(d, email)
+    etapa = 'enviar'
     await d.enviarCortesia(email, { token: link.token, expira_em: link.expira_em, validade_em: validade })
     return true
-  } catch {
+  } catch (e) {
+    // Só a etapa e o nome do erro (curto, sem mensagem): a mensagem poderia carregar token, chave ou e-mail.
+    const nome = e instanceof Error && /^\w{1,40}$/.test(e.name) ? e.name : 'desconhecido'
+    console.error(`cortesia_email_falhou etapa=${etapa} erro=${nome}`)
     return false
   }
 }

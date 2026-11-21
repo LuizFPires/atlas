@@ -604,14 +604,18 @@ function Cortesia({ api }: { api: AdminApi }) {
   const [msg, setMsg] = useState('')
   // E-mail que não saiu: guarda para quem reenviar e a data, para o aviso de atenção.
   const [falhou, setFalhou] = useState<{ email: string; ate: string } | null>(null)
+  const [enviando, setEnviando] = useState(false)
   const hoje = new Date()
   const reenviar = async () => {
-    if (!falhou) return
+    if (!falhou || enviando) return
     setErro('')
-    const r = await api.reenviarCortesia(falhou.email)
-    if (!r.ok) { setErro(r.mensagem); return }
-    if (r.email_enviado) { setFalhou(null); setMsg(`E-mail reenviado para ${falhou.email}. A cortesia vale até ${falhou.ate}.`) }
-    else setErro('O e-mail ainda não saiu. Confira a chave de e-mail do servidor e tente de novo.')
+    setEnviando(true)
+    try {
+      const r = await api.reenviarCortesia(falhou.email)
+      if (!r.ok) { setErro(r.mensagem); return }
+      if (r.email_enviado) { setFalhou(null); setMsg(`E-mail reenviado para ${falhou.email}. A cortesia vale até ${falhou.ate}.`) }
+      else setErro('O e-mail ainda não saiu. Confira a chave de e-mail do servidor e tente de novo.')
+    } finally { setEnviando(false) }
   }
   const confirmar = async (ev: React.FormEvent) => {
     ev.preventDefault(); setErro(''); setMsg(''); setFalhou(null)
@@ -638,7 +642,7 @@ function Cortesia({ api }: { api: AdminApi }) {
         {falhou && (
           <div role="status" className="ad-linha">
             <p className="ad-aviso-msg" style={{ borderColor: 'var(--aviso)' }}>Cortesia liberada para {falhou.email} até {falhou.ate}, mas o e-mail não saiu — confira a chave de e-mail do servidor.</p>
-            <button type="button" className="ad-botao ad-botao--aviso" onClick={reenviar}>Reenviar e-mail</button>
+            <button type="button" className="ad-botao ad-botao--aviso" onClick={reenviar} disabled={enviando}>{enviando ? 'Enviando…' : 'Reenviar e-mail'}</button>
           </div>
         )}
         {erro && <p role="alert" className="ad-erro">{erro}</p>}
