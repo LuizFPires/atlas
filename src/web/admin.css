@@ -130,3 +130,8 @@
 .ad-kpis--radar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 1100px) { .ad-kpis--radar { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .ad-kpis--radar { grid-template-columns: minmax(0, 1fr); } }
+.ad-entrega { border-top: 1px solid var(--line, rgba(128,128,128,.2)); padding: 6px 0; }
+.ad-cli-ficha { margin: 6px 0 4px; padding: 8px 12px; border-radius: 10px; background: var(--soft, rgba(128,128,128,.08)); }
+.ad-ajuda-marca { margin-top: 10px; font-size: 14px; }
+.ad-ajuda-marca summary { cursor: pointer; color: var(--lime, inherit); }
+.ad-ajuda-marca summary:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
