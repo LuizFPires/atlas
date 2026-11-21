@@ -141,6 +141,15 @@
 .ad-uf { stroke: var(--card); stroke-width: 1.2; stroke-linejoin: round; cursor: pointer; }
 .ad-uf:hover, .ad-uf--ativo { stroke: var(--text); stroke-width: 2; }
 .ad-uf:focus-visible { outline: none; stroke: var(--lime-txt); stroke-width: 3; }
+.ad-mapa-caixa { position: relative; }
+.ad-mapa-zoom { position: absolute; top: 6px; right: 6px; z-index: 2; display: flex; flex-direction: column; gap: 6px; }
+.ad-zoom-btn { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; }
+.ad-zoom-btn:hover:not(:disabled) { border-color: var(--lime); }
+.ad-zoom-btn:focus-visible { outline: 2px solid var(--lime-txt); outline-offset: 2px; }
+.ad-zoom-btn:disabled { opacity: .4; cursor: default; }
+.ad-mapa { touch-action: pan-y; }
+.ad-mapa--zoom { cursor: grab; touch-action: none; }
+.ad-bolha-txt { fill: var(--text); font-family: var(--mono, monospace); font-weight: 700; pointer-events: none; paint-order: stroke; stroke: var(--card); stroke-width: 3px; stroke-linejoin: round; }
 .ad-bolha { fill: color-mix(in srgb, var(--lime) 55%, transparent); stroke: var(--lime); stroke-width: 1.5; pointer-events: none; }
 .ad-bolha--ativa { fill: color-mix(in srgb, var(--lime) 80%, transparent); stroke: var(--text); }
 .ad-mapa-info { margin: 0; min-height: 22px; font-size: 14px; }
