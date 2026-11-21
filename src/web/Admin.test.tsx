@@ -261,6 +261,27 @@ describe('painel do admin (F16)', () => {
     expect(b.closest('.ad-eu')).not.toBeNull()
   })
 
+  it('a gaveta trava a rolagem do fundo, fecha com Esc mesmo com o foco fora e prende o Tab', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente()
+    montar(api)
+    const abrir = await screen.findByRole('button', { name: /Precisam de atenção/ })
+    expect(document.body.style.overflow).toBe('')
+    await userEvent.click(abrir)
+    const d = screen.getByRole('dialog', { name: 'Precisam de atenção' })
+    expect(document.body.style.overflow).toBe('hidden')
+    // foco fora do diálogo: o Tab traz de volta para dentro
+    ;(document.activeElement as HTMLElement).blur()
+    await userEvent.tab()
+    expect(d.contains(document.activeElement)).toBe(true)
+    // foco no body: Esc ainda fecha
+    ;(document.activeElement as HTMLElement).blur()
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.body.style.overflow).toBe('')
+    expect(abrir).toHaveFocus()
+  })
+
   it('o menu recolhe só com ícones, lembra a escolha e abre de novo', async () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api } = ambiente()

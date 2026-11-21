@@ -430,23 +430,39 @@ function GavetaAtencao({ itens, clientes, cadastros, agora, onFechar, onLiberar,
   onFechar: () => void; onLiberar: (a: ItemAtencao) => void; onBloquear: (a: ItemAtencao) => void; onBaixa: (id: string) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const fechar = useRef(onFechar)
+  useEffect(() => { fechar.current = onFechar })
   useEffect(() => {
     const antes = document.activeElement as HTMLElement | null
+    const corpo = document.body
+    const overflowAntes = corpo.style.overflow
+    corpo.style.overflow = 'hidden' // o fundo não rola enquanto a gaveta está aberta
+    const menu = document.querySelector<HTMLElement>('.ad-lateral')
+    menu?.setAttribute('inert', '') // leitor de tela e Tab não alcançam o menu de trás
     ref.current?.querySelector<HTMLElement>('.ad-gaveta-x')?.focus()
-    return () => { antes?.focus?.() }
+    // Esc e Tab valem no documento inteiro: mesmo com o foco no body, a gaveta manda.
+    const teclas = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); fechar.current(); return }
+      if (e.key !== 'Tab' || !ref.current) return
+      const f = [...ref.current.querySelectorAll<HTMLElement>(FOCAVEIS)]
+      if (f.length === 0) return
+      const primeiro = f[0], ultimo = f[f.length - 1]
+      const ativo = document.activeElement
+      if (!ref.current.contains(ativo)) { e.preventDefault(); (e.shiftKey ? ultimo : primeiro).focus() }
+      else if (e.shiftKey && ativo === primeiro) { e.preventDefault(); ultimo.focus() }
+      else if (!e.shiftKey && ativo === ultimo) { e.preventDefault(); primeiro.focus() }
+    }
+    document.addEventListener('keydown', teclas)
+    return () => {
+      document.removeEventListener('keydown', teclas)
+      corpo.style.overflow = overflowAntes
+      menu?.removeAttribute('inert')
+      antes?.focus?.()
+    }
   }, [])
-  const teclas = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') { e.stopPropagation(); onFechar(); return }
-    if (e.key !== 'Tab' || !ref.current) return
-    const f = [...ref.current.querySelectorAll<HTMLElement>(FOCAVEIS)]
-    if (f.length === 0) return
-    const primeiro = f[0], ultimo = f[f.length - 1]
-    if (e.shiftKey && document.activeElement === primeiro) { e.preventDefault(); ultimo.focus() }
-    else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primeiro.focus() }
-  }
   return (
     <div className="ad-gaveta-fundo" onMouseDown={(e) => { if (e.target === e.currentTarget) onFechar() }}>
-      <div ref={ref} className="ad-gaveta" role="dialog" aria-modal="true" aria-label="Precisam de atenção" onKeyDown={teclas}>
+      <div ref={ref} className="ad-gaveta" role="dialog" aria-modal="true" aria-label="Precisam de atenção">
         <div className="ad-gaveta-topo">
           <span className="ad-rotulo ad-rotulo--aviso">PRECISAM DE ATENÇÃO ({itens.length})</span>
           <button type="button" className="ad-gaveta-x" aria-label="Fechar" title="Fechar" onClick={onFechar}><Icone nome="x" tamanho={18} /></button>
