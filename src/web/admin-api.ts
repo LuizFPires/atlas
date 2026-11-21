@@ -49,9 +49,9 @@ export interface LinhaUf { uf: string; regiao: Regiao; clientes: number; compras
 /** Só agregado por estado (nunca IP, nome ou e-mail). `ligado:false` = o servidor ainda não guarda a região: a tela explica e NÃO inventa ponto. */
 export interface CidadeCliente { uf: string; cidade: string; clientes: number }
 /**
- * `por_cidade` é OPCIONAL: só existe quando o servidor guardar a cidade do comprador (cidade + UF derivadas do IP/checkout na hora,
- * nunca o IP cru). Hoje o servidor só captura a UF; então, no caminho real, fica `undefined` e a tela explica. A posição (lon/lat) vem da base
- * CIDADES pelo nome + UF; cidade fora da base não ganha bolha.
+ * `por_cidade` é OPCIONAL: cidade + UF vêm do CADASTRO do cliente (informadas por ele, nunca derivadas de IP; o IP cru não é guardado).
+ * Se o servidor não devolver, fica `undefined` e a tela explica. A posição (lon/lat) vem da base CIDADES pelo nome + UF; cidade fora da
+ * base não ganha bolha.
  */
 export interface MapaClientes { ligado: boolean; mensagem?: string; total: number; por_uf: LinhaUf[]; por_cidade?: CidadeCliente[]; atualizado_em: string }
 
@@ -82,7 +82,7 @@ export interface AdminApi {
   fluxoCaixa(): Promise<Resp<{ fluxo: FluxoCaixa }>>
   /** Radar de pirataria: sinais suspeitos agregados. Sem a rota no servidor, devolve ok:true com `ligado:false`. */
   radarPirataria(): Promise<Resp<{ radar: RadarPirataria }>>
-  /** "Já verifiquei" um sinal. No servidor real ainda não existe (pendência): devolve ok:false com mensagem honesta. */
+  /** "Já verifiquei" um sinal (POST /admin/radar/resolver). Só baixa o sinal; não mexe na licença nem apaga histórico. */
   resolverSinalRadar(id: string): Promise<Resp>
   /** Mapa do Brasil: clientes e compras por estado. Sem a rota no servidor, devolve ok:true com `ligado:false`. */
   mapaClientes(): Promise<Resp<{ mapa: MapaClientes }>>
@@ -212,7 +212,7 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       // Rota ainda não existe (pendência): estado honesto, sem número inventado.
       return { ok: true, radar: { ligado: false, mensagem: 'O Radar ainda está sendo ligado no servidor. Quando estiver pronto, os sinais aparecem aqui sozinhos.', resumo: RESUMO_VAZIO, sinais: [] } }
     },
-    resolverSinalRadar: () => Promise.resolve({ ok: false, mensagem: 'Dar baixa nos sinais ainda não está ligado no servidor. Nada foi marcado.' }),
+    resolverSinalRadar: (id) => servidor('/admin/radar/resolver', { id }),
     async mapaClientes() {
       const r = await servidor<{ total?: number; por_uf?: LinhaUf[]; por_cidade?: CidadeCliente[]; atualizado_em?: string }>('/admin/mapa')
       if (r.ok && Array.isArray(r.por_uf) && typeof r.total === 'number') {

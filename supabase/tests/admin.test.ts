@@ -21,7 +21,7 @@ type A = Awaited<ReturnType<typeof montarAdmin>>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const painel = async (a: A) => (await (await chamar(a.ctx(), '/admin/painel', JWT_LUIZ)).json()) as any
 
-const ROTAS = ['/admin/eu', '/admin/painel', '/admin/ocorrencias/resolver', '/admin/liberar-troca', '/admin/entregas', '/admin/cadastros', '/admin/cortesia', '/admin/qualquer-coisa']
+const ROTAS = ['/admin/eu', '/admin/painel', '/admin/ocorrencias/resolver', '/admin/liberar-troca', '/admin/entregas', '/admin/cadastros', '/admin/cortesia', '/admin/mapa', '/admin/fluxo-caixa', '/admin/radar', '/admin/radar/resolver', '/admin/qualquer-coisa']
 
 describe('admin — só o admin entra (segurança)', () => {
   it('sem token, token inválido, cliente comum logado e e-mail parecido: nenhuma rota /admin/* abre', async () => {

@@ -3,6 +3,7 @@
 // pelo servidor, nunca aceita do corpo (anti-IDOR). Uma licença = um computador ativo = uma instância.
 // Só confere a licença; não coleta nada além do que já existe (e-mail, hash do computador, token).
 import { iguais, sha256 } from './cripto.ts'
+import { registrarAcesso, registrarRecusa } from './radar.ts'
 import { motivoDaLicenca } from './verificar.ts'
 import { type Deps, ErroRegra, HASH_RE } from './tipos.ts'
 
@@ -10,7 +11,7 @@ export type VereditoInstancia = { ok: true } | { ok: false; motivo: 'outra_insta
 
 export async function validarInstancia(
   d: Deps,
-  a: { email: unknown; computador_hash: unknown; token_dispositivo: string },
+  a: { email: unknown; computador_hash: unknown; token_dispositivo: string; /** UF do acesso (derivada na borda; nunca o IP). Só alimenta o Radar. */ uf?: string | null },
 ): Promise<VereditoInstancia> {
   const negado = () => new ErroRegra('nao_autorizado', 'Não foi possível confirmar esta instalação.', 403)
   if (typeof a.computador_hash !== 'string' || !HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
@@ -28,6 +29,11 @@ export async function validarInstancia(
   // Mesma matriz do /verificar (M2): pausada, atrasada sem carência, cortesia vencida, cancelada etc. negam.
   if (motivoDaLicenca(lic, d.agora()) !== 'ok') return { ok: false, motivo: 'licenca_invalida' }
   // Token certo, mas num computador que não é o ativo: cópia do app rodando em outro lugar.
-  if (ativa.computador_hash !== a.computador_hash) return { ok: false, motivo: 'outra_instancia' }
+  // O Radar só AVISA: registra a recusa (UF + id curto do dispositivo, nunca IP) e a resposta ao app não muda.
+  if (ativa.computador_hash !== a.computador_hash) {
+    await registrarRecusa(d, lic.id, a.computador_hash, a.uf ?? null)
+    return { ok: false, motivo: 'outra_instancia' }
+  }
+  await registrarAcesso(d, lic.id, a.uf ?? null)
   return { ok: true }
 }

@@ -15,6 +15,9 @@ export interface Cliente {
   auth_user_id?: string | null
   /** LGPD: quando a conta foi excluída (dados pessoais anonimizados). */
   excluido_em?: Date | null
+  /** Cidade e UF que o cliente informou no cadastro (0026). Nunca derivadas de IP. Nulos em cadastros antigos. */
+  cidade?: string | null
+  uf?: string | null
 }
 export interface Licenca {
   id: string
@@ -38,6 +41,8 @@ export interface Licenca {
   origem?: 'degustacao' | null
   /** Cortesia: até quando vale (obrigatório nela). Nulo = sem prazo. */
   validade_em?: Date | null
+  /** Quando o cancelamento foi pedido/ocorreu (0027). Nulo = nunca ou antes da migration. Alimenta "Cancelamentos no mês" do painel. */
+  cancelada_em?: Date | null
 }
 export interface Ativacao {
   id: string
@@ -276,7 +281,7 @@ export interface Store {
 
   // ── M4: cadastro pós-pagamento ──
   /** Atômico: UPDATE clientes SET nome_tratamento, empresa, ramo, cadastro_em WHERE id AND cadastro_em IS NULL. false = já cadastrado. */
-  salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string }, quando: Date): Promise<boolean>
+  salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string; cidade?: string | null; uf?: string | null }, quando: Date): Promise<boolean>
   /** Guarda a sessão do checkout criada (ainda não paga). Idempotente. */
   registrarSessao(contaId: string, sessaoId: string, email: string): Promise<void>
   /** Marca a sessão como paga (upsert: cria se o webhook chegar sem registro prévio). */
@@ -310,7 +315,26 @@ export interface Store {
   entregasDaLicenca(licencaId: string, limite: number): Promise<Entrega[]>
   /** entregas_kit WHERE marca_dagua = $1 (índice já existe): rastrear de quem veio um arquivo vazado. */
   entregasPorMarca(marca: string): Promise<Entrega[]>
+
+  // ── M33: Radar de pirataria (só avisa; nada aqui mexe em licença) ──
+  /** INSERT radar_eventos. */
+  registrarEventoRadar(e: EventoRadar): Promise<void>
+  /** radar_eventos WHERE criado_em >= desde. */
+  eventosRadar(desde: Date): Promise<EventoRadar[]>
+  /** Ledger do teste grátis: computadores com ao menos `minimo` barradas e a última em/depois de `desde`. */
+  barradasDeTeste(desde: Date, minimo: number): Promise<BarradaTeste[]>
+  /** radar_baixas: sinal_id -> quando foi dada a baixa. */
+  baixasRadar(): Promise<Array<{ sinal_id: string; resolvida_em: Date }>>
+  /** UPSERT radar_baixas (a baixa mais nova vale). */
+  baixarSinalRadar(sinalId: string, por: string, quando: Date): Promise<void>
+  /** DELETE radar_eventos WHERE criado_em < antes (retenção). Devolve quantas linhas. */
+  limparEventosRadar(antes: Date): Promise<number>
 }
+
+/** Radar de pirataria (0028). NUNCA IP: só a UF derivada do acesso e o id CURTO do dispositivo (8 hex). */
+export interface EventoRadar { licenca_id: string; tipo: 'instancia_recusada' | 'acesso'; uf: string | null; dispositivo: string | null; criado_em: Date }
+/** Computador que o ledger do teste grátis já barrou (degustacoes_dispositivos). `dispositivo` = 8 primeiros caracteres do HMAC. */
+export interface BarradaTeste { dispositivo: string; licenca_id: string; barradas: number; ultima_em: Date }
 
 export interface ConfigDegustacao { ativa: boolean; dias: number }
 

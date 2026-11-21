@@ -21,7 +21,7 @@
 //   clientePorEmail            SELECT clientes (id,email_compra,nome_tratamento,empresa,ramo,cadastro_em,auth_user_id) WHERE email_compra
 //   clientePorId/PorAuthUser   idem, WHERE id / auth_user_id
 //   vincularAuthUser           UPDATE clientes SET auth_user_id WHERE id AND auth_user_id IS NULL (1 instrução = atômico; 0 linhas = false)
-//   salvarCadastro             UPDATE clientes SET nome_tratamento,empresa,ramo,cadastro_em WHERE id AND cadastro_em IS NULL
+//   salvarCadastro             UPDATE clientes SET nome_tratamento,empresa,ramo,cidade,uf,cadastro_em WHERE id AND cadastro_em IS NULL
 //   reabrirCadastro            UPDATE clientes SET cadastro_em=NULL WHERE id
 //   licencaDoCliente/PorId     SELECT licencas (11 colunas seguras, sem plano_valor/criada_em)
 //   salvarLicenca              UPDATE licencas SET <campos> WHERE id
@@ -67,12 +67,15 @@
 //   marcarSessaoPaga           UPDATE sessoes_checkout SET paga,paga_em WHERE sessao_id; se 0 linhas, INSERT (2 passos, com retry no 23505)
 //   sessaoPorId                SELECT sessoes_checkout (conta_gateway_id,sessao_id,email,paga) WHERE sessao_id
 //   listarClientes/Licencas    SELECT paginado (mesmas colunas seguras acima)
-//   listarPagamentos           SELECT paginado só (licenca_id,tipo,valor,status,pago_em); gateway_ref/pi/conta saem vazios (painel nunca vê)
+//   listarPagamentos           SELECT paginado só (licenca_id,tipo,valor,status,pago_em,segmento); gateway_ref/pi/conta saem vazios (painel nunca vê)
 //   listarAtivacoes            SELECT paginado SEM token_hash (sai null)
 //   listarTrocas               SELECT paginado trocas_computador
 //   ocorrenciasAbertas         SELECT ocorrencias_admin WHERE NOT resolvida ORDER BY criada_em DESC LIMIT n
 //   resolverOcorrencia         UPDATE ocorrencias_admin SET resolvida,resolvida_por,resolvida_em WHERE id AND NOT resolvida RETURNING id
 //   entregasRecentes/DaLicenca/PorMarca   SELECT entregas_kit (licenca_id,obra_id,marca_dagua,baixado_em) ORDER BY baixado_em DESC
+//   registrarEventoRadar / eventosRadar / limparEventosRadar   INSERT / SELECT / DELETE radar_eventos (0028; nunca IP: só UF e dispositivo curto)
+//   barradasDeTeste            SELECT degustacoes_dispositivos (dispositivo_hmac,licenca_id,barradas,ultima_barrada_em) WHERE barradas>=n; só 8 chars do HMAC saem
+//   baixasRadar / baixarSinalRadar   SELECT / UPSERT radar_baixas (0028)
 //
 // ── Carregador do kit ──
 // Bucket PRIVADO (ATLAS_KIT_BUCKET, padrão 'kit'). Layout: 'base/...' (comum a todas as obras) e '<obra_id>/...' (da obra);
@@ -121,20 +124,20 @@ async function ler(mk: () => any, limite = Infinity): Promise<any[]> {
 }
 
 // Colunas lidas (só o que o servidor precisa).
-const C_CLIENTE = 'id,email_compra,nome_tratamento,empresa,ramo,cadastro_em,auth_user_id,excluido_em'
-const C_LICENCA = 'id,cliente_id,status,pausa_prevista_em,troca_liberada_em,comprada_em,avisos_atraso,conta_gateway_id,gateway_cliente_ref,gateway_assinatura_ref,mensalidade_encerra_em,tipo,origem,validade_em'
+const C_CLIENTE = 'id,email_compra,nome_tratamento,empresa,ramo,cadastro_em,auth_user_id,excluido_em,cidade,uf'
+const C_LICENCA = 'id,cliente_id,status,pausa_prevista_em,troca_liberada_em,comprada_em,avisos_atraso,conta_gateway_id,gateway_cliente_ref,gateway_assinatura_ref,mensalidade_encerra_em,tipo,origem,validade_em,cancelada_em'
 const C_ATIVACAO = 'id,licenca_id,computador_hash,token_hash,ativo,ativado_em,desativado_em'
 const C_ATIVACAO_ADMIN = 'id,licenca_id,computador_hash,ativo,ativado_em,desativado_em'
 const C_PAGAMENTO = 'licenca_id,conta_gateway_id,tipo,valor,status,gateway_ref,gateway_pi,pago_em,segmento'
 const C_ENTREGA = 'licenca_id,obra_id,marca_dagua,baixado_em'
 const C_OCORRENCIA = 'id,cliente_id,tipo,descricao,autor,resolvida,criada_em,resolvida_por,resolvida_em,chave'
 
-const cliente = (r: any) => r && { id: r.id, email_compra: r.email_compra, nome_tratamento: r.nome_tratamento, empresa: r.empresa, ramo: r.ramo, cadastro_em: dt(r.cadastro_em), auth_user_id: r.auth_user_id, excluido_em: dt(r.excluido_em) }
+const cliente = (r: any) => r && { id: r.id, email_compra: r.email_compra, nome_tratamento: r.nome_tratamento, empresa: r.empresa, ramo: r.ramo, cadastro_em: dt(r.cadastro_em), auth_user_id: r.auth_user_id, excluido_em: dt(r.excluido_em), cidade: r.cidade ?? null, uf: r.uf ?? null }
 const licenca = (r: any) => r && {
   id: r.id, cliente_id: r.cliente_id, status: r.status, pausa_prevista_em: dt(r.pausa_prevista_em), troca_liberada_em: dt(r.troca_liberada_em),
   comprada_em: dt(r.comprada_em), avisos_atraso: r.avisos_atraso ?? 0, conta_gateway_id: r.conta_gateway_id ?? null,
   gateway_cliente_ref: r.gateway_cliente_ref ?? null, gateway_assinatura_ref: r.gateway_assinatura_ref ?? null, mensalidade_encerra_em: dt(r.mensalidade_encerra_em),
-  tipo: r.tipo === 'cortesia' ? 'cortesia' : 'paga', origem: r.origem === 'degustacao' ? 'degustacao' : null, validade_em: dt(r.validade_em),
+  tipo: r.tipo === 'cortesia' ? 'cortesia' : 'paga', origem: r.origem === 'degustacao' ? 'degustacao' : null, validade_em: dt(r.validade_em), cancelada_em: dt(r.cancelada_em),
 }
 const ativacao = (r: any) => r && { id: r.id, licenca_id: r.licenca_id, computador_hash: r.computador_hash, token_hash: r.token_hash ?? null, ativo: r.ativo, ativado_em: new Date(r.ativado_em), desativado_em: dt(r.desativado_em) }
 const pagamento = (r: any) => r && { licenca_id: r.licenca_id, conta_gateway_id: r.conta_gateway_id ?? '', tipo: r.tipo, valor: Number(r.valor), status: r.status, gateway_ref: r.gateway_ref ?? '', gateway_pi: r.gateway_pi ?? null, pago_em: dt(r.pago_em), segmento: r.segmento ?? null }
@@ -167,8 +170,8 @@ export function criarStoreSupabase() {
       const r = ok(await t('clientes').update({ auth_user_id: authUserId }).eq('id', clienteId).is('auth_user_id', null).select('id'), 'vincularAuthUser')
       return r.length === 1
     },
-    async salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string }, quando: Date) {
-      const r = ok(await t('clientes').update({ nome_tratamento: c.nome, empresa: c.empresa, ramo: c.ramo, cadastro_em: iso(quando) }).eq('id', clienteId).is('cadastro_em', null).select('id'), 'salvarCadastro')
+    async salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string; cidade?: string | null; uf?: string | null }, quando: Date) {
+      const r = ok(await t('clientes').update({ nome_tratamento: c.nome, empresa: c.empresa, ramo: c.ramo, cidade: c.cidade ?? null, uf: c.uf ?? null, cadastro_em: iso(quando) }).eq('id', clienteId).is('cadastro_em', null).select('id'), 'salvarCadastro')
       return r.length === 1
     },
     async reabrirCadastro(clienteId: string) { ok(await t('clientes').update({ cadastro_em: null }).eq('id', clienteId), 'reabrirCadastro') },
@@ -359,7 +362,7 @@ export function criarStoreSupabase() {
     async listarClientes() { return (await ler(() => t('clientes').select(C_CLIENTE).order('id'))).map(cliente) },
     async listarLicencas() { return (await ler(() => t('licencas').select(C_LICENCA).order('id'))).map(licenca) },
     async listarPagamentos() {
-      return (await ler(() => t('pagamentos').select('licenca_id,tipo,valor,status,pago_em').order('id'))).map(pagamento) // sem gateway_ref/pi/conta
+      return (await ler(() => t('pagamentos').select('licenca_id,tipo,valor,status,pago_em,segmento').order('id'))).map(pagamento) // sem gateway_ref/pi/conta (segmento não é sensível: diz só qual app pronto)
     },
     async listarAtivacoes() { return (await ler(() => t('ativacoes').select(C_ATIVACAO_ADMIN).order('id'))).map(ativacao) }, // sem token_hash
     async listarTrocas() { return (await ler(() => t('trocas_computador').select('licenca_id,de_hash,para_hash,feita_em,por_admin').order('feita_em').order('id'))).map(troca) },
@@ -374,6 +377,20 @@ export function criarStoreSupabase() {
     async entregasDaLicenca(licencaId: string, limite: number) {
       return (await ler(() => t('entregas_kit').select(C_ENTREGA).eq('licenca_id', licencaId).order('baixado_em', { ascending: false }).order('id'), limite)).map(entrega)
     },
+    // ── Radar de pirataria (M33): só aviso, nada aqui mexe em licença ──
+    async registrarEventoRadar(e: any) { ok(await t('radar_eventos').insert({ licenca_id: e.licenca_id, tipo: e.tipo, uf: e.uf ?? null, dispositivo: e.dispositivo ?? null, criado_em: iso(e.criado_em) }), 'registrarEventoRadar') },
+    async eventosRadar(desde: Date) {
+      return (await ler(() => t('radar_eventos').select('licenca_id,tipo,uf,dispositivo,criado_em').gte('criado_em', desde.toISOString()).order('criado_em').order('id'), 50000)).map((r: any) => ({ licenca_id: r.licenca_id, tipo: r.tipo, uf: r.uf ?? null, dispositivo: r.dispositivo ?? null, criado_em: new Date(r.criado_em) }))
+    },
+    async barradasDeTeste(desde: Date, minimo: number) {
+      const l = await ler(() => t('degustacoes_dispositivos').select('dispositivo_hmac,licenca_id,barradas,ultima_barrada_em').gte('barradas', minimo).gte('ultima_barrada_em', desde.toISOString()).order('id'), 5000)
+      return l.map((r: any) => ({ dispositivo: String(r.dispositivo_hmac).slice(0, 8), licenca_id: r.licenca_id, barradas: r.barradas, ultima_em: new Date(r.ultima_barrada_em) })) // nunca o HMAC inteiro
+    },
+    async baixasRadar() { return (await ler(() => t('radar_baixas').select('sinal_id,resolvida_em').order('sinal_id'), 20000)).map((r: any) => ({ sinal_id: r.sinal_id, resolvida_em: new Date(r.resolvida_em) })) },
+    async baixarSinalRadar(id: string, por: string, quando: Date) {
+      ok(await t('radar_baixas').upsert({ sinal_id: id, resolvida_por: por, resolvida_em: iso(quando) }, { onConflict: 'sinal_id' }), 'baixarSinalRadar')
+    },
+    async limparEventosRadar(antes: Date) { return ok(await t('radar_eventos').delete().lt('criado_em', antes.toISOString()).select('id'), 'limparEventosRadar').length },
     async entregasPorMarca(marca: string) { return (await ler(() => t('entregas_kit').select(C_ENTREGA).eq('marca_dagua', marca).order('baixado_em', { ascending: false }).order('id'))).map(entrega) },
   }
 }
