@@ -22,6 +22,7 @@ export interface LinhaCliente {
   tipo?: 'paga' | 'cortesia'; validade_em?: string | null
 }
 export interface ItemAtencao { id: string; tipo: string; quem: string; oque: string; quando: string; licenca_id: string | null; dominio_sugerido?: string }
+export interface CortesiaAtiva { email: string; nome: string; validade_em: string }
 export interface DominioBloqueado { dominio: string; motivo: string; criado_em: string }
 export interface PainelAdmin { gerado_em: string; indicadores: IndicadoresAdmin; atencao: ItemAtencao[]; clientes: LinhaCliente[] }
 export interface LinhaEntrega { licenca_id: string; cliente: string; obra_id: string; marca_dagua: string; baixado_em: string }
@@ -70,6 +71,8 @@ export interface AdminApi {
   resolverOcorrencia(id: string): Promise<Resp>
   /** Libera (ou renova) uma cortesia. `validadeEm` é um instante ISO; o servidor valida tudo de novo. */
   liberarCortesia(email: string, validadeEm: string, nome?: string): Promise<Resp<{ nova: boolean; validade_em: string; email_enviado: boolean }>>
+  /** Cortesias em vigor (não vencidas), para estender o prazo. */
+  listarCortesias(): Promise<Resp<{ cortesias: CortesiaAtiva[] }>>
   /** Reenvia o e-mail da cortesia (novo link de instalação). Erro claro se não houver cortesia ativa para o e-mail. */
   reenviarCortesia(email: string): Promise<Resp<{ email_enviado: boolean }>>
   /** Teste grátis: sem argumentos só lê; com `ativa`/`dias` liga, desliga ou ajusta (1 a 30 dias). O servidor valida de novo. */
@@ -195,6 +198,7 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       if (!EMAIL_RE.test(e)) return Promise.resolve({ ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' })
       return servidor<{ nova: boolean; validade_em: string; email_enviado: boolean }>('/admin/cortesia', { email: e, validade_em: validadeEm, ...(nome?.trim() ? { nome: nome.trim() } : {}) })
     },
+    listarCortesias: () => servidor<{ cortesias: CortesiaAtiva[] }>('/admin/cortesias'),
     reenviarCortesia(email) {
       const e = email.trim().toLowerCase()
       if (!EMAIL_RE.test(e)) return Promise.resolve({ ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' })

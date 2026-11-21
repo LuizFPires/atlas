@@ -18,7 +18,7 @@ import { processarWebhook } from './pagamento/webhook.ts'
 import { lerPersonalizacao, salvarPersonalizacaoDoPortal } from './personalizacao.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
 import { adicionarDominio, auditarDegustacao, configDegustacaoAdmin, confirmarDegustacao, listarDominios, removerDominio, type DepsDegustacao, estadoDegustacao, pedirDegustacao } from './degustacao.ts'
-import { adminLogado, fluxoCaixa, liberarCortesia, type DepsAdmin, euAdmin, liberarTrocaUrgente, mapa, painel, reenviarCortesia, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
+import { adminLogado, fluxoCaixa, liberarCortesia, listarCortesias, type DepsAdmin, euAdmin, liberarTrocaUrgente, mapa, painel, reenviarCortesia, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
 import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, excluirConta, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
 
 export interface Contexto {
@@ -104,6 +104,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await verEntregas(ctx.admin, jwt, { licenca_id: o.licenca_id, marca: o.marca }))
         case '/admin/cortesia':
           return json(await liberarCortesia(ctx.admin, jwt, { email: o.email, validade_em: o.validade_em, nome: o.nome }))
+        case '/admin/cortesias':
+          return json(await listarCortesias(ctx.admin, jwt))
         case '/admin/cortesia/reenviar':
           return json(await reenviarCortesia(ctx.admin, jwt, { email: o.email }))
         case '/admin/degustacao':

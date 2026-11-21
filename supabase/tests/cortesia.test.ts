@@ -79,6 +79,41 @@ describe('cortesia — liberar pelo painel', () => {
   })
 })
 
+describe('cortesia — listar e estender', () => {
+  const listar = (a: Awaited<ReturnType<typeof montarAdmin>>, jwt = JWT_LUIZ) => chamar(a.ctx({ admin: a.admin }), '/admin/cortesias', jwt)
+
+  it('lista só as cortesias em vigor (exclui vencida, paga e cancelada) e só com e-mail, nome e validade', async () => {
+    const a = await montarAdmin()
+    await a.liberar({ email: 'vigor@x.com', validade_em: a.em(10), nome: 'Vigor' })
+    await a.liberar({ email: 'vencida@x.com', validade_em: a.em(5) })
+    await a.liberar({ email: 'cancelada@x.com', validade_em: a.em(5) })
+    const cli = (e: string) => a.store.clientes.find((c) => c.email_compra === e)!
+    const lic = (e: string) => a.store.licencas.find((l) => l.cliente_id === cli(e).id)!
+    lic('vencida@x.com').validade_em = new Date(a.deps.agora().getTime() - 1000)
+    lic('cancelada@x.com').status = 'cancelada'
+    const r = await listar(a)
+    expect(r.status).toBe(200)
+    const corpo = await r.json()
+    expect(corpo.cortesias).toEqual([{ email: 'vigor@x.com', nome: 'Vigor', validade_em: a.em(10) }])
+    expect(Object.keys(corpo.cortesias[0]).sort()).toEqual(['email', 'nome', 'validade_em'])
+  })
+
+  it('não-admin recebe 403', async () => {
+    const a = await montarAdmin()
+    expect((await listar(a, JWT_ANA)).status).toBe(403)
+  })
+
+  it('estender (liberar de novo) muda só a validade e a lista mostra a nova data', async () => {
+    const a = await montarAdmin()
+    await a.liberar({ email: 'amigo@x.com', validade_em: a.em(5) })
+    const n = a.store.licencas.length
+    const r = await a.liberar({ email: 'amigo@x.com', validade_em: a.em(12) })
+    expect((await r.json()).nova).toBe(false)
+    expect(a.store.licencas).toHaveLength(n)
+    expect((await (await listar(a)).json()).cortesias).toEqual([expect.objectContaining({ email: 'amigo@x.com', validade_em: a.em(12) })])
+  })
+})
+
 describe('cortesia — e-mail com link de instalação', () => {
   type Envio = { email: string; token: string; expira_em: Date; validade_em: Date }
   async function comEmail(falha = false) {
