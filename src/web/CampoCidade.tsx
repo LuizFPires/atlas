@@ -37,7 +37,7 @@ export function CampoCidade({ valor, uf, onDigitar, onEscolher }: Props) {
   const teclas = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') { setAberta(false); return }
     if (!sugestoes.length) return
-    if (e.key === 'ArrowDown') { e.preventDefault(); setAberta(true); setAtiva((a) => (a + 1) % sugestoes.length) }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setAberta(true); if (mostrar) setAtiva((a) => (a + 1) % sugestoes.length) }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setAtiva((a) => (a - 1 + sugestoes.length) % sugestoes.length) }
     else if (e.key === 'Enter' && mostrar) { e.preventDefault(); escolher(sugestoes[Math.min(ativa, sugestoes.length - 1)]) }
   }

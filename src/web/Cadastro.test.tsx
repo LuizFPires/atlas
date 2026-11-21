@@ -11,10 +11,15 @@ const montar = (onEnviar = vi.fn(async () => ({ ok: true }) as const)) => {
   return onEnviar
 }
 
-test('tem as 4 perguntas, cada uma com microfone', () => {
+const escolherCidade = async (digitar: string, opcao: string) => {
+  await userEvent.type(screen.getByLabelText(/De qual cidade/), digitar)
+  await userEvent.click(await screen.findByRole('option', { name: opcao }))
+}
+
+test('tem as 5 perguntas, cada uma com microfone', () => {
   montar()
-  for (const r of [/Como o Atlas vai te chamar/, /nome da sua empresa/, /O que a sua empresa faz/, /Qual o seu e-mail/]) expect(screen.getByLabelText(r)).toBeInTheDocument()
-  expect(screen.getAllByRole('button', { name: 'Falar' })).toHaveLength(4)
+  for (const r of [/Como o Atlas vai te chamar/, /nome da sua empresa/, /O que a sua empresa faz/, /De qual cidade/, /Qual o seu e-mail/]) expect(screen.getByLabelText(r)).toBeInTheDocument()
+  expect(screen.getAllByRole('button', { name: 'Falar' })).toHaveLength(5)
 })
 
 test('a transcrição é editável: o texto falado cai no campo e dá para mudar', async () => {
@@ -48,7 +53,11 @@ test('valida antes de enviar e mostra a tela de e-mail depois de enviar', async 
   await userEvent.type(screen.getByLabelText(/O que a sua empresa faz/), 'Barbearia')
   await userEvent.type(screen.getByLabelText(/Qual o seu e-mail/), 'ze@barbearia.com.br')
   await userEvent.click(screen.getByRole('button', { name: /Receber meu acesso/ }))
-  await waitFor(() => expect(onEnviar).toHaveBeenCalledWith({ nome: 'Zé', empresa: '', faz: 'Barbearia', email: 'ze@barbearia.com.br' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(/de qual cidade você é/i)
+  expect(onEnviar).not.toHaveBeenCalled()
+  await escolherCidade('campinas', 'Campinas – SP')
+  await userEvent.click(screen.getByRole('button', { name: /Receber meu acesso/ }))
+  await waitFor(() => expect(onEnviar).toHaveBeenCalledWith({ nome: 'Zé', empresa: '', faz: 'Barbearia', cidade: 'Campinas', uf: 'SP', email: 'ze@barbearia.com.br' }))
   expect(await screen.findByRole('status')).toHaveTextContent(/Olhe o seu e-mail/)
 })
 
@@ -69,6 +78,7 @@ test('o tela de sucesso mostra o e-mail REAL da compra (mascarado) devolvido pel
   montar(onEnviar)
   await userEvent.type(screen.getByLabelText(/Como o Atlas vai te chamar/), 'Zé')
   await userEvent.type(screen.getByLabelText(/O que a sua empresa faz/), 'Barbearia')
+  await escolherCidade('campinas', 'Campinas – SP')
   await userEvent.type(screen.getByLabelText(/Qual o seu e-mail/), 'outro@x.com')
   await userEvent.click(screen.getByRole('button', { name: /Receber meu acesso/ }))
   const s = await screen.findByRole('status')
@@ -88,16 +98,42 @@ test('fala vira e-mail', () => {
 
 test('enviarCadastro manda as respostas ao POST /cadastro', async () => {
   const f = vi.fn(async () => new Response('{"ok":true}', { status: 200 }))
-  const r = await enviarCadastro({ nome: 'Zé', empresa: 'B', faz: 'corte', email: 'ze@b.com' }, { api: 'https://api.test/fn' }, f as unknown as typeof fetch, 'cs_test_a1B2c3D4e5')
+  const r = await enviarCadastro({ nome: 'Zé', empresa: 'B', faz: 'corte', cidade: 'Campinas', uf: 'SP', email: 'ze@b.com' }, { api: 'https://api.test/fn' }, f as unknown as typeof fetch, 'cs_test_a1B2c3D4e5')
   expect(r).toMatchObject({ ok: true })
   const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]
   expect(url).toBe('https://api.test/fn/cadastro')
-  expect(JSON.parse(init.body as string)).toEqual({ session_id: 'cs_test_a1B2c3D4e5', nome: 'Zé', empresa: 'B', ramo: 'corte', email: 'ze@b.com' })
-  expect((await enviarCadastro({ nome: 'a', empresa: '', faz: 'b', email: 'c@d.e' }, null)).ok).toBe(false)
+  expect(JSON.parse(init.body as string)).toEqual({ session_id: 'cs_test_a1B2c3D4e5', nome: 'Zé', empresa: 'B', ramo: 'corte', cidade: 'Campinas', uf: 'SP', email: 'ze@b.com' })
+  expect((await enviarCadastro({ nome: 'a', empresa: '', faz: 'b', cidade: 'X', uf: 'SP', email: 'c@d.e' }, null)).ok).toBe(false)
   // sem session_id nem chama o servidor; resposta 202 (Pix pendente) não é sucesso
   const g = vi.fn()
-  expect((await enviarCadastro({ nome: 'a', empresa: '', faz: 'b', email: 'c@d.e' }, { api: 'https://api.test/fn' }, g as unknown as typeof fetch, '')).ok).toBe(false)
+  expect((await enviarCadastro({ nome: 'a', empresa: '', faz: 'b', cidade: 'X', uf: 'SP', email: 'c@d.e' }, { api: 'https://api.test/fn' }, g as unknown as typeof fetch, '')).ok).toBe(false)
   expect(g).not.toHaveBeenCalled()
   const pend = vi.fn(async () => new Response('{"ok":false,"pendente":true,"mensagem":"espere"}', { status: 202 }))
-  expect(await enviarCadastro({ nome: 'a', empresa: '', faz: 'b', email: 'c@d.e' }, { api: 'https://api.test/fn' }, pend as unknown as typeof fetch, 'cs_test_a1B2c3D4e5')).toEqual({ ok: false, mensagem: 'espere' })
+  expect(await enviarCadastro({ nome: 'a', empresa: '', faz: 'b', cidade: 'X', uf: 'SP', email: 'c@d.e' }, { api: 'https://api.test/fn' }, pend as unknown as typeof fetch, 'cs_test_a1B2c3D4e5')).toEqual({ ok: false, mensagem: 'espere' })
+})
+
+test('cidade: digitar sem acento acha a sugestão, setas + Enter escolhem e a UF aparece; Esc fecha', async () => {
+  montar()
+  const campo = screen.getByLabelText(/De qual cidade/)
+  await userEvent.type(campo, 'sao paulo')
+  expect(await screen.findByRole('option', { name: 'São Paulo – SP' })).toBeInTheDocument()
+  await userEvent.keyboard('{Escape}')
+  expect(screen.queryByRole('option')).not.toBeInTheDocument()
+  await userEvent.keyboard('{ArrowDown}{Enter}')
+  expect(campo).toHaveValue('São Paulo')
+  expect(screen.getByLabelText('Estado: SP')).toBeInTheDocument()
+  // mexer no texto desfaz o estado: precisa escolher de novo
+  await userEvent.type(campo, 'x')
+  expect(screen.queryByLabelText(/Estado:/)).not.toBeInTheDocument()
+})
+
+test('cidade que não existe: avisa com gentileza e não deixa enviar sem escolher da lista', async () => {
+  const onEnviar = montar()
+  await userEvent.type(screen.getByLabelText(/De qual cidade/), 'zzzzqq')
+  expect(await screen.findByText(/Não achei essa cidade/)).toBeInTheDocument()
+  await userEvent.type(screen.getByLabelText(/Como o Atlas vai te chamar/), 'Zé')
+  await userEvent.type(screen.getByLabelText(/O que a sua empresa faz/), 'Barbearia')
+  await userEvent.click(screen.getByRole('button', { name: /Receber meu acesso/ }))
+  expect(await screen.findByRole('alert')).toHaveTextContent(/escolha a sua cidade na lista/i)
+  expect(onEnviar).not.toHaveBeenCalled()
 })

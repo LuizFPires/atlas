@@ -37,6 +37,8 @@ export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onE
     setErro('')
     if (!d.nome.trim()) return setErro('Diga como o Atlas vai te chamar.')
     if (!d.faz.trim()) return setErro('Conte, com as suas palavras, o que a sua empresa faz.')
+    if (!d.cidade.trim()) return setErro('Diga de qual cidade você é — ajuda a gente a te atender melhor.')
+    if (!d.uf) return setErro('Não consegui achar o estado. Escolha a sua cidade na lista que aparece embaixo do campo, que o estado vem junto.')
     if (!EMAIL_RE.test(d.email.trim())) return setErro('Confira o e-mail: ele precisa ter um @ e um final, como .com.br.')
     setEnviando(true)
     const r = await onEnviar({ nome: d.nome.trim(), empresa: d.empresa.trim(), faz: d.faz.trim(), cidade: d.cidade.trim(), uf: d.uf, email: d.email.trim().toLowerCase() })
