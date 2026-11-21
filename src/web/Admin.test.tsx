@@ -34,8 +34,7 @@ function ambiente(extra: (url: string, init: RequestInit) => Response | undefine
     chamadas.push({ url, init })
     const o = extra(url, init)
     if (o) return o
-    if (url.endsWith('/otp')) return resp({})
-    if (url.endsWith('/verify')) return resp({ access_token: 'jwt-luiz' })
+    if (url.includes('/token?grant_type=password')) return resp({ access_token: 'jwt-luiz' })
     if (url.endsWith('/admin/eu')) return resp({ email: 'luiz@atlas.com' })
     if (url.endsWith('/admin/painel')) return resp(PAINEL)
     if (url.endsWith('/admin/liberar-troca')) return resp({ ok: true, ja_liberada: false })
@@ -48,34 +47,41 @@ const montar = (api: ReturnType<typeof criarAdminApi>) => render(<TemaProvider><
 
 async function entrar() {
   await userEvent.type(screen.getByLabelText(/Seu e-mail de administrador/), 'luiz@atlas.com')
-  await userEvent.click(screen.getByRole('button', { name: /Receber o código/ }))
-  await userEvent.type(await screen.findByLabelText(/Código que chegou/), '123456')
+  await userEvent.type(screen.getByLabelText('Senha'), 'segredo-teste')
   await userEvent.click(screen.getByRole('button', { name: /^Entrar/ }))
 }
 
 beforeEach(() => sessionStorage.clear())
 
 describe('painel do admin (F16)', () => {
-  it('login com código, sem criar usuário novo; as chamadas levam só o token', async () => {
+  it('login com e-mail e senha; as chamadas levam só o token', async () => {
     const { api, chamadas } = ambiente()
     montar(api)
     expect(screen.getByRole('heading', { name: 'Entrar no painel' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Falar' })).toBeInTheDocument()
     await entrar()
     expect(await screen.findByRole('heading', { name: 'Visão geral' })).toBeInTheDocument()
-    expect(JSON.parse(String(chamadas.find((c) => c.url.endsWith('/otp'))!.init.body))).toMatchObject({ create_user: false })
+    expect(JSON.parse(String(chamadas.find((c) => c.url.includes('grant_type=password'))!.init.body))).toMatchObject({ email: 'luiz@atlas.com', password: 'segredo-teste' })
     const painel = chamadas.find((c) => c.url.endsWith('/admin/painel'))!
     expect(painel.init.headers).toMatchObject({ Authorization: 'Bearer jwt-luiz' })
     expect(painel.init.body).toBe('{}')
     expect(sessionStorage.getItem(CHAVE_SESSAO_ADMIN)).toBe('jwt-luiz')
   })
 
-  it('cliente comum que entra com código válido é barrado pelo servidor (403) e a sessão é descartada', async () => {
+  it('e-mail fora da lista, mesmo com senha certa, é barrado pelo servidor (403) e a sessão é descartada', async () => {
     const { api } = ambiente((url) => (url.endsWith('/admin/eu') ? resp({ erro: 'sem_acesso', mensagem: 'Esta área é só do administrador do Atlas.' }, 403) : undefined))
     montar(api)
     await entrar()
     expect(await screen.findByRole('alert')).toHaveTextContent('só do administrador')
     expect(screen.queryByRole('heading', { name: 'Visão geral' })).toBeNull()
+    expect(sessionStorage.getItem(CHAVE_SESSAO_ADMIN)).toBeNull()
+  })
+
+  it('e-mail ou senha errados mostram o erro e não guardam sessão', async () => {
+    const { api } = ambiente((url) => (url.includes('grant_type=password') ? resp({ error: 'invalid_grant' }, 400) : undefined))
+    montar(api)
+    await entrar()
+    expect(await screen.findByRole('alert')).toHaveTextContent('E-mail ou senha incorretos.')
     expect(sessionStorage.getItem(CHAVE_SESSAO_ADMIN)).toBeNull()
   })
 

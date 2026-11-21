@@ -1,4 +1,4 @@
-// Painel do administrador (F16) — cliente da API. Só o Luiz usa. O login é o mesmo do Atlas (Supabase Auth, código por e-mail),
+// Painel do administrador (F16) — cliente da API. Só o Luiz usa. O login é o mesmo do Atlas (Supabase Auth, e-mail + senha),
 // mas QUEM é admin é decidido no servidor (JWT validado + lista ATLAS_ADMIN_EMAILS): esconder o link aqui não protege nada.
 // A sessão fica só nesta aba e em chave própria (a do portal do cliente nunca abre o painel).
 import { configPortal, type ConfigPortal, type Resp } from './portal-api'
@@ -26,8 +26,8 @@ export interface LinhaCadastro { licenca_id: string; nome: string; empresa: stri
 
 export interface AdminApi {
   logado(): boolean
-  pedirCodigoLogin(email: string): Promise<Resp>
-  entrar(email: string, codigo: string): Promise<Resp>
+  /** Login por e-mail + senha (Supabase Auth, password grant). A allowlist continua valendo no servidor. */
+  entrar(email: string, senha: string): Promise<Resp>
   /** O servidor confirma que este login é de administrador (senão: 403 e a sessão é descartada). */
   eu(): Promise<Resp<{ email: string }>>
   painel(): Promise<Resp<{ painel: PainelAdmin }>>
@@ -73,25 +73,17 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
   }
   return {
     logado: () => token !== '',
-    async pedirCodigoLogin(email) {
+    async entrar(email, senha) {
       const e = email.trim().toLowerCase()
       if (!EMAIL_RE.test(e)) return { ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' }
+      if (!senha) return { ok: false, mensagem: 'Digite a sua senha.' }
       if (!cfg) return { ok: false, mensagem: MSG_OFF }
       try {
-        // create_user:false — o painel nunca cria usuário novo no Auth.
-        const { r } = await auth('/otp', { email: e, create_user: false })
-        if (r.status === 429) return { ok: false, mensagem: 'Códigos demais. Espere uns minutos e tente de novo.' }
-        return r.ok ? { ok: true } : { ok: false, mensagem: 'Não deu para mandar o código agora. Tente de novo em instantes.' }
-      } catch { return { ok: false, mensagem: MSG_REDE } }
-    },
-    async entrar(email, codigo) {
-      const c = codigo.replace(/\s+/g, '')
-      if (!/^\d{6,8}$/.test(c)) return { ok: false, mensagem: 'O código tem 6 números. Confira o e-mail.' }
-      if (!cfg) return { ok: false, mensagem: MSG_OFF }
-      try {
-        const { r, d } = await auth('/verify', { type: 'email', email: email.trim().toLowerCase(), token: c })
+        // Senha só vai no corpo desta chamada; nunca é guardada nem registrada. Quem é admin o servidor decide (allowlist) em /admin/eu.
+        const { r, d } = await auth('/token?grant_type=password', { email: e, password: senha })
+        if (r.status === 429) return { ok: false, mensagem: 'Tentativas demais. Espere uns minutos e tente de novo.' }
         const t = d.access_token
-        if (!r.ok || typeof t !== 'string') return { ok: false, mensagem: 'Código incorreto ou vencido. Peça um novo.' }
+        if (!r.ok || typeof t !== 'string') return { ok: false, mensagem: 'E-mail ou senha incorretos.' }
         token = t
         guardar(t)
         return { ok: true }

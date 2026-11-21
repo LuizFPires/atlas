@@ -67,39 +67,34 @@ export function Admin({ api }: { api: AdminApi }) {
 
 function Entrada({ api, aviso, onEntrou }: { api: AdminApi; aviso: string; onEntrou: (email: string) => void }) {
   const [email, setEmail] = useState('')
-  const [codigo, setCodigo] = useState('')
-  const [etapa, setEtapa] = useState<'email' | 'codigo'>('email')
+  const [senha, setSenha] = useState('')
   const [erro, setErro] = useState(aviso)
   const [ocupado, setOcupado] = useState(false)
 
-  const pedir = async (ev: React.FormEvent) => {
-    ev.preventDefault(); setErro(''); setOcupado(true)
-    const r = await api.pedirCodigoLogin(email)
-    setOcupado(false)
-    if (r.ok) setEtapa('codigo'); else setErro(r.mensagem)
-  }
   const confirmar = async (ev: React.FormEvent) => {
     ev.preventDefault(); setErro(''); setOcupado(true)
-    const r = await api.entrar(email, codigo)
+    const r = await api.entrar(email, senha)
     if (!r.ok) { setOcupado(false); setErro(r.mensagem); return }
     const eu = await api.eu() // o servidor decide se é admin; se não for, a sessão já cai
-    setOcupado(false)
+    setOcupado(false); setSenha('')
     if (eu.ok) onEntrou(eu.email); else setErro(eu.mensagem)
   }
   return (
     <div className="ad-solo">
-      <form className="ad-login" onSubmit={etapa === 'email' ? pedir : confirmar} noValidate>
+      <form className="ad-login" onSubmit={confirmar} noValidate>
         <div className="ad-marca"><Monograma fundo="escuro" largura={40} altura={22} /><NomeAtlas fundo="escuro" largura={96} altura={14} /></div>
         <span className="ad-rotulo-lime">ADMINISTRADOR</span>
         <h1>Entrar no painel</h1>
-        {etapa === 'email' ? (
-          <CampoFalado rotulo="Seu e-mail de administrador" type="email" autoComplete="email" valor={email} onChange={setEmail} placeholder="voce@atlas.com.br" juntar={juntarFalaEmail} />
-        ) : (
-          <CampoFalado rotulo="Código que chegou no e-mail" valor={codigo} onChange={(v) => setCodigo(v.replace(/[^\d\s]/g, ''))} placeholder="000000" autoComplete="one-time-code" />
-        )}
+        <CampoFalado rotulo="Seu e-mail de administrador" type="email" autoComplete="email" valor={email} onChange={setEmail} placeholder="voce@atlas.com.br" juntar={juntarFalaEmail} />
+        <div className="at-campo">
+          <label htmlFor="ad-senha" className="at-campo-rotulo">Senha</label>
+          <div className="at-campo-linha">
+            <input id="ad-senha" type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+          </div>
+        </div>
         {erro && <p role="alert" className="ad-erro">{erro}</p>}
         <button type="submit" className="ad-botao ad-botao--lime" disabled={ocupado}>
-          {ocupado ? 'Um instante…' : etapa === 'email' ? <>Receber o código <Icone nome="seta" /></> : <>Entrar <Icone nome="seta" /></>}
+          {ocupado ? 'Um instante…' : <>Entrar <Icone nome="seta" /></>}
         </button>
       </form>
     </div>

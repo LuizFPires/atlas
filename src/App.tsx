@@ -3,7 +3,6 @@ import { Shell, type IdTela } from './shell/Shell'
 import { ImagemAssinatura } from './marca/Marca'
 import { Vendas } from './web/Vendas'
 import { ModalCompra } from './web/ModalCompra'
-import { BannerCookies } from './web/Cookies'
 import { Cadastro } from './web/Cadastro'
 import { PassoApp } from './web/PassoApp'
 import { criarPersonalizacaoFixture, criarPersonalizacaoPortal } from './web/personalizacao'
@@ -51,7 +50,6 @@ function PaginaVendas() {
     <>
       <Vendas onComprar={() => { setSegmento(undefined); setComprando(true) }} onComprarPronto={(s) => { setSegmento(s); setComprando(true) }} />
       <ModalCompra aberto={comprando} segmento={segmento} onFechar={() => setComprando(false)} />
-      <BannerCookies />
     </>
   )
 }

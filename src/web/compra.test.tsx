@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { BannerCookies, lerEscolha, medicaoPermitida } from './Cookies'
+import { medicaoAnonima } from './medicao'
 import { ModalCompra } from './ModalCompra'
 import { iniciarCompra } from './compra'
 
@@ -68,21 +68,9 @@ describe('consentimento (LGPD)', () => {
   })
 })
 
-describe('cookies', () => {
-  beforeEach(() => localStorage.clear())
-  test('sem escolha a medição fica desligada e a opção privada é a principal', async () => {
-    render(<BannerCookies />)
-    expect(medicaoPermitida()).toBe(false)
-    const botoes = screen.getAllByRole('button')
-    expect(botoes[0]).toHaveTextContent('Só o necessário')
-    await userEvent.click(botoes[0])
-    expect(lerEscolha()).toBe('essenciais')
-    expect(medicaoPermitida()).toBe(false)
-    expect(screen.queryByRole('region')).toBeNull()
-  })
-  test('aceitar a contagem liga a medição', async () => {
-    render(<BannerCookies />)
-    await userEvent.click(screen.getByRole('button', { name: /Aceitar a contagem/ }))
-    expect(medicaoPermitida()).toBe(true)
+describe('medição', () => {
+  test('a medição é anônima e não depende de consentimento (sem banner)', () => {
+    // Contagem agregada e cookieless: roda sob interesse legítimo (LGPD), sem pedir nada.
+    expect(medicaoAnonima()).toBe(true)
   })
 })
