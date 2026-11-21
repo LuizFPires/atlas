@@ -152,6 +152,15 @@ describe('/admin/painel — cancelamentos_no_mes', () => {
     expect(m.store.licencas.find((l) => l.id === 'l1')?.cancelada_em).toBeInstanceOf(Date)
     expect((await m.post('/admin/painel')).indicadores.cancelamentos_no_mes).toBe(2)
   })
+
+  it('vale a data do PRIMEIRO pedido: cancelar de novo não sobrescreve cancelada_em', async () => {
+    const m = await montar()
+    const primeira = new Date('2026-10-20T12:00:00Z')
+    const lic = m.store.licencas.find((l) => l.id === 'l2')!
+    lic.cancelada_em = primeira
+    await cancelarMensalidade(m.deps, 'beto@outra.com')
+    expect(m.store.licencas.find((l) => l.id === 'l2')?.cancelada_em).toEqual(primeira)
+  })
 })
 
 describe('Radar de pirataria', () => {

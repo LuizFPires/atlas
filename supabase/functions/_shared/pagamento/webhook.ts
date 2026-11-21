@@ -180,7 +180,7 @@ async function faturaFalhou(d: DepsPagamento, contaId: string, f: Obj) {
 async function assinaturaEncerrada(d: DepsPagamento, contaId: string, sub: Obj) {
   const lic = await d.store.licencaPorGateway(contaId, { assinatura: idDe(sub) })
   if (!lic || lic.status === 'cancelada') return
-  await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada', pausa_prevista_em: null, cancelada_em: d.agora() }, { status_diferente: 'cancelada' })
+  await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada', pausa_prevista_em: null, cancelada_em: lic.cancelada_em ?? d.agora() }, { status_diferente: 'cancelada' }) // vale o PRIMEIRO pedido
 }
 
 async function estornado(d: DepsPagamento, contaId: string, ch: Obj) {

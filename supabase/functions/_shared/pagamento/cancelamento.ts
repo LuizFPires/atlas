@@ -51,9 +51,9 @@ export async function cancelarMensalidade(d: DepsPagamento, email: string) {
   const emDia = lic.status === 'ativa'
   const { encerra_em } = await api.cancelarAssinatura(lic.gateway_assinatura_ref, !emDia)
   if (!emDia || !encerra_em) {
-    await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada', pausa_prevista_em: null, cancelada_em: d.agora() }, { status_diferente: 'cancelada' })
+    await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada', pausa_prevista_em: null, cancelada_em: lic.cancelada_em ?? d.agora() }, { status_diferente: 'cancelada' })
     return { ok: true, encerra_em: d.agora() }
   }
-  await d.store.atualizarLicencaSe(lic.id, { mensalidade_encerra_em: encerra_em, cancelada_em: d.agora() }, { status_diferente: 'cancelada' })
+  await d.store.atualizarLicencaSe(lic.id, { mensalidade_encerra_em: encerra_em, cancelada_em: lic.cancelada_em ?? d.agora() }, { status_diferente: 'cancelada' })
   return { ok: true, encerra_em }
 }

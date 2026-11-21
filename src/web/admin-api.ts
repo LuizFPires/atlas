@@ -49,9 +49,9 @@ export interface LinhaUf { uf: string; regiao: Regiao; clientes: number; compras
 /** Só agregado por estado (nunca IP, nome ou e-mail). `ligado:false` = o servidor ainda não guarda a região: a tela explica e NÃO inventa ponto. */
 export interface CidadeCliente { uf: string; cidade: string; clientes: number }
 /**
- * `por_cidade` é OPCIONAL: só existe quando o servidor guardar a cidade do comprador (cidade + UF derivadas do IP/checkout na hora,
- * nunca o IP cru). Hoje o servidor só captura a UF; então, no caminho real, fica `undefined` e a tela explica. A posição (lon/lat) vem da base
- * CIDADES pelo nome + UF; cidade fora da base não ganha bolha.
+ * `por_cidade` é OPCIONAL: cidade + UF vêm do CADASTRO do cliente (informadas por ele, nunca derivadas de IP; o IP cru não é guardado).
+ * Se o servidor não devolver, fica `undefined` e a tela explica. A posição (lon/lat) vem da base CIDADES pelo nome + UF; cidade fora da
+ * base não ganha bolha.
  */
 export interface MapaClientes { ligado: boolean; mensagem?: string; total: number; por_uf: LinhaUf[]; por_cidade?: CidadeCliente[]; atualizado_em: string }
 

@@ -57,7 +57,7 @@ export async function cadastrar(d: DepsCadastro, p: PedidoCadastro): Promise<Res
   const ramo = limpar(p.ramo, 300)
   const digitado = limpar(p.email, 254).toLowerCase()
   const cidadeBruta = limpar(p.cidade, 80)
-  const ufBruta = limpar(p.uf, 2)
+  const ufBruta = limpar(p.uf, 20) // não trunca: "SPX" deve ser rejeitada, não virar "SP"
   // Cidade e UF são opcionais (cadastro antigo não tinha). Se vierem, precisam ser sãs; a cidade sem UF não tem onde ficar no mapa.
   const uf = ufBruta ? ufValida(ufBruta) : null
   if (ufBruta && !uf) throw new ErroRegra('uf_invalida', 'Escolha o estado na lista.')
