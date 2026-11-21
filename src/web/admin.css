@@ -139,7 +139,10 @@
 .ad-mapa-lado { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .ad-mapa { width: 100%; height: auto; max-height: 70vh; display: block; }
 .ad-uf { stroke: var(--card); stroke-width: 1.2; stroke-linejoin: round; cursor: pointer; }
-.ad-uf:hover, .ad-uf--ativo { stroke: var(--text); stroke-width: 2; }
+.ad-uf, .ad-mapa, .ad-mapa:focus, .ad-mapa:focus-visible { outline: none; -webkit-tap-highlight-color: transparent; }
+.ad-uf:focus { outline: none; }
+.ad-uf:hover { stroke: var(--text); stroke-width: 2; }
+.ad-uf--ativo, .ad-uf--ativo:hover { stroke: var(--lime-txt); stroke-width: 3; }
 .ad-uf:focus-visible { outline: none; stroke: var(--lime-txt); stroke-width: 3; }
 .ad-mapa-caixa { position: relative; }
 .ad-mapa-zoom { position: absolute; top: 6px; right: 6px; z-index: 2; display: flex; flex-direction: column; gap: 6px; }
