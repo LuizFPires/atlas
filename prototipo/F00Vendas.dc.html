@@ -38,7 +38,7 @@
   <div style="display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center"><h2 style="margin:0;font-size:56px;line-height:1.05;letter-spacing:-0.03em">Você faz 3 passos. <span style="color:{{t.limeTxt}}">A IA faz o resto.</span></h2><span style="font-size:20px;color:{{t.mute}}">É só isso. Depois, pode ir dormir.</span></div>
   <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.5fr);gap:14px;align-items:stretch">
    <sc-for list="{{tres}}" as="p" hint-placeholder-count="3">
-    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:22px;display:flex;flex-direction:column;justify-content:center;gap:12px"><span style="width:44px;height:44px;border-radius:22px;background:{{t.lime}};color:{{t.onLime}};font:700 20px 'Geist Mono',monospace;display:flex;align-items:center;justify-content:center">{{p.n}}</span><b style="font-size:23px;line-height:1.25">{{p.nome}}</b></div>
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:22px;display:flex;flex-direction:column;justify-content:center;gap:12px"><span style="width:46px;height:46px;border-radius:23px;background:color-mix(in srgb,{{t.lime}} 14%,transparent);color:{{t.lime}};display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{p.d}}"/></svg></span><span style="font:700 11px 'Geist Mono',monospace;letter-spacing:0.12em;text-transform:uppercase;color:{{t.mute2}}">Passo {{p.n}}</span><b style="font-size:22px;line-height:1.25">{{p.nome}}</b><span style="font-size:14px;line-height:1.5;color:{{t.mute}}">{{p.apoio}}</span></div>
    </sc-for>
    <div style="background:{{t.lime}};color:{{t.onLime}};border-radius:18px;padding:22px;display:flex;gap:16px;align-items:center">
     <span style="width:56px;height:56px;flex:none;border-radius:28px;background:#141619;color:#C6F135;display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></span>
@@ -157,9 +157,9 @@ class Component extends DCLogic {
         { t: 'Ajuda a qualquer hora.', d: 'Travou? O próprio Atlas vê o que aconteceu e te guia, passo a passo.' }
       ],
       tres: [
-        { n: '1', nome: 'Mostre o que você gosta.' },
-        { n: '2', nome: 'Explique como você quer.' },
-        { n: '3', nome: 'Escolha um nome.' }
+        { n: '1', nome: 'Mostre o que você gosta.', apoio: 'Fotos, prints, um app que te inspira.', d: 'M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM7.2 10a1.8 1.8 0 1 0 3.6 0 1.8 1.8 0 1 0-3.6 0M21 16l-5-5-9 9' },
+        { n: '2', nome: 'Explique como você quer.', apoio: 'Fala ou escreve, do seu jeito.', d: 'M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3' },
+        { n: '3', nome: 'Escolha um nome.', apoio: 'Um nome pro seu app. Só isso.', d: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z' }
       ],
       exemplos: [
         { ic: '💈', nome: 'Agenda de barbearia', txt: 'Clientes marcam horário sozinhos e você vê tudo do celular.' },
