@@ -51,7 +51,8 @@ async function entrar() {
   await userEvent.click(screen.getByRole('button', { name: /^Entrar/ }))
 }
 
-beforeEach(() => sessionStorage.clear())
+beforeEach(() => { sessionStorage.clear(); localStorage.clear(); localStorage.setItem('atlas.admin.menu-recolhido', '0') }) // os testes partem do menu aberto
+const irParaAcoes = async () => { await userEvent.click(await screen.findByRole('link', { name: 'Ações' })) }
 
 describe('painel do admin (F16)', () => {
   it('login com e-mail e senha; as chamadas levam só o token', async () => {
@@ -106,7 +107,8 @@ describe('painel do admin (F16)', () => {
     expect(within(clientes).getByText('travado em: instalar e ativar')).toBeInTheDocument()
     expect(within(clientes).getByText('Atrasada')).toBeInTheDocument()
     expect(within(clientes).getByText('agora')).toBeInTheDocument()
-    const atencao = screen.getByRole('region', { name: 'Precisam de atenção' })
+    await userEvent.click(screen.getByRole('button', { name: /Precisam de atenção \(2\)/ }))
+    const atencao = screen.getByRole('dialog', { name: 'Precisam de atenção' })
     expect(within(atencao).getByText('Box Força Total')).toBeInTheDocument()
     expect(within(atencao).getByText('Salão Bella')).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(/[\u{1F300}-\u{1FAFF}]/u) // sem emoji
@@ -122,8 +124,10 @@ describe('painel do admin (F16)', () => {
     expect(screen.getByText('novembro de 2026')).toBeInTheDocument()
     expect([...document.querySelectorAll('.ad-info-nome')].map((n) => n.textContent)).toEqual(['Clientes ativos', 'Receita recorrente (MRR)', 'Ticket médio'])
     expect([...document.querySelectorAll('.ad-kpi-nome')].map((n) => n.textContent)).toEqual(['Ativações no mês', 'Inadimplência', 'Cancelamentos no mês', 'Clientes travados'])
-    expect(screen.getByText('PRECISAM DE ATENÇÃO')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Precisam de atenção \(2\)/ })).toBeInTheDocument()
     expect(screen.getByText('CLIENTES')).toBeInTheDocument()
+    expect([...document.querySelectorAll('.ad-item')].map((n) => n.getAttribute('aria-label'))).toEqual(['Visão geral', 'Fluxo de caixa', 'Ações', 'Entregas e marca d’água'])
+    expect(screen.queryByRole('link', { name: 'Cadastros' })).toBeNull()
   })
 
   it('linha de cima só informa; os 4 cartões são botões que filtram a lista e clicar de novo limpa', async () => {
@@ -159,8 +163,10 @@ describe('painel do admin (F16)', () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api, chamadas } = ambiente()
     montar(api)
-    const atencao = await screen.findByRole('region', { name: 'Precisam de atenção' })
+    await userEvent.click(await screen.findByRole('button', { name: /Precisam de atenção/ }))
+    const atencao = screen.getByRole('dialog', { name: 'Precisam de atenção' })
     await userEvent.click(within(atencao).getByRole('button', { name: 'Liberar troca' }))
+    expect(screen.queryByRole('dialog')).toBeNull() // a gaveta fecha para o formulário aparecer
     const form = screen.getByRole('region', { name: 'Liberar troca urgente' })
     expect(within(form).getByLabelText('Motivo')).toHaveValue('Cliente pediu a troca antes do prazo de 7 dias.')
     await userEvent.click(within(form).getByRole('button', { name: 'Liberar a troca' }))
@@ -173,7 +179,8 @@ describe('painel do admin (F16)', () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api, chamadas } = ambiente()
     montar(api)
-    const atencao = await screen.findByRole('region', { name: 'Precisam de atenção' })
+    await userEvent.click(await screen.findByRole('button', { name: /Precisam de atenção/ }))
+    const atencao = screen.getByRole('dialog', { name: 'Precisam de atenção' })
     await userEvent.click(within(atencao).getAllByRole('button', { name: 'Já resolvi' })[1])
     await waitFor(() => expect(chamadas.some((x) => x.url.endsWith('/admin/ocorrencias/resolver') && String(x.init.body) === '{"id":"o2"}')).toBe(true))
   })
@@ -194,20 +201,150 @@ describe('painel do admin (F16)', () => {
     expect(chamadas.filter((x) => x.url.endsWith('/admin/entregas')).at(-1)!.init.body).toBe('{"marca":"abc12345def"}')
   })
 
-  it('cadastros: lista as respostas e quem ainda não respondeu', async () => {
+  it('a lista de clientes junta e-mail, ramo e cadastro (por licenca_id); sem cadastro mostra traço', async () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api } = ambiente((url) =>
       url.endsWith('/admin/cadastros')
         ? resp({ cadastros: [
             { licenca_id: 'l1', nome: 'Rafa', empresa: 'Pet Shop Amigo', ramo: 'pet shop', email: 'rafa@pet.com', cadastro_em: '2026-11-16T12:00:00.000Z', comprada_em: '2026-11-15T12:00:00.000Z', situacao: 'feito' },
-            { licenca_id: 'l2', nome: 'Carla', empresa: '', ramo: '', email: 'carla@x.com', cadastro_em: null, comprada_em: '2026-11-14T12:00:00.000Z', situacao: 'pendente' },
+            { licenca_id: 'l2', nome: 'Zé', empresa: 'Barbearia do Zé', ramo: 'barbearia', email: 'ze@barba.com', cadastro_em: null, comprada_em: '2026-11-14T12:00:00.000Z', situacao: 'pendente' },
           ] })
         : undefined,
     )
     montar(api)
-    await userEvent.click(await screen.findByRole('link', { name: 'Cadastros' }))
-    expect(await screen.findByText('rafa@pet.com')).toBeInTheDocument()
-    expect(screen.getByText('Ainda não respondeu')).toBeInTheDocument()
+    const clientes = await screen.findByRole('region', { name: 'Clientes' })
+    expect(await within(clientes).findByText('rafa@pet.com')).toBeInTheDocument()
+    expect(within(clientes).getByText('Feito em 16/11/2026')).toBeInTheDocument()
+    expect(within(clientes).getByText('ze@barba.com')).toBeInTheDocument()
+    expect(within(clientes).getByText('Ainda não respondeu')).toBeInTheDocument()
+    const linhaBella = within(clientes).getByText('Salão Bella').closest('.ad-tabela') as HTMLElement
+    expect(within(linhaBella).getAllByText('—').length).toBeGreaterThanOrEqual(2) // sem e-mail e sem cadastro
+  })
+
+  it('a aba Cadastros não existe mais; a aba Ações traz os 3 blocos', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente()
+    montar(api)
+    expect(screen.queryByRole('link', { name: 'Cadastros' })).toBeNull()
+    await irParaAcoes()
+    expect(await screen.findByRole('region', { name: 'Teste grátis' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'E-mails temporários bloqueados' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Liberar cortesia' })).toBeInTheDocument()
+  })
+
+  it('o painel de atenção abre, fecha com X e com Esc, e devolve o foco ao botão', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente()
+    montar(api)
+    const abrir = await screen.findByRole('button', { name: /Precisam de atenção/ })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    await userEvent.click(abrir)
+    const d = screen.getByRole('dialog', { name: 'Precisam de atenção' })
+    expect(d).toHaveAttribute('aria-modal', 'true')
+    expect(within(d).getByRole('button', { name: 'Fechar' })).toHaveFocus()
+    await userEvent.click(within(d).getByRole('button', { name: 'Fechar' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(abrir).toHaveFocus()
+    await userEvent.click(abrir)
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('sem preferência salva o menu começa recolhido; o botão fica no rodapé', async () => {
+    localStorage.clear()
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente()
+    montar(api)
+    await screen.findByRole('heading', { name: 'Visão geral' })
+    expect(screen.queryByText('ADMINISTRADOR')).toBeNull()
+    const b = screen.getByRole('button', { name: 'Abrir o menu' })
+    expect(b.closest('.ad-eu')).not.toBeNull()
+  })
+
+  it('a gaveta trava a rolagem do fundo, fecha com Esc mesmo com o foco fora e prende o Tab', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente()
+    montar(api)
+    const abrir = await screen.findByRole('button', { name: /Precisam de atenção/ })
+    expect(document.body.style.overflow).toBe('')
+    await userEvent.click(abrir)
+    const d = screen.getByRole('dialog', { name: 'Precisam de atenção' })
+    expect(document.body.style.overflow).toBe('hidden')
+    // foco fora do diálogo: o Tab traz de volta para dentro
+    ;(document.activeElement as HTMLElement).blur()
+    await userEvent.tab()
+    expect(d.contains(document.activeElement)).toBe(true)
+    // foco no body: Esc ainda fecha
+    ;(document.activeElement as HTMLElement).blur()
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.body.style.overflow).toBe('')
+    expect(abrir).toHaveFocus()
+  })
+
+  it('o menu recolhe só com ícones, lembra a escolha e abre de novo', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente()
+    const { unmount } = montar(api)
+    await screen.findByRole('heading', { name: 'Visão geral' })
+    expect(screen.getByText('ADMINISTRADOR')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Recolher o menu' }))
+    expect(screen.queryByText('ADMINISTRADOR')).toBeNull()
+    expect(screen.queryByText('luiz@atlas.com')).toBeNull()
+    const link = screen.getByRole('link', { name: 'Fluxo de caixa' })
+    expect(link).toHaveAttribute('title', 'Fluxo de caixa')
+    expect(link.textContent).toBe('')
+    expect(link.querySelector('svg')).not.toBeNull()
+    expect(screen.getByRole('link', { name: 'Visão geral' })).toHaveAttribute('aria-current', 'page')
+    expect(localStorage.getItem('atlas.admin.menu-recolhido')).toBe('1')
+    unmount()
+    montar(api)
+    await screen.findByRole('heading', { name: 'Visão geral' })
+    expect(screen.queryByText('ADMINISTRADOR')).toBeNull() // lembrou
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir o menu' }))
+    expect(screen.getByText('ADMINISTRADOR')).toBeInTheDocument()
+    expect(localStorage.getItem('atlas.admin.menu-recolhido')).toBe('0')
+  })
+})
+
+describe('paginação da lista de clientes', () => {
+  const muitos: PainelAdmin = {
+    ...PAINEL,
+    clientes: Array.from({ length: 45 }, (_, n) => ({ licenca_id: `x${n}`, nome: `Pessoa ${n + 1}`, empresa: `Loja ${String(n + 1).padStart(2, '0')}`, ramo: 'loja', situacao: n < 25 ? ('em_dia' as const) : ('atrasada' as const), obras: 1, ultimo_sinal_em: null, travado_em: null })),
+  }
+  const abrir = async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente((url) => (url.endsWith('/admin/painel') ? resp(muitos) : undefined))
+    montar(api)
+    return await screen.findByRole('region', { name: 'Clientes' })
+  }
+
+  it('mostra 20 por vez, muda de página e desabilita nos extremos', async () => {
+    const lista = await abrir()
+    expect(within(lista).getByText('mostrando 1–20 de 45')).toBeInTheDocument()
+    expect(within(lista).getAllByRole('button', { name: /^Liberar troca de/ })).toHaveLength(20)
+    expect(within(lista).getByRole('button', { name: 'Página anterior' })).toBeDisabled()
+    await userEvent.click(within(lista).getByRole('button', { name: 'Próxima página' }))
+    expect(within(lista).getByText('mostrando 21–40 de 45')).toBeInTheDocument()
+    expect(within(lista).getByText('Loja 21')).toBeInTheDocument()
+    expect(within(lista).queryByText('Loja 01')).toBeNull()
+    await userEvent.click(within(lista).getByRole('button', { name: 'Próxima página' }))
+    expect(within(lista).getByText('mostrando 41–45 de 45')).toBeInTheDocument()
+    expect(within(lista).getByRole('button', { name: 'Próxima página' })).toBeDisabled()
+    await userEvent.click(within(lista).getByRole('button', { name: 'Página anterior' }))
+    expect(within(lista).getByText('mostrando 21–40 de 45')).toBeInTheDocument()
+  })
+
+  it('trocar o filtro ou a busca volta para a página 1 e pagina só o que foi filtrado', async () => {
+    const lista = await abrir()
+    await userEvent.click(within(lista).getByRole('button', { name: 'Próxima página' }))
+    await userEvent.selectOptions(within(lista).getByRole('combobox'), 'inadimplentes')
+    expect(within(lista).getByText('mostrando 1–20 de 20')).toBeInTheDocument()
+    expect(within(lista).getByRole('button', { name: 'Próxima página' })).toBeDisabled()
+    await userEvent.selectOptions(within(lista).getByRole('combobox'), 'todas')
+    await userEvent.click(within(lista).getByRole('button', { name: 'Próxima página' }))
+    await userEvent.type(within(lista).getByLabelText('Buscar por nome ou empresa'), 'Loja 3')
+    expect(within(lista).getByText('mostrando 1–10 de 10')).toBeInTheDocument()
   })
 })
 
@@ -230,6 +367,7 @@ describe('cortesia manual no painel', () => {
     montar(api)
     const clientes = await screen.findByRole('region', { name: 'Clientes' })
     expect(within(clientes).getByText(/cortesia até 29\/11\/2026/)).toBeInTheDocument()
+    await irParaAcoes()
     const form = screen.getByRole('region', { name: 'Liberar cortesia' })
     await userEvent.type(within(form).getByLabelText('E-mail da pessoa'), 'Amigo@Email.com')
     await userEvent.type(within(form).getByLabelText('Vale até'), '2026-11-27')
@@ -243,6 +381,7 @@ describe('cortesia manual no painel', () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api } = ambiente((url) => (url.endsWith('/admin/cortesia') ? resp({ erro: 'ja_tem_licenca_paga', mensagem: 'Essa pessoa já tem uma licença paga. Não precisa de cortesia.' }, 409) : undefined))
     montar(api)
+    await irParaAcoes()
     const form = await screen.findByRole('region', { name: 'Liberar cortesia' })
     await userEvent.type(within(form).getByLabelText('E-mail da pessoa'), 'ana@loja.com')
     await userEvent.type(within(form).getByLabelText('Vale até'), '2026-11-27')
@@ -261,6 +400,7 @@ describe('teste grátis (degustação) no painel', () => {
       return resp({ ok: true, ativa: corpo.ativa ?? false, dias: 5 })
     })
     montar(api)
+    await irParaAcoes()
     const sec = await screen.findByRole('region', { name: 'Teste grátis' })
     expect(await within(sec).findByText('Desligado')).toBeInTheDocument()
     await userEvent.click(within(sec).getByRole('button', { name: 'Ligar o teste grátis' }))
@@ -274,6 +414,7 @@ describe('teste grátis (degustação) no painel', () => {
     let n = 0
     const { api } = ambiente((url) => (url.endsWith('/admin/degustacao') ? (n++ === 0 ? resp({ ok: true, ativa: false, dias: 5 }) : resp({ erro: 'dias_invalidos', mensagem: 'O teste pode durar de 1 a 30 dias.' }, 400)) : undefined))
     montar(api)
+    await irParaAcoes()
     const sec = await screen.findByRole('region', { name: 'Teste grátis' })
     await within(sec).findByText('Desligado')
     await userEvent.click(within(sec).getByRole('button', { name: 'Ligar o teste grátis' }))
