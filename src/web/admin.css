@@ -79,6 +79,8 @@
 .ad-alerta .ad-mute { font-size: 13px; }
 .ad-linha { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 4px; }
 .ad-link { background: none; border: none; padding: 0; font: 600 13px var(--font-text, 'Geist', system-ui, sans-serif); color: var(--lime-txt); cursor: pointer; text-align: left; }
+.ad-link--centro { align-self: center; }
+.ad-info { color: var(--lime-txt); font-size: 14px; margin: 0; }
 .ad-link:disabled { opacity: 0.4; cursor: not-allowed; }
 .ad-link--mudo { color: var(--mute); }
 .ad-lateral .ad-link { color: var(--side-lime); }

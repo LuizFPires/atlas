@@ -3,7 +3,8 @@ import { CampoFalado, Icone } from '../ui'
 import type { NomeIcone } from '../ui/Icone'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
-import type { AdminApi, DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, RadarPirataria, MapaClientes, GravidadeSinal, SinalRadar, TipoSinal, Situacao } from './admin-api'
+import { MSG_RECUPERACAO } from './admin-api'
+import type { AdminApi,DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, RadarPirataria, MapaClientes, GravidadeSinal, SinalRadar, TipoSinal, Situacao } from './admin-api'
 import { FILTROS, filtrarClientes, fluxoPorMes, indicadoresGerenciais, type FiltroConta } from './admin-calc'
 import { LegendaMapa, MapaBrasil, nomeUf, resumirMapa, textoUf } from './AdminMapa'
 import { NOME_REGIAO } from './mapa-brasil'
@@ -96,11 +97,19 @@ function CampoSenha({ id, rotulo, autoComplete, valor, onChange }: { id: string;
   )
 }
 
-function Entrada({ api, aviso, onEntrou }: { api: AdminApi; aviso: string; onEntrou: (email: string) => void }) {
+function Entrada({ api, aviso, info: infoInicial = '', onEntrou }: { api: AdminApi; aviso: string; info?: string; onEntrou: (email: string) => void }) {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState(aviso)
+  const [info, setInfo] = useState(infoInicial)
   const [ocupado, setOcupado] = useState(false)
+
+  const esqueci = async () => {
+    setErro(''); setInfo(''); setOcupado(true)
+    const r = await api.recuperarSenha(email)
+    setOcupado(false)
+    if (r.ok) setInfo(MSG_RECUPERACAO); else setErro(r.mensagem)
+  }
 
   const confirmar = async (ev: React.FormEvent) => {
     ev.preventDefault(); setErro(''); setOcupado(true)
@@ -119,9 +128,11 @@ function Entrada({ api, aviso, onEntrou }: { api: AdminApi; aviso: string; onEnt
         <CampoFalado rotulo="Seu e-mail de administrador" type="email" autoComplete="email" valor={email} onChange={setEmail} placeholder="voce@atlas.com.br" juntar={juntarFalaEmail} />
         <CampoSenha id="ad-senha" rotulo="Senha" autoComplete="current-password" valor={senha} onChange={setSenha} />
         {erro && <p role="alert" className="ad-erro">{erro}</p>}
+        {info && <p role="status" className="ad-info">{info}</p>}
         <button type="submit" className="ad-botao ad-botao--lime" disabled={ocupado}>
           {ocupado ? 'Um instante…' : <>Entrar <Icone nome="seta" /></>}
         </button>
+        <button type="button" className="ad-link ad-link--centro" disabled={ocupado} onClick={esqueci}>Esqueci minha senha</button>
       </form>
     </div>
   )

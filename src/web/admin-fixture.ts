@@ -119,6 +119,8 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
   return {
     logado: () => true,
     entrar: () => ok({}),
+    recuperarSenha: () => ok({}), // demonstração: não envia nada
+    definirNovaSenha: () => ok({}),
     eu: () => ok({ email: 'admin@demonstracao.local' }),
     painel: () => ok({ painel: painel() }),
     liberarTroca(licencaId) {
