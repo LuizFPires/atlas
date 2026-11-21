@@ -4,7 +4,7 @@ import type { NomeIcone } from '../ui/Icone'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
 import { MSG_LINK_VENCIDO, MSG_RECUPERACAO, linkDeRecuperacaoComErro, tokenDeRecuperacao, validarNovaSenha } from './admin-api'
-import type { AdminApi,DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, RadarPirataria, MapaClientes, GravidadeSinal, SinalRadar, TipoSinal, Situacao } from './admin-api'
+import type { AdminApi, CortesiaAtiva, DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, RadarPirataria, MapaClientes, GravidadeSinal, SinalRadar, TipoSinal, Situacao } from './admin-api'
 import { FILTROS, filtrarClientes, fluxoPorMes, indicadoresGerenciais, type FiltroConta } from './admin-calc'
 import { LegendaMapa, MapaBrasil, nomeUf, resumirMapa, textoUf } from './AdminMapa'
 import { NOME_REGIAO } from './mapa-brasil'
@@ -56,6 +56,8 @@ const DIA_MS = 24 * 3600_000
 /** "AAAA-MM-DD" -> fim desse dia em Brasília (23:59), como instante ISO. */
 export const fimDoDiaBrasilia = (aaaammdd: string) => new Date(`${aaaammdd}T23:59:59-03:00`).toISOString()
 /** Data de hoje + n dias, em Brasília, no formato do <input type="date">. */
+/** Teto em dias: o servidor recusa validade > agora + 180 dias e o envio usa 23:59:59 do dia, então 179 é o máximo seguro. */
+const TETO_DIAS = 179
 const dataEm = (base: Date, dias: number) => new Date(base.getTime() + dias * DIA_MS - 3 * 3600_000).toISOString().slice(0, 10)
 
 /** Painel do administrador (F16) em /admin. Só o Luiz: o servidor recusa qualquer outro login. */
@@ -586,19 +588,21 @@ function Atencao({ a, tipo, quando, detalhe, onBaixa, onLiberar, onBloquear }: {
 
 /** Aba "Ações": teste grátis, e-mails bloqueados e cortesia, cada um num cartão grande. */
 function Acoes({ api }: { api: AdminApi }) {
+  const [versao, setVersao] = useState(0) // sobe quando uma cortesia nova é liberada, pra lista recarregar
   return (
     <>
       <div className="ad-titulo"><h1>Ações</h1><span className="ad-mute">o que você liga, bloqueia ou libera na mão</span></div>
       <div className="ad-acoes">
         <TesteGratis api={api} />
         <DominiosBloqueados api={api} />
-        <Cortesia api={api} />
+        <Cortesia api={api} aoMudar={() => setVersao((v) => v + 1)} />
+        <CortesiasAtivas api={api} versao={versao} />
       </div>
     </>
   )
 }
 
-function Cortesia({ api }: { api: AdminApi }) {
+function Cortesia({ api, aoMudar }: { api: AdminApi; aoMudar?: () => void }) {
   const [cortesia, setCortesia] = useState({ email: '', data: '' })
   const [erro, setErro] = useState('')
   const [msg, setMsg] = useState('')
@@ -627,6 +631,7 @@ function Cortesia({ api }: { api: AdminApi }) {
     if (r.email_enviado) setMsg(`${base} Avisamos a pessoa por e-mail com o link pra instalar.`)
     else setFalhou({ email: para, ate: dia(r.validade_em) })
     setCortesia({ email: '', data: '' })
+    aoMudar?.()
   }
   return (
     <section className="ad-card" aria-label="Liberar cortesia">
@@ -635,9 +640,9 @@ function Cortesia({ api }: { api: AdminApi }) {
       <form onSubmit={confirmar} noValidate>
         <CampoFalado rotulo="E-mail da pessoa" type="email" autoComplete="off" valor={cortesia.email} onChange={(email) => setCortesia({ ...cortesia, email })} placeholder="amigo@email.com" juntar={juntarFalaEmail} />
         <label className="ad-campo-data">Vale até
-          <input type="date" value={cortesia.data} min={dataEm(hoje, 1)} max={dataEm(hoje, 180)} onChange={(e) => setCortesia({ ...cortesia, data: e.target.value })} />
+          <input type="date" value={cortesia.data} min={dataEm(hoje, 1)} max={dataEm(hoje, TETO_DIAS)} onChange={(e) => setCortesia({ ...cortesia, data: e.target.value })} />
         </label>
-        <span className="ad-mute2">Entre 1 e 180 dias. Costuma ser de 10 a 15.</span>
+        <span className="ad-mute2">Entre 1 e 179 dias. Costuma ser de 10 a 15.</span>
         {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
         {falhou && (
           <div role="status" className="ad-linha">
@@ -1008,5 +1013,74 @@ function Mapa({ api }: { api: AdminApi }) {
         </>
       )}
     </>
+  )
+}
+
+/** Cartão "Cortesias ativas": quem está de presente agora e um jeito de dar mais tempo (só estende; o acesso continua o mesmo). */
+function CortesiasAtivas({ api, versao }: { api: AdminApi; versao: number }) {
+  const [lista, setLista] = useState<CortesiaAtiva[] | null>(null)
+  const [erro, setErro] = useState('')
+  const [msg, setMsg] = useState('')
+  const recarregar = async () => {
+    const r = await api.listarCortesias()
+    if (!r.ok) { setErro(r.mensagem); return }
+    setErro(''); setLista(r.cortesias)
+  }
+  useEffect(() => {
+    let vivo = true
+    api.listarCortesias().then((r) => { if (!vivo) return; if (r.ok) { setErro(''); setLista(r.cortesias) } else setErro(r.mensagem) })
+    return () => { vivo = false }
+  }, [api, versao])
+  return (
+    <section className="ad-card" aria-label="Cortesias ativas">
+      <span className="ad-rotulo">CORTESIAS ATIVAS</span>
+      <p className="ad-p">Quem está com acesso de presente agora. Dá pra dar mais tempo: a pessoa continua com o mesmo acesso, só por mais dias.</p>
+      {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
+      {erro && <p role="alert" className="ad-erro">{erro}</p>}
+      {lista && lista.length === 0 && <p className="ad-mute">Nenhuma cortesia ativa agora.</p>}
+      {lista && lista.map((c) => (
+        <LinhaCortesia key={c.email} api={api} c={c} aoEstender={async (ate) => { setMsg(`Cortesia renovada até ${ate}.`); await recarregar() }} aoErro={setErro} />
+      ))}
+    </section>
+  )
+}
+
+function LinhaCortesia({ api, c, aoEstender, aoErro }: { api: AdminApi; c: CortesiaAtiva; aoEstender: (ate: string) => Promise<void>; aoErro: (m: string) => void }) {
+  const hoje = new Date()
+  const amanha = dataEm(hoje, 1)
+  const atual = dataEm(new Date(c.validade_em), 0)
+  const min = atual > amanha ? atual : amanha // não dá pra encurtar o prazo que já vale
+  const max = dataEm(hoje, TETO_DIAS)
+  const [data, setData] = useState(atual)
+  const [indo, setIndo] = useState(false)
+  const somar = (n: number) => {
+    const base = data || atual
+    const nova = new Date(new Date(`${base}T12:00:00-03:00`).getTime() + n * DIA_MS)
+    const iso = dataEm(nova, 0)
+    setData(iso > max ? max : iso < min ? min : iso)
+  }
+  const valida = !!data && data >= min && data <= max
+  const estender = async () => {
+    if (!valida || indo) return
+    aoErro(''); setIndo(true)
+    try {
+      const r = await api.estenderCortesia(c.email, fimDoDiaBrasilia(data))
+      if (!r.ok) { aoErro(r.mensagem); return }
+      await aoEstender(dia(r.validade_em).slice(0, 5))
+    } finally { setIndo(false) }
+  }
+  return (
+    <div className="ad-linha" style={{ flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+      <div style={{ flex: '1 1 200px' }}>
+        <strong>{c.email}</strong>
+        <span className="ad-mute2"> · vale até {dia(c.validade_em)}</span>
+      </div>
+      <label className="ad-campo-data">Estender prazo
+        <input type="date" value={data} min={min} max={max} onChange={(e) => setData(e.target.value)} />
+      </label>
+      <button type="button" className="ad-botao" onClick={() => somar(1)}>+1 dia</button>
+      <button type="button" className="ad-botao" onClick={() => somar(7)}>+7 dias</button>
+      <button type="button" className="ad-botao ad-botao--lime" onClick={estender} disabled={!valida || indo}>{indo ? 'Estendendo…' : 'Estender'}</button>
+    </div>
   )
 }

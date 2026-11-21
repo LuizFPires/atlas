@@ -79,6 +79,41 @@ describe('cortesia — liberar pelo painel', () => {
   })
 })
 
+describe('cortesia — listar e estender', () => {
+  const listar = (a: Awaited<ReturnType<typeof montarAdmin>>, jwt = JWT_LUIZ) => chamar(a.ctx({ admin: a.admin }), '/admin/cortesias', jwt)
+
+  it('lista só as cortesias em vigor (exclui vencida, paga e cancelada) e só com e-mail, nome e validade', async () => {
+    const a = await montarAdmin()
+    await a.liberar({ email: 'vigor@x.com', validade_em: a.em(10), nome: 'Vigor' })
+    await a.liberar({ email: 'vencida@x.com', validade_em: a.em(5) })
+    await a.liberar({ email: 'cancelada@x.com', validade_em: a.em(5) })
+    const cli = (e: string) => a.store.clientes.find((c) => c.email_compra === e)!
+    const lic = (e: string) => a.store.licencas.find((l) => l.cliente_id === cli(e).id)!
+    lic('vencida@x.com').validade_em = new Date(a.deps.agora().getTime() - 1000)
+    lic('cancelada@x.com').status = 'cancelada'
+    const r = await listar(a)
+    expect(r.status).toBe(200)
+    const corpo = await r.json()
+    expect(corpo.cortesias).toEqual([{ email: 'vigor@x.com', nome: 'Vigor', validade_em: a.em(10) }])
+    expect(Object.keys(corpo.cortesias[0]).sort()).toEqual(['email', 'nome', 'validade_em'])
+  })
+
+  it('não-admin recebe 403', async () => {
+    const a = await montarAdmin()
+    expect((await listar(a, JWT_ANA)).status).toBe(403)
+  })
+
+  it('estender (liberar de novo) muda só a validade e a lista mostra a nova data', async () => {
+    const a = await montarAdmin()
+    await a.liberar({ email: 'amigo@x.com', validade_em: a.em(5) })
+    const n = a.store.licencas.length
+    const r = await a.liberar({ email: 'amigo@x.com', validade_em: a.em(12) })
+    expect((await r.json()).nova).toBe(false)
+    expect(a.store.licencas).toHaveLength(n)
+    expect((await (await listar(a)).json()).cortesias).toEqual([expect.objectContaining({ email: 'amigo@x.com', validade_em: a.em(12) })])
+  })
+})
+
 describe('cortesia — e-mail com link de instalação', () => {
   type Envio = { email: string; token: string; expira_em: Date; validade_em: Date }
   async function comEmail(falha = false) {
@@ -106,6 +141,25 @@ describe('cortesia — e-mail com link de instalação', () => {
     expect(a.enviados[0].token.length).toBeGreaterThan(20)
     expect(a.enviados[0].validade_em.toISOString()).toBe(a.em(10))
     expect(a.store.links).toHaveLength(antes + 1)
+  })
+
+  it('estender em silêncio renova a validade sem gerar link nem mandar e-mail; sem o flag, envia', async () => {
+    const a = await comEmail()
+    await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(10) })
+    expect(a.enviados).toHaveLength(1)
+    const links = a.store.links.length
+    const r = await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(20), silencioso: true })
+    const j = await r.json()
+    expect(r.status).toBe(200)
+    expect(j.nova).toBe(false)
+    expect(j.email_enviado).toBe(false)
+    expect(a.enviados).toHaveLength(1)
+    expect(a.store.links).toHaveLength(links)
+    // as validações continuam valendo no modo silencioso
+    expect((await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(400), silencioso: true })).status).toBe(400)
+    // valor que não é o booleano true não silencia
+    await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(21), silencioso: 'true' })
+    expect(a.enviados).toHaveLength(2)
   })
 
   it('reenviar manda de novo com um link novo; sem cortesia ativa dá 404', async () => {

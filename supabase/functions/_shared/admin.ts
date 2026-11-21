@@ -205,7 +205,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
  * Tudo é validado AQUI: e-mail válido, vencimento no futuro e até CORTESIA_MAX_DIAS dias. Idempotente (mesmo e-mail renova a cortesia).
  * E-mail que já tem licença paga não é alterado. Fica registrado em ocorrencias_admin (quem, quando, até quando).
  */
-export async function liberarCortesia(d: DepsAdmin, jwt: string, a: { email: unknown; validade_em: unknown; nome?: unknown }) {
+export async function liberarCortesia(d: DepsAdmin, jwt: string, a: { email: unknown; validade_em: unknown; nome?: unknown; silencioso?: unknown }) {
   const adm = await adminLogado(d, jwt)
   const email = typeof a.email === 'string' ? norm(a.email) : ''
   if (email.length > 254 || !EMAIL_RE.test(email)) throw new ErroRegra('email_invalido', 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.', 400)
@@ -219,7 +219,8 @@ export async function liberarCortesia(d: DepsAdmin, jwt: string, a: { email: unk
   const r = await d.store.criarCortesia({ email, nome, validade_em: validade, agora })
   if (r.resultado === 'ja_tem_paga') throw new ErroRegra('ja_tem_licenca_paga', 'Essa pessoa já tem uma licença paga. Não precisa de cortesia.', 409)
   await d.store.inserirOcorrencia({ cliente_id: r.licenca.cliente_id, tipo: 'cortesia', descricao: `Cortesia ${r.resultado === 'criada' ? 'liberada' : 'renovada'} até ${validade.toISOString()}`, autor: adm.email, resolvida: true, criada_em: agora })
-  const email_enviado = await enviarEmailCortesia(d, email, validade)
+  // silencioso (estender prazo): só suprime o aviso; as validações acima valem igual. Só o booleano true conta.
+  const email_enviado = a.silencioso === true ? false : await enviarEmailCortesia(d, email, validade)
   return { ok: true, nova: r.resultado === 'criada', licenca_id: r.licenca.id, validade_em: validade, email_enviado }
 }
 
@@ -254,6 +255,23 @@ export async function reenviarCortesia(d: DepsAdmin, jwt: string, a: { email: un
     throw new ErroRegra('sem_cortesia', 'Não há uma cortesia ativa para esse e-mail. Libere a cortesia primeiro.', 404)
   }
   return { ok: true, email_enviado: await enviarEmailCortesia(d, email, lic.validade_em) }
+}
+
+/** Cortesias em vigor (tipo cortesia, ativa, dentro do prazo): só e-mail, nome e validade — o que o gestor precisa para estender. */
+export async function listarCortesias(d: DepsAdmin, jwt: string) {
+  await adminLogado(d, jwt)
+  const agora = d.agora()
+  const [clientes, licencas] = await Promise.all([d.store.listarClientes(), d.store.listarLicencas()])
+  const porCliente = new Map(clientes.map((c) => [c.id, c]))
+  const cortesias: Array<{ email: string; nome: string; validade_em: string }> = []
+  for (const l of licencas) {
+    if (l.tipo !== 'cortesia' || l.status !== 'ativa' || cortesiaVencida(l, agora) || !l.validade_em) continue
+    const c = porCliente.get(l.cliente_id)
+    if (!c || c.excluido_em) continue
+    cortesias.push({ email: c.email_compra, nome: c.nome_tratamento, validade_em: l.validade_em.toISOString() })
+  }
+  cortesias.sort((a, b) => a.validade_em.localeCompare(b.validade_em) || a.email.localeCompare(b.email))
+  return { cortesias }
 }
 
 /** Cortesia cujo prazo passou (status ainda 'ativa' no banco até alguém verificar). Cortesia sem prazo conta como vencida (fail-closed). */
