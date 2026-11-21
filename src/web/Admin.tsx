@@ -3,7 +3,7 @@ import { CampoFalado, Icone } from '../ui'
 import type { NomeIcone } from '../ui/Icone'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
-import { MSG_RECUPERACAO } from './admin-api'
+import { MSG_LINK_VENCIDO, MSG_RECUPERACAO, linkDeRecuperacaoComErro, tokenDeRecuperacao, validarNovaSenha } from './admin-api'
 import type { AdminApi,DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, RadarPirataria, MapaClientes, GravidadeSinal, SinalRadar, TipoSinal, Situacao } from './admin-api'
 import { FILTROS, filtrarClientes, fluxoPorMes, indicadoresGerenciais, type FiltroConta } from './admin-calc'
 import { LegendaMapa, MapaBrasil, nomeUf, resumirMapa, textoUf } from './AdminMapa'
@@ -63,9 +63,19 @@ export function Admin({ api }: { api: AdminApi }) {
   const [email, setEmail] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(api.logado())
   const [aviso, setAviso] = useState('')
+  // Link do e-mail de recuperação: o Supabase devolve o token no #hash. Lemos uma vez e apagamos do endereço.
+  const [recuperacao, setRecuperacao] = useState<{ token: string; vencido: boolean } | null>(() => {
+    const h = window.location.hash
+    const token = tokenDeRecuperacao(h)
+    return token || linkDeRecuperacaoComErro(h) ? { token, vencido: !token } : null
+  })
+  const [info, setInfo] = useState('')
+  useEffect(() => {
+    if (recuperacao) window.history.replaceState(null, '', window.location.pathname + window.location.search)
+  }, [recuperacao])
 
   useEffect(() => {
-    if (!api.logado()) return
+    if (recuperacao || !api.logado()) return
     let vivo = true
     api.eu().then((r) => {
       if (!vivo) return
@@ -74,10 +84,13 @@ export function Admin({ api }: { api: AdminApi }) {
       setCarregando(false)
     })
     return () => { vivo = false }
-  }, [api])
+  }, [api, recuperacao])
 
+  if (recuperacao) {
+    return <NovaSenha api={api} token={recuperacao.token} vencido={recuperacao.vencido} onVoltar={(msg) => { setRecuperacao(null); setInfo(msg) }} />
+  }
   if (carregando) return <div className="ad-solo"><p role="status" className="ad-mute">Abrindo o painel…</p></div>
-  if (!email) return <Entrada api={api} aviso={aviso} onEntrou={setEmail} />
+  if (!email) return <Entrada api={api} aviso={aviso} info={info} onEntrou={setEmail} />
   return <Painel api={api} email={email} onSair={() => { api.sair(); setEmail(null); setAviso('') }} />
 }
 
@@ -93,6 +106,49 @@ function CampoSenha({ id, rotulo, autoComplete, valor, onChange }: { id: string;
           <Icone nome={visivel ? 'olho-corte' : 'olho'} tamanho={20} />
         </button>
       </div>
+    </div>
+  )
+}
+
+/** Tela de "Crie uma senha nova", aberta pelo link do e-mail de recuperação. */
+function NovaSenha({ api, token, vencido, onVoltar }: { api: AdminApi; token: string; vencido: boolean; onVoltar: (aviso: string) => void }) {
+  const [senha, setSenha] = useState('')
+  const [conf, setConf] = useState('')
+  const [erro, setErro] = useState(vencido ? MSG_LINK_VENCIDO : '')
+  const [ocupado, setOcupado] = useState(false)
+
+  const gravar = async (ev: React.FormEvent) => {
+    ev.preventDefault(); setErro('')
+    const falha = validarNovaSenha(senha, conf)
+    if (falha) { setErro(falha); return }
+    setOcupado(true)
+    const r = await api.definirNovaSenha(token, senha)
+    setOcupado(false)
+    if (!r.ok) { setErro(r.mensagem); return }
+    setSenha(''); setConf('')
+    onVoltar('Senha atualizada, pode entrar.')
+  }
+  return (
+    <div className="ad-solo">
+      <form className="ad-login" onSubmit={gravar} noValidate>
+        <div className="ad-marca"><Monograma fundo="escuro" largura={40} altura={22} /><NomeAtlas fundo="escuro" largura={96} altura={14} /></div>
+        <span className="ad-rotulo-lime">ADMINISTRADOR</span>
+        <h1>Crie uma senha nova</h1>
+        {!vencido && (
+          <>
+            <CampoSenha id="ad-nova-senha" rotulo="Senha nova" autoComplete="new-password" valor={senha} onChange={setSenha} />
+            <CampoSenha id="ad-nova-senha2" rotulo="Repita a senha nova" autoComplete="new-password" valor={conf} onChange={setConf} />
+            <p className="ad-mute">Use pelo menos 8 caracteres.</p>
+          </>
+        )}
+        {erro && <p role="alert" className="ad-erro">{erro}</p>}
+        {!vencido && (
+          <button type="submit" className="ad-botao ad-botao--lime" disabled={ocupado}>
+            {ocupado ? 'Um instante…' : <>Salvar senha nova <Icone nome="seta" /></>}
+          </button>
+        )}
+        <button type="button" className="ad-link ad-link--centro" onClick={() => onVoltar('')}>Voltar ao login</button>
+      </form>
     </div>
   )
 }
