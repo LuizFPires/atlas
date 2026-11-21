@@ -17,7 +17,7 @@ import { processarWebhook } from './pagamento/webhook.ts'
 import { lerPersonalizacao, salvarPersonalizacaoDoPortal } from './personalizacao.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
 import { adicionarDominio, auditarDegustacao, configDegustacaoAdmin, confirmarDegustacao, listarDominios, removerDominio, type DepsDegustacao, estadoDegustacao, pedirDegustacao } from './degustacao.ts'
-import { adminLogado, liberarCortesia, type DepsAdmin, euAdmin, liberarTrocaUrgente, painel, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
+import { adminLogado, liberarCortesia, type DepsAdmin, euAdmin, liberarTrocaUrgente, mapa, painel, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
 import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, excluirConta, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
 
 export interface Contexto {
@@ -111,6 +111,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await removerDominio(ctx.admin, jwt, { dominio: o.dominio }))
         case '/admin/cadastros':
           return json(await verCadastros(ctx.admin, jwt))
+        case '/admin/mapa':
+          return json(await mapa(ctx.admin, jwt))
         default:
           // Rota /admin/* desconhecida: ainda exige admin antes de dizer qualquer coisa (não revela o que existe).
           await adminLogado(ctx.admin, jwt)

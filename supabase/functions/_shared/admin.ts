@@ -3,6 +3,7 @@
 // (não basta existir) e o e-mail confirmado precisa estar na allowlist ATLAS_ADMIN_EMAILS (ambiente do servidor).
 // Cliente comum, mesmo logado no portal, recebe 403. Lista vazia = ninguém é admin (fail-closed).
 // O painel mostra agregados e dados operacionais: nunca token_hash, hash de computador, refs/contas do gateway ou chaves.
+import { REGIAO_DA_UF, type Regiao, UFS } from './geo.ts'
 import type { IdentidadePortal } from './portal.ts'
 import { VALOR_MENSALIDADE } from './pagamento/config.ts'
 import { type Cliente, type Deps, ErroRegra, type OcorrenciaAdmin } from './tipos.ts'
@@ -285,4 +286,49 @@ export async function verCadastros(d: DepsAdmin, jwt: string) {
   }
   cadastros.sort((x, y) => (y.comprada_em?.getTime() ?? 0) - (x.comprada_em?.getTime() ?? 0))
   return { cadastros: cadastros.slice(0, 500) }
+}
+
+// ── mapa de clientes (por estado e por cidade) ───────────────────────────────────
+export interface LinhaUf { uf: string; regiao: Regiao; clientes: number; compras: number }
+export interface CidadeCliente { uf: string; cidade: string; clientes: number }
+
+/**
+ * Mapa do Brasil: clientes PAGANTES por estado e por cidade, a partir do que o próprio cliente informou no cadastro (clientes.cidade/uf).
+ * Pagante = licença paga (não cortesia/teste), já comprada, não cancelada e conta não excluída. Cliente sem UF (cadastro antigo ou ainda
+ * não feito) fica fora do mapa (não se chuta estado); sem cidade conta só no estado. `total` = soma dos estados, e a soma das cidades
+ * nunca passa do total do estado. `compras` = pagamentos de compra (implantação ou app pronto) recebidos desses clientes; mensalidade não conta.
+ * Só agregado: nada de nome, e-mail ou IP sai daqui.
+ */
+export async function mapa(d: DepsAdmin, jwt: string) {
+  await adminLogado(d, jwt)
+  const [clientes, licencas, pagamentos] = await Promise.all([d.store.listarClientes(), d.store.listarLicencas(), d.store.listarPagamentos()])
+  const licDoCliente = new Map(licencas.map((l) => [l.cliente_id, l]))
+  const comprasDaLicenca = new Map<string, number>()
+  for (const p of pagamentos) if (p.status === 'pago' && p.tipo !== 'mensalidade') comprasDaLicenca.set(p.licenca_id, (comprasDaLicenca.get(p.licenca_id) ?? 0) + 1)
+  const porUf = new Map<string, LinhaUf>(UFS.map((uf) => [uf, { uf, regiao: REGIAO_DA_UF[uf], clientes: 0, compras: 0 }]))
+  const porCidade = new Map<string, CidadeCliente>()
+  let total = 0
+  for (const c of clientes) {
+    const l = licDoCliente.get(c.id)
+    if (!l || c.excluido_em || l.tipo === 'cortesia' || l.status === 'cancelada' || !l.comprada_em) continue
+    const linha = c.uf ? porUf.get(c.uf) : undefined
+    if (!linha) continue
+    linha.clientes += 1
+    linha.compras += comprasDaLicenca.get(l.id) ?? 0
+    total += 1
+    const cidade = (c.cidade ?? '').trim()
+    if (cidade) {
+      const k = `${c.uf}|${cidade.toLocaleLowerCase('pt-BR')}`
+      const x = porCidade.get(k)
+      if (x) x.clientes += 1
+      else porCidade.set(k, { uf: c.uf as string, cidade, clientes: 1 })
+    }
+  }
+  return {
+    ligado: true,
+    total,
+    por_uf: [...porUf.values()],
+    por_cidade: [...porCidade.values()].sort((a, b) => b.clientes - a.clientes || a.uf.localeCompare(b.uf) || a.cidade.localeCompare(b.cidade, 'pt-BR')),
+    atualizado_em: d.agora(),
+  }
 }
