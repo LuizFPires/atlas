@@ -79,6 +79,8 @@
 .ad-alerta .ad-mute { font-size: 13px; }
 .ad-linha { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 4px; }
 .ad-link { background: none; border: none; padding: 0; font: 600 13px var(--font-text, 'Geist', system-ui, sans-serif); color: var(--lime-txt); cursor: pointer; text-align: left; }
+.ad-link--centro { align-self: center; }
+.ad-info { color: var(--lime-txt); font-size: 14px; margin: 0; }
 .ad-link:disabled { opacity: 0.4; cursor: not-allowed; }
 .ad-link--mudo { color: var(--mute); }
 .ad-lateral .ad-link { color: var(--side-lime); }
@@ -90,6 +92,9 @@
 .ad-solo { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg); color: var(--text); }
 .ad-login { width: 100%; max-width: 440px; background: var(--card); border: 1px solid var(--card-b); border-radius: 22px; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
 .ad-login .ad-marca, .ad-login .ad-rotulo-lime { padding-left: 0; padding-bottom: 0; }
+.ad-olho { flex: none; width: 50px; height: 50px; border-radius: 12px; border: 1px solid var(--card-b); background: var(--input); color: var(--mute); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.ad-olho:hover { color: var(--text); }
+.ad-olho:focus-visible { outline: 2px solid var(--lime); outline-offset: 1px; }
 .ad-login h1 { margin: 0; font-size: 26px; }
 @media (max-width: 1400px) {
   .ad-tabela--cli { grid-template-columns: 1.6fr 1.6fr 1.2fr 1.2fr 0.8fr 1.2fr 0.9fr; }

@@ -60,6 +60,10 @@ export interface AdminApi {
   /** Login por e-mail + senha (Supabase Auth, password grant). A allowlist continua valendo no servidor. */
   entrar(email: string, senha: string): Promise<Resp>
   /** O servidor confirma que este login é de administrador (senão: 403 e a sessão é descartada). */
+  /** Pede o e-mail de "criar senha nova". Resposta neutra: nunca revela se o e-mail é de admin. */
+  recuperarSenha(email: string): Promise<Resp>
+  /** Grava a senha nova com o token do link de recuperação. */
+  definirNovaSenha(token: string, senha: string): Promise<Resp>
   eu(): Promise<Resp<{ email: string }>>
   painel(): Promise<Resp<{ painel: PainelAdmin }>>
   liberarTroca(licencaId: string, motivo: string): Promise<Resp<{ ja_liberada: boolean }>>
@@ -91,6 +95,27 @@ export const CHAVE_SESSAO_ADMIN = 'atlas.admin.sessao'
 const MSG_OFF = 'O painel ainda não está aberto por aqui.'
 const MSG_REDE = 'Sem conexão com o servidor. Veja a sua internet e tente de novo.'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export const MSG_RECUPERACAO = 'Se esse e-mail for de administrador, enviamos um link pra criar uma senha nova. Olhe sua caixa de entrada.'
+export const MSG_LINK_VENCIDO = 'Esse link venceu ou já foi usado. Volte ao login e peça um link novo em “Esqueci minha senha”.'
+export const SENHA_MINIMA = 8
+
+/** Confere a senha nova e a confirmação. Devolve a mensagem de erro, ou '' se estiver tudo certo. */
+export function validarNovaSenha(senha: string, confirmacao: string): string {
+  if (senha.length < SENHA_MINIMA) return `A senha precisa ter pelo menos ${SENHA_MINIMA} caracteres.`
+  if (senha !== confirmacao) return 'As duas senhas não são iguais. Confira e escreva de novo.'
+  return ''
+}
+
+/** Lê o token do link de recuperação do Supabase (#access_token=…&type=recovery). Devolve '' se a URL não for de recuperação. */
+export function tokenDeRecuperacao(hash: string): string {
+  const p = new URLSearchParams(hash.replace(/^#/, ''))
+  return p.get('type') === 'recovery' ? (p.get('access_token') ?? '') : ''
+}
+/** O link voltou com erro (ex.: vencido): #error=access_denied&error_code=otp_expired. */
+export function linkDeRecuperacaoComErro(hash: string): boolean {
+  const p = new URLSearchParams(hash.replace(/^#/, ''))
+  return p.has('error') || p.has('error_code')
+}
 
 const ler = () => { try { return sessionStorage.getItem(CHAVE_SESSAO_ADMIN) ?? '' } catch { return '' } }
 const guardar = (t: string) => { try { if (t) sessionStorage.setItem(CHAVE_SESSAO_ADMIN, t); else sessionStorage.removeItem(CHAVE_SESSAO_ADMIN) } catch { /* vale só nesta carga */ } }
@@ -127,6 +152,31 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
         if (!r.ok || typeof t !== 'string') return { ok: false, mensagem: 'E-mail ou senha incorretos.' }
         token = t
         guardar(t)
+        return { ok: true }
+      } catch { return { ok: false, mensagem: MSG_REDE } }
+    },
+    async recuperarSenha(email) {
+      const e = email.trim().toLowerCase()
+      if (!EMAIL_RE.test(e)) return { ok: false, mensagem: 'Escreva o seu e-mail no campo acima e toque de novo em “Esqueci minha senha”.' }
+      if (!cfg) return { ok: false, mensagem: MSG_OFF }
+      try {
+        const volta = encodeURIComponent(`${globalThis.location?.origin ?? ''}/admin`)
+        const { r } = await auth(`/recover?redirect_to=${volta}`, { email: e })
+        if (r.status === 429) return { ok: false, mensagem: 'Pedidos demais. Espere uns minutos e tente de novo.' }
+        // Resposta neutra: não revela se o e-mail existe nem se é de administrador.
+        return { ok: true }
+      } catch { return { ok: false, mensagem: MSG_REDE } }
+    },
+    async definirNovaSenha(tokenRecuperacao, senha) {
+      const falha = validarNovaSenha(senha, senha)
+      if (falha) return { ok: false, mensagem: falha }
+      if (!cfg) return { ok: false, mensagem: MSG_OFF }
+      try {
+        // Token e senha só vão nesta chamada; nunca são guardados nem registrados.
+        const r = await f(`${cfg.authUrl}/user`, { method: 'PUT', headers: { 'Content-Type': 'application/json', apikey: cfg.anonKey, Authorization: `Bearer ${tokenRecuperacao}` }, body: JSON.stringify({ password: senha }) })
+        if (r.status === 401 || r.status === 403) return { ok: false, mensagem: MSG_LINK_VENCIDO }
+        if (r.status === 422) return { ok: false, mensagem: 'Essa senha não foi aceita. Escolha uma diferente da anterior e mais difícil de adivinhar.' }
+        if (!r.ok) return { ok: false, mensagem: 'Não deu certo agora. Tente de novo em instantes.' }
         return { ok: true }
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },

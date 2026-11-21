@@ -307,3 +307,10 @@ Teste sem Electron/Claude/rede: `node --test app/adaptadores/*.teste.cjs` (ajuda
 - **O endpoint só agrega:** contar clientes (licenças pagas, sem cortesia) e compras por UF; nunca devolver nome, e-mail ou IP. Cobrir compras antigas (sem região) é impossível por IP; ficam fora do mapa ou entram como "sem estado".
 - **Bolha por cidade (nível de zoom do mapa):** a tela já abre as cidades ao aproximar num estado, mas o servidor só captura UF. Para valer de verdade: capturar **cidade + UF** do comprador (do IP/checkout, na hora; guardar só cidade/UF, **nunca o IP cru**) e devolver `por_cidade: [{ uf, cidade, clientes }]` em `POST /admin/mapa` (soma das cidades = `por_uf`). A posição vem da base `CIDADES` (`src/web/cidades-brasil.ts`) por nome + UF; cidade fora da base não ganha bolha (ampliar a base conforme aparecerem). Sem `por_cidade`, a tela mantém o mapa por estado e avisa. Hoje só a demonstração tem cidades.
 - **Mapa:** caminhos SVG dos estados em `src/web/mapa-brasil.ts` (gerados do IBGE simplificado); não há biblioteca nem imagem externa.
+
+## Painel admin — recuperar senha (Supabase Auth)
+- **Só a tela + chamadas ao Supabase Auth.** O login do admin ganhou "Esqueci minha senha" (`POST {auth}/recover?redirect_to=<origem>/admin`) e a tela "Crie uma senha nova" em `/admin` (lê `#access_token=…&type=recovery` do endereço, apaga o hash e grava com `PUT {auth}/user`). Nada de segredo em log.
+- **No painel do Supabase (Auth > URL Configuration):** colocar `https://<domínio do Atlas>/admin` em **Redirect URLs** (sem isso o link do e-mail cai na página inicial e o token se perde). Conferir o **Site URL**.
+- **Template do e-mail "Reset Password"** (Auth > Email Templates): revisar e deixar em português do Brasil, tom de amigo, com o link `{{ .ConfirmationURL }}`.
+- **Confirmar que o cadastro público segue DESLIGADO** (Auth > Sign In / Providers > "Allow new users to sign up" off). A recuperação responde igual para qualquer e-mail; quem manda o e-mail é só o Supabase, e só para usuários que já existem.
+- Limite de envio de e-mails do Supabase (SMTP padrão é baixo): configurar SMTP próprio antes de depender disso.
