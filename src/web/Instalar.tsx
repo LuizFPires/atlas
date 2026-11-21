@@ -67,7 +67,7 @@ export function Instalar({ api = api_padrao, token = tokenDaUrl(), ir = irPadrao
               </>
             ) : estado.a.instalador ? (
               <>
-                <p>O Atlas se instala neste computador. São três passos e leva uns 10 minutos.</p>
+                <p>O Atlas se instala neste computador. São dois passos e leva uns 10 minutos.</p>
                 <ol aria-label="Passos para instalar" className="v-passos-instalar">
                   <li>
                     <p><b>Baixe o instalador.</b></p>
@@ -78,13 +78,23 @@ export function Instalar({ api = api_padrao, token = tokenDaUrl(), ir = irPadrao
                     {download.s === 'erro' && <p role="alert" className="v-erro">{download.mensagem}</p>}
                   </li>
                   <li>
-                    <p><b>Abra o arquivo Atlas-Instalador.exe</b> (ele fica na pasta Downloads) e espere o Atlas abrir sozinho.</p>
-                  </li>
-                  <li>
-                    <p><b>Volte aqui e libere este computador.</b> O navegador vai perguntar se pode abrir o Atlas: diga que sim.</p>
-                    <a className="v-acao v-acao--contorno" href={`atlas://ativar?t=${encodeURIComponent(token)}`}>Liberar o Atlas neste computador</a>
+                    <p><b>Abra o arquivo que você baixou</b> (ele fica na pasta Downloads e o nome começa com Atlas-Instalador). O Atlas abre sozinho e segue com você dali.</p>
+                    {/* O instalador ainda não é assinado: o cliente é avisado ANTES de ver a tela azul do Windows (mesmo texto do e-mail). */}
+                    <div role="note" aria-label="Aviso do Windows" className="v-aviso-windows">
+                      <p><b>O Windows vai pedir uma confirmação.</b> Ao abrir o instalador, aparece uma tela azul dizendo "O Windows protegeu o computador". Ela aparece porque o Atlas é um programa novo e o Windows ainda não o conhece.</p>
+                      <ol>
+                        <li>Clique em <b>Mais informações</b>.</li>
+                        <li>Clique em <b>Executar assim mesmo</b>.</li>
+                      </ol>
+                    </div>
                   </li>
                 </ol>
+                {/* O código do link vai no nome do arquivo baixado. Se o cliente mudar o nome, o Atlas pede para liberar: este link resolve. */}
+                <details className="v-reserva">
+                  <summary>O Atlas pediu para liberar este computador?</summary>
+                  <p>Clique no botão abaixo. O navegador vai perguntar se pode abrir o Atlas: diga que sim.</p>
+                  <a className="v-acao v-acao--contorno" href={`atlas://ativar?t=${encodeURIComponent(token)}`}>Liberar o Atlas neste computador</a>
+                </details>
               </>
             ) : (
               <>

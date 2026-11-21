@@ -25,6 +25,13 @@ export async function abrirLink(d: DepsCadastro, a: { token: string; user_agent?
   return { valido: true, celular, aviso: celular ? AVISO_ABRA_NO_COMPUTADOR : null, expira_em: l.expira_em, pode_reenviar: celular, instalador: !!d.instalador }
 }
 
+/** Nome com que o instalador chega ao computador. Leva o código do link: o instalador lê o próprio nome e entrega o código ao
+ *  Atlas (app/link-instalacao.cjs), então o cliente não precisa voltar à página para liberar o computador.
+ *  Código fora do formato esperado: nome sem código (o Atlas pede para liberar pela página). */
+export function nomeDoInstalador(token: string): string {
+  return /^[\w-]{20,128}$/.test(token) ? `Atlas-Instalador-${token}.exe` : 'Atlas-Instalador.exe'
+}
+
 const semInstalador = () => new ErroRegra('instalador_indisponivel', 'O instalador ainda não está disponível para baixar. O seu acesso continua valendo: tente de novo daqui a pouco.', 503)
 
 /** Botão "Baixar o instalador": só quem tem link válido recebe o endereço temporário do arquivo. Baixar NÃO consome o link
@@ -32,7 +39,7 @@ const semInstalador = () => new ErroRegra('instalador_indisponivel', 'O instalad
 export async function baixarInstalador(d: DepsCadastro, a: { token: string }): Promise<{ url: string }> {
   await validarLink(d, a.token) // inválido/usado/vencido: ErroRegra com mensagem clara, antes de tocar no arquivo
   if (!d.instalador) throw semInstalador()
-  const url = await d.instalador.link().catch(() => null)
+  const url = await d.instalador.link(nomeDoInstalador(a.token)).catch(() => null)
   if (!url || !/^https:\/\//.test(url)) throw semInstalador()
   return { url }
 }

@@ -12,11 +12,12 @@ const montar = (c: ClaudeFixture = criarClaudeFixture(), p: Partial<React.Compon
   render(<TemaProvider><Claude claude={c} onContinuar={onContinuar} {...p} /></TemaProvider>)
   return { c, onContinuar }
 }
-const clicar = (nome: string | RegExp) => userEvent.click(screen.getByRole('button', { name: nome }))
+// A tela abre conferindo se o Claude já está conectado; os botões aparecem logo depois, então o clique espera por eles.
+const clicar = async (nome: string | RegExp) => userEvent.click(await screen.findByRole('button', { name: nome }))
 
 test('guia de mão dada: abre o claude.ai, e-mail, código, Authorize, até "Ver meu plano"', async () => {
   const { c } = montar()
-  expect(screen.getByText('PASSO 1 DE 6')).toBeInTheDocument()
+  expect(await screen.findByText('PASSO 1 DE 6')).toBeInTheDocument()
   expect(screen.getByText(/Clique no botão verde/)).toBeInTheDocument()
   await clicar('Abrir o site →')
   expect(c.abertos).toEqual(['login'])
@@ -58,7 +59,7 @@ test('"Não consegui fazer este passo" abre a ajuda do passo', async () => {
 
 test('voltar e "Criar no site do Claude"; sem conexão detectada, avisa com calma', async () => {
   const { c } = montar()
-  expect(screen.getByRole('button', { name: '← Voltar' })).toBeDisabled()
+  expect(await screen.findByRole('button', { name: '← Voltar' })).toBeDisabled()
   await clicar('Criar no site do Claude ↗')
   expect(c.abertos).toEqual(['criar-conta'])
   await clicar('Abrir o site →')
@@ -81,11 +82,39 @@ test('depois de ativar, o app abre a F03; ao conectar segue', async () => {
   expect(await screen.findByRole('heading', { name: 'O Claude é o construtor.' })).toBeInTheDocument()
 })
 
+// Fixture já conectado: a tela percebe ao abrir e mostra o resultado, sem passar pelos 6 passos.
 const conectar = async (c: ClaudeFixture) => {
   render(<TemaProvider><Claude claude={c} onContinuar={() => {}} /></TemaProvider>)
-  for (let i = 0; i < 5; i++) await clicar(/Abrir o site →|Fiz isso →/)
-  await clicar('Ver meu plano →')
+  await screen.findByText(/Conectado!/)
 }
+
+test('Claude já conectado neste computador: pula os 6 passos, não abre site nenhum e mostra a conta e o plano', async () => {
+  const c = criarClaudeFixture({ conectado: true, conta: 'ana@loja.com', plano: 'max' })
+  const { onContinuar } = montar(c)
+  expect(await screen.findByText(/Conectado!/)).toHaveTextContent('Conectado! Conta ana@loja.com · plano Max')
+  expect(screen.getByText('O Claude já estava conectado neste computador, então pulei os passos.')).toBeInTheDocument()
+  expect(screen.queryByText(/PASSO \d DE 6/)).toBeNull()
+  expect(c.abertos).toEqual([])
+  await clicar(/Continuar/)
+  expect(onContinuar).toHaveBeenCalled()
+})
+
+test('enquanto confere, a tela diz que está conferindo e não mostra o passo 1 nem o botão de abrir o site', async () => {
+  let soltar: (e: { conectado: boolean }) => void = () => {}
+  const c = { ...criarClaudeFixture(), estado: () => new Promise<{ conectado: boolean }>((r) => { soltar = r }) }
+  render(<TemaProvider><Claude claude={c} onContinuar={() => {}} /></TemaProvider>)
+  expect(screen.getByRole('status')).toHaveTextContent('Conferindo se o Claude já está conectado neste computador…')
+  expect(screen.queryByRole('button', { name: 'Abrir o site →' })).toBeNull()
+  soltar({ conectado: false })
+  expect(await screen.findByText('PASSO 1 DE 6')).toBeInTheDocument()
+})
+
+test('não deu para conferir (erro ao ler o Claude): segue pelo guia de passos, sem travar', async () => {
+  const c = { ...criarClaudeFixture(), estado: async () => { throw new Error('claude fora') } }
+  render(<TemaProvider><Claude claude={c} onContinuar={() => {}} /></TemaProvider>)
+  expect(await screen.findByText('PASSO 1 DE 6')).toBeInTheDocument()
+})
+
 
 test('ao conectar no Pro: mostra conta, plano e explica em dias de obra, com o convite para o site do Claude', async () => {
   const c = criarClaudeFixture({ conectado: true, conta: 'ze@barbeariadoze.com.br', plano: 'pro' })
@@ -115,8 +144,7 @@ test('reconhece o upgrade sozinho (polling leve), sem o cliente clicar em nada',
   try {
     const c = criarClaudeFixture({ conectado: true, conta: 'a@b.com', plano: 'pro' })
     render(<TemaProvider><Claude claude={c} onContinuar={() => {}} sondagemMs={1000} /></TemaProvider>)
-    for (let i = 0; i < 5; i++) await clicar(/Abrir o site →|Fiz isso →/)
-    await clicar('Ver meu plano →')
+    await screen.findByText(/Conectado!/)
     expect(screen.getByText('COMO O ATLAS VAI TRABALHAR NO SEU PLANO PRO')).toBeInTheDocument()
     c.simularUpgrade('max')
     await vi.advanceTimersByTimeAsync(1100)

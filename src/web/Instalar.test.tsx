@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Instalar } from './Instalar'
 import { criarInstalarApi, criarInstalarFixture, type InstalarApi } from './instalar-api'
@@ -69,13 +69,21 @@ test('computador com instalador publicado: o botão pede o endereço e começa o
   expect(await screen.findByRole('status')).toHaveTextContent(/download começou/)
 })
 
-test('os três passos ficam à vista: baixar, abrir o arquivo e liberar o Atlas com o código deste link', async () => {
+test('são só dois passos: baixar e abrir o arquivo; ninguém precisa voltar à página', async () => {
   render(<Instalar api={comInstalador()} token={T} ir={vi.fn()} />)
-  const passos = within(await screen.findByRole('list', { name: 'Passos para instalar' })).getAllByRole('listitem')
-  expect(passos).toHaveLength(3)
-  expect(passos[1]).toHaveTextContent(/Abra o arquivo Atlas-Instalador\.exe/)
-  const liberar = screen.getByRole('link', { name: /Liberar o Atlas neste computador/ })
-  expect(liberar).toHaveAttribute('href', `atlas://ativar?t=${T}`)
+  // Só os passos de fora: o aviso do Windows, dentro do passo 2, tem a sua própria listinha.
+  const passos = [...(await screen.findByRole('list', { name: 'Passos para instalar' })).querySelectorAll(':scope > li')]
+  expect(passos).toHaveLength(2)
+  expect(passos[1]).toHaveTextContent(/Abra o arquivo que você baixou/)
+  expect(passos[1]).toHaveTextContent(/O Atlas abre sozinho e segue com você dali/)
+  expect(screen.queryByText(/Volte aqui/)).toBeNull()
+})
+
+test('reserva para quem mudou o nome do arquivo: o link de liberar fica guardado, fora dos passos', async () => {
+  render(<Instalar api={comInstalador()} token={T} ir={vi.fn()} />)
+  const reserva = await screen.findByText('O Atlas pediu para liberar este computador?')
+  await userEvent.click(reserva)
+  expect(screen.getByRole('link', { name: /Liberar o Atlas neste computador/ })).toHaveAttribute('href', `atlas://ativar?t=${T}`)
 })
 
 test('o servidor não entregou o arquivo: recado honesto, nada é baixado e dá para tentar de novo', async () => {
@@ -107,4 +115,13 @@ test('adaptador: /instalar/abrir informa o instalador e /instalar/baixar só ace
   respostas['/instalar/baixar'] = { url: 'javascript:alert(1)' }
   expect(await api.baixar(T)).toMatchObject({ ok: false })
   expect(await criarInstalarApi(null).baixar(T)).toMatchObject({ ok: false })
+})
+
+test('avisa antes da tela azul do Windows, com os dois cliques que o cliente vai dar', async () => {
+  render(<Instalar api={comInstalador()} token={T} ir={vi.fn()} />)
+  const aviso = await screen.findByRole('note', { name: 'Aviso do Windows' })
+  expect(aviso).toHaveTextContent('O Windows vai pedir uma confirmação')
+  expect(aviso).toHaveTextContent('O Windows protegeu o computador')
+  expect(aviso).toHaveTextContent('Mais informações')
+  expect(aviso).toHaveTextContent('Executar assim mesmo')
 })
