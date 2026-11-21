@@ -1,6 +1,7 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { lerEmailsAdmin } from '../functions/_shared/admin.ts'
+import { montarCortesia } from '../functions/_shared/emails.ts'
 import { verificar } from '../functions/_shared/verificar.ts'
 import { chamar, comDoisClientes, JWT_ANA } from './helpers-portal.ts'
 import { H1, montar, TOKEN } from './helpers.ts'
@@ -75,6 +76,82 @@ describe('cortesia — liberar pelo painel', () => {
     expect(depois.tipo).toBeUndefined()
     expect(depois.validade_em).toBeUndefined()
     expect((await chamar(a.ctx({ admin: a.admin }), '/admin/cortesia', JWT_ANA, { email: 'z@z.com', validade_em: a.em(5) })).status).toBe(403)
+  })
+})
+
+describe('cortesia — e-mail com link de instalação', () => {
+  type Envio = { email: string; token: string; expira_em: Date; validade_em: Date }
+  async function comEmail(falha = false) {
+    const m = await comDoisClientes()
+    m.sessoes.set(JWT_LUIZ, { auth_user_id: 'auth-luiz', email: 'luiz@atlas.com' })
+    const enviados: Envio[] = []
+    const admin = {
+      ...m.deps,
+      emailsAdmin: lerEmailsAdmin('luiz@atlas.com'),
+      enviarCortesia: async (email: string, d: Omit<Envio, 'email'>) => { if (falha) throw new Error('smtp fora do ar'); enviados.push({ email, ...d }) },
+    }
+    const em = (dias: number) => new Date(m.deps.agora().getTime() + dias * DIA).toISOString()
+    const ch = (rota: string, corpo: object) => chamar(m.ctx({ admin }), rota, JWT_LUIZ, corpo)
+    return { ...m, enviados, em, ch }
+  }
+
+  it('liberar envia o e-mail com link de uso único e devolve email_enviado: true', async () => {
+    const a = await comEmail()
+    const antes = a.store.links.length
+    const r = await a.ch('/admin/cortesia', { email: 'Novo@Amigo.com', validade_em: a.em(10) })
+    expect(r.status).toBe(200)
+    expect((await r.json()).email_enviado).toBe(true)
+    expect(a.enviados).toHaveLength(1)
+    expect(a.enviados[0].email).toBe('novo@amigo.com')
+    expect(a.enviados[0].token.length).toBeGreaterThan(20)
+    expect(a.enviados[0].validade_em.toISOString()).toBe(a.em(10))
+    expect(a.store.links).toHaveLength(antes + 1)
+  })
+
+  it('reenviar manda de novo com um link novo; sem cortesia ativa dá 404', async () => {
+    const a = await comEmail()
+    await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(10) })
+    const r = await a.ch('/admin/cortesia/reenviar', { email: 'novo@amigo.com' })
+    expect(r.status).toBe(200)
+    expect((await r.json()).email_enviado).toBe(true)
+    expect(a.enviados).toHaveLength(2)
+    expect(a.enviados[1].token).not.toBe(a.enviados[0].token)
+    expect((await a.ch('/admin/cortesia/reenviar', { email: 'ninguem@x.com' })).status).toBe(404)
+    expect((await a.ch('/admin/cortesia/reenviar', { email: 'ana@loja.com' })).status).toBe(404) // paga, não é cortesia
+    expect((await chamar(a.ctx({ admin: { ...a.deps, emailsAdmin: lerEmailsAdmin('luiz@atlas.com') } }), '/admin/cortesia/reenviar', JWT_ANA, { email: 'novo@amigo.com' })).status).toBe(403)
+  })
+
+  it('falha no envio NÃO quebra a liberação: licença criada e email_enviado: false (sem vazar o erro)', async () => {
+    const a = await comEmail(true)
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const r = await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(10) })
+    expect(r.status).toBe(200)
+    const corpo = await r.json()
+    expect(corpo.email_enviado).toBe(false)
+    expect(JSON.stringify(corpo)).not.toContain('smtp')
+    // log: só etapa e nome do erro; nada de mensagem, token, chave ou e-mail
+    const logado = log.mock.calls.map((c) => c.join(' ')).join('\n')
+    log.mockRestore()
+    expect(logado).toContain('cortesia_email_falhou etapa=enviar erro=Error')
+    expect(logado).not.toMatch(/smtp|novo@amigo|re_|RESEND|token/i)
+    const link = a.store.links[a.store.links.length - 1] as unknown as Record<string, unknown>
+    for (const v of Object.values(link)) if (typeof v === 'string' && v.length > 20) expect(logado).not.toContain(v)
+    const cli = a.store.clientes.find((c) => c.email_compra === 'novo@amigo.com')!
+    expect(a.store.licencas.find((l) => l.cliente_id === cli.id)).toMatchObject({ tipo: 'cortesia', status: 'ativa' })
+    const re = await a.ch('/admin/cortesia/reenviar', { email: 'novo@amigo.com' })
+    expect(re.status).toBe(200)
+    expect((await re.json()).email_enviado).toBe(false)
+  })
+})
+
+describe('cortesia — texto do e-mail', () => {
+  it('destaca a validade em dd/mm/aaaa e avisa que acaba sozinho; traz o link', () => {
+    const m = montarCortesia({ validade_em: new Date('2026-12-05T20:00:00Z'), link: 'https://x.test/instalar?t=abc', link_expira_em: new Date('2026-11-23T12:00:00Z') })
+    for (const t of [m.texto, m.html]) {
+      expect(t).toContain('05/12/2026')
+      expect(t).toContain('acaba sozinho')
+      expect(t).toContain('https://x.test/instalar?t=abc')
+    }
   })
 })
 
