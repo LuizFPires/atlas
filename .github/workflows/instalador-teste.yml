@@ -34,7 +34,8 @@ jobs:
 
       - name: Endereço do servidor para o processo principal (app/config.json)
         shell: bash
-        run: printf '{ "api": "%s" }\n' "$ATLAS_API" > app/config.json
+        run: |
+          printf '{ "api": "%s" }\n' "$ATLAS_API" > app/config.json
 
       - name: Config de teste (sem assinatura)
         shell: bash
