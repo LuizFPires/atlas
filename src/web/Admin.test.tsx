@@ -286,6 +286,47 @@ describe('painel do admin (F16)', () => {
   })
 })
 
+describe('paginação da lista de clientes', () => {
+  const muitos: PainelAdmin = {
+    ...PAINEL,
+    clientes: Array.from({ length: 45 }, (_, n) => ({ licenca_id: `x${n}`, nome: `Pessoa ${n + 1}`, empresa: `Loja ${String(n + 1).padStart(2, '0')}`, ramo: 'loja', situacao: n < 25 ? ('em_dia' as const) : ('atrasada' as const), obras: 1, ultimo_sinal_em: null, travado_em: null })),
+  }
+  const abrir = async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente((url) => (url.endsWith('/admin/painel') ? resp(muitos) : undefined))
+    montar(api)
+    return await screen.findByRole('region', { name: 'Clientes' })
+  }
+
+  it('mostra 20 por vez, muda de página e desabilita nos extremos', async () => {
+    const lista = await abrir()
+    expect(within(lista).getByText('mostrando 1–20 de 45')).toBeInTheDocument()
+    expect(within(lista).getAllByRole('button', { name: /^Liberar troca de/ })).toHaveLength(20)
+    expect(within(lista).getByRole('button', { name: 'Página anterior' })).toBeDisabled()
+    await userEvent.click(within(lista).getByRole('button', { name: 'Próxima página' }))
+    expect(within(lista).getByText('mostrando 21–40 de 45')).toBeInTheDocument()
+    expect(within(lista).getByText('Loja 21')).toBeInTheDocument()
+    expect(within(lista).queryByText('Loja 01')).toBeNull()
+    await userEvent.click(within(lista).getByRole('button', { name: 'Próxima página' }))
+    expect(within(lista).getByText('mostrando 41–45 de 45')).toBeInTheDocument()
+    expect(within(lista).getByRole('button', { name: 'Próxima página' })).toBeDisabled()
+    await userEvent.click(within(lista).getByRole('button', { name: 'Página anterior' }))
+    expect(within(lista).getByText('mostrando 21–40 de 45')).toBeInTheDocument()
+  })
+
+  it('trocar o filtro ou a busca volta para a página 1 e pagina só o que foi filtrado', async () => {
+    const lista = await abrir()
+    await userEvent.click(within(lista).getByRole('button', { name: 'Próxima página' }))
+    await userEvent.selectOptions(within(lista).getByRole('combobox'), 'inadimplentes')
+    expect(within(lista).getByText('mostrando 1–20 de 20')).toBeInTheDocument()
+    expect(within(lista).getByRole('button', { name: 'Próxima página' })).toBeDisabled()
+    await userEvent.selectOptions(within(lista).getByRole('combobox'), 'todas')
+    await userEvent.click(within(lista).getByRole('button', { name: 'Próxima página' }))
+    await userEvent.type(within(lista).getByLabelText('Buscar por nome ou empresa'), 'Loja 3')
+    expect(within(lista).getByText('mostrando 1–10 de 10')).toBeInTheDocument()
+  })
+})
+
 describe('quandoFoi', () => {
   it('fala como gente', () => {
     const agora = new Date('2026-11-18T12:00:00Z')

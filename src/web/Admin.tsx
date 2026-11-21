@@ -20,6 +20,9 @@ const CHAVE_MENU = 'atlas.admin.menu-recolhido'
 const lerRecolhido = () => { try { return localStorage.getItem(CHAVE_MENU) !== '0' } catch { return true } }
 const guardarRecolhido = (v: boolean) => { try { localStorage.setItem(CHAVE_MENU, v ? '1' : '0') } catch { /* vale só nesta carga */ } }
 
+/** Quantas contas aparecem por página na lista de clientes. */
+export const POR_PAGINA = 20
+
 const dinheiro = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 const dia = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—')
 const mesAno = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' })
@@ -262,6 +265,7 @@ function VisaoGeral({ api }: { api: AdminApi }) {
   const [atencaoAberta, setAtencaoAberta] = useState(false)
   const [filtro, setFiltro] = useState<FiltroConta>('todas')
   const [busca, setBusca] = useState('')
+  const [pagina, setPagina] = useState(1)
   const listaRef = useRef<HTMLElement>(null)
 
   // E-mail, ramo e cadastro vêm de outra rota: junta por licenca_id. Se falhar, a lista segue sem esses dados.
@@ -278,6 +282,12 @@ function VisaoGeral({ api }: { api: AdminApi }) {
   const { indicadores: i, atencao, clientes } = dado
   const agora = new Date(dado.gerado_em)
   const visiveis = filtrarClientes(clientes, filtro, busca)
+  const totalPaginas = Math.max(1, Math.ceil(visiveis.length / POR_PAGINA))
+  const paginaAtual = Math.min(pagina, totalPaginas)
+  const ini = (paginaAtual - 1) * POR_PAGINA
+  const daPagina = visiveis.slice(ini, ini + POR_PAGINA)
+  const mudarFiltro = (f: FiltroConta) => { setFiltro(f); setPagina(1) }
+  const mudarBusca = (b: string) => { setBusca(b); setPagina(1) }
 
   const confirmarLiberar = async () => {
     if (!liberando) return
@@ -319,7 +329,7 @@ function VisaoGeral({ api }: { api: AdminApi }) {
   ]
   const alternar = (f: FiltroConta) => {
     const novo = filtro === f ? 'todas' : f
-    setFiltro(novo)
+    mudarFiltro(novo)
     if (novo !== 'todas') setTimeout(() => listaRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }), 0)
   }
 
@@ -358,19 +368,29 @@ function VisaoGeral({ api }: { api: AdminApi }) {
         <span className="ad-rotulo">CLIENTES</span>
         <div className="ad-filtro">
           <label className="ad-campo-data">Mostrar
-            <select value={filtro} onChange={(e) => setFiltro(e.target.value as FiltroConta)}>
+            <select value={filtro} onChange={(e) => mudarFiltro(e.target.value as FiltroConta)}>
               {FILTROS.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
             </select>
           </label>
           <label className="ad-campo-data">Buscar por nome ou empresa
-            <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Ex.: barbearia" autoComplete="off" />
+            <input type="search" value={busca} onChange={(e) => mudarBusca(e.target.value)} placeholder="Ex.: barbearia" autoComplete="off" />
           </label>
         </div>
         <p aria-live="polite" className="ad-mute2">{visiveis.length === clientes.length ? `${clientes.length} ${clientes.length === 1 ? 'conta' : 'contas'}` : `${visiveis.length} de ${clientes.length} contas`}</p>
         <div className="ad-tabela ad-tabela--cli ad-tabela--cab" role="row"><span>Cliente</span><span>E-mail</span><span className="ad-col-ramo">Ramo</span><span>Cadastro</span><span>Situação</span><span>Obras</span><span>Último sinal</span><span>Ação</span></div>
         {clientes.length === 0 && <p className="ad-mute">Ainda não há clientes.</p>}
         {clientes.length > 0 && visiveis.length === 0 && <p className="ad-mute">Nenhuma conta com esse filtro. Tente outro ou limpe a busca.</p>}
-        {visiveis.map((c) => <LinhaDoCliente key={c.licenca_id} c={c} cad={cadastros.get(c.licenca_id)} agora={agora} onLiberar={() => abrirLiberar(c.licenca_id, c.empresa || c.nome)} />)}
+        {daPagina.map((c) => <LinhaDoCliente key={c.licenca_id} c={c} cad={cadastros.get(c.licenca_id)} agora={agora} onLiberar={() => abrirLiberar(c.licenca_id, c.empresa || c.nome)} />)}
+        {visiveis.length > 0 && (
+          <nav className="ad-pagina" aria-label="Páginas da lista de clientes">
+            <span aria-live="polite" className="ad-mute2">mostrando {ini + 1}–{ini + daPagina.length} de {visiveis.length}</span>
+            <div className="ad-linha">
+              <button type="button" className="ad-botao" aria-label="Página anterior" disabled={paginaAtual <= 1} onClick={() => setPagina(paginaAtual - 1)}>Anterior</button>
+              <span className="ad-mute2">página {paginaAtual} de {totalPaginas}</span>
+              <button type="button" className="ad-botao" aria-label="Próxima página" disabled={paginaAtual >= totalPaginas} onClick={() => setPagina(paginaAtual + 1)}>Próxima</button>
+            </div>
+          </nav>
+        )}
       </section>
       {atencaoAberta && (
         <GavetaAtencao itens={atencao} clientes={clientes} cadastros={cadastros} agora={agora} onFechar={() => setAtencaoAberta(false)}
