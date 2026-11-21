@@ -30,6 +30,20 @@ export interface MesCaixa { mes: string; implantacoes: number; prateleira: numbe
 /** Entradas por mês (AAAA-MM). Saídas/despesas ainda não existem: ficam para depois. */
 export interface FluxoCaixa { meses: MesCaixa[] }
 
+export type TipoSinal = 'instancia_recusada' | 'troca_frequente' | 'regioes_distantes' | 'degustacao_repetida'
+export type GravidadeSinal = 'alta' | 'media' | 'baixa'
+/** Detalhes por tipo. Só informação já resumida: hash CURTO do dispositivo, nunca token, computador_hash inteiro ou IP. */
+export interface DetalhesSinal {
+  regioes?: [string, string]
+  trocas?: number; dias?: number
+  dispositivo_hash?: string
+  tentativas?: number
+}
+export interface SinalRadar { id: string; tipo: TipoSinal; gravidade: GravidadeSinal; licenca_id: string | null; cliente: string; descricao: string; quando: string; detalhes: DetalhesSinal }
+export interface ResumoRadar { licencas_sob_suspeita: number; sinais_abertos: number; por_tipo: Record<TipoSinal, number> }
+/** `ligado:false` = o servidor ainda não tem a rota: a tela explica e NÃO inventa número. */
+export interface RadarPirataria { ligado: boolean; mensagem?: string; resumo: ResumoRadar; sinais: SinalRadar[] }
+
 export interface AdminApi {
   logado(): boolean
   /** Login por e-mail + senha (Supabase Auth, password grant). A allowlist continua valendo no servidor. */
@@ -51,8 +65,14 @@ export interface AdminApi {
   cadastros(): Promise<Resp<{ cadastros: LinhaCadastro[] }>>
   /** Fluxo de caixa (só entradas). Se o servidor ainda não tem a rota, devolve ok:false com mensagem honesta. */
   fluxoCaixa(): Promise<Resp<{ fluxo: FluxoCaixa }>>
+  /** Radar de pirataria: sinais suspeitos agregados. Sem a rota no servidor, devolve ok:true com `ligado:false`. */
+  radarPirataria(): Promise<Resp<{ radar: RadarPirataria }>>
+  /** "Já verifiquei" um sinal. No servidor real ainda não existe (pendência): devolve ok:false com mensagem honesta. */
+  resolverSinalRadar(id: string): Promise<Resp>
   sair(): void
 }
+
+export const RESUMO_VAZIO: ResumoRadar = { licencas_sob_suspeita: 0, sinais_abertos: 0, por_tipo: { instancia_recusada: 0, troca_frequente: 0, regioes_distantes: 0, degustacao_repetida: 0 } }
 
 export const CHAVE_SESSAO_ADMIN = 'atlas.admin.sessao'
 const MSG_OFF = 'O painel ainda não está aberto por aqui.'
@@ -123,6 +143,13 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       // Rota ainda não existe no servidor (pendência): mensagem honesta em vez de erro técnico.
       return { ok: false, mensagem: 'O fluxo de caixa ainda não está ligado no servidor. Por enquanto só aparece no modo demonstração.' }
     },
+    async radarPirataria() {
+      const r = await servidor<{ resumo?: ResumoRadar; sinais?: SinalRadar[] }>('/admin/radar')
+      if (r.ok && Array.isArray(r.sinais) && r.resumo) return { ok: true, radar: { ligado: true, resumo: r.resumo, sinais: r.sinais } }
+      // Rota ainda não existe (pendência): estado honesto, sem número inventado.
+      return { ok: true, radar: { ligado: false, mensagem: 'O Radar ainda está sendo ligado no servidor. Quando estiver pronto, os sinais aparecem aqui sozinhos.', resumo: RESUMO_VAZIO, sinais: [] } }
+    },
+    resolverSinalRadar: () => Promise.resolve({ ok: false, mensagem: 'Dar baixa nos sinais ainda não está ligado no servidor. Nada foi marcado.' }),
     sair() { token = ''; guardar('') },
   }
 }

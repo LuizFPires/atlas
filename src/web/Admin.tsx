@@ -3,15 +3,16 @@ import { CampoFalado, Icone } from '../ui'
 import type { NomeIcone } from '../ui/Icone'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
-import type { AdminApi, DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, Situacao } from './admin-api'
+import type { AdminApi, DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, RadarPirataria, GravidadeSinal, SinalRadar, TipoSinal, Situacao } from './admin-api'
 import { FILTROS, filtrarClientes, fluxoPorMes, indicadoresGerenciais, type FiltroConta } from './admin-calc'
 import './admin.css'
 
-type Aba = 'geral' | 'caixa' | 'acoes' | 'entregas'
+type Aba = 'geral' | 'caixa' | 'acoes' | 'radar' | 'entregas'
 const MENU: { id: Aba; nome: string; icone: NomeIcone }[] = [
   { id: 'geral', nome: 'Visão geral', icone: 'brilho' },
   { id: 'caixa', nome: 'Fluxo de caixa', icone: 'moeda' },
   { id: 'acoes', nome: 'Ações', icone: 'aperto' },
+  { id: 'radar', nome: 'Radar', icone: 'escudo' },
   { id: 'entregas', nome: 'Entregas e marca d’água', icone: 'pasta' },
 ]
 
@@ -144,6 +145,7 @@ function Painel({ api, email, onSair }: { api: AdminApi; email: string; onSair: 
         {aba === 'geral' && <VisaoGeral api={api} />}
         {aba === 'caixa' && <FluxoCaixa api={api} />}
         {aba === 'acoes' && <Acoes api={api} />}
+        {aba === 'radar' && <Radar api={api} />}
         {aba === 'entregas' && <Entregas api={api} />}
       </main>
     </div>
@@ -542,6 +544,128 @@ function Cortesia({ api }: { api: AdminApi }) {
         <div className="ad-linha"><button type="submit" className="ad-botao ad-botao--lime" disabled={!cortesia.email.trim() || !cortesia.data}>Liberar cortesia</button></div>
       </form>
     </section>
+  )
+}
+
+const TIPO_SINAL: Record<TipoSinal, string> = {
+  instancia_recusada: 'Segundo computador barrado',
+  troca_frequente: 'Trocas demais de computador',
+  regioes_distantes: 'Lugares muito distantes',
+  degustacao_repetida: 'Teste grátis repetido',
+}
+const TIPOS_SINAL = Object.keys(TIPO_SINAL) as TipoSinal[]
+const GRAVIDADE: Record<GravidadeSinal, { texto: string; classe: string; ordem: number }> = {
+  alta: { texto: 'Alta', classe: 'ad-st--erro', ordem: 0 },
+  media: { texto: 'Média', classe: 'ad-st--aviso', ordem: 1 },
+  baixa: { texto: 'Baixa', classe: 'ad-st--neutro', ordem: 2 },
+}
+
+/** Mais grave primeiro; dentro da mesma gravidade, o mais recente. */
+export function ordenarSinais(l: SinalRadar[]): SinalRadar[] {
+  return [...l].sort((a, b) => GRAVIDADE[a.gravidade].ordem - GRAVIDADE[b.gravidade].ordem || new Date(b.quando).getTime() - new Date(a.quando).getTime())
+}
+
+function detalhesTexto(s: SinalRadar): string[] {
+  const d = s.detalhes
+  const l: string[] = []
+  if (d.regioes) l.push(`Lugares: ${d.regioes[0]} e ${d.regioes[1]}`)
+  if (d.trocas !== undefined) l.push(`${d.trocas} trocas${d.dias ? ` em ${d.dias} dias` : ''}`)
+  if (d.tentativas !== undefined) l.push(`${d.tentativas} ${d.tentativas === 1 ? 'tentativa' : 'tentativas'}`)
+  if (d.dispositivo_hash) l.push(`Dispositivo (código curto): ${String(d.dispositivo_hash).slice(0, 8)}`)
+  return l
+}
+
+/** Aba "Radar": sinais suspeitos de pirataria ou compartilhamento de licença. O servidor decide; aqui só se olha e se dá baixa. */
+function Radar({ api }: { api: AdminApi }) {
+  const buscar = useCallback(async () => {
+    const r = await api.radarPirataria()
+    return r.ok ? ({ ok: true, v: r.radar } as const) : r
+  }, [api])
+  const { dado, erro, recarregar } = useCarga<RadarPirataria>(buscar)
+  const [tipo, setTipo] = useState<'todos' | TipoSinal>('todos')
+  const [grav, setGrav] = useState<'todas' | GravidadeSinal>('todas')
+  const [aberto, setAberto] = useState<string | null>(null)
+  const [msg, setMsg] = useState('')
+  const baixa = async (id: string) => {
+    const r = await api.resolverSinalRadar(id)
+    setMsg(r.ok ? 'Pronto, marquei como verificado.' : r.mensagem)
+    if (r.ok) await recarregar()
+  }
+  const visiveis = dado ? ordenarSinais(dado.sinais.filter((x) => (tipo === 'todos' || x.tipo === tipo) && (grav === 'todas' || x.gravidade === grav))) : []
+  const agora = new Date()
+  return (
+    <>
+      <div className="ad-titulo"><h1>Radar</h1><span className="ad-mute">sinais de licença compartilhada ou pirateada</span></div>
+      {erro && <p role="alert" className="ad-erro">{erro}</p>}
+      {!dado && !erro && <p role="status" className="ad-mute">Carregando os sinais…</p>}
+      {dado && !dado.ligado && (
+        <section className="ad-card" aria-label="Radar ainda não ligado">
+          <span className="ad-rotulo">AINDA NÃO LIGADO</span>
+          <p className="ad-p">{dado.mensagem ?? 'O Radar ainda está sendo ligado no servidor.'}</p>
+          <p className="ad-mute2">Enquanto isso, nenhum sinal é mostrado: prefiro não inventar número.</p>
+        </section>
+      )}
+      {dado?.ligado && (
+        <>
+          <div className="ad-kpis ad-kpis--radar" role="group" aria-label="Resumo do Radar">
+            <div className={`ad-kpi ${dado.resumo.licencas_sob_suspeita > 0 ? 'ad-kpi--aviso' : ''}`}><span className="ad-kpi-nome">Licenças sob suspeita</span><span className="ad-kpi-v">{dado.resumo.licencas_sob_suspeita}</span><span className="ad-mute2">com pelo menos um sinal aberto</span></div>
+            <div className="ad-kpi"><span className="ad-kpi-nome">Sinais abertos</span><span className="ad-kpi-v">{dado.resumo.sinais_abertos}</span><span className="ad-mute2">ainda sem a sua conferência</span></div>
+            {TIPOS_SINAL.map((t) => (
+              <button key={t} type="button" aria-pressed={tipo === t} onClick={() => setTipo(tipo === t ? 'todos' : t)} className={`ad-kpi ad-kpi--botao ${tipo === t ? 'ad-kpi--ativo' : ''}`}>
+                <span className="ad-kpi-nome">{TIPO_SINAL[t]}</span><span className="ad-kpi-v">{dado.resumo.por_tipo[t]}</span><span className="ad-mute2">{tipo === t ? 'filtrando (clique para limpar)' : 'clique para filtrar'}</span>
+              </button>
+            ))}
+          </div>
+          {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
+          <section className="ad-card" aria-label="Sinais">
+            <span className="ad-rotulo">SINAIS</span>
+            <div className="ad-filtro">
+              <label className="ad-campo-data">Mostrar
+                <select value={tipo} onChange={(e) => setTipo(e.target.value as 'todos' | TipoSinal)}>
+                  <option value="todos">Todos os tipos</option>
+                  {TIPOS_SINAL.map((t) => <option key={t} value={t}>{TIPO_SINAL[t]}</option>)}
+                </select>
+              </label>
+              <label className="ad-campo-data">Gravidade
+                <select value={grav} onChange={(e) => setGrav(e.target.value as 'todas' | GravidadeSinal)}>
+                  <option value="todas">Todas</option>
+                  <option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option>
+                </select>
+              </label>
+            </div>
+            <p aria-live="polite" className="ad-mute2">{visiveis.length === dado.sinais.length ? `${dado.sinais.length} ${dado.sinais.length === 1 ? 'sinal' : 'sinais'}` : `${visiveis.length} de ${dado.sinais.length} sinais`}</p>
+            {dado.sinais.length === 0 && <p className="ad-mute">Nenhum sinal por enquanto. Tudo calmo.</p>}
+            {dado.sinais.length > 0 && visiveis.length === 0 && <p className="ad-mute">Nenhum sinal com esse filtro. Tente outro.</p>}
+            {visiveis.map((s) => {
+              const g = GRAVIDADE[s.gravidade]
+              const det = detalhesTexto(s)
+              const exp = aberto === s.id
+              return (
+                <article key={s.id} className="ad-sinal" aria-label={`${TIPO_SINAL[s.tipo]} — ${s.cliente}`}>
+                  <div className="ad-sinal-topo">
+                    <span className={`ad-st ${g.classe}`}>Gravidade {g.texto.toLowerCase()}</span>
+                    <span className="ad-alerta-tipo">{TIPO_SINAL[s.tipo]}</span>
+                    <span className="ad-mute2">{quandoFoi(s.quando, agora)}</span>
+                  </div>
+                  <b>{s.cliente}</b>
+                  <p className="ad-p">{s.descricao}</p>
+                  {exp && (
+                    <ul className="ad-sinal-det" aria-label="Detalhes do sinal">
+                      {det.map((t) => <li key={t}>{t}</li>)}
+                      <li>{s.licenca_id ? `Licença: ${s.licenca_id}` : 'Sem licença: é gente que ainda não comprou.'}</li>
+                    </ul>
+                  )}
+                  <div className="ad-linha">
+                    <button type="button" className="ad-link" aria-expanded={exp} aria-label={`${exp ? 'Esconder' : 'Ver'} detalhes de ${s.cliente}`} onClick={() => setAberto(exp ? null : s.id)}>{exp ? 'Esconder detalhes' : 'Ver detalhes'}</button>
+                    <button type="button" className="ad-link ad-link--mudo" aria-label={`Já verifiquei o sinal de ${s.cliente}`} onClick={() => baixa(s.id)}>Já verifiquei</button>
+                  </div>
+                </article>
+              )
+            })}
+          </section>
+        </>
+      )}
+    </>
   )
 }
 

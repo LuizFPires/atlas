@@ -126,7 +126,7 @@ describe('painel do admin (F16)', () => {
     expect([...document.querySelectorAll('.ad-kpi-nome')].map((n) => n.textContent)).toEqual(['Ativações no mês', 'Inadimplência', 'Cancelamentos no mês', 'Clientes travados'])
     expect(screen.getByRole('button', { name: /Precisam de atenção \(2\)/ })).toBeInTheDocument()
     expect(screen.getByText('CLIENTES')).toBeInTheDocument()
-    expect([...document.querySelectorAll('.ad-item')].map((n) => n.getAttribute('aria-label'))).toEqual(['Visão geral', 'Fluxo de caixa', 'Ações', 'Entregas e marca d’água'])
+    expect([...document.querySelectorAll('.ad-item')].map((n) => n.getAttribute('aria-label'))).toEqual(['Visão geral', 'Fluxo de caixa', 'Ações', 'Radar', 'Entregas e marca d’água'])
     expect(screen.queryByRole('link', { name: 'Cadastros' })).toBeNull()
   })
 
