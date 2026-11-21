@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { abrirLink, AVISO_ABRA_NO_COMPUTADOR, ehCelular, reenviarParaComputador } from '../functions/_shared/abertura.ts'
+import { abrirLink, AVISO_ABRA_NO_COMPUTADOR, baixarInstalador, ehCelular, reenviarParaComputador } from '../functions/_shared/abertura.ts'
 import type { BoasVindas, DepsCadastro } from '../functions/_shared/cadastro.ts'
 import { gerarLink, VALIDADE_LINK_MS } from '../functions/_shared/links.ts'
 import { montarPag } from './helpers-pagamento.ts'
@@ -86,5 +86,45 @@ describe('Enviar para o meu computador', () => {
     await reenviarParaComputador(deps, { token })
     token = enviados[2].dados.token
     await expect(reenviarParaComputador(deps, { token })).rejects.toMatchObject({ codigo: 'muitas_solicitacoes', status: 429 })
+  })
+})
+
+describe('baixar o instalador pelo link do e-mail', () => {
+  const comInstalador = (deps: DepsCadastro, link: () => Promise<string | null>): DepsCadastro => ({ ...deps, instalador: { link } })
+
+  it('abrir o link diz se o instalador já pode ser baixado', async () => {
+    const { m, deps } = pronto()
+    const { token } = await gerarLink(m.deps, 'ana@loja.com')
+    expect(await abrirLink(deps, { token, user_agent: WINDOWS, largura: 1440 })).toMatchObject({ instalador: false })
+    expect(await abrirLink(comInstalador(deps, async () => 'https://arquivos.test/x'), { token, user_agent: WINDOWS, largura: 1440 })).toMatchObject({ instalador: true })
+  })
+
+  it('link válido recebe o endereço temporário; baixar NÃO consome o link', async () => {
+    const { m, deps } = pronto()
+    const { token } = await gerarLink(m.deps, 'ana@loja.com')
+    const d = comInstalador(deps, async () => 'https://arquivos.test/Atlas-Instalador.exe?assinatura=1')
+    expect(await baixarInstalador(d, { token })).toEqual({ url: 'https://arquivos.test/Atlas-Instalador.exe?assinatura=1' })
+    expect(await baixarInstalador(d, { token })).toMatchObject({ url: expect.any(String) })
+    await expect(abrirLink(d, { token })).resolves.toMatchObject({ valido: true })
+  })
+
+  it('sem link válido ninguém recebe o endereço (nem chega a pedir o arquivo)', async () => {
+    const { m, deps } = pronto()
+    let pedidos = 0
+    const d = comInstalador(deps, async () => { pedidos++; return 'https://arquivos.test/x' })
+    await expect(baixarInstalador(d, { token: 'nada' })).rejects.toMatchObject({ codigo: 'link_invalido' })
+    const { token } = await gerarLink(m.deps, 'ana@loja.com')
+    m.avancar(VALIDADE_LINK_MS + 1)
+    await expect(baixarInstalador(d, { token })).rejects.toMatchObject({ codigo: 'link_expirado' })
+    expect(pedidos).toBe(0)
+  })
+
+  it('instalador ainda não publicado, ou arquivo fora do ar: recado honesto, sem endereço inventado', async () => {
+    const { m, deps } = pronto()
+    const { token } = await gerarLink(m.deps, 'ana@loja.com')
+    await expect(baixarInstalador(deps, { token })).rejects.toMatchObject({ codigo: 'instalador_indisponivel', status: 503 })
+    await expect(baixarInstalador(comInstalador(deps, async () => null), { token })).rejects.toMatchObject({ codigo: 'instalador_indisponivel' })
+    await expect(baixarInstalador(comInstalador(deps, async () => { throw new Error('storage fora') }), { token })).rejects.toMatchObject({ codigo: 'instalador_indisponivel' })
+    await expect(baixarInstalador(comInstalador(deps, async () => 'http://sem-https.test/x'), { token })).rejects.toMatchObject({ codigo: 'instalador_indisponivel' })
   })
 })

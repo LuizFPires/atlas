@@ -22,6 +22,8 @@ export interface BoasVindas { nome: string; empresa: string; ramo: string; token
 export interface DepsCadastro extends Deps {
   /** Envia o e-mail de boas-vindas. Fixture/testes: grava. Produção: adaptador de e-mail (etapa /entregar). */
   enviarBoasVindas: (email: string, dados: BoasVindas) => Promise<void>
+  /** Instalador para baixar. Ausente = ainda não publicado. `link` devolve um endereço https temporário do arquivo, ou null. */
+  instalador?: { link: () => Promise<string | null> }
 }
 
 export interface PedidoCadastro { session_id?: unknown; nome?: unknown; empresa?: unknown; ramo?: unknown; email?: unknown; cidade?: unknown; uf?: unknown }

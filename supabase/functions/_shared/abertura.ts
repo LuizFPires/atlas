@@ -16,12 +16,25 @@ export function ehCelular(userAgent: string | null | undefined, largura?: number
 
 export const AVISO_ABRA_NO_COMPUTADOR = 'Abra no computador onde você vai construir. O Atlas se instala no computador, não no celular. Toque em "Enviar para o meu computador" e a gente manda o acesso de novo para o seu e-mail.'
 
-export interface AberturaLink { valido: true; celular: boolean; aviso: string | null; expira_em: Date; pode_reenviar: boolean }
+/** `instalador`: o arquivo já está publicado e pode ser pedido em /instalar/baixar (a página só mostra o botão se for true). */
+export interface AberturaLink { valido: true; celular: boolean; aviso: string | null; expira_em: Date; pode_reenviar: boolean; instalador: boolean }
 
 export async function abrirLink(d: DepsCadastro, a: { token: string; user_agent?: string | null; largura?: number | null }): Promise<AberturaLink> {
   const l = await validarLink(d, a.token) // inválido/usado/vencido: ErroRegra com mensagem clara
   const celular = ehCelular(a.user_agent, a.largura)
-  return { valido: true, celular, aviso: celular ? AVISO_ABRA_NO_COMPUTADOR : null, expira_em: l.expira_em, pode_reenviar: celular }
+  return { valido: true, celular, aviso: celular ? AVISO_ABRA_NO_COMPUTADOR : null, expira_em: l.expira_em, pode_reenviar: celular, instalador: !!d.instalador }
+}
+
+const semInstalador = () => new ErroRegra('instalador_indisponivel', 'O instalador ainda não está disponível para baixar. O seu acesso continua valendo: tente de novo daqui a pouco.', 503)
+
+/** Botão "Baixar o instalador": só quem tem link válido recebe o endereço temporário do arquivo. Baixar NÃO consome o link
+ *  (quem consome é a ativação). Qualquer dúvida sobre o arquivo vira recado honesto, nunca um endereço inventado. */
+export async function baixarInstalador(d: DepsCadastro, a: { token: string }): Promise<{ url: string }> {
+  await validarLink(d, a.token) // inválido/usado/vencido: ErroRegra com mensagem clara, antes de tocar no arquivo
+  if (!d.instalador) throw semInstalador()
+  const url = await d.instalador.link().catch(() => null)
+  if (!url || !/^https:\/\//.test(url)) throw semInstalador()
+  return { url }
 }
 
 /** "Enviar para o meu computador": gera um link novo (o aberto no celular deixa de valer) e manda SEMPRE para o e-mail da compra. */

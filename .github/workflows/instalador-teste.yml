@@ -5,11 +5,12 @@ name: Instalador de teste (Windows)
 on:
   workflow_dispatch:
   push:
-    branches: [feat/instalador-teste]
+    branches: [feat/instalador-teste, feat/instalar-download]
     paths: ['app/**', 'instalador/**', 'src/**', '.github/workflows/instalador-teste.yml']
 
+# contents: write é só para publicar o .exe na release "instalador-teste" deste repositório (privado).
 permissions:
-  contents: read
+  contents: write
 
 env:
   # Endereço público do servidor de licenças (o mesmo que o site usa; não é segredo).
@@ -80,6 +81,34 @@ jobs:
           "## Instalador de teste`n" + (($r.GetEnumerator() | ForEach-Object { "- {0}: **{1}**" -f $_.Key, $(if ($_.Value) { 'sim' } else { 'NÃO' }) }) -join "`n") >> $env:GITHUB_STEP_SUMMARY
           Get-Process -Name Atlas -ErrorAction SilentlyContinue | Stop-Process -Force
           if (-not (Test-Path $app) -or -not (Test-Path $obras)) { exit 1 }
+
+      # A página /instalar entrega este arquivo: o servidor pede ao GitHub um endereço temporário para quem tem link válido.
+      - name: Publicar na release privada "instalador-teste"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view instalador-teste >/dev/null 2>&1 || gh release create instalador-teste --prerelease --title "Instalador de teste" --notes "Instalador de TESTE do Atlas (sem assinatura). Gerado pelo workflow; o arquivo é trocado a cada rodada."
+          for antigo in $(gh release view instalador-teste --json assets --jq '.assets[].name'); do gh release delete-asset instalador-teste "$antigo" --yes; done
+          gh release upload instalador-teste release/Atlas-Instalador-TESTE-*.exe
+          gh release view instalador-teste --json assets --jq '.assets[] | "\(.name) \(.size) bytes"'
+
+      - name: Conferir o endereço temporário que a página vai receber
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          id=$(gh api "repos/${{ github.repository }}/releases/tags/instalador-teste" --jq '.assets[] | select(.name | endswith(".exe")) | .id')
+          destino=$(curl -s -o /dev/null -w '%{redirect_url}' -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/octet-stream" "https://api.github.com/repos/${{ github.repository }}/releases/assets/$id")
+          [ -n "$destino" ] || { echo "o GitHub não devolveu endereço temporário"; exit 1; }
+          echo "Servidor do endereço temporário: $(echo "$destino" | sed -E 's#^(https://[^/]+)/.*#\1#')"
+          echo "Parâmetros (só os nomes): $(echo "$destino" | sed -E 's/^[^?]*\?//' | tr '&' '\n' | cut -d= -f1 | tr '\n' ' ')"
+          echo "Validade pedida: $(echo "$destino" | grep -oE '(X-Amz-Expires|se)=[^&]+' | head -1)"
+          # Sem nenhuma credencial, como o navegador do cliente: tem de responder com o arquivo inteiro.
+          curl -s -o baixado.exe -w 'Sem credencial: HTTP %{http_code}, %{size_download} bytes\n' "$destino"
+          cmp baixado.exe release/Atlas-Instalador-TESTE-*.exe && echo "Arquivo baixado é idêntico ao gerado"
+          # E o endereço fixo, sem credencial, tem de ser negado (o repositório é privado).
+          curl -s -o /dev/null -w 'Endereço fixo sem credencial: HTTP %{http_code}\n' "https://api.github.com/repos/${{ github.repository }}/releases/assets/$id" -H "Accept: application/octet-stream"
 
       - name: Guardar o instalador
         if: always()

@@ -35,7 +35,7 @@ test('celular: limite de pedidos aparece como erro honesto', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('Espere uns minutos.')
 })
 
-test('computador: acesso liberado, sem link nem botão de download inventado', async () => {
+test('computador, instalador ainda não publicado: acesso liberado, sem link nem botão de download inventado', async () => {
   const { container } = render(<Instalar api={criarInstalarFixture(false)} token={T} />)
   expect(await screen.findByRole('heading', { name: /acesso está liberado/ })).toBeInTheDocument()
   expect(screen.getByTestId('download-pendente')).toHaveTextContent(/ainda não está disponível/)
@@ -48,4 +48,55 @@ test('adaptador: 429 vira limite e sem servidor responde com honestidade', async
   const api = criarInstalarApi({ api: 'https://x.test' }, f)
   expect(await api.enviarParaComputador(T)).toMatchObject({ ok: false, limite: true })
   expect(await criarInstalarApi(null).abrir(T)).toMatchObject({ ok: false })
+})
+
+// ---- baixar o instalador -----------------------------------------------------------------------------------------------------
+
+const comInstalador = (extra: Partial<InstalarApi> = {}): InstalarApi => ({
+  ...criarInstalarFixture(false),
+  abrir: async () => ({ ok: true, celular: false, aviso: null, podeReenviar: false, expiraEm: null, instalador: true }),
+  ...extra,
+})
+
+test('computador com instalador publicado: o botão pede o endereço e começa o download', async () => {
+  const baixar = vi.fn(async () => ({ ok: true as const, url: 'https://arquivos.test/Atlas-Instalador.exe?assinatura=1' }))
+  const ir = vi.fn()
+  render(<Instalar api={comInstalador({ baixar })} token={T} ir={ir} />)
+  expect(screen.queryByTestId('download-pendente')).toBeNull()
+  await userEvent.click(await screen.findByRole('button', { name: /Baixar o instalador/ }))
+  expect(baixar).toHaveBeenCalledWith(T)
+  expect(ir).toHaveBeenCalledWith('https://arquivos.test/Atlas-Instalador.exe?assinatura=1')
+  expect(await screen.findByRole('status')).toHaveTextContent(/download começou/)
+  expect(screen.getByText(/abra o arquivo Atlas-Instalador\.exe/)).toBeInTheDocument()
+})
+
+test('o servidor não entregou o arquivo: recado honesto, nada é baixado e dá para tentar de novo', async () => {
+  const ir = vi.fn()
+  const api = comInstalador({ baixar: async () => ({ ok: false, mensagem: 'O instalador ainda não está disponível para baixar.' }) })
+  render(<Instalar api={api} token={T} ir={ir} />)
+  await userEvent.click(await screen.findByRole('button', { name: /Baixar o instalador/ }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('O instalador ainda não está disponível para baixar.')
+  expect(ir).not.toHaveBeenCalled()
+  expect(screen.getByRole('button', { name: /Baixar o instalador/ })).toBeEnabled()
+})
+
+test('no celular não aparece botão de baixar, mesmo com o instalador publicado', async () => {
+  const api = comInstalador({ abrir: async () => ({ ok: true, celular: true, aviso: 'Abra no computador.', podeReenviar: true, expiraEm: null, instalador: true }) })
+  render(<Instalar api={api} token={T} />)
+  expect(await screen.findByRole('button', { name: /Enviar para o meu computador/ })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Baixar o instalador/ })).toBeNull()
+})
+
+test('adaptador: /instalar/abrir informa o instalador e /instalar/baixar só aceita endereço https', async () => {
+  const respostas: Record<string, unknown> = {
+    '/instalar/abrir': { valido: true, celular: false, aviso: null, pode_reenviar: false, expira_em: null, instalador: true },
+    '/instalar/baixar': { url: 'https://arquivos.test/a.exe' },
+  }
+  const f = vi.fn(async (u: string) => new Response(JSON.stringify(respostas[u.replace('https://x.test', '')]), { status: 200 })) as unknown as typeof fetch
+  const api = criarInstalarApi({ api: 'https://x.test' }, f)
+  expect(await api.abrir(T)).toMatchObject({ ok: true, instalador: true })
+  expect(await api.baixar(T)).toEqual({ ok: true, url: 'https://arquivos.test/a.exe' })
+  respostas['/instalar/baixar'] = { url: 'javascript:alert(1)' }
+  expect(await api.baixar(T)).toMatchObject({ ok: false })
+  expect(await criarInstalarApi(null).baixar(T)).toMatchObject({ ok: false })
 })
