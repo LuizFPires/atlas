@@ -6,8 +6,6 @@ export interface ConfigInstalador { bucket: string; arquivo: string }
 
 /** Validade do endereço temporário: dá para começar o download, e é curto para não virar link repassável. */
 export const VALIDADE_LINK_INSTALADOR_S = 10 * 60
-/** Nome com que o arquivo chega ao computador do cliente (a página fala esse nome). */
-export const NOME_DO_DOWNLOAD = 'Atlas-Instalador.exe'
 
 const ARQUIVO_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*(\/[A-Za-z0-9][A-Za-z0-9._-]*)*$/
 const BUCKET_RE = /^[a-z0-9][a-z0-9_-]{0,62}$/
@@ -26,11 +24,11 @@ export type DoBucket = (bucket: string) => {
   createSignedUrl: (arquivo: string, validadeS: number, opcoes?: { download?: string }) => Promise<{ data: { signedUrl: string } | null; error: unknown }>
 }
 
-/** Devolve a função que pede o endereço temporário. Qualquer dúvida devolve null (nunca um endereço inventado). */
-export function criarLinkInstaladorStorage(cfg: ConfigInstalador, doBucket: DoBucket): () => Promise<string | null> {
-  return async () => {
+/** Devolve a função que pede o endereço temporário, baixando com o nome pedido (abertura.ts põe nele o código do link). Qualquer dúvida devolve null (nunca um endereço inventado). */
+export function criarLinkInstaladorStorage(cfg: ConfigInstalador, doBucket: DoBucket): (nomeDoDownload: string) => Promise<string | null> {
+  return async (nomeDoDownload) => {
     try {
-      const { data, error } = await doBucket(cfg.bucket).createSignedUrl(cfg.arquivo, VALIDADE_LINK_INSTALADOR_S, { download: NOME_DO_DOWNLOAD })
+      const { data, error } = await doBucket(cfg.bucket).createSignedUrl(cfg.arquivo, VALIDADE_LINK_INSTALADOR_S, { download: nomeDoDownload })
       return error || !data?.signedUrl ? null : data.signedUrl
     } catch {
       return null

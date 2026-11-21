@@ -329,3 +329,13 @@
 .v-link { background: none; border: 0; padding: 0; font: inherit; color: var(--text); text-decoration: underline; cursor: pointer; }
 .v-legal-no-app { max-height: 220px; overflow: auto; border: 1px solid var(--card-b); border-radius: 12px; padding: 12px 14px; font-size: 13px; }
 .v-modal:has(.v-legal-no-app) { max-height: 92vh; overflow: auto; }
+
+/* Página /instalar: reserva para liberar o computador pela página (só se o Atlas pedir). */
+.v-reserva { font-size: 14px; color: var(--mute); }
+.v-reserva summary { cursor: pointer; }
+.v-reserva[open] { display: flex; flex-direction: column; gap: 12px; }
+
+/* Página /instalar: aviso da tela azul do Windows (instalador ainda sem assinatura). */
+.v-aviso-windows { border: 1px solid var(--card-b); border-left: 3px solid #2f6fd6; border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+.v-aviso-windows p { font-size: 14px; }
+.v-aviso-windows ol { margin: 8px 0 0; padding-left: 20px; color: var(--mute); line-height: 1.6; }

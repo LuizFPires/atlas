@@ -17,7 +17,8 @@
   CreateShortCut "$DESKTOP\Atlas · minhas obras.lnk" "$INSTDIR\Atlas.exe" "" "$INSTDIR\Atlas.exe" 0
 
   ; 4) So nesta primeira instalacao: abre o app direto na ativacao (F02)
-  Exec '"$INSTDIR\Atlas.exe" --tela=F02'
+  ; $EXEFILE = nome do instalador baixado (Atlas-Instalador-<codigo>.exe): o app tira dele o codigo do link do e-mail.
+  Exec '"$INSTDIR\Atlas.exe" --tela=F02 "--instalador=$EXEFILE"'
 !macroend
 
 !macro customUnInstall

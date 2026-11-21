@@ -32,16 +32,16 @@ describe('configuração', () => {
 
 describe('endereço temporário do instalador (pasta privada do Storage)', () => {
   const cfg = { bucket: 'instalador', arquivo: 'Atlas-Instalador.exe' }
-  it('pede um endereço que vale 10 minutos e baixa com o nome Atlas-Instalador.exe', async () => {
+  it('pede um endereço que vale 10 minutos e baixa com o nome pedido (que leva o código do link)', async () => {
     const s = storage({ data: { signedUrl: TEMPORARIO }, error: null })
-    expect(await criarLinkInstaladorStorage(cfg, s.de)()).toBe(TEMPORARIO)
+    expect(await criarLinkInstaladorStorage(cfg, s.de)('Atlas-Instalador-abc.exe')).toBe(TEMPORARIO)
     expect(VALIDADE_LINK_INSTALADOR_S).toBe(600)
-    expect(s.pedidos).toEqual([{ bucket: 'instalador', arquivo: 'Atlas-Instalador.exe', validade: 600, opcoes: { download: 'Atlas-Instalador.exe' } }])
+    expect(s.pedidos).toEqual([{ bucket: 'instalador', arquivo: 'Atlas-Instalador.exe', validade: 600, opcoes: { download: 'Atlas-Instalador-abc.exe' } }])
   })
   it('arquivo que ainda não subiu, erro do Storage ou queda: null, nunca um endereço inventado', async () => {
-    expect(await criarLinkInstaladorStorage(cfg, storage({ data: null, error: { message: 'Object not found' } }).de)()).toBeNull()
-    expect(await criarLinkInstaladorStorage(cfg, storage({ data: { signedUrl: '' }, error: null }).de)()).toBeNull()
+    expect(await criarLinkInstaladorStorage(cfg, storage({ data: null, error: { message: 'Object not found' } }).de)('a.exe')).toBeNull()
+    expect(await criarLinkInstaladorStorage(cfg, storage({ data: { signedUrl: '' }, error: null }).de)('a.exe')).toBeNull()
     const cai = () => ({ createSignedUrl: async () => { throw new Error('fora') } })
-    expect(await criarLinkInstaladorStorage(cfg, cai)()).toBeNull()
+    expect(await criarLinkInstaladorStorage(cfg, cai)('a.exe')).toBeNull()
   })
 })

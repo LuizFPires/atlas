@@ -120,6 +120,19 @@ export const caixa = (titulo: string, linhas: string[]) =>
   `<div style="margin:0 0 22px;background:${COR.caixa};border-radius:12px;padding:18px 20px;font-size:15px;line-height:1.6;color:${COR.corpo}"><b style="color:${COR.tinta}">${esc(titulo)}</b>${linhas.map((l) => `<br>${esc(l)}`).join('')}</div>`
 export const destaque = (icone: keyof typeof ICONES, corpo: string) =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;background:${COR.caixa};border-radius:12px"><tr><td width="56" valign="top" style="padding:18px 0 18px 18px">${bolinha(icone)}</td><td style="padding:18px 18px 18px 12px;font-size:15px;line-height:1.5;color:${COR.corpo}">${corpo}</td></tr></table>`
+/** Aviso da tela azul do Windows (SmartScreen): o instalador ainda não é assinado, então o cliente é avisado ANTES de ver a tela.
+ *  Sai daqui quando o instalador for assinado ou for para a Microsoft Store. Mesmo texto da página /instalar. */
+export const AVISO_WINDOWS = {
+  titulo: 'O Windows vai pedir uma confirmação',
+  linhas: [
+    'Ao abrir o instalador, aparece uma tela azul dizendo "O Windows protegeu o computador". Ela aparece porque o Atlas é um programa novo e o Windows ainda não o conhece.',
+    '1. Clique em "Mais informações".',
+    '2. Clique em "Executar assim mesmo".',
+  ],
+}
+const avisoWindows = () => caixa(AVISO_WINDOWS.titulo, AVISO_WINDOWS.linhas)
+const avisoWindowsTexto = () => [`${AVISO_WINDOWS.titulo}:`, ...AVISO_WINDOWS.linhas]
+
 export const rodape = (t: string) => `<p style="margin:0;font-size:13px;line-height:1.5;color:${COR.claro}">${t}</p>`
 
 export const AJUDA = 'Travou em algum passo? Dentro do Atlas tem a Ajuda do Atlas, que vê o que aconteceu e te guia.'
@@ -141,6 +154,7 @@ export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
       p('Abra este e-mail <b>no computador onde você vai trabalhar</b> e clique no botão. Leva uns 10 minutos.'),
       link ? botao(link, 'Instalar o Atlas neste computador') : '',
       caixa('O que vai acontecer', ['1. O instalador pede um código que chega neste e-mail.', '2. Você conecta a sua conta do Claude.', '3. O Atlas te ajuda a abrir as contas que o seu sistema vai usar.']),
+      avisoWindows(),
       destaque('microfone', `<b style="color:${COR.tinta}">Você não vai precisar digitar.</b> No Atlas, tudo pode ser falado. É só apertar o microfone e conversar como se estivesse com um amigo na mesa de um restaurante.`),
       rodape(`O botão funciona uma vez só e vale até ${esc(ate)} (48 horas). Abriu no celular? Toque em "Enviar para o meu computador".`),
       `<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:${COR.claro}">${esc(AJUDA)}</p>`,
@@ -157,6 +171,8 @@ export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
       d.link_instalacao,
       '',
       `O link vale para uma instalação e vence em ${ate}. Se abrir no celular, é só abrir de novo no computador.`,
+      '',
+      ...avisoWindowsTexto(),
       '',
       AJUDA,
     ].join('\n'),
@@ -179,7 +195,8 @@ export function montarCortesia(d: DadosCortesia): EmailMontado {
       p('Alguém quis te dar um presente: um acesso ao Atlas, o jeito de construir os sistemas do seu negócio sem programar. Abra este e-mail <b>no computador onde você vai trabalhar</b> e clique no botão. Leva uns 10 minutos.'),
       link ? botao(link, 'Instalar o Atlas neste computador') : '',
       `<div style="margin:0 0 22px;border:2px solid ${COR.lime};background:${COR.caixa};border-radius:12px;padding:18px 20px;font-size:16px;line-height:1.6;color:${COR.corpo}"><b style="color:${COR.tinta};font-size:18px">Seu presente vale até ${esc(validade)}.</b><br>É como um bilhete com data: no dia ${esc(validade)} o acesso acaba sozinho, sem você precisar fazer nada. Nada é cobrado e não fica nenhuma conta pendente.</div>`,
-      destaque('microfone', `<b style="color:${COR.tinta}">Você não vai precisar digitar.</b> No Atlas, tudo pode ser falado. É só apertar o microfone e conversar como se estivesse com um amigo na mesa de um restaurante.`),
+avisoWindows(),
+            destaque('microfone', `<b style="color:${COR.tinta}">Você não vai precisar digitar.</b> No Atlas, tudo pode ser falado. É só apertar o microfone e conversar como se estivesse com um amigo na mesa de um restaurante.`),
       rodape(`O botão funciona uma vez só e vale até ${esc(ate)} (48 horas). Abriu no celular? Abra de novo no computador.`),
       `<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:${COR.claro}">${esc(AJUDA)}</p>`,
     ].join(''),
@@ -197,6 +214,8 @@ export function montarCortesia(d: DadosCortesia): EmailMontado {
       d.link,
       '',
       `O link funciona uma vez e vale até ${ate}.`,
+      '',
+      ...avisoWindowsTexto(),
       '',
       AJUDA,
     ].join('\n'),

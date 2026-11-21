@@ -67,7 +67,11 @@ jobs:
           $exe = Get-ChildItem release -Filter 'Atlas-Instalador-TESTE-*.exe' | Select-Object -First 1
           if (-not $exe) { Write-Error 'instalador não foi gerado'; exit 1 }
           "Instalador: $($exe.Name) ($([math]::Round($exe.Length / 1MB, 1)) MB)"
-          $p = Start-Process -FilePath $exe.FullName -ArgumentList '/S' -PassThru
+          # Como o cliente recebe: o arquivo baixado pela página chama Atlas-Instalador-<código do link>.exe.
+          $codigo = 'c' * 30
+          $baixado = Join-Path $env:TEMP "Atlas-Instalador-$codigo.exe"
+          Copy-Item $exe.FullName $baixado
+          $p = Start-Process -FilePath $baixado -ArgumentList '/S' -PassThru
           if (-not $p.WaitForExit(900000)) { $p.Kill(); Write-Error 'a instalação não terminou em 15 minutos'; exit 1 }
           "Código de saída do instalador: $($p.ExitCode)"
           Start-Sleep -Seconds 8
@@ -75,6 +79,9 @@ jobs:
           $obras = Join-Path $env:USERPROFILE 'Atlas\Obras'
           $atalho = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Atlas · minhas obras.lnk'
           $aberto = [bool](Get-Process -Name Atlas -ErrorAction SilentlyContinue)
+          # O instalador tem de abrir o app dizendo o nome do arquivo baixado: é dali que o app tira o código do link.
+          $linhas = @(Get-CimInstance Win32_Process -Filter "Name='Atlas.exe'" | ForEach-Object { $_.CommandLine })
+          $recebeuNome = [bool]($linhas | Where-Object { $_ -like "*--instalador=Atlas-Instalador-$codigo.exe*" })
           $claude = [bool](Get-Command claude -ErrorAction SilentlyContinue)
           $r = [ordered]@{
             'Atlas.exe instalado' = (Test-Path $app)
@@ -83,12 +90,13 @@ jobs:
             'config.json dentro do pacote' = [bool](Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Programs\Atlas\resources') -Recurse -Filter 'app.asar' -ErrorAction SilentlyContinue)
             'Claude Code instalado' = $claude
             'App abriu sozinho na ativação' = $aberto
+            'App recebeu o nome do instalador (código do link)' = $recebeuNome
             'Endereço atlas:// registrado no Windows' = (Test-Path 'HKCU:\Software\Classes\atlas')
           }
           $r.GetEnumerator() | ForEach-Object { "{0}: {1}" -f $_.Key, $(if ($_.Value) { 'sim' } else { 'NÃO' }) }
           "## Instalador de teste`n" + (($r.GetEnumerator() | ForEach-Object { "- {0}: **{1}**" -f $_.Key, $(if ($_.Value) { 'sim' } else { 'NÃO' }) }) -join "`n") >> $env:GITHUB_STEP_SUMMARY
           Get-Process -Name Atlas -ErrorAction SilentlyContinue | Stop-Process -Force
-          if (-not (Test-Path $app) -or -not (Test-Path $obras)) { exit 1 }
+          if (-not (Test-Path $app) -or -not (Test-Path $obras) -or -not $recebeuNome) { exit 1 }
 
       # A hospedagem saiu do GitHub (a release era pública enquanto o repositório for público). Este passo apaga a release
       # antiga, se ainda existir; depois da primeira rodada pode ser removido junto com o "contents: write" acima.

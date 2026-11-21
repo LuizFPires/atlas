@@ -26,3 +26,22 @@ test('comToken troca o código antigo pelo novo, sem repetir', () => {
   assert.deepEqual(comToken(['Atlas.exe', '--tela=F02', '--token=velho'], T), ['Atlas.exe', '--tela=F02', `--token=${T}`])
   assert.deepEqual(comToken(['Atlas.exe', `atlas://ativar?t=${T}`], T), ['Atlas.exe', `--token=${T}`])
 })
+
+test('lê o código do nome do instalador baixado (--instalador=Atlas-Instalador-<código>.exe)', () => {
+  assert.equal(tokenDoLink(['Atlas.exe', '--tela=F02', `--instalador=Atlas-Instalador-${T}.exe`]), T)
+  // O navegador renomeia quando o arquivo é baixado duas vezes.
+  assert.equal(tokenDoLink(['Atlas.exe', `--instalador=Atlas-Instalador-${T} (1).exe`]), T)
+  assert.equal(tokenDoLink(['Atlas.exe', `--instalador=atlas-instalador-${T}.EXE`]), T)
+})
+
+test('instalador sem código no nome (renomeado, ou o de teste) não vira código', () => {
+  for (const nome of ['Atlas-Instalador.exe', 'Atlas-Instalador-TESTE-0.1.0.exe', 'Atlas-Instalador-curto.exe', `Outro-${T}.exe`, `Atlas-Instalador-${T}.exe.txt`, `C:\\x\\Atlas-Instalador-${T}.exe --tela=F05`, '']) {
+    assert.equal(tokenDoLink(['Atlas.exe', `--instalador=${nome}`]), '', nome)
+  }
+})
+
+test('o link aberto pela página vale mais que o nome do instalador', () => {
+  const outro = 'b'.repeat(30)
+  assert.equal(tokenDoLink(['Atlas.exe', `--instalador=Atlas-Instalador-${T}.exe`, `atlas://ativar?t=${outro}`]), outro)
+  assert.deepEqual(comToken(['Atlas.exe', '--tela=F02', `--instalador=Atlas-Instalador-${T}.exe`], T), ['Atlas.exe', '--tela=F02', `--token=${T}`])
+})

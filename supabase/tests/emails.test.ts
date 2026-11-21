@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { montarBoasVindas } from '../functions/_shared/emails.ts'
+import { montarBoasVindas, montarCortesia } from '../functions/_shared/emails.ts'
 
 const LINK = 'https://atlas-ia.app.br/instalar?t=abc123'
 const base = { nome: 'Zé', empresa: 'Barbearia do Zé', ramo: 'barbearia', link_instalacao: LINK, expira_em: new Date('2026-11-20T15:00:00Z') }
@@ -42,5 +42,17 @@ describe('e-mail de boas-vindas em HTML (F01)', () => {
     const { html } = montarBoasVindas({ ...base, link_instalacao: 'javascript:alert(1)' })
     expect(html).not.toContain('javascript:')
     expect(html).not.toContain('Instalar o Atlas neste computador</a>')
+  })
+})
+
+describe('aviso da tela azul do Windows (instalador ainda sem assinatura)', () => {
+  const cortesia = montarCortesia({ validade_em: new Date('2026-12-05T20:00:00Z'), link: LINK, link_expira_em: new Date('2026-11-23T12:00:00Z') })
+  it.each([['boas-vindas', montarBoasVindas(base)], ['cortesia', cortesia]])('%s: avisa antes, no HTML e no texto, com os dois cliques', (_nome, m) => {
+    for (const corpo of [m.html, m.texto]) {
+      expect(corpo).toContain('O Windows protegeu o computador')
+      expect(corpo).toContain('Mais informações')
+      expect(corpo).toContain('Executar assim mesmo')
+    }
+    expect(m.html).toContain('O Windows vai pedir uma confirmação')
   })
 })

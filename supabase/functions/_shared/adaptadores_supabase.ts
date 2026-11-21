@@ -435,7 +435,7 @@ export function criarCarregarKit() {
 // ── Instalador para baixar (pasta PRIVADA do Storage; a página só recebe um endereço temporário) ──
 /** Liga o download quando ATLAS_INSTALADOR_ARQUIVO está definido (ver instalador-storage.ts).
  *  Sem ele devolve undefined: a página continua dizendo que o instalador ainda não está disponível. */
-export function criarInstalador(): { link: () => Promise<string | null> } | undefined {
+export function criarInstalador(): { link: (nomeDoDownload: string) => Promise<string | null> } | undefined {
   const cfg = lerConfigInstalador((nome) => Deno.env.get(nome))
   return cfg ? { link: criarLinkInstaladorStorage(cfg, (bucket) => db().storage.from(bucket)) } : undefined
 }

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { abrirLink, AVISO_ABRA_NO_COMPUTADOR, baixarInstalador, ehCelular, reenviarParaComputador } from '../functions/_shared/abertura.ts'
+import { abrirLink, AVISO_ABRA_NO_COMPUTADOR, baixarInstalador, ehCelular, nomeDoInstalador, reenviarParaComputador } from '../functions/_shared/abertura.ts'
 import type { BoasVindas, DepsCadastro } from '../functions/_shared/cadastro.ts'
 import { gerarLink, VALIDADE_LINK_MS } from '../functions/_shared/links.ts'
 import { montarPag } from './helpers-pagamento.ts'
@@ -90,7 +90,7 @@ describe('Enviar para o meu computador', () => {
 })
 
 describe('baixar o instalador pelo link do e-mail', () => {
-  const comInstalador = (deps: DepsCadastro, link: () => Promise<string | null>): DepsCadastro => ({ ...deps, instalador: { link } })
+  const comInstalador = (deps: DepsCadastro, link: (nome: string) => Promise<string | null>): DepsCadastro => ({ ...deps, instalador: { link } })
 
   it('abrir o link diz se o instalador já pode ser baixado', async () => {
     const { m, deps } = pronto()
@@ -126,5 +126,16 @@ describe('baixar o instalador pelo link do e-mail', () => {
     await expect(baixarInstalador(comInstalador(deps, async () => null), { token })).rejects.toMatchObject({ codigo: 'instalador_indisponivel' })
     await expect(baixarInstalador(comInstalador(deps, async () => { throw new Error('storage fora') }), { token })).rejects.toMatchObject({ codigo: 'instalador_indisponivel' })
     await expect(baixarInstalador(comInstalador(deps, async () => 'http://sem-https.test/x'), { token })).rejects.toMatchObject({ codigo: 'instalador_indisponivel' })
+  })
+
+  it('o arquivo baixado leva o código do link no nome, para o instalador entregar ao Atlas sem o cliente voltar à página', async () => {
+    const { m, deps } = pronto()
+    const { token } = await gerarLink(m.deps, 'ana@loja.com')
+    const nomes: string[] = []
+    const d = comInstalador(deps, async (nome) => { nomes.push(nome); return 'https://arquivos.test/x' })
+    await baixarInstalador(d, { token })
+    expect(nomes).toEqual([`Atlas-Instalador-${token}.exe`])
+    expect(nomeDoInstalador('curto')).toBe('Atlas-Instalador.exe')
+    expect(nomeDoInstalador('../../x'.padEnd(30, 'a'))).toBe('Atlas-Instalador.exe')
   })
 })

@@ -32,6 +32,9 @@ export function Claude({ claude, onContinuar, onPedirAjuda, sondagemMs = 15000 }
   const [ajuda, setAjuda] = useState(false)
   const [aviso, setAviso] = useState('')
   const [estado, setEstado] = useState<EstadoClaude | null>(null)
+  // Ao abrir, confere se o Claude Code deste computador JÁ está conectado (quem já usa o Claude não precisa refazer o login).
+  const [conferindoInicio, setConferindoInicio] = useState(true)
+  const [jaEstava, setJaEstava] = useState(false)
 
   const [novidade, setNovidade] = useState('')
   const [conferindo, setConferindo] = useState(false)
@@ -45,6 +48,17 @@ export function Claude({ claude, onContinuar, onPedirAjuda, sondagemMs = 15000 }
     if (mudou) setNovidade(`Percebi a troca! Agora você está no plano ${NOME_PLANO[e.plano!]}. Já ajustei a previsão das suas obras.`)
     return mudou
   }
+
+  useEffect(() => {
+    let vivo = true
+    void (async () => {
+      const e = await claude.estado().catch(() => null)
+      if (!vivo) return
+      if (e?.conectado) { planoVisto.current = e.plano; setEstado(e); setJaEstava(true) }
+      setConferindoInicio(false) // sem resposta ou desconectado: segue pelo guia de passos
+    })()
+    return () => { vivo = false }
+  }, [claude])
 
   // Polling leve: enquanto o cliente está nesta tela conectado, olha o estado de tempos em tempos.
   const conectado = estado !== null
@@ -79,7 +93,7 @@ export function Claude({ claude, onContinuar, onPedirAjuda, sondagemMs = 15000 }
   }
   const voltar = () => {
     setAviso('')
-    if (estado) { setEstado(null); setNovidade('') }
+    if (estado) { setEstado(null); setNovidade(''); setJaEstava(false) }
     else if (passo > 0) { setPasso(passo - 1); setAjuda(false) }
   }
 
@@ -95,7 +109,9 @@ export function Claude({ claude, onContinuar, onPedirAjuda, sondagemMs = 15000 }
               <span className="at-ativ__txt">É ele quem faz o seu sistema. Ele trabalha com a sua assinatura do Claude, que você paga direto para a Anthropic. Agora vamos apresentar o Claude ao Atlas.</span>
             </div>
 
-            {!estado && (
+            {conferindoInicio && <p role="status" className="at-ativ__txt">Conferindo se o Claude já está conectado neste computador…</p>}
+
+            {!conferindoInicio && !estado && (
               <>
                 <div className="at-claude__passo" aria-live="polite">
                   <div className="at-claude__prog">
@@ -136,6 +152,7 @@ export function Claude({ claude, onContinuar, onPedirAjuda, sondagemMs = 15000 }
             {estado && (
               <>
                 <div className="at-claude__ok"><span className="at-claude__ok-bola"><Icone nome="check" tamanho={16} /></span><span>Conectado! Conta <b>{estado.conta}</b>{estado.plano && <> · plano <b>{NOME_PLANO[estado.plano]}</b></>}</span></div>
+                {jaEstava && <span className="at-ativ__txt">O Claude já estava conectado neste computador, então pulei os passos.</span>}
                 <div className="at-claude__explica">
                   <span className="at-claude__explica-rotulo">{explicarPlano(estado.plano).titulo}</span>
                   <span>{explicarPlano(estado.plano).texto}</span>

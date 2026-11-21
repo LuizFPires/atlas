@@ -3,6 +3,7 @@ import config from './electron-builder.json'
 import nsh from './atlas-install.nsh?raw'
 import ps1 from './instalar.ps1?raw'
 import executar from './executar.mjs?raw'
+import principal from '../app/main.cjs?raw'
 import pkg from '../package.json'
 import { atalhoAreaDeTrabalho, pastaObras, pastaObrasSegura } from './caminhos.ts'
 import { executarPlano, planoDeInstalacao, rodarInstalacao, telaInicial } from './passos.ts'
@@ -75,7 +76,8 @@ describe('config do electron-builder e scripts', () => {
     expect(nsh).not.toMatch(/\$(DOCUMENTS|DESKTOP)\\Atlas\\/)
     expect(nsh).toContain('Atlas · minhas obras.lnk')
     expect(nsh).toMatch(/CreateShortCut [^\n]*Atlas\.exe" "" /)
-    expect(nsh).toContain('Exec \'"$INSTDIR\\Atlas.exe" --tela=F02\'')
+    // O nome do instalador baixado leva o código do link; o app lê daí (app/link-instalacao.cjs) e o cliente não volta à página.
+    expect(nsh).toContain('Exec \'"$INSTDIR\\Atlas.exe" --tela=F02 "--instalador=$EXEFILE"\'')
   })
   it('customUnInstall não remove a pasta das obras', () => {
     const un = nsh.slice(nsh.indexOf('!macro customUnInstall'))
@@ -101,6 +103,15 @@ describe('config do electron-builder e scripts', () => {
     expect(config.directories.app).toBe('.')
     expect(config.extraMetadata.main).toBe('app/main.cjs')
     expect(config.electronVersion).toMatch(/^\d+\.\d+\.\d+$/)
+  })
+  it('o app e o instalador usam o ícone do Atlas, não o do Electron', () => {
+    expect(config.win.icon).toBe('instalador/recursos/icon.ico')
+    expect(Object.keys(import.meta.glob('./recursos/icon.ico', { eager: true, query: '?url' }))).toHaveLength(1)
+    expect(Object.keys(import.meta.glob('../app/icone.png', { eager: true, query: '?url' }))).toHaveLength(1)
+    expect(principal).toContain("icon: path.join(__dirname, 'icone.png')")
+  })
+  it('a janela do app não mostra o menu padrão do Electron (File, Edit, View, Window)', () => {
+    expect(principal).toContain('Menu.setApplicationMenu(null)')
   })
   it('o aviso de erro não trava a instalação silenciosa', () => {
     expect(nsh).toMatch(/MessageBox MB_ICONEXCLAMATION "[^"]+" \/SD IDOK/)

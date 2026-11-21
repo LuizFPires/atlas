@@ -1,6 +1,6 @@
 // Processo principal do app Atlas (Electron). Reaproveita o front (dist-app/, gerado por `npm run build:app`).
 'use strict'
-const { app, BrowserWindow, dialog, ipcMain, powerSaveBlocker, session, shell } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain, Menu, powerSaveBlocker, session, shell } = require('electron')
 const crypto = require('node:crypto')
 const os = require('node:os')
 const path = require('node:path')
@@ -231,6 +231,8 @@ handle('atlas:sono', (ligado) => {
 })
 
 function abrir() {
+  // Sem o menu padrão do Electron (File, Edit, View, Window): o cliente é leigo e o app tem o próprio menu lateral.
+  Menu.setApplicationMenu(null)
   // Abre junto com o Windows (ao ligar o computador). Com obra em andamento, a tela inicial é Retomar (F12): a regra está em
   // src/app/tela.ts (telaInicial). Para desligar: Configurações → Abrir com o Windows (a tela F12 avisa o cliente).
   app.setLoginItemSettings({ openAtLogin: true })
@@ -241,7 +243,7 @@ function abrir() {
   session.defaultSession.setPermissionRequestHandler((wc, permissao, ok, detalhes) => ok(permissao === 'media' && doApp(wc.getURL()) && doApp((detalhes && detalhes.requestingUrl) || wc.getURL())))
   session.defaultSession.setPermissionCheckHandler((wc, permissao, origem) => permissao === 'media' && doApp((wc && wc.getURL()) || '') && String(origem).startsWith('file://'))
   const janela = new BrowserWindow({
-    width: 1100, height: 780, backgroundColor: '#141619', title: 'Atlas',
+    width: 1100, height: 780, backgroundColor: '#141619', title: 'Atlas', icon: path.join(__dirname, 'icone.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   })
   janelaPrincipal = janela
