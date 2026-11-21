@@ -1024,7 +1024,11 @@ function CortesiasAtivas({ api, versao }: { api: AdminApi; versao: number }) {
     if (!r.ok) { setErro(r.mensagem); return }
     setErro(''); setLista(r.cortesias)
   }
-  useEffect(() => { void recarregar() }, [api, versao]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    let vivo = true
+    api.listarCortesias().then((r) => { if (!vivo) return; if (r.ok) { setErro(''); setLista(r.cortesias) } else setErro(r.mensagem) })
+    return () => { vivo = false }
+  }, [api, versao])
   return (
     <section className="ad-card" aria-label="Cortesias ativas">
       <span className="ad-rotulo">CORTESIAS ATIVAS</span>

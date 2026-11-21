@@ -415,6 +415,38 @@ describe('quandoFoi', () => {
   })
 })
 
+describe('cortesias ativas: estender prazo', () => {
+  const diaIso = (n: number) => new Date(Date.now() + n * 86400000).toISOString()
+  it('lista a cortesia, soma dias na data e estende pelo mesmo endpoint de liberar', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const validade = diaIso(5)
+    const { api, chamadas } = ambiente((url) => (url.endsWith('/admin/cortesias') ? resp({ ok: true, cortesias: [{ email: 'amigo@x.com', nome: 'Amigo', validade_em: validade }] }) : url.endsWith('/admin/cortesia') ? resp({ ok: true, nova: false, validade_em: diaIso(12) }) : undefined))
+    montar(api)
+    await irParaAcoes()
+    const cartao = await screen.findByRole('region', { name: 'Cortesias ativas' })
+    expect(await within(cartao).findByText('amigo@x.com')).toBeInTheDocument()
+    const campo = within(cartao).getByLabelText('Estender prazo') as HTMLInputElement
+    const antes = campo.value
+    await userEvent.click(within(cartao).getByRole('button', { name: '+7 dias' }))
+    expect(campo.value > antes).toBe(true)
+    await userEvent.click(within(cartao).getByRole('button', { name: 'Estender' }))
+    await waitFor(() => expect(within(cartao).getByRole('status')).toHaveTextContent(/Cortesia renovada até \d\d\/\d\d\./))
+    const c = chamadas.find((x) => x.url.endsWith('/admin/cortesia'))!
+    const corpo = JSON.parse(String(c.init.body))
+    expect(corpo.email).toBe('amigo@x.com')
+    expect(corpo.validade_em).toMatch(/T02:59:59\.000Z$/)
+    expect(chamadas.filter((x) => x.url.endsWith('/admin/cortesias')).length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('sem nenhuma cortesia, mostra o estado vazio', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente((url) => (url.endsWith('/admin/cortesias') ? resp({ ok: true, cortesias: [] }) : undefined))
+    montar(api)
+    await irParaAcoes()
+    expect(await screen.findByText('Nenhuma cortesia ativa agora.')).toBeInTheDocument()
+  })
+})
+
 describe('cortesia manual no painel', () => {
   it('mostra tipo e validade da cortesia na lista e libera uma nova (data vira fim do dia em Brasília)', async () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
