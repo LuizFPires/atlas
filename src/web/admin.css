@@ -36,12 +36,12 @@
 .ad-kpi--aviso .ad-kpi-v { color: var(--aviso-txt); }
 .ad-acoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
 .ad-acoes .ad-card { padding: 24px 26px; }
-.ad-recolher { align-self: flex-start; margin: 0 10px 10px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid var(--side-border); background: transparent; color: var(--side-mute); cursor: pointer; }
+.ad-recolher { align-self: flex-start; margin: 0 0 4px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid var(--side-border); background: transparent; color: var(--side-mute); cursor: pointer; }
 .ad-recolher svg { transition: transform .2s ease; }
 .ad-lateral--recolhida .ad-recolher svg { transform: rotate(180deg); }
 .ad-lateral--recolhida { width: 72px; padding-left: 10px; padding-right: 10px; align-items: center; }
 .ad-lateral--recolhida .ad-marca { padding: 4px 0 10px; }
-.ad-lateral--recolhida .ad-recolher { align-self: center; margin: 0 0 10px; }
+.ad-lateral--recolhida .ad-recolher { align-self: center; }
 .ad-lateral--recolhida nav { align-items: center; }
 .ad-lateral--recolhida .ad-item { padding: 10px; justify-content: center; }
 .ad-lateral--recolhida .ad-eu { padding: 10px 0; align-items: center; }

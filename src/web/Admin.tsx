@@ -16,7 +16,8 @@ const MENU: { id: Aba; nome: string; icone: NomeIcone }[] = [
 ]
 
 const CHAVE_MENU = 'atlas.admin.menu-recolhido'
-const lerRecolhido = () => { try { return localStorage.getItem(CHAVE_MENU) === '1' } catch { return false } }
+// Sem preferência salva, o menu começa recolhido.
+const lerRecolhido = () => { try { return localStorage.getItem(CHAVE_MENU) !== '0' } catch { return true } }
 const guardarRecolhido = (v: boolean) => { try { localStorage.setItem(CHAVE_MENU, v ? '1' : '0') } catch { /* vale só nesta carga */ } }
 
 const dinheiro = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
@@ -120,9 +121,6 @@ function Painel({ api, email, onSair }: { api: AdminApi; email: string; onSair: 
           {!recolhido && <NomeAtlas fundo="escuro" largura={96} altura={14} />}
         </div>
         {!recolhido && <span className="ad-rotulo-lime">ADMINISTRADOR</span>}
-        <button type="button" className="ad-recolher" aria-expanded={!recolhido} aria-label={recolhido ? 'Abrir o menu' : 'Recolher o menu'} title={recolhido ? 'Abrir o menu' : 'Recolher o menu'} onClick={alternarMenu}>
-          <Icone nome="chevron" tamanho={18} />
-        </button>
         <nav aria-label="Menu do administrador">
           {MENU.map((m) => (
             <a key={m.id} href={`#/${m.id}`} title={m.nome} aria-label={m.nome} className={`ad-item ${aba === m.id ? 'ad-item--ativo' : ''}`} aria-current={aba === m.id ? 'page' : undefined} onClick={(e) => { e.preventDefault(); setAba(m.id) }}>
@@ -132,6 +130,9 @@ function Painel({ api, email, onSair }: { api: AdminApi; email: string; onSair: 
           ))}
         </nav>
         <div className="ad-eu">
+          <button type="button" className="ad-recolher" aria-expanded={!recolhido} aria-label={recolhido ? 'Abrir o menu' : 'Recolher o menu'} title={recolhido ? 'Abrir o menu' : 'Recolher o menu'} onClick={alternarMenu}>
+            <Icone nome="chevron" tamanho={18} />
+          </button>
           {!recolhido && <span>{email}</span>}
           <button type="button" className="ad-link" aria-label="Sair" title="Sair" onClick={onSair}>{recolhido ? <Icone nome="x" tamanho={18} /> : 'Sair'}</button>
         </div>

@@ -51,7 +51,7 @@ async function entrar() {
   await userEvent.click(screen.getByRole('button', { name: /^Entrar/ }))
 }
 
-beforeEach(() => { sessionStorage.clear(); localStorage.clear() })
+beforeEach(() => { sessionStorage.clear(); localStorage.clear(); localStorage.setItem('atlas.admin.menu-recolhido', '0') }) // os testes partem do menu aberto
 const irParaAcoes = async () => { await userEvent.click(await screen.findByRole('link', { name: 'Ações' })) }
 
 describe('painel do admin (F16)', () => {
@@ -248,6 +248,17 @@ describe('painel do admin (F16)', () => {
     await userEvent.click(abrir)
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('sem preferência salva o menu começa recolhido; o botão fica no rodapé', async () => {
+    localStorage.clear()
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente()
+    montar(api)
+    await screen.findByRole('heading', { name: 'Visão geral' })
+    expect(screen.queryByText('ADMINISTRADOR')).toBeNull()
+    const b = screen.getByRole('button', { name: 'Abrir o menu' })
+    expect(b.closest('.ad-eu')).not.toBeNull()
   })
 
   it('o menu recolhe só com ícones, lembra a escolha e abre de novo', async () => {
