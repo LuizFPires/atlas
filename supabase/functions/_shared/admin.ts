@@ -3,6 +3,7 @@
 // (não basta existir) e o e-mail confirmado precisa estar na allowlist ATLAS_ADMIN_EMAILS (ambiente do servidor).
 // Cliente comum, mesmo logado no portal, recebe 403. Lista vazia = ninguém é admin (fail-closed).
 // O painel mostra agregados e dados operacionais: nunca token_hash, hash de computador, refs/contas do gateway ou chaves.
+import { gerarLink } from './links.ts'
 import { REGIAO_DA_UF, type Regiao, UFS } from './geo.ts'
 import type { IdentidadePortal } from './portal.ts'
 import { VALOR_MENSALIDADE } from './pagamento/config.ts'
@@ -13,6 +14,8 @@ export interface DepsAdmin extends Deps {
   autenticarPortal: (jwt: string) => Promise<IdentidadePortal | null>
   /** Allowlist de admins (ATLAS_ADMIN_EMAILS, separada por vírgula). */
   emailsAdmin: readonly string[]
+  /** Envia o e-mail da cortesia (link de instalação de uso único). Produção: adaptador de e-mail (Resend). Ausente = não envia (email_enviado: false). */
+  enviarCortesia?: (email: string, dados: { token: string; expira_em: Date; validade_em: Date }) => Promise<void>
 }
 
 export interface IdentidadeAdmin { auth_user_id: string; email: string }
@@ -216,7 +219,36 @@ export async function liberarCortesia(d: DepsAdmin, jwt: string, a: { email: unk
   const r = await d.store.criarCortesia({ email, nome, validade_em: validade, agora })
   if (r.resultado === 'ja_tem_paga') throw new ErroRegra('ja_tem_licenca_paga', 'Essa pessoa já tem uma licença paga. Não precisa de cortesia.', 409)
   await d.store.inserirOcorrencia({ cliente_id: r.licenca.cliente_id, tipo: 'cortesia', descricao: `Cortesia ${r.resultado === 'criada' ? 'liberada' : 'renovada'} até ${validade.toISOString()}`, autor: adm.email, resolvida: true, criada_em: agora })
-  return { ok: true, nova: r.resultado === 'criada', licenca_id: r.licenca.id, validade_em: validade }
+  const email_enviado = await enviarEmailCortesia(d, email, validade)
+  return { ok: true, nova: r.resultado === 'criada', licenca_id: r.licenca.id, validade_em: validade, email_enviado }
+}
+
+/**
+ * Gera um link de instalação de uso único e manda o e-mail da cortesia. NUNCA lança: se o link ou o envio falhar, a cortesia
+ * continua valendo e devolve false (o gestor pode reenviar). Token e erro do provedor não vão para log.
+ */
+async function enviarEmailCortesia(d: DepsAdmin, email: string, validade: Date): Promise<boolean> {
+  if (!d.enviarCortesia) return false
+  try {
+    const link = await gerarLink(d, email)
+    await d.enviarCortesia(email, { token: link.token, expira_em: link.expira_em, validade_em: validade })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Reenvia o e-mail da cortesia (novo link de uso único; o anterior continua valendo até vencer ou ser usado). Exige cortesia ativa e dentro do prazo. */
+export async function reenviarCortesia(d: DepsAdmin, jwt: string, a: { email: unknown }) {
+  await adminLogado(d, jwt)
+  const email = typeof a.email === 'string' ? norm(a.email) : ''
+  if (email.length > 254 || !EMAIL_RE.test(email)) throw new ErroRegra('email_invalido', 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.', 400)
+  const cli = await d.store.clientePorEmail(email)
+  const lic = cli && (await d.store.licencaDoCliente(cli.id))
+  if (!lic || lic.tipo !== 'cortesia' || lic.status !== 'ativa' || cortesiaVencida(lic, d.agora()) || !lic.validade_em) {
+    throw new ErroRegra('sem_cortesia', 'Não há uma cortesia ativa para esse e-mail. Libere a cortesia primeiro.', 404)
+  }
+  return { ok: true, email_enviado: await enviarEmailCortesia(d, email, lic.validade_em) }
 }
 
 /** Cortesia cujo prazo passou (status ainda 'ativa' no banco até alguém verificar). Cortesia sem prazo conta como vencida (fail-closed). */

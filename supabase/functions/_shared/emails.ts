@@ -164,6 +164,46 @@ export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
   }
 }
 
+export interface DadosCortesia { validade_em: Date; /** Endereço de instalação com o token de uso único. */ link: string; /** Até quando o link vale. */ link_expira_em: Date }
+
+/** Cortesia liberada pelo gestor: avisa do presente, até quando vale e traz o link de instalação. Sem promessa de atendimento humano. */
+export function montarCortesia(d: DadosCortesia): EmailMontado {
+  const link = linkSeguro(d.link)
+  const validade = d.validade_em.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' }) // dd/mm/aaaa
+  const ate = quando(d.link_expira_em)
+  const html = moldura({
+    titulo: 'Você ganhou um acesso de presente ao Atlas.',
+    subtitulo: `O seu presente vale até ${validade}. Falta só instalar no computador.`,
+    preheader: 'Abra este e-mail no computador onde você vai trabalhar e clique no botão.',
+    corpo: [
+      p('Alguém quis te dar um presente: um acesso ao Atlas, o jeito de construir os sistemas do seu negócio sem programar. Abra este e-mail <b>no computador onde você vai trabalhar</b> e clique no botão. Leva uns 10 minutos.'),
+      link ? botao(link, 'Instalar o Atlas neste computador') : '',
+      `<div style="margin:0 0 22px;border:2px solid ${COR.lime};background:${COR.caixa};border-radius:12px;padding:18px 20px;font-size:16px;line-height:1.6;color:${COR.corpo}"><b style="color:${COR.tinta};font-size:18px">Seu presente vale até ${esc(validade)}.</b><br>É como um bilhete com data: no dia ${esc(validade)} o acesso acaba sozinho, sem você precisar fazer nada. Nada é cobrado e não fica nenhuma conta pendente.</div>`,
+      destaque('microfone', `<b style="color:${COR.tinta}">Você não vai precisar digitar.</b> No Atlas, tudo pode ser falado. É só apertar o microfone e conversar como se estivesse com um amigo na mesa de um restaurante.`),
+      rodape(`O botão funciona uma vez só e vale até ${esc(ate)} (48 horas). Abriu no celular? Abra de novo no computador.`),
+      `<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:${COR.claro}">${esc(AJUDA)}</p>`,
+    ].join(''),
+  })
+  return {
+    assunto: 'Você ganhou um acesso de presente ao Atlas',
+    texto: [
+      'Oi! Você ganhou um acesso de presente ao Atlas.',
+      '',
+      `ATENÇÃO AO PRAZO: o seu presente vale até ${validade}. No dia ${validade} o acesso acaba sozinho, sem você precisar fazer nada. Nada é cobrado.`,
+      '',
+      'Agora falta só instalar o Atlas no computador onde você vai construir.',
+      '',
+      'Abra este e-mail no computador e clique no link abaixo:',
+      d.link,
+      '',
+      `O link funciona uma vez e vale até ${ate}.`,
+      '',
+      AJUDA,
+    ].join('\n'),
+    html,
+  }
+}
+
 export interface DadosConfirmacaoDegustacao { dias: number; expira_em: Date; /** Endereço de confirmação com o token de uso único. */ link: string }
 
 /** Confirmação da degustação: só o clique libera o teste. Sem promessa de atendimento humano. */

@@ -85,7 +85,7 @@
 // marca d'água e aviso de licença são do /entregar-kit (kit.ts), não daqui.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { montarBoasVindas, montarConfirmacaoDegustacao } from './emails.ts'
+import { montarBoasVindas, montarConfirmacaoDegustacao, montarCortesia } from './emails.ts'
 import { montarAvisoAtraso, montarCodigoAtivacao } from './emails-avisos.ts'
 
 function env(nome: string): string {
@@ -466,6 +466,12 @@ export async function enviarAvisoAtraso(email: string, aviso: { n: 1 | 2 | 3; pa
 export async function enviarBoasVindas(email: string, d: { nome: string; empresa: string; ramo: string; token: string; expira_em: Date }) {
   const base = Deno.env.get('ATLAS_INSTALAR_URL') ?? 'https://atlas-ia.app.br/instalar'
   const m = montarBoasVindas({ nome: d.nome, empresa: d.empresa, ramo: d.ramo, expira_em: d.expira_em, link_instalacao: `${base}?t=${encodeURIComponent(d.token)}` })
+  await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
+}
+
+export async function enviarCortesia(email: string, d: { token: string; expira_em: Date; validade_em: Date }) {
+  const base = Deno.env.get('ATLAS_INSTALAR_URL') ?? 'https://atlas-ia.app.br/instalar'
+  const m = montarCortesia({ validade_em: d.validade_em, link_expira_em: d.expira_em, link: `${base}?t=${encodeURIComponent(d.token)}` })
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }
 
