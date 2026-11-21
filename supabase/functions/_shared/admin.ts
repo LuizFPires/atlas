@@ -332,3 +332,47 @@ export async function mapa(d: DepsAdmin, jwt: string) {
     atualizado_em: d.agora(),
   }
 }
+
+// ── fluxo de caixa (só entradas) ────────────────────────────────────────────────
+export const MESES_DO_FLUXO = 12
+export interface MesCaixa { mes: string; implantacoes: number; prateleira: number; mensalidades: number; total: number }
+
+/** AAAA-MM no horário de Brasília (o mesmo corte do "mês corrente" do painel). */
+const chaveMes = (d: Date) => {
+  const l = new Date(d.getTime() - BRT_MS)
+  return `${l.getUTCFullYear()}-${String(l.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+/**
+ * Entradas por mês (em reais) da receita do Atlas, dos últimos MESES_DO_FLUXO meses (o corrente incluso, meses sem venda = 0).
+ * Fonte: tabela `pagamentos`, só os de status 'pago', agrupados pelo mês de `pago_em` (Brasília):
+ *   implantacoes = tipo 'implantacao' sem segmento · prateleira = tipo 'implantacao' com segmento (app pronto) · mensalidades = tipo 'mensalidade'.
+ * Estornado/falhou/pendente não entra (um arrependimento tira a venda do mês). Cortesia e teste grátis não geram pagamento, então não aparecem.
+ * Saídas (despesas) NÃO existem ainda: o fluxo é só de entradas e a resposta diz isso.
+ */
+export async function fluxoCaixa(d: DepsAdmin, jwt: string) {
+  await adminLogado(d, jwt)
+  const agora = d.agora()
+  const meses = new Map<string, MesCaixa>()
+  const l = new Date(agora.getTime() - BRT_MS)
+  for (let i = MESES_DO_FLUXO - 1; i >= 0; i--) {
+    const chave = chaveMes(new Date(Date.UTC(l.getUTCFullYear(), l.getUTCMonth() - i, 15) + BRT_MS))
+    meses.set(chave, { mes: chave, implantacoes: 0, prateleira: 0, mensalidades: 0, total: 0 })
+  }
+  for (const p of await d.store.listarPagamentos()) {
+    if (p.status !== 'pago' || !p.pago_em) continue
+    const m = meses.get(chaveMes(p.pago_em))
+    if (!m) continue // fora da janela
+    if (p.tipo === 'mensalidade') m.mensalidades += p.valor
+    else if (p.segmento) m.prateleira += p.valor
+    else m.implantacoes += p.valor
+    m.total += p.valor
+  }
+  const arred = (n: number) => Math.round(n * 100) / 100
+  return {
+    ligado: true,
+    meses: [...meses.values()].map((m) => ({ mes: m.mes, implantacoes: arred(m.implantacoes), prateleira: arred(m.prateleira), mensalidades: arred(m.mensalidades), total: arred(m.total) })),
+    saidas_ligado: false,
+    mensagem: 'Só entradas por enquanto: as despesas ainda não são registradas.',
+  }
+}

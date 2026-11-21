@@ -67,7 +67,7 @@
 //   marcarSessaoPaga           UPDATE sessoes_checkout SET paga,paga_em WHERE sessao_id; se 0 linhas, INSERT (2 passos, com retry no 23505)
 //   sessaoPorId                SELECT sessoes_checkout (conta_gateway_id,sessao_id,email,paga) WHERE sessao_id
 //   listarClientes/Licencas    SELECT paginado (mesmas colunas seguras acima)
-//   listarPagamentos           SELECT paginado só (licenca_id,tipo,valor,status,pago_em); gateway_ref/pi/conta saem vazios (painel nunca vê)
+//   listarPagamentos           SELECT paginado só (licenca_id,tipo,valor,status,pago_em,segmento); gateway_ref/pi/conta saem vazios (painel nunca vê)
 //   listarAtivacoes            SELECT paginado SEM token_hash (sai null)
 //   listarTrocas               SELECT paginado trocas_computador
 //   ocorrenciasAbertas         SELECT ocorrencias_admin WHERE NOT resolvida ORDER BY criada_em DESC LIMIT n
@@ -359,7 +359,7 @@ export function criarStoreSupabase() {
     async listarClientes() { return (await ler(() => t('clientes').select(C_CLIENTE).order('id'))).map(cliente) },
     async listarLicencas() { return (await ler(() => t('licencas').select(C_LICENCA).order('id'))).map(licenca) },
     async listarPagamentos() {
-      return (await ler(() => t('pagamentos').select('licenca_id,tipo,valor,status,pago_em').order('id'))).map(pagamento) // sem gateway_ref/pi/conta
+      return (await ler(() => t('pagamentos').select('licenca_id,tipo,valor,status,pago_em,segmento').order('id'))).map(pagamento) // sem gateway_ref/pi/conta (segmento não é sensível: diz só qual app pronto)
     },
     async listarAtivacoes() { return (await ler(() => t('ativacoes').select(C_ATIVACAO_ADMIN).order('id'))).map(ativacao) }, // sem token_hash
     async listarTrocas() { return (await ler(() => t('trocas_computador').select('licenca_id,de_hash,para_hash,feita_em,por_admin').order('feita_em').order('id'))).map(troca) },

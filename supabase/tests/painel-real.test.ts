@@ -2,6 +2,7 @@
 // M33 — números reais do painel: mapa por cidade, fluxo de caixa, cancelamentos e radar de pirataria.
 import { describe, expect, it } from 'vitest'
 import { lerEmailsAdmin } from '../functions/_shared/admin.ts'
+import type { Pagamento } from '../functions/_shared/tipos.ts'
 import { chamar, comDoisClientes, JWT_ANA } from './helpers-portal.ts'
 
 const JWT_LUIZ = 'jwt-luiz'
@@ -74,5 +75,53 @@ describe('POST /admin/mapa', () => {
     const r = await m.post('/admin/mapa')
     expect(r.total).toBe(0)
     expect(r.por_uf).toHaveLength(27)
+  })
+})
+
+describe('POST /admin/fluxo-caixa', () => {
+  const pag = (m: M, p: Partial<Pagamento> & { ref: string }) =>
+    m.store.pagamentos.push({ licenca_id: 'l1', conta_gateway_id: 'conta-1', tipo: 'implantacao', valor: 0, status: 'pago', gateway_ref: p.ref, gateway_pi: null, pago_em: null, ...p })
+
+  it('só admin', async () => {
+    const m = await montar()
+    expect((await chamar(m.ctx(), '/admin/fluxo-caixa', JWT_ANA)).status).toBe(403)
+  })
+
+  it('soma por mês e por componente (implantação, prateleira, mensalidade) com os 12 meses, zeros inclusos', async () => {
+    const m = await montar() // agora = 2026-11-18
+    m.store.pagamentos.length = 0
+    pag(m, { ref: 'a', valor: 4800, pago_em: new Date('2026-11-02T15:00:00Z') })
+    pag(m, { ref: 'b', valor: 297, segmento: 'academia', pago_em: new Date('2026-11-10T15:00:00Z') })
+    pag(m, { ref: 'c', tipo: 'mensalidade', valor: 99.9, pago_em: new Date('2026-11-12T15:00:00Z') })
+    pag(m, { ref: 'd', tipo: 'mensalidade', valor: 99.9, pago_em: new Date('2026-10-12T15:00:00Z') })
+    pag(m, { ref: 'e', valor: 4800, pago_em: new Date('2026-10-31T01:00:00Z') }) // 22h de 30/10 em Brasília: ainda é outubro
+    pag(m, { ref: 'f', valor: 4800, pago_em: new Date('2026-11-01T01:00:00Z') }) // 22h de 31/10 em Brasília: outubro
+    const r = await m.post('/admin/fluxo-caixa')
+    expect(r.ligado).toBe(true)
+    expect(r.meses).toHaveLength(12)
+    expect(r.meses[0].mes).toBe('2025-12')
+    expect(r.meses[11].mes).toBe('2026-11')
+    expect(r.meses[11]).toEqual({ mes: '2026-11', implantacoes: 4800, prateleira: 297, mensalidades: 99.9, total: 5196.9 })
+    expect(r.meses[10]).toEqual({ mes: '2026-10', implantacoes: 9600, prateleira: 0, mensalidades: 99.9, total: 9699.9 })
+    expect(r.meses[5]).toEqual({ mes: '2026-05', implantacoes: 0, prateleira: 0, mensalidades: 0, total: 0 })
+    expect(r.saidas_ligado).toBe(false)
+  })
+
+  it('estornado, falhou, pendente e fora da janela não entram', async () => {
+    const m = await montar()
+    m.store.pagamentos.length = 0
+    const quando = new Date('2026-11-05T15:00:00Z')
+    pag(m, { ref: 'a', valor: 4800, status: 'estornado', pago_em: quando })
+    pag(m, { ref: 'b', valor: 4800, status: 'falhou', pago_em: quando })
+    pag(m, { ref: 'c', valor: 4800, status: 'pendente', pago_em: null })
+    pag(m, { ref: 'd', valor: 4800, pago_em: new Date('2024-01-05T15:00:00Z') })
+    const r = await m.post('/admin/fluxo-caixa')
+    expect(r.meses.every((x: { total: number }) => x.total === 0)).toBe(true)
+  })
+
+  it('não vaza referência do gateway nem conta', async () => {
+    const m = await montar()
+    const txt = JSON.stringify(await m.post('/admin/fluxo-caixa'))
+    expect(txt).not.toMatch(/pi_|conta-1|acct_|cus_|sub_/)
   })
 })
