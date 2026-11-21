@@ -14,7 +14,7 @@ type Aba = 'geral' | 'caixa' | 'acoes' | 'radar' | 'mapa' | 'entregas'
 const MENU: { id: Aba; nome: string; icone: NomeIcone }[] = [
   { id: 'geral', nome: 'Visão geral', icone: 'brilho' },
   { id: 'caixa', nome: 'Fluxo de caixa', icone: 'moeda' },
-  { id: 'acoes', nome: 'Ações', icone: 'aperto' },
+  { id: 'acoes', nome: 'Ações', icone: 'raio' },
   { id: 'radar', nome: 'Radar', icone: 'escudo' },
   { id: 'mapa', nome: 'Mapa', icone: 'mapa' },
   { id: 'entregas', nome: 'Marca d’água', icone: 'pasta' },

@@ -121,6 +121,8 @@ const CAMINHOS = {
       <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
     </>
   ),
+  // Raio: lembra "ação" — o que você liga, bloqueia ou libera na mão.
+  raio: <path d="M13 2 3 14 12 14 11 22 21 10 12 10Z" />,
 } as const
 
 export type NomeIcone = keyof typeof CAMINHOS
