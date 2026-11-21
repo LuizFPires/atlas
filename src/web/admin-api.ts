@@ -11,6 +11,8 @@ export interface IndicadoresAdmin {
   ativacoes: { no_mes: number; meta: number; computadores_ativos: number }
   inadimplencia: { atrasadas: number; pausadas: number; valor_em_aberto: number }
   travados: number
+  /** Cancelamentos do mês. Ausente = o servidor ainda não informa (pendência); a tela mostra "—", nunca inventa. */
+  cancelamentos_no_mes?: number
 }
 export interface LinhaCliente {
   licenca_id: string; nome: string; empresa: string; ramo: string; situacao: Situacao; obras: number
@@ -23,6 +25,10 @@ export interface DominioBloqueado { dominio: string; motivo: string; criado_em: 
 export interface PainelAdmin { gerado_em: string; indicadores: IndicadoresAdmin; atencao: ItemAtencao[]; clientes: LinhaCliente[] }
 export interface LinhaEntrega { licenca_id: string; cliente: string; obra_id: string; marca_dagua: string; baixado_em: string }
 export interface LinhaCadastro { licenca_id: string; nome: string; empresa: string; ramo: string; email: string; cadastro_em: string | null; comprada_em: string | null; situacao: 'feito' | 'pendente' }
+
+export interface MesCaixa { mes: string; implantacoes: number; prateleira: number; mensalidades: number }
+/** Entradas por mês (AAAA-MM). Saídas/despesas ainda não existem: ficam para depois. */
+export interface FluxoCaixa { meses: MesCaixa[] }
 
 export interface AdminApi {
   logado(): boolean
@@ -43,6 +49,8 @@ export interface AdminApi {
   liberarDominio(dominio: string): Promise<Resp<{ dominio: string }>>
   entregas(filtro?: { marca?: string; licenca_id?: string }): Promise<Resp<{ entregas: LinhaEntrega[] }>>
   cadastros(): Promise<Resp<{ cadastros: LinhaCadastro[] }>>
+  /** Fluxo de caixa (só entradas). Se o servidor ainda não tem a rota, devolve ok:false com mensagem honesta. */
+  fluxoCaixa(): Promise<Resp<{ fluxo: FluxoCaixa }>>
   sair(): void
 }
 
@@ -109,6 +117,12 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
     resolverOcorrencia: (id) => servidor('/admin/ocorrencias/resolver', { id }),
     entregas: (filtro = {}) => servidor<{ entregas: LinhaEntrega[] }>('/admin/entregas', filtro),
     cadastros: () => servidor<{ cadastros: LinhaCadastro[] }>('/admin/cadastros'),
+    async fluxoCaixa() {
+      const r = await servidor<FluxoCaixa>('/admin/fluxo-caixa')
+      if (r.ok) return { ok: true, fluxo: { meses: Array.isArray(r.meses) ? r.meses : [] } }
+      // Rota ainda não existe no servidor (pendência): mensagem honesta em vez de erro técnico.
+      return { ok: false, mensagem: 'O fluxo de caixa ainda não está ligado no servidor. Por enquanto só aparece no modo demonstração.' }
+    },
     sair() { token = ''; guardar('') },
   }
 }
