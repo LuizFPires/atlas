@@ -3,13 +3,21 @@
   "appId": "br.com.atlas.app",
   "productName": "Atlas",
   "copyright": "Atlas",
+  "electronVersion": "45.4.1",
+  "extraMetadata": {
+    "main": "app/main.cjs"
+  },
   "directories": {
     "output": "release",
-    "buildResources": "instalador/recursos"
+    "buildResources": "instalador/recursos",
+    "app": "."
   },
   "files": [
     "app/**/*",
-    "dist/**/*"
+    "dist-app/**/*",
+    "package.json",
+    "!app/**/*.teste.cjs",
+    "!app/PENDENTE-ENTREGAR.md"
   ],
   "win": {
     "target": [
@@ -63,10 +71,6 @@
     {
       "from": "instalador/caminhos.ts",
       "to": "instalador/caminhos.ts"
-    },
-    {
-      "from": "instalador/plugin-atlas",
-      "to": "instalador/plugin-atlas"
     }
   ]
 }

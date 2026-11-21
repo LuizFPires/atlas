@@ -12,3 +12,7 @@ dist
 dist-app
 dev-dist
 *.tsbuildinfo
+
+# Gerado na montagem do instalador (endereço do servidor)
+app/config.json
+release/

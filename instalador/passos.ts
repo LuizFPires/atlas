@@ -1,7 +1,7 @@
 import { pastaObras, pastaObrasSegura } from './caminhos.ts'
 
 export type Passo = {
-  id: 'node' | 'claude-code' | 'integridade' | 'plugin' | 'obras' | 'app'
+  id: 'node' | 'claude-code' | 'obras' | 'app'
   titulo: string
   /** Se já estiver pronto, o passo é pulado (a instalação pode ser refeita sem estragar nada). */
   verificar?: string
@@ -20,24 +20,12 @@ export const TELA_ATIVACAO = 'F02'
 export const TELA_OBRAS = 'F05'
 export const TELA_RETOMAR = 'F12'
 
-/** Id do plugin Atlas dentro do marketplace local empacotado. PLACEHOLDER: ids reais vêm do M9. */
-export const PLUGIN_MARKETPLACE = 'atlas-local'
-export const PLUGIN_ID = `atlas@${PLUGIN_MARKETPLACE}`
-/** PLACEHOLDER (M9): SHA-256 da pasta plugin-atlas empacotada. Enquanto for placeholder, a instalação NÃO prossegue. */
-export const PLUGIN_SHA256 = 'PLACEHOLDER-M9-SHA256'
-
-export type OpcoesPlano = {
-  /** Pasta resources\instalador do pacote (onde está plugin-atlas). */
-  recursos: string
-  /** Confere o checksum da pasta do plugin contra o esperado. */
-  integridade: (esperado: string) => Promise<boolean>
-}
-
-/** Plano de instalação (o Node já vem do bootstrap): Claude Code, plugin Atlas local, pasta das obras e app. */
-export function planoDeInstalacao(usuario: string, opc: OpcoesPlano): Passo[] {
+/** Plano de instalação (o Node já vem do bootstrap): Claude Code, pasta das obras e app.
+ *  O kit (agentes e skills) NÃO é instalado aqui: o app o recebe do servidor a cada obra (app/adaptadores/kit.cjs),
+ *  porque as instruções dos agentes nunca ficam salvas no disco do cliente. */
+export function planoDeInstalacao(usuario: string): Passo[] {
   const obras = pastaObras(usuario)
   if (!pastaObrasSegura(obras)) throw new Error('Pasta das obras em local proibido.')
-  const pluginDir = `${opc.recursos.replace(/[\\/]+$/, '')}\\plugin-atlas`
   return [
     {
       id: 'node',
@@ -50,18 +38,6 @@ export function planoDeInstalacao(usuario: string, opc: OpcoesPlano): Passo[] {
       titulo: 'Instalando o Claude Code',
       verificar: 'claude --version',
       comando: 'npm install -g @anthropic-ai/claude-code',
-    },
-    {
-      id: 'integridade',
-      titulo: 'Conferindo a integridade do plugin do Atlas',
-      funcao: () => opc.integridade(PLUGIN_SHA256),
-    },
-    {
-      id: 'plugin',
-      titulo: 'Instalando o plugin do Atlas',
-      verificar: `claude plugin list | findstr /i "${PLUGIN_ID}"`,
-      confirmar: true,
-      comando: `claude plugin marketplace add "${pluginDir}" && claude plugin install ${PLUGIN_ID}`,
     },
     {
       id: 'obras',
@@ -113,11 +89,10 @@ export async function executarPlano(passos: Passo[], exec: Executor): Promise<Re
 /** Ponto de entrada real (chamado por executar.mjs): devolve o código de saída do processo. */
 export async function rodarInstalacao(
   usuario: string,
-  opc: OpcoesPlano,
   exec: Executor,
   log: (msg: string) => void = () => {},
 ): Promise<number> {
-  const plano = planoDeInstalacao(usuario, opc)
+  const plano = planoDeInstalacao(usuario)
   const r = await executarPlano(plano, exec)
   r.pulados.forEach((id) => log(`pronto: ${id}`))
   r.feitos.forEach((id) => log(`feito: ${id}`))

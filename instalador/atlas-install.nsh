@@ -6,12 +6,12 @@
   CreateDirectory "$PROFILE\Atlas"
   CreateDirectory "$PROFILE\Atlas\Obras"
 
-  ; 2) Node, Claude Code e plugin Atlas: bootstrap em PowerShell + executarPlano (refazivel sem estragar nada)
+  ; 2) Node e Claude Code: bootstrap em PowerShell + executarPlano (refazivel sem estragar nada)
   DetailPrint "Preparando o seu computador..."
   nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\resources\instalador\instalar.ps1"'
   Pop $0
   StrCmp $0 "0" +2 0
-    MessageBox MB_ICONEXCLAMATION "Algo não deu certo na instalação. Abra o Atlas de novo para tentarmos continuar de onde parou."
+    MessageBox MB_ICONEXCLAMATION "Algo não deu certo na instalação. Abra o Atlas de novo para tentarmos continuar de onde parou." /SD IDOK
 
   ; 3) Atalho na Área de Trabalho: SEM flag (depois de ativado, o app cai em "minhas obras")
   CreateShortCut "$DESKTOP\Atlas · minhas obras.lnk" "$INSTDIR\Atlas.exe" "" "$INSTDIR\Atlas.exe" 0

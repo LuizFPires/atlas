@@ -28,6 +28,12 @@ const { criarAjuda, criarCasos } = require('./adaptadores/ajuda.cjs')
 const { criarPublicar } = require('./adaptadores/publicar.cjs')
 const { criarKit } = require('./adaptadores/kit.cjs')
 
+// Endereço do servidor de licenças: no pacote vem de app/config.json, gravado na geração do instalador (não é segredo).
+// ATLAS_API_URL (ambiente) continua valendo no desenvolvimento. Sem nenhum dos dois, licença e kit negam (falha fechada).
+if (!process.env.ATLAS_API_URL) {
+  try { const c = require('./config.json'); if (c && typeof c.api === 'string') process.env.ATLAS_API_URL = c.api } catch { /* sem config */ }
+}
+
 const argv = process.argv.slice(1)
 const cofre = criarCofre()
 let bloqueio = null

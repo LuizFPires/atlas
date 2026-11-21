@@ -87,6 +87,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { montarBoasVindas, montarConfirmacaoDegustacao, montarCortesia } from './emails.ts'
 import { montarAvisoAtraso, montarCodigoAtivacao } from './emails-avisos.ts'
+import { criarLinkInstaladorGitHub, lerConfigInstalador } from './instalador-github.ts'
 
 function env(nome: string): string {
   const v = Deno.env.get(nome)
@@ -429,6 +430,14 @@ export function criarCarregarKit() {
     if (mapa.size === 0) throw new Error('kit: nenhum arquivo no bucket (suba o kit em base/ ou na pasta da obra)')
     return [...mapa].map(([caminho, conteudo]) => ({ caminho, conteudo }))
   }
+}
+
+// ── Instalador para baixar (release privada do GitHub; a página só recebe um endereço temporário) ──
+/** Liga o download quando ATLAS_INSTALADOR_REPO e ATLAS_INSTALADOR_GITHUB_TOKEN estão definidos (ver instalador-github.ts).
+ *  Sem eles devolve undefined: a página continua dizendo que o instalador ainda não está disponível. */
+export function criarInstalador(): { link: () => Promise<string | null> } | undefined {
+  const cfg = lerConfigInstalador((nome) => Deno.env.get(nome))
+  return cfg ? { link: criarLinkInstaladorGitHub(cfg) } : undefined
 }
 
 // ── E-mail (provedor configurável; padrão Resend) ──

@@ -1,0 +1,123 @@
+# Gera o instalador de TESTE do Atlas para Windows (SEM assinatura) e confere, na própria máquina do GitHub,
+# que ele instala. Serve para o Luiz e convidados de confiança: o Windows vai avisar "editor desconhecido".
+# O instalador assinado (Azure Trusted Signing) continua sendo o `npm run instalador`, com as credenciais.
+name: Instalador de teste (Windows)
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/instalador-teste, feat/instalar-download]
+    paths: ['app/**', 'instalador/**', 'src/**', '.github/workflows/instalador-teste.yml']
+
+# contents: write é só para publicar o .exe na release "instalador-teste" deste repositório (privado).
+permissions:
+  contents: write
+
+env:
+  # Endereço público do servidor de licenças (o mesmo que o site usa; não é segredo).
+  ATLAS_API: https://jwnrzcyudurdrxhjfdua.supabase.co/functions/v1/api
+
+jobs:
+  instalador:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Tela do app (dist-app) com o endereço do servidor
+        run: npm run build:app
+        env:
+          VITE_API_URL: ${{ env.ATLAS_API }}
+
+      - name: Endereço do servidor para o processo principal (app/config.json)
+        shell: bash
+        run: |
+          printf '{ "api": "%s" }\n' "$ATLAS_API" > app/config.json
+
+      - name: Config de teste (sem assinatura)
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('fs')
+            const c = JSON.parse(fs.readFileSync('instalador/electron-builder.json', 'utf8'))
+            delete c.win.azureSignOptions
+            c.win.artifactName = 'Atlas-Instalador-TESTE-\${version}.\${ext}'
+            fs.writeFileSync('instalador/electron-builder.teste.json', JSON.stringify(c, null, 2))
+          "
+
+      - name: Gerar o instalador
+        run: npm exec --package=electron-builder@26.18.0 -- electron-builder --config instalador/electron-builder.teste.json --win nsis --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Conferir que instala (instalação silenciosa nesta máquina)
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem release -Filter 'Atlas-Instalador-TESTE-*.exe' | Select-Object -First 1
+          if (-not $exe) { Write-Error 'instalador não foi gerado'; exit 1 }
+          "Instalador: $($exe.Name) ($([math]::Round($exe.Length / 1MB, 1)) MB)"
+          $p = Start-Process -FilePath $exe.FullName -ArgumentList '/S' -PassThru
+          if (-not $p.WaitForExit(900000)) { $p.Kill(); Write-Error 'a instalação não terminou em 15 minutos'; exit 1 }
+          "Código de saída do instalador: $($p.ExitCode)"
+          Start-Sleep -Seconds 8
+          $app = Join-Path $env:LOCALAPPDATA 'Programs\Atlas\Atlas.exe'
+          $obras = Join-Path $env:USERPROFILE 'Atlas\Obras'
+          $atalho = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Atlas · minhas obras.lnk'
+          $aberto = [bool](Get-Process -Name Atlas -ErrorAction SilentlyContinue)
+          $claude = [bool](Get-Command claude -ErrorAction SilentlyContinue)
+          $r = [ordered]@{
+            'Atlas.exe instalado' = (Test-Path $app)
+            'Pasta das obras criada' = (Test-Path $obras)
+            'Atalho na área de trabalho' = (Test-Path $atalho)
+            'config.json dentro do pacote' = [bool](Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Programs\Atlas\resources') -Recurse -Filter 'app.asar' -ErrorAction SilentlyContinue)
+            'Claude Code instalado' = $claude
+            'App abriu sozinho na ativação' = $aberto
+          }
+          $r.GetEnumerator() | ForEach-Object { "{0}: {1}" -f $_.Key, $(if ($_.Value) { 'sim' } else { 'NÃO' }) }
+          "## Instalador de teste`n" + (($r.GetEnumerator() | ForEach-Object { "- {0}: **{1}**" -f $_.Key, $(if ($_.Value) { 'sim' } else { 'NÃO' }) }) -join "`n") >> $env:GITHUB_STEP_SUMMARY
+          Get-Process -Name Atlas -ErrorAction SilentlyContinue | Stop-Process -Force
+          if (-not (Test-Path $app) -or -not (Test-Path $obras)) { exit 1 }
+
+      # A página /instalar entrega este arquivo: o servidor pede ao GitHub um endereço temporário para quem tem link válido.
+      - name: Publicar na release privada "instalador-teste"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view instalador-teste >/dev/null 2>&1 || gh release create instalador-teste --prerelease --title "Instalador de teste" --notes "Instalador de TESTE do Atlas (sem assinatura). Gerado pelo workflow; o arquivo é trocado a cada rodada."
+          for antigo in $(gh release view instalador-teste --json assets --jq '.assets[].name'); do gh release delete-asset instalador-teste "$antigo" --yes; done
+          gh release upload instalador-teste release/Atlas-Instalador-TESTE-*.exe
+          gh release view instalador-teste --json assets --jq '.assets[] | "\(.name) \(.size) bytes"'
+
+      - name: Conferir o endereço temporário que a página vai receber
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          id=$(gh api "repos/${{ github.repository }}/releases/tags/instalador-teste" --jq '.assets[] | select(.name | endswith(".exe")) | .id')
+          destino=$(curl -s -o /dev/null -w '%{redirect_url}' -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/octet-stream" "https://api.github.com/repos/${{ github.repository }}/releases/assets/$id")
+          [ -n "$destino" ] || { echo "o GitHub não devolveu endereço temporário"; exit 1; }
+          echo "Servidor do endereço temporário: $(echo "$destino" | sed -E 's#^(https://[^/]+)/.*#\1#')"
+          echo "Parâmetros (só os nomes): $(echo "$destino" | sed -E 's/^[^?]*\?//' | tr '&' '\n' | cut -d= -f1 | tr '\n' ' ')"
+          echo "Validade pedida: $(echo "$destino" | grep -oE '(X-Amz-Expires|se)=[^&]+' | head -1)"
+          # Sem nenhuma credencial, como o navegador do cliente: tem de responder com o arquivo inteiro.
+          curl -s -o baixado.exe -w 'Sem credencial: HTTP %{http_code}, %{size_download} bytes\n' "$destino"
+          cmp baixado.exe release/Atlas-Instalador-TESTE-*.exe && echo "Arquivo baixado é idêntico ao gerado"
+          # O endereço fixo, sem credencial, só é negado se o repositório for privado. Com o repositório público, qualquer
+          # pessoa baixa o instalador direto do GitHub, sem passar pelo link do e-mail: fica o aviso na rodada.
+          fixo=$(curl -s -o /dev/null -w '%{http_code}' -H "Accept: application/octet-stream" "https://api.github.com/repos/${{ github.repository }}/releases/assets/$id")
+          echo "Pedido direto ao GitHub, sem credencial: HTTP $fixo"
+          if [ "$fixo" != "404" ]; then echo "::warning::O repositorio esta publico: o instalador pode ser baixado direto do GitHub, sem o link do e-mail."; fi
+
+      - name: Guardar o instalador
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-instalador-teste
+          path: release/Atlas-Instalador-TESTE-*.exe
+          if-no-files-found: error
+          retention-days: 7

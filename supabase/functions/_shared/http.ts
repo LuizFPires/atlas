@@ -1,5 +1,5 @@
 // Roteador das APIs S4 (sem dependência de Deno: testável com Request/Response padrão).
-import { abrirLink, reenviarParaComputador } from './abertura.ts'
+import { abrirLink, baixarInstalador, reenviarParaComputador } from './abertura.ts'
 import { registrarCasoAjuda } from './ajuda-caso.ts'
 import { confirmarAtivacao, solicitarCodigo } from './ativacao.ts'
 import { validarInstancia } from './instancia.ts'
@@ -211,12 +211,14 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
       }
       // Link de instalação aberto (M5): público, o token é a prova. Só consulta; não consome o link.
       case '/instalar/abrir':
+      case '/instalar/baixar':
       case '/instalar/enviar-para-computador': {
         if (!ctx.cadastro) return json({ erro: 'cadastro_indisponivel' }, 503)
         if (!(await ctx.cadastro.store.tentarEvento(`instalar:ip:${ipDe(req)}`, 30, 15 * 60_000, ctx.cadastro.agora()))) {
           return json({ erro: 'muitas_solicitacoes', mensagem: 'Muitas tentativas. Espere uns minutos.' }, 429)
         }
         if (rota === '/instalar/enviar-para-computador') return json(await reenviarParaComputador(ctx.cadastro, { token: s('token') }))
+        if (rota === '/instalar/baixar') return json(await baixarInstalador(ctx.cadastro, { token: s('token') }))
         const largura = typeof (b as Record<string, unknown>).largura === 'number' ? ((b as Record<string, unknown>).largura as number) : null
         return json(await abrirLink(ctx.cadastro, { token: s('token'), user_agent: req.headers.get('User-Agent'), largura }))
       }
