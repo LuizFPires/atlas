@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { montarBoasVindas, montarCortesia } from '../functions/_shared/emails.ts'
+import { montarBoasVindas, montarConfirmacaoDegustacao, montarCortesia } from '../functions/_shared/emails.ts'
 
 const LINK = 'https://atlas-ia.app.br/instalar?t=abc123'
 const base = { nome: 'Zé', empresa: 'Barbearia do Zé', ramo: 'barbearia', link_instalacao: LINK, expira_em: new Date('2026-11-20T15:00:00Z') }
@@ -54,5 +54,18 @@ describe('aviso da tela azul do Windows (instalador ainda sem assinatura)', () =
       expect(corpo).toContain('Executar assim mesmo')
     }
     expect(m.html).toContain('O Windows vai pedir uma confirmação')
+  })
+})
+
+describe('aviso de que o Atlas só funciona com uma assinatura do Claude', () => {
+  const cortesia = montarCortesia({ validade_em: new Date('2026-12-05T20:00:00Z'), link: LINK, link_expira_em: new Date('2026-11-23T12:00:00Z') })
+  const teste = montarConfirmacaoDegustacao({ dias: 5, link: 'https://atlas-ia.app.br/degustacao?t=abc', expira_em: new Date('2026-11-23T12:00:00Z') })
+  it.each([['boas-vindas', montarBoasVindas(base)], ['cortesia', cortesia], ['confirmação do teste grátis', teste]])('%s: diz, no HTML e no texto, que precisa do Claude, que é pago à parte e que plano maior anda mais rápido', (_nome, m) => {
+    for (const corpo of [m.html, m.texto]) {
+      expect(corpo).toContain('O Atlas só funciona com uma assinatura do Claude')
+      expect(corpo).toContain('paga direto à Anthropic, à parte do Atlas')
+      expect(corpo).toContain('Quanto maior o plano, mais rápido a obra anda')
+      expect(corpo).not.toMatch(/plano (Pro|Max)\b/)
+    }
   })
 })

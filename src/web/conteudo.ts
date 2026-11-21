@@ -6,6 +6,12 @@ export const VIDEO_URL = ''
 
 export const PRECO = { implantacao: 'R$ 4.800', mensalidade: 'R$ 200' }
 
+/** O Atlas só funciona com uma assinatura do Claude, paga à parte: o cliente precisa saber antes de comprar ou testar.
+ *  Sem citar nomes de plano (mudam com o tempo). Mesmo texto dos e-mails (supabase/functions/_shared/emails.ts, AVISO_CLAUDE). */
+export const AVISO_CLAUDE = {
+  titulo: 'O Atlas só funciona com uma assinatura do Claude',
+  texto: 'O Claude é quem constrói o seu sistema. A assinatura dele é paga direto à Anthropic, à parte do Atlas. Quanto maior o plano, mais rápido a obra anda.',
+}
 export const PRECO_PRATELEIRA = { avista: 'R$ 7.300', mensalidade: 'R$ 200' }
 
 export type SegmentoPronto = 'barbearia' | 'restaurante' | 'mercearia' | 'academia'

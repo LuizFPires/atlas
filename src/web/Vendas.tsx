@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Bolinha, Icone } from '../ui'
 import { ImagemAssinatura, Monograma, NomeAtlas } from '../marca/Marca'
 import { useTema } from '../tema/tema'
-import { duvidas, ehParaVoce, etapas, exemplos, formas, naoEhParaVoce, PRECO, PRECO_PRATELEIRA, prateleira, recebe, tresPassos, VIDEO_URL, type SegmentoPronto } from './conteudo'
+import { AVISO_CLAUDE, duvidas, ehParaVoce, etapas, exemplos, formas, naoEhParaVoce, PRECO, PRECO_PRATELEIRA, prateleira, recebe, tresPassos, VIDEO_URL, type SegmentoPronto } from './conteudo'
 import { BlocoDegustacao } from './Degustacao'
 import type { DegustacaoApi } from './degustacao-api'
 import { LinksLegais } from './Legal'
@@ -149,7 +149,7 @@ export function Vendas({ onComprar, onComprarPronto, extra, degustacaoApi }: { o
           <div className="v-linha" />
           <div className="v-mensal"><span>Manutenção mensal</span><b>{PRECO.mensalidade}<small>/mês</small></b></div>
           <small style={{ lineHeight: 1.5, fontSize: 14 }}>Inclui as atualizações do Atlas e o portal da sua conta.</small>
-          <div className="v-aviso"><b>Você também vai precisar de uma assinatura do Claude</b>, paga direto à Anthropic. Ela é a força de trabalho da obra: no plano Pro a obra tem pausas, no Max ela termina mais rápido.</div>
+          <div className="v-aviso" role="note" aria-label="Assinatura do Claude"><b>{AVISO_CLAUDE.titulo}.</b> {AVISO_CLAUDE.texto}</div>
           <Comprar onComprar={onComprar}>Quero construir o meu <Icone nome="seta" /></Comprar>
         </div>
       </section>

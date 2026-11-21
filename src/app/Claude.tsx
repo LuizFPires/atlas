@@ -35,6 +35,8 @@ export function Claude({ claude, onContinuar, onPedirAjuda, sondagemMs = 15000 }
   // Ao abrir, confere se o Claude Code deste computador JÁ está conectado (quem já usa o Claude não precisa refazer o login).
   const [conferindoInicio, setConferindoInicio] = useState(true)
   const [jaEstava, setJaEstava] = useState(false)
+  // Antes dos passos do login: o cliente precisa saber que o Atlas só funciona com uma conta paga do Claude (à parte do Atlas).
+  const [etapaConta, setEtapaConta] = useState<'aviso' | 'criando' | 'feito'>('aviso')
 
   const [novidade, setNovidade] = useState('')
   const [conferindo, setConferindo] = useState(false)
@@ -91,6 +93,11 @@ export function Claude({ claude, onContinuar, onPedirAjuda, sondagemMs = 15000 }
     if (e.conectado) { planoVisto.current = e.plano; setEstado(e) }
     else setAviso('Ainda não vi a conexão. Termine o passo no site do Claude (botão Authorize) e clique de novo.')
   }
+  const aindaNaoTenho = async () => {
+    setAviso('')
+    setEtapaConta('criando')
+    try { await claude.abrirSite('criar-conta') } catch { setAviso('Não consegui abrir o site do Claude agora. Abra o claude.ai no seu navegador.') }
+  }
   const voltar = () => {
     setAviso('')
     if (estado) { setEstado(null); setNovidade(''); setJaEstava(false) }
@@ -111,7 +118,36 @@ export function Claude({ claude, onContinuar, onPedirAjuda, sondagemMs = 15000 }
 
             {conferindoInicio && <p role="status" className="at-ativ__txt">Conferindo se o Claude já está conectado neste computador…</p>}
 
-            {!conferindoInicio && !estado && (
+            {!conferindoInicio && !estado && etapaConta !== 'feito' && (
+              <>
+                <h2 className="at-claude__antes-titulo">Antes de começar: você precisa de uma conta no Claude.</h2>
+                <div role="note" aria-label="Conta do Claude" className="at-claude__passo">
+                  <span className="at-ativ__txt">O Claude é quem constrói o seu sistema. Ele é de outra empresa, a Anthropic, e a assinatura é paga direto para a Anthropic, à parte do Atlas.</span>
+                  <span className="at-ativ__txt"><b>Sem um plano pago do Claude, o Atlas não consegue construir.</b> Quanto maior o plano, mais rápido a obra anda.</span>
+                </div>
+                {etapaConta === 'criando' && (
+                  <ol aria-label="Como criar a sua conta do Claude" className="at-claude__caminho">
+                    <li>Crie a sua conta no site do Claude, que acabei de abrir.</li>
+                    <li>Assine um plano pago lá mesmo.</li>
+                    <li>Volte aqui e clique em "Já criei e assinei".</li>
+                  </ol>
+                )}
+                {aviso && <span role="alert" className="at-ativ__erro">{aviso}</span>}
+                <div className="at-claude__botoes">
+                  {etapaConta === 'aviso' ? (
+                    <>
+                      <Botao onClick={() => { setAviso(''); setEtapaConta('feito') }}>Já tenho conta e plano →</Botao>
+                      <Botao variante="secundario" onClick={() => void aindaNaoTenho()}>Ainda não tenho</Botao>
+                    </>
+                  ) : (
+                    <Botao onClick={() => { setAviso(''); setEtapaConta('feito') }}>Já criei e assinei →</Botao>
+                  )}
+                </div>
+                <button type="button" className="at-ativ__link at-claude__negrito" onClick={() => void claude.abrirSite('planos').catch(() => {})}>Ver os planos no site do Claude ↗</button>
+              </>
+            )}
+
+            {!conferindoInicio && !estado && etapaConta === 'feito' && (
               <>
                 <div className="at-claude__passo" aria-live="polite">
                   <div className="at-claude__prog">
@@ -144,7 +180,7 @@ export function Claude({ claude, onContinuar, onPedirAjuda, sondagemMs = 15000 }
                 <span className="at-claude__rodape-txt">
                   Ainda não tem conta no Claude?{' '}
                   <button type="button" className="at-ativ__link at-claude__negrito" onClick={() => void claude.abrirSite('criar-conta')}>Criar no site do Claude ↗</button>{' '}
-                  e assinar o plano Pro ou Max. Depois volte aqui.
+                  e assinar um plano pago. Depois volte aqui.
                 </span>
               </>
             )}

@@ -58,3 +58,12 @@ test('página do link: confirma e leva à instalação; erro mostra o recado', a
   render(<ConfirmarDegustacao api={fake({ confirmar: async () => ({ ok: false, mensagem: 'Esse link venceu.' }) })} token={'a'.repeat(30)} />)
   expect(await screen.findByRole('alert')).toHaveTextContent('Esse link venceu.')
 })
+
+test('o teste é grátis, mas o bloco avisa antes do e-mail que o Atlas só funciona com uma assinatura do Claude', async () => {
+  montar(fake())
+  await screen.findByRole('heading', { name: /Testar 5 dias grátis/ })
+  const aviso = screen.getByRole('note', { name: 'Assinatura do Claude para o teste' })
+  expect(aviso).toHaveTextContent('O teste do Atlas é grátis, mas o Atlas só funciona com uma assinatura do Claude')
+  expect(aviso).toHaveTextContent('paga direto à Anthropic, à parte do Atlas')
+  expect(aviso).toHaveTextContent('Quanto maior o plano, mais rápido a obra anda')
+})

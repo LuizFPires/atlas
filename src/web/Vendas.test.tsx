@@ -40,3 +40,12 @@ test('vitrine Comece pronto: 4 segmentos, preço e botão que abre a compra do s
   await userEvent.click(screen.getByRole('button', { name: 'Começar pronto: Mercearia' }))
   expect(onComprarPronto).toHaveBeenCalledWith('mercearia')
 })
+
+test('perto do preço: o Atlas só funciona com uma assinatura do Claude, paga à parte, e plano maior anda mais rápido', () => {
+  render(<Vendas onComprar={() => {}} />)
+  const aviso = screen.getByRole('note', { name: 'Assinatura do Claude' })
+  expect(aviso).toHaveTextContent('O Atlas só funciona com uma assinatura do Claude')
+  expect(aviso).toHaveTextContent('paga direto à Anthropic, à parte do Atlas')
+  expect(aviso).toHaveTextContent('Quanto maior o plano, mais rápido a obra anda')
+  expect(aviso).not.toHaveTextContent(/plano Pro|no Max/)
+})

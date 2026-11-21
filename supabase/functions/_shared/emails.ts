@@ -130,6 +130,19 @@ export const AVISO_WINDOWS = {
     '2. Clique em "Executar assim mesmo".',
   ],
 }
+/** O cliente precisa saber ANTES de instalar: o Atlas só funciona com uma assinatura do Claude, paga à parte.
+ *  Sem citar nomes de plano (mudam com o tempo). Mesmo texto da página de vendas (src/web/conteudo.ts, AVISO_CLAUDE). */
+export const AVISO_CLAUDE = {
+  titulo: 'O Atlas só funciona com uma assinatura do Claude',
+  linhas: [
+    'O Claude é quem constrói o seu sistema. A assinatura dele é paga direto à Anthropic, à parte do Atlas.',
+    'Quanto maior o plano, mais rápido a obra anda.',
+    'Ainda não tem? Você cria a conta e assina no site do Claude. O Atlas te guia na hora de conectar.',
+  ],
+}
+const avisoClaude = () => caixa(AVISO_CLAUDE.titulo, AVISO_CLAUDE.linhas)
+const avisoClaudeTexto = () => [`${AVISO_CLAUDE.titulo}.`, ...AVISO_CLAUDE.linhas]
+
 const avisoWindows = () => caixa(AVISO_WINDOWS.titulo, AVISO_WINDOWS.linhas)
 const avisoWindowsTexto = () => [`${AVISO_WINDOWS.titulo}:`, ...AVISO_WINDOWS.linhas]
 
@@ -154,6 +167,7 @@ export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
       p('Abra este e-mail <b>no computador onde você vai trabalhar</b> e clique no botão. Leva uns 10 minutos.'),
       link ? botao(link, 'Instalar o Atlas neste computador') : '',
       caixa('O que vai acontecer', ['1. O instalador pede um código que chega neste e-mail.', '2. Você conecta a sua conta do Claude.', '3. O Atlas te ajuda a abrir as contas que o seu sistema vai usar.']),
+      avisoClaude(),
       avisoWindows(),
       destaque('microfone', `<b style="color:${COR.tinta}">Você não vai precisar digitar.</b> No Atlas, tudo pode ser falado. É só apertar o microfone e conversar como se estivesse com um amigo na mesa de um restaurante.`),
       rodape(`O botão funciona uma vez só e vale até ${esc(ate)} (48 horas). Abriu no celular? Toque em "Enviar para o meu computador".`),
@@ -171,6 +185,8 @@ export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
       d.link_instalacao,
       '',
       `O link vale para uma instalação e vence em ${ate}. Se abrir no celular, é só abrir de novo no computador.`,
+      '',
+      ...avisoClaudeTexto(),
       '',
       ...avisoWindowsTexto(),
       '',
@@ -195,7 +211,8 @@ export function montarCortesia(d: DadosCortesia): EmailMontado {
       p('Alguém quis te dar um presente: um acesso ao Atlas, o jeito de construir os sistemas do seu negócio sem programar. Abra este e-mail <b>no computador onde você vai trabalhar</b> e clique no botão. Leva uns 10 minutos.'),
       link ? botao(link, 'Instalar o Atlas neste computador') : '',
       `<div style="margin:0 0 22px;border:2px solid ${COR.lime};background:${COR.caixa};border-radius:12px;padding:18px 20px;font-size:16px;line-height:1.6;color:${COR.corpo}"><b style="color:${COR.tinta};font-size:18px">Seu presente vale até ${esc(validade)}.</b><br>É como um bilhete com data: no dia ${esc(validade)} o acesso acaba sozinho, sem você precisar fazer nada. Nada é cobrado e não fica nenhuma conta pendente.</div>`,
-avisoWindows(),
+      avisoClaude(),
+      avisoWindows(),
             destaque('microfone', `<b style="color:${COR.tinta}">Você não vai precisar digitar.</b> No Atlas, tudo pode ser falado. É só apertar o microfone e conversar como se estivesse com um amigo na mesa de um restaurante.`),
       rodape(`O botão funciona uma vez só e vale até ${esc(ate)} (48 horas). Abriu no celular? Abra de novo no computador.`),
       `<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:${COR.claro}">${esc(AJUDA)}</p>`,
@@ -214,6 +231,8 @@ avisoWindows(),
       d.link,
       '',
       `O link funciona uma vez e vale até ${ate}.`,
+      '',
+      ...avisoClaudeTexto(),
       '',
       ...avisoWindowsTexto(),
       '',
@@ -237,6 +256,7 @@ export function montarConfirmacaoDegustacao(d: DadosConfirmacaoDegustacao): Emai
       p('Alguém (espero que você) pediu um teste grátis do Atlas com este e-mail. Para liberar, clique no botão abaixo.'),
       link ? botao(link, 'Liberar o meu teste') : '',
       caixa('Como funciona', [`O teste vale ${d.dias} dias, contados a partir do clique.`, 'Quando acabar, o acesso fecha sozinho. Nada é cobrado.']),
+      avisoClaude(),
       rodape(`O botão funciona uma vez só e vale até ${esc(ate)}. Se não foi você, é só ignorar este e-mail: nada acontece.`),
       `<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:${COR.claro}">${esc(AJUDA)}</p>`,
     ].join(''),
@@ -250,6 +270,8 @@ export function montarConfirmacaoDegustacao(d: DadosConfirmacaoDegustacao): Emai
       d.link,
       '',
       `O link funciona uma vez e vale até ${ate}. Se não foi você, ignore: nada acontece e nada é cobrado.`,
+      '',
+      ...avisoClaudeTexto(),
       '',
       AJUDA,
     ].join('\n'),
