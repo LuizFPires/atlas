@@ -226,6 +226,8 @@
 .v-teste { display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .v-teste-form { display: flex; flex-direction: column; gap: 14px; width: min(480px, 100%); }
 .v-teste-ok { display: flex; gap: 10px; align-items: flex-start; max-width: 520px; line-height: 1.5; }
+.v-teste-ok > svg { flex: none; margin-top: 3px; }
+.v-teste-ok-txt { flex: 1 1 0; min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 .v-confirmar { min-height: 60vh; padding: 0 16px; }
 
 /* M30 — Minhas obras (celular primeiro) */

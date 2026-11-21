@@ -37,7 +37,7 @@ export function BlocoDegustacao({ api = api_padrao }: { api?: DegustacaoApi }) {
         <p>Quer ver o Atlas funcionando antes de decidir? Coloque o seu e-mail e eu mando um link para liberar o teste. Sem cartão, sem cobrança.</p>
       </div>
       {enviado ? (
-        <p role="status" className="v-teste-ok"><Icone nome="check" tamanho={18} /> Te enviei um e-mail para <b>{enviado}</b>. Clica no link que está nele pra liberar o seu teste. Não achou? Olhe também o spam.</p>
+        <p role="status" className="v-teste-ok"><Icone nome="check" tamanho={18} /><span className="v-teste-ok-txt">Te enviei um e-mail para <b>{enviado}</b>. Clica no link que está nele pra liberar o seu teste. Não achou? Olhe também o spam.</span></p>
       ) : (
         <form className="v-teste-form" onSubmit={pedir} noValidate>
           <CampoFalado rotulo="Qual o seu e-mail?" type="email" autoComplete="email" valor={email} onChange={setEmail} placeholder="voce@suaempresa.com.br" juntar={juntarFalaEmail} />
