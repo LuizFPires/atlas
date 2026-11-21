@@ -29,6 +29,8 @@ const { criarPublicar } = require('./adaptadores/publicar.cjs')
 const { criarKit } = require('./adaptadores/kit.cjs')
 const { criarServidor } = require('./adaptadores/servidor.cjs')
 const { tokenDoLink, comToken } = require('./link-instalacao.cjs')
+const { abrirExterno } = require('./seguro.cjs')
+const { HOSTS_PAGAMENTO } = require('./seguro-puro.cjs')
 
 // Endereço do servidor de licenças: no pacote vem de app/config.json, gravado na geração do instalador (não é segredo).
 // ATLAS_API_URL (ambiente) continua valendo no desenvolvimento. Sem nenhum dos dois, licença e kit negam (falha fechada).
@@ -117,6 +119,8 @@ handle('atlas:cofre:guardar', (c, v) => cofre.guardar(String(c), String(v)))
 handle('atlas:cofre:ler', (c) => cofre.ler(String(c)))
 handle('atlas:cofre:apagar', (c) => cofre.apagar(String(c)))
 handle('atlas:hash', () => hash())
+// Compra de dentro do app: abre no navegador do cliente SÓ a página de pagamento da Stripe (o endereço vem do servidor e é revalidado aqui).
+handle('atlas:pagamento:abrir', (url) => abrirExterno(shell, String(url), HOSTS_PAGAMENTO))
 // Chamadas da tela ao servidor de licenças (ativação, licença): rota de lista fechada e base fixa, revalidadas em servidor.cjs.
 handle('atlas:servidor:postar', (rota, corpo, cabecalhos) => servidor.postar(rota, corpo, cabecalhos))
 handle('atlas:descricao', () => `${os.hostname().toUpperCase()} · Windows ${Number(os.release().split('.')[2]) >= 22000 ? '11' : '10'}`)

@@ -40,6 +40,8 @@ export interface PonteDesktop {
   /** Adaptadores reais injetados pelo preload (app/preload.cjs). Opcionais: o que faltar cai no *Indisponivel. */
   /** Avisa quando o código do link de instalação chega com o app já aberto (clique em "Liberar o Atlas" na página do e-mail). */
   aoReceberLink?: (aviso: (token: string) => void) => void
+  /** Compra de dentro do app: abre no navegador do cliente a página de pagamento (o processo principal só aceita a da Stripe). */
+  pagamento?: { abrir(url: string): Promise<void> }
   /** Chamadas ao servidor de licenças pelo processo principal (a tela, em file://, é barrada pelo CORS do servidor). */
   servidor?: PonteServidor
   arquivos?: PonteArquivos
