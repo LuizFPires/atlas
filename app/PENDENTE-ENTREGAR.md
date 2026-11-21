@@ -314,3 +314,9 @@ Teste sem Electron/Claude/rede: `node --test app/adaptadores/*.teste.cjs` (ajuda
 - **Template do e-mail "Reset Password"** (Auth > Email Templates): revisar e deixar em português do Brasil, tom de amigo, com o link `{{ .ConfirmationURL }}`.
 - **Confirmar que o cadastro público segue DESLIGADO** (Auth > Sign In / Providers > "Allow new users to sign up" off). A recuperação responde igual para qualquer e-mail; quem manda o e-mail é só o Supabase, e só para usuários que já existem.
 - Limite de envio de e-mails do Supabase (SMTP padrão é baixo): configurar SMTP próprio antes de depender disso.
+
+## Cadastro com cidade + estado (mapa por cidade)
+- O formulário do cadastro (`src/web/Cadastro.tsx`) agora manda `cidade` e `uf` no corpo de `POST /cadastro` (junto de `session_id, nome, empresa, ramo, email`). A cidade vem de uma lista do IBGE (5.571 municípios, `src/web/municipios-br.ts`), então `cidade` + `uf` chegam sempre casados e com a grafia oficial.
+- **Servidor:** `/cadastro` precisa **guardar `cidade` + `uf` do cliente** (validar `uf` com 2 letras maiúsculas das 27 UFs e `cidade` com tamanho razoável; **nunca guardar IP cru**; aceitar cadastro antigo sem os dois campos).
+- **`POST /admin/mapa`** passa a devolver `por_cidade: [{ uf, cidade, clientes }]` (soma das cidades = `por_uf`) a partir desse dado do cadastro, não do IP. Isso acende a "bolha por cidade" de verdade no painel (hoje só a demonstração tem cidades). Isso também resolve o "campo estado no cadastro" citado acima como complemento da UF por IP; decidir qual vale quando divergirem (o cadastro é a informação que o próprio cliente deu).
+- A bolha só aparece para cidade com coordenada em `src/web/cidades-brasil.ts` (88 hoje); as demais contam no total do estado. Ampliar essa base conforme aparecerem.
