@@ -57,8 +57,13 @@ export function Vendas({ onComprar, onComprarPronto, extra, degustacaoApi }: { o
       <section className="v-tres">
         <div className="v-tres-cab"><h2>Você faz 3 passos. <span style={{ color: 'var(--lime-txt)' }}>A IA faz o resto.</span></h2><span>É só isso. Depois, pode ir dormir.</span></div>
         <div className="v-tres-grade">
-          {tresPassos.map((nome, i) => (
-            <div key={nome} className="v-card v-passo"><span className="v-num">{i + 1}</span><b>{nome}</b></div>
+          {tresPassos.map((p, i) => (
+            <div key={p.nome} className="v-card v-passo">
+              <span className="v-passo-disco"><Icone nome={p.icone} tamanho={22} /></span>
+              <span className="v-passo-selo">Passo {i + 1}</span>
+              <b>{p.nome}</b>
+              <span className="v-passo-apoio">{p.apoio}</span>
+            </div>
           ))}
           <div className="v-ia">
             <span className="v-ia-bola"><Icone nome="lua" tamanho={26} /></span>

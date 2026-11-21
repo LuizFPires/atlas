@@ -18,7 +18,11 @@ export const prateleira: Array<{ segmento: SegmentoPronto; icone: NomeIcone; nom
   { segmento: 'academia', icone: 'haltere', nome: 'Academia', txt: 'Alunos, treino do dia, check-in e mensalidades num lugar só.' },
 ]
 
-export const tresPassos = ['Mostre o que você gosta.', 'Explique como você quer.', 'Escolha um nome.']
+export const tresPassos: Array<{ nome: string; icone: NomeIcone; apoio: string }> = [
+  { nome: 'Mostre o que você gosta.', icone: 'imagem', apoio: 'Fotos, prints, um app que te inspira.' },
+  { nome: 'Explique como você quer.', icone: 'microfone', apoio: 'Fala ou escreve, do seu jeito.' },
+  { nome: 'Escolha um nome.', icone: 'brilho', apoio: 'Um nome pro seu app. Só isso.' },
+]
 
 export const exemplos: Array<{ icone: NomeIcone; nome: string; txt: string }> = [
   { icone: 'tesoura', nome: 'Agenda de barbearia', txt: 'Clientes marcam horário sozinhos e você vê tudo do celular.' },

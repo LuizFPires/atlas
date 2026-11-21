@@ -45,7 +45,10 @@
 .v-card b { font-size: 18px; }
 .v-card > span:not(.v-num):not(.at-bolinha) { font-size: 15px; line-height: 1.5; color: var(--mute); }
 .v-passo { justify-content: center; padding: 22px; gap: 12px; }
-.v-passo b { font-size: 23px; line-height: 1.25; }
+.v-passo b { font-size: 22px; line-height: 1.25; }
+.v-passo-disco { width: 46px; height: 46px; border-radius: 50%; background: var(--soft); color: var(--lime); display: flex; align-items: center; justify-content: center; }
+.v-passo-selo { font: 700 11px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute2); }
+.v-card > span.v-passo-apoio { font-size: 14px; line-height: 1.5; color: var(--mute); }
 .v-num { width: 44px; height: 44px; border-radius: 50%; background: var(--lime); color: var(--on-lime); font: 700 20px var(--font-mono); display: flex; align-items: center; justify-content: center; }
 .v-num--p { width: 34px; height: 34px; font-size: 15px; }
 .v-ia { background: var(--lime); color: var(--on-lime); border-radius: 18px; padding: 22px; display: flex; gap: 16px; align-items: center; }
