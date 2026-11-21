@@ -9,7 +9,8 @@
   },
   "directories": {
     "output": "release",
-    "buildResources": "instalador/recursos"
+    "buildResources": "instalador/recursos",
+    "app": "."
   },
   "files": [
     "app/**/*",

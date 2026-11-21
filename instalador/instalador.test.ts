@@ -97,6 +97,8 @@ describe('config do electron-builder e scripts', () => {
     expect(config.files).toContain('app/**/*')
     expect(config.files).toContain('dist-app/**/*')
     expect(config.files).not.toContain('dist/**/*')
+    // A raiz do projeto é a pasta do app: sem isto o electron-builder empacota só app/ e deixa a tela (dist-app) de fora.
+    expect(config.directories.app).toBe('.')
     expect(config.extraMetadata.main).toBe('app/main.cjs')
     expect(config.electronVersion).toMatch(/^\d+\.\d+\.\d+$/)
   })
