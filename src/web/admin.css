@@ -149,7 +149,7 @@
 .ad-zoom-btn:disabled { opacity: .4; cursor: default; }
 .ad-mapa { touch-action: pan-y; }
 .ad-mapa--zoom { cursor: grab; touch-action: none; }
-.ad-bolha-txt { fill: var(--text); font-family: var(--mono, monospace); font-weight: 700; pointer-events: none; paint-order: stroke; stroke: var(--card); stroke-width: 3px; stroke-linejoin: round; }
+.ad-bolha-txt { fill: var(--text); font-family: var(--font-mono); font-weight: 700; pointer-events: none; paint-order: stroke; stroke: var(--card); stroke-width: 3px; stroke-linejoin: round; }
 .ad-bolha { fill: color-mix(in srgb, var(--lime) 55%, transparent); stroke: var(--lime); stroke-width: 1.5; pointer-events: none; }
 .ad-bolha--ativa { fill: color-mix(in srgb, var(--lime) 80%, transparent); stroke: var(--text); }
 .ad-mapa-info { margin: 0; min-height: 22px; font-size: 14px; }

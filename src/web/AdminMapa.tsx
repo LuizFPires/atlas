@@ -94,11 +94,13 @@ export function MapaBrasil({ por_uf, maximo, ativo, onAtivo, onEscolher }: { por
           if (!a || !(ev.buttons & 1) || vista.k === 1) return
           const dx = ev.clientX - a.x, dy = ev.clientY - a.y
           if (!a.moveu && Math.hypot(dx, dy) < 5) return
+          if (!a.moveu) { try { ev.currentTarget.setPointerCapture(ev.pointerId) } catch { /* sem captura: segue normal */ } }
           a.moveu = true
           const r = ev.currentTarget.getBoundingClientRect()
           setVista(centrar({ k: vista.k, cx: a.cx - (dx / r.width) * w, cy: a.cy - (dy / r.height) * h }))
         }}
-        onPointerUp={() => { setTimeout(() => { arrasto.current = null }, 0) }}
+        onPointerCancel={() => { arrasto.current = null }}
+        onPointerUp={(ev) => { try { ev.currentTarget.releasePointerCapture(ev.pointerId) } catch { /* já solto */ } setTimeout(() => { arrasto.current = null }, 0) }}
         onClickCapture={(ev) => { if (arrasto.current?.moveu) { ev.stopPropagation(); ev.preventDefault() } }}>
         {ESTADOS.map((e) => {
           const l = dados.get(e.uf) ?? { uf: e.uf, regiao: e.regiao, clientes: 0, compras: 0 }
@@ -118,7 +120,7 @@ export function MapaBrasil({ por_uf, maximo, ativo, onAtivo, onEscolher }: { por
             if (!l || l.clientes <= 0 || !c) return null
             return (
               <g key={e.uf}>
-                <circle className={`ad-bolha ${ativo === e.uf ? 'ad-bolha--ativa' : ''}`} data-bolha={e.uf} cx={c[0]} cy={c[1]} r={raioBolha(l.clientes, maximo)} vectorEffect="non-scaling-stroke" />
+                <circle className={`ad-bolha ${ativo === e.uf ? 'ad-bolha--ativa' : ''}`} data-bolha={e.uf} cx={c[0]} cy={c[1]} r={raioBolha(l.clientes, maximo) / vista.k} vectorEffect="non-scaling-stroke" />
                 {mostrarRotulos && <text className="ad-bolha-txt" x={c[0]} y={c[1]} fontSize={12 / vista.k} textAnchor="middle" dominantBaseline="central">{e.uf} · {l.clientes}</text>}
               </g>
             )
@@ -138,7 +140,7 @@ export function LegendaMapa({ maximo }: { maximo: number }) {
       <span className="ad-mute2">Quanto maior a bolha, mais clientes no estado:</span>
       {niveis.map((n) => (
         <span key={n.nome} className="ad-legenda-nivel">
-          <svg width="44" height="44" viewBox="-22 -22 44 44" aria-hidden="true"><circle className="ad-bolha" r={raioBolha(Math.max(1, Math.round(m * n.f)), m) * 0.6} /></svg>
+          <svg width="72" height="72" viewBox="-36 -36 72 72" aria-hidden="true"><circle className="ad-bolha" r={raioBolha(Math.max(1, Math.round(m * n.f)), m)} /></svg>
           <span className="ad-mute2">{n.nome}</span>
         </span>
       ))}
