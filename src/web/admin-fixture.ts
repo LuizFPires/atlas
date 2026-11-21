@@ -1,7 +1,7 @@
 // Modo demonstração do painel do administrador: dados de mentira, em memória, só para olhar e clicar sem servidor.
 // Só entra quando modoFixture() é verdadeiro (dev). Em produção o App usa criarAdminApi() (login + lista de admins no servidor).
 import { ESTADOS } from './mapa-brasil'
-import { RESUMO_VAZIO, type AdminApi, type SinalRadar, type RadarPirataria, type DominioBloqueado, type FluxoCaixa, type MapaClientes, type ItemAtencao, type LinhaCadastro, type LinhaCliente, type LinhaEntrega, type PainelAdmin } from './admin-api'
+import { RESUMO_VAZIO, type AdminApi, type SinalRadar, type RadarPirataria, type DominioBloqueado, type FluxoCaixa, type MapaClientes, type CidadeCliente, type ItemAtencao, type LinhaCadastro, type LinhaCliente, type LinhaEntrega, type PainelAdmin } from './admin-api'
 
 const HORA = 3600_000
 const DIA = 24 * HORA
@@ -94,12 +94,27 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
     for (const x of sinaisRadar) por_tipo[x.tipo] += 1
     return { ligado: true, resumo: { licencas_sob_suspeita: new Set(sinaisRadar.map((x) => x.licenca_id).filter(Boolean)).size, sinais_abertos: sinaisRadar.length, por_tipo }, sinais: sinaisRadar.map((x) => ({ ...x, detalhes: { ...x.detalhes } })) }
   }
-  // Demonstração: distribuição realista, mas de mentira. Soma dos clientes = contas pagas do fixture (as 12 dos cadastros).
-  const CLIENTES_UF: Record<string, [number, number]> = { SP: [4, 6], RJ: [2, 3], MG: [2, 2], PR: [1, 2], RS: [1, 1], BA: [1, 1], PE: [1, 1] }
-  const mapa = (): MapaClientes => ({
-    ligado: true, total: cadastros.length, atualizado_em: new Date(agora).toISOString(),
-    por_uf: ESTADOS.map((e) => ({ uf: e.uf, regiao: e.regiao, clientes: CLIENTES_UF[e.uf]?.[0] ?? 0, compras: CLIENTES_UF[e.uf]?.[1] ?? 0 })),
-  })
+  // Demonstração: distribuição por CIDADE, de mentira (mas com cidades reais). O total por estado é a soma das cidades, então os dois níveis do mapa batem.
+  // No servidor de verdade isto só existe quando ele passar a guardar cidade + UF de quem compra (ver app/PENDENTE-ENTREGAR.md).
+  const CIDADES_DEMO: CidadeCliente[] = [
+    { uf: 'MG', cidade: 'Uberlândia', clientes: 30 }, { uf: 'MG', cidade: 'Montes Claros', clientes: 20 }, { uf: 'MG', cidade: 'Belo Horizonte', clientes: 10 },
+    { uf: 'MG', cidade: 'Juiz de Fora', clientes: 8 }, { uf: 'MG', cidade: 'Contagem', clientes: 6 }, { uf: 'MG', cidade: 'Itabira', clientes: 5 }, { uf: 'MG', cidade: 'Ipatinga', clientes: 4 },
+    { uf: 'SP', cidade: 'São Paulo', clientes: 60 }, { uf: 'SP', cidade: 'Campinas', clientes: 18 }, { uf: 'SP', cidade: 'Ribeirão Preto', clientes: 10 }, { uf: 'SP', cidade: 'Santos', clientes: 6 }, { uf: 'SP', cidade: 'Sorocaba', clientes: 4 },
+    { uf: 'RJ', cidade: 'Rio de Janeiro', clientes: 22 }, { uf: 'RJ', cidade: 'Niterói', clientes: 6 }, { uf: 'RJ', cidade: 'Petrópolis', clientes: 3 },
+    { uf: 'PR', cidade: 'Curitiba', clientes: 12 }, { uf: 'PR', cidade: 'Londrina', clientes: 7 }, { uf: 'PR', cidade: 'Maringá', clientes: 4 },
+    { uf: 'RS', cidade: 'Porto Alegre', clientes: 9 }, { uf: 'RS', cidade: 'Caxias do Sul', clientes: 4 },
+    { uf: 'BA', cidade: 'Salvador', clientes: 11 }, { uf: 'BA', cidade: 'Feira de Santana', clientes: 3 },
+    { uf: 'PE', cidade: 'Recife', clientes: 8 }, { uf: 'PE', cidade: 'Caruaru', clientes: 2 },
+    { uf: 'DF', cidade: 'Brasília', clientes: 7 }, { uf: 'GO', cidade: 'Goiânia', clientes: 5 }, { uf: 'CE', cidade: 'Fortaleza', clientes: 4 },
+  ]
+  const mapa = (): MapaClientes => {
+    const somaUf = (uf: string) => CIDADES_DEMO.filter((c) => c.uf === uf).reduce((s, c) => s + c.clientes, 0)
+    return {
+      ligado: true, total: CIDADES_DEMO.reduce((s, c) => s + c.clientes, 0), atualizado_em: new Date(agora).toISOString(),
+      por_uf: ESTADOS.map((e) => { const n = somaUf(e.uf); return { uf: e.uf, regiao: e.regiao, clientes: n, compras: Math.ceil(n * 1.3) } }),
+      por_cidade: CIDADES_DEMO.map((c) => ({ ...c })),
+    }
+  }
   const ok = <T extends object>(v: T) => Promise.resolve({ ok: true as const, ...v })
   return {
     logado: () => true,

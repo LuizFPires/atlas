@@ -47,7 +47,13 @@ export interface RadarPirataria { ligado: boolean; mensagem?: string; resumo: Re
 
 export interface LinhaUf { uf: string; regiao: Regiao; clientes: number; compras: number }
 /** Só agregado por estado (nunca IP, nome ou e-mail). `ligado:false` = o servidor ainda não guarda a região: a tela explica e NÃO inventa ponto. */
-export interface MapaClientes { ligado: boolean; mensagem?: string; total: number; por_uf: LinhaUf[]; atualizado_em: string }
+export interface CidadeCliente { uf: string; cidade: string; clientes: number }
+/**
+ * `por_cidade` é OPCIONAL: só existe quando o servidor guardar a cidade do comprador (cidade + UF derivadas do IP/checkout na hora,
+ * nunca o IP cru). Hoje o servidor só captura a UF; então, no caminho real, fica `undefined` e a tela explica. A posição (lon/lat) vem da base
+ * CIDADES pelo nome + UF; cidade fora da base não ganha bolha.
+ */
+export interface MapaClientes { ligado: boolean; mensagem?: string; total: number; por_uf: LinhaUf[]; por_cidade?: CidadeCliente[]; atualizado_em: string }
 
 export interface AdminApi {
   logado(): boolean
@@ -158,8 +164,12 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
     },
     resolverSinalRadar: () => Promise.resolve({ ok: false, mensagem: 'Dar baixa nos sinais ainda não está ligado no servidor. Nada foi marcado.' }),
     async mapaClientes() {
-      const r = await servidor<{ total?: number; por_uf?: LinhaUf[]; atualizado_em?: string }>('/admin/mapa')
-      if (r.ok && Array.isArray(r.por_uf) && typeof r.total === 'number') return { ok: true, mapa: { ligado: true, total: r.total, por_uf: r.por_uf, atualizado_em: r.atualizado_em ?? '' } }
+      const r = await servidor<{ total?: number; por_uf?: LinhaUf[]; por_cidade?: CidadeCliente[]; atualizado_em?: string }>('/admin/mapa')
+      if (r.ok && Array.isArray(r.por_uf) && typeof r.total === 'number') {
+        // Honestidade: só repassa cidade que o servidor mandou (e bem formada). Não mandou → undefined; nada é inventado.
+        const por_cidade = Array.isArray(r.por_cidade) ? r.por_cidade.filter((c) => c && typeof c.uf === 'string' && typeof c.cidade === 'string' && typeof c.clientes === 'number' && c.clientes > 0) : undefined
+        return { ok: true, mapa: { ligado: true, total: r.total, por_uf: r.por_uf, ...(por_cidade ? { por_cidade } : {}), atualizado_em: r.atualizado_em ?? '' } }
+      }
       // Rota ainda não existe e o servidor ainda não guarda a região do comprador (pendência): estado honesto, sem ponto inventado.
       return { ok: true, mapa: { ligado: false, mensagem: 'O Mapa ainda está sendo ligado: o Atlas precisa passar a guardar o estado de quem compra (só o estado, nunca o endereço). Quando estiver pronto, os estados se pintam aqui sozinhos.', total: 0, por_uf: [], atualizado_em: '' } }
     },

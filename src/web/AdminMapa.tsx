@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Icone } from '../ui'
 // Aba "Mapa" do painel do administrador: onde os clientes estão, por estado. Só números agregados por UF (nunca dado de pessoa).
 import { CENTRO_UF, ESTADOS, MAPA_ALTURA, MAPA_LARGURA, NOME_REGIAO, type Regiao } from './mapa-brasil'
-import type { LinhaUf } from './admin-api'
+import { posicaoCidade } from './cidades-brasil'
+import type { CidadeCliente, LinhaUf } from './admin-api'
 
 export const nomeUf = (uf: string) => ESTADOS.find((e) => e.uf === uf)?.nome ?? uf
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`
@@ -32,8 +33,11 @@ export function raioBolha(clientes: number, maximo: number) {
   return Math.round((RAIO_MIN + (RAIO_MAX - RAIO_MIN) * Math.sqrt(clientes / maximo)) * 10) / 10
 }
 
-// Pendência: "bolha por cidade" exige capturar a cidade do comprador (hoje só a UF — ver app/PENDENTE-ENTREGAR.md).
-// Por isso a bolha fica no centro do estado; nenhuma cidade é inventada.
+// Dois níveis de detalhe: afastado = uma bolha por estado (no centro dele); aproximado = uma bolha por cidade.
+// Bolha por cidade de verdade exige o servidor capturar a cidade do comprador (cidade + UF, nunca o IP cru — ver app/PENDENTE-ENTREGAR.md).
+// Sem `por_cidade` o mapa continua por estado e avisa; nenhuma cidade é inventada.
+/** A partir deste zoom as bolhas dos estados viram bolhas das cidades. */
+export const ZOOM_CIDADES = 2.5
 export const ZOOM_MIN = 1
 export const ZOOM_MAX = 8
 /** A partir deste zoom, mostra a sigla e o nº de clientes junto de cada bolha. */
@@ -55,7 +59,29 @@ export function zoomar(v: Vista, f: number, foco?: { x: number; y: number }): Vi
   return centrar({ k, cx: fx - (fx - v.cx) * (v.k / k), cy: fy - (fy - v.cy) * (v.k / k) })
 }
 
-export function MapaBrasil({ por_uf, maximo, ativo, onAtivo, onEscolher }: { por_uf: LinhaUf[]; maximo: number; ativo: string | null; onAtivo: (uf: string | null) => void; onEscolher: (uf: string) => void }) {
+const caixas = new Map<string, { x0: number; y0: number; x1: number; y1: number }>()
+/** Caixa que envolve o contorno do estado (lida dos números do próprio caminho SVG). */
+export function caixaUf(uf: string) {
+  const antes = caixas.get(uf)
+  if (antes) return antes
+  const e = ESTADOS.find((x) => x.uf === uf)
+  const n = (e?.d.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number)
+  if (n.length < 2) return null
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+  for (let i = 0; i + 1 < n.length; i += 2) { x0 = Math.min(x0, n[i]); x1 = Math.max(x1, n[i]); y0 = Math.min(y0, n[i + 1]); y1 = Math.max(y1, n[i + 1]) }
+  const c = { x0, y0, x1, y1 }
+  caixas.set(uf, c)
+  return c
+}
+/** Vista que enquadra o estado inteiro, já no nível de cidades. */
+export function vistaDoEstado(uf: string): Vista {
+  const c = caixaUf(uf)
+  if (!c) return VISTA_INICIAL
+  const k = limitar(Math.min(MAPA_LARGURA / ((c.x1 - c.x0) * 1.35), MAPA_ALTURA / ((c.y1 - c.y0) * 1.35)), ZOOM_CIDADES + 0.1, ZOOM_MAX)
+  return centrar({ k, cx: (c.x0 + c.x1) / 2, cy: (c.y0 + c.y1) / 2 })
+}
+
+export function MapaBrasil({ por_uf, por_cidade, maximo, ativo, onAtivo, onEscolher }: { por_uf: LinhaUf[]; por_cidade?: CidadeCliente[]; maximo: number; ativo: string | null; onAtivo: (uf: string | null) => void; onEscolher: (uf: string) => void }) {
   const dados = new Map(por_uf.map((l) => [l.uf, l]))
   const [vista, setVista] = useState<Vista>(VISTA_INICIAL)
   const svg = useRef<SVGSVGElement>(null)
@@ -79,7 +105,17 @@ export function MapaBrasil({ por_uf, maximo, ativo, onAtivo, onEscolher }: { por
     return () => el.removeEventListener('wheel', roda)
   }, [])
 
+  /** Clicar num estado dá zoom até enquadrá-lo (e abre as cidades dele) e marca o estado. */
+  const aoEscolher = (uf: string) => { setVista(vistaDoEstado(uf)); onEscolher(uf) }
   const mostrarRotulos = vista.k >= ZOOM_ROTULOS
+  const nivelCidade = vista.k >= ZOOM_CIDADES
+  const temCidades = !!por_cidade && por_cidade.length > 0
+  // Só ganha bolha a cidade que está na base (nome + UF); as outras são contadas no aviso, nunca chutadas.
+  const cidades = (por_cidade ?? []).flatMap((c) => { const p = posicaoCidade(c.uf, c.cidade); return p && c.clientes > 0 ? [{ ...c, x: p[0], y: p[1] }] : [] }).sort((a, b) => b.clientes - a.clientes)
+  const foraDaBase = (por_cidade ?? []).filter((c) => c.clientes > 0).length - cidades.length
+  const maxCidade = cidades[0]?.clientes ?? 0
+  const ufsComCidade = new Set(cidades.map((c) => c.uf))
+  const dentro = (x: number, y: number) => Math.abs(x - vista.cx) <= w / 2 + 30 / vista.k && Math.abs(y - vista.cy) <= h / 2 + 30 / vista.k
   return (
     <div className="ad-mapa-caixa">
       <div className="ad-mapa-zoom" role="group" aria-label="Controles de zoom do mapa">
@@ -87,7 +123,7 @@ export function MapaBrasil({ por_uf, maximo, ativo, onAtivo, onEscolher }: { por
         <button type="button" className="ad-zoom-btn" aria-label="Afastar o mapa" title="Afastar" disabled={vista.k <= ZOOM_MIN} onClick={() => setVista((v) => zoomar(v, 1 / 1.5))}><Icone nome="zoom-menos" tamanho={18} /></button>
         <button type="button" className="ad-zoom-btn" aria-label="Centralizar o mapa" title="Centralizar" disabled={vista.k === 1} onClick={() => setVista(VISTA_INICIAL)}><Icone nome="alvo" tamanho={18} /></button>
       </div>
-      <svg ref={svg} className={`ad-mapa ${vista.k > 1 ? 'ad-mapa--zoom' : ''}`} viewBox={`${vista.cx - w / 2} ${vista.cy - h / 2} ${w} ${h}`} role="group" aria-label="Mapa do Brasil com os clientes por estado" onMouseLeave={() => onAtivo(null)}
+      <svg ref={svg} className={`ad-mapa ${vista.k > 1 ? 'ad-mapa--zoom' : ''}`} viewBox={`${vista.cx - w / 2} ${vista.cy - h / 2} ${w} ${h}`} role="group" data-nivel={nivelCidade ? 'cidade' : 'estado'} aria-label={nivelCidade ? 'Mapa do Brasil com os clientes por cidade' : 'Mapa do Brasil com os clientes por estado'} onMouseLeave={() => onAtivo(null)}
         onPointerDown={(ev) => { arrasto.current = { x: ev.clientX, y: ev.clientY, cx: vista.cx, cy: vista.cy, moveu: false } }}
         onPointerMove={(ev) => {
           const a = arrasto.current
@@ -107,13 +143,13 @@ export function MapaBrasil({ por_uf, maximo, ativo, onAtivo, onEscolher }: { por
           const rotulo = `${e.nome} — ${textoUf(l)}`
           return (
             <path key={e.uf} d={e.d} data-uf={e.uf} className={`ad-uf ${ativo === e.uf ? 'ad-uf--ativo' : ''}`} fill={FUNDO_UF} tabIndex={0} role="button" aria-label={rotulo} aria-pressed={ativo === e.uf} vectorEffect="non-scaling-stroke"
-              onMouseEnter={() => onAtivo(e.uf)} onFocus={() => onAtivo(e.uf)} onBlur={() => onAtivo(null)} onClick={() => onEscolher(e.uf)}
-              onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onEscolher(e.uf) } }}>
+              onMouseEnter={() => onAtivo(e.uf)} onFocus={() => onAtivo(e.uf)} onBlur={() => onAtivo(null)} onClick={() => aoEscolher(e.uf)}
+              onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); aoEscolher(e.uf) } }}>
               <title>{rotulo}</title>
             </path>
           )
         })}
-        <g className="ad-bolhas" aria-hidden="true">
+        <g className={`ad-bolhas ${nivelCidade ? 'ad-bolhas--oculta' : ''}`} aria-hidden="true">
           {ESTADOS.map((e) => {
             const l = dados.get(e.uf)
             const c = CENTRO_UF[e.uf]
@@ -126,7 +162,36 @@ export function MapaBrasil({ por_uf, maximo, ativo, onAtivo, onEscolher }: { por
             )
           })}
         </g>
+        <g className={`ad-bolhas ${nivelCidade ? '' : 'ad-bolhas--oculta'}`} aria-hidden="true">
+          {nivelCidade && cidades.filter((c) => dentro(c.x, c.y)).map((c) => {
+            const r = raioBolha(c.clientes, maxCidade) / vista.k
+            return (
+              <g key={`${c.uf}-${c.cidade}`}>
+                <circle className={`ad-bolha ${ativo === c.uf ? 'ad-bolha--ativa' : ''}`} data-cidade={c.cidade} cx={c.x} cy={c.y} r={r} vectorEffect="non-scaling-stroke" />
+                <text className="ad-bolha-txt" x={c.x + r + 2 / vista.k} y={c.y} fontSize={11 / vista.k} textAnchor="start" dominantBaseline="central">{c.cidade} · {c.clientes}</text>
+              </g>
+            )
+          })}
+          {/* Estado com cliente mas sem nenhuma cidade conhecida continua aparecendo como bolha do estado: nada some. */}
+          {nivelCidade && ESTADOS.map((e) => {
+            const l = dados.get(e.uf), c = CENTRO_UF[e.uf]
+            if (!l || l.clientes <= 0 || !c || ufsComCidade.has(e.uf) || !dentro(c[0], c[1])) return null
+            return (
+              <g key={`uf-${e.uf}`}>
+                <circle className="ad-bolha" data-bolha={e.uf} cx={c[0]} cy={c[1]} r={raioBolha(l.clientes, maximo) / vista.k} vectorEffect="non-scaling-stroke" />
+                <text className="ad-bolha-txt" x={c[0]} y={c[1]} fontSize={12 / vista.k} textAnchor="middle" dominantBaseline="central">{e.uf} · {l.clientes}</text>
+              </g>
+            )
+          })}
+        </g>
       </svg>
+      <p className="ad-mapa-nivel" role="status">{nivelCidade ? 'Por cidade — afaste para voltar aos estados' : 'Por estado — clique num estado para ver as cidades'}</p>
+      {nivelCidade && !temCidades && (
+        <p className="ad-mapa-aviso" role="status">O detalhe por cidade aparece quando o Atlas começar a guardar a cidade de quem compra — por enquanto, o mapa mostra por estado.</p>
+      )}
+      {nivelCidade && temCidades && foraDaBase > 0 && (
+        <p className="ad-mapa-aviso" role="status">{plural(foraDaBase, 'cidade ainda não está', 'cidades ainda não estão')} no mapa de cidades; elas contam no total do estado.</p>
+      )}
     </div>
   )
 }

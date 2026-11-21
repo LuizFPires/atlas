@@ -4,7 +4,8 @@ import { TemaProvider } from '../tema/tema'
 import { Admin } from './Admin'
 import { criarAdminFixture } from './admin-fixture'
 import { criarAdminApi, CHAVE_SESSAO_ADMIN, type AdminApi } from './admin-api'
-import { RAIO_MAX, RAIO_MIN, VISTA_INICIAL, ZOOM_MAX, raioBolha, resumirMapa, zoomar } from './AdminMapa'
+import { RAIO_MAX, RAIO_MIN, VISTA_INICIAL, ZOOM_CIDADES, ZOOM_MAX, caixaUf, raioBolha, resumirMapa, vistaDoEstado, zoomar } from './AdminMapa'
+import { CIDADES, LONLAT_UF, acharCidade, posicaoCidade, projetar } from './cidades-brasil'
 import { CENTRO_UF, ESTADOS } from './mapa-brasil'
 import type { ConfigPortal } from './portal-api'
 
@@ -27,7 +28,10 @@ describe('aba Mapa', () => {
     expect(soma).toBe(r.mapa.total)
     const cad = await api.cadastros()
     if (!cad.ok) throw new Error('falhou')
-    expect(r.mapa.total).toBe(cad.cadastros.length)
+    expect(cad.cadastros.length).toBeGreaterThan(0)
+    // por cidade bate com por estado
+    for (const l of r.mapa.por_uf) expect((r.mapa.por_cidade ?? []).filter((c) => c.uf === l.uf).reduce((s, c) => s + c.clientes, 0)).toBe(l.clientes)
+    expect(r.mapa.por_cidade?.every((c) => acharCidade(c.uf, c.cidade))).toBe(true)
     const res = resumirMapa(r.mapa.por_uf)
     expect(res.regioes.reduce((s, g) => s + g.clientes, 0)).toBe(soma)
     expect(res.lider?.uf).toBe('SP')
@@ -42,14 +46,14 @@ describe('aba Mapa', () => {
     expect(await screen.findByRole('heading', { name: 'Mapa' })).toBeInTheDocument()
     const mapa = screen.getByRole('group', { name: /Mapa do Brasil/ })
     expect(mapa.querySelectorAll('path[data-uf]')).toHaveLength(27)
-    expect(within(mapa).getByRole('button', { name: /São Paulo — SP: 4 clientes \(6 compras\)/ })).toBeInTheDocument()
+    expect(within(mapa).getByRole('button', { name: /São Paulo — SP: 98 clientes \(128 compras\)/ })).toBeInTheDocument()
     const rank = screen.getByRole('region', { name: 'Ranking por estado' })
     const linhas = within(rank).getAllByRole('button')
-    expect(linhas[0]).toHaveAccessibleName(/São Paulo: SP: 4 clientes/)
-    expect(linhas).toHaveLength(7)
+    expect(linhas[0]).toHaveAccessibleName(/São Paulo: SP: 98 clientes/)
+    expect(linhas).toHaveLength(10)
     await userEvent.click(linhas[0])
     expect(linhas[0]).toHaveAttribute('aria-pressed', 'true')
-    expect(document.querySelector('.ad-mapa-info')).toHaveTextContent('São Paulo — SP: 4 clientes (6 compras)')
+    expect(document.querySelector('.ad-mapa-info')).toHaveTextContent('São Paulo — SP: 98 clientes (128 compras)')
     expect(screen.getByRole('region', { name: 'Resumo por região' })).toHaveTextContent('Sudeste')
   })
 
@@ -85,5 +89,72 @@ describe('bolhas e zoom do mapa', () => {
   })
   it('cada estado tem centro', () => {
     expect(ESTADOS.every((e) => CENTRO_UF[e.uf])).toBe(true)
+  })
+})
+
+describe('projeção e cidades', () => {
+  it('projetar o lon/lat de cada estado cai perto do centro dele no mapa', () => {
+    for (const uf of Object.keys(LONLAT_UF)) {
+      const [x, y] = projetar(...LONLAT_UF[uf])
+      expect(Math.hypot(x - CENTRO_UF[uf][0], y - CENTRO_UF[uf][1]), uf).toBeLessThan(15)
+    }
+  })
+  it('cidades caem dentro do mapa e na ordem geográfica certa', () => {
+    for (const c of CIDADES) {
+      const [x, y] = projetar(c.lon, c.lat)
+      expect(x, c.nome).toBeGreaterThan(0); expect(x, c.nome).toBeLessThan(660)
+      expect(y, c.nome).toBeGreaterThan(0); expect(y, c.nome).toBeLessThan(597)
+    }
+    const bh = posicaoCidade('MG', 'Belo Horizonte')!, udi = posicaoCidade('MG', 'uberlandia')!, moc = posicaoCidade('MG', 'Montes Claros')!
+    expect(udi[0]).toBeLessThan(bh[0]) // Uberlândia fica a oeste
+    expect(moc[1]).toBeLessThan(bh[1]) // Montes Claros fica ao norte
+    expect(posicaoCidade('MG', 'Cidade Inventada')).toBeNull()
+  })
+  it('o enquadramento de um estado já está no nível de cidade', () => {
+    expect(caixaUf('MG')).not.toBeNull()
+    expect(vistaDoEstado('MG').k).toBeGreaterThanOrEqual(ZOOM_CIDADES)
+    expect(vistaDoEstado('DF').k).toBeLessThanOrEqual(ZOOM_MAX)
+  })
+})
+
+describe('nível por zoom no mapa', () => {
+  beforeEach(() => { sessionStorage.clear(); localStorage.clear() })
+
+  it('afastado mostra estados; clicar em Minas mostra as cidades; centralizar volta ao Brasil', async () => {
+    montar(criarAdminFixture())
+    await irParaMapa()
+    const mapa = await screen.findByRole('group', { name: /Mapa do Brasil/ })
+    expect(mapa).toHaveAttribute('data-nivel', 'estado')
+    await userEvent.click(mapa.querySelector('path[data-uf="MG"]')!)
+    expect(mapa).toHaveAttribute('data-nivel', 'cidade')
+    const nomes = Array.from(mapa.querySelectorAll('circle[data-cidade]')).map((c) => c.getAttribute('data-cidade'))
+    expect(nomes).toEqual(expect.arrayContaining(['Uberlândia', 'Montes Claros', 'Belo Horizonte', 'Itabira']))
+    expect(mapa).toHaveTextContent('Uberlândia · 30')
+    expect(screen.queryByText(/O detalhe por cidade aparece/)).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Centralizar o mapa' }))
+    expect(mapa).toHaveAttribute('data-nivel', 'estado')
+    expect(mapa.querySelectorAll('circle[data-cidade]')).toHaveLength(0)
+  })
+
+  it('sem por_cidade (servidor real), aproximar não quebra e avisa com honestidade', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'tok')
+    const f = vi.fn(async (url: RequestInfo | URL) => {
+      if (String(url).endsWith('/admin/eu')) return new Response(JSON.stringify({ email: 'a@b.com' }), { status: 200 })
+      if (String(url).endsWith('/admin/painel')) return new Response(JSON.stringify({ gerado_em: '2026-01-01T00:00:00Z', indicadores: { clientes_ativos: 0, receita: { recorrente_mensal: 0, recebida_no_mes: 0, implantacoes_recebidas_no_mes: 0 }, ativacoes: { no_mes: 0, meta: 10, computadores_ativos: 0 }, inadimplencia: { atrasadas: 0, pausadas: 0, valor_em_aberto: 0 }, travados: 0 }, atencao: [], clientes: [] }), { status: 200 })
+      if (String(url).endsWith('/admin/mapa')) return new Response(JSON.stringify({ total: 3, por_uf: [{ uf: 'MG', regiao: 'SE', clientes: 3, compras: 3 }], atualizado_em: '2026-01-01T00:00:00Z' }), { status: 200 })
+      return new Response('{}', { status: 200 })
+    }) as unknown as typeof fetch
+    const api = criarAdminApi(cfg, f)
+    const r = await api.mapaClientes()
+    if (!r.ok) throw new Error('falhou')
+    expect(r.mapa.por_cidade).toBeUndefined()
+    montar(api)
+    await irParaMapa()
+    const mapa = await screen.findByRole('group', { name: /Mapa do Brasil/ })
+    await userEvent.click(mapa.querySelector('path[data-uf="MG"]')!)
+    expect(mapa).toHaveAttribute('data-nivel', 'cidade')
+    expect(screen.getByText(/O detalhe por cidade aparece quando o Atlas começar a guardar a cidade de quem compra/)).toBeInTheDocument()
+    expect(mapa.querySelectorAll('circle[data-cidade]')).toHaveLength(0)
+    expect(mapa.querySelector('circle[data-bolha="MG"]')).not.toBeNull() // continua a bolha do estado
   })
 })
