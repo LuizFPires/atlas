@@ -1,6 +1,7 @@
 // Painel do administrador (F16) — cliente da API. Só o Luiz usa. O login é o mesmo do Atlas (Supabase Auth, e-mail + senha),
 // mas QUEM é admin é decidido no servidor (JWT validado + lista ATLAS_ADMIN_EMAILS): esconder o link aqui não protege nada.
 // A sessão fica só nesta aba e em chave própria (a do portal do cliente nunca abre o painel).
+import type { Regiao } from './mapa-brasil'
 import { configPortal, type ConfigPortal, type Resp } from './portal-api'
 
 export type Situacao = 'em_dia' | 'atrasada' | 'pausada' | 'cancelada' | 'ativando'
@@ -44,6 +45,10 @@ export interface ResumoRadar { licencas_sob_suspeita: number; sinais_abertos: nu
 /** `ligado:false` = o servidor ainda não tem a rota: a tela explica e NÃO inventa número. */
 export interface RadarPirataria { ligado: boolean; mensagem?: string; resumo: ResumoRadar; sinais: SinalRadar[] }
 
+export interface LinhaUf { uf: string; regiao: Regiao; clientes: number; compras: number }
+/** Só agregado por estado (nunca IP, nome ou e-mail). `ligado:false` = o servidor ainda não guarda a região: a tela explica e NÃO inventa ponto. */
+export interface MapaClientes { ligado: boolean; mensagem?: string; total: number; por_uf: LinhaUf[]; atualizado_em: string }
+
 export interface AdminApi {
   logado(): boolean
   /** Login por e-mail + senha (Supabase Auth, password grant). A allowlist continua valendo no servidor. */
@@ -69,6 +74,8 @@ export interface AdminApi {
   radarPirataria(): Promise<Resp<{ radar: RadarPirataria }>>
   /** "Já verifiquei" um sinal. No servidor real ainda não existe (pendência): devolve ok:false com mensagem honesta. */
   resolverSinalRadar(id: string): Promise<Resp>
+  /** Mapa do Brasil: clientes e compras por estado. Sem a rota no servidor, devolve ok:true com `ligado:false`. */
+  mapaClientes(): Promise<Resp<{ mapa: MapaClientes }>>
   sair(): void
 }
 
@@ -150,6 +157,12 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       return { ok: true, radar: { ligado: false, mensagem: 'O Radar ainda está sendo ligado no servidor. Quando estiver pronto, os sinais aparecem aqui sozinhos.', resumo: RESUMO_VAZIO, sinais: [] } }
     },
     resolverSinalRadar: () => Promise.resolve({ ok: false, mensagem: 'Dar baixa nos sinais ainda não está ligado no servidor. Nada foi marcado.' }),
+    async mapaClientes() {
+      const r = await servidor<{ total?: number; por_uf?: LinhaUf[]; atualizado_em?: string }>('/admin/mapa')
+      if (r.ok && Array.isArray(r.por_uf) && typeof r.total === 'number') return { ok: true, mapa: { ligado: true, total: r.total, por_uf: r.por_uf, atualizado_em: r.atualizado_em ?? '' } }
+      // Rota ainda não existe e o servidor ainda não guarda a região do comprador (pendência): estado honesto, sem ponto inventado.
+      return { ok: true, mapa: { ligado: false, mensagem: 'O Mapa ainda está sendo ligado: o Atlas precisa passar a guardar o estado de quem compra (só o estado, nunca o endereço). Quando estiver pronto, os estados se pintam aqui sozinhos.', total: 0, por_uf: [], atualizado_em: '' } }
+    },
     sair() { token = ''; guardar('') },
   }
 }
