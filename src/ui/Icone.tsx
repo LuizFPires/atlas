@@ -91,6 +91,25 @@ const CAMINHOS = {
       <circle cx="12" cy="10" r="2.4" />
     </>
   ),
+  'zoom-mais': (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3M11 8v6M8 11h6" />
+    </>
+  ),
+  'zoom-menos': (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3M8 11h6" />
+    </>
+  ),
+  alvo: (
+    <>
+      <circle cx="12" cy="12" r="7" />
+      <circle cx="12" cy="12" r="2" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    </>
+  ),
 } as const
 
 export type NomeIcone = keyof typeof CAMINHOS

@@ -36,3 +36,8 @@ export const ESTADOS: EstadoMapa[] = [
   { uf: 'DF', nome: 'Distrito Federal', regiao: 'CO', d: 'M384 326L394 326L393 325L394 319L392 318L381 318L380 326Z' },
 ]
 export const UFS = ESTADOS.map((e) => e.uf)
+
+/** Centro de cada estado (mesmo sistema de coordenadas dos caminhos), calculado pela área de cada contorno. Usado para posicionar as bolhas. */
+export const CENTRO_UF: Record<string, readonly [number, number]> = {
+  RO: [165, 247], AC: [52, 221], AM: [138, 144], RR: [186, 49], PA: [309, 141], AP: [325, 59], TO: [379, 236], MA: [424, 158], PI: [458, 194], CE: [508, 159], RN: [551, 170], PB: [549, 190], PE: [531, 208], AL: [552, 226], SE: [540, 242], BA: [477, 271], MG: [433, 363], ES: [492, 380], RJ: [463, 420], SP: [373, 421], PR: [330, 457], SC: [347, 497], RS: [305, 535], MS: [283, 391], MT: [267, 278], GO: [360, 326], DF: [387, 322],
+}

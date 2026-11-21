@@ -4,8 +4,8 @@ import { TemaProvider } from '../tema/tema'
 import { Admin } from './Admin'
 import { criarAdminFixture } from './admin-fixture'
 import { criarAdminApi, CHAVE_SESSAO_ADMIN, type AdminApi } from './admin-api'
-import { resumirMapa } from './AdminMapa'
-import { ESTADOS } from './mapa-brasil'
+import { RAIO_MAX, RAIO_MIN, VISTA_INICIAL, ZOOM_MAX, raioBolha, resumirMapa, zoomar } from './AdminMapa'
+import { CENTRO_UF, ESTADOS } from './mapa-brasil'
 import type { ConfigPortal } from './portal-api'
 
 const montar = (api: AdminApi) => render(<TemaProvider><Admin api={api} /></TemaProvider>)
@@ -66,5 +66,24 @@ describe('aba Mapa', () => {
     const aviso = await screen.findByRole('region', { name: 'Mapa ainda não ligado' })
     expect(aviso).toHaveTextContent(/guardar o estado de quem compra/)
     expect(screen.queryByRole('group', { name: /Mapa do Brasil/ })).toBeNull()
+  })
+})
+
+describe('bolhas e zoom do mapa', () => {
+  it('raio: área proporcional, com mínimo e máximo; zero não tem bolha', () => {
+    expect(raioBolha(0, 10)).toBe(0)
+    expect(raioBolha(10, 10)).toBe(RAIO_MAX)
+    expect(raioBolha(1, 1000)).toBeGreaterThanOrEqual(RAIO_MIN)
+    expect(raioBolha(4, 16)).toBeGreaterThan(raioBolha(1, 16))
+  })
+  it('zoom respeita limites e volta ao centro ao afastar tudo', () => {
+    let v = VISTA_INICIAL
+    for (let i = 0; i < 20; i++) v = zoomar(v, 1.5)
+    expect(v.k).toBe(ZOOM_MAX)
+    for (let i = 0; i < 20; i++) v = zoomar(v, 1 / 1.5, { x: 10, y: 10 })
+    expect(v).toEqual(VISTA_INICIAL)
+  })
+  it('cada estado tem centro', () => {
+    expect(ESTADOS.every((e) => CENTRO_UF[e.uf])).toBe(true)
   })
 })
