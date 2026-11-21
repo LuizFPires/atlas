@@ -6,22 +6,24 @@ const l = (nome: string, empresa: string, situacao: LinhaCliente['situacao'], ex
   ({ licenca_id: nome, nome, empresa, ramo: '', situacao, obras: 0, ultimo_sinal_em: null, travado_em: null, ...extra })
 const lista = [
   l('Ana', 'Padaria Ótima', 'em_dia'), l('Beto', 'Barbearia', 'atrasada'), l('Caio', 'Café', 'pausada'),
-  l('Dora', 'Doces', 'cancelada'), l('Eva', '', 'em_dia', { tipo: 'cortesia' }), l('Fred', 'Frete', 'ativando'),
+  l('Dora', 'Doces', 'cancelada'), l('Eva', '', 'em_dia', { tipo: 'cortesia' }), l('Fred', 'Frete', 'ativando'), l('Gil', 'Gráfica', 'ativando', { travado_em: 'cadastro' }),
 ]
 
 describe('filtro de contas', () => {
   const nomes = (f: Parameters<typeof filtrarClientes>[1], b = '') => filtrarClientes(lista, f, b).map((c) => c.nome)
   it('filtra por situação', () => {
-    expect(nomes('todas')).toHaveLength(6)
+    expect(nomes('todas')).toHaveLength(7)
     expect(nomes('ativas')).toEqual(['Ana'])
-    expect(nomes('inativas')).toEqual(['Caio', 'Dora'])
-    expect(nomes('atrasadas')).toEqual(['Beto'])
+    expect(nomes('inadimplentes')).toEqual(['Beto', 'Caio'])
+    expect(nomes('canceladas')).toEqual(['Dora'])
+    expect(nomes('ativando')).toEqual(['Fred', 'Gil'])
+    expect(nomes('travados')).toEqual(['Gil'])
     expect(nomes('cortesias')).toEqual(['Eva'])
   })
   it('busca por nome ou empresa, sem ligar para acento e maiúscula', () => {
     expect(nomes('todas', 'otima')).toEqual(['Ana'])
     expect(nomes('todas', 'CAIO')).toEqual(['Caio'])
-    expect(nomes('inativas', 'do')).toEqual(['Dora'])
+    expect(nomes('canceladas', 'do')).toEqual(['Dora'])
   })
 })
 

@@ -1,12 +1,14 @@
 // Contas puras do painel do administrador (sem rede): filtro de clientes, fluxo de caixa e indicadores gerenciais.
 import type { FluxoCaixa, IndicadoresAdmin, LinhaCliente, MesCaixa } from './admin-api'
 
-export type FiltroConta = 'todas' | 'ativas' | 'inativas' | 'atrasadas' | 'cortesias'
+export type FiltroConta = 'todas' | 'ativas' | 'ativando' | 'inadimplentes' | 'canceladas' | 'travados' | 'cortesias'
 export const FILTROS: { id: FiltroConta; nome: string }[] = [
   { id: 'todas', nome: 'Todas' },
   { id: 'ativas', nome: 'Ativas (em dia)' },
-  { id: 'inativas', nome: 'Inativas (canceladas e pausadas)' },
-  { id: 'atrasadas', nome: 'Atrasadas' },
+  { id: 'ativando', nome: 'Ativando agora' },
+  { id: 'inadimplentes', nome: 'Inadimplentes (atrasadas e pausadas)' },
+  { id: 'canceladas', nome: 'Canceladas' },
+  { id: 'travados', nome: 'Travados (parados no cadastro ou na instalação)' },
   { id: 'cortesias', nome: 'Cortesias' },
 ]
 
@@ -19,8 +21,10 @@ export function filtrarClientes(lista: LinhaCliente[], filtro: FiltroConta, busc
     const passa =
       filtro === 'todas' ? true
       : filtro === 'ativas' ? c.situacao === 'em_dia' && c.tipo !== 'cortesia'
-      : filtro === 'inativas' ? c.situacao === 'cancelada' || c.situacao === 'pausada'
-      : filtro === 'atrasadas' ? c.situacao === 'atrasada'
+      : filtro === 'ativando' ? c.situacao === 'ativando'
+      : filtro === 'inadimplentes' ? c.situacao === 'atrasada' || c.situacao === 'pausada'
+      : filtro === 'canceladas' ? c.situacao === 'cancelada'
+      : filtro === 'travados' ? c.travado_em !== null
       : c.tipo === 'cortesia'
     return passa && (!q || semAcento(`${c.nome} ${c.empresa}`).includes(q))
   })

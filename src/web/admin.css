@@ -17,6 +17,15 @@
 .ad-aviso-msg { margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--soft); border: 1px solid var(--lime); font-size: 14px; }
 .ad-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
 .ad-kpi { background: var(--card); border: 1px solid var(--card-b); border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+.ad-kpi--botao { font: inherit; color: inherit; text-align: left; cursor: pointer; transition: background .15s, transform .1s; }
+.ad-kpi--botao:hover { background: var(--soft); }
+.ad-kpi--botao:active { transform: translateY(1px); }
+.ad-kpi--botao:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.ad-kpi--ativo { background: var(--soft); border-color: var(--lime); box-shadow: 0 0 0 1px var(--lime); }
+.ad-infos { display: flex; flex-wrap: wrap; gap: 8px 40px; margin: 0; padding: 0 0 4px; }
+.ad-info { display: flex; flex-direction: column; gap: 2px; }
+.ad-info-nome { font-size: 13px; color: var(--mute); }
+.ad-info-v { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
 .ad-kpi-nome { font-size: 13px; color: var(--mute); }
 .ad-kpi-v { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
 .ad-kpi--lime { border-color: var(--lime); }
@@ -61,6 +70,8 @@
   .ad-grade { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 760px) {
+  .ad-kpis { grid-template-columns: minmax(0, 1fr); }
+  .ad-infos { flex-direction: column; }
   .ad { flex-direction: column; }
   .ad-lateral { width: auto; border-right: none; border-bottom: 1px solid var(--side-border); }
   .ad-lateral nav { flex-direction: row; flex-wrap: wrap; }
