@@ -1,0 +1,61 @@
+// node --test app/adaptadores/servidor.teste.cjs
+'use strict'
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const { criarServidor, ROTAS } = require('./servidor.cjs')
+
+const API = 'https://servidor.test/functions/v1/api'
+function montar(resposta = { status: 200, corpo: '{"ok":true}' }, api = API) {
+  const pedidos = []
+  const buscar = async (url, init) => { pedidos.push({ url, init }); return new Response(resposta.corpo, { status: resposta.status }) }
+  return { s: criarServidor({ api, buscar }), pedidos }
+}
+
+test('repassa a chamada ao servidor do Atlas e devolve status e corpo', async () => {
+  const { s, pedidos } = montar({ status: 429, corpo: '{"mensagem":"Espere."}' })
+  const r = await s.postar('/ativar/solicitar-codigo', { email: 'ana@loja.com' }, {})
+  assert.deepEqual(r, { status: 429, corpo: '{"mensagem":"Espere."}' })
+  assert.equal(pedidos[0].url, `${API}/ativar/solicitar-codigo`)
+  assert.equal(pedidos[0].init.method, 'POST')
+  assert.equal(pedidos[0].init.redirect, 'error')
+  assert.equal(pedidos[0].init.body, '{"email":"ana@loja.com"}')
+  assert.equal(pedidos[0].init.headers['Content-Type'], 'application/json')
+})
+
+test('só o cabeçalho do dispositivo passa; qualquer outro é descartado', async () => {
+  const { s, pedidos } = montar()
+  await s.postar('/verificar', { email: 'a@b.com' }, { 'X-Atlas-Dispositivo': 'tok-1', Authorization: 'Bearer x', Cookie: 'a=b', Host: 'outro.test' })
+  assert.deepEqual(pedidos[0].init.headers, { 'Content-Type': 'application/json', 'X-Atlas-Dispositivo': 'tok-1' })
+})
+
+test('só as rotas da lista; a tela não escolhe outro endereço', async () => {
+  const { s, pedidos } = montar()
+  for (const rota of ['/admin/cortesia', '/ativar/confirmar/../../admin', 'https://outro.test/x', '//outro.test/x', '/verificar?x=1', '', null, 42]) {
+    await assert.rejects(() => s.postar(rota, {}, {}), /rota-nao-permitida/)
+  }
+  assert.equal(pedidos.length, 0)
+  assert.ok(ROTAS.includes('/ativar/solicitar-codigo') && ROTAS.includes('/ativar/confirmar') && ROTAS.includes('/verificar'))
+})
+
+test('corpo precisa ser um objeto simples e pequeno', async () => {
+  const { s, pedidos } = montar()
+  await assert.rejects(() => s.postar('/verificar', 'texto', {}), /corpo-invalido/)
+  await assert.rejects(() => s.postar('/verificar', [1, 2], {}), /corpo-invalido/)
+  await assert.rejects(() => s.postar('/verificar', { x: 'a'.repeat(20_001) }, {}), /corpo-invalido/)
+  assert.equal(pedidos.length, 0)
+})
+
+test('sem endereço https do servidor, falha fechada', async () => {
+  for (const api of [null, '', 'http://servidor.test/api', 'https://user:senha@servidor.test/api', 'nada']) {
+    const { s, pedidos } = montar(undefined, api)
+    await assert.rejects(() => s.postar('/verificar', {}, {}), /servidor-indisponivel/)
+    assert.equal(pedidos.length, 0)
+  }
+})
+
+test('rede fora vira sem-conexao; resposta grande demais é cortada', async () => {
+  const cai = criarServidor({ api: API, buscar: async () => { throw new Error('ECONNRESET') } })
+  await assert.rejects(() => cai.postar('/verificar', {}, {}), /sem-conexao/)
+  const { s } = montar({ status: 200, corpo: 'x'.repeat(50_000) })
+  assert.equal((await s.postar('/verificar', {}, {})).corpo.length, 20_000)
+})

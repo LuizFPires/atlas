@@ -113,7 +113,8 @@ test.each(['automatico', 'passo-a-passo'] as const)('no painel, no modo %s a oco
 
   oc.simular.abrir(OCORRENCIA_EXEMPLO)
   expect(await screen.findByRole('heading', { name: 'Conecte o WhatsApp da barbearia' })).toBeInTheDocument()
-  expect(oc.avisos.length).toBe(2)
+  // O aviso ao cliente sai depois que a tela aparece (efeito): esperar por ele, em vez de conferir no mesmo instante.
+  await waitFor(() => expect(oc.avisos.length).toBe(2))
 
   await user.type(await screen.findByLabelText('Chave do WhatsApp Business'), 'EAA123')
   await user.click(screen.getByRole('button', { name: 'Já colei a chave: continuar' }))

@@ -2,18 +2,23 @@
 # que ele instala. Serve para o Luiz e convidados de confiança: o Windows vai avisar "editor desconhecido".
 # O instalador assinado (Azure Trusted Signing) continua sendo o `npm run instalador`, com as credenciais.
 name: Instalador de teste (Windows)
+# Em PR que mexe no app ou no instalador: só gera e confere que instala. O arquivo que a página entrega (no Supabase) só é
+# trocado pela main ou por disparo manual, para nunca servir código que ainda não foi aprovado.
 on:
   workflow_dispatch:
   push:
-    branches: [feat/instalador-teste, feat/instalar-download]
-    paths: ['app/**', 'instalador/**', 'src/**', '.github/workflows/instalador-teste.yml']
+    branches: [main]
+    paths: ['app/**', 'instalador/**', 'src/app/**', '.github/workflows/instalador-teste.yml']
+  pull_request:
+    paths: ['app/**', 'instalador/**', 'src/app/**', '.github/workflows/instalador-teste.yml']
 
-# contents: write é só para publicar o .exe na release "instalador-teste" deste repositório (privado).
+# contents: write é só para apagar a release antiga do GitHub (passo temporário, ver abaixo).
 permissions:
   contents: write
 
 env:
-  # Endereço público do servidor de licenças (o mesmo que o site usa; não é segredo).
+  # Endereços públicos do projeto no Supabase (os mesmos que o site usa; não são segredo).
+  SUPABASE_URL: https://jwnrzcyudurdrxhjfdua.supabase.co
   ATLAS_API: https://jwnrzcyudurdrxhjfdua.supabase.co/functions/v1/api
 
 jobs:
@@ -76,42 +81,60 @@ jobs:
             'config.json dentro do pacote' = [bool](Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Programs\Atlas\resources') -Recurse -Filter 'app.asar' -ErrorAction SilentlyContinue)
             'Claude Code instalado' = $claude
             'App abriu sozinho na ativação' = $aberto
+            'Endereço atlas:// registrado no Windows' = (Test-Path 'HKCU:\Software\Classes\atlas')
           }
           $r.GetEnumerator() | ForEach-Object { "{0}: {1}" -f $_.Key, $(if ($_.Value) { 'sim' } else { 'NÃO' }) }
           "## Instalador de teste`n" + (($r.GetEnumerator() | ForEach-Object { "- {0}: **{1}**" -f $_.Key, $(if ($_.Value) { 'sim' } else { 'NÃO' }) }) -join "`n") >> $env:GITHUB_STEP_SUMMARY
           Get-Process -Name Atlas -ErrorAction SilentlyContinue | Stop-Process -Force
           if (-not (Test-Path $app) -or -not (Test-Path $obras)) { exit 1 }
 
-      # A página /instalar entrega este arquivo: o servidor pede ao GitHub um endereço temporário para quem tem link válido.
-      - name: Publicar na release privada "instalador-teste"
+      # A hospedagem saiu do GitHub (a release era pública enquanto o repositório for público). Este passo apaga a release
+      # antiga, se ainda existir; depois da primeira rodada pode ser removido junto com o "contents: write" acima.
+      - name: Apagar a release antiga do GitHub (se existir)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view instalador-teste >/dev/null 2>&1 || gh release create instalador-teste --prerelease --title "Instalador de teste" --notes "Instalador de TESTE do Atlas (sem assinatura). Gerado pelo workflow; o arquivo é trocado a cada rodada."
-          for antigo in $(gh release view instalador-teste --json assets --jq '.assets[].name'); do gh release delete-asset instalador-teste "$antigo" --yes; done
-          gh release upload instalador-teste release/Atlas-Instalador-TESTE-*.exe
-          gh release view instalador-teste --json assets --jq '.assets[] | "\(.name) \(.size) bytes"'
+          if gh release view instalador-teste >/dev/null 2>&1; then
+            gh release delete instalador-teste --cleanup-tag --yes && echo "release instalador-teste apagada"
+          else
+            echo "não há release instalador-teste"
+          fi
 
-      - name: Conferir o endereço temporário que a página vai receber
+      # A página /instalar entrega este arquivo: o servidor pede ao Storage um endereço temporário para quem tem link válido.
+      # Só a main ou o disparo manual trocam o arquivo; PR nunca sobe nada. Precisa do segredo SUPABASE_SERVICE_ROLE_KEY.
+      - name: Enviar para a pasta privada do Supabase (bucket "instalador")
+        if: github.event_name != 'pull_request'
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          id=$(gh api "repos/${{ github.repository }}/releases/tags/instalador-teste" --jq '.assets[] | select(.name | endswith(".exe")) | .id')
-          destino=$(curl -s -o /dev/null -w '%{redirect_url}' -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/octet-stream" "https://api.github.com/repos/${{ github.repository }}/releases/assets/$id")
-          [ -n "$destino" ] || { echo "o GitHub não devolveu endereço temporário"; exit 1; }
-          echo "Servidor do endereço temporário: $(echo "$destino" | sed -E 's#^(https://[^/]+)/.*#\1#')"
-          echo "Parâmetros (só os nomes): $(echo "$destino" | sed -E 's/^[^?]*\?//' | tr '&' '\n' | cut -d= -f1 | tr '\n' ' ')"
-          echo "Validade pedida: $(echo "$destino" | grep -oE '(X-Amz-Expires|se)=[^&]+' | head -1)"
-          # Sem nenhuma credencial, como o navegador do cliente: tem de responder com o arquivo inteiro.
-          curl -s -o baixado.exe -w 'Sem credencial: HTTP %{http_code}, %{size_download} bytes\n' "$destino"
-          cmp baixado.exe release/Atlas-Instalador-TESTE-*.exe && echo "Arquivo baixado é idêntico ao gerado"
-          # O endereço fixo, sem credencial, só é negado se o repositório for privado. Com o repositório público, qualquer
-          # pessoa baixa o instalador direto do GitHub, sem passar pelo link do e-mail: fica o aviso na rodada.
-          fixo=$(curl -s -o /dev/null -w '%{http_code}' -H "Accept: application/octet-stream" "https://api.github.com/repos/${{ github.repository }}/releases/assets/$id")
-          echo "Pedido direto ao GitHub, sem credencial: HTTP $fixo"
-          if [ "$fixo" != "404" ]; then echo "::warning::O repositorio esta publico: o instalador pode ser baixado direto do GitHub, sem o link do e-mail."; fi
+          if [ -z "$SUPABASE_KEY" ]; then
+            echo "::warning::Segredo SUPABASE_SERVICE_ROLE_KEY nao cadastrado: o instalador foi gerado, mas NAO foi enviado ao Supabase."
+            exit 0
+          fi
+          base="$SUPABASE_URL/storage/v1"
+          auth=(-H "Authorization: Bearer $SUPABASE_KEY" -H "apikey: $SUPABASE_KEY")
+          # Cria o bucket privado na primeira vez (se já existe, o Supabase responde que é duplicado e seguimos).
+          curl -sS -o bucket.json -w 'Criar bucket: HTTP %{http_code}\n' "${auth[@]}" -H 'Content-Type: application/json' -d '{"id":"instalador","name":"instalador","public":false}' "$base/bucket"
+          arquivo=$(ls release/Atlas-Instalador-TESTE-*.exe | head -1)
+          codigo=$(curl -sS -o envio.json -w '%{http_code}' -X POST "${auth[@]}" -H 'Content-Type: application/octet-stream' -H 'x-upsert: true' --data-binary "@$arquivo" "$base/object/instalador/Atlas-Instalador.exe")
+          echo "Enviar arquivo: HTTP $codigo"
+          if [ "$codigo" != "200" ]; then
+            cat envio.json; echo
+            [ "$codigo" = "413" ] && echo "::error::O Supabase recusou pelo tamanho. Aumente o limite de tamanho de arquivo nas configuracoes do Storage (o instalador tem mais de 100 MB)."
+            exit 1
+          fi
+
+          # Confere como a página vai receber: endereço temporário baixa o arquivo inteiro, sem nenhuma credencial...
+          assinado=$(curl -sS "${auth[@]}" -H 'Content-Type: application/json' -d '{"expiresIn":600}' "$base/object/sign/instalador/Atlas-Instalador.exe" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{process.stdout.write(JSON.parse(d).signedURL||'')}catch{}})")
+          [ -n "$assinado" ] || { echo "::error::O Supabase nao devolveu o endereco temporario."; exit 1; }
+          curl -sS -o baixado.exe -w 'Endereco temporario, sem credencial: HTTP %{http_code}, %{size_download} bytes\n' "$base$assinado"
+          cmp baixado.exe "$arquivo" && echo "Arquivo baixado e identico ao gerado"
+          # ...e o endereço direto, sem credencial, tem de ser negado (a pasta é privada).
+          direto=$(curl -sS -o /dev/null -w '%{http_code}' "$base/object/public/instalador/Atlas-Instalador.exe")
+          echo "Endereco direto, sem credencial: HTTP $direto"
+          if [ "$direto" = "200" ]; then echo "::error::A pasta do instalador esta PUBLICA no Supabase."; exit 1; fi
 
       - name: Guardar o instalador
         if: always()

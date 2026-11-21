@@ -1,5 +1,6 @@
 // Ponte entre o front (React) e o app desktop (Electron). O front só conhece esta interface:
 // a API do Electron fica atrás dela, então o CI (ubuntu) testa tudo sem empacotar nada.
+import type { PonteServidor } from './ponte-servidor'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { PonteClaude } from './ponte-claude'
 import type { PonteObras } from './ponte-obras'
@@ -37,6 +38,10 @@ export interface PonteDesktop {
   /** Liga/desliga o bloqueio de suspensão (o computador é o canteiro). */
   impedirSono(ligado: boolean): Promise<void>
   /** Adaptadores reais injetados pelo preload (app/preload.cjs). Opcionais: o que faltar cai no *Indisponivel. */
+  /** Avisa quando o código do link de instalação chega com o app já aberto (clique em "Liberar o Atlas" na página do e-mail). */
+  aoReceberLink?: (aviso: (token: string) => void) => void
+  /** Chamadas ao servidor de licenças pelo processo principal (a tela, em file://, é barrada pelo CORS do servidor). */
+  servidor?: PonteServidor
   arquivos?: PonteArquivos
   obras?: PonteObras
   claude?: PonteClaude
