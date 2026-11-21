@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 import { lerEmailsAdmin } from '../functions/_shared/admin.ts'
 import type { Pagamento } from '../functions/_shared/tipos.ts'
+import { cancelarCompra, cancelarMensalidade } from '../functions/_shared/pagamento/cancelamento.ts'
 import { chamar, comDoisClientes, JWT_ANA } from './helpers-portal.ts'
 
 const JWT_LUIZ = 'jwt-luiz'
@@ -123,5 +124,27 @@ describe('POST /admin/fluxo-caixa', () => {
     const m = await montar()
     const txt = JSON.stringify(await m.post('/admin/fluxo-caixa'))
     expect(txt).not.toMatch(/pi_|conta-1|acct_|cus_|sub_/)
+  })
+})
+
+describe('/admin/painel — cancelamentos_no_mes', () => {
+  it('conta só quem cancelou neste mês (cancelada_em), inclusive pedido de saída que segue até o fim do período', async () => {
+    const m = await montar() // 2026-11-18
+    const p0 = await m.post('/admin/painel')
+    expect(p0.indicadores.cancelamentos_no_mes).toBe(0)
+    novoCliente(m, 'a', {}, { status: 'cancelada', cancelada_em: new Date('2026-11-03T12:00:00Z') })
+    novoCliente(m, 'b', {}, { status: 'ativa', cancelada_em: new Date('2026-11-10T12:00:00Z'), mensalidade_encerra_em: new Date('2026-12-05T00:00:00Z') }) // pediu saída, ainda ativa
+    novoCliente(m, 'c', {}, { status: 'cancelada', cancelada_em: new Date('2026-10-20T12:00:00Z') }) // mês passado
+    novoCliente(m, 'd', {}, { status: 'cancelada' }) // antes da migration: sem data, fora da conta
+    expect((await m.post('/admin/painel')).indicadores.cancelamentos_no_mes).toBe(2)
+  })
+
+  it('os fluxos reais de cancelamento gravam cancelada_em (arrependimento e cancelar mensalidade)', async () => {
+    const m = await montar()
+    await cancelarMensalidade(m.deps, 'beto@outra.com')
+    expect(m.store.licencas.find((l) => l.id === 'l2')?.cancelada_em).toBeInstanceOf(Date)
+    await cancelarCompra(m.deps, 'ana@loja.com')
+    expect(m.store.licencas.find((l) => l.id === 'l1')?.cancelada_em).toBeInstanceOf(Date)
+    expect((await m.post('/admin/painel')).indicadores.cancelamentos_no_mes).toBe(2)
   })
 })

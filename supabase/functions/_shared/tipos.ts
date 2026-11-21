@@ -41,6 +41,8 @@ export interface Licenca {
   origem?: 'degustacao' | null
   /** Cortesia: até quando vale (obrigatório nela). Nulo = sem prazo. */
   validade_em?: Date | null
+  /** Quando o cancelamento foi pedido/ocorreu (0027). Nulo = nunca ou antes da migration. Alimenta "Cancelamentos no mês" do painel. */
+  cancelada_em?: Date | null
 }
 export interface Ativacao {
   id: string

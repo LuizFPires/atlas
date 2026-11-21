@@ -70,6 +70,8 @@ export interface IndicadoresAdmin {
   ativacoes: { no_mes: number; meta: number; computadores_ativos: number }
   inadimplencia: { atrasadas: number; pausadas: number; valor_em_aberto: number }
   travados: number
+  /** Cancelamentos pedidos/ocorridos no mês corrente (licenças com cancelada_em no mês). */
+  cancelamentos_no_mes: number
 }
 
 export interface LinhaCliente {
@@ -167,6 +169,7 @@ export async function painel(d: DepsAdmin, jwt: string) {
     },
     inadimplencia: { atrasadas, pausadas, valor_em_aberto: (atrasadas + pausadas) * VALOR_MENSALIDADE },
     travados: linhas.filter((x) => x.travado_em).length,
+    cancelamentos_no_mes: licencas.filter((l) => !!l.cancelada_em && l.cancelada_em >= mes).length,
   }
 
   const licDoCliente = new Map(licencas.map((l) => [l.cliente_id, l.id]))

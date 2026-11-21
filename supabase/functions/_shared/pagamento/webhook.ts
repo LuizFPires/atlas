@@ -77,7 +77,7 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   if (s.mode === 'subscription') {
     const lic = (str(meta.atlas_licenca) && (await d.store.licencaPorId(meta.atlas_licenca))) || (await d.store.licencaPorGateway(contaId, { cliente: idDe(s.customer) }))
     if (!lic || lic.conta_gateway_id !== contaId) return // sessão que não é nossa
-    await d.store.atualizarLicencaSe(lic.id, { gateway_assinatura_ref: idDe(s.subscription), gateway_cliente_ref: lic.gateway_cliente_ref ?? idDe(s.customer), mensalidade_encerra_em: null }, { status_diferente: 'cancelada' })
+    await d.store.atualizarLicencaSe(lic.id, { gateway_assinatura_ref: idDe(s.subscription), gateway_cliente_ref: lic.gateway_cliente_ref ?? idDe(s.customer), mensalidade_encerra_em: null, cancelada_em: null }, { status_diferente: 'cancelada' })
     return
   }
   if (s.mode !== 'payment') return
@@ -125,7 +125,7 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
     if (prev !== 'pago') {
       await d.store.atualizarLicencaSe(
         licenca.id,
-        { status: 'ativa', comprada_em: agora, pausa_prevista_em: null, avisos_atraso: 0, mensalidade_encerra_em: null, gateway_assinatura_ref: null, gateway_cliente_ref: idDe(s.customer) ?? licenca.gateway_cliente_ref ?? null },
+        { status: 'ativa', comprada_em: agora, pausa_prevista_em: null, avisos_atraso: 0, mensalidade_encerra_em: null, cancelada_em: null, gateway_assinatura_ref: null, gateway_cliente_ref: idDe(s.customer) ?? licenca.gateway_cliente_ref ?? null },
         { status: 'cancelada' },
       )
     }
@@ -180,7 +180,7 @@ async function faturaFalhou(d: DepsPagamento, contaId: string, f: Obj) {
 async function assinaturaEncerrada(d: DepsPagamento, contaId: string, sub: Obj) {
   const lic = await d.store.licencaPorGateway(contaId, { assinatura: idDe(sub) })
   if (!lic || lic.status === 'cancelada') return
-  await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada', pausa_prevista_em: null }, { status_diferente: 'cancelada' })
+  await d.store.atualizarLicencaSe(lic.id, { status: 'cancelada', pausa_prevista_em: null, cancelada_em: d.agora() }, { status_diferente: 'cancelada' })
 }
 
 async function estornado(d: DepsPagamento, contaId: string, ch: Obj) {
