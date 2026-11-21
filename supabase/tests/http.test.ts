@@ -28,6 +28,17 @@ describe('http', () => {
     expect(k.headers.get('Cache-Control')).toBe('no-store')
     expect((await k.json()).arquivos[0].conteudo).toContain('Lei 9.609/98')
   })
+  it('/licenca/resumo: só com a credencial do dispositivo no cabeçalho', async () => {
+    const { m, c } = ctx()
+    await m.ativar()
+    const corpo = { email: 'ana@loja.com', computador_hash: H1 }
+    const sem = await post(c, '/licenca/resumo', { ...corpo, token_dispositivo: TOKEN })
+    expect(sem.status).toBe(401)
+    expect(await sem.json()).toMatchObject({ erro: 'negado' })
+    const com = await post(c, '/licenca/resumo', corpo, { 'X-Atlas-Dispositivo': TOKEN })
+    expect(com.status).toBe(200)
+    expect(await com.json()).toMatchObject({ tipo: 'paga', validade_em: null, vencida: false })
+  })
   it('credencial no corpo é ignorada; só o cabeçalho vale', async () => {
     const { m, c } = ctx()
     await m.ativar()

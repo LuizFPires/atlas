@@ -1,5 +1,6 @@
 // Roteador das APIs S4 (sem dependência de Deno: testável com Request/Response padrão).
 import { abrirLink, baixarInstalador, reenviarParaComputador } from './abertura.ts'
+import { resumoDaLicenca } from './licenca-resumo.ts'
 import { registrarCasoAjuda } from './ajuda-caso.ts'
 import { confirmarAtivacao, solicitarCodigo } from './ativacao.ts'
 import { validarInstancia } from './instancia.ts'
@@ -234,6 +235,9 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         return json(await processarAtrasos(ctx.pagamento))
       case '/verificar':
         return json(await verificar(ctx.deps, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo }))
+      // Contador do teste no app: só leitura do tipo e da validade da licença, com a credencial do dispositivo.
+      case '/licenca/resumo':
+        return json(await resumoDaLicenca(ctx.deps, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo }))
       case '/ajuda-caso':
         return json(await registrarCasoAjuda(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, tipo: b.tipo, descricao: b.descricao }))
       case '/instancia/validar':
