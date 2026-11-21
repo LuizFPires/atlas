@@ -131,11 +131,18 @@ export function MapaBrasil({ por_uf, maximo, ativo, onAtivo, onEscolher }: { por
 
 /** Legenda da escala: do "nenhum" ao estado mais forte. */
 export function LegendaMapa({ maximo }: { maximo: number }) {
+  const m = maximo || 1
+  const niveis = [{ nome: 'poucos', f: 0.05 }, { nome: 'médio', f: 0.35 }, { nome: 'muitos', f: 1 }]
   return (
     <div className="ad-legenda" aria-label="Legenda do mapa">
-      <span className="ad-mute2">Tamanho da bolha:</span>
-      {[1, 0.4, 0.1].map((f) => <svg key={f} width="44" height="44" viewBox="-22 -22 44 44" aria-hidden="true"><circle className="ad-bolha" r={Math.min(21, raioBolha(Math.max(1, Math.round((maximo || 1) * f)), maximo || 1) * 0.6)} /></svg>)}
-      <span className="ad-mute2">de poucos a até {maximo || 1} {maximo === 1 ? 'cliente' : 'clientes'}</span>
+      <span className="ad-mute2">Quanto maior a bolha, mais clientes no estado:</span>
+      {niveis.map((n) => (
+        <span key={n.nome} className="ad-legenda-nivel">
+          <svg width="44" height="44" viewBox="-22 -22 44 44" aria-hidden="true"><circle className="ad-bolha" r={raioBolha(Math.max(1, Math.round(m * n.f)), m) * 0.6} /></svg>
+          <span className="ad-mute2">{n.nome}</span>
+        </span>
+      ))}
+      <span className="ad-mute2">(a maior tem {m} {m === 1 ? 'cliente' : 'clientes'})</span>
     </div>
   )
 }
