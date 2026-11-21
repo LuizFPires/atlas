@@ -300,3 +300,9 @@ Teste sem Electron/Claude/rede: `node --test app/adaptadores/*.teste.cjs` (ajuda
 - **Dado sensível:** `detalhes` leva só hash curto (8 caracteres) do dispositivo; nunca token, `computador_hash` inteiro nem IP.
 - **"Já verifiquei"**: precisa de `POST /admin/radar/resolver` `{ id }` (auditado em `auditoria`). Hoje o adaptador real responde que não está ligado e nada é marcado; só a demonstração dá baixa em memória.
 - **Regras a decidir:** limites de gravidade (quantas trocas em quantos dias) e se o Radar pausa a licença sozinho (hoje só avisa).
+
+## Painel admin — aba Mapa (clientes por estado)
+- **Só a tela + demonstração.** A aba "Mapa" chama `POST /admin/mapa` (resposta `{ total, por_uf: [{ uf, regiao: 'N'|'NE'|'CO'|'SE'|'S', clientes, compras }], atualizado_em }`, as 27 UFs, zero incluso). A rota **ainda não existe**: em produção a aba diz que o Mapa está sendo ligado e não pinta nenhum estado.
+- **HOJE O SISTEMA NÃO GUARDA A REGIÃO DO COMPRADOR.** Pré-requisito do endpoint: capturar a UF na compra (e/ou na primeira validação), derivada do IP na hora (geolocalização de IP) e **gravando só UF/região, nunca o IP cru** (mesma regra de privacidade do Radar). Alternativa/complemento: campo "estado" no cadastro pós-compra. Decidir qual vale quando não der pra descobrir (guardar "desconhecido", não chutar).
+- **O endpoint só agrega:** contar clientes (licenças pagas, sem cortesia) e compras por UF; nunca devolver nome, e-mail ou IP. Cobrir compras antigas (sem região) é impossível por IP; ficam fora do mapa ou entram como "sem estado".
+- **Mapa:** caminhos SVG dos estados em `src/web/mapa-brasil.ts` (gerados do IBGE simplificado); não há biblioteca nem imagem externa.

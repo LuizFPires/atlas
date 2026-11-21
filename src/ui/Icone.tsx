@@ -85,6 +85,12 @@ const CAMINHOS = {
   escudo: <path d="M12 3 4.5 6v6c0 4.4 3.2 7.9 7.5 9 4.3-1.1 7.5-4.6 7.5-9V6L12 3zM9 12l2.2 2.2L15.5 10" />,
   chevron: <path d="m15 6-6 6 6 6" />,
   alerta: <path d="M12 3 2 20h20L12 3zM12 10v4.5M12 17.2v.1" />,
+  mapa: (
+    <>
+      <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
+      <circle cx="12" cy="10" r="2.4" />
+    </>
+  ),
 } as const
 
 export type NomeIcone = keyof typeof CAMINHOS

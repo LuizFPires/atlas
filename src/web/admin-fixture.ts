@@ -1,6 +1,7 @@
 // Modo demonstração do painel do administrador: dados de mentira, em memória, só para olhar e clicar sem servidor.
 // Só entra quando modoFixture() é verdadeiro (dev). Em produção o App usa criarAdminApi() (login + lista de admins no servidor).
-import { RESUMO_VAZIO, type AdminApi, type SinalRadar, type RadarPirataria, type DominioBloqueado, type FluxoCaixa, type ItemAtencao, type LinhaCadastro, type LinhaCliente, type LinhaEntrega, type PainelAdmin } from './admin-api'
+import { ESTADOS } from './mapa-brasil'
+import { RESUMO_VAZIO, type AdminApi, type SinalRadar, type RadarPirataria, type DominioBloqueado, type FluxoCaixa, type MapaClientes, type ItemAtencao, type LinhaCadastro, type LinhaCliente, type LinhaEntrega, type PainelAdmin } from './admin-api'
 
 const HORA = 3600_000
 const DIA = 24 * HORA
@@ -93,6 +94,12 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
     for (const x of sinaisRadar) por_tipo[x.tipo] += 1
     return { ligado: true, resumo: { licencas_sob_suspeita: new Set(sinaisRadar.map((x) => x.licenca_id).filter(Boolean)).size, sinais_abertos: sinaisRadar.length, por_tipo }, sinais: sinaisRadar.map((x) => ({ ...x, detalhes: { ...x.detalhes } })) }
   }
+  // Demonstração: distribuição realista, mas de mentira. Soma dos clientes = contas pagas do fixture (as 12 dos cadastros).
+  const CLIENTES_UF: Record<string, [number, number]> = { SP: [4, 6], RJ: [2, 3], MG: [2, 2], PR: [1, 2], RS: [1, 1], BA: [1, 1], PE: [1, 1] }
+  const mapa = (): MapaClientes => ({
+    ligado: true, total: cadastros.length, atualizado_em: new Date(agora).toISOString(),
+    por_uf: ESTADOS.map((e) => ({ uf: e.uf, regiao: e.regiao, clientes: CLIENTES_UF[e.uf]?.[0] ?? 0, compras: CLIENTES_UF[e.uf]?.[1] ?? 0 })),
+  })
   const ok = <T extends object>(v: T) => Promise.resolve({ ok: true as const, ...v })
   return {
     logado: () => true,
@@ -134,6 +141,7 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
     cadastros: () => ok({ cadastros }),
     fluxoCaixa: () => ok({ fluxo }),
     radarPirataria: () => ok({ radar: radar() }),
+    mapaClientes: () => ok({ mapa: mapa() }),
     resolverSinalRadar(id) { sinaisRadar = sinaisRadar.filter((x) => x.id !== id); return ok({}) },
     sair() { /* demonstração: não há sessão para encerrar */ },
   }

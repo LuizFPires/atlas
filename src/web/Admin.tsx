@@ -3,16 +3,19 @@ import { CampoFalado, Icone } from '../ui'
 import type { NomeIcone } from '../ui/Icone'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
-import type { AdminApi, DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, RadarPirataria, GravidadeSinal, SinalRadar, TipoSinal, Situacao } from './admin-api'
+import type { AdminApi, DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, RadarPirataria, MapaClientes, GravidadeSinal, SinalRadar, TipoSinal, Situacao } from './admin-api'
 import { FILTROS, filtrarClientes, fluxoPorMes, indicadoresGerenciais, type FiltroConta } from './admin-calc'
+import { LegendaMapa, MapaBrasil, nomeUf, resumirMapa, textoUf } from './AdminMapa'
+import { NOME_REGIAO } from './mapa-brasil'
 import './admin.css'
 
-type Aba = 'geral' | 'caixa' | 'acoes' | 'radar' | 'entregas'
+type Aba = 'geral' | 'caixa' | 'acoes' | 'radar' | 'mapa' | 'entregas'
 const MENU: { id: Aba; nome: string; icone: NomeIcone }[] = [
   { id: 'geral', nome: 'Visão geral', icone: 'brilho' },
   { id: 'caixa', nome: 'Fluxo de caixa', icone: 'moeda' },
   { id: 'acoes', nome: 'Ações', icone: 'aperto' },
   { id: 'radar', nome: 'Radar', icone: 'escudo' },
+  { id: 'mapa', nome: 'Mapa', icone: 'mapa' },
   { id: 'entregas', nome: 'Marca d’água', icone: 'pasta' },
 ]
 
@@ -146,6 +149,7 @@ function Painel({ api, email, onSair }: { api: AdminApi; email: string; onSair: 
         {aba === 'caixa' && <FluxoCaixa api={api} />}
         {aba === 'acoes' && <Acoes api={api} />}
         {aba === 'radar' && <Radar api={api} />}
+        {aba === 'mapa' && <Mapa api={api} />}
         {aba === 'entregas' && <Entregas api={api} />}
       </main>
     </div>
@@ -824,6 +828,82 @@ function FluxoCaixa({ api }: { api: AdminApi }) {
               </div>
             ))}
           </section>
+        </>
+      )}
+    </>
+  )
+}
+
+const pct = (n: number, total: number) => (total > 0 ? `${Math.round((n / total) * 100)}%` : '0%')
+
+/** Aba "Mapa": onde os clientes estão, por estado, pra saber onde vale mirar o tráfego. Só agregado por UF. */
+function Mapa({ api }: { api: AdminApi }) {
+  const buscar = useCallback(async () => {
+    const r = await api.mapaClientes()
+    return r.ok ? ({ ok: true, v: r.mapa } as const) : r
+  }, [api])
+  const { dado, erro } = useCarga<MapaClientes>(buscar)
+  const [ativo, setAtivo] = useState<string | null>(null)
+  const [escolhido, setEscolhido] = useState<string | null>(null)
+  const destaque = ativo ?? escolhido
+  const r = dado?.ligado ? resumirMapa(dado.por_uf) : null
+  const linhaAtiva = destaque && dado ? dado.por_uf.find((l) => l.uf === destaque) : null
+  const escolher = (uf: string) => setEscolhido((x) => (x === uf ? null : uf))
+  return (
+    <>
+      <div className="ad-titulo"><h1>Mapa</h1><span className="ad-mute">onde estão os seus clientes, estado por estado</span></div>
+      {erro && <p role="alert" className="ad-erro">{erro}</p>}
+      {!dado && !erro && <p role="status" className="ad-mute">Carregando o mapa…</p>}
+      {dado && !dado.ligado && (
+        <section className="ad-card" aria-label="Mapa ainda não ligado">
+          <span className="ad-rotulo">AINDA NÃO LIGADO</span>
+          <p className="ad-p">{dado.mensagem ?? 'O Mapa ainda está sendo ligado no servidor.'}</p>
+          <p className="ad-mute2">Enquanto isso, nenhum estado é pintado: prefiro não inventar número.</p>
+        </section>
+      )}
+      {dado?.ligado && r && (
+        <>
+          <div className="ad-kpis ad-kpis--radar" role="group" aria-label="Resumo do mapa">
+            <div className="ad-kpi"><span className="ad-kpi-nome">Clientes no mapa</span><span className="ad-kpi-v">{dado.total}</span><span className="ad-mute2">em {r.ranking.length} {r.ranking.length === 1 ? 'estado' : 'estados'}</span></div>
+            <div className="ad-kpi ad-kpi--lime"><span className="ad-kpi-nome">Estado líder</span><span className="ad-kpi-v">{r.lider ? r.lider.uf : '—'}</span><span className="ad-mute2">{r.lider ? `${nomeUf(r.lider.uf)}: ${pct(r.lider.clientes, dado.total)} dos clientes` : 'ainda sem clientes'}</span></div>
+            <div className="ad-kpi"><span className="ad-kpi-nome">Região líder</span><span className="ad-kpi-v">{r.regiaoLider ? NOME_REGIAO[r.regiaoLider.regiao] : '—'}</span><span className="ad-mute2">{r.regiaoLider ? `${pct(r.regiaoLider.clientes, dado.total)} dos clientes` : 'ainda sem clientes'}</span></div>
+          </div>
+          <div className="ad-mapa-grade">
+            <section className="ad-card" aria-label="Mapa do Brasil">
+              <span className="ad-rotulo">CLIENTES POR ESTADO</span>
+              <MapaBrasil por_uf={dado.por_uf} maximo={r.maximo} ativo={destaque} onAtivo={setAtivo} onEscolher={escolher} />
+              <p className="ad-mapa-info" aria-live="polite">{linhaAtiva ? `${nomeUf(linhaAtiva.uf)} — ${textoUf(linhaAtiva)}` : 'Passe o mouse (ou use a tecla Tab) sobre um estado para ver os números.'}</p>
+              <LegendaMapa maximo={r.maximo} />
+            </section>
+            <div className="ad-mapa-lado">
+              <section className="ad-card" aria-label="Ranking por estado">
+                <span className="ad-rotulo">RANKING POR ESTADO</span>
+                {r.ranking.length === 0 && <p className="ad-mute">Nenhum cliente com estado registrado ainda.</p>}
+                <ol className="ad-rank">
+                  {r.ranking.map((l) => (
+                    <li key={l.uf}>
+                      <button type="button" className={`ad-rank-linha ${destaque === l.uf ? 'ad-rank-linha--ativa' : ''}`} aria-pressed={escolhido === l.uf} aria-label={`${nomeUf(l.uf)}: ${textoUf(l)}, ${pct(l.clientes, dado.total)} do total`} onClick={() => escolher(l.uf)} onMouseEnter={() => setAtivo(l.uf)} onMouseLeave={() => setAtivo(null)}>
+                        <b>{l.uf}</b><span className="ad-rank-barra" aria-hidden="true"><i style={{ width: `${Math.max(4, Math.round((l.clientes / r.maximo) * 100))}%` }} /></span>
+                        <span>{l.clientes}</span><span className="ad-mute2">{pct(l.clientes, dado.total)}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+                {r.semCliente > 0 && r.ranking.length > 0 && <p className="ad-mute2">{r.semCliente} {r.semCliente === 1 ? 'estado ainda sem cliente' : 'estados ainda sem cliente'}: bom lugar para testar um anúncio.</p>}
+              </section>
+              <section className="ad-card" aria-label="Resumo por região">
+                <span className="ad-rotulo">POR REGIÃO</span>
+                <ul className="ad-rank">
+                  {r.regioes.map((g) => (
+                    <li key={g.regiao} className="ad-rank-linha ad-rank-linha--reg">
+                      <b>{NOME_REGIAO[g.regiao]}</b><span className="ad-rank-barra" aria-hidden="true"><i style={{ width: `${g.clientes > 0 ? Math.max(4, Math.round((g.clientes / (r.regioes[0].clientes || 1)) * 100)) : 0}%` }} /></span>
+                      <span>{g.clientes}</span><span className="ad-mute2">{pct(g.clientes, dado.total)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </div>
+          </div>
         </>
       )}
     </>
