@@ -2,13 +2,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { CampoFalado, Icone } from '../ui'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
-import type { AdminApi, DominioBloqueado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, Situacao } from './admin-api'
-import { FILTROS, filtrarClientes, type FiltroConta } from './admin-calc'
+import type { AdminApi, DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, Situacao } from './admin-api'
+import { FILTROS, filtrarClientes, fluxoPorMes, type FiltroConta } from './admin-calc'
 import './admin.css'
 
-type Aba = 'geral' | 'cadastros' | 'entregas'
+type Aba = 'geral' | 'caixa' | 'cadastros' | 'entregas'
 const MENU: { id: Aba; nome: string }[] = [
   { id: 'geral', nome: 'Visão geral' },
+  { id: 'caixa', nome: 'Fluxo de caixa' },
   { id: 'cadastros', nome: 'Cadastros' },
   { id: 'entregas', nome: 'Entregas e marca d’água' },
 ]
@@ -121,6 +122,7 @@ function Painel({ api, email, onSair }: { api: AdminApi; email: string; onSair: 
       </aside>
       <main className="ad-main">
         {aba === 'geral' && <VisaoGeral api={api} />}
+        {aba === 'caixa' && <FluxoCaixa api={api} />}
         {aba === 'cadastros' && <Cadastros api={api} />}
         {aba === 'entregas' && <Entregas api={api} />}
       </main>
@@ -444,6 +446,54 @@ function Entregas({ api }: { api: AdminApi }) {
           ))}
           {dado.length === 0 && <p className="ad-mute">{filtro ? 'Nenhum cliente recebeu essa marca.' : 'Ainda não houve entregas.'}</p>}
         </section>
+      )}
+    </>
+  )
+}
+
+const mesCurto = (aaaamm: string) => new Date(`${aaaamm}-15T12:00:00-03:00`).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit', timeZone: 'America/Sao_Paulo' }).replace('.', '')
+
+function FluxoCaixa({ api }: { api: AdminApi }) {
+  const buscar = useCallback(async () => {
+    const r = await api.fluxoCaixa()
+    return r.ok ? ({ ok: true, v: r.fluxo } as const) : r
+  }, [api])
+  const { dado, erro } = useCarga<FluxoCaixaDado>(buscar)
+  const meses = dado ? fluxoPorMes(dado, 6) : []
+  const maior = Math.max(1, ...meses.map((m) => m.total))
+  const atual = meses[meses.length - 1]
+  const anterior = meses[meses.length - 2]
+  return (
+    <>
+      <div className="ad-titulo"><h1>Fluxo de caixa</h1><span className="ad-mute">o dinheiro que entrou, mês a mês</span></div>
+      {erro && <p role="status" className="ad-aviso-msg">{erro}</p>}
+      {!dado && !erro && <p role="status" className="ad-mute">Carregando…</p>}
+      {dado && meses.length === 0 && <p className="ad-mute">Ainda não entrou dinheiro registrado.</p>}
+      {dado && atual && (
+        <>
+          <p className="ad-p">Por enquanto só mostramos o que <b>entra</b>: implantações, apps prontos da prateleira e mensalidades. As saídas (despesas) entram numa próxima etapa.
+            {anterior && <> Em {mesCurto(atual.mes)} entrou <b>{dinheiro(atual.total)}</b>, {atual.total >= anterior.total ? 'mais' : 'menos'} que em {mesCurto(anterior.mes)} ({dinheiro(anterior.total)}).</>}</p>
+          <section className="ad-card" aria-label="Gráfico dos últimos meses">
+            <span className="ad-rotulo">ÚLTIMOS {meses.length} MESES</span>
+            <div className="ad-barras" role="img" aria-label={`Entradas por mês: ${meses.map((m) => `${mesCurto(m.mes)} ${dinheiro(m.total)}`).join('; ')}`}>
+              {meses.map((m) => (
+                <div key={m.mes} className="ad-barra-col">
+                  <span className="ad-mute2">{dinheiro(m.total)}</span>
+                  <div className="ad-barra" style={{ height: `${Math.max(4, Math.round((m.total / maior) * 100))}%` }} />
+                  <span className="ad-mute2">{mesCurto(m.mes)}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+          <section className="ad-card" aria-label="Entradas por mês">
+            <div className="ad-tabela ad-tabela--caixa ad-tabela--cab"><span>Mês</span><span>Implantações</span><span>Prateleira</span><span>Mensalidades</span><span>Total</span></div>
+            {[...meses].reverse().map((m) => (
+              <div key={m.mes} className="ad-tabela ad-tabela--caixa">
+                <b>{mesCurto(m.mes)}</b><span>{dinheiro(m.implantacoes)}</span><span>{dinheiro(m.prateleira)}</span><span>{dinheiro(m.mensalidades)}</span><b>{dinheiro(m.total)}</b>
+              </div>
+            ))}
+          </section>
+        </>
       )}
     </>
   )

@@ -65,10 +65,14 @@
   .ad-lateral { width: auto; border-right: none; border-bottom: 1px solid var(--side-border); }
   .ad-lateral nav { flex-direction: row; flex-wrap: wrap; }
   .ad-main { padding: 20px 16px; }
-  .ad-tabela, .ad-tabela--cad, .ad-tabela--ent { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ad-tabela, .ad-tabela--cad, .ad-tabela--ent, .ad-tabela--caixa { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .ad-tabela--cab { display: none; }
 }
 .ad-campo-data { display: grid; gap: 6px; font-size: 13px; color: var(--mute2); margin: 10px 0 6px; }
 .ad-campo-data input { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: inherit; }
 .ad-filtro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .ad-campo-data select { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: inherit; }
+.ad-tabela--caixa { grid-template-columns: 0.8fr 1fr 1fr 1fr 1fr; }
+.ad-barras { display: flex; align-items: flex-end; gap: 12px; height: 200px; margin-top: 12px; }
+.ad-barra-col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; text-align: center; }
+.ad-barra { width: 100%; max-width: 56px; border-radius: 8px 8px 0 0; background: var(--lime); }
