@@ -145,6 +145,13 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
       else clientes.push(c(`lic-${String(clientes.length + 1).padStart(2, '0')}`, nomeC, '', 'Cortesia', 'em_dia', 0, null, { tipo: 'cortesia', validade_em: validadeEm }))
       return ok({ nova: !ex, validade_em: validadeEm, email_enviado: true })
     },
+    estenderCortesia(email, validadeEm) {
+      const e = email.trim().toLowerCase()
+      const ex = clientes.find((x) => x.tipo === 'cortesia' && (x.nome === e || emailDe(x.nome) === e))
+      if (ex) ex.validade_em = validadeEm
+      else clientes.push(c(`lic-${String(clientes.length + 1).padStart(2, '0')}`, e, '', 'Cortesia', 'em_dia', 0, null, { tipo: 'cortesia', validade_em: validadeEm }))
+      return ok({ nova: !ex, validade_em: validadeEm })
+    },
     reenviarCortesia() { return ok({ email_enviado: true }) },
     degustacao(m = {}) {
       if (typeof m.dias === 'number' && (m.dias < 1 || m.dias > 30)) return Promise.resolve({ ok: false as const, mensagem: 'Escolha de 1 a 30 dias.' })

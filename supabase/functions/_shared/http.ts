@@ -103,7 +103,7 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         case '/admin/entregas':
           return json(await verEntregas(ctx.admin, jwt, { licenca_id: o.licenca_id, marca: o.marca }))
         case '/admin/cortesia':
-          return json(await liberarCortesia(ctx.admin, jwt, { email: o.email, validade_em: o.validade_em, nome: o.nome }))
+          return json(await liberarCortesia(ctx.admin, jwt, { email: o.email, validade_em: o.validade_em, nome: o.nome, silencioso: o.silencioso }))
         case '/admin/cortesias':
           return json(await listarCortesias(ctx.admin, jwt))
         case '/admin/cortesia/reenviar':

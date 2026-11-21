@@ -434,6 +434,8 @@ describe('cortesias ativas: estender prazo', () => {
     const c = chamadas.find((x) => x.url.endsWith('/admin/cortesia'))!
     const corpo = JSON.parse(String(c.init.body))
     expect(corpo.email).toBe('amigo@x.com')
+    expect(corpo.silencioso).toBe(true)
+    expect(within(cartao).getByRole('status')).not.toHaveTextContent(/e-mail/i)
     expect(corpo.validade_em).toMatch(/T02:59:59\.000Z$/)
     expect(chamadas.filter((x) => x.url.endsWith('/admin/cortesias')).length).toBeGreaterThanOrEqual(2)
   })

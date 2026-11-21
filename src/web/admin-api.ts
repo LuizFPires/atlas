@@ -71,6 +71,8 @@ export interface AdminApi {
   resolverOcorrencia(id: string): Promise<Resp>
   /** Libera (ou renova) uma cortesia. `validadeEm` é um instante ISO; o servidor valida tudo de novo. */
   liberarCortesia(email: string, validadeEm: string, nome?: string): Promise<Resp<{ nova: boolean; validade_em: string; email_enviado: boolean }>>
+  /** Estende o prazo em silêncio: sem link novo e sem e-mail. */
+  estenderCortesia(email: string, validadeEm: string): Promise<Resp<{ nova: boolean; validade_em: string }>>
   /** Cortesias em vigor (não vencidas), para estender o prazo. */
   listarCortesias(): Promise<Resp<{ cortesias: CortesiaAtiva[] }>>
   /** Reenvia o e-mail da cortesia (novo link de instalação). Erro claro se não houver cortesia ativa para o e-mail. */
@@ -197,6 +199,11 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       const e = email.trim().toLowerCase()
       if (!EMAIL_RE.test(e)) return Promise.resolve({ ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' })
       return servidor<{ nova: boolean; validade_em: string; email_enviado: boolean }>('/admin/cortesia', { email: e, validade_em: validadeEm, ...(nome?.trim() ? { nome: nome.trim() } : {}) })
+    },
+    estenderCortesia(email, validadeEm) {
+      const e = email.trim().toLowerCase()
+      if (!EMAIL_RE.test(e)) return Promise.resolve({ ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' })
+      return servidor<{ nova: boolean; validade_em: string }>('/admin/cortesia', { email: e, validade_em: validadeEm, silencioso: true })
     },
     listarCortesias: () => servidor<{ cortesias: CortesiaAtiva[] }>('/admin/cortesias'),
     reenviarCortesia(email) {

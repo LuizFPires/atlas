@@ -143,6 +143,25 @@ describe('cortesia — e-mail com link de instalação', () => {
     expect(a.store.links).toHaveLength(antes + 1)
   })
 
+  it('estender em silêncio renova a validade sem gerar link nem mandar e-mail; sem o flag, envia', async () => {
+    const a = await comEmail()
+    await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(10) })
+    expect(a.enviados).toHaveLength(1)
+    const links = a.store.links.length
+    const r = await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(20), silencioso: true })
+    const j = await r.json()
+    expect(r.status).toBe(200)
+    expect(j.nova).toBe(false)
+    expect(j.email_enviado).toBe(false)
+    expect(a.enviados).toHaveLength(1)
+    expect(a.store.links).toHaveLength(links)
+    // as validações continuam valendo no modo silencioso
+    expect((await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(400), silencioso: true })).status).toBe(400)
+    // valor que não é o booleano true não silencia
+    await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(21), silencioso: 'true' })
+    expect(a.enviados).toHaveLength(2)
+  })
+
   it('reenviar manda de novo com um link novo; sem cortesia ativa dá 404', async () => {
     const a = await comEmail()
     await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(10) })

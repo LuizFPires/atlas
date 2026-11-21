@@ -1064,7 +1064,7 @@ function LinhaCortesia({ api, c, aoEstender, aoErro }: { api: AdminApi; c: Corte
     if (!valida || indo) return
     aoErro(''); setIndo(true)
     try {
-      const r = await api.liberarCortesia(c.email, fimDoDiaBrasilia(data))
+      const r = await api.estenderCortesia(c.email, fimDoDiaBrasilia(data))
       if (!r.ok) { aoErro(r.mensagem); return }
       await aoEstender(dia(r.validade_em).slice(0, 5))
     } finally { setIndo(false) }
