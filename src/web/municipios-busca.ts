@@ -10,7 +10,19 @@ let cache: Promise<Indexado[]> | null = null
 export function carregarMunicipios(): Promise<Indexado[]> {
   cache ??= import('./municipios-br').then(({ MUNICIPIOS_TXT }) =>
     MUNICIPIOS_TXT.split('\n').map((l) => { const [nome, uf] = l.split('|'); return { nome, uf, n: normalizar(nome) } }))
-  return cache
+  // Se o download falhar, não guarda a promessa quebrada: a próxima tentativa baixa de novo.
+  const atual = cache
+  atual.catch(() => { if (cache === atual) cache = null })
+  return atual
+}
+
+/** Município cujo nome bate exatamente (sem acento/caixa) e é o único com esse nome; senão null (ex.: "Santa Rita" existe em vários estados). */
+export function municipioUnicoExato(base: Municipio[], termo: string): Municipio | null {
+  const t = normalizar(termo)
+  if (!t) return null
+  const lista = base as Partial<Indexado>[] as Indexado[]
+  const achados = lista.filter((c) => (c.n ?? normalizar(c.nome)) === t)
+  return achados.length === 1 ? { nome: achados[0].nome, uf: achados[0].uf } : null
 }
 
 /** Melhores correspondências: nome que começa com o termo primeiro, depois os que contêm. "sao paulo sp" ou "Santa Rita – PB" filtram pela UF. */
