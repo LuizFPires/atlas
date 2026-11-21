@@ -13,23 +13,21 @@ export function carregarMunicipios(): Promise<Indexado[]> {
   return cache
 }
 
-/** Melhores correspondências: nome que começa com o termo primeiro, depois os que contêm. "sao paulo sp" também vale. */
+/** Melhores correspondências: nome que começa com o termo primeiro, depois os que contêm. "sao paulo sp" ou "Santa Rita – PB" filtram pela UF. */
 export function buscarMunicipios(base: Municipio[], termo: string, limite = 8): Municipio[] {
-  let t = normalizar(termo.replace(/[–—-]\s*[A-Za-z]{2}\s*$/, ' ' + (termo.match(/[–—-]\s*([A-Za-z]{2})\s*$/)?.[1] ?? '')))
+  const lista = base as Partial<Indexado>[] as Indexado[]
+  const idx = (c: Indexado) => c.n ?? normalizar(c.nome)
+  let t = normalizar(termo.replace(/[–—-]/g, ' '))
   if (!t) return []
   let uf = ''
   const m = t.match(/^(.*\S)\s+([a-z]{2})$/)
-  if (m && (base as Indexado[]).some((c) => c.uf.toLowerCase() === m[2])) { /* só trata como UF se a cidade existir com esse sufixo */
-    const resto = m[1]
-    if ((base as Indexado[]).some((c) => (c.n ?? normalizar(c.nome)).startsWith(resto))) { t = resto; uf = m[2] }
-  }
+  if (m && lista.some((c) => c.uf.toLowerCase() === m[2] && idx(c).startsWith(m[1]))) { t = m[1]; uf = m[2] }
   const ini: Municipio[] = [], meio: Municipio[] = []
-  for (const c of base as Indexado[]) {
+  for (const c of lista) {
     if (uf && c.uf.toLowerCase() !== uf) continue
-    const n = c.n ?? normalizar(c.nome)
+    const n = idx(c)
     if (n.startsWith(t)) ini.push({ nome: c.nome, uf: c.uf })
     else if (n.includes(t)) meio.push({ nome: c.nome, uf: c.uf })
-    if (ini.length >= limite) break
   }
   return [...ini, ...meio].slice(0, limite)
 }

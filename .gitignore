@@ -12,3 +12,5 @@ dist
 dist-app
 dev-dist
 *.tsbuildinfo
+.vercel
+.env*

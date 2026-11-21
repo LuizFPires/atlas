@@ -462,6 +462,7 @@ export function iniciar(palco, obterEstado) {
     const r = renderer.domElement.getBoundingClientRect();
     const esp = esperaDe(E);
     let pensando = 0;
+    const vistos = [];
     for (const [k, p] of Object.entries(pessoas)) {
       const a = ag[k] || {};
       const desp = k === 'despachante' && esp && esp.desp; // na espera do CI, o despachante vai até o portão
@@ -523,11 +524,26 @@ export function iniciar(palco, obterEstado) {
           p.letras = Math.min(txt.length, p.letras + dt * 70); // efeito de digitação
           const mostra = txt.slice(0, Math.ceil(p.letras));
           if (p.vistoTxt !== mostra) { p.tx.textContent = mostra; p.vistoTxt = mostra; }
-          p.balao.style.transform = `translate(${(v3.x * .5 + .5) * r.width}px,${(-v3.y * .5 + .5) * r.height}px) translate(-50%,-100%)`;
+          vistos.push({ p, x: (v3.x * .5 + .5) * r.width, y: (-v3.y * .5 + .5) * r.height });
         }
       } else { p.balao.style.display = 'none'; p.tipo = ''; }
     }
 
+    // balões não se atropelam nem saem da tela: empilha os que se cruzam e segura nas bordas
+    vistos.sort((a, b) => b.y - a.y);
+    const postos = [];
+    for (const v of vistos) {
+      const w = v.p.balao.offsetWidth || 160, h = (v.p.balao.offsetHeight || 30) + 4;
+      v.x = Math.min(Math.max(v.x, w / 2 + 8), r.width - w / 2 - 8);
+      v.y = Math.max(v.y, h + 8);
+      for (let tent = 0; tent < 8; tent++) {
+        const bate = postos.find(o => Math.abs(o.x - v.x) < (o.w + w) / 2 && Math.abs(o.y - v.y) < h);
+        if (!bate) break;
+        v.y = bate.y - h;
+      }
+      postos.push({ x: v.x, y: v.y, w });
+      v.p.balao.style.transform = `translate(${v.x}px,${v.y}px) translate(-50%,-100%)`;
+    }
     if (!controles.autoRotate && performance.now() - ultimoToque > 25000) controles.autoRotate = true;
     controles.update();
     renderer.render(cena, camera);
