@@ -602,13 +602,26 @@ function Cortesia({ api }: { api: AdminApi }) {
   const [cortesia, setCortesia] = useState({ email: '', data: '' })
   const [erro, setErro] = useState('')
   const [msg, setMsg] = useState('')
+  // E-mail que não saiu: guarda para quem reenviar e a data, para o aviso de atenção.
+  const [falhou, setFalhou] = useState<{ email: string; ate: string } | null>(null)
   const hoje = new Date()
+  const reenviar = async () => {
+    if (!falhou) return
+    setErro('')
+    const r = await api.reenviarCortesia(falhou.email)
+    if (!r.ok) { setErro(r.mensagem); return }
+    if (r.email_enviado) { setFalhou(null); setMsg(`E-mail reenviado para ${falhou.email}. A cortesia vale até ${falhou.ate}.`) }
+    else setErro('O e-mail ainda não saiu. Confira a chave de e-mail do servidor e tente de novo.')
+  }
   const confirmar = async (ev: React.FormEvent) => {
-    ev.preventDefault(); setErro(''); setMsg('')
+    ev.preventDefault(); setErro(''); setMsg(''); setFalhou(null)
     if (!cortesia.data) { setErro('Escolha até quando a cortesia vale.'); return }
     const r = await api.liberarCortesia(cortesia.email, fimDoDiaBrasilia(cortesia.data))
     if (!r.ok) { setErro(r.mensagem); return } // erro honesto: nada foi liberado
-    setMsg(`${r.nova ? 'Cortesia liberada' : 'Cortesia renovada'} para ${cortesia.email.trim().toLowerCase()} até ${dia(r.validade_em)}.`)
+    const para = cortesia.email.trim().toLowerCase()
+    const base = `${r.nova ? 'Cortesia liberada' : 'Cortesia renovada'} para ${para} até ${dia(r.validade_em)}.`
+    if (r.email_enviado) setMsg(`${base} Avisamos a pessoa por e-mail com o link pra instalar.`)
+    else setFalhou({ email: para, ate: dia(r.validade_em) })
     setCortesia({ email: '', data: '' })
   }
   return (
@@ -622,6 +635,12 @@ function Cortesia({ api }: { api: AdminApi }) {
         </label>
         <span className="ad-mute2">Entre 1 e 180 dias. Costuma ser de 10 a 15.</span>
         {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
+        {falhou && (
+          <div role="status" className="ad-linha">
+            <p className="ad-aviso-msg" style={{ borderColor: 'var(--aviso)' }}>Cortesia liberada para {falhou.email} até {falhou.ate}, mas o e-mail não saiu — confira a chave de e-mail do servidor.</p>
+            <button type="button" className="ad-botao ad-botao--aviso" onClick={reenviar}>Reenviar e-mail</button>
+          </div>
+        )}
         {erro && <p role="alert" className="ad-erro">{erro}</p>}
         <div className="ad-linha"><button type="submit" className="ad-botao ad-botao--lime" disabled={!cortesia.email.trim() || !cortesia.data}>Liberar cortesia</button></div>
       </form>

@@ -69,7 +69,9 @@ export interface AdminApi {
   liberarTroca(licencaId: string, motivo: string): Promise<Resp<{ ja_liberada: boolean }>>
   resolverOcorrencia(id: string): Promise<Resp>
   /** Libera (ou renova) uma cortesia. `validadeEm` é um instante ISO; o servidor valida tudo de novo. */
-  liberarCortesia(email: string, validadeEm: string, nome?: string): Promise<Resp<{ nova: boolean; validade_em: string }>>
+  liberarCortesia(email: string, validadeEm: string, nome?: string): Promise<Resp<{ nova: boolean; validade_em: string; email_enviado: boolean }>>
+  /** Reenvia o e-mail da cortesia (novo link de instalação). Erro claro se não houver cortesia ativa para o e-mail. */
+  reenviarCortesia(email: string): Promise<Resp<{ email_enviado: boolean }>>
   /** Teste grátis: sem argumentos só lê; com `ativa`/`dias` liga, desliga ou ajusta (1 a 30 dias). O servidor valida de novo. */
   degustacao(mudanca?: { ativa?: boolean; dias?: number }): Promise<Resp<{ ativa: boolean; dias: number }>>
   /** Domínios de e-mail descartável bloqueados no teste grátis (a lista que o gestor edita). */
@@ -191,7 +193,12 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
     liberarCortesia(email, validadeEm, nome) {
       const e = email.trim().toLowerCase()
       if (!EMAIL_RE.test(e)) return Promise.resolve({ ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' })
-      return servidor<{ nova: boolean; validade_em: string }>('/admin/cortesia', { email: e, validade_em: validadeEm, ...(nome?.trim() ? { nome: nome.trim() } : {}) })
+      return servidor<{ nova: boolean; validade_em: string; email_enviado: boolean }>('/admin/cortesia', { email: e, validade_em: validadeEm, ...(nome?.trim() ? { nome: nome.trim() } : {}) })
+    },
+    reenviarCortesia(email) {
+      const e = email.trim().toLowerCase()
+      if (!EMAIL_RE.test(e)) return Promise.resolve({ ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' })
+      return servidor<{ email_enviado: boolean }>('/admin/cortesia/reenviar', { email: e })
     },
     degustacao: (mudanca = {}) => servidor<{ ativa: boolean; dias: number }>('/admin/degustacao', mudanca),
     dominios: () => servidor<{ dominios: DominioBloqueado[] }>('/admin/dominios'),
