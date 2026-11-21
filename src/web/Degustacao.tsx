@@ -1,3 +1,4 @@
+import { AVISO_CLAUDE } from './conteudo'
 import { useEffect, useState } from 'react'
 import { CampoFalado, Icone } from '../ui'
 import { juntarFalaEmail } from './compra'
@@ -36,6 +37,8 @@ export function BlocoDegustacao({ api = api_padrao }: { api?: DegustacaoApi }) {
         <h2>Testar {estado.dias} dias grátis</h2>
         <p>Quer ver o Atlas funcionando antes de decidir? Coloque o seu e-mail e eu mando um link para liberar o teste. Sem cartão, sem cobrança.</p>
       </div>
+      {/* Antes de pedir o teste: o Atlas não constrói sem o Claude, que é pago à parte (mesmo aviso do preço e dos e-mails). */}
+      <div className="v-aviso" role="note" aria-label="Assinatura do Claude para o teste"><b>O teste do Atlas é grátis, mas o Atlas só funciona com uma assinatura do Claude.</b> {AVISO_CLAUDE.texto}</div>
       {enviado ? (
         <p role="status" className="v-teste-ok"><Icone nome="check" tamanho={18} /><span className="v-teste-ok-txt">Te enviei um e-mail para <b>{enviado}</b>. Clica no link que está nele pra liberar o seu teste. Não achou? Olhe também o spam.</span></p>
       ) : (

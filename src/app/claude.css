@@ -57,3 +57,8 @@
 .at-claude__dado b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .at-claude__dado button { height: 32px; padding: 0 12px; border-radius: 8px; border: none; background: var(--lime); color: var(--on-lime); font: 700 13px var(--font-text); cursor: pointer; }
 .at-claude__status { justify-content: center; font-weight: 600; background: #eef6d6; color: #3f5600; border: 1px solid #c9e37a; height: 44px; border-radius: 8px; display: flex; align-items: center; padding: 0 14px; font-size: 15px; box-sizing: border-box; }
+
+/* Antes dos passos do login: aviso de que o Atlas precisa de uma conta paga do Claude. */
+.at-claude__antes-titulo { font-size: 20px; line-height: 1.25; margin: 0; }
+.at-claude__botoes { display: flex; flex-wrap: wrap; gap: 12px; }
+.at-claude__caminho { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.5; }

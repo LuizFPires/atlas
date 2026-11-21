@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { AppDesktop } from './AppDesktop'
@@ -17,6 +17,7 @@ const clicar = async (nome: string | RegExp) => userEvent.click(await screen.fin
 
 test('guia de mão dada: abre o claude.ai, e-mail, código, Authorize, até "Ver meu plano"', async () => {
   const { c } = montar()
+  await clicar('Já tenho conta e plano →')
   expect(await screen.findByText('PASSO 1 DE 6')).toBeInTheDocument()
   expect(screen.getByText(/Clique no botão verde/)).toBeInTheDocument()
   await clicar('Abrir o site →')
@@ -33,6 +34,7 @@ test('guia de mão dada: abre o claude.ai, e-mail, código, Authorize, até "Ver
 
 test('cada palavra em inglês vem traduzida', async () => {
   montar()
+  await clicar('Já tenho conta e plano →')
   expect(screen.queryByText(/quer dizer/)).not.toBeInTheDocument()
   await clicar('Abrir o site →')
   expect(screen.getByText(/quer dizer/)).toHaveTextContent('Enter your email quer dizer "Escreva o seu e-mail"')
@@ -49,6 +51,7 @@ test('cada palavra em inglês vem traduzida', async () => {
 test('"Não consegui fazer este passo" abre a ajuda do passo', async () => {
   const onPedirAjuda = vi.fn()
   montar(undefined, { onPedirAjuda })
+  await clicar('Já tenho conta e plano →')
   expect(screen.queryByText('Tudo bem, acontece com todo mundo.')).not.toBeInTheDocument()
   await clicar('Não consegui fazer este passo')
   expect(screen.getByText('Tudo bem, acontece com todo mundo.')).toBeInTheDocument()
@@ -59,6 +62,7 @@ test('"Não consegui fazer este passo" abre a ajuda do passo', async () => {
 
 test('voltar e "Criar no site do Claude"; sem conexão detectada, avisa com calma', async () => {
   const { c } = montar()
+  await clicar('Já tenho conta e plano →')
   expect(await screen.findByRole('button', { name: '← Voltar' })).toBeDisabled()
   await clicar('Criar no site do Claude ↗')
   expect(c.abertos).toEqual(['criar-conta'])
@@ -106,13 +110,13 @@ test('enquanto confere, a tela diz que está conferindo e não mostra o passo 1 
   expect(screen.getByRole('status')).toHaveTextContent('Conferindo se o Claude já está conectado neste computador…')
   expect(screen.queryByRole('button', { name: 'Abrir o site →' })).toBeNull()
   soltar({ conectado: false })
-  expect(await screen.findByText('PASSO 1 DE 6')).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'Antes de começar: você precisa de uma conta no Claude.' })).toBeInTheDocument()
 })
 
 test('não deu para conferir (erro ao ler o Claude): segue pelo guia de passos, sem travar', async () => {
   const c = { ...criarClaudeFixture(), estado: async () => { throw new Error('claude fora') } }
   render(<TemaProvider><Claude claude={c} onContinuar={() => {}} /></TemaProvider>)
-  expect(await screen.findByText('PASSO 1 DE 6')).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'Antes de começar: você precisa de uma conta no Claude.' })).toBeInTheDocument()
 })
 
 
@@ -163,4 +167,44 @@ test('"Já fiz o upgrade" (1 clique) renova a conexão quando o Claude Code só 
   await clicar('Já fiz o upgrade')
   expect(await screen.findByText(/Percebi a troca! Agora você está no plano Max/)).toBeInTheDocument()
   expect(screen.getByText('COMO O ATLAS VAI TRABALHAR NO SEU PLANO MAX')).toBeInTheDocument()
+})
+
+// ---- antes de começar: a conta do Claude ------------------------------------------------------------------------------------
+
+test('antes dos passos, o Atlas avisa que precisa de uma conta paga do Claude, à parte do Atlas, e que plano maior anda mais rápido', async () => {
+  const { c } = montar()
+  expect(await screen.findByRole('heading', { name: 'Antes de começar: você precisa de uma conta no Claude.' })).toBeInTheDocument()
+  const aviso = screen.getByRole('note', { name: 'Conta do Claude' })
+  expect(aviso).toHaveTextContent('paga direto para a Anthropic, à parte do Atlas')
+  expect(aviso).toHaveTextContent('Sem um plano pago do Claude, o Atlas não consegue construir')
+  expect(aviso).toHaveTextContent('Quanto maior o plano, mais rápido a obra anda')
+  expect(document.body.textContent).not.toMatch(/Pro ou Max/)
+  expect(screen.queryByText(/PASSO \d DE 6/)).toBeNull()
+  expect(c.abertos).toEqual([]) // nada abre sozinho
+})
+
+test('"Já tenho conta e plano" leva aos passos do login', async () => {
+  montar()
+  await clicar('Já tenho conta e plano →')
+  expect(screen.getByText('PASSO 1 DE 6')).toBeInTheDocument()
+})
+
+test('"Ainda não tenho": abre o site do Claude, mostra o caminho em três passos e deixa ver os planos', async () => {
+  const { c } = montar()
+  await clicar('Ainda não tenho')
+  expect(c.abertos).toEqual(['criar-conta'])
+  const caminho = within(screen.getByRole('list', { name: 'Como criar a sua conta do Claude' })).getAllByRole('listitem')
+  expect(caminho.map((li) => li.textContent)).toEqual(['Crie a sua conta no site do Claude, que acabei de abrir.', 'Assine um plano pago lá mesmo.', 'Volte aqui e clique em "Já criei e assinei".'])
+  await clicar('Ver os planos no site do Claude ↗')
+  expect(c.abertos).toEqual(['criar-conta', 'planos'])
+  await clicar('Já criei e assinei →')
+  expect(screen.getByText('PASSO 1 DE 6')).toBeInTheDocument()
+})
+
+test('não consegui abrir o site do Claude: avisa e mostra o caminho mesmo assim', async () => {
+  const c = { ...criarClaudeFixture(), abrirSite: async () => { throw new Error('sem navegador') } }
+  render(<TemaProvider><Claude claude={c} onContinuar={() => {}} /></TemaProvider>)
+  await clicar('Ainda não tenho')
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não consegui abrir o site do Claude agora. Abra o claude.ai no seu navegador.')
+  expect(screen.getByRole('list', { name: 'Como criar a sua conta do Claude' })).toBeInTheDocument()
 })
