@@ -3,7 +3,7 @@ import { CampoFalado, Icone } from '../ui'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
 import type { AdminApi, DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, Situacao } from './admin-api'
-import { FILTROS, filtrarClientes, fluxoPorMes, type FiltroConta } from './admin-calc'
+import { FILTROS, filtrarClientes, fluxoPorMes, indicadoresGerenciais, type FiltroConta } from './admin-calc'
 import './admin.css'
 
 type Aba = 'geral' | 'caixa' | 'cadastros' | 'entregas'
@@ -285,11 +285,14 @@ function VisaoGeral({ api }: { api: AdminApi }) {
   }
   const abrirLiberar = (licencaId: string, quem: string, motivo = '') => { setMsg(''); setLiberando({ licencaId, quem, motivo }) }
 
+  const g = indicadoresGerenciais(i)
   const kpis = [
     { nome: 'Clientes ativos', v: String(i.clientes_ativos), sub: 'licenças em dia', tom: '' },
-    { nome: 'Receita recorrente', v: dinheiro(i.receita.recorrente_mensal), sub: `por mês · ${dinheiro(i.receita.recebida_no_mes)} recebidos neste mês`, tom: 'lime' },
+    { nome: 'Receita recorrente (MRR)', v: dinheiro(g.mrr), sub: `por mês · ${dinheiro(i.receita.recebida_no_mes)} recebidos neste mês`, tom: 'lime' },
     { nome: 'Ativações no mês', v: String(i.ativacoes.no_mes), sub: `meta: ${i.ativacoes.meta} · ${i.ativacoes.computadores_ativos} computadores ativos`, tom: '' },
     { nome: 'Inadimplência', v: String(i.inadimplencia.atrasadas + i.inadimplencia.pausadas), sub: `${dinheiro(i.inadimplencia.valor_em_aberto)} em aberto · licença pausa em 7 dias`, tom: 'aviso' },
+    { nome: 'Ticket médio', v: g.ticketMedio === null ? '—' : dinheiro(g.ticketMedio), sub: 'quanto cada cliente ativo paga por mês', tom: '' },
+    { nome: 'Cancelamentos no mês', v: g.cancelamentosNoMes === null ? '—' : String(g.cancelamentosNoMes), sub: g.cancelamentosNoMes === null ? 'o servidor ainda não informa esse número' : g.cancelamentosNoMes === 0 ? 'ninguém cancelou, bom sinal' : 'clientes que pediram para sair', tom: g.cancelamentosNoMes ? 'aviso' : '' },
     { nome: 'Clientes travados', v: String(i.travados), sub: 'parados há mais de 2 dias', tom: i.travados > 0 ? 'aviso' : '' },
   ]
 
@@ -318,7 +321,7 @@ function VisaoGeral({ api }: { api: AdminApi }) {
               <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Ex.: barbearia" autoComplete="off" />
             </label>
           </div>
-          <p role="status" className="ad-mute2">{visiveis.length === clientes.length ? `${clientes.length} ${clientes.length === 1 ? 'conta' : 'contas'}` : `${visiveis.length} de ${clientes.length} contas`}</p>
+          <p aria-live="polite" className="ad-mute2">{visiveis.length === clientes.length ? `${clientes.length} ${clientes.length === 1 ? 'conta' : 'contas'}` : `${visiveis.length} de ${clientes.length} contas`}</p>
           {clientes.length === 0 && <p className="ad-mute">Ainda não há clientes.</p>}
           {clientes.length > 0 && visiveis.length === 0 && <p className="ad-mute">Nenhuma conta com esse filtro. Tente outro ou limpe a busca.</p>}
           {visiveis.map((c) => <LinhaDoCliente key={c.licenca_id} c={c} agora={agora} onLiberar={() => abrirLiberar(c.licenca_id, c.empresa || c.nome)} />)}
