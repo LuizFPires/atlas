@@ -19,12 +19,13 @@ export function ufValida(v: unknown): string | null {
 }
 
 /**
- * UF do acesso, a partir dos cabeçalhos que a borda já preenche (nunca do IP).
- * Só vale se o país for o Brasil; cabeçalho ausente, de outro país ou com valor estranho = null.
+ * UF do acesso lida de UM cabeçalho cujo nome o operador confirmou que o edge do deploy SEMPRE sobrescreve
+ * (variável ATLAS_GEO_HEADER_UF, ligada em api/index.ts). Qualquer outro cabeçalho de geolocalização (cf-*, x-vercel-*) pode ser
+ * mandado pelo CLIENTE e forjado para mascarar a região e furar o Radar, então NUNCA é lido por padrão: sem nome confiável
+ * configurado a UF é desconhecida (null). Melhor dado faltando do que dado envenenado. O IP não é lido nem guardado aqui.
  */
-export function ufDoAcesso(h: Pick<Headers, 'get'>): string | null {
-  const pais = (h.get('cf-ipcountry') ?? h.get('x-vercel-ip-country') ?? '').trim().toUpperCase()
-  if (pais && pais !== 'BR') return null
-  const reg = (h.get('cf-region-code') ?? h.get('x-vercel-ip-country-region') ?? '').trim().toUpperCase()
-  return ufValida(reg)
+export function ufDoCabecalhoConfiavel(h: Pick<Headers, 'get'>, nome: string | null | undefined): string | null {
+  const n = (nome ?? '').trim().toLowerCase()
+  if (!/^[a-z0-9-]{3,60}$/.test(n)) return null
+  return ufValida(h.get(n))
 }

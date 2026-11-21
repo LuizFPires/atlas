@@ -2,7 +2,6 @@
 import { abrirLink, reenviarParaComputador } from './abertura.ts'
 import { registrarCasoAjuda } from './ajuda-caso.ts'
 import { confirmarAtivacao, solicitarCodigo } from './ativacao.ts'
-import { ufDoAcesso } from './geo.ts'
 import { validarInstancia } from './instancia.ts'
 import { limparRadar, radar, resolverSinal } from './radar.ts'
 import { obrasDoPortal, publicarStatusObras } from './status-obras.ts'
@@ -35,7 +34,7 @@ export interface Contexto {
   portal?: DepsPortal
   /** Painel do administrador (M7, F16). Ausente = rotas /admin/* de pessoa respondem 503 (nunca ficam abertas). */
   admin?: DepsAdmin
-  /** UF do acesso (só para o Radar). Ausente = lê os cabeçalhos da borda (cf-region-code / x-vercel-ip-country-region). Nunca devolve nem guarda IP. */
+  /** UF do acesso (só para o Radar). Ausente = UF desconhecida (nada é gravado): nunca se confia em cabeçalho de geolocalização vindo do cliente. Nunca devolve nem guarda IP. */
   ufDoAcesso?: (req: Request) => string | null
   /** Origem do site (ex.: https://atlas-ia.app.br). Só ela recebe CORS; ausente = nenhuma origem de navegador. */
   origemWeb?: string
@@ -234,7 +233,7 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
       case '/ajuda-caso':
         return json(await registrarCasoAjuda(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, tipo: b.tipo, descricao: b.descricao }))
       case '/instancia/validar':
-        return json(await validarInstancia(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, uf: ctx.ufDoAcesso ? ctx.ufDoAcesso(req) : ufDoAcesso(req.headers) }))
+        return json(await validarInstancia(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, uf: ctx.ufDoAcesso ? ctx.ufDoAcesso(req) : null }))
       case '/status-obras/publicar':
         return json(await publicarStatusObras(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obras: (b as Record<string, unknown>).obras }))
       case '/entregar-kit': {

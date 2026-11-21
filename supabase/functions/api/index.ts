@@ -4,6 +4,7 @@
 // @ts-nocheck
 import { importarChavePrivada } from '../_shared/cripto.ts'
 import { lerEmailsAdmin } from '../_shared/admin.ts'
+import { ufDoCabecalhoConfiavel } from '../_shared/geo.ts'
 import { tratar } from '../_shared/http.ts'
 import { criarStripeApi } from '../_shared/pagamento/stripe-api.ts'
 
@@ -52,6 +53,9 @@ Deno.serve(async (req) => {
       cadastro,
       portal,
       degustacao,
+      // UF só para o Radar. Cabeçalhos de geo (cf-*, x-vercel-*) o cliente consegue forjar, então por padrão a UF é DESCONHECIDA.
+      // Só vale o cabeçalho que o operador confirmou que o edge do Supabase sobrescreve (ATLAS_GEO_HEADER_UF = nome dele). Nunca o IP.
+      ufDoAcesso: (r) => ufDoCabecalhoConfiavel(r.headers, Deno.env.get('ATLAS_GEO_HEADER_UF')),
       origemWeb: Deno.env.get('ATLAS_WEB_ORIGEM') ?? undefined,
       carregarKit: criarCarregarKit(),
       autorizarServico: (r) => r.headers.get('Authorization') === `Bearer ${servico}`,

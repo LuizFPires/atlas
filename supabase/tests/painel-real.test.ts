@@ -5,6 +5,7 @@ import { lerEmailsAdmin } from '../functions/_shared/admin.ts'
 import type { Pagamento } from '../functions/_shared/tipos.ts'
 import { cancelarCompra, cancelarMensalidade } from '../functions/_shared/pagamento/cancelamento.ts'
 import { tratar } from '../functions/_shared/http.ts'
+import { ufDoCabecalhoConfiavel } from '../functions/_shared/geo.ts'
 import { H2, TOKEN } from './helpers.ts'
 import { chamar, comDoisClientes, JWT_ANA } from './helpers-portal.ts'
 
@@ -161,7 +162,7 @@ describe('Radar de pirataria', () => {
 
   describe('registro no /instancia/validar', () => {
     const validar = (m: M, hash: string, h: Record<string, string> = {}) =>
-      tratar(m.ctx(), new Request('https://x.test/functions/v1/instancia/validar', { method: 'POST', headers: { 'X-Atlas-Dispositivo': TOKEN, 'x-forwarded-for': '203.0.113.77', 'cf-ipcountry': 'BR', 'cf-region-code': 'sp', ...h }, body: JSON.stringify({ email: 'ana@loja.com', computador_hash: hash }) }))
+      tratar({ ...m.ctx(), ufDoAcesso: (r) => ufDoCabecalhoConfiavel(r.headers, 'x-geo-confiavel') }, new Request('https://x.test/functions/v1/instancia/validar', { method: 'POST', headers: { 'X-Atlas-Dispositivo': TOKEN, 'x-forwarded-for': '203.0.113.77', 'x-geo-confiavel': 'sp', ...h }, body: JSON.stringify({ email: 'ana@loja.com', computador_hash: hash }) }))
 
     it('2º computador: continua recusando e grava UF + dispositivo curto, SEM IP e sem pausar a licença', async () => {
       const m = await montar()
@@ -174,15 +175,15 @@ describe('Radar de pirataria', () => {
       expect(JSON.stringify(m.store.eventosDoRadar)).not.toMatch(/203\.0\.113|bbbbbbbb/)
       expect(m.store.licencas.find((l) => l.id === 'l1')?.status).toBe('ativa') // o Radar só avisa
     })
-    it('acesso do dono grava só a UF (1 vez a cada 2 h); sem UF conhecida, não grava nada; outro país não vira UF', async () => {
+    it('acesso do dono grava só a UF (1 vez a cada 2 h); sem UF conhecida, não grava nada; cabeçalho de geo forjável é ignorado', async () => {
       const m = await montar()
       await validar(m, 'a'.repeat(64))
       await validar(m, 'a'.repeat(64))
       expect(m.store.eventosDoRadar).toHaveLength(1)
       expect(m.store.eventosDoRadar[0]).toMatchObject({ tipo: 'acesso', uf: 'SP', dispositivo: null })
       const n = await montar()
-      await validar(n, 'a'.repeat(64), { 'cf-region-code': '', 'cf-ipcountry': 'BR' })
-      await validar(n, 'a'.repeat(64), { 'cf-region-code': 'SP', 'cf-ipcountry': 'US' })
+      await validar(n, 'a'.repeat(64), { 'x-geo-confiavel': '' })
+      await validar(n, 'a'.repeat(64), { 'x-geo-confiavel': '', 'cf-region-code': 'SP', 'x-vercel-ip-country-region': 'SP' }) // cabeçalhos forjáveis são ignorados
       expect(n.store.eventosDoRadar).toHaveLength(0)
     })
     it('se gravar o evento falhar, o guardião responde igual', async () => {
