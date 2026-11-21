@@ -735,7 +735,7 @@ function Entregas({ api }: { api: AdminApi }) {
     <>
       <div className="ad-titulo"><h1>Marca d&rsquo;água</h1><span className="ad-mute">cada arquivo do kit sai com a marca do cliente</span></div>
       <form className="ad-card ad-busca" onSubmit={(e) => { e.preventDefault(); void procurar() }}>
-        <CampoFalado rotulo="Buscar por cliente, obra ou marca" valor={texto} onChange={setTexto} placeholder="Nome do cliente, da obra ou a marca (inteira ou um pedaço)" ajuda="Serve para descobrir de qual cliente saiu um arquivo que apareceu fora do lugar. Não precisa de acento nem de maiúscula." />
+        <CampoFalado rotulo="Buscar por cliente, obra ou marca" valor={texto} onChange={(v) => { setTexto(v); setAvisoBusca('') }} placeholder="Nome do cliente, da obra ou a marca (inteira ou um pedaço)" ajuda="Serve para descobrir de qual cliente saiu um arquivo que apareceu fora do lugar. Não precisa de acento nem de maiúscula." />
         <div className="ad-linha">
           <button type="submit" className="ad-botao ad-botao--lime">Procurar</button>
           {(texto || extras.length > 0) && <button type="button" className="ad-botao" onClick={limpar}>Limpar e ver as últimas entregas</button>}
@@ -760,8 +760,8 @@ function Entregas({ api }: { api: AdminApi }) {
         <section className="ad-card" aria-label="Entregas">
           <p className="ad-mute" role="status">{q ? `Mostrando ${mostradas.length} de ${todas.length} entregas.` : `Mostrando as últimas ${todas.length} entregas.`}</p>
           <div className="ad-tabela ad-tabela--ent ad-tabela--cab"><span>Cliente</span><span>Obra</span><span>Marca d&rsquo;água</span><span>Baixado em</span></div>
-          {mostradas.map((e, n) => {
-            const chave = `${e.marca_dagua}-${e.obra_id}-${e.baixado_em}-${n}`
+          {mostradas.map((e) => {
+            const chave = `${e.marca_dagua}|${e.licenca_id}|${e.obra_id}|${e.baixado_em}`
             const aberto = abertos.has(chave)
             return (
               <div key={chave} className="ad-entrega">
