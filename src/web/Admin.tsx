@@ -80,6 +80,22 @@ export function Admin({ api }: { api: AdminApi }) {
   return <Painel api={api} email={email} onSair={() => { api.sair(); setEmail(null); setAviso('') }} />
 }
 
+/** Campo de senha com o olho que mostra/oculta o que foi digitado. A senha nunca é guardada nem registrada. */
+function CampoSenha({ id, rotulo, autoComplete, valor, onChange }: { id: string; rotulo: string; autoComplete: string; valor: string; onChange: (v: string) => void }) {
+  const [visivel, setVisivel] = useState(false)
+  return (
+    <div className="at-campo">
+      <label htmlFor={id} className="at-campo-rotulo">{rotulo}</label>
+      <div className="at-campo-linha">
+        <input id={id} type={visivel ? 'text' : 'password'} autoComplete={autoComplete} value={valor} onChange={(e) => onChange(e.target.value)} />
+        <button type="button" className="ad-olho" aria-label={visivel ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={visivel} onClick={() => setVisivel((v) => !v)}>
+          <Icone nome={visivel ? 'olho-corte' : 'olho'} tamanho={20} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function Entrada({ api, aviso, onEntrou }: { api: AdminApi; aviso: string; onEntrou: (email: string) => void }) {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -101,12 +117,7 @@ function Entrada({ api, aviso, onEntrou }: { api: AdminApi; aviso: string; onEnt
         <span className="ad-rotulo-lime">ADMINISTRADOR</span>
         <h1>Entrar no painel</h1>
         <CampoFalado rotulo="Seu e-mail de administrador" type="email" autoComplete="email" valor={email} onChange={setEmail} placeholder="voce@atlas.com.br" juntar={juntarFalaEmail} />
-        <div className="at-campo">
-          <label htmlFor="ad-senha" className="at-campo-rotulo">Senha</label>
-          <div className="at-campo-linha">
-            <input id="ad-senha" type="password" autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} />
-          </div>
-        </div>
+        <CampoSenha id="ad-senha" rotulo="Senha" autoComplete="current-password" valor={senha} onChange={setSenha} />
         {erro && <p role="alert" className="ad-erro">{erro}</p>}
         <button type="submit" className="ad-botao ad-botao--lime" disabled={ocupado}>
           {ocupado ? 'Um instante…' : <>Entrar <Icone nome="seta" /></>}
