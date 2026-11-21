@@ -5,7 +5,9 @@ import { RESUMO_VAZIO, type AdminApi, type SinalRadar, type RadarPirataria, type
 
 const HORA = 3600_000
 const DIA = 24 * HORA
-const atras = (agora: number, ms: number) => new Date(agora - ms).toISOString()
+/** E-mail de demonstração de uma cortesia do fixture (o nome já é o e-mail quando foi liberada pela tela). */
+const emailDe = (nome: string) => (nome.includes('@') ? nome : `${nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '')}@exemplo.com`)
+const atras =(agora: number, ms: number) => new Date(agora - ms).toISOString()
 const isoMes = (agora: number, voltar: number) => {
   const d = new Date(agora); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - voltar)
   return d.toISOString().slice(0, 7)
@@ -129,10 +131,17 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
       return ok({ ja_liberada: ja })
     },
     resolverOcorrencia(id) { atencao = atencao.filter((a) => a.id !== id); return ok({}) },
+    listarCortesias() {
+      const agora = Date.now()
+      const cortesias = clientes
+        .filter((x) => x.tipo === 'cortesia' && x.validade_em && new Date(x.validade_em).getTime() > agora)
+        .map((x) => ({ email: emailDe(x.nome), nome: x.nome, validade_em: x.validade_em as string }))
+      return ok({ cortesias })
+    },
     liberarCortesia(email, validadeEm, nome) {
       const e = email.trim().toLowerCase()
       const nomeC = nome?.trim() || e
-      const ex = clientes.find((x) => x.tipo === 'cortesia' && x.nome === nomeC)
+      const ex = clientes.find((x) => x.tipo === 'cortesia' && (x.nome === nomeC || emailDe(x.nome) === e))
       if (ex) ex.validade_em = validadeEm
       else clientes.push(c(`lic-${String(clientes.length + 1).padStart(2, '0')}`, nomeC, '', 'Cortesia', 'em_dia', 0, null, { tipo: 'cortesia', validade_em: validadeEm }))
       return ok({ nova: !ex, validade_em: validadeEm, email_enviado: true })

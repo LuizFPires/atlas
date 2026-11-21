@@ -256,6 +256,23 @@ export async function reenviarCortesia(d: DepsAdmin, jwt: string, a: { email: un
   return { ok: true, email_enviado: await enviarEmailCortesia(d, email, lic.validade_em) }
 }
 
+/** Cortesias em vigor (tipo cortesia, ativa, dentro do prazo): só e-mail, nome e validade — o que o gestor precisa para estender. */
+export async function listarCortesias(d: DepsAdmin, jwt: string) {
+  await adminLogado(d, jwt)
+  const agora = d.agora()
+  const [clientes, licencas] = await Promise.all([d.store.listarClientes(), d.store.listarLicencas()])
+  const porCliente = new Map(clientes.map((c) => [c.id, c]))
+  const cortesias: Array<{ email: string; nome: string; validade_em: string }> = []
+  for (const l of licencas) {
+    if (l.tipo !== 'cortesia' || l.status !== 'ativa' || cortesiaVencida(l, agora) || !l.validade_em) continue
+    const c = porCliente.get(l.cliente_id)
+    if (!c || c.excluido_em) continue
+    cortesias.push({ email: c.email_compra, nome: c.nome_tratamento, validade_em: l.validade_em.toISOString() })
+  }
+  cortesias.sort((a, b) => a.validade_em.localeCompare(b.validade_em) || a.email.localeCompare(b.email))
+  return { cortesias }
+}
+
 /** Cortesia cujo prazo passou (status ainda 'ativa' no banco até alguém verificar). Cortesia sem prazo conta como vencida (fail-closed). */
 export const cortesiaVencida = (l: { tipo?: string; validade_em?: Date | null }, agora: Date) =>
   l.tipo === 'cortesia' && (!l.validade_em || l.validade_em.getTime() <= agora.getTime())
