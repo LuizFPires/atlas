@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Instalar } from './Instalar'
 import { criarInstalarApi, criarInstalarFixture, type InstalarApi } from './instalar-api'
@@ -67,7 +67,15 @@ test('computador com instalador publicado: o botão pede o endereço e começa o
   expect(baixar).toHaveBeenCalledWith(T)
   expect(ir).toHaveBeenCalledWith('https://arquivos.test/Atlas-Instalador.exe?assinatura=1')
   expect(await screen.findByRole('status')).toHaveTextContent(/download começou/)
-  expect(screen.getByText(/abra o arquivo Atlas-Instalador\.exe/)).toBeInTheDocument()
+})
+
+test('os três passos ficam à vista: baixar, abrir o arquivo e liberar o Atlas com o código deste link', async () => {
+  render(<Instalar api={comInstalador()} token={T} ir={vi.fn()} />)
+  const passos = within(await screen.findByRole('list', { name: 'Passos para instalar' })).getAllByRole('listitem')
+  expect(passos).toHaveLength(3)
+  expect(passos[1]).toHaveTextContent(/Abra o arquivo Atlas-Instalador\.exe/)
+  const liberar = screen.getByRole('link', { name: /Liberar o Atlas neste computador/ })
+  expect(liberar).toHaveAttribute('href', `atlas://ativar?t=${T}`)
 })
 
 test('o servidor não entregou o arquivo: recado honesto, nada é baixado e dá para tentar de novo', async () => {

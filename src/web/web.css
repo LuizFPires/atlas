@@ -317,3 +317,10 @@
 .cc-lista[hidden] { display: none; }
 .cc-op { padding: 12px 14px; border-radius: 8px; font-size: 16px; cursor: pointer; }
 .cc-op--ativa { background: var(--soft); outline: 1px solid var(--lime); }
+
+/* Página /instalar: os três passos (baixar, abrir o arquivo, liberar o computador). */
+.v-passos-instalar { margin: 0; padding: 0 0 0 22px; display: flex; flex-direction: column; gap: 18px; }
+.v-passos-instalar li { padding-left: 4px; }
+.v-passos-instalar li::marker { font-family: var(--font-mono); font-weight: 700; color: var(--lime-txt, var(--lime)); }
+.v-passos-instalar li > * + * { margin-top: 10px; }
+.v-passos-instalar b { color: var(--text); }

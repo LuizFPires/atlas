@@ -27,6 +27,8 @@ const { criarImportar } = require('./adaptadores/importar.cjs')
 const { criarAjuda, criarCasos } = require('./adaptadores/ajuda.cjs')
 const { criarPublicar } = require('./adaptadores/publicar.cjs')
 const { criarKit } = require('./adaptadores/kit.cjs')
+const { criarServidor } = require('./adaptadores/servidor.cjs')
+const { tokenDoLink, comToken } = require('./link-instalacao.cjs')
 
 // Endereço do servidor de licenças: no pacote vem de app/config.json, gravado na geração do instalador (não é segredo).
 // ATLAS_API_URL (ambiente) continua valendo no desenvolvimento. Sem nenhum dos dois, licença e kit negam (falha fechada).
@@ -35,6 +37,8 @@ if (!process.env.ATLAS_API_URL) {
 }
 
 const argv = process.argv.slice(1)
+// O que a tela enxerga dos argumentos: o código do link (atlas://ativar?t=... ou --token=) vira sempre `--token=<código>`.
+let argvTela = comToken(argv, tokenDoLink(argv))
 const cofre = criarCofre()
 let bloqueio = null
 let janelaPrincipal = null
@@ -66,6 +70,7 @@ const nomes = criarNomes()
 // Pós-obra: roda pela MESMA linha da obra (construcao.linha) e só com licença em dia, conferida AQUI no processo principal (token do cofre).
 // O endereço da API vem de ATLAS_API_URL (https); sem ele a licença nega (fail-closed) e o pós-obra não executa.
 const licenca = criarLicenca({ cofre, hashComputador: async () => hash() })
+const servidor = criarServidor()
 const posobra = criarPosObra({ raiz: obras.raiz(), disparo, construcao, licenca })
 // Ajuda do Atlas (F17): o Claude só lê; o print é SÓ da janela do Atlas; páginas só da lista fechada. Casos não resolvidos vão à API (endpoint ainda pendente).
 const ajuda = criarAjuda({
@@ -77,6 +82,18 @@ const casos = criarCasos({ cofre, hashComputador: async () => hash() })
 const publicar = criarPublicar({ raiz: obras.raiz(), shell, cofre })
 
 if (!app.requestSingleInstanceLock()) app.quit()
+
+// O cliente clicou em "Liberar o Atlas neste computador" na página do e-mail com o app já aberto: o Windows tenta abrir outro
+// Atlas com atlas://ativar?t=<código>; quem recebe é este aqui. Guarda o código, avisa a tela e traz a janela para a frente.
+app.setAsDefaultProtocolClient('atlas')
+app.on('second-instance', (_e, argvNovo) => {
+  const t = tokenDoLink(argvNovo)
+  if (t) {
+    argvTela = comToken(argvTela, t)
+    if (janelaPrincipal) janelaPrincipal.webContents.send('atlas:link', t)
+  }
+  if (janelaPrincipal) { if (janelaPrincipal.isMinimized()) janelaPrincipal.restore(); janelaPrincipal.focus() }
+})
 
 function idDaMaquina() {
   try {
@@ -95,11 +112,13 @@ const confiavel = (e) => janelaPrincipal !== null && e.sender === janelaPrincipa
 const protegido = (fn) => (e, ...a) => { if (!confiavel(e)) throw new Error('remetente-nao-confiavel'); return fn(...a) }
 const handle = (canal, fn) => ipcMain.handle(canal, (e, ...a) => protegido(fn)(e, ...a))
 
-ipcMain.on('atlas:argv', (e) => { e.returnValue = argv })
+ipcMain.on('atlas:argv', (e) => { e.returnValue = argvTela })
 handle('atlas:cofre:guardar', (c, v) => cofre.guardar(String(c), String(v)))
 handle('atlas:cofre:ler', (c) => cofre.ler(String(c)))
 handle('atlas:cofre:apagar', (c) => cofre.apagar(String(c)))
 handle('atlas:hash', () => hash())
+// Chamadas da tela ao servidor de licenças (ativação, licença): rota de lista fechada e base fixa, revalidadas em servidor.cjs.
+handle('atlas:servidor:postar', (rota, corpo, cabecalhos) => servidor.postar(rota, corpo, cabecalhos))
 handle('atlas:descricao', () => `${os.hostname().toUpperCase()} · Windows ${Number(os.release().split('.')[2]) >= 22000 ? '11' : '10'}`)
 
 // Arquivos da obra, pasta das obras e Claude (portas de base).

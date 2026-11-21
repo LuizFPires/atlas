@@ -67,17 +67,24 @@ export function Instalar({ api = api_padrao, token = tokenDaUrl(), ir = irPadrao
               </>
             ) : estado.a.instalador ? (
               <>
-                <p>O Atlas se instala neste computador. Baixe o instalador, abra o arquivo e eu cuido do resto. Leva uns 10 minutos.</p>
-                <button type="button" className="v-acao" onClick={baixar} disabled={download.s === 'pedindo'}>
-                  {download.s === 'pedindo' ? 'Preparando…' : download.s === 'ok' ? <>Baixar o instalador de novo <Icone nome="seta" /></> : <>Baixar o instalador <Icone nome="seta" /></>}
-                </button>
-                {download.s === 'ok' && (
-                  <>
-                    <p role="status" className="v-teste-ok"><Icone nome="check" tamanho={18} /><span className="v-teste-ok-txt">O download começou.</span></p>
-                    <p className="v-mute">Quando terminar, abra o arquivo Atlas-Instalador.exe (ele fica na pasta Downloads) e siga as instruções na tela.</p>
-                  </>
-                )}
-                {download.s === 'erro' && <p role="alert" className="v-erro">{download.mensagem}</p>}
+                <p>O Atlas se instala neste computador. São três passos e leva uns 10 minutos.</p>
+                <ol aria-label="Passos para instalar" className="v-passos-instalar">
+                  <li>
+                    <p><b>Baixe o instalador.</b></p>
+                    <button type="button" className="v-acao" onClick={baixar} disabled={download.s === 'pedindo'}>
+                      {download.s === 'pedindo' ? 'Preparando…' : download.s === 'ok' ? <>Baixar o instalador de novo <Icone nome="seta" /></> : <>Baixar o instalador <Icone nome="seta" /></>}
+                    </button>
+                    {download.s === 'ok' && <p role="status" className="v-teste-ok"><Icone nome="check" tamanho={18} /><span className="v-teste-ok-txt">O download começou.</span></p>}
+                    {download.s === 'erro' && <p role="alert" className="v-erro">{download.mensagem}</p>}
+                  </li>
+                  <li>
+                    <p><b>Abra o arquivo Atlas-Instalador.exe</b> (ele fica na pasta Downloads) e espere o Atlas abrir sozinho.</p>
+                  </li>
+                  <li>
+                    <p><b>Volte aqui e libere este computador.</b> O navegador vai perguntar se pode abrir o Atlas: diga que sim.</p>
+                    <a className="v-acao v-acao--contorno" href={`atlas://ativar?t=${encodeURIComponent(token)}`}>Liberar o Atlas neste computador</a>
+                  </li>
+                </ol>
               </>
             ) : (
               <>

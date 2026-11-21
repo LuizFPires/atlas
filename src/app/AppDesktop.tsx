@@ -41,8 +41,10 @@ import { celularIndisponivel, criarCelularFixture, type PonteCelular } from './p
 import { contasIndisponivel, criarContasFixture, type PonteContas } from './ponte-contas'
 import { claudeIndisponivel, criarClaudeFixture, type PonteClaude } from './ponte-claude'
 import { criarAtivacaoApi, criarAtivacaoFixture, lerAtivacao, modoFixture, type AtivacaoApi } from './ativacao-api'
+import { fetchPelaPonte } from './ponte-servidor'
+import { useTokenDoLink } from './link-instalacao'
 import { criarPonteFixture, ponteDoAmbiente, type PonteDesktop } from './ponte'
-import { flag, telaInicial, TELA_ATIVACAO, TELA_CELULAR, TELA_CLAUDE, TELA_CONTAS, TELA_RETOMAR } from './tela'
+import { telaInicial, TELA_ATIVACAO, TELA_CELULAR, TELA_CLAUDE, TELA_CONTAS, TELA_RETOMAR } from './tela'
 import { useImpedirSono } from './sono'
 
 /** Estamos dentro do app desktop (Electron) ou no modo fixture de desenvolvimento (?app=1)? */
@@ -163,19 +165,20 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     if (licenca) return licenca
     if (modoFixture()) return criarLicencaFixture()
     const url = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/[/]+$/, '')
-    return url ? criarLicencaApi(ponte, url) : licencaIndisponivel
+    return url ? criarLicencaApi(ponte, url, ponte.servidor ? fetchPelaPonte(ponte.servidor, url) : undefined) : licencaIndisponivel
   }, [licenca, ponte])
 
   const ponteNomes = useMemo<PonteNomes>(() => nomes ?? (modoFixture() ? criarNomesFixture() : (ponte.nomes ?? nomesIndisponivel)), [nomes, ponte])
 
+  const tokenLink = useTokenDoLink(ponte)
   const ativacao = useMemo<AtivacaoApi>(
     () => {
       if (api) return api
       if (modoFixture()) return criarAtivacaoFixture(ponte)
       const url = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/[/]+$/, '')
-      return criarAtivacaoApi(ponte, url ? { api: url, linkToken: flag(ponte.argv, 'token') } : null)
+      return criarAtivacaoApi(ponte, url ? { api: url, linkToken: tokenLink } : null, url && ponte.servidor ? fetchPelaPonte(ponte.servidor, url) : undefined)
     },
-    [api, ponte],
+    [api, ponte, tokenLink],
   )
 
   useEffect(() => {

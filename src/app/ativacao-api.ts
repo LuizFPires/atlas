@@ -67,7 +67,7 @@ export function criarAtivacaoApi(
       const c = codigo.replace(/\s+/g, '')
       if (!/^\d{6}$/.test(c)) return { ok: false, mensagem: 'O código tem 6 números. Confira o e-mail que mandamos.' }
       if (!cfg) return { ok: false, mensagem: MSG_OFF }
-      if (!cfg.linkToken) return { ok: false, mensagem: 'Faltou o link de instalação. Abra o instalador pelo link que chegou no seu e-mail.' }
+      if (!cfg.linkToken) return { ok: false, mensagem: 'Falta liberar este computador. Volte à página que abriu pelo e-mail e clique em "Liberar o Atlas neste computador".' }
       try {
         const e = email.trim().toLowerCase()
         const { r, d } = await post('/ativar/confirmar', { email: e, codigo: c, token: cfg.linkToken, computador_hash: await ponte.hashComputador() })
