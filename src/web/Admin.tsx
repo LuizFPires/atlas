@@ -571,7 +571,7 @@ function detalhesTexto(s: SinalRadar): string[] {
   if (d.regioes) l.push(`Lugares: ${d.regioes[0]} e ${d.regioes[1]}`)
   if (d.trocas !== undefined) l.push(`${d.trocas} trocas${d.dias ? ` em ${d.dias} dias` : ''}`)
   if (d.tentativas !== undefined) l.push(`${d.tentativas} ${d.tentativas === 1 ? 'tentativa' : 'tentativas'}`)
-  if (d.dispositivo_hash) l.push(`Dispositivo (código curto): ${d.dispositivo_hash}`)
+  if (d.dispositivo_hash) l.push(`Dispositivo (código curto): ${String(d.dispositivo_hash).slice(0, 8)}`)
   return l
 }
 

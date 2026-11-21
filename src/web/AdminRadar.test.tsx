@@ -66,3 +66,20 @@ describe('aba Radar (pirataria)', () => {
     expect(screen.queryByRole('group', { name: 'Resumo do Radar' })).toBeNull()
   })
 })
+
+describe('Radar: privacidade', () => {
+  it('mesmo com hash longo vindo do servidor, a tela mostra só 8 caracteres', async () => {
+    const longo = 'a94f1c07deadbeefcafebabe0123456789abcdef0123456789abcdef01234567'
+    const base = criarAdminFixture()
+    const api: AdminApi = { ...base, radarPirataria: async () => {
+      const r = await base.radarPirataria()
+      if (!r.ok) return r
+      return { ok: true, radar: { ...r.radar, sinais: r.radar.sinais.map((s) => (s.detalhes.dispositivo_hash ? { ...s, detalhes: { ...s.detalhes, dispositivo_hash: longo } } : s)) } }
+    } }
+    montar(api)
+    await irParaRadar()
+    await userEvent.click((await screen.findAllByRole('button', { name: /Ver detalhes de Restaurante/ }))[0])
+    expect(await screen.findByText(/código curto\): a94f1c07$/)).toBeInTheDocument()
+    expect(document.body.textContent).not.toContain('deadbeef')
+  })
+})
