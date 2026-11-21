@@ -56,6 +56,8 @@ const DIA_MS = 24 * 3600_000
 /** "AAAA-MM-DD" -> fim desse dia em Brasília (23:59), como instante ISO. */
 export const fimDoDiaBrasilia = (aaaammdd: string) => new Date(`${aaaammdd}T23:59:59-03:00`).toISOString()
 /** Data de hoje + n dias, em Brasília, no formato do <input type="date">. */
+/** Teto em dias: o servidor recusa validade > agora + 180 dias e o envio usa 23:59:59 do dia, então 179 é o máximo seguro. */
+const TETO_DIAS = 179
 const dataEm = (base: Date, dias: number) => new Date(base.getTime() + dias * DIA_MS - 3 * 3600_000).toISOString().slice(0, 10)
 
 /** Painel do administrador (F16) em /admin. Só o Luiz: o servidor recusa qualquer outro login. */
@@ -638,9 +640,9 @@ function Cortesia({ api, aoMudar }: { api: AdminApi; aoMudar?: () => void }) {
       <form onSubmit={confirmar} noValidate>
         <CampoFalado rotulo="E-mail da pessoa" type="email" autoComplete="off" valor={cortesia.email} onChange={(email) => setCortesia({ ...cortesia, email })} placeholder="amigo@email.com" juntar={juntarFalaEmail} />
         <label className="ad-campo-data">Vale até
-          <input type="date" value={cortesia.data} min={dataEm(hoje, 1)} max={dataEm(hoje, 180)} onChange={(e) => setCortesia({ ...cortesia, data: e.target.value })} />
+          <input type="date" value={cortesia.data} min={dataEm(hoje, 1)} max={dataEm(hoje, TETO_DIAS)} onChange={(e) => setCortesia({ ...cortesia, data: e.target.value })} />
         </label>
-        <span className="ad-mute2">Entre 1 e 180 dias. Costuma ser de 10 a 15.</span>
+        <span className="ad-mute2">Entre 1 e 179 dias. Costuma ser de 10 a 15.</span>
         {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
         {falhou && (
           <div role="status" className="ad-linha">
@@ -1045,9 +1047,10 @@ function CortesiasAtivas({ api, versao }: { api: AdminApi; versao: number }) {
 
 function LinhaCortesia({ api, c, aoEstender, aoErro }: { api: AdminApi; c: CortesiaAtiva; aoEstender: (ate: string) => Promise<void>; aoErro: (m: string) => void }) {
   const hoje = new Date()
-  const min = dataEm(hoje, 1)
-  const max = dataEm(hoje, 180)
+  const amanha = dataEm(hoje, 1)
   const atual = dataEm(new Date(c.validade_em), 0)
+  const min = atual > amanha ? atual : amanha // não dá pra encurtar o prazo que já vale
+  const max = dataEm(hoje, TETO_DIAS)
   const [data, setData] = useState(atual)
   const [indo, setIndo] = useState(false)
   const somar = (n: number) => {

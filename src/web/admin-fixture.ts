@@ -7,7 +7,7 @@ const HORA = 3600_000
 const DIA = 24 * HORA
 /** E-mail de demonstração de uma cortesia do fixture (o nome já é o e-mail quando foi liberada pela tela). */
 const emailDe = (nome: string) => (nome.includes('@') ? nome : `${nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '')}@exemplo.com`)
-const atras =(agora: number, ms: number) => new Date(agora - ms).toISOString()
+const atras = (agora: number, ms: number) => new Date(agora - ms).toISOString()
 const isoMes = (agora: number, voltar: number) => {
   const d = new Date(agora); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - voltar)
   return d.toISOString().slice(0, 7)
@@ -132,7 +132,6 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
     },
     resolverOcorrencia(id) { atencao = atencao.filter((a) => a.id !== id); return ok({}) },
     listarCortesias() {
-      const agora = Date.now()
       const cortesias = clientes
         .filter((x) => x.tipo === 'cortesia' && x.validade_em && new Date(x.validade_em).getTime() > agora)
         .map((x) => ({ email: emailDe(x.nome), nome: x.nome, validade_em: x.validade_em as string }))
