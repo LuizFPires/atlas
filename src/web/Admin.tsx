@@ -1,18 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { CampoFalado, Icone } from '../ui'
+import type { NomeIcone } from '../ui/Icone'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
 import type { AdminApi, DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, Situacao } from './admin-api'
 import { FILTROS, filtrarClientes, fluxoPorMes, indicadoresGerenciais, type FiltroConta } from './admin-calc'
 import './admin.css'
 
-type Aba = 'geral' | 'caixa' | 'cadastros' | 'entregas'
-const MENU: { id: Aba; nome: string }[] = [
-  { id: 'geral', nome: 'Visão geral' },
-  { id: 'caixa', nome: 'Fluxo de caixa' },
-  { id: 'cadastros', nome: 'Cadastros' },
-  { id: 'entregas', nome: 'Entregas e marca d’água' },
+type Aba = 'geral' | 'caixa' | 'acoes' | 'entregas'
+const MENU: { id: Aba; nome: string; icone: NomeIcone }[] = [
+  { id: 'geral', nome: 'Visão geral', icone: 'brilho' },
+  { id: 'caixa', nome: 'Fluxo de caixa', icone: 'moeda' },
+  { id: 'acoes', nome: 'Ações', icone: 'aperto' },
+  { id: 'entregas', nome: 'Entregas e marca d’água', icone: 'pasta' },
 ]
+
+const CHAVE_MENU = 'atlas.admin.menu-recolhido'
+const lerRecolhido = () => { try { return localStorage.getItem(CHAVE_MENU) === '1' } catch { return false } }
+const guardarRecolhido = (v: boolean) => { try { localStorage.setItem(CHAVE_MENU, v ? '1' : '0') } catch { /* vale só nesta carga */ } }
 
 const dinheiro = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 const dia = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—')
@@ -105,25 +110,36 @@ function Entrada({ api, aviso, onEntrou }: { api: AdminApi; aviso: string; onEnt
 
 function Painel({ api, email, onSair }: { api: AdminApi; email: string; onSair: () => void }) {
   const [aba, setAba] = useState<Aba>('geral')
+  const [recolhido, setRecolhido] = useState(lerRecolhido)
+  const alternarMenu = () => { const novo = !recolhido; setRecolhido(novo); guardarRecolhido(novo) }
   return (
     <div className="ad">
-      <aside className="ad-lateral">
-        <div className="ad-marca"><Monograma fundo="escuro" largura={40} altura={22} /><NomeAtlas fundo="escuro" largura={96} altura={14} /></div>
-        <span className="ad-rotulo-lime">ADMINISTRADOR</span>
+      <aside className={`ad-lateral ${recolhido ? 'ad-lateral--recolhida' : ''}`}>
+        <div className="ad-marca">
+          <Monograma fundo="escuro" largura={40} altura={22} />
+          {!recolhido && <NomeAtlas fundo="escuro" largura={96} altura={14} />}
+        </div>
+        {!recolhido && <span className="ad-rotulo-lime">ADMINISTRADOR</span>}
+        <button type="button" className="ad-recolher" aria-expanded={!recolhido} aria-label={recolhido ? 'Abrir o menu' : 'Recolher o menu'} title={recolhido ? 'Abrir o menu' : 'Recolher o menu'} onClick={alternarMenu}>
+          <Icone nome="chevron" tamanho={18} />
+        </button>
         <nav aria-label="Menu do administrador">
           {MENU.map((m) => (
-            <a key={m.id} href={`#/${m.id}`} className={`ad-item ${aba === m.id ? 'ad-item--ativo' : ''}`} aria-current={aba === m.id ? 'page' : undefined} onClick={(e) => { e.preventDefault(); setAba(m.id) }}>{m.nome}</a>
+            <a key={m.id} href={`#/${m.id}`} title={m.nome} aria-label={m.nome} className={`ad-item ${aba === m.id ? 'ad-item--ativo' : ''}`} aria-current={aba === m.id ? 'page' : undefined} onClick={(e) => { e.preventDefault(); setAba(m.id) }}>
+              <Icone nome={m.icone} tamanho={20} />
+              {!recolhido && <span>{m.nome}</span>}
+            </a>
           ))}
         </nav>
         <div className="ad-eu">
-          <span>{email}</span>
-          <button type="button" className="ad-link" onClick={onSair}>Sair</button>
+          {!recolhido && <span>{email}</span>}
+          <button type="button" className="ad-link" aria-label="Sair" title="Sair" onClick={onSair}>{recolhido ? <Icone nome="x" tamanho={18} /> : 'Sair'}</button>
         </div>
       </aside>
       <main className="ad-main">
         {aba === 'geral' && <VisaoGeral api={api} />}
         {aba === 'caixa' && <FluxoCaixa api={api} />}
-        {aba === 'cadastros' && <Cadastros api={api} />}
+        {aba === 'acoes' && <Acoes api={api} />}
         {aba === 'entregas' && <Entregas api={api} />}
       </main>
     </div>
@@ -167,7 +183,7 @@ function TesteGratis({ api }: { api: AdminApi }) {
 }
 
 /** Lista de e-mails temporários bloqueados no teste grátis: ver, bloquear mais um e liberar de volta. O servidor valida de novo. */
-function DominiosBloqueados({ api, versao }: { api: AdminApi; versao: number }) {
+function DominiosBloqueados({ api }: { api: AdminApi }) {
   const [lista, setLista] = useState<DominioBloqueado[] | null>(null)
   const [novo, setNovo] = useState('')
   const [erro, setErro] = useState('')
@@ -180,7 +196,7 @@ function DominiosBloqueados({ api, versao }: { api: AdminApi; versao: number }) 
     let vivo = true
     api.dominios().then((r) => { if (!vivo) return; if (r.ok) { setLista(r.dominios); setErro('') } else setErro(r.mensagem) })
     return () => { vivo = false }
-  }, [api, versao])
+  }, [api])
   const adicionar = async (ev: React.FormEvent) => {
     ev.preventDefault(); setErro(''); setMsg('')
     const r = await api.bloquearDominio(novo)
@@ -239,14 +255,23 @@ function VisaoGeral({ api }: { api: AdminApi }) {
     return r.ok ? ({ ok: true, v: r.painel } as const) : r
   }, [api])
   const { dado, erro, recarregar } = useCarga<PainelAdmin>(buscar)
+  const [cadastros, setCadastros] = useState<Map<string, LinhaCadastro>>(new Map())
   const [liberando, setLiberando] = useState<{ licencaId: string; quem: string; motivo: string } | null>(null)
   const [msg, setMsg] = useState('')
-  const [cortesia, setCortesia] = useState({ email: '', data: '' })
-  const [erroCortesia, setErroCortesia] = useState('')
-  const [versaoDominios, setVersaoDominios] = useState(0)
+  const [atencaoAberta, setAtencaoAberta] = useState(false)
   const [filtro, setFiltro] = useState<FiltroConta>('todas')
   const [busca, setBusca] = useState('')
   const listaRef = useRef<HTMLElement>(null)
+
+  // E-mail, ramo e cadastro vêm de outra rota: junta por licenca_id. Se falhar, a lista segue sem esses dados.
+  useEffect(() => {
+    let vivo = true
+    api.cadastros().then((r) => {
+      if (!vivo || !r.ok || !Array.isArray(r.cadastros)) return
+      setCadastros(new Map(r.cadastros.map((c) => [c.licenca_id, c])))
+    })
+    return () => { vivo = false }
+  }, [api])
 
   if (!dado) return erro ? <p role="alert" className="ad-erro">{erro}</p> : <p role="status" className="ad-mute">Carregando os números…</p>
   const { indicadores: i, atencao, clientes } = dado
@@ -261,15 +286,6 @@ function VisaoGeral({ api }: { api: AdminApi }) {
     setLiberando(null)
     await recarregar()
   }
-  const confirmarCortesia = async (ev: React.FormEvent) => {
-    ev.preventDefault(); setErroCortesia(''); setMsg('')
-    if (!cortesia.data) { setErroCortesia('Escolha até quando a cortesia vale.'); return }
-    const r = await api.liberarCortesia(cortesia.email, fimDoDiaBrasilia(cortesia.data))
-    if (!r.ok) { setErroCortesia(r.mensagem); return } // erro honesto: nada foi liberado
-    setMsg(`${r.nova ? 'Cortesia liberada' : 'Cortesia renovada'} para ${cortesia.email.trim().toLowerCase()} até ${dia(r.validade_em)}.`)
-    setCortesia({ email: '', data: '' })
-    await recarregar()
-  }
   const dar_baixa = async (id: string) => {
     const r = await api.resolverOcorrencia(id)
     setMsg(r.ok ? '' : r.mensagem)
@@ -281,10 +297,10 @@ function VisaoGeral({ api }: { api: AdminApi }) {
     if (!r.ok) { setMsg(r.mensagem); return }
     await api.resolverOcorrencia(a.id) // o alerta está atendido
     setMsg(`${r.dominio} bloqueado. Quem pedir o teste com esse e-mail será recusado.`)
-    setVersaoDominios((v) => v + 1)
     await recarregar()
   }
-  const abrirLiberar = (licencaId: string, quem: string, motivo = '') => { setMsg(''); setLiberando({ licencaId, quem, motivo }) }
+  // "Liberar troca urgente" abre sempre aqui na Visão geral (acima da lista); se veio do painel de atenção, ele fecha para o formulário aparecer.
+  const abrirLiberar = (licencaId: string, quem: string, motivo = '') => { setMsg(''); setAtencaoAberta(false); setLiberando({ licencaId, quem, motivo }) }
 
   const g = indicadoresGerenciais(i)
   // Linha de cima: só fatos (não clicam). Cartões de baixo: botões que filtram a lista de clientes.
@@ -314,6 +330,9 @@ function VisaoGeral({ api }: { api: AdminApi }) {
             <div key={k.nome} className="ad-info"><dt className="ad-info-nome">{k.nome}</dt><dd className="ad-info-v">{k.v}</dd></div>
           ))}
         </dl>
+        <button type="button" className={`ad-botao ad-botao--atencao ${atencao.length > 0 ? 'ad-botao--aviso' : ''}`} aria-haspopup="dialog" onClick={() => setAtencaoAberta(true)}>
+          <Icone nome="alerta" tamanho={18} />Precisam de atenção ({atencao.length})
+        </button>
       </div>
       {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
       <div className="ad-kpis" role="group" aria-label="Filtrar clientes por situação">
@@ -323,68 +342,55 @@ function VisaoGeral({ api }: { api: AdminApi }) {
           </button>
         ))}
       </div>
-      <div className="ad-grade">
-        <section className="ad-card" aria-label="Clientes" ref={listaRef}>
-          <span className="ad-rotulo">CLIENTES</span>
-          <div className="ad-tabela ad-tabela--cab" role="row"><span>Cliente</span><span>Licença</span><span>Obras</span><span>Último sinal</span><span>Ação</span></div>
-          <div className="ad-filtro">
-            <label className="ad-campo-data">Mostrar
-              <select value={filtro} onChange={(e) => setFiltro(e.target.value as FiltroConta)}>
-                {FILTROS.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
-              </select>
-            </label>
-            <label className="ad-campo-data">Buscar por nome ou empresa
-              <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Ex.: barbearia" autoComplete="off" />
-            </label>
+      {liberando && (
+        <section className="ad-card" aria-label="Liberar troca urgente">
+          <span className="ad-rotulo">LIBERAR TROCA URGENTE</span>
+          <p className="ad-p">{liberando.quem} poderá trocar de computador agora, uma vez, sem esperar os 7 dias. Fica registrado no seu nome.</p>
+          <CampoFalado rotulo="Motivo" valor={liberando.motivo} onChange={(motivo) => setLiberando({ ...liberando, motivo })} placeholder="Ex.: o computador do cliente quebrou" />
+          <div className="ad-linha">
+            <button type="button" className="ad-botao ad-botao--lime" onClick={confirmarLiberar} disabled={liberando.motivo.trim().length < 5}>Liberar a troca</button>
+            <button type="button" className="ad-botao" onClick={() => setLiberando(null)}>Cancelar</button>
           </div>
-          <p aria-live="polite" className="ad-mute2">{visiveis.length === clientes.length ? `${clientes.length} ${clientes.length === 1 ? 'conta' : 'contas'}` : `${visiveis.length} de ${clientes.length} contas`}</p>
-          {clientes.length === 0 && <p className="ad-mute">Ainda não há clientes.</p>}
-          {clientes.length > 0 && visiveis.length === 0 && <p className="ad-mute">Nenhuma conta com esse filtro. Tente outro ou limpe a busca.</p>}
-          {visiveis.map((c) => <LinhaDoCliente key={c.licenca_id} c={c} agora={agora} onLiberar={() => abrirLiberar(c.licenca_id, c.empresa || c.nome)} />)}
         </section>
-        <div className="ad-coluna">
-          <section className="ad-card ad-card--aviso" aria-label="Precisam de atenção">
-            <span className="ad-rotulo ad-rotulo--aviso">PRECISAM DE ATENÇÃO</span>
-            {atencao.length === 0 && <p className="ad-mute">Nada pedindo atenção agora.</p>}
-            {atencao.map((a) => <Atencao key={a.id} a={a} onBloquear={() => bloquearSugerido(a)} onBaixa={() => dar_baixa(a.id)} onLiberar={() => a.licenca_id && abrirLiberar(a.licenca_id, a.quem, 'Cliente pediu a troca antes do prazo de 7 dias.')} />)}
-          </section>
-          <TesteGratis api={api} />
-          <DominiosBloqueados api={api} versao={versaoDominios} />
-          <section className="ad-card" aria-label="Liberar cortesia">
-            <span className="ad-rotulo">LIBERAR CORTESIA</span>
-            <p className="ad-p">Dê um acesso de presente a alguém, por uns dias. Quando a data chegar, o acesso acaba sozinho.</p>
-            <form onSubmit={confirmarCortesia} noValidate>
-              <CampoFalado rotulo="E-mail da pessoa" type="email" autoComplete="off" valor={cortesia.email} onChange={(email) => setCortesia({ ...cortesia, email })} placeholder="amigo@email.com" juntar={juntarFalaEmail} />
-              <label className="ad-campo-data">Vale até
-                <input type="date" value={cortesia.data} min={dataEm(agora, 1)} max={dataEm(agora, 180)} onChange={(e) => setCortesia({ ...cortesia, data: e.target.value })} />
-              </label>
-              <span className="ad-mute2">Entre 1 e 180 dias. Costuma ser de 10 a 15.</span>
-              {erroCortesia && <p role="alert" className="ad-erro">{erroCortesia}</p>}
-              <div className="ad-linha"><button type="submit" className="ad-botao ad-botao--lime" disabled={!cortesia.email.trim() || !cortesia.data}>Liberar cortesia</button></div>
-            </form>
-          </section>
-          {liberando && (
-            <section className="ad-card" aria-label="Liberar troca urgente">
-              <span className="ad-rotulo">LIBERAR TROCA URGENTE</span>
-              <p className="ad-p">{liberando.quem} poderá trocar de computador agora, uma vez, sem esperar os 7 dias. Fica registrado no seu nome.</p>
-              <CampoFalado rotulo="Motivo" valor={liberando.motivo} onChange={(motivo) => setLiberando({ ...liberando, motivo })} placeholder="Ex.: o computador do cliente quebrou" />
-              <div className="ad-linha">
-                <button type="button" className="ad-botao ad-botao--lime" onClick={confirmarLiberar} disabled={liberando.motivo.trim().length < 5}>Liberar a troca</button>
-                <button type="button" className="ad-botao" onClick={() => setLiberando(null)}>Cancelar</button>
-              </div>
-            </section>
-          )}
+      )}
+      <section className="ad-card" aria-label="Clientes" ref={listaRef}>
+        <span className="ad-rotulo">CLIENTES</span>
+        <div className="ad-filtro">
+          <label className="ad-campo-data">Mostrar
+            <select value={filtro} onChange={(e) => setFiltro(e.target.value as FiltroConta)}>
+              {FILTROS.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
+            </select>
+          </label>
+          <label className="ad-campo-data">Buscar por nome ou empresa
+            <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Ex.: barbearia" autoComplete="off" />
+          </label>
         </div>
-      </div>
+        <p aria-live="polite" className="ad-mute2">{visiveis.length === clientes.length ? `${clientes.length} ${clientes.length === 1 ? 'conta' : 'contas'}` : `${visiveis.length} de ${clientes.length} contas`}</p>
+        <div className="ad-tabela ad-tabela--cli ad-tabela--cab" role="row"><span>Cliente</span><span>E-mail</span><span className="ad-col-ramo">Ramo</span><span>Cadastro</span><span>Situação</span><span>Obras</span><span>Último sinal</span><span>Ação</span></div>
+        {clientes.length === 0 && <p className="ad-mute">Ainda não há clientes.</p>}
+        {clientes.length > 0 && visiveis.length === 0 && <p className="ad-mute">Nenhuma conta com esse filtro. Tente outro ou limpe a busca.</p>}
+        {visiveis.map((c) => <LinhaDoCliente key={c.licenca_id} c={c} cad={cadastros.get(c.licenca_id)} agora={agora} onLiberar={() => abrirLiberar(c.licenca_id, c.empresa || c.nome)} />)}
+      </section>
+      {atencaoAberta && (
+        <GavetaAtencao itens={atencao} clientes={clientes} cadastros={cadastros} agora={agora} onFechar={() => setAtencaoAberta(false)}
+          onBloquear={bloquearSugerido} onBaixa={dar_baixa}
+          onLiberar={(a) => a.licenca_id && abrirLiberar(a.licenca_id, a.quem, 'Cliente pediu a troca antes do prazo de 7 dias.')} />
+      )}
     </>
   )
 }
 
-function LinhaDoCliente({ c, agora, onLiberar }: { c: LinhaCliente; agora: Date; onLiberar: () => void }) {
+function LinhaDoCliente({ c, cad, agora, onLiberar }: { c: LinhaCliente; cad?: LinhaCadastro; agora: Date; onLiberar: () => void }) {
   const st = SITUACAO[c.situacao]
+  const ramo = cad?.ramo || c.ramo
   return (
-    <div className="ad-tabela" role="row">
-      <div className="ad-quem"><b>{c.empresa || c.nome}</b><span className="ad-mute">{c.ramo || (c.empresa ? c.nome : '')}</span></div>
+    <div className="ad-tabela ad-tabela--cli" role="row">
+      <div className="ad-quem"><b>{c.empresa || c.nome}</b><span className="ad-mute">{c.empresa ? c.nome : ''}<span className="ad-so-estreito">{c.empresa && ramo ? ' · ' : ''}{ramo}</span></span></div>
+      <span className="ad-email">{cad?.email || '—'}</span>
+      <span className="ad-col-ramo">{ramo || '—'}</span>
+      {cad
+        ? <span className={`ad-st ${cad.situacao === 'feito' ? 'ad-st--ok' : 'ad-st--aviso'}`}>{cad.situacao === 'feito' ? `Feito em ${dia(cad.cadastro_em)}` : 'Ainda não respondeu'}</span>
+        : <span className="ad-mute">—</span>}
       <span className={`ad-st ${st.classe}`}>{st.texto}{c.tipo === 'cortesia' && <small className="ad-mute"> · cortesia até {dia(c.validade_em ?? null)}</small>}</span>
       <span>{c.obras > 0 ? `${c.obras} ${c.obras === 1 ? 'entregue' : 'entregues'}` : '—'}</span>
       <span className="ad-mute">{c.travado_em ? `travado em: ${TRAVADO[c.travado_em]}` : quandoFoi(c.ultimo_sinal_em, agora)}</span>
@@ -393,11 +399,61 @@ function LinhaDoCliente({ c, agora, onLiberar }: { c: LinhaCliente; agora: Date;
   )
 }
 
-function Atencao({ a, onBaixa, onLiberar, onBloquear }: { a: ItemAtencao; onBaixa: () => void; onLiberar: () => void; onBloquear: () => void }) {
+const TIPO_ATENCAO: Record<string, string> = { travado: 'Cliente travado', atraso: 'Mensalidade atrasada', troca: 'Troca de computador', troca_antecipada: 'Troca de computador', licenca_pausada: 'Licença pausada', dominio: 'E-mail temporário' }
+
+const FOCAVEIS = 'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+/** Painel lateral "Precisam de atenção": desliza da direita, fecha com X, Esc ou clicando fora, e prende o foco enquanto está aberto. */
+function GavetaAtencao({ itens, clientes, cadastros, agora, onFechar, onLiberar, onBloquear, onBaixa }: {
+  itens: ItemAtencao[]; clientes: LinhaCliente[]; cadastros: Map<string, LinhaCadastro>; agora: Date
+  onFechar: () => void; onLiberar: (a: ItemAtencao) => void; onBloquear: (a: ItemAtencao) => void; onBaixa: (id: string) => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const antes = document.activeElement as HTMLElement | null
+    ref.current?.querySelector<HTMLElement>('.ad-gaveta-x')?.focus()
+    return () => { antes?.focus?.() }
+  }, [])
+  const teclas = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') { e.stopPropagation(); onFechar(); return }
+    if (e.key !== 'Tab' || !ref.current) return
+    const f = [...ref.current.querySelectorAll<HTMLElement>(FOCAVEIS)]
+    if (f.length === 0) return
+    const primeiro = f[0], ultimo = f[f.length - 1]
+    if (e.shiftKey && document.activeElement === primeiro) { e.preventDefault(); ultimo.focus() }
+    else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primeiro.focus() }
+  }
+  return (
+    <div className="ad-gaveta-fundo" onMouseDown={(e) => { if (e.target === e.currentTarget) onFechar() }}>
+      <div ref={ref} className="ad-gaveta" role="dialog" aria-modal="true" aria-label="Precisam de atenção" onKeyDown={teclas}>
+        <div className="ad-gaveta-topo">
+          <span className="ad-rotulo ad-rotulo--aviso">PRECISAM DE ATENÇÃO ({itens.length})</span>
+          <button type="button" className="ad-gaveta-x" aria-label="Fechar" title="Fechar" onClick={onFechar}><Icone nome="x" tamanho={18} /></button>
+        </div>
+        <div className="ad-gaveta-lista">
+          {itens.length === 0 && <p className="ad-mute">Nada pedindo atenção agora.</p>}
+          {itens.map((a) => {
+            const cli = a.licenca_id ? clientes.find((c) => c.licenca_id === a.licenca_id) : undefined
+            const cad = a.licenca_id ? cadastros.get(a.licenca_id) : undefined
+            return (
+              <Atencao key={a.id} a={a} tipo={TIPO_ATENCAO[a.tipo] ?? 'Aviso'} quando={quandoFoi(a.quando, agora)}
+                detalhe={[cli && `Situação: ${SITUACAO[cli.situacao].texto}`, cad?.email, (cad?.ramo || cli?.ramo)].filter(Boolean).join(' · ')}
+                onBloquear={() => onBloquear(a)} onBaixa={() => onBaixa(a.id)} onLiberar={() => onLiberar(a)} />
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Atencao({ a, tipo, quando, detalhe, onBaixa, onLiberar, onBloquear }: { a: ItemAtencao; tipo: string; quando: string; detalhe: string; onBaixa: () => void; onLiberar: () => void; onBloquear: () => void }) {
   return (
     <div className="ad-alerta">
+      <span className="ad-alerta-tipo">{tipo} · {quando}</span>
       <b>{a.quem}</b>
       <span className="ad-mute">{a.oque}</span>
+      {detalhe && <span className="ad-mute2">{detalhe}</span>}
       <div className="ad-linha">
         {a.licenca_id && <button type="button" className="ad-link" onClick={onLiberar}>Liberar troca</button>}
         {a.dominio_sugerido && <button type="button" className="ad-link" onClick={onBloquear}>Bloquear este domínio</button>}
@@ -407,32 +463,48 @@ function Atencao({ a, onBaixa, onLiberar, onBloquear }: { a: ItemAtencao; onBaix
   )
 }
 
-function Cadastros({ api }: { api: AdminApi }) {
-  const buscar = useCallback(async () => {
-    const r = await api.cadastros()
-    return r.ok ? ({ ok: true, v: r.cadastros } as const) : r
-  }, [api])
-  const { dado, erro } = useCarga<LinhaCadastro[]>(buscar)
+/** Aba "Ações": teste grátis, e-mails bloqueados e cortesia, cada um num cartão grande. */
+function Acoes({ api }: { api: AdminApi }) {
   return (
     <>
-      <div className="ad-titulo"><h1>Cadastros</h1><span className="ad-mute">as respostas que cada cliente deu depois de pagar</span></div>
-      {erro && <p role="alert" className="ad-erro">{erro}</p>}
-      {!dado && !erro && <p role="status" className="ad-mute">Carregando…</p>}
-      {dado && (
-        <section className="ad-card" aria-label="Cadastros">
-          <div className="ad-tabela ad-tabela--cad ad-tabela--cab"><span>Cliente</span><span>E-mail</span><span>Ramo</span><span>Cadastro</span></div>
-          {dado.map((c) => (
-            <div key={c.licenca_id} className="ad-tabela ad-tabela--cad">
-              <div className="ad-quem"><b>{c.empresa || c.nome}</b><span className="ad-mute">{c.empresa ? c.nome : ''}</span></div>
-              <span>{c.email}</span>
-              <span>{c.ramo || '—'}</span>
-              <span className={`ad-st ${c.situacao === 'feito' ? 'ad-st--ok' : 'ad-st--aviso'}`}>{c.situacao === 'feito' ? `Feito em ${dia(c.cadastro_em)}` : 'Ainda não respondeu'}</span>
-            </div>
-          ))}
-          {dado.length === 0 && <p className="ad-mute">Ainda não há cadastros.</p>}
-        </section>
-      )}
+      <div className="ad-titulo"><h1>Ações</h1><span className="ad-mute">o que você liga, bloqueia ou libera na mão</span></div>
+      <div className="ad-acoes">
+        <TesteGratis api={api} />
+        <DominiosBloqueados api={api} />
+        <Cortesia api={api} />
+      </div>
     </>
+  )
+}
+
+function Cortesia({ api }: { api: AdminApi }) {
+  const [cortesia, setCortesia] = useState({ email: '', data: '' })
+  const [erro, setErro] = useState('')
+  const [msg, setMsg] = useState('')
+  const hoje = new Date()
+  const confirmar = async (ev: React.FormEvent) => {
+    ev.preventDefault(); setErro(''); setMsg('')
+    if (!cortesia.data) { setErro('Escolha até quando a cortesia vale.'); return }
+    const r = await api.liberarCortesia(cortesia.email, fimDoDiaBrasilia(cortesia.data))
+    if (!r.ok) { setErro(r.mensagem); return } // erro honesto: nada foi liberado
+    setMsg(`${r.nova ? 'Cortesia liberada' : 'Cortesia renovada'} para ${cortesia.email.trim().toLowerCase()} até ${dia(r.validade_em)}.`)
+    setCortesia({ email: '', data: '' })
+  }
+  return (
+    <section className="ad-card" aria-label="Liberar cortesia">
+      <span className="ad-rotulo">LIBERAR CORTESIA</span>
+      <p className="ad-p">Dê um acesso de presente a alguém, por uns dias. Quando a data chegar, o acesso acaba sozinho.</p>
+      <form onSubmit={confirmar} noValidate>
+        <CampoFalado rotulo="E-mail da pessoa" type="email" autoComplete="off" valor={cortesia.email} onChange={(email) => setCortesia({ ...cortesia, email })} placeholder="amigo@email.com" juntar={juntarFalaEmail} />
+        <label className="ad-campo-data">Vale até
+          <input type="date" value={cortesia.data} min={dataEm(hoje, 1)} max={dataEm(hoje, 180)} onChange={(e) => setCortesia({ ...cortesia, data: e.target.value })} />
+        </label>
+        <span className="ad-mute2">Entre 1 e 180 dias. Costuma ser de 10 a 15.</span>
+        {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
+        {erro && <p role="alert" className="ad-erro">{erro}</p>}
+        <div className="ad-linha"><button type="submit" className="ad-botao ad-botao--lime" disabled={!cortesia.email.trim() || !cortesia.data}>Liberar cortesia</button></div>
+      </form>
+    </section>
   )
 }
 

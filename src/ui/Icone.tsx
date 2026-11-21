@@ -82,6 +82,8 @@ const CAMINHOS = {
     </>
   ),
   livro: <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4zM5 17a3 3 0 0 1 3-3h11" />,
+  chevron: <path d="m15 6-6 6 6 6" />,
+  alerta: <path d="M12 3 2 20h20L12 3zM12 10v4.5M12 17.2v.1" />,
 } as const
 
 export type NomeIcone = keyof typeof CAMINHOS
