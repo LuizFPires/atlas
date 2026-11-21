@@ -2,7 +2,9 @@
 import { abrirLink, reenviarParaComputador } from './abertura.ts'
 import { registrarCasoAjuda } from './ajuda-caso.ts'
 import { confirmarAtivacao, solicitarCodigo } from './ativacao.ts'
+import { ufDoAcesso } from './geo.ts'
 import { validarInstancia } from './instancia.ts'
+import { limparRadar, radar, resolverSinal } from './radar.ts'
 import { obrasDoPortal, publicarStatusObras } from './status-obras.ts'
 import { entregarKit, type CarregarKit } from './kit.ts'
 import { gerarLink } from './links.ts'
@@ -33,6 +35,8 @@ export interface Contexto {
   portal?: DepsPortal
   /** Painel do administrador (M7, F16). Ausente = rotas /admin/* de pessoa respondem 503 (nunca ficam abertas). */
   admin?: DepsAdmin
+  /** UF do acesso (só para o Radar). Ausente = lê os cabeçalhos da borda (cf-region-code / x-vercel-ip-country-region). Nunca devolve nem guarda IP. */
+  ufDoAcesso?: (req: Request) => string | null
   /** Origem do site (ex.: https://atlas-ia.app.br). Só ela recebe CORS; ausente = nenhuma origem de navegador. */
   origemWeb?: string
   /** Chamadas de serviço/admin (gerar link pós-compra, override). Conferido contra segredo do ambiente. */
@@ -113,6 +117,10 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await verCadastros(ctx.admin, jwt))
         case '/admin/fluxo-caixa':
           return json(await fluxoCaixa(ctx.admin, jwt))
+        case '/admin/radar':
+          return json(await radar(ctx.admin, jwt))
+        case '/admin/radar/resolver':
+          return json(await resolverSinal(ctx.admin, jwt, o.id))
         case '/admin/mapa':
           return json(await mapa(ctx.admin, jwt))
         default:
@@ -161,7 +169,7 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
       // Degustação (bloco B): públicas. O freio principal é o clique no link do e-mail; IP, e-mail e domínio têm limites próprios.
       case '/degustacao/limpar-ips': // agendador diário (cron): zera o ip de pedidos antigos (LGPD)
         if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
-        return json({ ok: true, limpos: await ctx.deps.store.limparIpsDegustacao(ctx.deps.agora(), 30) })
+        return json({ ok: true, limpos: await ctx.deps.store.limparIpsDegustacao(ctx.deps.agora(), 30), radar_limpos: await limparRadar(ctx.deps) })
       case '/degustacao/auditar': // agendador semanal (cron): varredura anti-fraude; só abre ocorrências no painel
         if (!ctx.autorizarServico(req)) return json({ erro: 'nao_autorizado' }, 401)
         return json(await auditarDegustacao(ctx.deps))
@@ -226,7 +234,7 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
       case '/ajuda-caso':
         return json(await registrarCasoAjuda(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, tipo: b.tipo, descricao: b.descricao }))
       case '/instancia/validar':
-        return json(await validarInstancia(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo }))
+        return json(await validarInstancia(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, uf: ctx.ufDoAcesso ? ctx.ufDoAcesso(req) : ufDoAcesso(req.headers) }))
       case '/status-obras/publicar':
         return json(await publicarStatusObras(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obras: (b as Record<string, unknown>).obras }))
       case '/entregar-kit': {

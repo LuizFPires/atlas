@@ -4,9 +4,13 @@ import { describe, expect, it } from 'vitest'
 import { lerEmailsAdmin } from '../functions/_shared/admin.ts'
 import type { Pagamento } from '../functions/_shared/tipos.ts'
 import { cancelarCompra, cancelarMensalidade } from '../functions/_shared/pagamento/cancelamento.ts'
+import { tratar } from '../functions/_shared/http.ts'
+import { H2, TOKEN } from './helpers.ts'
 import { chamar, comDoisClientes, JWT_ANA } from './helpers-portal.ts'
 
 const JWT_LUIZ = 'jwt-luiz'
+const HORA = 3600_000
+const DIA = 24 * HORA
 
 async function montar() {
   const m = await comDoisClientes()
@@ -146,5 +150,155 @@ describe('/admin/painel — cancelamentos_no_mes', () => {
     await cancelarCompra(m.deps, 'ana@loja.com')
     expect(m.store.licencas.find((l) => l.id === 'l1')?.cancelada_em).toBeInstanceOf(Date)
     expect((await m.post('/admin/painel')).indicadores.cancelamentos_no_mes).toBe(2)
+  })
+})
+
+describe('Radar de pirataria', () => {
+  const agora = (m: M) => m.deps.agora()
+  const ev = (m: M, e: { tipo?: 'instancia_recusada' | 'acesso'; uf?: string | null; dispositivo?: string | null; antes: number; licenca?: string }) =>
+    m.store.registrarEventoRadar({ licenca_id: e.licenca ?? 'l1', tipo: e.tipo ?? 'instancia_recusada', uf: e.uf ?? null, dispositivo: e.dispositivo ?? null, criado_em: new Date(agora(m).getTime() - e.antes) })
+  const sinais = async (m: M) => (await m.post('/admin/radar')).sinais as Array<{ id: string; tipo: string; gravidade: string; cliente: string; licenca_id: string | null; detalhes: Record<string, unknown>; descricao: string }>
+
+  describe('registro no /instancia/validar', () => {
+    const validar = (m: M, hash: string, h: Record<string, string> = {}) =>
+      tratar(m.ctx(), new Request('https://x.test/functions/v1/instancia/validar', { method: 'POST', headers: { 'X-Atlas-Dispositivo': TOKEN, 'x-forwarded-for': '203.0.113.77', 'cf-ipcountry': 'BR', 'cf-region-code': 'sp', ...h }, body: JSON.stringify({ email: 'ana@loja.com', computador_hash: hash }) }))
+
+    it('2º computador: continua recusando e grava UF + dispositivo curto, SEM IP e sem pausar a licença', async () => {
+      const m = await montar()
+      const r = await validar(m, H2)
+      expect(await r.json()).toEqual({ ok: false, motivo: 'outra_instancia' })
+      expect(m.store.eventosDoRadar).toHaveLength(1)
+      expect(m.store.eventosDoRadar[0]).toMatchObject({ licenca_id: 'l1', tipo: 'instancia_recusada', uf: 'SP' })
+      expect(m.store.eventosDoRadar[0].dispositivo).toMatch(/^[0-9a-f]{8}$/)
+      expect(m.store.eventosDoRadar[0].dispositivo).not.toBe(H2.slice(0, 8))
+      expect(JSON.stringify(m.store.eventosDoRadar)).not.toMatch(/203\.0\.113|bbbbbbbb/)
+      expect(m.store.licencas.find((l) => l.id === 'l1')?.status).toBe('ativa') // o Radar só avisa
+    })
+    it('acesso do dono grava só a UF (1 vez a cada 2 h); sem UF conhecida, não grava nada; outro país não vira UF', async () => {
+      const m = await montar()
+      await validar(m, 'a'.repeat(64))
+      await validar(m, 'a'.repeat(64))
+      expect(m.store.eventosDoRadar).toHaveLength(1)
+      expect(m.store.eventosDoRadar[0]).toMatchObject({ tipo: 'acesso', uf: 'SP', dispositivo: null })
+      const n = await montar()
+      await validar(n, 'a'.repeat(64), { 'cf-region-code': '', 'cf-ipcountry': 'BR' })
+      await validar(n, 'a'.repeat(64), { 'cf-region-code': 'SP', 'cf-ipcountry': 'US' })
+      expect(n.store.eventosDoRadar).toHaveLength(0)
+    })
+    it('se gravar o evento falhar, o guardião responde igual', async () => {
+      const m = await montar()
+      m.store.registrarEventoRadar = async () => { throw new Error('banco fora') }
+      expect(await (await validar(m, H2)).json()).toEqual({ ok: false, motivo: 'outra_instancia' })
+    })
+  })
+
+  it('só admin e responde ligado com o shape do painel', async () => {
+    const m = await montar()
+    expect((await chamar(m.ctx(), '/admin/radar', JWT_ANA)).status).toBe(403)
+    expect((await chamar(m.ctx(), '/admin/radar/resolver', JWT_ANA, { id: 'x' })).status).toBe(403)
+    expect((await chamar(m.ctx(), '/admin/radar', null)).status).toBe(401)
+    const r = await m.post('/admin/radar')
+    expect(r).toEqual({ ligado: true, resumo: { licencas_sob_suspeita: 0, sinais_abertos: 0, por_tipo: { instancia_recusada: 0, troca_frequente: 0, regioes_distantes: 0, degustacao_repetida: 0 } }, sinais: [] })
+  })
+
+  it('(a) 2º computador barrado: 1 = baixa, 2 = média, 3+ = alta (janela de 7 dias)', async () => {
+    const m = await montar()
+    await ev(m, { antes: HORA, dispositivo: 'abcd1234' })
+    expect((await sinais(m))[0]).toMatchObject({ tipo: 'instancia_recusada', gravidade: 'baixa', licenca_id: 'l1', cliente: 'Ana', detalhes: { tentativas: 1, dispositivo_hash: 'abcd1234' } })
+    await ev(m, { antes: 2 * HORA, dispositivo: 'abcd1234' })
+    expect((await sinais(m))[0].gravidade).toBe('media')
+    await ev(m, { antes: 3 * HORA, dispositivo: 'abcd1234' })
+    await ev(m, { antes: 9 * DIA, dispositivo: 'abcd1234' }) // fora da janela: não conta
+    const s = await sinais(m)
+    expect(s).toHaveLength(1)
+    expect(s[0]).toMatchObject({ gravidade: 'alta', detalhes: { tentativas: 3 } })
+  })
+
+  it('(b) troca frequente: 3 em 30 dias = média, 5 = alta; troca liberada pelo Luiz e troca antiga não contam', async () => {
+    const m = await montar()
+    const troca = (dias: number, por_admin = false) => m.store.trocas.push({ licenca_id: 'l2', de_hash: 'x', para_hash: 'y', feita_em: new Date(agora(m).getTime() - dias * DIA), por_admin })
+    troca(1); troca(8)
+    troca(2, true); troca(40)
+    expect(await sinais(m)).toEqual([])
+    troca(15)
+    expect((await sinais(m))[0]).toMatchObject({ tipo: 'troca_frequente', gravidade: 'media', licenca_id: 'l2', cliente: 'Beto', detalhes: { trocas: 3, dias: 30 } })
+    troca(20); troca(25)
+    expect((await sinais(m))[0]).toMatchObject({ gravidade: 'alta', detalhes: { trocas: 5 } })
+  })
+
+  it('(c) regiões distantes: UFs de macrorregiões diferentes em até 6 h = média; mesma região ou mais de 6 h = nada', async () => {
+    const m = await montar()
+    await ev(m, { tipo: 'acesso', uf: 'SP', antes: 3 * HORA })
+    await ev(m, { tipo: 'acesso', uf: 'RJ', antes: 2 * HORA }) // mesma região (SE)
+    await ev(m, { tipo: 'acesso', uf: 'PE', antes: 12 * HORA }) // longe no tempo
+    expect(await sinais(m)).toEqual([])
+    await ev(m, { tipo: 'acesso', uf: 'AM', antes: HORA / 2 })
+    const s = await sinais(m)
+    expect(s).toHaveLength(1)
+    expect(s[0]).toMatchObject({ tipo: 'regioes_distantes', gravidade: 'media', licenca_id: 'l1', detalhes: { regioes: ['RJ', 'AM'] } })
+    // a recusa também carrega UF e entra na conta
+    const n = await montar()
+    await ev(n, { tipo: 'acesso', uf: 'RS', antes: 4 * HORA })
+    await ev(n, { tipo: 'instancia_recusada', uf: 'CE', antes: HORA, dispositivo: 'aaaa0000' })
+    expect((await sinais(n)).map((x) => x.tipo).sort()).toEqual(['instancia_recusada', 'regioes_distantes'])
+  })
+
+  it('(d) teste grátis repetido (ledger): 1 barrada = baixa, 2+ = alta; só 8 caracteres do HMAC saem', async () => {
+    const m = await montar()
+    const hmac = 'f'.repeat(8) + 'segredo-longo-que-nao-pode-sair'
+    m.store.dispositivosTeste.set(hmac, 'l2')
+    await m.store.registrarBarradaDispositivo(hmac, new Date(agora(m).getTime() - HORA))
+    const um = await sinais(m)
+    expect(um[0]).toMatchObject({ tipo: 'degustacao_repetida', gravidade: 'baixa', licenca_id: 'l2', detalhes: { dispositivo_hash: 'ffffffff', tentativas: 1 } })
+    await m.store.registrarBarradaDispositivo(hmac, new Date(agora(m).getTime() - 60_000))
+    expect((await sinais(m))[0]).toMatchObject({ gravidade: 'alta', detalhes: { tentativas: 2 } })
+    expect(JSON.stringify(await m.post('/admin/radar'))).not.toContain('segredo-longo')
+  })
+
+  it('resumo, ordem (mais grave primeiro) e licenças sob suspeita', async () => {
+    const m = await montar()
+    await ev(m, { antes: HORA, dispositivo: 'abcd1234' }) // l1 baixa
+    const troca = (dias: number) => m.store.trocas.push({ licenca_id: 'l1', de_hash: 'x', para_hash: 'y', feita_em: new Date(agora(m).getTime() - dias * DIA), por_admin: false })
+    troca(1); troca(2); troca(3); troca(4); troca(5) // l1 alta
+    const r = await m.post('/admin/radar')
+    expect(r.sinais.map((x: { tipo: string }) => x.tipo)).toEqual(['troca_frequente', 'instancia_recusada'])
+    expect(r.resumo).toEqual({ licencas_sob_suspeita: 1, sinais_abertos: 2, por_tipo: { instancia_recusada: 1, troca_frequente: 1, regioes_distantes: 0, degustacao_repetida: 0 } })
+  })
+
+  describe('POST /admin/radar/resolver', () => {
+    it('baixa o sinal, audita, não mexe na licença e não apaga o histórico; fato novo reabre', async () => {
+      const m = await montar()
+      await ev(m, { antes: 2 * HORA, dispositivo: 'abcd1234' })
+      const id = (await sinais(m))[0].id
+      expect(id).toBe('instancia_recusada:l1')
+      const antes = JSON.stringify(m.store.licencas)
+      expect(await m.post('/admin/radar/resolver', { id })).toEqual({ ok: true, ja_resolvido: false })
+      expect(await sinais(m)).toEqual([])
+      expect((await m.post('/admin/radar')).resumo.sinais_abertos).toBe(0)
+      expect(JSON.stringify(m.store.licencas)).toBe(antes)
+      expect(m.store.eventosDoRadar).toHaveLength(1) // histórico intacto
+      expect(m.store.ocorrencias.find((o) => o.tipo === 'radar_baixa')).toMatchObject({ autor: 'luiz@atlas.com', resolvida: true, cliente_id: 'c1' })
+      expect(await m.post('/admin/radar/resolver', { id })).toEqual({ ok: true, ja_resolvido: true })
+      m.avancar(HORA)
+      await ev(m, { antes: 0, dispositivo: 'abcd1234' }) // nova tentativa depois da baixa
+      const s = await sinais(m)
+      expect(s).toHaveLength(1)
+      expect(s[0].detalhes.tentativas).toBe(2)
+    })
+    it('id inválido = 400; sinal que não existe = 404', async () => {
+      const m = await montar()
+      expect((await chamar(m.ctx(), '/admin/radar/resolver', JWT_LUIZ, { id: 123 })).status).toBe(400)
+      expect((await chamar(m.ctx(), '/admin/radar/resolver', JWT_LUIZ, { id: "x'; drop table" })).status).toBe(400)
+      expect((await chamar(m.ctx(), '/admin/radar/resolver', JWT_LUIZ, { id: 'troca_frequente:l1' })).status).toBe(404)
+    })
+  })
+
+  it('retenção: o agendador diário apaga eventos com mais de 90 dias', async () => {
+    const m = await montar()
+    await ev(m, { antes: 100 * DIA }); await ev(m, { antes: DIA })
+    const c = { ...m.ctx(), autorizarServico: () => true }
+    const r = await (await tratar(c, new Request('https://x.test/degustacao/limpar-ips', { method: 'POST', body: '{}' }))).json()
+    expect(r.radar_limpos).toBe(1)
+    expect(m.store.eventosDoRadar).toHaveLength(1)
   })
 })

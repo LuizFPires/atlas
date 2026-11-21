@@ -1,7 +1,7 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
 import { dominioRegistravel, LIMIARES_AUDITORIA, PROVEDORES_COMUNS, protegeProvedor } from './auditoria.ts'
-import type { Ativacao, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, Personalizacao, StatusObraLinha, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
+import type { Ativacao, BarradaTeste, EventoRadar, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, Personalizacao, StatusObraLinha, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
   clientes: Cliente[] = []
@@ -297,6 +297,23 @@ export class StoreMemoria implements Store {
   }
   async licencasAtrasadas() { return this.licencas.filter((l) => l.status === 'atrasada') }
   async licencasEncerramentoVencido(agora: Date) { return this.licencas.filter((l) => l.status !== 'cancelada' && l.mensalidade_encerra_em && l.mensalidade_encerra_em <= agora) }
+  // ── M33: Radar (espelha 0028) ──
+  eventosDoRadar: EventoRadar[] = []
+  baixasDoRadar = new Map<string, { por: string; em: Date }>()
+  async registrarEventoRadar(e: EventoRadar) { this.eventosDoRadar.push({ ...e }) }
+  async eventosRadar(desde: Date) { return this.eventosDoRadar.filter((e) => e.criado_em >= desde).map((e) => ({ ...e })) }
+  async barradasDeTeste(desde: Date, minimo: number): Promise<BarradaTeste[]> {
+    const saida: BarradaTeste[] = []
+    for (const [hmac, b] of this.barradasDispositivo) {
+      const lic = this.dispositivosTeste.get(hmac)
+      if (lic && b.n >= minimo && b.ultima >= desde) saida.push({ dispositivo: hmac.slice(0, 8), licenca_id: lic, barradas: b.n, ultima_em: b.ultima })
+    }
+    return saida
+  }
+  async baixasRadar() { return [...this.baixasDoRadar].map(([sinal_id, b]) => ({ sinal_id, resolvida_em: b.em })) }
+  async baixarSinalRadar(id: string, por: string, quando: Date) { this.baixasDoRadar.set(id, { por, em: quando }) }
+  async limparEventosRadar(antes: Date) { const n = this.eventosDoRadar.length; this.eventosDoRadar = this.eventosDoRadar.filter((e) => e.criado_em >= antes); return n - this.eventosDoRadar.length }
+
   async clientePorId(id: string) { return this.clientes.find((c) => c.id === id) ?? null }
 
   async clientePorAuthUser(id: string) { return this.clientes.find((c) => c.auth_user_id === id) ?? null }

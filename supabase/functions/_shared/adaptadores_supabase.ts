@@ -73,6 +73,9 @@
 //   ocorrenciasAbertas         SELECT ocorrencias_admin WHERE NOT resolvida ORDER BY criada_em DESC LIMIT n
 //   resolverOcorrencia         UPDATE ocorrencias_admin SET resolvida,resolvida_por,resolvida_em WHERE id AND NOT resolvida RETURNING id
 //   entregasRecentes/DaLicenca/PorMarca   SELECT entregas_kit (licenca_id,obra_id,marca_dagua,baixado_em) ORDER BY baixado_em DESC
+//   registrarEventoRadar / eventosRadar / limparEventosRadar   INSERT / SELECT / DELETE radar_eventos (0028; nunca IP: só UF e dispositivo curto)
+//   barradasDeTeste            SELECT degustacoes_dispositivos (dispositivo_hmac,licenca_id,barradas,ultima_barrada_em) WHERE barradas>=n; só 8 chars do HMAC saem
+//   baixasRadar / baixarSinalRadar   SELECT / UPSERT radar_baixas (0028)
 //
 // ── Carregador do kit ──
 // Bucket PRIVADO (ATLAS_KIT_BUCKET, padrão 'kit'). Layout: 'base/...' (comum a todas as obras) e '<obra_id>/...' (da obra);
@@ -374,6 +377,20 @@ export function criarStoreSupabase() {
     async entregasDaLicenca(licencaId: string, limite: number) {
       return (await ler(() => t('entregas_kit').select(C_ENTREGA).eq('licenca_id', licencaId).order('baixado_em', { ascending: false }).order('id'), limite)).map(entrega)
     },
+    // ── Radar de pirataria (M33): só aviso, nada aqui mexe em licença ──
+    async registrarEventoRadar(e: any) { ok(await t('radar_eventos').insert({ licenca_id: e.licenca_id, tipo: e.tipo, uf: e.uf ?? null, dispositivo: e.dispositivo ?? null, criado_em: iso(e.criado_em) }), 'registrarEventoRadar') },
+    async eventosRadar(desde: Date) {
+      return (await ler(() => t('radar_eventos').select('licenca_id,tipo,uf,dispositivo,criado_em').gte('criado_em', desde.toISOString()).order('criado_em').order('id'), 50000)).map((r: any) => ({ licenca_id: r.licenca_id, tipo: r.tipo, uf: r.uf ?? null, dispositivo: r.dispositivo ?? null, criado_em: new Date(r.criado_em) }))
+    },
+    async barradasDeTeste(desde: Date, minimo: number) {
+      const l = await ler(() => t('degustacoes_dispositivos').select('dispositivo_hmac,licenca_id,barradas,ultima_barrada_em').gte('barradas', minimo).gte('ultima_barrada_em', desde.toISOString()).order('id'), 5000)
+      return l.map((r: any) => ({ dispositivo: String(r.dispositivo_hmac).slice(0, 8), licenca_id: r.licenca_id, barradas: r.barradas, ultima_em: new Date(r.ultima_barrada_em) })) // nunca o HMAC inteiro
+    },
+    async baixasRadar() { return (await ler(() => t('radar_baixas').select('sinal_id,resolvida_em').order('sinal_id'), 20000)).map((r: any) => ({ sinal_id: r.sinal_id, resolvida_em: new Date(r.resolvida_em) })) },
+    async baixarSinalRadar(id: string, por: string, quando: Date) {
+      ok(await t('radar_baixas').upsert({ sinal_id: id, resolvida_por: por, resolvida_em: iso(quando) }, { onConflict: 'sinal_id' }), 'baixarSinalRadar')
+    },
+    async limparEventosRadar(antes: Date) { return ok(await t('radar_eventos').delete().lt('criado_em', antes.toISOString()).select('id'), 'limparEventosRadar').length },
     async entregasPorMarca(marca: string) { return (await ler(() => t('entregas_kit').select(C_ENTREGA).eq('marca_dagua', marca).order('baixado_em', { ascending: false }).order('id'))).map(entrega) },
   }
 }
