@@ -107,8 +107,11 @@ jobs:
           # Sem nenhuma credencial, como o navegador do cliente: tem de responder com o arquivo inteiro.
           curl -s -o baixado.exe -w 'Sem credencial: HTTP %{http_code}, %{size_download} bytes\n' "$destino"
           cmp baixado.exe release/Atlas-Instalador-TESTE-*.exe && echo "Arquivo baixado é idêntico ao gerado"
-          # E o endereço fixo, sem credencial, tem de ser negado (o repositório é privado).
-          curl -s -o /dev/null -w 'Endereço fixo sem credencial: HTTP %{http_code}\n' "https://api.github.com/repos/${{ github.repository }}/releases/assets/$id" -H "Accept: application/octet-stream"
+          # O endereço fixo, sem credencial, só é negado se o repositório for privado. Com o repositório público, qualquer
+          # pessoa baixa o instalador direto do GitHub, sem passar pelo link do e-mail: fica o aviso na rodada.
+          fixo=$(curl -s -o /dev/null -w '%{http_code}' -H "Accept: application/octet-stream" "https://api.github.com/repos/${{ github.repository }}/releases/assets/$id")
+          echo "Pedido direto ao GitHub, sem credencial: HTTP $fixo"
+          if [ "$fixo" != "404" ]; then echo "::warning::O repositorio esta publico: o instalador pode ser baixado direto do GitHub, sem o link do e-mail."; fi
 
       - name: Guardar o instalador
         if: always()
