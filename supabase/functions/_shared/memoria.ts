@@ -307,10 +307,10 @@ export class StoreMemoria implements Store {
     return true
   }
 
-  async salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string }, quando: Date) {
+  async salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string; cidade?: string | null; uf?: string | null }, quando: Date) {
     const cli = this.clientes.find((x) => x.id === clienteId)
     if (!cli || cli.cadastro_em) return false
-    Object.assign(cli, { nome_tratamento: c.nome, empresa: c.empresa, ramo: c.ramo, cadastro_em: quando })
+    Object.assign(cli, { nome_tratamento: c.nome, empresa: c.empresa, ramo: c.ramo, cadastro_em: quando, cidade: c.cidade ?? null, uf: c.uf ?? null })
     return true
   }
   async registrarSessao(conta: string, id: string, email: string) {
@@ -332,7 +332,7 @@ export class StoreMemoria implements Store {
     if (cli.excluido_em) return true // idempotente, como a RPC
     const email = cli.email_compra
     const lics = this.licencas.filter((l) => l.cliente_id === clienteId).map((l) => l.id)
-    Object.assign(cli, { email_compra: `excluido+${clienteId}@anonimo.invalid`, nome_tratamento: 'Conta excluída', empresa: null, ramo: null, excluido_em: quando })
+    Object.assign(cli, { email_compra: `excluido+${clienteId}@anonimo.invalid`, nome_tratamento: 'Conta excluída', empresa: null, ramo: null, cidade: null, uf: null, excluido_em: quando })
     for (const l of this.licencas) if (lics.includes(l.id)) Object.assign(l, { status: 'cancelada', pausa_prevista_em: null, troca_liberada_em: null, gateway_cliente_ref: null, gateway_assinatura_ref: null })
     this.ativacoes = this.ativacoes.filter((a) => !lics.includes(a.licenca_id))
     this.trocas = this.trocas.filter((t) => !lics.includes(t.licenca_id))

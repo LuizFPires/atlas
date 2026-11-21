@@ -2,11 +2,14 @@
 // e dispara o e-mail de boas-vindas (S10) com o link de instalação de uso único.
 // A chave do cadastro é o session_id do Stripe Checkout (prova da compra), nunca o e-mail do corpo:
 // o acesso vai SEMPRE para o e-mail da compra. Sem prova válida, uma única resposta genérica.
+import { ufValida } from './geo.ts'
 import { gerarLink } from './links.ts'
 import { type Deps, ErroRegra } from './tipos.ts'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const SESSAO_RE = /^cs_[A-Za-z0-9_]{8,200}$/
+/** Nome de cidade: só letras (com acento), espaço, ponto, apóstrofo e hífen; 2 a 80 caracteres. */
+const CIDADE_RE = /^[\p{L}][\p{L} .'’-]{1,79}$/u
 const limpar = (v: unknown, max: number) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '')
 
 /** Texto livre vira e-mail: sem endereço, link ou número comprido (anti-phishing). */
@@ -21,7 +24,7 @@ export interface DepsCadastro extends Deps {
   enviarBoasVindas: (email: string, dados: BoasVindas) => Promise<void>
 }
 
-export interface PedidoCadastro { session_id?: unknown; nome?: unknown; empresa?: unknown; ramo?: unknown; email?: unknown }
+export interface PedidoCadastro { session_id?: unknown; nome?: unknown; empresa?: unknown; ramo?: unknown; email?: unknown; cidade?: unknown; uf?: unknown }
 
 export type RespostaCadastro =
   | { ok: true; enviado_para: string; email_diferente: boolean; segmento: string | null }
@@ -53,6 +56,14 @@ export async function cadastrar(d: DepsCadastro, p: PedidoCadastro): Promise<Res
   const empresa = limpar(p.empresa, 120)
   const ramo = limpar(p.ramo, 300)
   const digitado = limpar(p.email, 254).toLowerCase()
+  const cidadeBruta = limpar(p.cidade, 80)
+  const ufBruta = limpar(p.uf, 2)
+  // Cidade e UF são opcionais (cadastro antigo não tinha). Se vierem, precisam ser sãs; a cidade sem UF não tem onde ficar no mapa.
+  const uf = ufBruta ? ufValida(ufBruta) : null
+  if (ufBruta && !uf) throw new ErroRegra('uf_invalida', 'Escolha o estado na lista.')
+  if (cidadeBruta && !CIDADE_RE.test(cidadeBruta)) throw new ErroRegra('cidade_invalida', 'Escolha a cidade na lista.')
+  if (cidadeBruta && !uf) throw new ErroRegra('uf_obrigatoria', 'Escolha também o estado da cidade.')
+  const cidade = uf && cidadeBruta ? cidadeBruta : null
   if (!nome) throw new ErroRegra('nome_obrigatorio', 'Diga como o Atlas vai te chamar.')
   if (!ramo) throw new ErroRegra('ramo_obrigatorio', 'Conte, com as suas palavras, o que a sua empresa faz.')
   if (digitado && !EMAIL_RE.test(digitado)) throw new ErroRegra('email_invalido', 'Confira o e-mail.')
@@ -66,7 +77,7 @@ export async function cadastrar(d: DepsCadastro, p: PedidoCadastro): Promise<Res
   }
 
   // Uma vez só, de forma atômica: dois envios ao mesmo tempo não mandam dois acessos.
-  if (!(await d.store.salvarCadastro(cliente.id, { nome, empresa, ramo }, d.agora()))) {
+  if (!(await d.store.salvarCadastro(cliente.id, { nome, empresa, ramo, cidade, uf }, d.agora()))) {
     throw new ErroRegra('cadastro_feito', 'O seu cadastro já foi feito. O acesso foi enviado: olhe o seu e-mail.', 409)
   }
   const destino = cliente.email_compra

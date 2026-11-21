@@ -193,7 +193,7 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         if (!(await ctx.cadastro.store.tentarEvento(`cadastro:ip:${ipDe(req)}`, 10, 15 * 60_000, ctx.cadastro.agora()))) {
           return json({ erro: 'muitas_solicitacoes', mensagem: 'Muitas tentativas. Espere uns minutos.' }, 429)
         }
-        const rc = await cadastrar(ctx.cadastro, { session_id: b.session_id, nome: b.nome, empresa: b.empresa, ramo: b.ramo, email: b.email })
+        const rc = await cadastrar(ctx.cadastro, { session_id: b.session_id, nome: b.nome, empresa: b.empresa, ramo: b.ramo, email: b.email, cidade: b.cidade, uf: b.uf })
         return json(rc, rc.ok ? 200 : 202)
       }
       // Link de instalação aberto (M5): público, o token é a prova. Só consulta; não consome o link.

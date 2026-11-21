@@ -15,6 +15,9 @@ export interface Cliente {
   auth_user_id?: string | null
   /** LGPD: quando a conta foi excluída (dados pessoais anonimizados). */
   excluido_em?: Date | null
+  /** Cidade e UF que o cliente informou no cadastro (0026). Nunca derivadas de IP. Nulos em cadastros antigos. */
+  cidade?: string | null
+  uf?: string | null
 }
 export interface Licenca {
   id: string
@@ -276,7 +279,7 @@ export interface Store {
 
   // ── M4: cadastro pós-pagamento ──
   /** Atômico: UPDATE clientes SET nome_tratamento, empresa, ramo, cadastro_em WHERE id AND cadastro_em IS NULL. false = já cadastrado. */
-  salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string }, quando: Date): Promise<boolean>
+  salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string; cidade?: string | null; uf?: string | null }, quando: Date): Promise<boolean>
   /** Guarda a sessão do checkout criada (ainda não paga). Idempotente. */
   registrarSessao(contaId: string, sessaoId: string, email: string): Promise<void>
   /** Marca a sessão como paga (upsert: cria se o webhook chegar sem registro prévio). */

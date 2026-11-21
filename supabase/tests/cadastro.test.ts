@@ -47,6 +47,22 @@ describe('cadastro pós-pagamento', () => {
     expect(texto).toContain('Ajuda do Atlas')
     expect(texto).not.toMatch(/atendente|equipe de suporte|ligue/i)
   })
+  it('guarda cidade + UF informadas (UF em maiúsculas); cadastro sem os dois campos continua valendo', async () => {
+    const a = pronto()
+    await cadastrar(a.deps, { ...pedido, cidade: ' São  Paulo ', uf: 'sp' })
+    expect(a.m.store.clientes[0]).toMatchObject({ cidade: 'São Paulo', uf: 'SP' })
+    const b = pronto()
+    await cadastrar(b.deps, pedido)
+    expect(b.m.store.clientes[0]).toMatchObject({ cidade: null, uf: null })
+  })
+  it('recusa UF fora das 27, cidade esquisita e cidade sem UF (e não grava nada)', async () => {
+    for (const [extra, codigo] of [[{ cidade: 'Recife', uf: 'XX' }, 'uf_invalida'], [{ cidade: 'Rua <b>1</b>', uf: 'PE' }, 'cidade_invalida'], [{ cidade: 'Recife' }, 'uf_obrigatoria']] as const) {
+      const a = pronto()
+      await expect(cadastrar(a.deps, { ...pedido, ...extra })).rejects.toMatchObject({ codigo, status: 400 })
+      expect(a.m.store.clientes[0].cadastro_em).toBeFalsy()
+      expect(a.enviados).toHaveLength(0)
+    }
+  })
   it('e-mail digitado diferente é só informativo: o acesso vai para o e-mail da compra', async () => {
     const { deps, enviados } = pronto()
     const r = await cadastrar(deps, { ...pedido, email: 'atacante@evil.com' })

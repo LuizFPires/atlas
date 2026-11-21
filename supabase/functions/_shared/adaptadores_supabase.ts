@@ -21,7 +21,7 @@
 //   clientePorEmail            SELECT clientes (id,email_compra,nome_tratamento,empresa,ramo,cadastro_em,auth_user_id) WHERE email_compra
 //   clientePorId/PorAuthUser   idem, WHERE id / auth_user_id
 //   vincularAuthUser           UPDATE clientes SET auth_user_id WHERE id AND auth_user_id IS NULL (1 instrução = atômico; 0 linhas = false)
-//   salvarCadastro             UPDATE clientes SET nome_tratamento,empresa,ramo,cadastro_em WHERE id AND cadastro_em IS NULL
+//   salvarCadastro             UPDATE clientes SET nome_tratamento,empresa,ramo,cidade,uf,cadastro_em WHERE id AND cadastro_em IS NULL
 //   reabrirCadastro            UPDATE clientes SET cadastro_em=NULL WHERE id
 //   licencaDoCliente/PorId     SELECT licencas (11 colunas seguras, sem plano_valor/criada_em)
 //   salvarLicenca              UPDATE licencas SET <campos> WHERE id
@@ -121,7 +121,7 @@ async function ler(mk: () => any, limite = Infinity): Promise<any[]> {
 }
 
 // Colunas lidas (só o que o servidor precisa).
-const C_CLIENTE = 'id,email_compra,nome_tratamento,empresa,ramo,cadastro_em,auth_user_id,excluido_em'
+const C_CLIENTE = 'id,email_compra,nome_tratamento,empresa,ramo,cadastro_em,auth_user_id,excluido_em,cidade,uf'
 const C_LICENCA = 'id,cliente_id,status,pausa_prevista_em,troca_liberada_em,comprada_em,avisos_atraso,conta_gateway_id,gateway_cliente_ref,gateway_assinatura_ref,mensalidade_encerra_em,tipo,origem,validade_em'
 const C_ATIVACAO = 'id,licenca_id,computador_hash,token_hash,ativo,ativado_em,desativado_em'
 const C_ATIVACAO_ADMIN = 'id,licenca_id,computador_hash,ativo,ativado_em,desativado_em'
@@ -129,7 +129,7 @@ const C_PAGAMENTO = 'licenca_id,conta_gateway_id,tipo,valor,status,gateway_ref,g
 const C_ENTREGA = 'licenca_id,obra_id,marca_dagua,baixado_em'
 const C_OCORRENCIA = 'id,cliente_id,tipo,descricao,autor,resolvida,criada_em,resolvida_por,resolvida_em,chave'
 
-const cliente = (r: any) => r && { id: r.id, email_compra: r.email_compra, nome_tratamento: r.nome_tratamento, empresa: r.empresa, ramo: r.ramo, cadastro_em: dt(r.cadastro_em), auth_user_id: r.auth_user_id, excluido_em: dt(r.excluido_em) }
+const cliente = (r: any) => r && { id: r.id, email_compra: r.email_compra, nome_tratamento: r.nome_tratamento, empresa: r.empresa, ramo: r.ramo, cadastro_em: dt(r.cadastro_em), auth_user_id: r.auth_user_id, excluido_em: dt(r.excluido_em), cidade: r.cidade ?? null, uf: r.uf ?? null }
 const licenca = (r: any) => r && {
   id: r.id, cliente_id: r.cliente_id, status: r.status, pausa_prevista_em: dt(r.pausa_prevista_em), troca_liberada_em: dt(r.troca_liberada_em),
   comprada_em: dt(r.comprada_em), avisos_atraso: r.avisos_atraso ?? 0, conta_gateway_id: r.conta_gateway_id ?? null,
@@ -167,8 +167,8 @@ export function criarStoreSupabase() {
       const r = ok(await t('clientes').update({ auth_user_id: authUserId }).eq('id', clienteId).is('auth_user_id', null).select('id'), 'vincularAuthUser')
       return r.length === 1
     },
-    async salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string }, quando: Date) {
-      const r = ok(await t('clientes').update({ nome_tratamento: c.nome, empresa: c.empresa, ramo: c.ramo, cadastro_em: iso(quando) }).eq('id', clienteId).is('cadastro_em', null).select('id'), 'salvarCadastro')
+    async salvarCadastro(clienteId: string, c: { nome: string; empresa: string; ramo: string; cidade?: string | null; uf?: string | null }, quando: Date) {
+      const r = ok(await t('clientes').update({ nome_tratamento: c.nome, empresa: c.empresa, ramo: c.ramo, cidade: c.cidade ?? null, uf: c.uf ?? null, cadastro_em: iso(quando) }).eq('id', clienteId).is('cadastro_em', null).select('id'), 'salvarCadastro')
       return r.length === 1
     },
     async reabrirCadastro(clienteId: string) { ok(await t('clientes').update({ cadastro_em: null }).eq('id', clienteId), 'reabrirCadastro') },
