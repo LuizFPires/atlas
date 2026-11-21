@@ -15,6 +15,7 @@ import { Admin } from './web/Admin'
 import { ConfirmarDegustacao } from './web/Degustacao'
 import { Instalar } from './web/Instalar'
 import { criarAdminApi } from './web/admin-api'
+import { criarAdminFixture } from './web/admin-fixture'
 import { PaginaLegal } from './web/Legal'
 import { idLegalDoCaminho } from './web/textos-legais'
 import { AppDesktop, noAppDesktop } from './app/AppDesktop'
@@ -25,7 +26,7 @@ const AppMercearia = lazy(() => import('./modelos/mercearia/AppMercearia').then(
 const AppAcademia = lazy(() => import('./modelos/academia/AppAcademia').then((m) => ({ default: m.AppAcademia })))
 
 const portalApi = criarPortalApi()
-const adminApi = criarAdminApi()
+const adminApi = modoFixture() ? criarAdminFixture() : criarAdminApi()
 // Personalização do app pronto (M32 b): em produção grava pela rota /portal/personalizacao (escopada pelo login).
 const personalizacao = modoFixture() ? criarPersonalizacaoFixture() : criarPersonalizacaoPortal(portalApi)
 // Status das obras no celular (M30 relay): em produção lê o resumo que o computador publicou, pela rota /portal/obras
