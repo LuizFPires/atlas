@@ -13,6 +13,7 @@ import { criarStatusObrasFixture, criarStatusObrasPortal } from './web/obras-sta
 import { modoFixture } from './app/ativacao-api'
 import { Admin } from './web/Admin'
 import { ConfirmarDegustacao } from './web/Degustacao'
+import { Instalar } from './web/Instalar'
 import { criarAdminApi } from './web/admin-api'
 import { PaginaLegal } from './web/Legal'
 import { idLegalDoCaminho } from './web/textos-legais'
@@ -68,6 +69,8 @@ export default function App() {
   if (caminho === '/conta') return <Portal api={portalApi} obras={statusObras} />
   // Link de confirmação do teste grátis (vem no e-mail).
   if (caminho === '/degustacao') return <ConfirmarDegustacao />
+  // Ponte de instalação (link do e-mail de compra/teste): pública, o token é a prova.
+  if (caminho === '/instalar') return <Instalar />
   // Painel do administrador: o link existe para todos, mas só o servidor decide quem entra (JWT + allowlist).
   if (caminho === '/admin') return <Admin api={adminApi} />
   // Demonstração do app-modelo da barbearia (M32 d1): só em modo fixture (desenvolvimento ou VITE_FIXTURE=1). Em produção a rota não existe.
