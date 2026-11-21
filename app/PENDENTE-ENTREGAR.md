@@ -207,6 +207,7 @@ O CI (ubuntu) só roda eslint, tsc, vitest e o build do front. `electron` e `ele
   4. Conta no provedor de e-mail (padrão Resend), domínio do remetente verificado. Outro provedor: `definirEnviadorEmail(...)`.
   5. Cadastrar a conta de pagamento do cliente em `contas_gateway` (com `segredo_ref` e `base_retorno`) e publicar a função `api`.
   6. Testar de ponta a ponta: compra, e-mail de boas-vindas, ativação com código, troca de computador, `/entregar-kit` e painel `/admin`.
+- A página `/instalar` do site já existe (`src/web/Instalar.tsx`, usa `/instalar/abrir` e `/instalar/enviar-para-computador`). O que continua PENDENTE é só o DOWNLOAD do instalador assinado (assinatura Azure): a página tem um ponto reservado e avisa honestamente que o botão ainda não está disponível.
 - Pendência de decisão: confirmar a URL real da página de instalação (padrão `https://atlas-ia.app.br/instalar`, usada nos testes) e o layout do bucket (`base/` + `<obra_id>/`).
 
 ## Bloco "criação de projeto" (feat/app-adaptadores-projeto)

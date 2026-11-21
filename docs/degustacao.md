@@ -38,5 +38,5 @@ Locks: o pedido e a confirmação pegam `'degustacao:'||email_hash` e depois `'c
 ## Pendente de deploy
 - Agendar o cron DIÁRIO de `/degustacao/limpar-ips` e o cron SEMANAL de `/degustacao/auditar` (ver `docs/auditoria.md`).
 - Aplicar as migrations 0016 a 0020; definir `ATLAS_DEGUSTACAO_URL` (padrão `https://atlas-ia.app.br/degustacao`), `RESEND_API_KEY` e `ATLAS_EMAIL_FROM` reais (hoje só testado com enviador de fixture).
-- Confirmar a URL real da página de instalação (a página do link leva a `/instalar?t=<token>`; hoje a rota `/instalar` não existe no site, só o padrão de `ATLAS_INSTALAR_URL`).
+- Confirmar a URL real da página de instalação (a página do link leva a `/instalar?t=<token>`; a rota `/instalar` já existe no site (`src/web/Instalar.tsx`): confirma o acesso, no celular oferece "Enviar para o meu computador" e no computador explica o próximo passo. Falta só o DOWNLOAD do instalador assinado, que continua pendente em `app/PENDENTE-ENTREGAR.md`).
 - Liberar o CORS: a origem do site já é a de `ATLAS_WEB_ORIGEM`.
