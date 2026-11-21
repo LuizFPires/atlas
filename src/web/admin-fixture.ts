@@ -1,6 +1,6 @@
 // Modo demonstração do painel do administrador: dados de mentira, em memória, só para olhar e clicar sem servidor.
 // Só entra quando modoFixture() é verdadeiro (dev). Em produção o App usa criarAdminApi() (login + lista de admins no servidor).
-import type { AdminApi, DominioBloqueado, FluxoCaixa, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin } from './admin-api'
+import { RESUMO_VAZIO, type AdminApi, type SinalRadar, type RadarPirataria, type DominioBloqueado, type FluxoCaixa, type ItemAtencao, type LinhaCadastro, type LinhaCliente, type LinhaEntrega, type PainelAdmin } from './admin-api'
 
 const HORA = 3600_000
 const DIA = 24 * HORA
@@ -75,6 +75,24 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
   const fluxo: FluxoCaixa = {
     meses: [5, 4, 3, 2, 1, 0].map((voltar, n) => ({ mes: isoMes(agora, voltar), implantacoes: implantacoes[n], prateleira: prateleira[n], mensalidades: mensalidades[n] })),
   }
+  const nomeDe = (id: string) => { const x = clientes.find((y) => y.licenca_id === id); return x ? (x.empresa || x.nome) : id }
+  const sin = (id: string, tipo: SinalRadar['tipo'], gravidade: SinalRadar['gravidade'], lic: string | null, descricao: string, ms: number, detalhes: SinalRadar['detalhes']): SinalRadar =>
+    ({ id, tipo, gravidade, licenca_id: lic, cliente: lic ? nomeDe(lic) : 'Teste grátis', descricao, quando: atras(agora, ms), detalhes })
+  let sinaisRadar: SinalRadar[] = [
+    sin('rd-1', 'instancia_recusada', 'alta', 'lic-02', 'Um segundo computador tentou abrir o Atlas com a licença deste cliente e o guardião barrou. Já é a terceira vez esta semana.', 3 * HORA, { dispositivo_hash: 'a94f1c07', tentativas: 3 }),
+    sin('rd-2', 'regioes_distantes', 'alta', 'lic-02', 'A mesma licença validou de Recife (PE) e de Porto Alegre (RS) em menos de 2 horas.', 5 * HORA, { regioes: ['Recife (PE)', 'Porto Alegre (RS)'] }),
+    sin('rd-3', 'troca_frequente', 'media', 'lic-04', 'Esta licença trocou de computador 4 vezes em 20 dias. O normal é no máximo uma.', 1 * DIA, { trocas: 4, dias: 20 }),
+    sin('rd-4', 'instancia_recusada', 'media', 'lic-01', 'O guardião barrou uma segunda instância do app usando a licença desta barbearia.', 2 * DIA, { dispositivo_hash: '7be20d93', tentativas: 1 }),
+    sin('rd-5', 'degustacao_repetida', 'media', null, 'Alguém tentou refazer o teste grátis no mesmo computador, com outro e-mail.', 6 * HORA, { dispositivo_hash: 'c31d88ae', tentativas: 3 }),
+    sin('rd-6', 'regioes_distantes', 'baixa', 'lic-03', 'A licença validou de São Paulo (SP) e de Campinas (SP) no mesmo dia. Pode ser só a internet do celular.', 3 * DIA, { regioes: ['São Paulo (SP)', 'Campinas (SP)'] }),
+    sin('rd-7', 'troca_frequente', 'baixa', 'lic-14', 'Cortesia que trocou de computador 2 vezes em 5 dias.', 4 * DIA, { trocas: 2, dias: 5 }),
+    sin('rd-8', 'degustacao_repetida', 'baixa', null, 'Segunda tentativa de teste grátis neste dispositivo, com o mesmo e-mail.', 5 * DIA, { dispositivo_hash: '5d0e61f2', tentativas: 2 }),
+  ]
+  const radar = (): RadarPirataria => {
+    const por_tipo = { ...RESUMO_VAZIO.por_tipo }
+    for (const x of sinaisRadar) por_tipo[x.tipo] += 1
+    return { ligado: true, resumo: { licencas_sob_suspeita: new Set(sinaisRadar.map((x) => x.licenca_id).filter(Boolean)).size, sinais_abertos: sinaisRadar.length, por_tipo }, sinais: sinaisRadar.map((x) => ({ ...x, detalhes: { ...x.detalhes } })) }
+  }
   const ok = <T extends object>(v: T) => Promise.resolve({ ok: true as const, ...v })
   return {
     logado: () => true,
@@ -115,6 +133,8 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
     },
     cadastros: () => ok({ cadastros }),
     fluxoCaixa: () => ok({ fluxo }),
+    radarPirataria: () => ok({ radar: radar() }),
+    resolverSinalRadar(id) { sinaisRadar = sinaisRadar.filter((x) => x.id !== id); return ok({}) },
     sair() { /* demonstração: não há sessão para encerrar */ },
   }
 }
