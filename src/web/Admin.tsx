@@ -13,7 +13,7 @@ const MENU: { id: Aba; nome: string; icone: NomeIcone }[] = [
   { id: 'caixa', nome: 'Fluxo de caixa', icone: 'moeda' },
   { id: 'acoes', nome: 'Ações', icone: 'aperto' },
   { id: 'radar', nome: 'Radar', icone: 'escudo' },
-  { id: 'entregas', nome: 'Entregas e marca d’água', icone: 'pasta' },
+  { id: 'entregas', nome: 'Marca d’água', icone: 'pasta' },
 ]
 
 const CHAVE_MENU = 'atlas.admin.menu-recolhido'
@@ -669,34 +669,113 @@ function Radar({ api }: { api: AdminApi }) {
   )
 }
 
+const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+/** Parece uma marca inteira (HMAC de 24 caracteres)? Então vale perguntar ao servidor, que acha também as entregas antigas. */
+export const pareceMarcaInteira = (t: string) => /^[A-Za-z0-9+/_=-]{16,}$/.test(t.trim())
+const mesmaEntrega = (a: LinhaEntrega, b: LinhaEntrega) => a.licenca_id === b.licenca_id && a.obra_id === b.obra_id && a.marca_dagua === b.marca_dagua && a.baixado_em === b.baixado_em
+
+function DadosDoCliente({ licencaId, clientes, cadastros }: { licencaId: string; clientes: LinhaCliente[]; cadastros: LinhaCadastro[] }) {
+  const cli = clientes.find((x) => x.licenca_id === licencaId)
+  const cad = cadastros.find((x) => x.licenca_id === licencaId)
+  const nome = cli?.nome ?? cad?.nome
+  if (!cli && !cad) return <p className="ad-p" role="status">Não achei os dados deste cliente na lista. A licença é <code className="ad-marca-cod">{licencaId}</code>.</p>
+  return (
+    <div className="ad-cli-ficha" role="group" aria-label={`Dados de ${nome ?? licencaId}`}>
+      <ul className="ad-sinal-det">
+        <li>Nome: {nome || '—'}</li>
+        <li>Empresa: {(cli?.empresa ?? cad?.empresa) || '—'}</li>
+        <li>Ramo: {(cli?.ramo ?? cad?.ramo) || '—'}</li>
+        <li>Situação: {cli ? SITUACAO[cli.situacao].texto : '—'}</li>
+        <li>E-mail: {cad?.email || '—'}</li>
+      </ul>
+      <p className="ad-p">Próximo passo: <b>fale com este cliente</b>. Pergunte com calma como esse arquivo foi parar fora do lugar e peça que ele não compartilhe o kit.</p>
+    </div>
+  )
+}
+
 function Entregas({ api }: { api: AdminApi }) {
-  const [marca, setMarca] = useState('')
-  const [filtro, setFiltro] = useState('')
+  const [texto, setTexto] = useState('')
+  const [extras, setExtras] = useState<LinhaEntrega[]>([])
+  const [avisoBusca, setAvisoBusca] = useState('')
+  const [abertos, setAbertos] = useState<Set<string>>(new Set())
+  const [clientes, setClientes] = useState<LinhaCliente[]>([])
+  const [cadastros, setCadastros] = useState<LinhaCadastro[]>([])
   const buscar = useCallback(async () => {
-    const r = await api.entregas(filtro ? { marca: filtro } : {})
-    return r.ok ? ({ ok: true, v: r.entregas } as const) : r
-  }, [api, filtro])
+    const r = await api.entregas({})
+    return r.ok ? ({ ok: true, v: r.entregas ?? [] } as const) : r
+  }, [api])
   const { dado, erro } = useCarga<LinhaEntrega[]>(buscar)
+  useEffect(() => {
+    let vivo = true
+    api.painel().then((r) => { if (vivo && r.ok) setClientes(r.painel.clientes ?? []) }).catch(() => undefined)
+    api.cadastros().then((r) => { if (vivo && r.ok) setCadastros(r.cadastros ?? []) }).catch(() => undefined)
+    return () => { vivo = false }
+  }, [api])
+
+  const procurar = async () => {
+    const t = texto.trim()
+    setAvisoBusca('')
+    if (!pareceMarcaInteira(t)) { setExtras([]); return }
+    const r = await api.entregas({ marca: t })
+    if (r.ok) setExtras(r.entregas ?? [])
+    else setAvisoBusca(`Não consegui conferir essa marca no servidor agora (${r.mensagem}). Mostro só o que já estava na lista.`)
+  }
+  const limpar = () => { setTexto(''); setExtras([]); setAvisoBusca('') }
+
+  const base = dado ?? []
+  const todas = [...base, ...extras.filter((x) => !base.some((y) => mesmaEntrega(x, y)))]
+  const q = semAcento(texto)
+  const mostradas = !q ? todas : todas.filter((e) => {
+    const cli = clientes.find((x) => x.licenca_id === e.licenca_id)
+    return [e.cliente, e.obra_id, e.marca_dagua, cli?.nome ?? '', cli?.empresa ?? ''].some((c) => semAcento(c).includes(q))
+  })
+  const alternar = (id: string) => setAbertos((a) => { const n = new Set(a); if (n.has(id)) n.delete(id); else n.add(id); return n })
+
   return (
     <>
-      <div className="ad-titulo"><h1>Entregas e marca d&rsquo;água</h1><span className="ad-mute">cada arquivo do kit sai com a marca do cliente</span></div>
-      <form className="ad-card ad-busca" onSubmit={(e) => { e.preventDefault(); setFiltro(marca.trim()) }}>
-        <CampoFalado rotulo="De quem é esta marca?" valor={marca} onChange={setMarca} placeholder="Cole a marca encontrada num arquivo" ajuda="Serve para descobrir de qual cliente saiu um arquivo que apareceu fora do lugar." />
+      <div className="ad-titulo"><h1>Marca d&rsquo;água</h1><span className="ad-mute">cada arquivo do kit sai com a marca do cliente</span></div>
+      <form className="ad-card ad-busca" onSubmit={(e) => { e.preventDefault(); void procurar() }}>
+        <CampoFalado rotulo="Buscar por cliente, obra ou marca" valor={texto} onChange={setTexto} placeholder="Nome do cliente, da obra ou a marca (inteira ou um pedaço)" ajuda="Serve para descobrir de qual cliente saiu um arquivo que apareceu fora do lugar. Não precisa de acento nem de maiúscula." />
         <div className="ad-linha">
           <button type="submit" className="ad-botao ad-botao--lime">Procurar</button>
-          {filtro && <button type="button" className="ad-botao" onClick={() => { setMarca(''); setFiltro('') }}>Ver as últimas entregas</button>}
+          {(texto || extras.length > 0) && <button type="button" className="ad-botao" onClick={limpar}>Limpar e ver as últimas entregas</button>}
         </div>
+        <details className="ad-ajuda-marca">
+          <summary>Onde encontro a marca?</summary>
+          <div className="ad-p">
+            <p>A marca é um código de 24 letras e números, único de cada cliente. Por exemplo: <code className="ad-marca-cod">k3Zt9QpL0aXv7RmB2yHcN5dE</code></p>
+            <ul className="ad-sinal-det">
+              <li>No app do cliente: no rodapé, repetido assim: &ldquo;Nome do cliente · código&rdquo;.</li>
+              <li>No topo dos arquivos de código: a linha <code className="ad-marca-cod">const ATLAS_LICENCA = &apos;...&apos;</code> e o comentário &ldquo;licenciado a &lt;nome&gt;&rdquo;.</li>
+              <li>Em arquivos JSON: o campo <code className="ad-marca-cod">&quot;_marca&quot;</code>.</li>
+              <li>Em páginas HTML: a linha <code className="ad-marca-cod">&lt;meta name=&quot;atlas-licenca&quot;&gt;</code>.</li>
+            </ul>
+            <p>Copie o código e cole aqui em cima. Se achar só um pedaço, pode colar o pedaço também.</p>
+          </div>
+        </details>
       </form>
+      {avisoBusca && <p role="status" className="ad-mute">{avisoBusca}</p>}
       {erro && <p role="alert" className="ad-erro">{erro}</p>}
       {dado && (
         <section className="ad-card" aria-label="Entregas">
+          <p className="ad-mute" role="status">{q ? `Mostrando ${mostradas.length} de ${todas.length} entregas.` : `Mostrando as últimas ${todas.length} entregas.`}</p>
           <div className="ad-tabela ad-tabela--ent ad-tabela--cab"><span>Cliente</span><span>Obra</span><span>Marca d&rsquo;água</span><span>Baixado em</span></div>
-          {dado.map((e, n) => (
-            <div key={`${e.marca_dagua}-${n}`} className="ad-tabela ad-tabela--ent">
-              <b>{e.cliente}</b><span>{e.obra_id}</span><code className="ad-marca-cod">{e.marca_dagua}</code><span className="ad-mute">{dia(e.baixado_em)}</span>
-            </div>
-          ))}
-          {dado.length === 0 && <p className="ad-mute">{filtro ? 'Nenhum cliente recebeu essa marca.' : 'Ainda não houve entregas.'}</p>}
+          {mostradas.map((e, n) => {
+            const chave = `${e.marca_dagua}-${e.obra_id}-${e.baixado_em}-${n}`
+            const aberto = abertos.has(chave)
+            return (
+              <div key={chave} className="ad-entrega">
+                <div className="ad-tabela ad-tabela--ent">
+                  <b>{e.cliente}</b><span>{e.obra_id}</span><code className="ad-marca-cod">{e.marca_dagua}</code><span className="ad-mute">{dia(e.baixado_em)}</span>
+                </div>
+                <div className="ad-linha">
+                  <button type="button" className="ad-link" aria-expanded={aberto} aria-label={`${aberto ? 'Esconder' : 'Ver'} o cliente ${e.cliente}`} onClick={() => alternar(chave)}>{aberto ? 'Esconder este cliente' : 'Ver este cliente'}</button>
+                </div>
+                {aberto && <DadosDoCliente licencaId={e.licenca_id} clientes={clientes} cadastros={cadastros} />}
+              </div>
+            )
+          })}
+          {mostradas.length === 0 && <p className="ad-mute">{q ? 'Nada encontrado com esse texto. Confira a grafia ou cole a marca inteira.' : 'Ainda não houve entregas.'}</p>}
         </section>
       )}
     </>

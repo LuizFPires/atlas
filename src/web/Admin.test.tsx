@@ -126,7 +126,7 @@ describe('painel do admin (F16)', () => {
     expect([...document.querySelectorAll('.ad-kpi-nome')].map((n) => n.textContent)).toEqual(['Ativações no mês', 'Inadimplência', 'Cancelamentos no mês', 'Clientes travados'])
     expect(screen.getByRole('button', { name: /Precisam de atenção \(2\)/ })).toBeInTheDocument()
     expect(screen.getByText('CLIENTES')).toBeInTheDocument()
-    expect([...document.querySelectorAll('.ad-item')].map((n) => n.getAttribute('aria-label'))).toEqual(['Visão geral', 'Fluxo de caixa', 'Ações', 'Radar', 'Entregas e marca d’água'])
+    expect([...document.querySelectorAll('.ad-item')].map((n) => n.getAttribute('aria-label'))).toEqual(['Visão geral', 'Fluxo de caixa', 'Ações', 'Radar', 'Marca d’água'])
     expect(screen.queryByRole('link', { name: 'Cadastros' })).toBeNull()
   })
 
@@ -185,20 +185,76 @@ describe('painel do admin (F16)', () => {
     await waitFor(() => expect(chamadas.some((x) => x.url.endsWith('/admin/ocorrencias/resolver') && String(x.init.body) === '{"id":"o2"}')).toBe(true))
   })
 
-  it('entregas: procurar por marca d’água mostra de quem é', async () => {
-    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
-    const { api, chamadas } = ambiente((url, init) =>
-      url.endsWith('/admin/entregas')
-        ? resp({ entregas: JSON.parse(String(init.body)).marca ? [{ licenca_id: 'l2', cliente: 'Barbearia do Zé', obra_id: 'obra-3', marca_dagua: 'abc12345def', baixado_em: '2026-11-17T10:00:00.000Z' }] : [] })
-        : undefined,
-    )
+  const MARCA = 'k3Zt9QpL0aXv7RmB2yHcN5dE'
+  const ENTREGAS = [
+    { licenca_id: 'l2', cliente: 'Barbearia do Zé', obra_id: 'agenda-barbearia', marca_dagua: 'AAAA1111BBBB2222CCCC3333', baixado_em: '2026-11-17T10:00:00.000Z' },
+    { licenca_id: 'l3', cliente: 'Salão Bella', obra_id: 'cardapio', marca_dagua: 'ZZZZ9999YYYY8888XXXX7777', baixado_em: '2026-11-16T10:00:00.000Z' },
+  ]
+  const antiga = { licenca_id: 'l1', cliente: 'Pet Shop Amigo', obra_id: 'obra-antiga', marca_dagua: MARCA, baixado_em: '2026-01-10T10:00:00.000Z' }
+  const ambienteEntregas = () => { sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz'); return ambienteE() }
+  const ambienteE = () => ambiente((url, init) => {
+    if (url.endsWith('/admin/entregas')) return resp({ entregas: JSON.parse(String(init.body)).marca ? [antiga] : ENTREGAS })
+    if (url.endsWith('/admin/cadastros')) return resp({ cadastros: [{ licenca_id: 'l2', nome: 'Zé', empresa: 'Barbearia do Zé', ramo: 'barbearia', email: 'ze@barbearia.com', cadastro_em: null, comprada_em: null, situacao: 'feito' }] })
+    return undefined
+  })
+  const abrirMarca = async () => { await userEvent.click(await screen.findByRole('link', { name: /Marca d’água/ })) }
+
+  it('marca d’água: busca por nome (sem acento), obra e pedaço da marca', async () => {
+    const { api } = ambienteEntregas()
     montar(api)
-    await userEvent.click(await screen.findByRole('link', { name: /Entregas e marca/ }))
-    expect(await screen.findByText('Ainda não houve entregas.')).toBeInTheDocument()
-    await userEvent.type(screen.getByLabelText(/De quem é esta marca/), 'abc12345def')
+    await abrirMarca()
+    expect(await screen.findByText('Mostrando as últimas 2 entregas.')).toBeInTheDocument()
+    const campo = screen.getByLabelText(/Buscar por cliente, obra ou marca/)
+    await userEvent.type(campo, 'salao')
+    expect(screen.getByText('Mostrando 1 de 2 entregas.')).toBeInTheDocument()
+    expect(screen.getByText('cardapio')).toBeInTheDocument()
+    expect(screen.queryByText('agenda-barbearia')).toBeNull()
+    await userEvent.clear(campo)
+    await userEvent.type(campo, 'AGENDA')
+    expect(screen.getByText('Mostrando 1 de 2 entregas.')).toBeInTheDocument()
+    await userEvent.clear(campo)
+    await userEvent.type(campo, 'bbbb2222')
+    expect(screen.getByText('agenda-barbearia')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /Limpar e ver as últimas/ }))
+    expect(screen.getByText('Mostrando as últimas 2 entregas.')).toBeInTheDocument()
+  })
+
+  it('marca d’água: marca inteira consulta o servidor e acha entrega antiga sem duplicar', async () => {
+    const { api, chamadas } = ambienteEntregas()
+    montar(api)
+    await abrirMarca()
+    await screen.findByText('Mostrando as últimas 2 entregas.')
+    await userEvent.type(screen.getByLabelText(/Buscar por cliente, obra ou marca/), MARCA)
     await userEvent.click(screen.getByRole('button', { name: 'Procurar' }))
-    expect(await screen.findByText('obra-3')).toBeInTheDocument()
-    expect(chamadas.filter((x) => x.url.endsWith('/admin/entregas')).at(-1)!.init.body).toBe('{"marca":"abc12345def"}')
+    expect(await screen.findByText('obra-antiga')).toBeInTheDocument()
+    expect(screen.getByText('Mostrando 1 de 3 entregas.')).toBeInTheDocument()
+    expect(chamadas.filter((x) => x.url.endsWith('/admin/entregas')).at(-1)!.init.body).toBe(`{"marca":"${MARCA}"}`)
+  })
+
+  it('marca d’água: ajuda abre e fecha', async () => {
+    const { api } = ambienteEntregas()
+    montar(api)
+    await abrirMarca()
+    const det = (await screen.findByText('Onde encontro a marca?')).closest('details')!
+    expect(det.open).toBe(false)
+    await userEvent.click(screen.getByText('Onde encontro a marca?'))
+    expect(det.open).toBe(true)
+    expect(screen.getByText(/ATLAS_LICENCA/)).toBeInTheDocument()
+    await userEvent.click(screen.getByText('Onde encontro a marca?'))
+    expect(det.open).toBe(false)
+  })
+
+  it('marca d’água: “Ver este cliente” mostra os dados certos', async () => {
+    const { api } = ambienteEntregas()
+    montar(api)
+    await abrirMarca()
+    await screen.findByText('Mostrando as últimas 2 entregas.')
+    await userEvent.click(screen.getByRole('button', { name: /Ver o cliente Barbearia do Zé/ }))
+    const ficha = await screen.findByRole('group', { name: 'Dados de Zé' })
+    expect(within(ficha).getByText('E-mail: ze@barbearia.com')).toBeInTheDocument()
+    expect(within(ficha).getByText('Empresa: Barbearia do Zé')).toBeInTheDocument()
+    expect(within(ficha).getByText(/Situação: /)).toBeInTheDocument()
+    expect(within(ficha).getByText(/fale com este cliente/)).toBeInTheDocument()
   })
 
   it('a lista de clientes junta e-mail, ramo e cadastro (por licenca_id); sem cadastro mostra traço', async () => {
