@@ -6,9 +6,10 @@ import { EMAIL_RE, juntarFalaEmail } from './compra'
 import { sessionIdDaUrl } from './cadastro-api'
 import { PRECO } from './conteudo'
 import { LinksLegais } from './Legal'
+import { CampoCidade } from './CampoCidade'
 import './web.css'
 
-export interface DadosCadastro { nome: string; empresa: string; faz: string; email: string }
+export interface DadosCadastro { nome: string; empresa: string; faz: string; cidade: string; uf: string; email: string }
 export type ResultadoCadastro = { ok: true; enviado_para?: string; email_diferente?: boolean; segmento?: string | null } | { ok: false; mensagem: string }
 
 /** E-mail da compra guardado só nesta aba, para já vir preenchido na volta do pagamento. */
@@ -22,10 +23,10 @@ const limparEmailGuardado = () => {
   try { localStorage.removeItem(CHAVE_EMAIL_COMPRA); sessionStorage.removeItem(CHAVE_EMAIL_COMPRA) } catch { /* sem armazenamento */ }
 }
 
-/** Cadastro pós-pagamento (F00b): 4 respostas, todas podem ser faladas. */
+/** Cadastro pós-pagamento (F00b): 5 respostas, todas podem ser faladas. */
 export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onEnviar: (d: DadosCadastro) => Promise<ResultadoCadastro>; temProva?: boolean }) {
   const { tema } = useTema()
-  const [d, setD] = useState<DadosCadastro>({ nome: '', empresa: '', faz: '', email: emailGuardado() })
+  const [d, setD] = useState<DadosCadastro>({ nome: '', empresa: '', faz: '', cidade: '', uf: '', email: emailGuardado() })
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [pronto, setPronto] = useState<{ para?: string; diferente?: boolean; segmento?: string | null } | null>(null)
@@ -36,9 +37,11 @@ export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onE
     setErro('')
     if (!d.nome.trim()) return setErro('Diga como o Atlas vai te chamar.')
     if (!d.faz.trim()) return setErro('Conte, com as suas palavras, o que a sua empresa faz.')
+    if (!d.cidade.trim()) return setErro('Diga de qual cidade você é — ajuda a gente a te atender melhor.')
+    if (!d.uf) return setErro('Não consegui achar o estado. Escolha a sua cidade na lista que aparece embaixo do campo, que o estado vem junto.')
     if (!EMAIL_RE.test(d.email.trim())) return setErro('Confira o e-mail: ele precisa ter um @ e um final, como .com.br.')
     setEnviando(true)
-    const r = await onEnviar({ nome: d.nome.trim(), empresa: d.empresa.trim(), faz: d.faz.trim(), email: d.email.trim().toLowerCase() })
+    const r = await onEnviar({ nome: d.nome.trim(), empresa: d.empresa.trim(), faz: d.faz.trim(), cidade: d.cidade.trim(), uf: d.uf, email: d.email.trim().toLowerCase() })
     setEnviando(false)
     if (r.ok) { limparEmailGuardado(); setPronto({ para: r.enviado_para, diferente: r.email_diferente, segmento: r.segmento }) }
     else setErro(r.mensagem)
@@ -54,7 +57,7 @@ export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onE
         <div className="c-esq">
           <span className="c-selo"><Icone nome="check" tamanho={14} />Falta pouco</span>
           {!temProva && <p role="alert" className="v-erro">Para abrir o cadastro, volte pelo botão da página de pagamento: é ele que mostra ao Atlas que a compra é sua.</p>}
-          <h1>Bem-vindo ao Atlas! Só faltam 4 respostas.</h1>
+          <h1>Bem-vindo ao Atlas! Só faltam 5 respostas.</h1>
           <p className="c-lead">Com elas o Atlas te chama pelo nome, já entende o seu negócio e manda o seu acesso por e-mail.</p>
           <div className="c-dica">
             <span className="c-dica-mic"><Icone nome="microfone" tamanho={20} /></span>
@@ -87,6 +90,11 @@ export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onE
             <CampoFalado rotulo="Como o Atlas vai te chamar?" valor={d.nome} onChange={mudar('nome')} placeholder="Seu nome ou apelido" autoComplete="given-name" />
             <CampoFalado rotulo="Qual o nome da sua empresa?" obs="(se tiver)" valor={d.empresa} onChange={mudar('empresa')} placeholder="Ex.: Barbearia do Zé" autoComplete="organization" />
             <CampoFalado rotulo="O que a sua empresa faz?" obs="(com as suas palavras)" valor={d.faz} onChange={mudar('faz')} placeholder="Ex.: loja de roupas, consultório de dentista…" />
+            <CampoCidade
+              valor={d.cidade} uf={d.uf}
+              onDigitar={(t) => setD((x) => ({ ...x, cidade: t, uf: '' }))}
+              onEscolher={(cidade, uf) => setD((x) => ({ ...x, cidade, uf }))}
+            />
             <CampoFalado
               rotulo="Qual o seu e-mail?" obs="(só para conferir)"
               type="email"

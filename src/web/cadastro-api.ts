@@ -1,4 +1,4 @@
-// Cadastro: POST /cadastro no servidor (item 4 do M4). Só texto das 4 respostas + o session_id da compra
+// Cadastro: POST /cadastro no servidor (item 4 do M4). Só texto das 5 respostas + o session_id da compra
 // (prova que o Stripe devolve na URL /compra/sucesso?session_id=…). Sem segredo, sem pagamento.
 import { configCompra, type ConfigCompra } from './compra'
 import type { DadosCadastro, ResultadoCadastro } from './Cadastro'
@@ -16,7 +16,7 @@ export async function enviarCadastro(d: DadosCadastro, cfg: Pick<ConfigCompra, '
     const r = await f(`${cfg.api}/cadastro`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId, nome: d.nome, empresa: d.empresa, ramo: d.faz, email: d.email }),
+      body: JSON.stringify({ session_id: sessionId, nome: d.nome, empresa: d.empresa, ramo: d.faz, cidade: d.cidade, uf: d.uf, email: d.email }),
     })
     const corpo = (await r.json().catch(() => ({}))) as { ok?: boolean; mensagem?: string; enviado_para?: string; email_diferente?: boolean; segmento?: string | null }
     if (r.ok && corpo.ok === true) return { ok: true, enviado_para: corpo.enviado_para, email_diferente: corpo.email_diferente, segmento: corpo.segmento ?? null }

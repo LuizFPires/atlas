@@ -305,3 +305,12 @@
 .en-como { width: 720px; max-width: 100%; box-sizing: border-box; margin-top: 20px; background: var(--side); border: 1px solid var(--card-b); border-radius: 16px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; text-align: left; }
 .en-como div { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; color: var(--mute); }
 .en-como b { font: 600 15px var(--font-mono); color: var(--lime-txt); }
+
+/* Cidade com sugestões (cadastro) */
+.cc-linha { position: relative; align-items: center; }
+.cc-uf { font: 600 13px var(--font-mono); background: var(--soft); border: 1px solid var(--lime); border-radius: 8px; padding: 6px 10px; color: var(--text); }
+.cc-retry { background: none; border: 0; padding: 8px 0; min-height: 44px; font: inherit; color: var(--lime); text-decoration: underline; cursor: pointer; }
+.cc-lista { position: absolute; left: 0; right: 0; top: 100%; margin: 4px 0 0; padding: 4px; list-style: none; z-index: 20; max-height: 260px; overflow-y: auto; background: var(--card); border: 1px solid var(--card-b); border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, .25); }
+.cc-lista[hidden] { display: none; }
+.cc-op { padding: 12px 14px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+.cc-op--ativa { background: var(--soft); outline: 1px solid var(--lime); }
