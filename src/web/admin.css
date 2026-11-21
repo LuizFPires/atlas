@@ -70,3 +70,5 @@
 }
 .ad-campo-data { display: grid; gap: 6px; font-size: 13px; color: var(--mute2); margin: 10px 0 6px; }
 .ad-campo-data input { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: inherit; }
+.ad-filtro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.ad-campo-data select { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: inherit; }

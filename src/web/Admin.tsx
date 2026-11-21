@@ -3,6 +3,7 @@ import { CampoFalado, Icone } from '../ui'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
 import type { AdminApi, DominioBloqueado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, Situacao } from './admin-api'
+import { FILTROS, filtrarClientes, type FiltroConta } from './admin-calc'
 import './admin.css'
 
 type Aba = 'geral' | 'cadastros' | 'entregas'
@@ -241,10 +242,13 @@ function VisaoGeral({ api }: { api: AdminApi }) {
   const [cortesia, setCortesia] = useState({ email: '', data: '' })
   const [erroCortesia, setErroCortesia] = useState('')
   const [versaoDominios, setVersaoDominios] = useState(0)
+  const [filtro, setFiltro] = useState<FiltroConta>('todas')
+  const [busca, setBusca] = useState('')
 
   if (!dado) return erro ? <p role="alert" className="ad-erro">{erro}</p> : <p role="status" className="ad-mute">Carregando os números…</p>
   const { indicadores: i, atencao, clientes } = dado
   const agora = new Date(dado.gerado_em)
+  const visiveis = filtrarClientes(clientes, filtro, busca)
 
   const confirmarLiberar = async () => {
     if (!liberando) return
@@ -302,8 +306,20 @@ function VisaoGeral({ api }: { api: AdminApi }) {
         <section className="ad-card" aria-label="Clientes">
           <span className="ad-rotulo">CLIENTES</span>
           <div className="ad-tabela ad-tabela--cab" role="row"><span>Cliente</span><span>Licença</span><span>Obras</span><span>Último sinal</span><span>Ação</span></div>
+          <div className="ad-filtro">
+            <label className="ad-campo-data">Mostrar
+              <select value={filtro} onChange={(e) => setFiltro(e.target.value as FiltroConta)}>
+                {FILTROS.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
+              </select>
+            </label>
+            <label className="ad-campo-data">Buscar por nome ou empresa
+              <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Ex.: barbearia" autoComplete="off" />
+            </label>
+          </div>
+          <p role="status" className="ad-mute2">{visiveis.length === clientes.length ? `${clientes.length} ${clientes.length === 1 ? 'conta' : 'contas'}` : `${visiveis.length} de ${clientes.length} contas`}</p>
           {clientes.length === 0 && <p className="ad-mute">Ainda não há clientes.</p>}
-          {clientes.map((c) => <LinhaDoCliente key={c.licenca_id} c={c} agora={agora} onLiberar={() => abrirLiberar(c.licenca_id, c.empresa || c.nome)} />)}
+          {clientes.length > 0 && visiveis.length === 0 && <p className="ad-mute">Nenhuma conta com esse filtro. Tente outro ou limpe a busca.</p>}
+          {visiveis.map((c) => <LinhaDoCliente key={c.licenca_id} c={c} agora={agora} onLiberar={() => abrirLiberar(c.licenca_id, c.empresa || c.nome)} />)}
         </section>
         <div className="ad-coluna">
           <section className="ad-card ad-card--aviso" aria-label="Precisam de atenção">
