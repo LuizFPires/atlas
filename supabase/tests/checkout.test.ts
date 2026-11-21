@@ -13,6 +13,32 @@ describe('checkout (Stripe do cliente)', () => {
     expect(codificarForm({ a: { b: [1, { c: 2 }] }, x: undefined }).join('&')).toBe('a%5Bb%5D%5B0%5D=1&a%5Bb%5D%5B1%5D%5Bc%5D=2')
   })
 
+  it('compra feita de dentro do app: a Stripe devolve o cliente à página "pode voltar para o Atlas", não ao cadastro', async () => {
+    const m = montarPag()
+    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com', aceite_termos_versao: '1.0', origem: 'app' })
+    const f = corpoDe(m.chamadas[0])
+    expect(f.get('success_url')).toBe('https://loja.atlas.test/compra/pelo-app')
+    expect(f.get('cancel_url')).toBe('https://loja.atlas.test/compra/pelo-app/cancelada')
+  })
+
+  it('compra pelo site: retorno de sempre (cadastro)', async () => {
+    const m = montarPag()
+    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com', aceite_termos_versao: '1.0' })
+    const f = corpoDe(m.chamadas[0])
+    expect(f.get('success_url')).toBe('https://loja.atlas.test/compra/sucesso?session_id={CHECKOUT_SESSION_ID}')
+    expect(f.get('cancel_url')).toBe('https://loja.atlas.test/compra/cancelada')
+  })
+
+  it('http: origem só vale quando é exatamente "app"', async () => {
+    const m = montarPag()
+    const c = { deps: m.deps, pagamento: m.deps, carregarKit: async () => [], autorizarServico: () => false }
+    const pedir = (extra: object) => tratar(c, new Request('https://x.test/pagamento/checkout', { method: 'POST', body: JSON.stringify({ conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com', aceite_termos: true, versao_termos: '1.0', ...extra }) }))
+    expect((await pedir({ origem: 'app' })).status).toBe(200)
+    expect((await pedir({ origem: 'https://golpe.test' })).status).toBe(200)
+    expect(corpoDe(m.chamadas[0]).get('success_url')).toBe('https://loja.atlas.test/compra/pelo-app')
+    expect(corpoDe(m.chamadas[1]).get('success_url')).toBe('https://loja.atlas.test/compra/sucesso?session_id={CHECKOUT_SESSION_ID}')
+  })
+
   it('implantação: pagamento único R$ 4.800 com Pix e cartão, usando a chave da conta do cliente', async () => {
     const m = montarPag()
     const r = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'Ana@Loja.com', aceite_termos_versao: '1.0', ...urls })

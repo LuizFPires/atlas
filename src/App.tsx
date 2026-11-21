@@ -14,6 +14,7 @@ import { modoFixture } from './app/ativacao-api'
 import { Admin } from './web/Admin'
 import { ConfirmarDegustacao } from './web/Degustacao'
 import { Instalar } from './web/Instalar'
+import { CompraPeloApp } from './web/CompraPeloApp'
 import { criarAdminApi } from './web/admin-api'
 import { criarAdminFixture } from './web/admin-fixture'
 import { PaginaLegal } from './web/Legal'
@@ -64,6 +65,9 @@ export default function App() {
   if (caminho.startsWith('/app')) return <Aplicativo />
   // A Stripe devolve o comprador em /compra/sucesso; /comecar é o endereço público do cadastro.
   if (caminho === '/comecar' || caminho === '/compra/sucesso') return <Cadastro onEnviar={enviarCadastro} />
+  // Compra feita de dentro do Atlas instalado: a Stripe devolve aqui (sem cadastro de novo).
+  if (caminho === '/compra/pelo-app') return <CompraPeloApp />
+  if (caminho === '/compra/pelo-app/cancelada') return <CompraPeloApp cancelada />
   // Depois da compra de um app pronto: cadastro -> /personalizar (login, configurador, entrega). A implantação do zero não passa por aqui.
   if (caminho === '/personalizar') return <PassoApp api={portalApi} porta={personalizacao} />
   // Portal do cliente: login próprio do Atlas, separado do login do Claude.

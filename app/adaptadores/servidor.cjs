@@ -14,7 +14,7 @@
 // tem de fazer o e-mail chegar (antes era barrado e a tela dizia "sem internet").
 'use strict'
 
-const ROTAS = ['/ativar/solicitar-codigo', '/ativar/confirmar', '/verificar']
+const ROTAS = ['/ativar/solicitar-codigo', '/ativar/confirmar', '/verificar', '/licenca/resumo', '/pagamento/checkout']
 const MAX_CORPO = 20_000
 const MAX_RESPOSTA = 20_000
 

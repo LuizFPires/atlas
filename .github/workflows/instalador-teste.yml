@@ -37,6 +37,8 @@ jobs:
         run: npm run build:app
         env:
           VITE_API_URL: ${{ env.ATLAS_API }}
+          # Conta de pagamento que o site usa (pública, vem no próprio site): a compra de dentro do app abre o mesmo checkout.
+          VITE_CONTA_ID: 71bb1474-0ddd-44c1-a17b-40050f94ae7d
 
       - name: Endereço do servidor para o processo principal (app/config.json)
         shell: bash

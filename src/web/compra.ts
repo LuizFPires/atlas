@@ -25,8 +25,9 @@ export type ResultadoCompra = { ok: true; url: string } | { ok: false; mensagem:
 /**
  * `versaoAceita` é a versão dos Termos/Política que o cliente marcou que leu e aceita (LGPD).
  * Sem ela a compra nem sai daqui; o servidor também recusa e é ele quem registra o aceite.
+ * `origem: 'app'` = compra feita de dentro do Atlas instalado (muda só para onde a Stripe devolve o cliente).
  */
-export async function iniciarCompra(email: string, cfg: ConfigCompra | null = configCompra(), f: typeof fetch = fetch, versaoAceita: string | null = null, parcelas = 1, segmento?: string): Promise<ResultadoCompra> {
+export async function iniciarCompra(email: string, cfg: ConfigCompra | null = configCompra(), f: typeof fetch = fetch, versaoAceita: string | null = null, parcelas = 1, segmento?: string, origem?: 'app'): Promise<ResultadoCompra> {
   const e = email.trim().toLowerCase()
   if (!versaoAceita) return { ok: false, mensagem: 'Para continuar, marque que você leu e aceita a Política de Privacidade e os Termos de Uso.' }
   if (!EMAIL_RE.test(e)) return { ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' }
@@ -35,7 +36,7 @@ export async function iniciarCompra(email: string, cfg: ConfigCompra | null = co
     const r = await f(`${cfg.api}/pagamento/checkout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conta_id: cfg.contaId, tipo: segmento ? 'prateleira' : 'implantacao', ...(segmento ? { segmento } : {}), email: e, parcelas, aceite_termos: true, versao_termos: versaoAceita }),
+      body: JSON.stringify({ conta_id: cfg.contaId, tipo: segmento ? 'prateleira' : 'implantacao', ...(segmento ? { segmento } : {}), email: e, parcelas, aceite_termos: true, versao_termos: versaoAceita, ...(origem ? { origem } : {}) }),
     })
     const corpo = (await r.json().catch(() => ({}))) as { url?: string; mensagem?: string }
     if (r.ok && corpo.url && corpo.url.startsWith('https://')) return { ok: true, url: corpo.url }

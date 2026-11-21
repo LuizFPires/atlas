@@ -74,3 +74,13 @@ describe('medição', () => {
     expect(medicaoAnonima()).toBe(true)
   })
 })
+
+test('compra feita de dentro do app manda a origem "app"; pelo site não manda origem', async () => {
+  const f = vi.fn(async () => new Response(JSON.stringify({ url: 'https://checkout.stripe.com/x' }), { status: 200 }))
+  const cfg = { api: 'https://x.test', contaId: 'c1' }
+  await iniciarCompra('ana@loja.com', cfg, f as unknown as typeof fetch, '1.0', 2, undefined, 'app')
+  await iniciarCompra('ana@loja.com', cfg, f as unknown as typeof fetch, '1.0', 2)
+  const corpos = (f.mock.calls as unknown as [string, RequestInit][]).map((c) => JSON.parse(c[1].body as string))
+  expect(corpos[0]).toMatchObject({ origem: 'app', tipo: 'implantacao', parcelas: 2 })
+  expect('origem' in corpos[1]).toBe(false)
+})

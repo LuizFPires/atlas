@@ -30,6 +30,9 @@ function caminhoSeguro(raiz, ...partes) {
 // Hosts oficiais. Acrescentar é mudar o código, nunca aceitar URL de dado.
 const HOSTS_OFICIAIS = Object.freeze(['claude.ai', 'www.claude.ai', 'docs.claude.com', 'support.claude.com', 'github.com', 'vercel.com'])
 
+// Pagamento: a compra de dentro do app abre SÓ a página de pagamento da Stripe (lista separada da dos sites oficiais).
+const HOSTS_PAGAMENTO = Object.freeze(['checkout.stripe.com'])
+
 /** Valida (https, sem usuário/senha, sem porta, host na allowlist). Devolve a URL normalizada ou lança. */
 function urlOficial(url, hosts = HOSTS_OFICIAIS) {
   let u
@@ -38,4 +41,4 @@ function urlOficial(url, hosts = HOSTS_OFICIAIS) {
   return u.toString()
 }
 
-module.exports = { caminhoSeguro, urlOficial, HOSTS_OFICIAIS }
+module.exports = { caminhoSeguro, urlOficial, HOSTS_OFICIAIS, HOSTS_PAGAMENTO }

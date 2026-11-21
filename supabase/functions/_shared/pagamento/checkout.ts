@@ -28,22 +28,26 @@ export interface PedidoCheckout {
   licenca_id?: string
   /** LGPD: versão dos Termos/Política que o comprador aceitou. Obrigatória na implantação (sem aceite, sem pagamento). */
   aceite_termos_versao?: string
+  /** 'app' = compra feita de dentro do Atlas instalado: o retorno vai para /compra/pelo-app (sem cadastro de novo). */
+  origem?: 'app'
 }
 
 /** URLs de retorno montadas no servidor a partir da origem https cadastrada na conta. A requisição não influencia. */
-function urlsDeRetorno(base: string | null | undefined) {
+function urlsDeRetorno(base: string | null | undefined, origem?: 'app') {
   let u: URL | null
   try { u = base ? new URL(base) : null } catch { u = null }
   if (!u || u.protocol !== 'https:' || u.username || u.password || u.origin === 'null') {
     throw new ErroRegra('retorno_nao_configurado', 'O endereço de retorno do pagamento ainda não está configurado.', 503)
   }
+  // Compra de dentro do app: o cliente já tem o Atlas instalado e ativado; a licença vira paga pelo webhook, sem cadastro de novo.
+  if (origem === 'app') return { success_url: `${u.origin}/compra/pelo-app`, cancel_url: `${u.origin}/compra/pelo-app/cancelada` }
   return { success_url: `${u.origin}/compra/sucesso?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${u.origin}/compra/cancelada` }
 }
 
 export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promise<{ url: string }> {
   const { conta, api } = await apiDaConta(d, p.conta_id)
   const meta: Record<string, string> = { atlas_conta: conta.id, atlas_tipo: p.tipo }
-  const base = { ...urlsDeRetorno(conta.base_retorno), locale: 'pt-BR' }
+  const base = { ...urlsDeRetorno(conta.base_retorno, p.tipo === 'implantacao' ? p.origem : undefined), locale: 'pt-BR' }
 
   if (p.tipo === 'implantacao' || p.tipo === 'prateleira') {
     if (p.tipo === 'prateleira') {

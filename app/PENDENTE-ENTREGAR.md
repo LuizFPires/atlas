@@ -326,3 +326,9 @@ Teste sem Electron/Claude/rede: `node --test app/adaptadores/*.teste.cjs` (ajuda
 ## Cadastro com cidade + estado (mapa por cidade)
 - **Feito (M33):** `POST /cadastro` aceita `cidade` e `uf` (UF das 27, cidade só com letras/espaço/ponto/hífen/apóstrofo, 2 a 80 caracteres; cidade sem UF é recusada; ambos opcionais para cadastros antigos) e guarda em `clientes.cidade/uf` (migration 0026). Nunca guarda IP.
 - O formulário do cadastro (`src/web/Cadastro.tsx`) já manda os dois campos; a cidade vem da lista do IBGE (`src/web/municipios-br.ts`), então chegam casados e com a grafia oficial.
+
+## Contador do teste e compra de dentro do app (21/11/2026)
+- **Feito no código** (docs/prd-contador-degustacao.md): cartão na lateral (`src/shell/Shell.tsx`), leitura do resumo (`src/app/licenca-resumo.ts`, `licenca-no-app.ts`), tela de compra (`src/app/ComprarAtlas.tsx`), ponte `servidor` com as rotas `/licenca/resumo` e `/pagamento/checkout`, e `pagamento.abrir` (processo principal só abre `https://checkout.stripe.com/`).
+- **Conferir num Windows real, com o app instalado e ativado numa licença de teste:** (a) o contador aparece e bate com a validade; (b) "Quero o Atlas" → "Ir para o pagamento" abre a Stripe no navegador padrão; (c) depois de pagar (modo teste da Stripe), a lateral volta a "Licença ativa" em até 10 s sem reabrir o app; (d) fechar o navegador sem voltar à página: o app ainda percebe.
+- **Depende de deploy:** função `api` publicada com `/licenca/resumo` e `origem: 'app'`; `base_retorno` da conta de pagamento apontando para o site (as páginas `/compra/pelo-app` ficam nele).
+- **Build do app:** precisa de `VITE_API_URL` e `VITE_CONTA_ID` (o workflow do instalador já passa os dois).
