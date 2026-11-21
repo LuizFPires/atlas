@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Shell, type IdTela } from '../shell/Shell'
 import { ImagemAssinatura } from '../marca/Marca'
 import { Ativacao } from './Ativacao'
@@ -43,16 +43,31 @@ import { claudeIndisponivel, criarClaudeFixture, type PonteClaude } from './pont
 import { criarAtivacaoApi, criarAtivacaoFixture, lerAtivacao, modoFixture, type AtivacaoApi } from './ativacao-api'
 import { fetchPelaPonte } from './ponte-servidor'
 import { useTokenDoLink } from './link-instalacao'
+import { lerResumo, type ResumoLicenca } from './licenca-resumo'
+import { ContextoLicenca, useLicencaNoApp } from './licenca-no-app'
+import { ComprarAtlas, type PedidoCompraNoApp } from './ComprarAtlas'
+import { configCompra, iniciarCompra, type ResultadoCompra } from '../web/compra'
 import { criarPonteFixture, ponteDoAmbiente, type PonteDesktop } from './ponte'
 import { telaInicial, TELA_ATIVACAO, TELA_CELULAR, TELA_CLAUDE, TELA_CONTAS, TELA_RETOMAR } from './tela'
 import { useImpedirSono } from './sono'
+
+/** Só em modo fixture (desenvolvimento): `?teste=3` mostra o contador com 3 dias, `?teste=0` mostra o teste vencido. Sem o parâmetro, nada. */
+function resumoDeDemonstracao(): ResumoLicenca | null {
+  const v = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('teste')
+  if (v === null || !/^\d{1,2}$/.test(v)) return null
+  const agora = new Date()
+  const dias = Number(v)
+  return { tipo: 'cortesia', origem: 'degustacao', validade_em: new Date(agora.getTime() + dias * 24 * 60 * 60_000).toISOString(), vencida: dias === 0, agora: agora.toISOString() }
+}
 
 /** Estamos dentro do app desktop (Electron) ou no modo fixture de desenvolvimento (?app=1)? */
 export const noAppDesktop = () => ponteDoAmbiente() !== null
 
 function Obras({ ativo, onNavegar, children }: { ativo: IdTela; onNavegar: (t: IdTela) => void; children?: ReactNode }) {
+  // Contador do teste grátis / cortesia e a compra de dentro do app (docs/prd-contador-degustacao.md).
+  const licenca = useContext(ContextoLicenca)
   return (
-    <Shell ativo={ativo} onNavegar={onNavegar} onFalar={() => {}}>
+    <Shell ativo={ativo} onNavegar={onNavegar} onFalar={() => {}} licenca={licenca?.cartao} onComprar={licenca?.comprar}>
       {children ?? (
         <>
           <p className="rotulo">Minhas obras</p>
@@ -68,7 +83,7 @@ function Obras({ ativo, onNavegar, children }: { ativo: IdTela; onNavegar: (t: I
 let ponteFixture: PonteDesktop | null = null
 const ponteInicial = () => ponteDoAmbiente() ?? (ponteFixture ??= criarPonteFixture())
 
-export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo, nomes, construcao, modos, painel, cota, ocorrencias, retomar, publicar, posobra, licenca, ajuda, casos }: { ponte?: PonteDesktop; api?: AtivacaoApi; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo; nomes?: PonteNomes; construcao?: PonteConstrucao; modos?: PonteModoObra; painel?: PontePainel; cota?: PonteCota; ocorrencias?: PonteOcorrencias; retomar?: PonteRetomar; publicar?: PontePublicar; posobra?: PontePosObra; licenca?: PonteLicenca; ajuda?: PonteAjuda; casos?: PonteCasosAdmin }) {
+export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celular, obras, arquivos, estilo, importar, prototipo, batismo, nomes, construcao, modos, painel, cota, ocorrencias, retomar, publicar, posobra, licenca, ajuda, casos, resumoLicenca, iniciarCompraNoApp }: { ponte?: PonteDesktop; api?: AtivacaoApi; /** Lê o tipo e a validade da licença (contador do teste). Padrão: servidor, pela ponte. */ resumoLicenca?: () => Promise<ResumoLicenca | null>; /** Abre o checkout da compra de dentro do app. Padrão: servidor, pela ponte. */ iniciarCompraNoApp?: (p: PedidoCompraNoApp) => Promise<ResultadoCompra>; claude?: PonteClaude; contas?: PonteContas; celular?: PonteCelular; obras?: PonteObras; arquivos?: PonteArquivos; estilo?: PonteEstilo; importar?: PonteImportar; prototipo?: PontePrototipo; batismo?: PonteBatismo; nomes?: PonteNomes; construcao?: PonteConstrucao; modos?: PonteModoObra; painel?: PontePainel; cota?: PonteCota; ocorrencias?: PonteOcorrencias; retomar?: PonteRetomar; publicar?: PontePublicar; posobra?: PontePosObra; licenca?: PonteLicenca; ajuda?: PonteAjuda; casos?: PonteCasosAdmin }) {
   const [tela, setTela] = useState<string | null>(null)
   const [ativo, setAtivo] = useState<IdTela>('obras')
   const [instalando, setInstalando] = useState(false)
@@ -181,6 +196,27 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     [api, ponte, tokenLink],
   )
 
+  // Contador do teste e compra de dentro do app. Sem servidor (ou em modo fixture sem `?teste=N`) não há contador.
+  const lerLicenca = useCallback(async (): Promise<ResumoLicenca | null> => {
+    if (resumoLicenca) return resumoLicenca()
+    if (modoFixture()) return resumoDeDemonstracao()
+    const url = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/[/]+$/, '') ?? null
+    return lerResumo(ponte, url, url && ponte.servidor ? fetchPelaPonte(ponte.servidor, url) : undefined)
+  }, [resumoLicenca, ponte])
+  const licencaNoApp = useLicencaNoApp(lerLicenca)
+  const [emailCompra, setEmailCompra] = useState<string | null>(null)
+  const abrirCompra = useCallback(() => { void lerAtivacao(ponte.cofre).then((a) => { if (a?.email) setEmailCompra(a.email) }) }, [ponte])
+  const iniciarCompraPeloApp = useCallback((p: PedidoCompraNoApp): Promise<ResultadoCompra> => {
+    if (iniciarCompraNoApp) return iniciarCompraNoApp(p)
+    const cfg = configCompra()
+    return iniciarCompra(p.email, cfg, cfg && ponte.servidor ? fetchPelaPonte(ponte.servidor, cfg.api) : undefined, p.versaoTermos, p.parcelas, undefined, p.origem)
+  }, [iniciarCompraNoApp, ponte])
+  const abrirPagamento = useCallback(async (url: string) => {
+    if (ponte.pagamento) return ponte.pagamento.abrir(url)
+    if (!modoFixture()) throw new Error('pagamento-indisponivel') // sem o processo principal não há como abrir o navegador: não finge
+  }, [ponte])
+  const contextoLicenca = useMemo(() => ({ cartao: licencaNoApp.cartao, comprar: abrirCompra }), [licencaNoApp.cartao, abrirCompra])
+
   useEffect(() => {
     let vivo = true
     void (async () => {
@@ -202,9 +238,11 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
 
   if (tela === null) return null
   const painelDeAjuda = painelAjuda ? <Ajuda key={painelAjuda.n} ajuda={ponteAjuda} casos={ponteCasos} contexto={painelAjuda.contexto} nome={dono.split(' ')[0] || undefined} onFechar={() => setPainelAjuda(null)} /> : null
-  const com = (n: ReactNode) => <>{n}{painelDeAjuda}</>
+  // Pagou: o cartão já virou "Licença ativa" e a tela de compra some sozinha.
+  const compra = emailCompra && !licencaNoApp.pagou ? <ComprarAtlas aberto email={emailCompra} onFechar={() => setEmailCompra(null)} iniciar={iniciarCompraPeloApp} abrirPagamento={abrirPagamento} onPagamentoAberto={licencaNoApp.esperarPagamento} /> : null
+  const com = (n: ReactNode) => <ContextoLicenca.Provider value={contextoLicenca}>{n}{painelDeAjuda}{compra}</ContextoLicenca.Provider>
   if (tela === TELA_ATIVACAO) {
-    return com(<Ativacao api={ativacao} computador={computador} onInstalando={setInstalando} onContinuar={() => setTela(TELA_CLAUDE)} />)
+    return com(<Ativacao api={ativacao} computador={computador} onInstalando={setInstalando} onContinuar={() => { void licencaNoApp.conferir(); setTela(TELA_CLAUDE) }} />)
   }
   if (tela === TELA_CLAUDE) return com(<Claude claude={ponteClaude} onContinuar={() => setTela(TELA_CONTAS)} onPedirAjuda={() => abrirAjuda({ origem: 'menu', onde: 'a conexão com o Claude' })} />)
   if (tela === TELA_CONTAS) return com(<Contas contas={ponteContas} onContinuar={() => setTela(TELA_CELULAR)} onPedirAjuda={pedirAjudaPasso} />)

@@ -31,6 +31,14 @@
 .at-plano__sub { font-size: 13px; color: var(--side-mute); }
 .at-licenca { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--side-mute); padding: 0 6px; }
 .at-licenca__ponto { width: 8px; height: 8px; border-radius: 4px; background: var(--side-lime); }
+/* Contador do teste grátis / cortesia, com a compra de dentro do Atlas. */
+.at-teste { background: var(--side-card); border: 1px solid var(--side-lime); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.at-teste__rotulo { color: var(--side-lime); }
+.at-teste__titulo { font-size: 18px; font-weight: 600; color: #edefea; line-height: 1.2; }
+.at-teste__sub { font-size: 13px; color: var(--side-mute); }
+.at-teste__comprar { margin-top: 10px; border: 0; border-radius: 10px; padding: 10px 12px; font: inherit; font-weight: 600; cursor: pointer; background: var(--side-lime); color: #141619; }
+.at-teste__comprar:focus-visible { outline: 2px solid #edefea; outline-offset: 2px; }
+.at-teste--vencido { border-color: var(--side-mute); }
 
 .at-item:focus-visible, .at-falar:focus-visible, .at-ajuda:focus-visible { outline: 2px solid var(--side-lime); outline-offset: 2px; }
 .at-ajuda--ativo { background: var(--side-act-bg); color: var(--side-act-cor); border-color: transparent; }
@@ -45,4 +53,5 @@
   .at-item { white-space: nowrap; padding: 9px 12px; }
   .at-lateral__fixo { margin: 0 0 0 auto; flex-direction: row; align-items: center; }
   .at-plano, .at-licenca { display: none; }
+  .at-teste__sub { display: none; }
 }

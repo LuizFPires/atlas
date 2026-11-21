@@ -28,3 +28,32 @@ test('no tema claro usa o monograma de fundo claro', async () => {
   expect(r.container.querySelector('.at-lateral__marca img')).toHaveAttribute('src', escuro)
   localStorage.removeItem('atlas.tema')
 })
+
+// ---- cartão da licença (contador do teste) ----------------------------------------------------------------------------------
+
+test('sem dado de licença, ou com licença paga: a linha de sempre, sem botão de compra', () => {
+  const { rerender } = render(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} />)
+  expect(screen.getByText('Licença ativa · este computador')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Quero o Atlas' })).toBeNull()
+  rerender(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} licenca={{ estado: 'ativa' }} onComprar={() => {}} />)
+  expect(screen.getByText('Licença ativa · este computador')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Quero o Atlas' })).toBeNull()
+})
+
+test('teste em andamento: rótulo, quanto falta, quando vence e o botão de compra', async () => {
+  const onComprar = vi.fn()
+  render(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} licenca={{ estado: 'contando', rotulo: 'TESTE GRÁTIS', titulo: 'Faltam 3 dias', sub: 'Vence em 24/11' }} onComprar={onComprar} />)
+  const cartao = screen.getByRole('status', { name: 'Seu acesso ao Atlas' })
+  expect(cartao).toHaveTextContent('TESTE GRÁTIS')
+  expect(cartao).toHaveTextContent('Faltam 3 dias')
+  expect(cartao).toHaveTextContent('Vence em 24/11')
+  expect(screen.queryByText('Licença ativa · este computador')).toBeNull()
+  await userEvent.click(screen.getByRole('button', { name: 'Quero o Atlas' }))
+  expect(onComprar).toHaveBeenCalledTimes(1)
+})
+
+test('teste vencido: avisa que acabou e mantém o botão', () => {
+  render(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} licenca={{ estado: 'vencida', rotulo: 'TESTE GRÁTIS', titulo: 'Seu teste acabou', sub: null }} onComprar={() => {}} />)
+  expect(screen.getByRole('status', { name: 'Seu acesso ao Atlas' })).toHaveTextContent('Seu teste acabou')
+  expect(screen.getByRole('button', { name: 'Quero o Atlas' })).toBeInTheDocument()
+})

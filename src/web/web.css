@@ -324,3 +324,8 @@
 .v-passos-instalar li::marker { font-family: var(--font-mono); font-weight: 700; color: var(--lime-txt, var(--lime)); }
 .v-passos-instalar li > * + * { margin-top: 10px; }
 .v-passos-instalar b { color: var(--text); }
+
+/* Compra de dentro do Atlas instalado: links que abrem os textos legais ali mesmo (o app não abre janelas novas). */
+.v-link { background: none; border: 0; padding: 0; font: inherit; color: var(--text); text-decoration: underline; cursor: pointer; }
+.v-legal-no-app { max-height: 220px; overflow: auto; border: 1px solid var(--card-b); border-radius: 12px; padding: 12px 14px; font-size: 13px; }
+.v-modal:has(.v-legal-no-app) { max-height: 92vh; overflow: auto; }

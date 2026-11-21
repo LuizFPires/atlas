@@ -14,15 +14,24 @@ export const ITENS_MENU: { id: Exclude<IdTela, 'ajuda'>; nome: string }[] = [
   { id: 'retomar', nome: 'Como retomar' },
 ]
 
+/** Cartão da licença na lateral. 'ativa' = a linha de sempre; 'contando'/'vencida' = teste grátis ou cortesia com prazo. */
+export type LicencaNoMenu =
+  | { estado: 'ativa' }
+  | { estado: 'contando' | 'vencida'; rotulo: string; titulo: string; sub: string | null }
+
 type Props = {
   ativo: IdTela
   onNavegar: (id: IdTela) => void
   onFalar: () => void
+  /** Sem este dado (ou com licença paga) a lateral mostra "Licença ativa". Nunca inventar prazo aqui. */
+  licenca?: LicencaNoMenu
+  /** Com teste/cortesia: abre a compra de dentro do Atlas. Sem ele o botão não aparece. */
+  onComprar?: () => void
   children?: ReactNode
 }
 
 /** Menu lateral sempre escuro, com "Falar com o Atlas" e "Ajuda do Atlas" fixos (prototipo/Shell.dc.html). */
-export function Shell({ ativo, onNavegar, onFalar, children }: Props) {
+export function Shell({ ativo, onNavegar, onFalar, licenca, onComprar, children }: Props) {
   const { tema } = useTema()
   return (
     <div className="at-shell">
@@ -54,7 +63,16 @@ export function Shell({ ativo, onNavegar, onFalar, children }: Props) {
             <span className="at-plano__valor">Pro · 64% da cota</span>
             <span className="at-plano__sub">Renova hoje, 14h.</span>
           </div>
-          <div className="at-licenca"><span className="at-licenca__ponto" />Licença ativa · este computador</div>
+          {licenca && licenca.estado !== 'ativa' ? (
+            <div className={`at-teste ${licenca.estado === 'vencida' ? 'at-teste--vencido' : ''}`} role="status" aria-label="Seu acesso ao Atlas">
+              <span className="rotulo at-teste__rotulo">{licenca.rotulo}</span>
+              <span className="at-teste__titulo">{licenca.titulo}</span>
+              {licenca.sub && <span className="at-teste__sub">{licenca.sub}</span>}
+              {onComprar && <button type="button" className="at-teste__comprar" onClick={onComprar}>Quero o Atlas</button>}
+            </div>
+          ) : (
+            <div className="at-licenca"><span className="at-licenca__ponto" />Licença ativa · este computador</div>
+          )}
         </div>
       </aside>
       <main className="at-conteudo">{children}</main>
