@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Vendas } from './Vendas'
@@ -55,4 +55,19 @@ test('dúvidas explicam quando o sistema vai para o ar: prévia desde o 1º dia,
   const p = screen.getByText('Quando o meu sistema vai para o ar?')
   expect(p.parentElement).toHaveTextContent('prévia desde o primeiro dia')
   expect(p.parentElement).toHaveTextContent('a partir do 8º dia da compra')
+})
+
+test('seção dos agentes: o mestre de obras coordena especialistas de mesa limpa, e a conta de tokens aparece com premissas', () => {
+  montar()
+  const sec = screen.getByRole('region', { name: 'Como o Atlas trabalha por dentro' })
+  expect(within(sec).getByRole('heading', { name: 'O mestre de obras não carrega a obra inteira na cabeça.' })).toBeInTheDocument()
+  const desenhos = within(sec).getAllByRole('img', { name: /Mestre de obras no centro/ }) // um para computador, outro para celular
+  expect(desenhos).toHaveLength(2)
+  for (const d of desenhos) for (const quem of ['Arquiteta', 'Equipe de execução', 'Inspetor de qualidade', 'Técnico de segurança', 'Eng. de desempenho', 'Despachante']) expect(d).toHaveTextContent(quem)
+  expect(sec).toHaveTextContent('22 milhões')
+  expect(sec).toHaveTextContent('8 milhões')
+  expect(sec).toHaveTextContent('64% a menos')
+  expect(sec).toHaveTextContent('mesmo com três revisões a mais por etapa')
+  expect(within(sec).getByRole('note', { name: 'Como fizemos a conta' })).toHaveTextContent('conta simplificada')
+  for (const g of ['Um método pronto, no automático', 'A sua cota do Claude rende mais']) expect(within(sec).getByText(g)).toBeInTheDocument()
 })
