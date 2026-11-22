@@ -25,13 +25,15 @@ type Props = {
   onFalar: () => void
   /** Sem este dado (ou com licença paga) a lateral mostra "Licença ativa". Nunca inventar prazo aqui. */
   licenca?: LicencaNoMenu
+  /** O que o app leu do Claude do cliente (assinatura). Sem leitura, o cartão não aparece. */
+  plano?: { valor: string; sub: string } | null
   /** Com teste/cortesia: abre a compra de dentro do Atlas. Sem ele o botão não aparece. */
   onComprar?: () => void
   children?: ReactNode
 }
 
 /** Menu lateral sempre escuro, com "Falar com o Atlas" e "Ajuda do Atlas" fixos (prototipo/Shell.dc.html). */
-export function Shell({ ativo, onNavegar, onFalar, licenca, onComprar, children }: Props) {
+export function Shell({ ativo, onNavegar, onFalar, licenca, plano, onComprar, children }: Props) {
   const { tema } = useTema()
   return (
     <div className="at-shell">
@@ -58,11 +60,13 @@ export function Shell({ ativo, onNavegar, onFalar, licenca, onComprar, children 
             <Icone nome="ajuda" tamanho={18} />
             Ajuda do Atlas
           </a>
-          <div className="at-plano">
-            <span className="rotulo at-plano__rotulo">Plano Claude</span>
-            <span className="at-plano__valor">Pro · 64% da cota</span>
-            <span className="at-plano__sub">Renova hoje, 14h.</span>
-          </div>
+          {plano && (
+            <div className="at-plano">
+              <span className="rotulo at-plano__rotulo">Plano Claude</span>
+              <span className="at-plano__valor">{plano.valor}</span>
+              <span className="at-plano__sub">{plano.sub}</span>
+            </div>
+          )}
           {licenca && licenca.estado !== 'ativa' ? (
             <div className={`at-teste ${licenca.estado === 'vencida' ? 'at-teste--vencido' : ''}`} role="status" aria-label="Seu acesso ao Atlas">
               <span className="rotulo at-teste__rotulo">{licenca.rotulo}</span>

@@ -65,3 +65,13 @@ test('teste vencido: avisa que acabou e mantém o botão', () => {
   expect(screen.getByRole('status', { name: 'Seu acesso ao Atlas' })).toHaveTextContent('Seu teste acabou')
   expect(screen.getByRole('button', { name: 'Quero o Atlas' })).toBeInTheDocument()
 })
+
+test('cartão do plano: mostra só o que o app leu do Claude; nunca cota ou horário inventados', () => {
+  const { rerender } = render(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} plano={{ valor: 'Ultra', sub: 'Conectado neste computador' }} />)
+  expect(screen.getByText('Ultra')).toBeInTheDocument()
+  expect(screen.getByText('Conectado neste computador')).toBeInTheDocument()
+  expect(screen.queryByText(/64% da cota|Renova hoje/)).toBeNull()
+  rerender(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} />)
+  expect(screen.queryByText('Plano Claude')).toBeNull()
+  expect(screen.queryByText(/64% da cota|Renova hoje/)).toBeNull()
+})

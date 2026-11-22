@@ -26,6 +26,8 @@ function lerEstado(saida) {
   if (typeof j.email === 'string' && j.email.length <= 200) estado.conta = j.email
   const t = typeof j.subscriptionType === 'string' ? j.subscriptionType.toLowerCase() : ''
   if (t === 'pro' || t === 'max') estado.plano = t
+  // Assinatura como o Claude informa (ex.: ultra): só para mostrar no menu. Só letras, curta; o resto é ignorado.
+  if (/^[a-z]{2,20}$/.test(t)) estado.assinatura = t
   return estado
 }
 
