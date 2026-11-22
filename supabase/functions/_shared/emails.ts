@@ -219,7 +219,8 @@ export function montarCortesia(d: DadosCortesia): EmailMontado {
     ].join(''),
   })
   return {
-    assunto: 'Você ganhou um acesso de presente ao Atlas',
+    // A validade no assunto evita que o Gmail junte cada cortesia nova à conversa da anterior.
+    assunto: `Você ganhou um acesso de presente ao Atlas (até ${validade.slice(0, 5)})`,
     texto: [
       'Oi! Você ganhou um acesso de presente ao Atlas.',
       '',
