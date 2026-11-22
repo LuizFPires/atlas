@@ -11,13 +11,24 @@ const montar = (o: ObrasFixture = criarObrasFixture()) => {
   return { o, onComecar, onTrazer }
 }
 
-test('mostra a analogia da casa em cinco etapas e os exemplos de sistemas', () => {
+test('mostra a analogia da casa em cinco etapas, sem a seção de ideias (pedido do Luiz, 22/11/2026)', () => {
   montar()
   expect(screen.getByRole('heading', { name: 'Tudo pronto, Zé. Agora vamos construir.' })).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Fazer um sistema é igual construir uma casa.' })).toBeInTheDocument()
   expect(screen.getAllByText('NUMA CASA')).toHaveLength(5)
   expect(screen.getAllByText('NO ATLAS')).toHaveLength(5)
-  for (const n of ['Agenda online', 'Fidelidade', 'Caixa do dia', 'Estoque']) expect(screen.getByText(n)).toBeInTheDocument()
+  expect(screen.queryByText(/IDEIAS PARA BARBEARIAS/)).toBeNull()
+  for (const n of ['Agenda online', 'Fidelidade', 'Caixa do dia', 'Estoque']) expect(screen.queryByText(n)).toBeNull()
+})
+
+test('o primeiro passo vem antes de tudo, com o prédio subindo ao lado e a analogia logo abaixo', async () => {
+  montar()
+  const primeira = await screen.findByRole('region', { name: 'Comece a sua primeira obra' })
+  const casa = screen.getByRole('region', { name: 'Fazer um sistema é igual construir uma casa' })
+  expect(primeira.compareDocumentPosition(casa) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  const predio = screen.getByRole('img', { name: /prédio subindo/ })
+  expect(primeira.parentElement).toContainElement(predio)
+  expect(screen.getByText('Este prédio é o seu sistema.')).toBeInTheDocument()
 })
 
 test('primeira obra vazia tem um único botão principal claro', async () => {
@@ -30,12 +41,10 @@ test('primeira obra vazia tem um único botão principal claro', async () => {
   expect(onComecar).toHaveBeenCalledWith()
 })
 
-test('"Já tenho um protótipo" encaminha ao fluxo de trazer; uma ideia começa com o nome dela', async () => {
-  const { onTrazer, onComecar } = montar()
+test('"Já tenho um protótipo" encaminha ao fluxo de trazer', async () => {
+  const { onTrazer } = montar()
   await userEvent.click(screen.getByRole('button', { name: 'Já tenho um protótipo' }))
   expect(onTrazer).toHaveBeenCalledTimes(1)
-  await userEvent.click(screen.getByRole('button', { name: /Agenda online/ }))
-  expect(onComecar).toHaveBeenCalledWith('Agenda online')
 })
 
 test('com obras já começadas, lista as pastas e oferece outra obra', async () => {
