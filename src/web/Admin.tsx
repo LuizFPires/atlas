@@ -628,7 +628,7 @@ function Cortesia({ api, aoMudar }: { api: AdminApi; aoMudar?: () => void }) {
     if (!r.ok) { setErro(r.mensagem); return } // erro honesto: nada foi liberado
     const para = cortesia.email.trim().toLowerCase()
     const base = `${r.nova ? 'Cortesia liberada' : 'Cortesia renovada'} para ${para} até ${dia(r.validade_em)}.`
-    if (r.email_enviado) setMsg(`${base} Avisamos a pessoa por e-mail com o link pra instalar.`)
+    if (r.email_enviado) setMsg(`${base} Avisamos a pessoa por e-mail com o link pra instalar. Avise a pessoa: se não achar, olhar nas abas Promoções e Atualizações do Gmail e no spam.`)
     else setFalhou({ email: para, ate: dia(r.validade_em) })
     setCortesia({ email: '', data: '' })
     aoMudar?.()

@@ -74,7 +74,8 @@ describe('aviso de que o Atlas só funciona com uma assinatura do Claude', () =>
 test('cortesia: a validade vai no assunto, para cada presente chegar como e-mail separado', () => {
   const a = montarCortesia({ validade_em: new Date('2026-12-05T20:00:00Z'), link: LINK, link_expira_em: new Date('2026-11-23T12:00:00Z') })
   const b = montarCortesia({ validade_em: new Date('2026-11-24T02:59:59Z'), link: LINK, link_expira_em: new Date('2026-11-23T12:00:00Z') })
-  expect(a.assunto).toBe('Você ganhou um acesso de presente ao Atlas (até 05/12)')
-  expect(b.assunto).toBe('Você ganhou um acesso de presente ao Atlas (até 23/11)') // fim do dia em Brasília
+  expect(a.assunto).toBe('Seu acesso ao Atlas está liberado (até 05/12)')
+  expect(b.assunto).toBe('Seu acesso ao Atlas está liberado (até 23/11)') // fim do dia em Brasília
+  expect(a.assunto).not.toMatch(/ganhou|presente|grátis/i) // palavras que puxam o e-mail para a aba Promoções
   expect(a.assunto).not.toBe(b.assunto)
 })
