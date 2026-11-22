@@ -640,9 +640,9 @@ function Cortesia({ api, aoMudar }: { api: AdminApi; aoMudar?: () => void }) {
       <form onSubmit={confirmar} noValidate>
         <CampoFalado rotulo="E-mail da pessoa" type="email" autoComplete="off" valor={cortesia.email} onChange={(email) => setCortesia({ ...cortesia, email })} placeholder="amigo@email.com" juntar={juntarFalaEmail} />
         <label className="ad-campo-data">Vale até
-          <input type="date" value={cortesia.data} min={dataEm(hoje, 1)} max={dataEm(hoje, TETO_DIAS)} onChange={(e) => setCortesia({ ...cortesia, data: e.target.value })} />
+          <input type="date" value={cortesia.data} min={dataEm(hoje, 0)} max={dataEm(hoje, TETO_DIAS)} onChange={(e) => setCortesia({ ...cortesia, data: e.target.value })} />
         </label>
-        <span className="ad-mute2">Entre 1 e 179 dias. Costuma ser de 10 a 15.</span>
+        <span className="ad-mute2">Pode ser só hoje (vale até 23:59) ou até 179 dias. Costuma ser de 10 a 15.</span>
         {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
         {falhou && (
           <div role="status" className="ad-linha">

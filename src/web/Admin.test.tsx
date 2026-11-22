@@ -485,6 +485,17 @@ describe('cortesia manual no painel', () => {
     expect(JSON.parse(String(c.init.body))).toEqual({ email: 'amigo@email.com', validade_em: '2026-11-28T02:59:59.000Z' })
   })
 
+  it('dá para liberar cortesia só do dia: o calendário começa hoje (vale até 23:59 de hoje)', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente(() => undefined)
+    montar(api)
+    await irParaAcoes()
+    const form = screen.getByRole('region', { name: 'Liberar cortesia' })
+    const hoje = new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 10) // dia de hoje em Brasília
+    expect(within(form).getByLabelText('Vale até')).toHaveAttribute('min', hoje)
+    expect(within(form).getByText(/Pode ser só hoje/)).toBeInTheDocument()
+  })
+
   it('se o servidor recusar, mostra o erro e NÃO diz que liberou', async () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api } = ambiente((url) => (url.endsWith('/admin/cortesia') ? resp({ erro: 'ja_tem_licenca_paga', mensagem: 'Essa pessoa já tem uma licença paga. Não precisa de cortesia.' }, 409) : undefined))
