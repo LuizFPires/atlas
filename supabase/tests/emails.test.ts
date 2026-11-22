@@ -69,3 +69,12 @@ describe('aviso de que o Atlas só funciona com uma assinatura do Claude', () =>
     }
   })
 })
+
+// Pedido do Luiz (22/11/2026): com o mesmo assunto, o Gmail juntava cada cortesia nova à conversa antiga e ela "não chegava".
+test('cortesia: a validade vai no assunto, para cada presente chegar como e-mail separado', () => {
+  const a = montarCortesia({ validade_em: new Date('2026-12-05T20:00:00Z'), link: LINK, link_expira_em: new Date('2026-11-23T12:00:00Z') })
+  const b = montarCortesia({ validade_em: new Date('2026-11-24T02:59:59Z'), link: LINK, link_expira_em: new Date('2026-11-23T12:00:00Z') })
+  expect(a.assunto).toBe('Você ganhou um acesso de presente ao Atlas (até 05/12)')
+  expect(b.assunto).toBe('Você ganhou um acesso de presente ao Atlas (até 23/11)') // fim do dia em Brasília
+  expect(a.assunto).not.toBe(b.assunto)
+})
