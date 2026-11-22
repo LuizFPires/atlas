@@ -67,3 +67,9 @@ test('o teste é grátis, mas o bloco avisa antes do e-mail que o Atlas só func
   expect(aviso).toHaveTextContent('paga direto à Anthropic, à parte do Atlas')
   expect(aviso).toHaveTextContent('Quanto maior o plano, mais rápido a obra anda')
 })
+
+test('o bloco do teste avisa que no teste o sistema fica em prévia, sem ir para o ar', async () => {
+  montar(fake())
+  await screen.findByRole('heading', { name: /Testar 5 dias grátis/ })
+  expect(screen.getByText(/No teste, o sistema fica em prévia/)).toHaveTextContent('colocar no ar e mandar para as lojas só com o Atlas comprado')
+})

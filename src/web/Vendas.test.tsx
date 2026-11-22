@@ -49,3 +49,10 @@ test('perto do preço: o Atlas só funciona com uma assinatura do Claude, paga �
   expect(aviso).toHaveTextContent('Quanto maior o plano, mais rápido a obra anda')
   expect(aviso).not.toHaveTextContent(/plano Pro|no Max/)
 })
+
+test('dúvidas explicam quando o sistema vai para o ar: prévia desde o 1º dia, publicação a partir do 8º dia da compra', () => {
+  montar()
+  const p = screen.getByText('Quando o meu sistema vai para o ar?')
+  expect(p.parentElement).toHaveTextContent('prévia desde o primeiro dia')
+  expect(p.parentElement).toHaveTextContent('a partir do 8º dia da compra')
+})

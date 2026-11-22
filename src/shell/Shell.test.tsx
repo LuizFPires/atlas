@@ -40,6 +40,14 @@ test('sem dado de licença, ou com licença paga: a linha de sempre, sem botão 
   expect(screen.queryByRole('button', { name: 'Quero o Atlas' })).toBeNull()
 })
 
+test('licença paga nos 7 dias de arrependimento: mostra quando a entrega em produção libera', () => {
+  const { rerender } = render(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} licenca={{ estado: 'ativa', entrega: 'Entrega em produção libera em 25/11' }} />)
+  expect(screen.getByText('Licença ativa · este computador')).toBeInTheDocument()
+  expect(screen.getByText('Entrega em produção libera em 25/11')).toBeInTheDocument()
+  rerender(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} licenca={{ estado: 'ativa' }} />)
+  expect(screen.queryByText(/Entrega em produção libera/)).toBeNull()
+})
+
 test('teste em andamento: rótulo, quanto falta, quando vence e o botão de compra', async () => {
   const onComprar = vi.fn()
   render(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} licenca={{ estado: 'contando', rotulo: 'TESTE GRÁTIS', titulo: 'Faltam 3 dias', sub: 'Vence em 24/11' }} onComprar={onComprar} />)

@@ -4,7 +4,7 @@ import termos from '../../docs/legal/termos-de-uso.md?raw'
 import licenca from '../../docs/legal/licenca-de-uso.md?raw'
 
 /** Versão dos termos que o cliente aceita. Mude junto com o "Versão x.y" dos textos em docs/legal. */
-export const VERSAO_TERMOS = '1.0'
+export const VERSAO_TERMOS = '1.1'
 
 export type IdLegal = 'privacidade' | 'termos' | 'licenca'
 export const DOCS_LEGAIS: Record<IdLegal, { caminho: string; titulo: string; md: string }> = {

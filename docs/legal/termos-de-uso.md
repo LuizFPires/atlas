@@ -1,6 +1,6 @@
 # Termos de Uso do Atlas
 
-**Versão 1.0 · 19 de novembro de 2026**
+**Versão 1.1 · 22 de novembro de 2026**
 
 Estes Termos regulam a contratação e o uso do Atlas, oferecido por **PL Participações LTDA**, CNPJ 30.484.256/0001-82, com sede na Avenida Guaratã, 1885, Sala 12, Calafate, Belo Horizonte/MG, CEP 30411-516 ("PL Participações LTDA", "nós"), pelo site **atlas-ia.app.br**. Quem contrata o Atlas é chamado aqui de "Cliente" ou "você".
 
@@ -38,6 +38,10 @@ Ao concluir a compra ou usar o Atlas, você declara que leu e concorda com estes
 3.1. Como a compra é feita pela internet, o Cliente pode desistir em até **7 (sete) dias corridos** contados da compra, conforme o art. 49 do Código de Defesa do Consumidor. A PL Participações LTDA devolverá integralmente os valores pagos, pelo mesmo meio de pagamento.
 
 3.2. Para desistir, basta usar o botão "Cancelar compra" no portal da conta ou escrever para contato@atlas-ia.app.br. Com a desistência, a licença é desativada.
+
+3.3. Durante o prazo do item 3.1, o Cliente pode construir Obras e vê-las em prévia normalmente. A entrega em produção (publicar a Obra com endereço próprio na internet e enviá-la às lojas de aplicativos) fica disponível a partir do 8º (oitavo) dia contado da compra, depois de terminado o prazo de desistência.
+
+3.4. O teste grátis do Atlas não inclui a entrega em produção: as Obras feitas no teste ficam em prévia.
 
 ## 4. Manutenção mensal, atraso e cancelamento
 

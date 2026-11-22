@@ -16,7 +16,7 @@ export const ITENS_MENU: { id: Exclude<IdTela, 'ajuda'>; nome: string }[] = [
 
 /** Cartão da licença na lateral. 'ativa' = a linha de sempre; 'contando'/'vencida' = teste grátis ou cortesia com prazo. */
 export type LicencaNoMenu =
-  | { estado: 'ativa' }
+  | { estado: 'ativa'; entrega?: string }
   | { estado: 'contando' | 'vencida'; rotulo: string; titulo: string; sub: string | null }
 
 type Props = {
@@ -71,7 +71,10 @@ export function Shell({ ativo, onNavegar, onFalar, licenca, onComprar, children 
               {onComprar && <button type="button" className="at-teste__comprar" onClick={onComprar}>Quero o Atlas</button>}
             </div>
           ) : (
-            <div className="at-licenca"><span className="at-licenca__ponto" />Licença ativa · este computador</div>
+            <div className="at-licenca">
+              <span className="at-licenca__linha"><span className="at-licenca__ponto" />Licença ativa · este computador</span>
+              {licenca?.estado === 'ativa' && licenca.entrega && <span className="at-licenca__entrega">{licenca.entrega}</span>}
+            </div>
           )}
         </div>
       </aside>

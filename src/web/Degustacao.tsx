@@ -47,6 +47,7 @@ export function BlocoDegustacao({ api = api_padrao }: { api?: DegustacaoApi }) {
           {erro && <p role="alert" className="v-erro">{erro}</p>}
           <button type="submit" className="v-acao" disabled={enviando || !email.trim()}>{enviando ? 'Enviando…' : <>Quero testar {estado.dias} dias grátis <Icone nome="seta" /></>}</button>
           <small className="v-mute">O teste acaba sozinho depois de {estado.dias} dias. Um teste por pessoa.</small>
+          <small className="v-mute">No teste, o sistema fica em prévia: colocar no ar e mandar para as lojas só com o Atlas comprado.</small>
         </form>
       )}
     </section>

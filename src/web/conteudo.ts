@@ -86,6 +86,7 @@ export const duvidas = [
   { p: 'Quanto tempo leva uma obra?', r: 'Um sistema simples costuma ficar pronto em poucos dias. O Atlas mostra a previsão antes de começar.' },
   { p: 'O computador precisa ficar ligado?', r: 'Sim, durante a obra. Ele é o canteiro. Você acompanha tudo pelo celular.' },
   { p: 'O sistema é meu?', r: 'Sim. O código fica na sua conta e continua seu mesmo se um dia você parar de usar o Atlas.' },
+  { p: 'Quando o meu sistema vai para o ar?', r: 'Você constrói e vê tudo em prévia desde o primeiro dia. A publicação com o seu endereço e nas lojas libera a partir do 8º dia da compra, quando termina o prazo de 7 dias para desistir.' },
   { p: 'E se eu quiser mudar algo depois?', r: 'Você pede com as suas palavras. O Atlas mostra o que vai mudar e só publica quando você aprovar.' },
   { p: 'Funciona no meu computador?', r: 'Funciona em computadores com Windows 10 ou 11 e internet. O instalador confere tudo para você.' },
 ]

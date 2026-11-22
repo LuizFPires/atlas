@@ -2,6 +2,7 @@
 // Só responde para o computador ativado (mesma credencial do /verificar). Não libera nem bloqueia nada: quem decide se a obra
 // pode rodar continua sendo o /verificar. Aqui é só leitura, e a recusa é sempre genérica.
 import { iguais, sha256 } from './cripto.ts'
+import { situacaoDaEntrega } from './entrega.ts'
 import { type Deps, ErroRegra, HASH_RE } from './tipos.ts'
 
 export interface ResumoLicenca {
@@ -12,6 +13,8 @@ export interface ResumoLicenca {
   validade_em: string | null
   /** Cortesia cujo prazo passou (ou sem prazo gravado), mesmo que a licença já tenha sido encerrada. */
   vencida: boolean
+  /** Paga nos 7 dias de arrependimento: quando a entrega em produção libera (ISO). Nulo quando já liberou ou não se aplica. */
+  entrega_libera_em?: string | null
   /** Hora do servidor (ISO): o app conta os dias a partir dela, não do relógio do computador. */
   agora: string
 }
@@ -28,7 +31,10 @@ export async function resumoDaLicenca(d: Deps, a: { email: string; computador_ha
   if (!ativa || ativa.computador_hash !== a.computador_hash || !ativa.token_hash || !iguais(hashToken, ativa.token_hash)) throw negado()
 
   const agora = d.agora()
-  if (lic.tipo !== 'cortesia') return { tipo: 'paga', origem: null, validade_em: null, vencida: false, agora: agora.toISOString() }
+  if (lic.tipo !== 'cortesia') {
+    const e = situacaoDaEntrega(lic, agora)
+    return { tipo: 'paga', origem: null, validade_em: null, vencida: false, entrega_libera_em: e.liberada ? null : e.libera_em, agora: agora.toISOString() }
+  }
   const validade = lic.validade_em ?? null
   return {
     tipo: 'cortesia',

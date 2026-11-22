@@ -30,6 +30,12 @@ describe('texto do cartão', () => {
     expect(cartaoDaLicenca({ tipo: 'paga', origem: null, validade_em: null, vencida: false, agora: AGORA })).toEqual({ estado: 'ativa' })
     expect(cartaoDaLicenca(null)).toEqual({ estado: 'ativa' })
   })
+  it('paga nos 7 dias de arrependimento: linha de sempre com a data em que a entrega libera', () => {
+    const paga = (entrega_libera_em: string | null): ResumoLicenca => ({ tipo: 'paga', origem: null, validade_em: null, vencida: false, entrega_libera_em, agora: AGORA })
+    expect(cartaoDaLicenca(paga('2026-11-25T12:00:00.000Z'))).toEqual({ estado: 'ativa', entrega: 'Entrega em produção libera em 25/11' })
+    expect(cartaoDaLicenca(paga(null))).toEqual({ estado: 'ativa' })
+    expect(cartaoDaLicenca(paga('2026-11-21T14:00:00.000Z'))).toEqual({ estado: 'ativa' }) // a data já passou pelo relógio do servidor
+  })
   it('relógio do computador errado não muda a conta: quem manda é a hora do servidor', () => {
     const r = em('2026-11-24T15:00:00.000Z')
     expect(cartaoDaLicenca(r)).toEqual(cartaoDaLicenca({ ...r }))
@@ -61,6 +67,13 @@ describe('ler o resumo no servidor', () => {
     for (const ruim of [{}, { ...em('nao-e-data') }, { ...em('2026-11-24T15:00:00.000Z'), tipo: 'vitalicia' }, { ...em('2026-11-24T15:00:00.000Z'), agora: 'x' }, { tipo: 'cortesia', origem: 'degustacao', validade_em: null, vencida: false, agora: AGORA }, 'texto', null]) {
       expect(await lerResumo(ponte(ativado), API, responder(200, ruim)), JSON.stringify(ruim)).toBeNull()
     }
+  })
+
+  it('paga: guarda a data da entrega; data estranha vira null (não inventa prazo)', async () => {
+    const base = { tipo: 'paga', origem: null, validade_em: null, vencida: false, agora: AGORA }
+    expect(await lerResumo(ponte(ativado), API, responder(200, { ...base, entrega_libera_em: '2026-11-25T12:00:00.000Z' }))).toMatchObject({ entrega_libera_em: '2026-11-25T12:00:00.000Z' })
+    expect(await lerResumo(ponte(ativado), API, responder(200, { ...base, entrega_libera_em: 'x' }))).toMatchObject({ entrega_libera_em: null })
+    expect(await lerResumo(ponte(ativado), API, responder(200, base))).toMatchObject({ entrega_libera_em: null })
   })
 
   it('cortesia vencida sem data gravada ainda é uma resposta válida', async () => {

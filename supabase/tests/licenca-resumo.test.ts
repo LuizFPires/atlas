@@ -19,7 +19,16 @@ describe('resumo da licença para o app (contador do teste)', () => {
   it('licença paga: sem prazo', async () => {
     const m = montar()
     await m.ativar()
-    expect(await resumoDaLicenca(m.deps, arg())).toEqual({ tipo: 'paga', origem: null, validade_em: null, vencida: false, agora: '2026-11-18T12:00:00.000Z' })
+    expect(await resumoDaLicenca(m.deps, arg())).toEqual({ tipo: 'paga', origem: null, validade_em: null, vencida: false, entrega_libera_em: null, agora: '2026-11-18T12:00:00.000Z' })
+  })
+
+  it('licença paga nos 7 dias de arrependimento: diz quando a entrega em produção libera', async () => {
+    const m = montar()
+    Object.assign(m.store.licencas[0], { tipo: 'paga', comprada_em: new Date('2026-11-16T12:00:00Z') })
+    await m.ativar()
+    expect(await resumoDaLicenca(m.deps, arg())).toMatchObject({ tipo: 'paga', entrega_libera_em: '2026-11-23T12:00:00.000Z' })
+    m.avancar(5 * DIA)
+    expect(await resumoDaLicenca(m.deps, arg())).toMatchObject({ tipo: 'paga', entrega_libera_em: null })
   })
 
   it('teste grátis em andamento: tipo, origem e até quando vale', async () => {

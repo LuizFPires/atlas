@@ -120,3 +120,77 @@ describe('/entregar-kit com o kit de verdade (.claude)', () => {
     expect(temAvisoNoTopo({ caminho: 'a.json', conteudo: JSON.stringify({ a: 1, _licenca: 'Lei 9.609/98', _marca: marca }) }, marca)).toBe(false)
   })
 })
+
+// Pedido do Luiz (22/11/2026): a entrega em produção só libera depois dos 7 dias de arrependimento (CDC art. 49).
+// Paga: a partir de comprada_em + 7 dias. Teste grátis: nunca. Cortesia do gestor: na hora.
+describe('/entregar-kit: entrega em produção só depois do 8º dia', () => {
+  const kitComEntrega: CarregarKit = async () => [
+    { caminho: '.claude/skills/construir/SKILL.md', conteudo: '---\nname: construir\ndescription: Constrói.\n---\n# Construir' },
+    { caminho: '.claude/skills/entregar/SKILL.md', conteudo: '---\nname: entregar\ndescription: Entrega /entregar.\n---\n# Entregar de verdade' },
+    { caminho: '.claude/skills/entregar/extra.md', conteudo: '# passo a passo do deploy' },
+    { caminho: '.claude/agents/implantador.md', conteudo: '---\nname: implantador\ndescription: Põe no ar.\ntools: Bash\n---\n# Implantador' },
+    { caminho: '.claude/agents/corretor.md', conteudo: '---\nname: corretor\ndescription: Lojas.\ntools: Bash\n---\n# Corretor' },
+    { caminho: '.claude/agents/qa.md', conteudo: '---\nname: qa\ndescription: Revisa.\ntools: Read\n---\n# QA' },
+  ]
+  const DIA = 24 * 3600_000
+  const pedir = (m: ReturnType<typeof montar>) => entregarKit(m.deps, kitComEntrega, { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: 'obra-1' })
+  const caminhos = (r: Awaited<ReturnType<typeof pedir>>) => r.arquivos.map((f) => f.caminho)
+  const ENTREGA_REAL = ['.claude/skills/entregar/extra.md', '.claude/agents/implantador.md', '.claude/agents/corretor.md']
+
+  it('paga, dentro dos 7 dias: sai sem implantador, corretor e entrega real; a skill entregar avisa a data', async () => {
+    const m = montar()
+    Object.assign(m.store.licencas[0], { tipo: 'paga', comprada_em: new Date('2026-11-18T12:00:00Z') })
+    await m.ativar()
+    m.avancar(6 * DIA)
+    const r = await pedir(m)
+    for (const c of ENTREGA_REAL) expect(caminhos(r)).not.toContain(c)
+    expect(caminhos(r)).toContain('.claude/agents/qa.md')
+    expect(caminhos(r)).toContain('.claude/skills/construir/SKILL.md')
+    const ent = r.arquivos.find((f) => f.caminho === '.claude/skills/entregar/SKILL.md')!
+    expect(ent.conteudo).not.toContain('Entregar de verdade')
+    expect(ent.conteudo).toMatch(/name: entregar/)
+    expect(ent.conteudo).toContain('/entregar')
+    expect(ent.conteudo).toContain('25/11/2026')
+    expect(temAvisoNoTopo(ent, r.marca_dagua)).toBe(true)
+    expect(r.entrega).toEqual({ liberada: false, libera_em: '2026-11-25T12:00:00.000Z', motivo: 'arrependimento' })
+  })
+
+  it('paga, a partir do 8º dia: sai completo', async () => {
+    const m = montar()
+    Object.assign(m.store.licencas[0], { tipo: 'paga', comprada_em: new Date('2026-11-18T12:00:00Z') })
+    await m.ativar()
+    m.avancar(7 * DIA)
+    const r = await pedir(m)
+    for (const c of ENTREGA_REAL) expect(caminhos(r)).toContain(c)
+    expect(r.arquivos.find((f) => f.caminho === '.claude/skills/entregar/SKILL.md')!.conteudo).toContain('Entregar de verdade')
+    expect(r.entrega).toEqual({ liberada: true, libera_em: '2026-11-25T12:00:00.000Z', motivo: 'paga' })
+  })
+
+  it('teste grátis: nunca entrega em produção', async () => {
+    const m = montar()
+    Object.assign(m.store.licencas[0], { tipo: 'cortesia', origem: 'degustacao', validade_em: new Date('2026-12-30T12:00:00Z') })
+    await m.ativar()
+    const r = await pedir(m)
+    for (const c of ENTREGA_REAL) expect(caminhos(r)).not.toContain(c)
+    const ent = r.arquivos.find((f) => f.caminho === '.claude/skills/entregar/SKILL.md')!
+    expect(ent.conteudo).toMatch(/teste grátis/i)
+    expect(r.entrega).toEqual({ liberada: false, libera_em: null, motivo: 'degustacao' })
+  })
+
+  it('cortesia do gestor: libera na hora', async () => {
+    const m = montar()
+    Object.assign(m.store.licencas[0], { tipo: 'cortesia', origem: null, validade_em: new Date('2026-12-30T12:00:00Z') })
+    await m.ativar()
+    const r = await pedir(m)
+    for (const c of ENTREGA_REAL) expect(caminhos(r)).toContain(c)
+    expect(r.entrega).toEqual({ liberada: true, libera_em: null, motivo: 'cortesia' })
+  })
+
+  it('paga sem data de compra gravada (licença antiga): não trava quem já pagou', async () => {
+    const m = montar()
+    await m.ativar()
+    const r = await pedir(m)
+    for (const c of ENTREGA_REAL) expect(caminhos(r)).toContain(c)
+    expect(r.entrega).toEqual({ liberada: true, libera_em: null, motivo: 'paga' })
+  })
+})
