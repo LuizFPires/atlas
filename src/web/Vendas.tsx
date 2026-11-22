@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Bolinha, Icone } from '../ui'
 import { ImagemAssinatura, Monograma, NomeAtlas } from '../marca/Marca'
 import { useTema } from '../tema/tema'
+import { VendasAgentes } from './VendasAgentes'
 import { AVISO_CLAUDE, duvidas, ehParaVoce, etapas, exemplos, formas, naoEhParaVoce, PRECO, PRECO_PRATELEIRA, prateleira, recebe, tresPassos, VIDEO_URL, type SegmentoPronto } from './conteudo'
 import { BlocoDegustacao } from './Degustacao'
 import type { DegustacaoApi } from './degustacao-api'
@@ -117,6 +118,8 @@ export function Vendas({ onComprar, onComprarPronto, extra, degustacaoApi }: { o
           ))}
         </div>
       </section>
+
+      <VendasAgentes />
 
       <section className="v-duas v-duas--igual">
         <div>
