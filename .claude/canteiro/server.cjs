@@ -16,7 +16,7 @@ const { calcularPrazo } = require('../hooks/prazo.cjs');
 const PORTA = Number(process.argv[2] || process.env.CANTEIRO_PORTA || 4747);
 const NONCE = process.env.CANTEIRO_NONCE || '';
 const ATIVO_MS = 30000;
-const PAPEIS = ['coordenador', 'designer', 'escritor', 'revisor', 'implementador', 'qa', 'despachante', 'plantonista', 'vistoriador', 'implantador', 'corretor'];
+const PAPEIS = ['coordenador', 'designer', 'escritor', 'revisor', 'implementador', 'qa', 'seguranca', 'desempenho', 'despachante', 'plantonista', 'vistoriador', 'implantador', 'corretor'];
 const ESQUECER_MS = 30 * 24 * 3600 * 1000; // obra sem movimento há 30 dias sai da carteira (volta sozinha no próximo evento)
 
 // o projeto de onde o painel foi ligado entra na carteira

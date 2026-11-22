@@ -198,6 +198,8 @@ const EQUIPE={
   revisor:{nome:'Fiscal',funcao:'revisor',cor:'#ff8a3d',colete:'#5b3218'},
   implementador:{nome:'Equipe de execução',funcao:'implementador',cor:'#4a9be8',colete:'#e8762d'},
   qa:{nome:'Inspetor de qualidade',funcao:'qa',cor:'#3fbf7f',colete:'#1d4a35'},
+  seguranca:{nome:'Técnico de segurança',funcao:'seguranca',cor:'#ffffff',colete:'#d7263d'},
+  desempenho:{nome:'Eng. de desempenho',funcao:'desempenho',cor:'#5ad1e6',colete:'#1f4f5a'},
   despachante:{nome:'Despachante (GitHub)',funcao:'despachante',cor:'#b8c0c8',colete:'#3b4652'},
   plantonista:{nome:'Plantonista (ocorrências)',funcao:'plantonista',cor:'#e5604f',colete:'#4a2420'},
   vistoriador:{nome:'Vistoriador (habite-se)',funcao:'vistoriador',cor:'#e8e2d0',colete:'#6b5d2e'},
@@ -210,7 +212,9 @@ const FUNCAO={
   escritor:{resumo:'Transforma a ideia em um plano de obra.',obra:'Faz o caderno de obra e o cronograma: o que construir, em que ordem e quanto tempo leva.',sistema:'Escreve os documentos do sistema (PRD, SPEC, PLAN e CLAUDE): as regras, as telas e as etapas (milestones) com cada tarefa.',quando:'Na etapa de Documentos, depois do protótipo aprovado.',junto:['revisor','coordenador']},
   revisor:{resumo:'Confere o plano antes de a obra começar.',obra:'Revisa o projeto para não ter erro, nem coisa repetida, nem parede faltando.',sistema:'Lê os documentos do planejamento, tira repetições e confere se tudo bate com o protótipo aprovado.',quando:'Na etapa de Revisão, antes da construção.',junto:['escritor','coordenador']},
   implementador:{resumo:'São os pedreiros: quem levanta as paredes.',obra:'Executa o serviço, tijolo por tijolo, seguindo o projeto.',sistema:'Escreve o código de cada tarefa, uma etapa (milestone) por vez, e faz os testes da própria tarefa.',quando:'Na Construção. É ele que faz o prédio subir.',junto:['qa','coordenador']},
-  qa:{resumo:'Só deixa o prédio subir se estiver tudo certo.',obra:'Inspeciona cada parede antes de liberar o próximo andar.',sistema:'Roda os testes e revisa o código. Se achar problema, devolve para a equipe corrigir e só aprova quando estiver certo.',quando:'Na Construção, depois de cada tarefa.',junto:['implementador','despachante']},
+  qa:{resumo:'Só deixa o prédio subir se estiver tudo certo.',obra:'Inspeciona cada parede antes de liberar o próximo andar.',sistema:'Roda os testes e revisa o código. Se achar problema, devolve para a equipe corrigir e só aprova quando estiver certo.',quando:'Na Construção, depois de cada tarefa.',junto:['implementador','seguranca','desempenho','despachante']},
+  seguranca:{resumo:'Confere se ficou alguma porta sem tranca.',obra:'É o técnico de segurança: antes de liberar cada andar, confere trancas, chaves e quem pode entrar onde.',sistema:'Em toda etapa, procura brechas de ataque e de vazamento de dados: quem pode ver o quê, senhas e chaves expostas, dados de um cliente aparecendo para outro. Se achar algo, a etapa só sobe depois da correção.',quando:'Na Construção, em toda etapa, junto com o inspetor.',junto:['qa','desempenho','implementador']},
+  desempenho:{resumo:'Garante que o sistema seja rápido e não desperdice.',obra:'É o engenheiro que confere se o elevador não demora e se ninguém deixou a torneira pingando.',sistema:'Em toda etapa, procura lentidão e desperdício: buscas pesadas no banco, telas que carregam demais, arquivos grandes, chamadas repetidas. Pensa no sistema já cheio de clientes.',quando:'Na Construção, em toda etapa, junto com o inspetor.',junto:['qa','seguranca','implementador']},
   despachante:{resumo:'Cuida da papelada e do cartório.',obra:'Leva os documentos ao cartório e espera a aprovação.',sistema:'Guarda o código no GitHub, abre o pedido para juntar o trabalho (PR), espera a vistoria automática (CI) e junta o que foi aprovado.',quando:'No fim de cada etapa da Construção.',junto:['qa','coordenador']},
   plantonista:{resumo:'Resolve imprevistos, até de madrugada.',obra:'É chamado quando falta luz, chove ou um fornecedor atrasa.',sistema:'Quando algo de fora trava a obra (um serviço fora do ar, a cota do Claude acabou), anota a ocorrência, tenta de novo e só te chama se precisar.',quando:'Só quando aparece um problema.',junto:['coordenador']},
   vistoriador:{resumo:'Faz a vistoria final antes de abrir as portas.',obra:'É a vistoria do habite-se: confere o prédio inteiro.',sistema:'Usa o sistema inteiro como se fosse um cliente, no celular e no computador, antes de publicar.',quando:'Na Entrega, antes de ir para o ar.',junto:['implantador','coordenador']},
@@ -233,7 +237,7 @@ document.addEventListener('keydown',ev=>{if(ev.key==='Escape')return fecharFicha
 window.addEventListener('canteiro:agente',ev=>abrirFicha(ev.detail));
 const VERBO={Read:'lendo',Edit:'construindo',MultiEdit:'construindo',Write:'construindo',Bash:'rodando',Grep:'procurando',Glob:'procurando',Task:'chamando equipe',Agent:'chamando equipe',WebSearch:'pesquisando',WebFetch:'pesquisando',NotebookEdit:'construindo'};
 const fmt=n=>Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:1});
-const acao=a=>{const v=VERBO[a.ferramenta]||a.ferramenta||'';return (v+(a.alvo?' '+a.alvo:'')).trim()};
+const acao=a=>{const v=VERBO[a.ferramenta]||a.ferramenta||'';const alvo=/^(Task|Agent)$/.test(a.ferramenta)&&EQUIPE[a.alvo]?EQUIPE[a.alvo].nome:a.alvo;return (v+(alvo?' '+alvo:'')).trim()};
 
 /* ---------- estado ---------- */
 let E={nome:'—',etapa:'briefing',plano:null,agentes:{},feed:[]};
@@ -445,6 +449,8 @@ const LUGAR={
   revisor:{ativo:[2.4,7.2],parado:[5.4,10.4]},
   implementador:{ativo:'obra',parado:[4.6,11.5]},
   qa:{ativo:[10.9,10.4],parado:[5.3,11.4]},
+  seguranca:{ativo:[11.6,10.9],parado:[7.8,11.6]},
+  desempenho:{ativo:[12.3,10.4],parado:[8.2,11.1]},
   despachante:{ativo:[7.2,11.6],parado:[5.9,10.9]},
   plantonista:{ativo:[3.4,6.4],parado:[6.2,11.5]},
   vistoriador:{ativo:[8.6,8.2],parado:[6.6,11.1]},
