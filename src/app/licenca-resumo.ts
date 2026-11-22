@@ -9,11 +9,13 @@ export interface ResumoLicenca {
   origem: 'degustacao' | null
   validade_em: string | null
   vencida: boolean
+  /** Paga nos 7 dias de arrependimento: quando a entrega em produção libera (ISO). */
+  entrega_libera_em?: string | null
   agora: string
 }
 
 export type CartaoLicenca =
-  | { estado: 'ativa' }
+  | { estado: 'ativa'; entrega?: string }
   | { estado: 'contando' | 'vencida'; rotulo: 'TESTE GRÁTIS' | 'CORTESIA'; titulo: string; sub: string | null }
 
 const DIA_MS = 24 * 60 * 60_000
@@ -24,7 +26,7 @@ function validar(d: unknown): ResumoLicenca | null {
   if (!d || typeof d !== 'object') return null
   const r = d as Record<string, unknown>
   if (!dataValida(r.agora) || typeof r.vencida !== 'boolean') return null
-  if (r.tipo === 'paga') return { tipo: 'paga', origem: null, validade_em: null, vencida: false, agora: r.agora }
+  if (r.tipo === 'paga') return { tipo: 'paga', origem: null, validade_em: null, vencida: false, entrega_libera_em: dataValida(r.entrega_libera_em) ? r.entrega_libera_em : null, agora: r.agora }
   if (r.tipo !== 'cortesia') return null
   const origem = r.origem === 'degustacao' ? 'degustacao' : r.origem === null || r.origem === undefined ? null : undefined
   if (origem === undefined) return null
@@ -55,6 +57,10 @@ const mesmoDia = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.
 
 /** Texto do cartão da lateral. Paga ou sem resposta: a linha de sempre ("Licença ativa"), sem contador. */
 export function cartaoDaLicenca(r: ResumoLicenca | null): CartaoLicenca {
+  if (r && r.tipo === 'paga' && r.entrega_libera_em && new Date(r.entrega_libera_em).getTime() > new Date(r.agora).getTime()) {
+    const d = new Date(r.entrega_libera_em)
+    return { estado: 'ativa', entrega: `Entrega em produção libera em ${doisDigitos(d.getDate())}/${doisDigitos(d.getMonth() + 1)}` }
+  }
   if (!r || r.tipo !== 'cortesia') return { estado: 'ativa' }
   const teste = r.origem === 'degustacao'
   const rotulo = teste ? 'TESTE GRÁTIS' : 'CORTESIA'

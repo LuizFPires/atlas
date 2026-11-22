@@ -29,7 +29,9 @@
 .at-plano__rotulo { color: var(--side-mute); }
 .at-plano__valor { font-size: 15px; font-weight: 600; color: #edefea; }
 .at-plano__sub { font-size: 13px; color: var(--side-mute); }
-.at-licenca { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--side-mute); padding: 0 6px; }
+.at-licenca { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--side-mute); padding: 0 6px; }
+.at-licenca__linha { display: flex; align-items: center; gap: 8px; }
+.at-licenca__entrega { padding-left: 16px; font-size: 12px; color: var(--side-lime); }
 .at-licenca__ponto { width: 8px; height: 8px; border-radius: 4px; background: var(--side-lime); }
 /* Contador do teste grátis / cortesia, com a compra de dentro do Atlas. */
 .at-teste { background: var(--side-card); border: 1px solid var(--side-lime); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }

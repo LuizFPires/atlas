@@ -154,6 +154,7 @@ Se `ate` tiver um milestone, ao concluir a etapa 4 dele grave `"ativo": false`, 
 - Nunca faça merge com CI vermelho, force push ou pule hooks (`--no-verify`).
 - Nunca marque tarefa como feita sem aprovação do `qa`, do `seguranca` e do `desempenho`.
 - Nunca leia o código você mesmo para "conferir rápido"; para isso existe o `qa`.
+- **Produção só pela skill `entregar`.** Antes de qualquer deploy de produção (`vercel --prod`, migrations no banco de produção, domínio próprio) ou envio às lojas (`eas submit`, TestFlight, Google Play), feito por você, pelo `implementador` ou pelo `plantonista`, leia `.claude/skills/entregar/SKILL.md`. Se ela abrir com "Entregar — ainda travado", a licença ainda não libera a entrega: não publique; a tarefa do PLAN vira bloqueio externo no livro de ocorrências, com o motivo "entrega em produção travada" e a data que a skill informa, e a obra segue com o resto. Prévia e testes estão sempre liberados.
 - Antes de cada ação difícil de desfazer (push, merge, apagar branch), escreva `⏩ Auto: <ação>` no automático.
 - Se o usuário mandar um ajuste ou dúvida no meio, atenda e retome o roteiro, salvo cancelamento.
 - Em etapas longas, dê notícias curtas. Depois de uns 8 a 10 milestones, sugira: "Está tudo salvo no PLAN, no git e no roteiro.json. Dê /clear e chame /construir; eu retomo de onde parei."

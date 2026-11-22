@@ -1,6 +1,7 @@
 // Item 6 — /entregar-kit: instruções dos agentes da obra com marca d'água por cliente.
 // O conteúdo só existe em memória e na resposta (Cache-Control: no-store); nada é gravado em disco aqui.
 import { hmac } from './cripto.ts'
+import { aplicarTravaDeEntrega, situacaoDaEntrega } from './entrega.ts'
 import { type Deps, ErroRegra } from './tipos.ts'
 import { verificar } from './verificar.ts'
 
@@ -73,7 +74,10 @@ export async function entregarKit(
   const cliente = await d.store.clientePorEmail(a.email.trim().toLowerCase())
   const marca = await marcaDagua(d, v.licenca_id)
   const nome = cliente?.nome_tratamento ?? 'cliente'
-  const arquivos = (await carregar(a.obra_id)).map((f) => aplicarMarca(f, nome, marca))
+  // Entrega em produção só depois dos 7 dias de arrependimento (teste grátis: nunca; cortesia do gestor: na hora).
+  const lic = cliente ? await d.store.licencaDoCliente(cliente.id) : null
+  const entrega = situacaoDaEntrega(lic ?? {}, d.agora())
+  const arquivos = aplicarTravaDeEntrega(await carregar(a.obra_id), entrega).map((f) => aplicarMarca(f, nome, marca))
   // Pós-condição do invariante: nenhum arquivo sai sem o aviso no topo e a marca do cliente.
   if (!arquivos.every((f) => temAvisoNoTopo(f, marca))) throw new ErroRegra('kit_invalido', 'Um arquivo do kit não pôde receber a marca do cliente.', 500)
   await d.store.inserirEntrega({ licenca_id: v.licenca_id, obra_id: a.obra_id, marca_dagua: marca, baixado_em: d.agora() })
@@ -81,6 +85,7 @@ export async function entregarKit(
     marca_dagua: marca,
     arquivos,
     valido_ate: v.valido_ate,
+    entrega,
     /** O app deve manter só em memória e descartar ao fim da obra. */
     cabecalhos: { 'Cache-Control': 'no-store', 'X-Atlas-Persistir': 'nunca' },
   }

@@ -17,6 +17,7 @@ O coordenador manda `confira as ocorrências vencidas` ou `confira a ocorrência
    b. **Ainda bloqueado** → `node .claude/hooks/ocorrencias.cjs tentativa <id> --nota "<o que o teste respondeu, em uma linha>"`. Se a mensagem do serviço disser quando libera, inclua `--liberar-em <data>`. Passe para a próxima.
    c. **Liberou** → execute **exatamente** a `acao` registrada, nada além. Ela foi combinada antes; não amplie o escopo.
       - Deploy: use o comando que o projeto já usa (veja `CLAUDE.md`, `package.json` ou a SPEC). Confira o resultado (URL no ar, status 200).
+      - Deploy de **produção** ou envio às lojas: antes, leia `.claude/skills/entregar/SKILL.md`. Se ainda abrir com "Entregar — ainda travado", não publique: a ocorrência continua aberta com a data que a skill informa.
       - Se a ação falhar por outro motivo que não o bloqueio, **não** dê baixa: registre `tentativa` com o erro e relate.
    d. **Deu certo** → `node .claude/hooks/ocorrencias.cjs resolver <id> --nota "<prova curta: URL, id do deploy>"`.
 3. Faça commit só de `docs/ocorrencias.json`: `chore: livro de ocorrências — #<ids>`. Não faça push nem merge; isso é do coordenador.
