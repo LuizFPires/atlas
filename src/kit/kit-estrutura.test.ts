@@ -20,7 +20,7 @@ function frontmatter(t: string): Record<string, string> {
   return o
 }
 
-const AGENTES = ['corretor', 'designer', 'despachante', 'escritor', 'implantador', 'implementador', 'plantonista', 'qa', 'revisor', 'vistoriador']
+const AGENTES = ['corretor', 'designer', 'desempenho', 'despachante', 'escritor', 'implantador', 'implementador', 'plantonista', 'qa', 'revisor', 'seguranca', 'vistoriador']
 const SKILLS = ['adotar', 'briefing', 'canteiro', 'construir', 'documentar', 'entregar', 'linha', 'prototipo', 'stop-recomendado', 'login-usuarios', 'notificacoes', 'pagamento-cliente', 'lgpd-basico']
 
 test.each(AGENTES)('agente %s mantém nome e descrição (gatilho)', (a) => {
@@ -56,4 +56,48 @@ test('o roteiro de passos das skills continua no lugar', () => {
 test('o formato do PLAN que o escritor ensina continua intacto', () => {
   const t = fs.readFileSync(`${raiz}/agents/escritor.md`, 'utf8')
   for (const c of ['## Milestone 1 — <título curto>', 'peso: 1', 'spec: S1, S3', 'tela: prototipo/index.html#tela-x', '- [ ] Tarefa verificável', 'Notas:']) expect(t).toContain(c)
+})
+
+// Pedido do Luiz (22/11/2026): toda etapa passa por revisão de segurança e de desempenho, além do qa.
+describe('revisores de segurança e desempenho', () => {
+  const agente = (a: string) => fs.readFileSync(`${raiz}/agents/${a}.md`, 'utf8')
+  const construir = () => fs.readFileSync(`${raiz}/skills/construir/SKILL.md`, 'utf8')
+
+  test('os dois só apontam: ferramentas de leitura, sem Edit/Write', () => {
+    for (const a of ['seguranca', 'desempenho']) {
+      const f = frontmatter(agente(a))
+      expect(f.tools).not.toMatch(/Edit|Write/)
+      expect(agente(a)).toMatch(/VEREDITO: aprovado \| reprovado/)
+    }
+  })
+
+  test('segurança cobre ataque, vazamento, permissões, segredos e dependências', () => {
+    const t = agente('seguranca').toLowerCase()
+    for (const c of ['injeção', 'xss', 'rls', 'segredo', 'dependências', 'vazamento', 'senha']) expect(t).toContain(c)
+  })
+
+  test('desempenho cobre consultas, bundle, imagens e renderização', () => {
+    const t = agente('desempenho').toLowerCase()
+    for (const c of ['n+1', 'índice', 'bundle', 'imagens', 'paginação', 'render']) expect(t).toContain(c)
+  })
+
+  test('a etapa 3 do /construir chama qa, seguranca e desempenho juntos', () => {
+    const e3 = construir().split('### Etapa 3')[1].split('### Etapa 4')[0]
+    for (const a of ['`qa`', '`seguranca`', '`desempenho`']) expect(e3).toContain(a)
+    expect(e3).toMatch(/em paralelo/)
+  })
+
+  test('a medição e o merge exigem os três aprovados', () => {
+    const e4 = construir().split('### Etapa 4')[1].split('## Bloqueios externos')[0]
+    expect(e4).toMatch(/`qa`, `seguranca` e `desempenho`/)
+  })
+
+  test('o canteiro 3D conhece os dois novos papéis', () => {
+    const srv = fs.readFileSync(`${raiz}/canteiro/server.cjs`, 'utf8')
+    const cena = fs.readFileSync(`${raiz}/canteiro/cena3d.js`, 'utf8')
+    for (const a of ['seguranca', 'desempenho']) {
+      expect(srv).toMatch(new RegExp(`PAPEIS = \\[[^\\]]*'${a}'`))
+      expect(cena).toMatch(new RegExp(`\\n  ${a}: +\\{ nome:`))
+    }
+  })
 })

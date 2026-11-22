@@ -115,7 +115,12 @@ async function obra() {
     pr++;
     ev('coordenador', 'Bash', `gh pr create (PR #${pr})`);
     roteiro(m, 2, pr);
-    await equipe('qa', [['Bash', `git diff main...HEAD`], ['Bash', 'pnpm test'], ['Bash', 'playwright test']], 1.6);
+    // Etapa 3: os três revisores trabalham ao mesmo tempo (qa, segurança e desempenho).
+    await Promise.all([
+      equipe('qa', [['Bash', `git diff main...HEAD`], ['Bash', 'pnpm test'], ['Bash', 'playwright test']], 1.6),
+      equipe('seguranca', [['Grep', 'service_role'], ['Read', 'supabase/migrations'], ['Bash', 'npm audit --omit=dev']], 1.6),
+      equipe('desempenho', [['Grep', 'select('], ['Read', 'supabase/migrations'], ['Bash', 'pnpm build']], 1.6),
+    ]);
     roteiro(m, 3, pr);
     let medir = n;
     if (m === 3) { // a cota da Vercel estoura: a obra não para

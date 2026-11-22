@@ -10,6 +10,8 @@ const PAPEIS = {
   revisor:       { nome: 'Fiscal',                capacete: 0xff8a3d, colete: 0x5b3218 },
   implementador: { nome: 'Equipe de execução',    capacete: 0x4a9be8, colete: 0xe8762d },
   qa:            { nome: 'Inspetor de qualidade', capacete: 0x3fbf7f, colete: 0x1d4a35 },
+  seguranca:     { nome: 'Técnico de segurança',  capacete: 0xffffff, colete: 0xd7263d },
+  desempenho:    { nome: 'Eng. de desempenho',    capacete: 0x5ad1e6, colete: 0x1f4f5a },
   despachante:   { nome: 'Despachante (GitHub)',  capacete: 0xb8c0c8, colete: 0x3b4652 },
   plantonista:   { nome: 'Plantonista',           capacete: 0xe5604f, colete: 0x4a2420 },
   vistoriador:   { nome: 'Vistoriador',           capacete: 0xe8e2d0, colete: 0x6b5d2e },
@@ -26,6 +28,8 @@ const PENSA = {
   revisor: ['separando o checklist', 'relendo o projeto'],
   implementador: ['afiando as ferramentas', 'esperando a próxima tarefa', 'um cafezinho e já volto ☕'],
   qa: ['preparando os testes', 'calibrando os instrumentos'],
+  seguranca: ['conferindo as trancas', 'checando quem tem a chave'],
+  desempenho: ['cronometrando o elevador', 'medindo o fluxo da obra'],
   despachante: ['de olho no GitHub', 'separando a papelada'],
   plantonista: ['de plantão', 'atento a imprevistos'],
   vistoriador: ['revisando o checklist do habite-se'],
@@ -53,6 +57,8 @@ const LUGAR = {
   revisor:       { ativo: [-18.6, -8.4], parado: [-19.5, 18] },
   implementador: { ativo: 'laje',       parado: [-14, 15.5] },
   qa:            { ativo: [6, 18.6],    parado: [-16.5, 19] },
+  seguranca:     { ativo: [9.5, 18.6],  parado: [-18, 19.5] },
+  desempenho:    { ativo: [12.5, 18.6], parado: [-19.5, 19.8] },
   despachante:   { ativo: [-3, 25.2],   parado: [-14.5, 18.5] },
   plantonista:   { ativo: [-15.5, -9.8], parado: [-21, 17.5] },
   vistoriador:   { ativo: [2, 6.5],     parado: [-22.5, 16] },
@@ -488,7 +494,7 @@ export function iniciar(palco, obterEstado) {
         pos.addScaledVector(v3.normalize(), passo);
         if (Math.abs(v3.y) < .5) { const ang = Math.atan2(v3.x, v3.z); p.g.rotation.y += ((ang - p.g.rotation.y + Math.PI * 3) % (Math.PI * 2) - Math.PI) * Math.min(1, dt * 8); }
       } else if (emCampo) {
-        const olhar = lugar === 'laje' ? Math.PI : k === 'coordenador' ? -2.4 : k === 'qa' ? Math.PI : 0;
+        const olhar = lugar === 'laje' ? Math.PI : k === 'coordenador' ? -2.4 : (k === 'qa' || k === 'seguranca' || k === 'desempenho') ? Math.PI : 0;
         p.g.rotation.y += (olhar - p.g.rotation.y) * Math.min(1, dt * 3);
       } else {
         p.g.rotation.y += (Math.sin(t / 4200 + p.fase) * 1.3 - p.g.rotation.y) * Math.min(1, dt * .8); // olha em volta
@@ -505,7 +511,7 @@ export function iniciar(palco, obterEstado) {
       p.g.scale.y = 2.2 * (1 + Math.sin(t / 700 + p.fase) * .012); // respiração
       // balão: fala (o que está fazendo de verdade) ou pensamento (esperando a vez)
       let txt = '', tipo = 'fala';
-      if (a.ativo) txt = ((VERBO[a.ferramenta] || a.ferramenta || 'trabalhando') + (a.alvo ? ' ' + a.alvo : '')).trim();
+      if (a.ativo) { const alvo = /^(Task|Agent)$/.test(a.ferramenta) && PAPEIS[a.alvo] ? PAPEIS[a.alvo].nome : a.alvo; txt = ((VERBO[a.ferramenta] || a.ferramenta || 'trabalhando') + (alvo ? ' ' + alvo : '')).trim(); }
       else if (k === 'coordenador' && esp) { txt = esp.coord; tipo = 'espera'; }
       else if (desp) { txt = esp.desp; tipo = 'espera'; }
       else if (a.ferramenta === 'entregou' && Date.now() - a.ts < 20000) txt = '✓ entreguei o serviço';

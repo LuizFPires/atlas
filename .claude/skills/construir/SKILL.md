@@ -12,7 +12,7 @@ Em palavras simples: a obra é feita em etapas pequenas (milestones), sempre do 
 | 1 — Planejar | Você | branch `feat/mN-…`, lista de itens, decisões registradas |
 | 2 — Implementar | Subagente `implementador` | um commit por item, verificação completa |
 | | Você | push, PR **sem merge**, CI |
-| 3 — Revisar e testar | Subagente `qa` (revisão independente, testes reais, comparação com o protótipo) | achados por gravidade |
+| 3 — Revisar e testar | Subagentes `qa` (revisão, testes reais, protótipo), `seguranca` (ataques e vazamento) e `desempenho` (velocidade e desperdício), em paralelo | achados por gravidade |
 | | Novo `implementador` | `fix(mN): review fixes — …` |
 | 4 — Merge | Você | medição no PLAN, CI verde, merge, branch apagada |
 
@@ -74,18 +74,20 @@ Em palavras simples: a obra é feita em etapas pequenas (milestones), sempre do 
 4. Se o STATUS for parcial ou bloqueado, registre a pendência e decida (ou pergunte) antes de seguir. Se o bloqueio for **externo** (billing, cota, serviço fora do ar), não pare: siga a seção "Bloqueios externos".
 
 ### Etapa 3 — Revisar e testar (subagente independente)
-1. Chame o subagente `qa`:
+1. Chame **em paralelo** (na mesma mensagem) os três revisores, cada um com a mesma entrada:
    `Revise o Milestone N. Base <base>, branch feat/mN-…, PR #n. Itens: <lista>. Tela: <tela: do milestone, se houver>.`
-   Ele faz a revisão somente leitura do diff `<base>...HEAD`, roda o projeto e testa o comportamento real, e compara com o protótipo quando o milestone mexe em telas.
-   Se o milestone mexer em várias telas, chame um `qa` por tela **em paralelo**, cada um só com a sua tela.
-2. Achados **altos e médios** se corrigem sempre; **baixos**, quando baratos. Chame um **novo** `implementador`:
+   - `qa`: revisão somente leitura do diff `<base>...HEAD`, roda o projeto, testa o comportamento real e compara com o protótipo quando o milestone mexe em telas. Se o milestone mexer em várias telas, chame um `qa` por tela, cada um só com a sua.
+   - `seguranca`: ataques, vazamento de dados, permissões e isolamento entre clientes, segredos e dependências, no que o milestone mudou.
+   - `desempenho`: consultas, índices, paginação, chamadas repetidas, render, bundle e imagens, no que o milestone mudou.
+   Os três valem em **toda** etapa, inclusive no automático; nenhum substitui o outro. O `vistoriador` continua sendo a vistoria final do /entregar.
+2. Achados **altos e médios** (de qualquer um dos três) se corrigem sempre; **baixos**, quando baratos. Junte os achados num só pedido e chame um **novo** `implementador`:
    `Corrija os achados do Milestone N: <lista com arquivo:linha>. Commit: fix(mN): review fixes — <resumo>.`
    Se uma migration já foi commitada, a correção vem numa migration nova. Achados aceitos sem correção vão para `Notas:` com o motivo.
-3. Push e espere o CI. Não crie commit vazio nem repita verificações sem mudança que justifique.
+3. Push e espere o CI. Depois da correção, chame de novo **só** o revisor que reprovou (ou os que reprovaram), com a lista do que foi corrigido. Não crie commit vazio nem repita verificações sem mudança que justifique.
 4. Duas reprovações seguidas do mesmo milestone → pare e pergunte, mesmo no automático.
 
 ### Etapa 4 — Merge (você)
-1. **Medição**: no PLAN, troque `- [ ]` por `- [x]` **somente** nas tarefas que o `qa` aprovou (Edit pontual). Commit `docs(mN): medição`, push, espere o CI. É isso que faz o prédio subir no canteiro.
+1. **Medição**: no PLAN, troque `- [ ]` por `- [x]` **somente** nas tarefas aprovadas pelo `qa`, `seguranca` e `desempenho` (os três com VEREDITO aprovado, sem achado alto ou médio em aberto) (Edit pontual). Commit `docs(mN): medição`, push, espere o CI. É isso que faz o prédio subir no canteiro.
 2. `git status`: nada do milestone sem commit, nada alheio ao trabalho. Avise sobre o que ficou de fora.
 3. Confira o CI da versão atual da branch. **Só faça merge com os checks exigidos verdes e sem bloqueio de revisão.** CI rodando não é sucesso. Sem CI configurado, diga isso e siga os critérios do projeto, sem alegar CI verde.
 4. `⏩ Auto: merge PR #n` (no automático) e, respeitando o método do projeto:
@@ -150,7 +152,7 @@ Se `ate` tiver um milestone, ao concluir a etapa 4 dele grave `"ativo": false`, 
 
 ## Cuidados
 - Nunca faça merge com CI vermelho, force push ou pule hooks (`--no-verify`).
-- Nunca marque tarefa como feita sem aprovação do `qa`.
+- Nunca marque tarefa como feita sem aprovação do `qa`, do `seguranca` e do `desempenho`.
 - Nunca leia o código você mesmo para "conferir rápido"; para isso existe o `qa`.
 - Antes de cada ação difícil de desfazer (push, merge, apagar branch), escreva `⏩ Auto: <ação>` no automático.
 - Se o usuário mandar um ajuste ou dúvida no meio, atenda e retome o roteiro, salvo cancelamento.
