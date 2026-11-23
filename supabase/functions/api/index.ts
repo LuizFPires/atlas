@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
   const sk = Deno.env.get('ATLAS_SIGN_SK')
   if (!segredo || !servico || !sk) return new Response('configuração ausente', { status: 503 })
   const { criarStoreSupabase, criarCarregarKit, enviarCodigo } = await import('../_shared/adaptadores_supabase.ts')
-  const { criarAtualizacao, criarInstalador, enviarAvisoAtraso, enviarBoasVindas, enviarConfirmacaoDegustacao, enviarCortesia } = await import('../_shared/adaptadores_supabase.ts')
+  const { criarArmazemPrototipos, criarAtualizacao, criarInstalador, enviarAvisoAtraso, enviarBoasVindas, enviarConfirmacaoDegustacao, enviarCortesia } = await import('../_shared/adaptadores_supabase.ts')
   const deps = { store: criarStoreSupabase(), agora: () => new Date(), enviarCodigoPorEmail: enviarCodigo, segredo, chaveAssinatura: await importarChavePrivada(sk) }
   // Pagamento: a conta Stripe é SEMPRE do cliente. Chaves por conta (STRIPE_<ref>_SK / STRIPE_<ref>_WHSEC) vêm dos
   // segredos do Supabase, resolvidas por referência guardada em contas_gateway. Nunca uma conta central do Luiz.
@@ -51,6 +51,8 @@ Deno.serve(async (req) => {
       deps,
       // Atualização automática (/atualizacao): mesma pasta privada do instalador + atualizacao.json do workflow.
       atualizacao: criarAtualizacao(),
+      // Link provisório do protótipo para o celular (/prototipo/link e /prototipo/ver): pasta privada "prototipos".
+      prototipos: criarArmazemPrototipos(),
       admin,
       pagamento,
       cadastro,

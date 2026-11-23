@@ -1,3 +1,4 @@
+import { VerPrototipo } from './web/VerPrototipo'
 import { lazy, Suspense, useState } from 'react'
 import { Shell, type IdTela } from './shell/Shell'
 import { ImagemAssinatura } from './marca/Marca'
@@ -76,6 +77,9 @@ export default function App() {
   if (caminho === '/degustacao') return <ConfirmarDegustacao />
   // Ponte de instalação (link do e-mail de compra/teste): pública, o token é a prova.
   if (caminho === '/instalar') return <Instalar />
+  // Link provisório do protótipo para o celular (7 dias): o token é a prova; o HTML só aparece em iframe sandbox.
+  const proto = /^\/p\/([A-Za-z0-9_-]{40,64})$/.exec(caminho)
+  if (proto) return <VerPrototipo token={proto[1]} />
   // Painel do administrador: o link existe para todos, mas só o servidor decide quem entra (JWT + allowlist).
   if (caminho === '/admin') return <Admin api={adminApi} />
   // Demonstração do app-modelo da barbearia (M32 d1): só em modo fixture (desenvolvimento ou VITE_FIXTURE=1). Em produção a rota não existe.

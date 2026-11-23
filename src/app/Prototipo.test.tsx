@@ -191,3 +191,27 @@ test('veio de "Já tenho a minha identidade visual" (sem um dos 3 estilos): dese
   expect(await screen.findByText(/Fiz as primeiras telas/)).toBeInTheDocument()
   expect(screen.queryByText(/não está ligado/)).toBeNull()
 })
+
+describe('ver no celular', () => {
+  test('"Ver no celular" gera o link do protótipo navegável e mostra QR, link, copiar e WhatsApp', async () => {
+    const p = criarPrototipoFixture()
+    const zap: string[] = []
+    p.whatsapp = async (u) => { zap.push(u) }
+    const { user } = montar(p)
+    await user.click(await screen.findByRole('button', { name: /Ver no celular/ }))
+    const janela = await screen.findByRole('dialog', { name: 'Abra no seu celular' })
+    expect(within(janela).getByRole('img', { name: /QR code/ })).toBeInTheDocument()
+    expect(within(janela).getByText(/atlas-ia\.app\.br\/p\//)).toBeInTheDocument()
+    expect(within(janela).getByText(/vale até/)).toBeInTheDocument()
+    expect(p.linksGerados).toEqual([obra.nome])
+    await user.click(within(janela).getByRole('button', { name: /Mandar pelo WhatsApp/ }))
+    expect(zap).toHaveLength(1)
+  })
+  test('sem servidor do link: o botão nem aparece (não promete o que não faz)', async () => {
+    const p = criarPrototipoFixture()
+    delete (p as Partial<typeof p>).linkCelular
+    montar(p)
+    await screen.findByText(/Fiz as primeiras telas/)
+    expect(screen.queryByRole('button', { name: /Ver no celular/ })).toBeNull()
+  })
+})

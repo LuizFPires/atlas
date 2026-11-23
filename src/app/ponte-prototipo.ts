@@ -46,6 +46,10 @@ export interface PontePrototipo {
   ajustar(pasta: string, pedido: string): Promise<{ estado: EstadoProto; resposta: string }>
   /** Volta a ver uma versão anterior. Não apaga nem reescreve nada: só muda a versão atual. */
   voltar(pasta: string, numero: number): Promise<EstadoProto>
+  /** Link provisório (7 dias) para abrir o protótipo navegável no celular. `documento` = montarNavegavel(...). */
+  linkCelular?(nome: string, documento: string): Promise<{ url: string; expira_em: string }>
+  /** Abre o WhatsApp com o link que acabou de ser gerado. */
+  whatsapp?(url: string): Promise<void>
 }
 
 // ---- Segurança do preview -------------------------------------------------------------------------------------------------
@@ -128,6 +132,8 @@ function telasDoEstilo(obraNome: string, e: EstiloProposto, avisos: readonly str
 }
 
 export interface PrototipoFixture extends PontePrototipo {
+  /** Nomes das obras que pediram link para o celular. */
+  linksGerados: string[]
   /** Pedidos montados para o Claude (já como dado) e escritas "feitas" (só na memória). */
   readonly pedidos: string[]
   readonly escritos: { pasta: string; caminho: string }[]
@@ -136,6 +142,7 @@ export interface PrototipoFixture extends PontePrototipo {
 /** Mock do modo fixture: devolve telas de exemplo no estilo e guarda as versões só na memória. Cor/palavras do pedido mudam a tela de verdade. */
 export function criarPrototipoFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): PrototipoFixture {
   const obras = new Map<string, { nome: string; estilo: EstiloProposto; avisos: string[]; destaque?: string; estado: EstadoProto }>()
+  const linksGerados: string[] = []
   const pedidos: string[] = []
   const escritos: PrototipoFixture['escritos'] = []
   const copia = (s: EstadoProto): EstadoProto => ({ atual: s.atual, versoes: s.versoes.map((v) => ({ ...v, telas: v.telas.map((t) => ({ ...t })) })) })
@@ -143,6 +150,7 @@ export function criarPrototipoFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): Pr
   return {
     pedidos,
     escritos,
+    linksGerados,
     async estado(pasta) { return copia(obras.get(pasta)?.estado ?? { versoes: [], atual: 0 }) },
     async desenhar(pasta, obraNome, estilo) {
       const existente = obras.get(pasta)
@@ -175,6 +183,12 @@ export function criarPrototipoFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): Pr
       o.estado = { versoes: [...o.estado.versoes, v], atual: numero }
       return { estado: copia(o.estado), resposta: mudaCor ? `Troquei a cor do destaque. Está na versão ${numero}.` : `Anotei o seu pedido e deixei um aviso na tela, na versão ${numero}. O Claude de verdade refaz a tela por completo.` }
     },
+    async linkCelular(nome, documento) {
+      if (!documento.startsWith('<!doctype html><meta http-equiv="Content-Security-Policy"')) throw new Error('prototipo-invalido')
+      linksGerados.push(nome)
+      return { url: `https://atlas-ia.app.br/p/${'Ex'.repeat(22)}`, expira_em: new Date(Date.now() + 7 * 86_400_000).toISOString() }
+    },
+    async whatsapp() {},
     async voltar(pasta, numero) {
       const o = obras.get(pasta)
       if (!o || !o.estado.versoes.some((v) => v.numero === numero)) throw new Error('versao-inexistente')

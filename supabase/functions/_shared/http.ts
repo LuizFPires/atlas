@@ -13,6 +13,7 @@ import { trocarComputador } from './troca.ts'
 import { verificar } from './verificar.ts'
 import { criarCheckout } from './pagamento/checkout.ts'
 import { type FonteAtualizacao, verAtualizacao } from './atualizacao.ts'
+import { type ArmazemPrototipos, publicarPrototipo, verPrototipo } from './prototipo-link.ts'
 import type { DepsPagamento } from './pagamento/config.ts'
 import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts'
 import { processarAtrasos } from './pagamento/atraso.ts'
@@ -28,6 +29,8 @@ export interface Contexto {
   carregarKit: CarregarKit
   /** Atualização automática do app: manifesto + endereço temporário do .exe. Ausente = "nada a atualizar". */
   atualizacao?: FonteAtualizacao
+  /** Links provisórios do protótipo (pasta privada). Ausente = "link indisponível". */
+  prototipos?: ArmazemPrototipos
   /** Pagamento (Stripe do cliente). Ausente = rotas de pagamento respondem 503. */
   pagamento?: DepsPagamento
   /** Cadastro pós-pagamento (M4) e e-mail de boas-vindas. Ausente = /cadastro responde 503. */
@@ -251,6 +254,12 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         return json(await validarInstancia(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, uf: ctx.ufDoAcesso ? ctx.ufDoAcesso(req) : null }))
       case '/status-obras/publicar':
         return json(await publicarStatusObras(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obras: (b as Record<string, unknown>).obras }))
+      case '/prototipo/link': {
+        const origem = (ctx.origemWeb ?? '').split(',').map((x) => x.trim()).find(Boolean)
+        return json(await publicarPrototipo(ctx.deps, ctx.prototipos, origem, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, nome: s('nome'), documento: s('documento') }), 200, { 'Cache-Control': 'no-store' })
+      }
+      case '/prototipo/ver':
+        return json(await verPrototipo(ctx.deps, ctx.prototipos, s('token')), 200, { 'Cache-Control': 'no-store' })
       case '/atualizacao':
         return json(await verAtualizacao(ctx.deps, ctx.atualizacao, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, versao: s('versao') }), 200, { 'Cache-Control': 'no-store' })
       case '/entregar-kit': {
