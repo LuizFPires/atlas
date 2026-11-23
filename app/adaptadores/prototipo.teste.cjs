@@ -95,3 +95,18 @@ test('identidade própria (estilo vazio): desenha seguindo o design-system.md da
   assert.equal(e.versoes.length, 1)
   assert.match(String(chamadas[0].o?.entrada ?? JSON.stringify(chamadas[0])), /siga o design-system\.md/)
 })
+
+test('protótipo premium: todo pedido ao Claude leva a direção de arte, a navegação por âncora e a conferência final', async () => {
+  const { p, chamadas, responder } = montar()
+  await p.desenhar('obra', 'Colore', ESTILO)
+  responder(resp(2))
+  await p.ajustar('obra', 'deixa o botão maior')
+  for (const c of chamadas) {
+    const pedido = String(c.o?.entrada ?? JSON.stringify(c))
+    assert.match(pedido, /PADRÃO DE QUALIDADE/)
+    assert.match(pedido, /href="#tela-ID"/)
+    assert.match(pedido, /ANTES DE RESPONDER, confira/)
+    assert.match(pedido, /nunca "lorem ipsum"/)
+  }
+  assert.match(String(chamadas[0].o?.entrada ?? JSON.stringify(chamadas[0])), /de 5 a 8 telas/)
+})

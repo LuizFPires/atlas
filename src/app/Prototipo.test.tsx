@@ -191,3 +191,26 @@ test('veio de "Já tenho a minha identidade visual" (sem um dos 3 estilos): dese
   expect(await screen.findByText(/Fiz as primeiras telas/)).toBeInTheDocument()
   expect(screen.queryByText(/não está ligado/)).toBeNull()
 })
+
+describe('protótipo navegável (sem script)', () => {
+  const telas = [
+    { id: 'inicio', nome: 'Início', html: '<style>.b{color:red}</style><a class="b" href="#tela-agenda">Ver agenda</a>' },
+    { id: 'agenda', nome: 'Agenda', html: '<a href="#tela-inicio">Voltar</a><a href="https://phishing.test/x">fora</a><a href=\'javascript:alert(1)\'>js</a>' },
+  ]
+  test('todas as telas num documento só, cada uma isolada, abrindo na escolhida; links levam de uma à outra', async () => {
+    const { montarNavegavel } = await import('./ponte-prototipo')
+    const doc = montarNavegavel(telas, 'agenda')!
+    expect(doc).toContain('Content-Security-Policy')
+    expect(doc).toContain('<section id="tela-inicio"')
+    expect(doc).toContain('<section id="tela-agenda"')
+    expect(doc.match(/<template shadowrootmode="open">/g)).toHaveLength(2) // CSS de uma tela não vaza para a outra
+    expect(doc).toContain('href="#tela-agenda"')
+    expect(doc).toMatch(/body:not\(:has\(section:target\)\) #tela-agenda\s*\{\s*display:\s*block/)
+  })
+  test('links para fora (http, javascript:) viram âncora morta: o protótipo nunca sai de si', async () => {
+    const { montarNavegavel } = await import('./ponte-prototipo')
+    const doc = montarNavegavel(telas, 'inicio')!
+    expect(doc).not.toContain('phishing.test')
+    expect(doc).not.toMatch(/javascript:/i)
+  })
+})

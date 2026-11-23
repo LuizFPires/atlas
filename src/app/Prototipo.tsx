@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Botao, Icone, Microfone, useVoz } from '../ui'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EstiloProposto } from './ponte-estilo'
-import { montarSrcDoc, SANDBOX_PREVIEW, type EstadoProto, type PontePrototipo } from './ponte-prototipo'
+import { montarNavegavel, montarSrcDoc, SANDBOX_PREVIEW, type EstadoProto, type PontePrototipo, type TelaDesenhada } from './ponte-prototipo'
 import type { ObraDoEstilo } from './Estilo'
 import './prototipo.css'
 
@@ -29,8 +29,9 @@ export const recadoDoErroProto = (e: unknown) => {
 }
 
 /** Preview do celular: o HTML (gerado/importado, NÃO confiável) só vive dentro de um iframe com sandbox vazio. Nunca no DOM do app. */
-export function CelularPreview({ html, titulo }: { html: string; titulo: string }) {
-  const doc = montarSrcDoc(html)
+export function CelularPreview({ html, titulo, telas, inicial }: { html: string; titulo: string; telas?: TelaDesenhada[]; inicial?: string }) {
+  // Com todas as telas: protótipo NAVEGÁVEL (tocar num botão leva à outra tela). Sem elas: só esta tela.
+  const doc = telas && inicial ? montarNavegavel(telas, inicial) : montarSrcDoc(html)
   return (
     <div className="at-proto__celular">
       {doc === null
@@ -167,7 +168,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
               ))}
             </div>
           )}
-          {tela && <CelularPreview html={tela.html} titulo={`Tela ${tela.nome} no celular`} />}
+          {tela && versao && <CelularPreview html={tela.html} telas={versao.telas} inicial={tela.id} titulo={`Tela ${tela.nome} no celular (dá para tocar e navegar)`} />}
         </section>
       </div>
     </div>
