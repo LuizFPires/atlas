@@ -350,3 +350,19 @@ describe('protótipo desenhado em segundo plano', () => {
     expect(pintar).toHaveBeenCalledWith('meu-ponto', 'Meu Ponto', ESTILOS_EXEMPLO[1])
   })
 })
+
+test('a pintura parou (sem internet): avisa que continua sozinho e segue acompanhando, sem pedir o relato de novo', async () => {
+  const TELA = { id: 'inicio', nome: 'Início', html: '<div>oi</div>' }
+  let volta = false
+  const p: PontePrototipo = {
+    ...prototipoIndisponivel,
+    async estado() { return volta ? { versoes: [{ numero: 1, resumo: 'Primeiras telas', telas: [TELA] }], atual: 1 } : { versoes: [], atual: 0 } },
+    async progresso() { return volta ? null : { fase: 'mapa', parado: true, mapa: [{ id: 'inicio', nome: 'Início' }, { id: 'b', nome: 'B' }], telas: [TELA] } },
+    async pintar() { throw new Error('claude-falhou') },
+  }
+  render(<TemaProvider><Prototipo obra={{ nome: 'Meu Ponto', pasta: 'meu-ponto' }} estilo={null} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
+  expect(await screen.findByText(/continua sozinho/)).toBeInTheDocument()
+  expect(screen.queryByRole('textbox', { name: /Conte/ })).toBeNull()
+  volta = true
+  expect(await screen.findByRole('button', { name: /Telas do meu jeito/ }, { timeout: 4000 })).toBeInTheDocument()
+})

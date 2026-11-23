@@ -183,14 +183,46 @@ function criarPrototipo({ raiz, disparo }) {
   }
 
   const mapeando = new Map() // pasta → trabalho do mapa em andamento (a pintura espera por ele)
+  const emSegundoPlano = new Set() // trabalhos começados por retomarPendentes (esperarTudo, para os testes e para fechar o app)
   const arqMapa = (pasta) => caminhoSeguro(raiz, pasta, 'prototipo', 'mapa.json')
   const lerMapa = (pasta) => { try { const j = lerJson(arqMapa(pasta)); return j ? mapaDoJson(j) : null } catch { return null } }
+  const existe = (...p) => { try { return fs.statSync(caminhoSeguro(raiz, ...p)).isFile() } catch { return false } }
+
+  // Rascunho da pintura (Luiz, 23/11/2026: sem internet ou computador desligado, continua de onde parou): cada tela pronta é
+  // guardada em prototipo/rascunho/<id>.json e o estilo usado em prototipo/rascunho/estilo.json. Vira versão no fim e é apagado.
+  const dirRascunho = (pasta) => caminhoSeguro(raiz, pasta, 'prototipo', 'rascunho')
+  const lerEstiloSalvo = (pasta) => { try { const j = lerJson(caminhoSeguro(raiz, pasta, 'prototipo', 'rascunho', 'estilo.json')); return j && 'estilo' in j ? { estilo: estiloValido(j.estilo) } : null } catch { return null } }
+  const limparRascunho = (pasta) => { try { fs.rmSync(dirRascunho(pasta), { recursive: true, force: true }) } catch { /* nada */ } }
+  function lerRascunho(pasta, mapa) {
+    const prontas = new Map()
+    for (const t of mapa) {
+      try {
+        const j = lerJson(caminhoSeguro(raiz, pasta, 'prototipo', 'rascunho', `${t.id}.json`))
+        if (j) { const [v] = telasDoJson({ telas: [j] }).telas; if (v && v.id === t.id) prontas.set(t.id, v) }
+      } catch { /* tela estragada: é desenhada de novo */ }
+    }
+    return prontas
+  }
+  // Retomada sem estilo (ao abrir o Atlas): usa o que foi salvo. Estilo novo e diferente: o rascunho antigo não serve mais.
+  function prepararEstilo(pasta, estilo) {
+    const salvo = lerEstiloSalvo(pasta)
+    const est = estiloValido(estilo)
+    if (!est && salvo) return salvo.estilo
+    if (!salvo || JSON.stringify(salvo.estilo) !== JSON.stringify(est)) {
+      limparRascunho(pasta)
+      garantirSubpasta(raiz, pasta, 'prototipo', 'rascunho')
+      gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'rascunho', 'estilo.json'), JSON.stringify({ estilo: est }))
+    }
+    return est
+  }
+  const guardarNoRascunho = (pasta, t) => gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'rascunho', `${t.id}.json`), JSON.stringify(t))
 
   async function fazerMapa(pasta, nome, relato, est = null) {
     const textoRelato = typeof relato === 'string' ? relato.slice(0, 20_000) : ''
     andamento.set(pasta, { fase: 'mapeando', mapa: [], telas: [] })
     try {
       garantirSubpasta(raiz, pasta, 'prototipo')
+      gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'obra.json'), JSON.stringify({ nome }))
       if (textoRelato.trim()) gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'relato.md'), `# Relato do cliente\n\n${textoRelato.trim()}\n`)
       const mapa = mapaDoJson(extrairJson(await disparo.perguntar(pasta, pedidoMapa(nome, est, textoRelato), { timeoutMs: 600_000, maxSaida: 2_000_000 }), 'objeto'))
       gravarAtomico(arqMapa(pasta), JSON.stringify({ versao: 1, telas: mapa }))
@@ -200,35 +232,39 @@ function criarPrototipo({ raiz, disparo }) {
 
   // Desenho em lotes. O 1º lote sai sozinho (a 1ª tela vira a referência visual); os outros saem AO MESMO TEMPO,
   // até LOTES_JUNTOS por vez (pedido do Luiz, 23/11/2026: em fila, era bem mais lento que o Claude direto).
+  // Telas já no rascunho não são pedidas de novo; com a 1ª tela já pronta, todos os lotes que faltam saem juntos.
   async function fazerPintura(pasta, nome, est, mapa) {
     const resumoMapa = mapa.map((t) => ({ id: t.id, nome: t.nome }))
-    andamento.set(pasta, { fase: 'pintando', mapa: resumoMapa, telas: [] })
+    garantirSubpasta(raiz, pasta, 'prototipo', 'rascunho')
+    const feitas = lerRascunho(pasta, mapa)
+    const atuais = () => mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id))
+    andamento.set(pasta, { fase: 'pintando', mapa: resumoMapa, telas: atuais() })
     try {
-      const feitas = new Map()
       let falhou = false // um lote falhou: os que rodam juntos não publicam mais nada nem pegam lote novo
-      const publicar = () => falhou || andamento.set(pasta, { fase: 'pintando', mapa: resumoMapa, telas: mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id)) })
+      const publicar = () => falhou || andamento.set(pasta, { fase: 'pintando', mapa: resumoMapa, telas: atuais() })
       const desenharLote = async (lote, referencia) => {
         const r = telasDoJson({ ...extrairJson(await disparo.perguntar(pasta, pedidoLote(nome, est, mapa, lote, referencia), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto') })
         const pedidos = new Set(lote.map((t) => t.id))
         if (!r.telas.every((t) => pedidos.has(t.id))) throw new Error('telas-invalidas') // nada fora do lote
-        for (const t of r.telas) feitas.set(t.id, t)
+        for (const t of r.telas) { feitas.set(t.id, t); guardarNoRascunho(pasta, t) }
         publicar()
       }
+      const faltam = mapa.filter((t) => !feitas.has(t.id))
       const lotes = []
-      for (let i = 0; i < mapa.length; i += LOTE) lotes.push(mapa.slice(i, i + LOTE))
-      await desenharLote(lotes[0], null)
+      for (let i = 0; i < faltam.length; i += LOTE) lotes.push(faltam.slice(i, i + LOTE))
+      if (lotes.length && !feitas.has(mapa[0].id)) await desenharLote(lotes.shift(), null)
       const referencia = feitas.get(mapa[0].id) ?? null
-      const fila = lotes.slice(1)
       const trabalhador = async () => {
-        for (let l = fila.shift(); l && !falhou; l = fila.shift()) {
+        for (let l = lotes.shift(); l && !falhou; l = lotes.shift()) {
           try { await desenharLote(l, referencia) } catch (e) { falhou = true; throw e }
         }
       }
-      await Promise.all(Array.from({ length: Math.min(LOTES_JUNTOS, fila.length) }, trabalhador))
-      const telas = mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id))
+      await Promise.all(Array.from({ length: Math.min(LOTES_JUNTOS, lotes.length) }, trabalhador))
+      const telas = atuais()
       if (!telas.length) throw new Error('telas-invalidas')
       if (ler(pasta).versoes.length) return ler(pasta) // alguém gravou enquanto o Claude pensava
       gravarVersao(pasta, 'Primeiras telas', telas)
+      limparRascunho(pasta)
       return ler(pasta)
     } finally { andamento.delete(pasta) }
   }
@@ -268,9 +304,39 @@ function criarPrototipo({ raiz, disparo }) {
         if (antes.versoes.length) return antes // nunca refaz por cima
         const mapa = lerMapa(pasta)
         if (!mapa) throw new Error('sem-mapa')
-        return fazerPintura(pasta, String(obraNome ?? ''), estiloValido(estilo), mapa)
+        return fazerPintura(pasta, String(obraNome ?? ''), prepararEstilo(pasta, estilo), mapa)
       })
     },
+
+    /** Ao abrir o Atlas e de tempos em tempos: continua sozinho o mapa e a pintura que pararam no meio (sem internet,
+     *  computador desligado). Devolve as obras em que começou algo. Falhou de novo (ainda sem internet): tenta na próxima vez. */
+    async retomarPendentes() {
+      let pastas = []
+      try { pastas = fs.readdirSync(raiz, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.isSymbolicLink()).map((d) => d.name) } catch { return [] }
+      const comecou = []
+      for (const pasta of pastas) {
+        try {
+          if (andamento.has(pasta) || mapeando.has(pasta) || ocupadas.has(pasta)) continue
+          if (ler(pasta).versoes.length) continue
+          const info = (() => { try { return lerJson(caminhoSeguro(raiz, pasta, 'prototipo', 'obra.json')) } catch { return null } })()
+          const nome = typeof info?.nome === 'string' ? info.nome : pasta
+          let trabalho = null
+          if (lerMapa(pasta)) { if (lerEstiloSalvo(pasta)) trabalho = this.pintar(pasta, nome, null) }
+          else if (info && existe(pasta, 'prototipo', 'relato.md')) {
+            const relato = lerTexto(caminhoSeguro(raiz, pasta, 'prototipo', 'relato.md'), 40_000).replace(/^# Relato do cliente\s*/, '')
+            trabalho = this.mapear(pasta, nome, relato)
+          }
+          if (!trabalho) continue
+          const t = trabalho.catch(() => {}).finally(() => emSegundoPlano.delete(t))
+          emSegundoPlano.add(t)
+          comecou.push(pasta)
+        } catch { /* obra estranha: pula */ }
+      }
+      return comecou
+    },
+
+    /** Espera os trabalhos começados por retomarPendentes (testes; e ao fechar o app, se quiser). */
+    async esperarTudo() { await Promise.all([...emSegundoPlano]) },
 
     /** Tudo de uma vez (mapa + pintura), como antes do caminho novo. Reaproveita o mapa se já existir. */
     desenhar(pasta, obraNome, estilo, relato) {
@@ -279,9 +345,8 @@ function criarPrototipo({ raiz, disparo }) {
         const antes = ler(pasta)
         if (antes.versoes.length) return antes // nunca refaz por cima
         const nome = String(obraNome ?? '')
-        const est = estiloValido(estilo)
-        const mapa = lerMapa(pasta) ?? await fazerMapa(pasta, nome, relato, est)
-        return fazerPintura(pasta, nome, est, mapa)
+        const mapa = lerMapa(pasta) ?? await fazerMapa(pasta, nome, relato, estiloValido(estilo))
+        return fazerPintura(pasta, nome, prepararEstilo(pasta, estilo), mapa)
       })
     },
 
@@ -290,11 +355,14 @@ function criarPrototipo({ raiz, disparo }) {
       pasta = String(pasta)
       const a = andamento.get(pasta)
       if (a) return { fase: a.fase, mapa: a.mapa.map((t) => ({ ...t })), telas: a.telas.map((t) => ({ ...t })) }
-      // Parado com o mapa pronto e nada desenhado ainda (esperando o estilo): o mapa continua visível.
+      // Parado com o mapa pronto e nada desenhado ainda (esperando o estilo), ou pintura que parou no meio: o mapa e as telas
+      // já prontas continuam visíveis; parado = a pintura tinha começado (ela continua sozinha quando der).
       let desenhado = true
       try { desenhado = ler(pasta).versoes.length > 0 } catch { /* obra inexistente */ }
       const m = desenhado ? null : lerMapa(pasta)
-      return m ? { fase: 'mapa', mapa: m.map((t) => ({ id: t.id, nome: t.nome })), telas: [] } : null
+      if (!m) return null
+      const prontas = lerRascunho(pasta, m)
+      return { fase: 'mapa', parado: !!lerEstiloSalvo(pasta), mapa: m.map((t) => ({ id: t.id, nome: t.nome })), telas: m.filter((t) => prontas.has(t.id)).map((t) => ({ ...prontas.get(t.id) })) }
     },
 
     ajustar(pasta, pedido) {

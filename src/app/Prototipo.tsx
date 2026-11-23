@@ -44,6 +44,8 @@ export function CelularPreview({ html, titulo, telas, inicial }: { html: string;
   )
 }
 
+const PAROU = 'O desenho parou no meio: sem internet ou o Claude não respondeu. Nada se perdeu: o protótipo continua sozinho quando der. Deixe o Atlas aberto.'
+
 /** F07: telas desenhadas com o Claude no estilo escolhido, com o celular ao lado. */
 export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcluir }: Props) {
   const [estado, setEstado] = useState<EstadoProto>({ versoes: [], atual: 0 })
@@ -92,8 +94,10 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
     }, () => {})
     if (fase === 'mapa' && prototipo.pintar) {
       const t = setInterval(() => { void espiar() }, 1500)
-      try { mostrarPrimeiras(await prototipo.pintar(obra.pasta, obra.nome, estilo ?? null)) } catch (x) { setErro(recadoDoErroProto(x)); setPedeRelato(true) } finally { clearInterval(t); setDesenhando(false); setAndamento(null); setPronto(true) }
-      return
+      let ok = false
+      try { mostrarPrimeiras(await prototipo.pintar(obra.pasta, obra.nome, estilo ?? null)); ok = true } catch { /* sem internet ou o Claude parou: o Atlas tenta de novo sozinho */ } finally { clearInterval(t) }
+      if (ok) { setDesenhando(false); setAndamento(null); setPronto(true); return }
+      setErro(PAROU)
     }
     await new Promise<void>((fim) => {
       const t = setInterval(() => {
@@ -102,7 +106,9 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
           const e = await prototipo.estado(obra.pasta).catch(() => null)
           if (e?.versoes.length) { clearInterval(t); mostrarPrimeiras(e); fim(); return }
           const a = await prototipo.progresso?.(obra.pasta).catch(() => null)
-          if (a?.fase === 'mapa' && prototipo.pintar) { clearInterval(t); fim(); void seguirSegundoPlano('mapa') }
+          if (a?.fase === 'mapa' && !a.parado && prototipo.pintar) { clearInterval(t); fim(); void seguirSegundoPlano('mapa') }
+          else if (a?.fase === 'mapa' && a.parado) setErro(PAROU) // o Atlas tenta de novo sozinho (a cada 2 min); segue acompanhando
+          else if (a?.fase === 'pintando') setErro('')
           else if (!a) { clearInterval(t); setErro('O desenho das telas parou. Conte de novo o que você quer e o Atlas desenha.'); setPedeRelato(true); fim() }
         })()
       }, 1500)

@@ -78,6 +78,11 @@ const disparo = criarDisparo({ modelo: () => modelo.args(), raiz: obras.raiz(), 
 const ideia = require('./adaptadores/ideia.cjs').criarIdeia({ disparo: criarDisparo({ modelo: () => ['--model', 'claude-haiku-5-5'], raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() }) })
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
+// Protótipo que parou no meio (sem internet, computador desligado; pedido do Luiz, 23/11/2026): ao abrir o Atlas e a cada 2 min,
+// continua sozinho de onde parou (as telas prontas ficam salvas). Ainda sem internet: tenta de novo na próxima volta.
+const retomarPrototipos = () => { void prototipo.retomarPendentes().catch(() => {}) }
+setTimeout(retomarPrototipos, 20_000).unref?.()
+setInterval(retomarPrototipos, 2 * 60_000).unref?.()
 const batismo = criarBatismo({ raiz: obras.raiz(), disparo })
 const nomes = criarNomes()
 // Pós-obra: roda pela MESMA linha da obra (construcao.linha) e só com licença em dia, conferida AQUI no processo principal (token do cofre).

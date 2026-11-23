@@ -60,7 +60,8 @@ export interface PontePrototipo {
 }
 
 /** fase: 'mapeando' (montando o mapa), 'mapa' (mapa pronto, esperando o estilo), 'pintando' (desenhando as telas). */
-export interface ProgressoProto { fase?: 'mapeando' | 'mapa' | 'pintando'; mapa: { id: string; nome: string }[]; telas: TelaDesenhada[] }
+/** parado: a pintura começou e parou no meio (sem internet, computador desligado); o Atlas continua sozinho em instantes. */
+export interface ProgressoProto { fase?: 'mapeando' | 'mapa' | 'pintando'; parado?: boolean; mapa: { id: string; nome: string }[]; telas: TelaDesenhada[] }
 
 // ---- Segurança do preview -------------------------------------------------------------------------------------------------
 
