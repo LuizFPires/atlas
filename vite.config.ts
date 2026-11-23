@@ -2,6 +2,19 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { copyFileSync, mkdirSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
+
+// App desktop: o motor da voz (onnxruntime, usado pelo Whisper no computador) vai junto em dist-app/ort, nada de CDN.
+const motorDaVoz = () => ({
+  name: 'atlas-motor-da-voz',
+  closeBundle() {
+    const de = join('node_modules', 'onnxruntime-web', 'dist')
+    const para = join('dist-app', 'ort')
+    mkdirSync(para, { recursive: true })
+    for (const f of readdirSync(de)) if (/^ort-wasm-simd-threaded(\.jsep)?\.(wasm|mjs)$/.test(f)) copyFileSync(join(de, f), join(para, f))
+  },
+})
 
 // Build do app desktop (`vite build --mode app`): caminhos relativos (file://), sem PWA, pasta própria.
 export default defineConfig(({ mode }) => {
@@ -9,8 +22,10 @@ export default defineConfig(({ mode }) => {
   return {
   base: app ? './' : '/',
   build: app ? { outDir: 'dist-app' } : undefined,
+  worker: { format: 'es' as const },
   plugins: [
     react(),
+    ...(app ? [motorDaVoz()] : []),
     ...(app ? [] : [VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],

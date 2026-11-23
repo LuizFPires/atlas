@@ -6,17 +6,14 @@ const LINK = 'https://atlas-ia.app.br/instalar?t=abc123'
 const base = { nome: 'Zé', empresa: 'Barbearia do Zé', ramo: 'barbearia', link_instalacao: LINK, expira_em: new Date('2026-11-20T15:00:00Z') }
 
 describe('e-mail de boas-vindas em HTML (F01)', () => {
-  it('segue o protótipo: título, botão e microfone como imagem da marca, passos e aviso de uso único', () => {
+  it('segue o protótipo: título, botão em texto, passos e aviso de uso único', () => {
     const { html, assunto } = montarBoasVindas(base)
     expect(assunto).toBe('Zé, o seu Atlas chegou')
     expect(html).toContain('Zé, sua licença do Atlas está pronta.')
     expect(html).toContain('Barbearia do Zé (barbearia)')
     expect(html).toContain(`href="${LINK}"`)
-    // Botão e microfone viram imagem (o lime não sobrevive como cor de CSS no modo escuro do Gmail); o rótulo fica no alt.
-    expect(html).toContain('alt="Instalar o Atlas neste computador"')
-    expect(html).toContain('/btn-instalar.png')
-    expect(html).toContain('/marca-banner.png')
-    expect(html).toContain('/mic-pino.png')
+    // Botão em texto e marca escrita (sem imagem): decisão de 22/11/2026 para o e-mail cair na Principal.
+    expect(html).toContain('>Instalar o Atlas neste computador</a>')
     expect(html).toContain('no computador onde você vai trabalhar')
     expect(html).toContain('O que vai acontecer')
     expect(html).toContain('Você não vai precisar digitar.')
@@ -78,4 +75,24 @@ test('cortesia: a validade vai no assunto, para cada presente chegar como e-mail
   expect(b.assunto).toBe('Seu acesso ao Atlas está liberado (até 23/11)') // fim do dia em Brasília
   expect(a.assunto).not.toMatch(/ganhou|presente|grátis/i) // palavras que puxam o e-mail para a aba Promoções
   expect(a.assunto).not.toBe(b.assunto)
+})
+
+describe('e-mails de acesso com cara de aviso de sistema (para cair na Principal, não em Promoções)', () => {
+  const montados = () => [
+    montarBoasVindas(base),
+    montarCortesia({ link: LINK, validade_em: new Date('2026-11-30T12:00:00Z'), link_expira_em: new Date('2026-11-24T12:00:00Z') }),
+    montarConfirmacaoDegustacao({ dias: 7, expira_em: new Date('2026-11-24T12:00:00Z'), link: LINK }),
+  ]
+  it('nenhuma imagem: nem banner, nem botão, nem ícone (o Gmail lê imagem grande como newsletter)', () => {
+    for (const m of montados()) expect(m.html).not.toMatch(/<img\b/i)
+  })
+  it('o botão é um link de texto, com o rótulo visível', () => {
+    const [bv, cort, deg] = montados()
+    expect(bv.html).toMatch(new RegExp(`<a href="${LINK.replace(/[?.]/g, '\\$&')}"[^>]*>[^<]*Instalar o Atlas neste computador`))
+    expect(cort.html).toContain('>Instalar o Atlas neste computador</a>')
+    expect(deg.html).toContain('>Liberar o meu teste</a>')
+  })
+  it('sem palavras de promoção no assunto, no corpo e no texto', () => {
+    for (const m of montados()) expect(`${m.assunto} ${m.html} ${m.texto}`).not.toMatch(/ganhou|presente|grátis|gratuit|oferta|promo/i)
+  })
 })
