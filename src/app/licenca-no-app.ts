@@ -16,11 +16,32 @@ export interface LicencaNoApp {
   esperarPagamento(): void
   /** Lê agora (ex.: logo depois de ativar o computador). */
   conferir(): Promise<void>
+  /** Cortesia ou teste vencido: o Atlas inteiro fica travado até a compra. Lembrado no computador, para continuar travado sem internet. */
+  encerrado: Encerrado | null
+}
+
+export interface Encerrado { rotulo: string; titulo: string }
+
+export const CHAVE_ENCERRADO = 'atlas:acesso-encerrado'
+function lerEncerrado(): Encerrado | null {
+  try {
+    const v = JSON.parse(localStorage.getItem(CHAVE_ENCERRADO) ?? 'null') as Partial<Encerrado> | null
+    return v && typeof v.titulo === 'string' && typeof v.rotulo === 'string' ? { rotulo: v.rotulo, titulo: v.titulo } : null
+  } catch { return null }
+}
+function gravarEncerrado(v: Encerrado | null) {
+  try { if (v) localStorage.setItem(CHAVE_ENCERRADO, JSON.stringify(v)); else localStorage.removeItem(CHAVE_ENCERRADO) } catch { /* sem armazenamento: vale só nesta sessão */ }
+}
+/** Vencido de verdade (prazo passado na hora do servidor): o que mostrar no aviso. */
+export function encerradoDo(r: ResumoLicenca): Encerrado | null {
+  const c = cartaoDaLicenca(r)
+  return c.estado === 'vencida' ? { rotulo: c.rotulo, titulo: c.titulo } : null
 }
 
 export function useLicencaNoApp(ler: () => Promise<ResumoLicenca | null>): LicencaNoApp {
   const [resumo, setResumo] = useState<ResumoLicenca | null>(null)
   const [pagou, setPagou] = useState(false)
+  const [encerrado, setEncerrado] = useState<Encerrado | null>(lerEncerrado)
   const [esperando, setEsperando] = useState(false)
   const esperandoRef = useRef(false)
 
@@ -28,6 +49,9 @@ export function useLicencaNoApp(ler: () => Promise<ResumoLicenca | null>): Licen
     const r = await ler().catch(() => null)
     if (!r) return // sem resposta: mantém o último dado bom
     setResumo(r)
+    const venceu = encerradoDo(r)
+    setEncerrado(venceu)
+    gravarEncerrado(venceu)
     if (r.tipo === 'paga' && esperandoRef.current) { esperandoRef.current = false; setEsperando(false); setPagou(true) }
   }, [ler])
 
@@ -47,7 +71,7 @@ export function useLicencaNoApp(ler: () => Promise<ResumoLicenca | null>): Licen
   }, [esperando, conferir])
 
   const esperarPagamento = useCallback(() => { esperandoRef.current = true; setPagou(false); setEsperando(true) }, [])
-  return { cartao: cartaoDaLicenca(resumo), pagou, esperarPagamento, conferir }
+  return { cartao: cartaoDaLicenca(resumo), pagou, esperarPagamento, conferir, encerrado }
 }
 
 /** O que as telas com menu lateral precisam: o cartão e como abrir a compra. Ausente = sem contador. */

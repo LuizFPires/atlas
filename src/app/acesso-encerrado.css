@@ -1,0 +1,9 @@
+.at-encerrado { position: fixed; inset: 0; display: grid; place-items: center; padding: 32px; background: radial-gradient(ellipse at 50% 35%, rgba(200, 245, 60, 0.08), transparent 60%), #0f1113; color: #edefea; font-family: 'Geist', system-ui, sans-serif; z-index: 50; }
+.at-encerrado__cartao { width: min(520px, 100%); background: #17191c; border: 1px solid rgba(200, 245, 60, 0.45); border-radius: 24px; padding: 40px 40px 36px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5); }
+.at-encerrado__marca { width: 56px; height: 56px; padding: 12px; border-radius: 50%; color: #c8f53c; background: rgba(200, 245, 60, 0.12); }
+.at-encerrado__rotulo { margin: 8px 0 0; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.18em; color: #c8f53c; }
+.at-encerrado__titulo { margin: 0; font-size: 34px; line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
+.at-encerrado__texto { margin: 4px 0 12px; font-size: 16px; line-height: 1.55; color: #a9ada6; }
+.at-encerrado__comprar { width: 100%; min-height: 56px; border: 0; border-radius: 14px; font: inherit; font-size: 18px; font-weight: 700; cursor: pointer; background: #c8f53c; color: #141619; }
+.at-encerrado__comprar:hover { filter: brightness(1.05); }
+.at-encerrado__comprar:focus-visible { outline: 3px solid #edefea; outline-offset: 3px; }
