@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { AVISO_EMAIL } from '../ui/aviso-email'
 import { CampoFalado, Icone } from '../ui'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
@@ -88,6 +89,7 @@ export function Entrada({ api, aviso, onEntrou }: { api: PortalApi; aviso: strin
         ) : (
           <>
             <p className="c-lead">Mandamos um código para o seu e-mail. Digite os números aqui. Ele vale por alguns minutos.</p>
+            <p className="aviso-email">{AVISO_EMAIL}</p>
             <CampoFalado rotulo="Código que chegou no e-mail" valor={codigo} onChange={(v) => setCodigo(v.replace(/[^\d\s]/g, ''))} placeholder="000000" autoComplete="one-time-code" />
           </>
         )}
@@ -334,6 +336,7 @@ function Computador({ api, conta, recarregar }: { api: PortalApi; conta: ContaPo
       {etapa === 'codigo' && (
         <form className="p-troca" onSubmit={desativar} noValidate>
           <p className="p-p">Mandamos um código de 6 números para <b>{email}</b>. Digite aqui para confirmar que é você.</p>
+          <p className="aviso-email">{AVISO_EMAIL}</p>
           <CampoFalado rotulo="Código que chegou no e-mail" valor={codigo} onChange={(v) => setCodigo(v.replace(/[^\d\s]/g, ''))} placeholder="000000" autoComplete="one-time-code" />
           <div className="p-linha">
             <button type="submit" className="v-acao v-acao--pequeno" disabled={ocupado}>{ocupado ? 'Um instante…' : 'Desativar e liberar a licença'}</button>

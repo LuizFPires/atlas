@@ -23,26 +23,37 @@
 .at-obras__etapa hr { width: 100%; height: 1px; border: 0; background: var(--card-b); margin: 0; }
 .at-obras__nota { font-size: 14px; color: var(--mute); }
 
-.at-obras__baixo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 22px; }
+.at-obras__topo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: stretch; }
+.at-obras__predio { margin: 0; background: var(--card2); border-radius: 20px; padding: 18px 22px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.at-obras__predio figcaption { font-size: 15px; line-height: 1.5; color: var(--mute); }
+.at-obras__predio figcaption b { color: var(--text); }
+.at-predio { width: 100%; max-height: 260px; }
+.at-predio__chao { stroke: var(--card-b); stroke-width: 2; }
+.at-predio__grua { stroke: var(--lime-txt); stroke-width: 3; stroke-linecap: round; }
+.at-predio__contrapeso { fill: var(--lime-txt); }
+.at-predio__cabo { stroke: var(--mute2); stroke-width: 1.5; }
+.at-predio__carga { fill: var(--lime); }
+.at-predio__laje { fill: var(--card); stroke: var(--lime); stroke-width: 1.5; }
+.at-predio__janela { fill: color-mix(in srgb, var(--lime) 35%, transparent); }
+.at-predio__andar { opacity: 0; animation: at-andar 7.2s ease-out infinite; }
+.at-predio__gancho { animation: at-gancho 1.8s ease-in-out infinite alternate; }
+@keyframes at-andar { 0% { opacity: 0; transform: translateY(-16px); } 6% { opacity: 1; transform: translateY(0); } 88% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes at-gancho { from { transform: translateY(0); } to { transform: translateY(26px); } }
+@media (prefers-reduced-motion: reduce) { .at-predio__andar, .at-predio__gancho { animation: none; opacity: 1; } }
 .at-obras__primeira { background: var(--card); border: 1px solid var(--lime); border-radius: 20px; padding: 26px; display: flex; flex-direction: column; gap: 12px; }
 .at-obras__primeira h2 { font-size: 24px; }
 .at-obras__primeira p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--mute); }
 .at-obras__acoes { margin-top: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .at-obras__acao { display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 26px; border-radius: 12px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 15px var(--font-text); cursor: pointer; white-space: nowrap; }
 .at-obras__acao--principal { background: var(--lime); border-color: var(--lime); color: var(--on-lime); font-weight: 700; font-size: 16px; }
-.at-obras__ideias { background: var(--card2); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
-.at-obras__grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.at-obras__ideia { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 14px; background: var(--card); border: 1px solid var(--card-b); color: var(--text); text-align: left; font-family: var(--font-text); cursor: pointer; }
-.at-obras__ideia b { font-size: 16px; }
-.at-obras__ideia span { font-size: 14px; color: var(--mute); }
-.at-obras__pasta { margin-top: auto; font-size: 14px; line-height: 1.5; color: var(--mute); }
+.at-obras__pasta { margin-top: 4px; font-size: 14px; line-height: 1.5; color: var(--mute); }
 .at-obras__pasta b { color: var(--text); font: 13px var(--font-mono); }
 .at-obras__link { background: none; border: none; padding: 0; color: var(--lime-txt); font: 600 14px var(--font-text); cursor: pointer; }
 .at-obras__aviso { margin: 0; font-size: 14px; color: var(--mute); background: var(--soft); border-radius: 12px; padding: 10px 14px; }
 
 @media (max-width: 1100px) {
   .at-obras__etapas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .at-obras__baixo { grid-template-columns: 1fr; }
+  .at-obras__topo { grid-template-columns: 1fr; }
 }
 
 /* F06 Nova obra */

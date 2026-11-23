@@ -24,6 +24,7 @@ describe('login do portal', () => {
     await userEvent.type(screen.getByLabelText(/Qual o seu e-mail/), 'ze@barbearia.com')
     await userEvent.click(screen.getByRole('button', { name: /Receber o código/ }))
     await userEvent.type(await screen.findByLabelText(/Código que chegou/), '123456')
+    expect(screen.getByText(/Não achou o e-mail\? Olhe também nas abas Promoções e Atualizações do Gmail e na caixa de spam/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /^Entrar/ }))
     expect(await screen.findByRole('heading', { name: 'Minha conta' })).toBeInTheDocument()
     expect(screen.getByText('Zé · Barbearia do Zé')).toBeInTheDocument()

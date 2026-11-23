@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { AVISO_EMAIL } from '../ui/aviso-email'
 import { Botao, CampoFalado, Icone, Microfone, useVoz, type NomeIcone } from '../ui'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from '../web/compra'
@@ -123,6 +124,7 @@ export function Ativacao({ api, computador, faseInicial = 'email', emailInicial 
             <form className="at-ativ__form" onSubmit={confirmar}>
               <h1>Confirme que é você</h1>
               <p className="at-ativ__txt">Mandamos um código de 6 números para <b>{email.trim().toLowerCase()}</b>. Ele vale por 10 minutos.</p>
+              <p className="aviso-email">{AVISO_EMAIL}</p>
               <div className="at-ativ__codigo" onClick={() => entrada.current?.focus()}>
                 {Array.from({ length: 6 }, (_, i) => (
                   <div key={i} className={`at-ativ__digito ${codigo[i] || i === codigo.length ? 'at-ativ__digito--on' : ''}`} aria-hidden="true">{codigo[i] ?? ''}</div>

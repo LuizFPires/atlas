@@ -59,6 +59,7 @@ test('valida antes de enviar e mostra a tela de e-mail depois de enviar', async 
   await userEvent.click(screen.getByRole('button', { name: /Receber meu acesso/ }))
   await waitFor(() => expect(onEnviar).toHaveBeenCalledWith({ nome: 'Zé', empresa: '', faz: 'Barbearia', cidade: 'Campinas', uf: 'SP', email: 'ze@barbearia.com.br' }))
   expect(await screen.findByRole('status')).toHaveTextContent(/Olhe o seu e-mail/)
+  expect(screen.getByText(/Não achou o e-mail\? Olhe também nas abas Promoções e Atualizações do Gmail e na caixa de spam/)).toBeInTheDocument()
 })
 
 test('voz com o campo de e-mail já preenchido: a fala nova substitui ou continua, sem colar as palavras', () => {
