@@ -23,14 +23,24 @@ export function pontoDeCorte(audio: Float32Array, de: number, ate: number): numb
   return melhor + Math.round(janela / 2)
 }
 
-export function criarTranscricaoEmPartes(t: Transcritor, o: { minSegundos?: number } = {}) {
+/**
+ * `aoPronto` (texto ao vivo, 23/11/2026): cada trecho vai para o campo assim que fica pronto, sempre na ordem da fala;
+ * aí `terminar` entrega o resto por ele e devolve ''. Sem `aoPronto`, tudo volta junto no `terminar` (como antes).
+ */
+export function criarTranscricaoEmPartes(t: Transcritor, o: { minSegundos?: number; aoPronto?: (texto: string) => void } = {}) {
   const min = (o.minSegundos ?? 12) * TAXA
   let cortado = 0
   const partes: Promise<string>[] = []
+  let fila: Promise<void> = Promise.resolve() // entrega em ordem: cada trecho espera o anterior sair
   const mandar = (seg: Float32Array) => {
     const p = t.transcrever(seg)
     p.catch(() => {}) // o erro aparece no terminar(); aqui só evita aviso de promessa sem dono
     partes.push(p)
+    if (o.aoPronto) {
+      const entregar = o.aoPronto
+      fila = fila.then(() => p).then((s) => { const x = s.trim(); if (x) entregar(x) })
+      fila.catch(() => {})
+    }
   }
   return {
     /** Recebe o áudio gravado até agora; se já tem um trecho grande o bastante, manda transcrever. */
@@ -45,6 +55,7 @@ export function criarTranscricaoEmPartes(t: Transcritor, o: { minSegundos?: numb
     async terminar(final: Float32Array): Promise<string> {
       const resto = final.slice(Math.min(cortado, final.length))
       if (resto.length > 0.3 * TAXA || partes.length === 0) mandar(resto)
+      if (o.aoPronto) { await fila; return '' }
       const textos = await Promise.all(partes)
       return textos.map((s) => s.trim()).filter(Boolean).join(' ')
     },
