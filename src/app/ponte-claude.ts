@@ -10,6 +10,8 @@ export interface EstadoClaude {
   conta?: string
   /** Plano detectado. O Atlas não escolhe nem troca plano. */
   plano?: Plano
+  /** Assinatura como o Claude informa (ex.: 'ultra'), só para mostrar no menu. */
+  assinatura?: string
 }
 
 export type SiteClaude = 'criar-conta' | 'planos'

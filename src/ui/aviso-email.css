@@ -1,0 +1,2 @@
+/* Recado "não achou o e-mail?" (Promoções/Atualizações/spam): destacado para o cliente não perder. */
+.aviso-email { display: block; margin: 10px 0 0; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--lime); background: color-mix(in srgb, var(--lime) 10%, transparent); color: var(--texto, inherit); font-size: 15px; line-height: 1.5; font-weight: 600; }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { PonteObras } from './ponte-obras'
-import { ETAPAS_CASA, IDEIAS } from './obras-dados'
+import { ETAPAS_CASA } from './obras-dados'
+import { PredioSubindo } from './PredioSubindo'
 import './obras.css'
 
 interface Props {
@@ -13,7 +14,8 @@ interface Props {
   onTrazer: () => void
 }
 
-/** F05: minhas obras (prototipo/F05Obras). Analogia da casa, um botão claro para a primeira obra (u05) e ideias de sistemas. */
+/** F05: minhas obras (prototipo/F05Obras). O primeiro passo vem no topo, com o prédio subindo ao lado; a analogia da casa logo
+ *  abaixo. Diferente do protótipo por decisão do Luiz (22/11/2026): sem a seção "Ideias para barbearias" (PLAN, Milestone 13). */
 export function Obras({ obras, nome = 'Zé', onComecar, onTrazer }: Props) {
   const [feitas, setFeitas] = useState<string[]>([])
   const [aviso, setAviso] = useState('')
@@ -36,6 +38,28 @@ export function Obras({ obras, nome = 'Zé', onComecar, onTrazer }: Props) {
         <h1>Tudo pronto, {nome}. Agora vamos construir.</h1>
       </header>
 
+      <div className="at-obras__topo">
+        <section className="at-obras__primeira" aria-label={primeira ? 'Comece a sua primeira obra' : 'Comece outra obra'}>
+          <span className="at-obras__rotulo at-obras__rotulo--lime">{primeira ? 'PRIMEIRO PASSO: O PROJETO' : 'UMA NOVA OBRA'}</span>
+          <h2>{primeira ? 'Comece a sua primeira obra' : 'Comece outra obra'}</h2>
+          <p>Conte, com as suas palavras, o que a sua barbearia precisa. O Claude desenha as telas junto com você. Nada é construído antes de você aprovar.</p>
+          {!primeira && <p className="at-obras__feitas">Já tem {feitas.length === 1 ? '1 obra começada' : `${feitas.length} obras começadas`}: {feitas.join(', ')}.</p>}
+          <div className="at-obras__acoes">
+            <button type="button" className="at-obras__acao at-obras__acao--principal" onClick={() => onComecar()}>Começar do zero →</button>
+            <button type="button" className="at-obras__acao" onClick={onTrazer}>Já tenho um protótipo</button>
+          </div>
+          <span className="at-obras__pasta">
+            Cada obra vira um sistema separado, com o seu próprio endereço. Todas ficam guardadas na pasta <b>Atlas\Obras</b>, no seu computador.{' '}
+            <button type="button" className="at-obras__link" onClick={abrir}>Abrir a pasta</button>
+          </span>
+          {aviso && <p className="at-obras__aviso" role="status">{aviso}</p>}
+        </section>
+        <figure className="at-obras__predio">
+          <PredioSubindo />
+          <figcaption><b>Este prédio é o seu sistema.</b> Cada andar é uma etapa pronta e conferida. Durante a obra, você vê o seu prédio subir aqui no Atlas.</figcaption>
+        </figure>
+      </div>
+
       <section className="at-obras__casa" aria-label="Fazer um sistema é igual construir uma casa">
         <div className="at-obras__casa-cab">
           <h2>Fazer um sistema é igual construir uma casa.</h2>
@@ -53,33 +77,6 @@ export function Obras({ obras, nome = 'Zé', onComecar, onTrazer }: Props) {
         </ol>
         <span className="at-obras__nota">Quem trabalha na obra é o <b>Claude</b>: um constrói, outro confere, outro fiscaliza. Você só decide e acompanha.</span>
       </section>
-
-      <div className="at-obras__baixo">
-        <section className="at-obras__primeira">
-          <span className="at-obras__rotulo at-obras__rotulo--lime">{primeira ? 'PRIMEIRO PASSO: O PROJETO' : 'UMA NOVA OBRA'}</span>
-          <h2>{primeira ? 'Comece a sua primeira obra' : 'Comece outra obra'}</h2>
-          <p>Conte, com as suas palavras, o que a sua barbearia precisa. O Claude desenha as telas junto com você. Nada é construído antes de você aprovar.</p>
-          {!primeira && <p className="at-obras__feitas">Já tem {feitas.length === 1 ? '1 obra começada' : `${feitas.length} obras começadas`}: {feitas.join(', ')}.</p>}
-          <div className="at-obras__acoes">
-            <button type="button" className="at-obras__acao at-obras__acao--principal" onClick={() => onComecar()}>Começar do zero →</button>
-            <button type="button" className="at-obras__acao" onClick={onTrazer}>Já tenho um protótipo</button>
-          </div>
-        </section>
-
-        <section className="at-obras__ideias">
-          <span className="at-obras__rotulo">IDEIAS PARA BARBEARIAS · ESCOLHA UMA PARA COMEÇAR</span>
-          <div className="at-obras__grade">
-            {IDEIAS.map((i) => (
-              <button key={i.nome} type="button" className="at-obras__ideia" onClick={() => onComecar(i.nome)}><b>{i.nome}</b><span>{i.desc}</span></button>
-            ))}
-          </div>
-          <span className="at-obras__pasta">
-            Cada obra vira um sistema separado, com o seu próprio endereço. Todas ficam guardadas na pasta <b>Atlas\Obras</b>, no seu computador.{' '}
-            <button type="button" className="at-obras__link" onClick={abrir}>Abrir a pasta</button>
-          </span>
-          {aviso && <p className="at-obras__aviso" role="status">{aviso}</p>}
-        </section>
-      </div>
     </div>
   )
 }
