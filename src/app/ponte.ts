@@ -8,6 +8,7 @@ import type { PonteConstrucao, PonteModoObra } from './ponte-construcao'
 import type { PontePainel } from './ponte-painel'
 import type { PonteEstilo } from './ponte-estilo'
 import type { PontePrototipo } from './ponte-prototipo'
+import type { PonteModelo } from './ponte-modelo'
 import type { PonteBatismo, PonteNomes } from './ponte-batismo'
 import type { PontePosObra } from './ponte-posobra'
 import type { PonteRetomar } from './ponte-retomar'
@@ -53,6 +54,8 @@ export interface PonteDesktop {
   retomar?: PonteRetomar
   estilo?: PonteEstilo
   prototipo?: PontePrototipo
+  /** Modelo do Claude escolhido pelo cliente (um só para todo o Atlas). */
+  modelo?: PonteModelo
   batismo?: PonteBatismo
   nomes?: PonteNomes
   posobra?: PontePosObra

@@ -27,13 +27,15 @@ type Props = {
   licenca?: LicencaNoMenu
   /** O que o app leu do Claude do cliente (assinatura). Sem leitura, o cartão não aparece. */
   plano?: { valor: string; sub: string } | null
+  /** Modelo do Claude (um só para todo o Atlas). Sem ele, o seletor não aparece. */
+  modelo?: { atual: string; lista: { id: string; nome: string; explica: string; recomendado: boolean }[]; escolher(id: string): void } | null
   /** Com teste/cortesia: abre a compra de dentro do Atlas. Sem ele o botão não aparece. */
   onComprar?: () => void
   children?: ReactNode
 }
 
 /** Menu lateral sempre escuro, com um botão fixo só: "Falar com o Atlas" (abre a Ajuda já ouvindo; decisão no PLAN, M13). */
-export function Shell({ ativo, onNavegar, onFalar, licenca, plano, onComprar, children }: Props) {
+export function Shell({ ativo, onNavegar, onFalar, licenca, plano, modelo, onComprar, children }: Props) {
   const { tema } = useTema()
   return (
     <div className="at-shell">
@@ -61,6 +63,14 @@ export function Shell({ ativo, onNavegar, onFalar, licenca, plano, onComprar, ch
               <span className="rotulo at-plano__rotulo">Plano Claude</span>
               <span className="at-plano__valor">{plano.valor}</span>
               <span className="at-plano__sub">{plano.sub}</span>
+              {modelo && (
+                <label className="at-plano__modelo">
+                  <span className="at-plano__modelo-rot">Modelo</span>
+                  <select aria-label="Modelo do Claude" value={modelo.atual} title={modelo.lista.find((m) => m.id === modelo.atual)?.explica} onChange={(e) => modelo.escolher(e.target.value)}>
+                    {modelo.lista.map((m) => <option key={m.id} value={m.id}>{m.nome}{m.recomendado ? ' (recomendado)' : ''}</option>)}
+                  </select>
+                </label>
+              )}
             </div>
           )}
           {licenca && licenca.estado !== 'ativa' ? (
