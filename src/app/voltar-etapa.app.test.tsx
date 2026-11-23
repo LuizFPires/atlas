@@ -32,8 +32,8 @@ test('ideia → estilo → nome: cada Voltar volta uma etapa só, e voltar à id
   expect(await screen.findByRole('heading', { name: 'Qual é a cara do seu sistema?' })).toBeInTheDocument()
   expect(obras.criadas).toHaveLength(1)
   // Escolhe o estilo: vai para o nome (as telas são pintadas em segundo plano). Do nome, Voltar volta para o estilo.
-  await user.type(await screen.findByLabelText(/Cole um link/), 'aesop.com')
-  await user.click(screen.getByRole('button', { name: 'Adicionar link' }))
+  await user.type(await screen.findByLabelText(/Cole o link de um site ou app/), 'aesop.com')
+  await user.click(screen.getByRole('button', { name: 'Adicionar' }))
   await user.click(screen.getByRole('button', { name: 'Confiança' }))
   await user.click(screen.getByRole('button', { name: 'Mostrar 3 estilos' }))
   await user.click(await screen.findByRole('button', { name: /e desenhar as telas/ }, { timeout: 4000 }))

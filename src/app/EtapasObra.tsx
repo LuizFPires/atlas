@@ -25,10 +25,13 @@ interface Props {
   progresso?: () => Promise<ProgressoProto | null>
   onVerTelas?: () => void
   intervaloMs?: number
+  /** A etapa mais adiantada que a obra já alcançou: até ela, cada etapa vira botão (Luiz, 23/11/2026: navegar entre etapas). */
+  alcancada?: EtapaDoCaminho
+  onIr?: (e: EtapaDoCaminho) => void
 }
 
 /** Faixa do caminho novo (prototipo/caminho-novo): as 6 etapas e o aviso do protótipo que roda em segundo plano. */
-export function EtapasObra({ atual, progresso, onVerTelas, intervaloMs = 3000 }: Props) {
+export function EtapasObra({ atual, progresso, onVerTelas, intervaloMs = 3000, alcancada, onIr }: Props) {
   const [aviso, setAviso] = useState<string | null>(null)
   useEffect(() => {
     if (!progresso) return
@@ -39,12 +42,15 @@ export function EtapasObra({ atual, progresso, onVerTelas, intervaloMs = 3000 }:
     return () => { vivo = false; clearInterval(t) }
   }, [progresso, intervaloMs])
   const i = ETAPAS.findIndex((e) => e.id === atual)
+  const ate = Math.max(i, ETAPAS.findIndex((e) => e.id === alcancada))
   return (
     <div className="at-etapas">
       <ol className="at-etapas__lista" aria-label="Etapas da obra">
         {ETAPAS.map((e, k) => (
-          <li key={e.id} data-estado={k < i ? 'feito' : k === i ? 'agora' : 'depois'} aria-current={k === i ? 'step' : undefined}>
-            <span className="at-etapas__barra" aria-hidden="true" />{e.rot}
+          <li key={e.id} data-estado={k === i ? 'agora' : k <= ate ? 'feito' : 'depois'} aria-current={!onIr && k === i ? 'step' : undefined}>
+            {onIr && k <= ate
+              ? <button type="button" className="at-etapas__ir" aria-current={k === i ? 'step' : undefined} onClick={() => { if (k !== i) onIr(e.id) }}><span className="at-etapas__barra" aria-hidden="true" />{e.rot}</button>
+              : <><span className="at-etapas__barra" aria-hidden="true" />{e.rot}</>}
           </li>
         ))}
       </ol>

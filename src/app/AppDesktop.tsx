@@ -142,6 +142,15 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Idem para a pasta das obras (Atlas\Obras): sem adaptador real, não finge que criou a pasta.
   const ponteObras = useMemo<PonteObras>(() => obras ?? (modoFixture() ? criarObrasFixture(dono || 'Zé') : (ponte.obras ?? obrasIndisponivel)), [obras, dono, ponte])
   // Com obras já começadas, o Atlas abre no Canteiro de obras (Milestone 37); sem nenhuma, fica no começo (Nova obra). Uma vez só.
+  // Etapa mais adiantada que a obra aberta já alcançou: até ela dá para navegar pela faixa das etapas (Luiz, 23/11/2026).
+  const [alcancada, setAlcancada] = useState<EtapaDoCaminho>('ideia')
+  const ORDEM_ETAPAS: readonly EtapaDoCaminho[] = ['ideia', 'estilo', 'batismo', 'telas', 'contas', 'aprovar']
+  useEffect(() => {
+    const k = ORDEM_ETAPAS.indexOf(fluxo as EtapaDoCaminho)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- guarda o máximo alcançado; só muda quando a etapa avança
+    if (k >= 0) setAlcancada((a) => (ORDEM_ETAPAS.indexOf(a) >= k ? a : ORDEM_ETAPAS[k]))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ORDEM_ETAPAS é fixa
+  }, [fluxo])
   const decidiuInicio = useRef(false)
   const fluxoAgora = useRef('lista')
   useEffect(() => { fluxoAgora.current = fluxo })
@@ -164,6 +173,11 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteIdeia = useMemo<PonteIdeia>(() => (modoFixture() ? criarIdeiaFixture() : (ponte.ideia ?? ideiaIndisponivel)), [ponte])
   const pontePrototipo = useMemo<PontePrototipo>(() => prototipo ?? (modoFixture() ? criarPrototipoFixture(ponteObras.raiz()) : (ponte.prototipo ?? prototipoIndisponivel)), [prototipo, ponteObras, ponte])
 
+  const irParaEtapa = async (e: EtapaDoCaminho) => {
+    // Voltar à ideia de uma obra já criada: traz o que foi contado (senão o Atlas criaria outra obra).
+    if (e === 'ideia' && obraAtual && relatoDaObra === null) setRelatoDaObra((await pontePrototipo.relato?.(obraAtual.pasta).catch(() => '')) ?? '')
+    setFluxo(e)
+  }
   // Idem para o Claude que sugere os nomes e grava a marca na pasta da obra: sem adaptador real, não finge.
   const ponteBatismo = useMemo<PonteBatismo>(() => batismo ?? (modoFixture() ? criarBatismoFixture(ponteObras.raiz()) : (ponte.batismo ?? batismoIndisponivel)), [batismo, ponteObras, ponte])
   // Idem para conferir nomes parecidos e endereço livre (consulta pública): sem adaptador real, não finge que conferiu.
@@ -287,6 +301,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   if (tela === null) return null
   // Minhas obras → "Continuar": cada obra volta para a etapa em que parou (fase-obra.ts). O estilo escolhido fica no design-system.md da pasta.
   const continuarObra = (o: ObraParaContinuar) => {
+    setAlcancada(o.etapa === 'obra' ? 'aprovar' : o.etapa)
     setAtivo('obras')
     setObraAtual({ nome: o.nome, pasta: o.pasta })
     setRelatoDaObra(null)
@@ -323,7 +338,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Demais telas (F05+ vêm nos próximos milestones): por ora cai em Obras.
   let conteudo: ReactNode
   if (ativo === 'obras' && fluxo === 'trazer') conteudo = <TrazerPrototipo obras={ponteObras} importar={ponteImportar} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} />
-  else if (ativo === 'obras' && fluxo === 'estilo' && obraAtual) conteudo = <Estilo obra={obraAtual} arquivos={ponteArquivos} estilo={ponteEstilo} onVoltar={() => setFluxo(relatoDaObra !== null ? 'ideia' : 'lista')} onConcluir={(r) => { setEstiloEscolhido(r.estilo); void pontePrototipo.pintar?.(obraAtual.pasta, obraAtual.nome, r.estilo).catch(() => {}); setFluxo('batismo') }} />
+  else if (ativo === 'obras' && fluxo === 'estilo' && obraAtual) conteudo = <Estilo obra={obraAtual} arquivos={ponteArquivos} estilo={ponteEstilo} onAvancar={ORDEM_ETAPAS.indexOf(alcancada) > 1 ? () => setFluxo('batismo') : undefined} onVoltar={() => setFluxo(relatoDaObra !== null ? 'ideia' : 'lista')} onConcluir={(r) => { setEstiloEscolhido(r.estilo); void pontePrototipo.pintar?.(obraAtual.pasta, obraAtual.nome, r.estilo).catch(() => {}); setFluxo('batismo') }} />
   else if (ativo === 'obras' && fluxo === 'telas' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setFluxo('batismo')} onConcluir={() => setFluxo('contas')} />
   else if (ativo === 'obras' && fluxo === 'batismo' && obraAtual) conteudo = <Batismo obra={obraAtual} batismo={ponteBatismo} nomes={ponteNomes} arquivos={ponteArquivos} onVoltar={() => setFluxo('estilo')} onConcluir={() => setFluxo('telas')} />
   else if (ativo === 'posobra') conteudo = obraAtual ? <PosObra obra={obraAtual} posobra={pontePosObra} arquivos={ponteArquivos} licenca={ponteLicenca} onAcompanhar={() => setAtivo('obra')} /> : <p>Escolha uma obra em Minhas obras para pedir uma mudança nela.</p>
@@ -349,8 +364,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     : <SemObra rotulo="COMO RETOMAR" titulo="Nenhuma obra parada agora." texto="Se o computador desligar ou a cota do Claude acabar, a obra para no ponto em que estava. Quando você ligar o computador, o Atlas abre sozinho aqui, com um botão só: Continuar obra." onIrObras={() => setAtivo('obras')} />
   else if (ativo === 'prototipo' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setAtivo('obras')} onConcluir={() => { setAtivo('obras'); setFluxo('batismo') }} />
   else if (ativo === 'prototipo' || ativo === 'obra') conteudo = <SemObra rotulo={ativo === 'prototipo' ? 'PROTÓTIPO' : 'OBRA'} titulo="Escolha uma obra primeiro." texto="Escolha uma obra em Minhas obras (ou comece a primeira). Depois é aqui que você vê as telas dela e acompanha a construção." onIrObras={() => setAtivo('obras')} />
-  else if (ativo === 'canteiro' || ativo === 'concluidas') conteudo = <Canteiro modo={ativo} obras={ponteObras} painel={pontePainel} retomar={ponteRetomar} onAbrir={continuarObra} onNova={() => { setAtivo('obras'); setRelatoDaObra(null); setFluxo('ideia') }} />
-  else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} painel={pontePainel} nome={dono || undefined} onComecar={() => { setRelatoDaObra(null); setFluxo('ideia') }} onTrazer={() => setFluxo('trazer')} onVerCanteiro={() => setAtivo('canteiro')} />
+  else if (ativo === 'canteiro' || ativo === 'concluidas') conteudo = <Canteiro modo={ativo} obras={ponteObras} painel={pontePainel} retomar={ponteRetomar} onAbrir={continuarObra} onNova={() => { setAtivo('obras'); setRelatoDaObra(null); setAlcancada('ideia'); setObraAtual(null); setFluxo('ideia') }} />
+  else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} painel={pontePainel} nome={dono || undefined} onComecar={() => { setRelatoDaObra(null); setAlcancada('ideia'); setObraAtual(null); setFluxo('ideia') }} onTrazer={() => setFluxo('trazer')} onVerCanteiro={() => setAtivo('canteiro')} />
   // Dentro da obra (Milestone 37): nome no topo, volta ao Canteiro e as partes (Construção, Protótipo, Pedir mudança).
   if (obraAtual && (ativo === 'obra' || ativo === 'prototipo' || ativo === 'posobra')) {
     conteudo = <><AbasDaObra nome={obraAtual.nome} atual={ativo} onIr={(p) => setAtivo(p)} onCanteiro={() => setAtivo('canteiro')} />{conteudo}</>
@@ -358,7 +373,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Caminho novo: faixa das 6 etapas no topo; fora das telas, o aviso do protótipo em segundo plano leva até elas.
   const CAMINHO: readonly string[] = ['ideia', 'estilo', 'batismo', 'telas', 'contas', 'aprovar']
   if (ativo === 'obras' && CAMINHO.includes(fluxo)) {
-    conteudo = <><EtapasObra atual={fluxo as EtapaDoCaminho} progresso={fluxo !== 'telas' ? progressoDaObra : undefined} onVerTelas={() => setFluxo('telas')} />{conteudo}</>
+    conteudo = <><EtapasObra atual={fluxo as EtapaDoCaminho} alcancada={obraAtual ? alcancada : undefined} onIr={obraAtual ? (e) => { void irParaEtapa(e) } : undefined} progresso={fluxo !== 'telas' ? progressoDaObra : undefined} onVerTelas={() => setFluxo('telas')} />{conteudo}</>
   }
   // "Ajuda do Atlas" no menu abre o painel por cima da tela atual (não troca de tela).
   return com(<Obras ativo={ativo} onFalar={() => abrirAjuda({ origem: 'menu', ouvir: true })} onNavegar={(t) => { if (t === 'ajuda') { abrirAjuda({ origem: 'menu' }); return } setAtivo(t); if (t === 'obras') setFluxo('lista') }}>{conteudo}</Obras>)

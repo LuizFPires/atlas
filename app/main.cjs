@@ -206,6 +206,7 @@ handle('atlas:prototipo:desenhar', (pasta, nome, estilo, relato) => prototipo.de
 handle('atlas:prototipo:ajustar', (pasta, pedido) => prototipo.ajustar(String(pasta), String(pedido)))
 handle('atlas:prototipo:voltar', (pasta, numero) => prototipo.voltar(String(pasta), Number(numero)))
 // 3 versões de uma tela (Milestone 36): comparar e escolher. A escolha vira versão nova.
+handle('atlas:prototipo:relato', (pasta) => prototipo.relato(String(pasta)))
 handle('atlas:prototipo:versoes', (pasta, telaId) => prototipo.versoesDaTela(String(pasta), String(telaId)))
 handle('atlas:prototipo:escolher', (pasta, telaId, html, titulo) => prototipo.escolherVersao(String(pasta), String(telaId), String(html), String(titulo)))
 // Link provisório para o celular (7 dias, servidor do Atlas): só o protótipo protegido sai; WhatsApp só do link recém-gerado.

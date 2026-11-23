@@ -54,6 +54,8 @@ export interface PontePrototipo {
   ajustar(pasta: string, pedido: string): Promise<{ estado: EstadoProto; resposta: string }>
   /** Volta a ver uma versão anterior. Não apaga nem reescreve nada: só muda a versão atual. */
   voltar(pasta: string, numero: number): Promise<EstadoProto>
+  /** O que o cliente contou (prototipo/relato.md), para voltar à etapa da ideia. */
+  relato?(pasta: string): Promise<string>
   /** 3 jeitos de uma tela, para comparar (Milestone 36). Não grava nada. */
   versoesDaTela?(pasta: string, telaId: string): Promise<VersaoDaTela[]>
   /** "Quero esta": troca só aquela tela numa versão NOVA. */

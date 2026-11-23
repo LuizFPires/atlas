@@ -28,7 +28,7 @@ test('obra com nome e protótipo: Continuar abre as telas para conferir', async 
   await userEvent.click(await screen.findByRole('link', { name: 'Canteiro de obras' }))
   const cartao = await screen.findByRole('article', { name: /^Agenda do ze: falta terminar, etapa 4 de 6/ })
   await userEvent.click(within(cartao).getByRole('button'))
-  expect(await screen.findByText(/Projeto 2 de 3 · Telas/)).toBeInTheDocument()
+  expect(await screen.findByText(/^O protótipo/, { selector: '.at-proto__rotulo' })).toBeInTheDocument()
 })
 
 test('Nova obra, com obras já começadas, leva ao Canteiro, onde elas estão', async () => {
@@ -42,4 +42,25 @@ test('com obras começadas, o Atlas abre no Canteiro de obras', async () => {
   montar({ 'agenda-do-ze': { estilo: true, prototipo: false, marca: false, plano: false } })
   expect(await screen.findByRole('article', { name: /^Agenda do ze: falta terminar/ })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Canteiro de obras' })).toHaveAttribute('aria-current', 'page')
+})
+
+test('dentro do caminho, as etapas já feitas são botões: do protótipo dá para voltar ao visual e ir de novo às telas', async () => {
+  montar({ 'agenda-do-ze': { estilo: true, prototipo: true, marca: true, plano: false } })
+  await userEvent.click(await screen.findByRole('link', { name: 'Canteiro de obras' }))
+  await userEvent.click(within(await screen.findByRole('article', { name: /^Agenda do ze/ })).getByRole('button'))
+  await screen.findByText(/^O protótipo/, { selector: '.at-proto__rotulo' })
+  await userEvent.click(screen.getByRole('button', { name: /2 · O visual/i }))
+  expect(await screen.findByRole('heading', { name: /Qual é a cara do seu sistema\?/ })).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: /4 · O protótipo/i }))
+  expect(await screen.findByText(/^O protótipo/, { selector: '.at-proto__rotulo' })).toBeInTheDocument()
+})
+
+test('voltou ao visual pela faixa: dá para seguir sem mudar o visual', async () => {
+  montar({ 'agenda-do-ze': { estilo: true, prototipo: true, marca: true, plano: false } })
+  await userEvent.click(await screen.findByRole('link', { name: 'Canteiro de obras' }))
+  await userEvent.click(within(await screen.findByRole('article', { name: /^Agenda do ze/ })).getByRole('button'))
+  await screen.findByText(/^O protótipo/, { selector: '.at-proto__rotulo' })
+  await userEvent.click(screen.getByRole('button', { name: /2 · O visual/i }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Manter o visual de agora e seguir →' }))
+  expect(await screen.findByRole('button', { name: /3 · O nome/i })).toHaveAttribute('aria-current', 'step')
 })

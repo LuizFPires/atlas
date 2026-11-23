@@ -11,3 +11,6 @@
 @keyframes at-etapas-giro { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .at-etapas__giro { animation: none; } }
 @media (max-width: 900px) { .at-etapas { flex-direction: column; align-items: stretch; } .at-etapas__lista { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.at-etapas__ir { all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: 7px; width: 100%; padding: 4px 0 6px; cursor: pointer; border-radius: 6px; }
+.at-etapas__ir:hover { color: var(--lime-txt, var(--lime)); }
+.at-etapas__ir:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }

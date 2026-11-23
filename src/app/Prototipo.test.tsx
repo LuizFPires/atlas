@@ -22,7 +22,7 @@ const montar = async (prototipo: PontePrototipo = criarPrototipoFixture(), estil
 
 test('desenha as telas no estilo escolhido e mostra o rótulo do projeto', async () => {
   await montar()
-  expect(await screen.findByText(/Projeto 2 de 3 · Telas · Estilo "Couro e madeira" · Versão 1/)).toBeInTheDocument()
+  expect(await screen.findByText(/O protótipo · Estilo "Couro e madeira" · Versão 1/)).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Agenda da Barbearia do Zé' })).toBeInTheDocument()
   expect(screen.getByText(/Fiz as primeiras telas no estilo que você escolheu/)).toBeInTheDocument()
   expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Marcar horário', 'Agenda do dia', 'Confirmação', 'Início'])

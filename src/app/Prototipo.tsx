@@ -318,7 +318,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
     <div className="at-proto">
       <header className="at-proto__cab">
         <div className="at-proto__tit">
-          <span className="at-proto__rotulo">Projeto 2 de 3 · Telas{estilo ? ` · Estilo "${estilo.nome}"` : ''}{versao ? ` · Versão ${versao.numero}` : ''}</span>
+          <span className="at-proto__rotulo">O protótipo{estilo ? ` · Estilo "${estilo.nome}"` : ''}{versao ? ` · Versão ${versao.numero}` : ''}</span>
           <h1>{obra.nome}</h1>
         </div>
         {versao && (

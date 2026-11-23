@@ -2,7 +2,7 @@ import { useContext, useState } from 'react'
 import { Botao, CampoFalado, Icone, useVoz } from '../ui'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EntradaEstilo, EstiloProposto, PonteEstilo } from './ponte-estilo'
-import { FASES, linkCurto, MAX_REFERENCIAS, MIN_REFERENCIAS, MODOS, normalizarLink, SENTIMENTOS, UPLOADS } from './estilo-dados'
+import { linkCurto, MAX_REFERENCIAS, MIN_REFERENCIAS, MODOS, normalizarLink, SENTIMENTOS, UPLOADS } from './estilo-dados'
 import { ContextoConectarClaude } from './conectar-claude'
 import { PaletaCores } from './PaletaCores'
 import { Pintor } from './Pintor'
@@ -18,6 +18,8 @@ interface Props {
   onVoltar: () => void
   /** Depois que o design system foi guardado na pasta da obra. */
   onConcluir?: (resultado: { estilo: EstiloProposto | null; caminho: string }) => void
+  /** A obra já tem visual (voltou pela faixa das etapas): seguir sem mudar nada. */
+  onAvancar?: () => void
 }
 
 interface Ref { tipo: 'link' | 'print'; valor: string; texto: string }
@@ -34,7 +36,7 @@ const recadoUpload = (e: unknown) => recado(e, 'PNG, JPG, WEBP, PDF ou o design-
 /** F06b: estilo do sistema (projeto 1/3). Referências (link, print ou fala) e o sentimento desejado. */
 const SEM_CLAUDE = 'O Claude ainda não está conectado neste computador. É ele quem monta os estilos: conecte agora (leva um clique) e depois toque em Mostrar 3 estilos de novo. Suas referências continuam aqui.'
 
-export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) {
+export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir, onAvancar }: Props) {
   const [refs, setRefs] = useState<Ref[]>([])
   const [link, setLink] = useState('')
   const [fala, setFala] = useState('')
@@ -159,12 +161,8 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
 
   return (
     <div className="at-estilo">
-      <div className="at-estilo__fases">
-        {FASES.map((f, i) => (
-          <div key={f.n} className={`at-estilo__fase ${i === 0 ? 'at-estilo__fase--agora' : ''}`} aria-current={i === 0 ? 'step' : undefined}><span>{f.n}</span>{f.nome}</div>
-        ))}
-        <span className="at-estilo__proj">PROJETO · {obra.nome.toUpperCase()}</span>
-      </div>
+      {/* As etapas ficam só na faixa de cima (EtapasObra); aqui, só o nome da obra. */}
+      <div className="at-estilo__fases"><span className="at-estilo__proj">OBRA · {obra.nome.toUpperCase()}</span></div>
       <header className="at-estilo__cab">
         <h1>Qual é a cara do seu sistema?</h1>
         <span>Antes de desenhar as telas, vamos escolher as cores, as letras e o jeito dos botões. Assim o protótipo já nasce com a cara da sua barbearia.</span>
@@ -179,20 +177,11 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
         <b className="at-estilo__tit">Mande 1 a 3 sites ou apps que você acha bonitos</b>
         <span className="at-estilo__sub">Pode ser de qualquer ramo: uma loja, um banco, um restaurante. Vale link ou print da tela.</span>
 
-        <ul className="at-estilo__refs" aria-label="Referências que você mandou">
-          {refs.map((r) => (
-            <li key={r.valor} className="at-estilo__ref at-estilo__ref--ok">
-              <span className="at-estilo__ref-txt">{r.texto}</span>
-              <span className="at-estilo__ref-st"><Icone nome="check" tamanho={14} /> anotado</span>
-              <button type="button" className="at-estilo__tirar" aria-label={`Tirar ${r.texto}`} onClick={() => setRefs(refs.filter((x) => x !== r))}><Icone nome="x" tamanho={14} /></button>
-            </li>
-          ))}
-          {refs.length === 0 && !fala.trim() && <li className="at-estilo__ref"><span className="at-estilo__ref-txt at-estilo__ref-txt--vazio">Ainda não mandou nenhuma referência</span></li>}
-        </ul>
-
+        {/* Luiz, 23/11/2026: o campo vem primeiro e a lista vai crescendo embaixo dele (antes a caixa vazia ficava em cima e parecia
+            que era para clicar nela). */}
         <form className="at-estilo__link" onSubmit={(e) => { e.preventDefault(); adicionarLink() }}>
-          <CampoFalado rotulo="Cole um link" obs="(opcional se você mandar print ou falar)" valor={link} onChange={setLink} placeholder="aesop.com" />
-          <Botao type="submit" variante="secundario">Adicionar link</Botao>
+          <CampoFalado rotulo="Cole o link de um site ou app" obs="(ou mande um print, ou fale)" valor={link} onChange={setLink} placeholder="aesop.com" />
+          <Botao type="submit" variante="secundario" disabled={!link.trim()}>Adicionar</Botao>
         </form>
 
         <div className="at-estilo__acoes">
@@ -207,6 +196,17 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
             <span>O Atlas escreveu assim. Pode corrigir se quiser:</span>
             <textarea rows={3} value={fala} onChange={(e) => setFala(e.target.value)} />
           </label>
+        )}
+        {refs.length > 0 && (
+          <ul className="at-estilo__refs" aria-label="Referências que você mandou">
+            {refs.map((r) => (
+              <li key={r.valor} className="at-estilo__ref at-estilo__ref--ok">
+                <span className="at-estilo__ref-txt">{r.texto}</span>
+                <span className="at-estilo__ref-st"><Icone nome="check" tamanho={14} /> anotado</span>
+                <button type="button" className="at-estilo__tirar" aria-label={`Tirar ${r.texto}`} onClick={() => setRefs(refs.filter((x) => x !== r))}><Icone nome="x" tamanho={14} /></button>
+              </li>
+            ))}
+          </ul>
         )}
         {!suportado && <span className="at-estilo__sub">Este navegador não escuta a sua voz. Pode digitar normalmente.</span>}
         {aviso && <p className="at-nova__erro" role="alert">{aviso}</p>}
@@ -323,6 +323,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
             ? <Botao disabled={!temIdentidade || ocupado !== ''} onClick={usarIdentidade}>{ocupado === 'guardando' ? 'Guardando…' : 'Usar a minha identidade e desenhar as telas →'}</Botao>
             : propostos && <Botao disabled={ocupado !== ''} onClick={usar}>{ocupado === 'guardando' ? 'Guardando…' : `Usar "${propostos?.find((p) => p.id === escolhido)?.nome ?? ''}" e desenhar as telas →`}</Botao>}
         <span>Vira o design system do seu sistema. Dá para ajustar depois.</span>
+        {onAvancar && !guardado && <Botao variante="secundario" className="at-estilo__avancar" onClick={onAvancar}>Manter o visual de agora e seguir →</Botao>}
       </div>
     </div>
   )
