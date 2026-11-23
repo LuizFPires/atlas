@@ -2,7 +2,7 @@
 // Diferenças conscientes: o app usa ícone SVG no lugar de "✓"/"+" e não desenha a onda do áudio nem o contador "0:42".
 import f05 from '../../prototipo/F05Obras.dc.html?raw'
 import f06 from '../../prototipo/F06NovaObra.dc.html?raw'
-import { ETAPAS_CASA, IDEIAS, PERGUNTAS, QUEM_USA } from './obras-dados'
+import { ETAPAS_CASA, IDEIAS, PERGUNTAS } from './obras-dados'
 
 test('F05: etapas da casa e ideias batem com o protótipo', () => {
   for (const e of ETAPAS_CASA) {
@@ -34,10 +34,8 @@ test('F05: textos fixos', () => {
   expect(f05).toContain('Tudo pronto, Zé. Agora vamos construir.')
 })
 
-test('F06: opções de quem usa, textos do microfone e do painel batem com o protótipo', () => {
-  for (const q of QUEM_USA) expect(f06).toContain(`{ id: '${q.id}', nome: '${q.nome}' }`)
+test('F06: textos do microfone e do painel batem com o protótipo (quem usa: sem opções prontas, decisão M13)', () => {
   expect(f06).toContain(PERGUNTAS[2].titulo)
-  expect(f06).toContain(PERGUNTAS[2].dica)
   for (const t of [
     'NOVA OBRA · PERGUNTA 3 DE 5',
     'Aperte e fale, como se contasse para um amigo na mesa de um restaurante.',

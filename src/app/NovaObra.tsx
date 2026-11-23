@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
 import { Botao, Icone, useVoz } from '../ui'
 import type { ObraCriada, PonteObras } from './ponte-obras'
-import { PERGUNTAS, QUEM_USA, type IdPergunta } from './obras-dados'
+import { PERGUNTAS, type IdPergunta } from './obras-dados'
 import './obras.css'
 
 export type Respostas = Record<IdPergunta, string>
@@ -15,7 +15,7 @@ interface Props {
   ideia?: string
   onVoltar: () => void
   onConcluir: (obra: ObraNova) => void
-  /** Segue para o estilo do sistema (F06b). Sem isto, só mostra "Ver minhas obras". */
+  /** Segue para o estilo do sistema (F06b). Com ele, é o único caminho (o "Ver minhas obras" saía do fluxo no meio). Sem ele, só mostra "Ver minhas obras". */
   onEstilo?: (obra: ObraNova) => void
 }
 
@@ -55,14 +55,14 @@ function BlocoVoz({ valor, onChange }: { valor: string; onChange: (v: string) =>
 export function NovaObra({ obras, ideia = '', onVoltar, onConcluir, onEstilo }: Props) {
   const [i, setI] = useState(0)
   const [resp, setResp] = useState<Respostas>({ ...VAZIAS, nome: ideia })
-  const [quem, setQuem] = useState<string[]>(['dono'])
   const [erro, setErro] = useState('')
   const [criando, setCriando] = useState(false)
   const [pronta, setPronta] = useState<ObraNova | null>(null)
 
   const p = PERGUNTAS[i]
   const ultima = i === PERGUNTAS.length - 1
-  const nomesQuem = QUEM_USA.filter((q) => quem.includes(q.id)).map((q) => q.nome)
+  // Quem usa: a pessoa conta do jeito dela (sem opções prontas de um ramo só).
+  const nomesQuem = resp.quem.trim() ? [resp.quem.trim()] : []
   const mudar = (v: string) => { setErro(''); setResp({ ...resp, [p.id]: v }) }
 
   const avancar = async () => {
@@ -84,7 +84,7 @@ export function NovaObra({ obras, ideia = '', onVoltar, onConcluir, onEstilo }: 
       <span className="at-obras__rotulo">O QUE O ATLAS JÁ ENTENDEU</span>
       <div className="at-nova__item"><span>Nome da obra</span><b>{resp.nome.trim() || 'Ainda sem nome'}</b></div>
       <div className="at-nova__item"><span>O problema</span><span>{resp.problema.trim() || 'Ainda não contado'}</span></div>
-      <div className="at-nova__item"><span>Quem usa</span><span>{nomesQuem.join(', ') || 'Ainda não definido'}</span></div>
+      <div className="at-nova__item"><span>Quem usa</span><span>{nomesQuem.join(', ') || 'Ainda não contado'}</span></div>
       <div className="at-nova__fim">Nada aqui é definitivo. No protótipo você vê as telas e muda o que quiser.</div>
     </aside>
   )
@@ -99,7 +99,7 @@ export function NovaObra({ obras, ideia = '', onVoltar, onConcluir, onEstilo }: 
           <div className="at-nova__pronto"><b>{pronta.respostas.nome}</b><code>{pronta.pasta.caminho}</code></div>
           <div className="at-nova__rodape">
             {onEstilo && <Botao onClick={() => onEstilo(pronta)}>Escolher o estilo →</Botao>}
-            <Botao variante={onEstilo ? 'secundario' : 'principal'} onClick={() => onConcluir(pronta)}>Ver minhas obras →</Botao>
+            {!onEstilo && <Botao onClick={() => onConcluir(pronta)}>Ver minhas obras →</Botao>}
           </div>
         </div>
         {lado}
@@ -116,14 +116,6 @@ export function NovaObra({ obras, ideia = '', onVoltar, onConcluir, onEstilo }: 
         </div>
         <h1>{p.titulo}</h1>
         <p className="at-nova__dica">{p.dica}</p>
-        {p.id === 'quem' && (
-          <div className="at-nova__opcoes" role="group" aria-label="Quem vai usar o sistema">
-            {QUEM_USA.map((q) => {
-              const on = quem.includes(q.id)
-              return <button key={q.id} type="button" aria-pressed={on} className={`at-nova__opcao ${on ? 'at-nova__opcao--on' : ''}`} onClick={() => setQuem(on ? quem.filter((x) => x !== q.id) : [...quem, q.id])}>{on && <Icone nome="check" tamanho={16} />} {q.nome}</button>
-            })}
-          </div>
-        )}
         <BlocoVoz key={p.id} valor={resp[p.id]} onChange={mudar} />
         {erro && <p className="at-nova__erro" role="alert">{erro}</p>}
         <div className="at-nova__rodape">

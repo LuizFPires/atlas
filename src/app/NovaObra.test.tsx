@@ -42,13 +42,16 @@ test('sem nome não avança, com recado amigo', async () => {
   expect(screen.getByText('NOVA OBRA · PERGUNTA 1 DE 5')).toBeInTheDocument()
 })
 
-test('quem usa: toque em vários e o painel mostra o que o Atlas entendeu', async () => {
+test('quem usa: sem opções prontas (nada de barbearia); a pessoa conta do jeito dela e o painel mostra', async () => {
   montar(criarObrasFixture(), { ideia: 'Agenda' })
   await clicar('Próxima pergunta'); await clicar('Próxima pergunta')
-  await clicar(/Os barbeiros/)
-  await clicar(/Eu, o dono/)
-  expect(screen.getByLabelText('O que o Atlas já entendeu')).toHaveTextContent('Os barbeiros')
-  expect(screen.getByLabelText('O que o Atlas já entendeu')).not.toHaveTextContent('Eu, o dono')
+  expect(screen.queryByRole('group', { name: 'Quem vai usar o sistema' })).toBeNull()
+  expect(document.body).not.toHaveTextContent(/barbe/i)
+  const lado = screen.getByLabelText('O que o Atlas já entendeu')
+  expect(lado).toHaveTextContent('Ainda não contado')
+  await clicar('Digitar em vez de falar')
+  await userEvent.type(screen.getByRole('textbox'), 'Eu e minha filha')
+  expect(lado).toHaveTextContent('Eu e minha filha')
 })
 
 test('ao terminar, cria a subpasta da obra em Atlas/Obras e mostra onde ficou', async () => {
@@ -59,7 +62,7 @@ test('ao terminar, cria a subpasta da obra em Atlas/Obras e mostra onde ficou', 
   expect(await screen.findByRole('heading', { name: 'Obra começada!' })).toBeInTheDocument()
   expect(o.criadas).toEqual(['agenda-da-barbearia-do-ze'])
   expect(screen.getByText('C:\\Users\\Zé\\Atlas\\Obras\\agenda-da-barbearia-do-ze')).toBeInTheDocument()
-  await clicar(/Ver minhas obras/)
+  await clicar(/Ver minhas obras/) // sem o estilo ligado, é o único caminho
   expect(onConcluir).toHaveBeenCalledTimes(1)
   expect(onConcluir.mock.calls[0][0].pasta.pasta).toBe('agenda-da-barbearia-do-ze')
 })
@@ -87,6 +90,7 @@ test('com o estilo ligado, "Escolher o estilo" leva a obra criada para o F06b', 
   montar(criarObrasFixture('Zé'), { ideia: 'Agenda da Barbearia do Zé', onEstilo })
   for (let i = 0; i < 4; i++) await clicar('Próxima pergunta')
   await clicar('Começar a obra')
+  expect(screen.queryByRole('button', { name: /Ver minhas obras/ })).toBeNull() // não tira a pessoa do caminho
   await clicar('Escolher o estilo →')
   expect(onEstilo.mock.calls[0][0].pasta.pasta).toBe('agenda-da-barbearia-do-ze')
   expect(onEstilo.mock.calls[0][0].respostas.nome).toBe('Agenda da Barbearia do Zé')
