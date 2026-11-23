@@ -204,7 +204,7 @@ tela: prototipo/F09Painel.dc.html
 - [x] Respeitar o modo da obra (M18): no automático, seguir etapa após etapa sem pedir aprovação (parar só em ocorrência/pausa/billing); no passo a passo, parar ao fim de cada etapa e pedir o OK; permitir trocar o modo aqui a qualquer momento
 - [x] Mostrar "Publicar o sistema" ao concluir
 - [x] Conferir fidelidade com o protótipo
-Notas: Ver decisão do modo automático × passo a passo no M18. O painel honra a escolha e deixa trocar a qualquer momento. QA aprovou. Canteiro por iframe (127.0.0.1, origem distinta => allow-same-origin seguro); % com paridade testada com plano.cjs; sem modo.json o painel pede a escolha. Baixas p/ /entregar: reverter modo.json se aplicarModo falhar; retry/ignorar liberacao em parada no aprovarEtapa; fluxo 'publicar' ao sair pelo menu.
+Notas: Ver decisão do modo automático × passo a passo no M18. O painel honra a escolha e deixa trocar a qualquer momento. QA aprovou. Canteiro por iframe (127.0.0.1, origem distinta => allow-same-origin seguro); % com paridade testada com plano.cjs; sem modo.json o painel pede a escolha. Baixas p/ /entregar: reverter modo.json se aplicarModo falhar; retry/ignorar liberacao em parada no aprovarEtapa; fluxo 'publicar' ao sair pelo menu. DIVERGÊNCIA 22/11/2026 (Luiz): o "Modo da obra" fica sempre à vista e discreto: dois botões (Automático / Passo a passo), sem "Trocar o modo"/"Fechar"; o (i) abre uma gaveta lateral com a explicação dos dois modos e das paradas de verdade.
 
 ## Milestone 20 — App: pausa por cota e ocorrência
 peso: 2
