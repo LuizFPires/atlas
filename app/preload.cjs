@@ -77,6 +77,10 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     propor: (entrada, pasta) => chamar('atlas:estilo:propor', JSON.parse(JSON.stringify(entrada ?? {})), pasta ? String(pasta) : undefined),
     materializar: (pasta, origem) => chamar('atlas:estilo:materializar', String(pasta), JSON.parse(JSON.stringify(origem ?? {}))),
   },
+  modelo: {
+    ler: () => chamar('atlas:modelo:ler'),
+    gravar: (id) => chamar('atlas:modelo:gravar', String(id)),
+  },
   prototipo: {
     estado: (pasta) => chamar('atlas:prototipo:estado', String(pasta)),
     desenhar: (pasta, obraNome, estilo, relato) => chamar('atlas:prototipo:desenhar', String(pasta), String(obraNome), JSON.parse(JSON.stringify(estilo ?? {})), String(relato ?? '')),

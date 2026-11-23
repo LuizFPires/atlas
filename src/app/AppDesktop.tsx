@@ -43,6 +43,7 @@ import { celularIndisponivel, criarCelularFixture, type PonteCelular } from './p
 import { contasIndisponivel, criarContasFixture, type PonteContas } from './ponte-contas'
 import { claudeIndisponivel, criarClaudeFixture, type PonteClaude } from './ponte-claude'
 import { ContextoPlano, usePlanoNoMenu } from './plano-no-menu'
+import { ContextoModelo, criarModeloFixture, useModeloNoMenu, type PonteModelo } from './ponte-modelo'
 import { criarAtivacaoApi, criarAtivacaoFixture, lerAtivacao, modoFixture, type AtivacaoApi } from './ativacao-api'
 import { fetchPelaPonte } from './ponte-servidor'
 import { useTokenDoLink } from './link-instalacao'
@@ -70,8 +71,9 @@ function Obras({ ativo, onNavegar, onFalar, children }: { ativo: IdTela; onNaveg
   // Contador do teste grátis / cortesia e a compra de dentro do app (docs/prd-contador-degustacao.md).
   const licenca = useContext(ContextoLicenca)
   const plano = useContext(ContextoPlano)
+  const modelo = useContext(ContextoModelo)
   return (
-    <Shell ativo={ativo} onNavegar={onNavegar} onFalar={onFalar ?? (() => {})} licenca={licenca?.cartao} plano={plano} onComprar={licenca?.comprar}>
+    <Shell ativo={ativo} onNavegar={onNavegar} onFalar={onFalar ?? (() => {})} licenca={licenca?.cartao} plano={plano} modelo={modelo} onComprar={licenca?.comprar}>
       {children ?? (
         <>
           <p className="rotulo">Minhas obras</p>
@@ -109,6 +111,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Sem adaptador real e fora do modo fixture, o app não finge conexão (adaptador real: pendência de /entregar).
   const ponteClaude = useMemo<PonteClaude>(() => claude ?? (modoFixture() ? criarClaudeFixture({ conectado: false }, { loginAutomatico: true }) : (ponte.claude ?? claudeIndisponivel)), [claude, ponte])
   const planoNoMenu = usePlanoNoMenu(ponteClaude)
+  const ponteModelo = useMemo<PonteModelo | undefined>(() => (modoFixture() ? criarModeloFixture() : ponte.modelo), [ponte])
+  const modeloNoMenu = useModeloNoMenu(ponteModelo)
 
   // Idem para as contas do cliente (GitHub, Supabase, Vercel): sem adaptador real, não finge que ficaram prontas.
   // A Ajuda do Atlas: o Claude por baixo, atrás de uma porta. Sem adaptador real, não finge que entendeu.
@@ -245,7 +249,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const painelDeAjuda = painelAjuda ? <Ajuda key={painelAjuda.n} ajuda={ponteAjuda} casos={ponteCasos} contexto={painelAjuda.contexto} nome={dono.split(' ')[0] || undefined} onFechar={() => setPainelAjuda(null)} /> : null
   // Pagou: o cartão já virou "Licença ativa" e a tela de compra some sozinha.
   const compra = emailCompra && !licencaNoApp.pagou ? <ComprarAtlas aberto email={emailCompra} onFechar={() => setEmailCompra(null)} iniciar={iniciarCompraPeloApp} abrirPagamento={abrirPagamento} onPagamentoAberto={licencaNoApp.esperarPagamento} /> : null
-  const com = (n: ReactNode) => <ContextoPlano.Provider value={planoNoMenu}><ContextoLicenca.Provider value={contextoLicenca}>{n}{painelDeAjuda}{compra}<StatusVoz /></ContextoLicenca.Provider></ContextoPlano.Provider>
+  const com = (n: ReactNode) => <ContextoPlano.Provider value={planoNoMenu}><ContextoModelo.Provider value={modeloNoMenu}><ContextoLicenca.Provider value={contextoLicenca}>{n}{painelDeAjuda}{compra}<StatusVoz /></ContextoLicenca.Provider></ContextoModelo.Provider></ContextoPlano.Provider>
   if (tela === TELA_ATIVACAO) {
     return com(<Ativacao api={ativacao} computador={computador} onInstalando={setInstalando} onContinuar={() => { void licencaNoApp.conferir(); setTela(TELA_CLAUDE) }} />)
   }
