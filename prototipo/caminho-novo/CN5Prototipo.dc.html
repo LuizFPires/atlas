@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · 4 O protótipo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes cnpulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.5)}70%{box-shadow:0 0 0 22px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}
+@keyframes cnonda{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes cngiro{to{transform:rotate(360deg)}}
+@keyframes cnpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.cn-grav{animation:cnpulso 1.4s infinite}
+.cn-onda span{display:block;width:4px;border-radius:2px;background:#F05A4F;animation:cnonda 1s infinite ease-in-out}
+.cn-giro{animation:cngiro 1s linear infinite}
+.cn-pisca{animation:cnpisca 1.2s infinite}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:center;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA · 4 · O PROTÓTIPO · 14 TELAS · VERSÃO 2</span><h1 style="margin:0;font-size:26px;letter-spacing:-.01em">Meu Ponto</h1></div>
+   <div style="margin-left:auto;display:flex;align-items:center;gap:10px"><a href="CN4Nome.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 16px;border-radius:12px;border:1px solid {{t.cardB}};color:{{t.text}};font:600 15px 'Geist',sans-serif">← Voltar</a><a href="CN6Contas.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 20px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font:700 15px 'Geist',sans-serif">Do meu jeito: seguir →</a></div>
+  </div>
+  <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="6"><li style="display:flex;flex-direction:column;gap:7px"><span style="height:4px;border-radius:2px;background:{{p.barra}}"></span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{p.cor}}">{{p.rot}}</span></li></sc-for>
+  </ol>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:24px">
+   <section style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;display:flex;flex-direction:column;overflow:hidden">
+    <div style="flex:1;padding:22px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+     <sc-for list="{{msgs}}" as="m" hint-placeholder-count="3"><div style="align-self:{{m.lado}};max-width:80%;background:{{m.bg}};border-radius:16px;padding:12px 16px;font-size:15px;line-height:1.5"><b style="display:block;font-size:12px;letter-spacing:.06em;margin-bottom:4px;opacity:.75">{{m.quem}}</b>{{m.txt}}</div></sc-for>
+    </div>
+    <div style="border-top:1px solid {{t.line}};padding:14px;display:flex;gap:10px;align-items:center">
+     <button aria-label="Falar o ajuste" style="width:48px;height:48px;flex:none;border-radius:50%;border:none;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+     <div style="flex:1;height:48px;box-sizing:border-box;border-radius:12px;border:1px solid {{t.cardB}};background:{{t.input}};padding:0 14px;display:flex;align-items:center;font-size:15px;color:{{t.mute2}}">Fale o que quer mudar: "o botão de bater ponto maior"…</div>
+    </div>
+   </section>
+   <section style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center"><sc-for list="{{abas}}" as="a" hint-placeholder-count="4"><button onClick="{{a.ir}}" style="height:34px;padding:0 12px;border-radius:999px;border:1px solid {{a.borda}};background:{{a.bg}};color:{{a.cor}};font:600 13px 'Geist',sans-serif;cursor:pointer">{{a.nome}}</button></sc-for></div>
+    <div style="width:300px;height:620px;border-radius:40px;background:#0B0C0D;padding:12px;box-sizing:border-box">
+     <div style="width:100%;height:100%;border-radius:30px;background:#FBF7F2;color:#2F3A31;overflow:hidden;display:flex;flex-direction:column">
+      <div style="background:#2F3A31;color:#FBF7F2;padding:28px 18px 18px;display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;opacity:.75">Meu Ponto · Residencial Vila Serena</span><b style="font-size:20px">{{tela.titulo}}</b></div>
+      <sc-if value="{{tela.ponto}}" hint-placeholder-val="{{ true }}"><div style="padding:18px;display:flex;flex-direction:column;align-items:center;gap:14px"><span style="font-size:40px;font-weight:700;letter-spacing:-.02em">06h56</span><span style="font-size:13px;color:#6E7A6F">Você está a 86 m da obra · dentro do raio</span><span style="width:170px;height:170px;border-radius:50%;background:#B5651D;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;margin-top:10px">Bater o ponto</span></div></sc-if>
+      <sc-if value="{{tela.horas}}" hint-placeholder-val="{{ false }}"><div style="padding:16px;display:flex;flex-direction:column;gap:8px"><sc-for list="{{horas}}" as="h" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;padding:12px;border-radius:12px;background:#FFFFFF;border:1px solid #E2D8CC;font-size:14px"><span>{{h.d}}</span><b>{{h.h}}</b></div></sc-for></div></sc-if>
+     </div>
+    </div>
+   </section>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', cinza: '#3A3F46', verm: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', cinza: '#C9CDC4', verm: '#D8483D' }
+};
+const PASSOS = ['1 · A IDEIA', '2 · O VISUAL', '3 · O NOME', '4 · O PROTÓTIPO', '5 · AS CONTAS', '6 · COMEÇAR'];
+const passos = (t, atual) => PASSOS.map((rot, i) => ({ rot, barra: i < atual ? t.lime : i === atual ? t.lime : t.line, cor: i <= atual ? t.text : t.mute2 }));
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { aba: 'ponto' }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const c = (quem, txt) => ({ quem, txt, lado: quem === 'VOCÊ' ? 'flex-end' : 'flex-start', bg: quem === 'VOCÊ' ? t.soft : t.card2 });
+    const msgs = [c('CLAUDE', 'Pronto: as 14 telas estão desenhadas no estilo "Areia serena" e ligadas entre si. Toque nas abas para navegar e me diga o que quer mudar.'), c('VOCÊ', 'O horário tem que aparecer bem grande, o pessoal olha de longe.'), c('CLAUDE', 'Feito na versão 2: o horário ficou maior e o botão de bater o ponto também.')];
+    const nomes = [['ponto', 'Bater o ponto'], ['horas', 'Minhas horas'], ['painel', 'Painel do escritório'], ['rel', 'Relatório do mês']];
+    const abas = nomes.map(([id, nome]) => ({ nome, bg: id === this.state.aba ? t.lime : 'transparent', cor: id === this.state.aba ? t.onLime : t.text, borda: id === this.state.aba ? t.lime : t.cardB, ir: () => this.setState({ aba: id === 'horas' ? 'horas' : 'ponto' }) }));
+    const tela = this.state.aba === 'horas' ? { titulo: 'Minhas horas · novembro', ponto: false, horas: true } : { titulo: 'Bom dia, José', ponto: true, horas: false };
+    const horas = [{ d: 'Seg, 17/11', h: '8h 52min' }, { d: 'Ter, 18/11', h: '9h 05min' }, { d: 'Qua, 19/11', h: '8h 40min' }, { d: 'Total do mês', h: '126h 10min' }];
+    return { tema, t, passos: passos(t, 3), msgs, abas, tela, horas };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 // Teste do adaptador de protótipo (node --test app/adaptadores/*.teste.cjs). Sem Claude real: o disparo é simulado.
 'use strict'
 const test = require('node:test')
+const { describe } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const os = require('node:os')
@@ -70,7 +71,7 @@ test('HTML perigoso, id ruim e excesso de telas são recusados e nada é gravado
     responder(ruim)
     await assert.rejects(p.desenhar('obra', 'B', ESTILO))
   }
-  assert.ok(!fs.existsSync(path.join(raiz, 'obra', 'prototipo')))
+  assert.ok(!fs.existsSync(path.join(raiz, 'obra', 'prototipo', 'versoes')) || fs.readdirSync(path.join(raiz, 'obra', 'prototipo', 'versoes')).length === 0, 'nenhuma versão gravada (o mapa pode ficar, para tentar de novo)')
   assert.throws(() => telasDoJson({ telas: [] }), /telas-invalidas/)
 })
 
@@ -95,7 +96,7 @@ test('identidade própria (estilo vazio): desenha seguindo o design-system.md da
   const { p, chamadas } = montar()
   const e = await p.desenhar('obra', 'B', {})
   assert.equal(e.versoes.length, 1)
-  assert.match(String(chamadas[0].o?.entrada ?? JSON.stringify(chamadas[0])), /siga o design-system\.md/)
+  assert.match(String(chamadas[1].o?.entrada ?? JSON.stringify(chamadas[1])), /siga o design-system\.md/) // a pintura (o mapa não depende do estilo)
 })
 
 test('protótipo premium: todo pedido ao Claude leva a direção de arte, a navegação por âncora e a conferência final', async () => {
@@ -229,6 +230,71 @@ test('um lote paralelo que falha para tudo: nada é gravado e o andamento some',
   const p = criarPrototipo({ raiz, disparo })
   await assert.rejects(p.desenhar('obra', 'Colore', ESTILO, 'x'))
   await new Promise((ok) => setTimeout(ok, 60)) // deixa os outros lotes terminarem
-  assert.equal(p.progresso('obra'), null)
+  const depois = p.progresso('obra')
+  assert.equal(depois.fase, 'mapa', 'falhou a pintura: volta para "mapa pronto", sem telas pela metade')
+  assert.deepEqual(depois.telas, [])
   assert.equal(p.estado ? (await p.estado('obra')).versoes.length : 0, 0)
+})
+
+// Caminho novo (Luiz, 23/11/2026): o mapa sai logo depois da ideia, em segundo plano; as telas são pintadas depois do estilo.
+describe('protótipo em duas partes: mapear (depois da ideia) e pintar (depois do estilo)', () => {
+  const MAPA = { telas: ['a', 'b', 'c'].map((id) => ({ id, nome: `Tela ${id}`, descricao: `faz ${id}` })) }
+
+  test('mapear grava o relato e o mapa; de novo não chama o Claude; depois o progresso mostra o mapa pronto', async () => {
+    const { p, raiz, chamadas, emFila } = montar()
+    emFila(MAPA)
+    const m = await p.mapear('obra', 'Meu Ponto', 'ponto da equipe nas obras')
+    assert.deepEqual(m.map((t) => t.id), ['a', 'b', 'c'])
+    assert.ok(fs.existsSync(path.join(raiz, 'obra', 'prototipo', 'mapa.json')))
+    assert.match(fs.readFileSync(path.join(raiz, 'obra', 'prototipo', 'relato.md'), 'utf8'), /ponto da equipe/)
+    assert.match(pedidoDe(chamadas[0]), /FASE 1 de 2/)
+    assert.doesNotMatch(pedidoDe(chamadas[0]), /Estilo escolhido/, 'o mapa não depende do estilo')
+    await p.mapear('obra', 'Meu Ponto', 'ponto da equipe nas obras')
+    assert.equal(chamadas.length, 1, 'o mapa salvo não é refeito')
+    const a = p.progresso('obra')
+    assert.equal(a.fase, 'mapa')
+    assert.deepEqual(a.mapa.map((t) => t.id), ['a', 'b', 'c'])
+    assert.deepEqual(a.telas, [])
+  })
+
+  test('pintar sem mapa: recusa com sem-mapa', async () => {
+    const { p } = montar()
+    await assert.rejects(p.pintar('obra', 'Meu Ponto', ESTILO), /sem-mapa/)
+  })
+
+  test('pintar usa o mapa salvo (só pede os lotes), com o estilo, e grava a 1ª versão', async () => {
+    const { p, chamadas, emFila } = montar()
+    emFila(MAPA)
+    await p.mapear('obra', 'Meu Ponto', 'x')
+    emFila({ telas: ['a', 'b', 'c'].map(tela) })
+    const e = await p.pintar('obra', 'Meu Ponto', ESTILO)
+    assert.equal(chamadas.length, 2)
+    assert.match(pedidoDe(chamadas[1]), /FASE 2 de 2/)
+    assert.match(pedidoDe(chamadas[1]), /Couro/)
+    assert.deepEqual(e.versoes[0].telas.map((t) => t.id), ['a', 'b', 'c'])
+    assert.equal(p.progresso('obra'), null, 'com a versão gravada, não há mais nada em andamento')
+  })
+
+  test('escolheu o estilo antes de o mapa ficar pronto: a pintura espera o mapa e segue sozinha', async () => {
+    const raiz = tmp()
+    fs.mkdirSync(path.join(raiz, 'obra'))
+    let soltarMapa
+    const mapaPronto = new Promise((ok) => { soltarMapa = ok })
+    const executar = async (args, o) => {
+      const pedido = String(o.entrada)
+      let r
+      if (/FASE 1 de 2/.test(pedido)) { await mapaPronto; r = MAPA } else r = { telas: /\(ids: ([^)]+)\)/.exec(pedido)[1].split(', ').map(tela) }
+      return { codigo: 0, saida: JSON.stringify({ result: JSON.stringify(r) }), erro: '' }
+    }
+    const disparo = criarDisparo({ raiz, dadosApp: tmp(), claudeEstado: async () => ({ conectado: true }), executar, resolver: () => ({ cmd: 'x' }) })
+    const p = criarPrototipo({ raiz, disparo })
+    const mapeando = p.mapear('obra', 'Meu Ponto', 'x')
+    await new Promise((ok) => setTimeout(ok, 5))
+    assert.equal(p.progresso('obra').fase, 'mapeando')
+    const pintando = p.pintar('obra', 'Meu Ponto', ESTILO)
+    soltarMapa()
+    await mapeando
+    const e = await pintando
+    assert.equal(e.versoes[0].telas.length, 3)
+  })
 })

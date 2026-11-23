@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · 6 Começar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes cnpulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.5)}70%{box-shadow:0 0 0 22px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}
+@keyframes cnonda{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes cngiro{to{transform:rotate(360deg)}}
+@keyframes cnpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.cn-grav{animation:cnpulso 1.4s infinite}
+.cn-onda span{display:block;width:4px;border-radius:2px;background:#F05A4F;animation:cnonda 1s infinite ease-in-out}
+.cn-giro{animation:cngiro 1s linear infinite}
+.cn-pisca{animation:cnpisca 1.2s infinite}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:center;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA · 6 · COMEÇAR</span><h1 style="margin:0;font-size:26px;letter-spacing:-.01em">Meu Ponto</h1></div>
+   <div style="margin-left:auto;display:flex;align-items:center;gap:10px"></div>
+  </div>
+  <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="6"><li style="display:flex;flex-direction:column;gap:7px"><span style="height:4px;border-radius:2px;background:{{p.barra}}"></span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{p.cor}}">{{p.rot}}</span></li></sc-for>
+  </ol>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:24px">
+   <section style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;padding:26px;display:flex;flex-direction:column;gap:14px">
+    <h2 style="margin:0;font-size:22px">Tudo pronto para a obra começar</h2>
+    <sc-for list="{{itens}}" as="i" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;background:{{t.card2}}"><span style="width:28px;height:28px;border-radius:50%;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></span><div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">{{i.t}}</b><span style="font-size:13px;color:{{t.mute}}">{{i.d}}</span></div><a href="{{i.href}}" style="margin-left:auto;font:600 13px 'Geist',sans-serif;color:{{t.limeTxt}}">Rever</a></div></sc-for>
+   </section>
+   <aside style="background:{{t.card}};border:1px solid {{t.lime}};border-radius:20px;padding:26px;display:flex;flex-direction:column;gap:14px">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">A OBRA</span>
+    <b style="font-size:20px">7 etapas · uns 4 dias no seu plano Pro</b>
+    <span style="font-size:14px;line-height:1.55;color:{{t.mute}}">O Claude constrói, outro confere, outro fiscaliza. Quando a cota do seu plano acaba, a obra pausa sozinha e volta quando ela renova. Você acompanha pelo canteiro aqui ou pelo celular.</span>
+    <span style="font-size:14px;line-height:1.55;color:{{t.mute}}">Deixe o computador ligado e com internet.</span>
+    <a href="CN7Comecar.dc.html" style="margin-top:auto;display:flex;align-items:center;justify-content:center;height:56px;border-radius:14px;background:{{t.lime}};color:{{t.onLime}};font:700 17px 'Geist',sans-serif">Começar a construção →</a>
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', cinza: '#3A3F46', verm: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', cinza: '#C9CDC4', verm: '#D8483D' }
+};
+const PASSOS = ['1 · A IDEIA', '2 · O VISUAL', '3 · O NOME', '4 · O PROTÓTIPO', '5 · AS CONTAS', '6 · COMEÇAR'];
+const passos = (t, atual) => PASSOS.map((rot, i) => ({ rot, barra: i < atual ? t.lime : i === atual ? t.lime : t.line, cor: i <= atual ? t.text : t.mute2 }));
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const itens = [
+      { t: 'A ideia', d: 'Ponto da equipe nas obras, pelo celular, com localização.', href: 'CN1Ideia.dc.html' },
+      { t: 'O visual', d: 'Estilo "Areia serena".', href: 'CN3Visual.dc.html' },
+      { t: 'O nome', d: 'Meu Ponto · "O tempo da equipe, obra por obra."', href: 'CN4Nome.dc.html' },
+      { t: 'O protótipo', d: '14 telas, versão 2, aprovado por você.', href: 'CN5Prototipo.dc.html' },
+      { t: 'As contas', d: 'GitHub, Supabase e Vercel ligados, no seu nome.', href: 'CN6Contas.dc.html' }
+    ];
+    return { tema, t, passos: passos(t, 5), itens };
+  }
+}
+</script>
+</body>
+</html>

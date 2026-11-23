@@ -83,9 +83,7 @@ function pedidoMapa(obraNome, estilo, relato) {
     'Nome da obra:',
     ...blocoDoCliente(obraNome, '(sem nome)'),
     '',
-    'Estilo escolhido (cores, cantos e letra):',
-    ...linhaDoEstilo(estilo),
-    '',
+    ...(estilo ? ['Estilo escolhido (cores, cantos e letra):', ...linhaDoEstilo(estilo), ''] : []),
     'Relato do cliente (está também em prototipo/relato.md):',
     ...blocoDoCliente(relato, '(o cliente não contou detalhes: proponha a jornada completa a partir do nome e do design-system.md)'),
   ].join('\n')
@@ -184,6 +182,57 @@ function criarPrototipo({ raiz, disparo }) {
     throw new Error('sem-numero-livre')
   }
 
+  const mapeando = new Map() // pasta → trabalho do mapa em andamento (a pintura espera por ele)
+  const arqMapa = (pasta) => caminhoSeguro(raiz, pasta, 'prototipo', 'mapa.json')
+  const lerMapa = (pasta) => { try { const j = lerJson(arqMapa(pasta)); return j ? mapaDoJson(j) : null } catch { return null } }
+
+  async function fazerMapa(pasta, nome, relato, est = null) {
+    const textoRelato = typeof relato === 'string' ? relato.slice(0, 20_000) : ''
+    andamento.set(pasta, { fase: 'mapeando', mapa: [], telas: [] })
+    try {
+      garantirSubpasta(raiz, pasta, 'prototipo')
+      if (textoRelato.trim()) gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'relato.md'), `# Relato do cliente\n\n${textoRelato.trim()}\n`)
+      const mapa = mapaDoJson(extrairJson(await disparo.perguntar(pasta, pedidoMapa(nome, est, textoRelato), { timeoutMs: 600_000, maxSaida: 2_000_000 }), 'objeto'))
+      gravarAtomico(arqMapa(pasta), JSON.stringify({ versao: 1, telas: mapa }))
+      return mapa
+    } finally { andamento.delete(pasta) }
+  }
+
+  // Desenho em lotes. O 1º lote sai sozinho (a 1ª tela vira a referência visual); os outros saem AO MESMO TEMPO,
+  // até LOTES_JUNTOS por vez (pedido do Luiz, 23/11/2026: em fila, era bem mais lento que o Claude direto).
+  async function fazerPintura(pasta, nome, est, mapa) {
+    const resumoMapa = mapa.map((t) => ({ id: t.id, nome: t.nome }))
+    andamento.set(pasta, { fase: 'pintando', mapa: resumoMapa, telas: [] })
+    try {
+      const feitas = new Map()
+      let falhou = false // um lote falhou: os que rodam juntos não publicam mais nada nem pegam lote novo
+      const publicar = () => falhou || andamento.set(pasta, { fase: 'pintando', mapa: resumoMapa, telas: mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id)) })
+      const desenharLote = async (lote, referencia) => {
+        const r = telasDoJson({ ...extrairJson(await disparo.perguntar(pasta, pedidoLote(nome, est, mapa, lote, referencia), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto') })
+        const pedidos = new Set(lote.map((t) => t.id))
+        if (!r.telas.every((t) => pedidos.has(t.id))) throw new Error('telas-invalidas') // nada fora do lote
+        for (const t of r.telas) feitas.set(t.id, t)
+        publicar()
+      }
+      const lotes = []
+      for (let i = 0; i < mapa.length; i += LOTE) lotes.push(mapa.slice(i, i + LOTE))
+      await desenharLote(lotes[0], null)
+      const referencia = feitas.get(mapa[0].id) ?? null
+      const fila = lotes.slice(1)
+      const trabalhador = async () => {
+        for (let l = fila.shift(); l && !falhou; l = fila.shift()) {
+          try { await desenharLote(l, referencia) } catch (e) { falhou = true; throw e }
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(LOTES_JUNTOS, fila.length) }, trabalhador))
+      const telas = mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id))
+      if (!telas.length) throw new Error('telas-invalidas')
+      if (ler(pasta).versoes.length) return ler(pasta) // alguém gravou enquanto o Claude pensava
+      gravarVersao(pasta, 'Primeiras telas', telas)
+      return ler(pasta)
+    } finally { andamento.delete(pasta) }
+  }
+
   async function exclusivo(pasta, fn) {
     pastaDaObra(raiz, pasta)
     if (ocupadas.has(pasta)) throw new Error('ocupado')
@@ -194,6 +243,36 @@ function criarPrototipo({ raiz, disparo }) {
   return {
     async estado(pasta) { return ler(String(pasta)) },
 
+    /** Caminho novo, parte 1 (logo depois da ideia, em segundo plano): grava o relato e o mapa de telas em prototipo/mapa.json.
+     *  Mapa já salvo (ou protótipo já desenhado) não é refeito. Chamado de novo enquanto roda: devolve o mesmo trabalho. */
+    mapear(pasta, obraNome, relato) {
+      pasta = String(pasta)
+      const rodando = mapeando.get(pasta)
+      if (rodando) return rodando
+      const trabalho = exclusivo(pasta, async () => {
+        const salvo = lerMapa(pasta)
+        if (salvo) return salvo
+        return fazerMapa(pasta, String(obraNome ?? ''), relato)
+      }).finally(() => mapeando.delete(pasta))
+      mapeando.set(pasta, trabalho)
+      return trabalho
+    },
+
+    /** Caminho novo, parte 2 (depois do estilo): pinta as telas a partir do mapa salvo. Se o mapa ainda está saindo, espera por ele. */
+    async pintar(pasta, obraNome, estilo) {
+      pasta = String(pasta)
+      const rodando = mapeando.get(pasta)
+      if (rodando) await rodando.catch(() => {})
+      return exclusivo(pasta, async () => {
+        const antes = ler(pasta)
+        if (antes.versoes.length) return antes // nunca refaz por cima
+        const mapa = lerMapa(pasta)
+        if (!mapa) throw new Error('sem-mapa')
+        return fazerPintura(pasta, String(obraNome ?? ''), estiloValido(estilo), mapa)
+      })
+    },
+
+    /** Tudo de uma vez (mapa + pintura), como antes do caminho novo. Reaproveita o mapa se já existir. */
     desenhar(pasta, obraNome, estilo, relato) {
       pasta = String(pasta)
       return exclusivo(pasta, async () => {
@@ -201,52 +280,21 @@ function criarPrototipo({ raiz, disparo }) {
         if (antes.versoes.length) return antes // nunca refaz por cima
         const nome = String(obraNome ?? '')
         const est = estiloValido(estilo)
-        const textoRelato = typeof relato === 'string' ? relato.slice(0, 20_000) : ''
-        andamento.set(pasta, { mapa: [], telas: [] })
-        try {
-        if (textoRelato.trim()) {
-          garantirSubpasta(raiz, pasta, 'prototipo')
-          gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'relato.md'), `# Relato do cliente\n\n${textoRelato.trim()}\n`)
-        }
-        // Fase 1: mapa de telas a partir do relato.
-        const mapa = mapaDoJson(extrairJson(await disparo.perguntar(pasta, pedidoMapa(nome, est, textoRelato), { timeoutMs: 600_000, maxSaida: 2_000_000 }), 'objeto'))
-        andamento.set(pasta, { mapa: mapa.map((t) => ({ id: t.id, nome: t.nome })), telas: [] })
-        // Fase 2: desenho em lotes. O 1º lote sai sozinho (a 1ª tela vira a referência visual); os outros saem AO MESMO TEMPO,
-        // até LOTES_JUNTOS por vez (pedido do Luiz, 23/11/2026: em fila, era bem mais lento que o Claude direto).
-        const feitas = new Map()
-        let falhou = false // um lote falhou: os que rodam juntos não publicam mais nada nem pegam lote novo
-        const publicar = () => falhou || andamento.set(pasta, { mapa: mapa.map((t) => ({ id: t.id, nome: t.nome })), telas: mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id)) })
-        const desenharLote = async (lote, referencia) => {
-          const r = telasDoJson({ ...extrairJson(await disparo.perguntar(pasta, pedidoLote(nome, est, mapa, lote, referencia), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto') })
-          const pedidos = new Set(lote.map((t) => t.id))
-          if (!r.telas.every((t) => pedidos.has(t.id))) throw new Error('telas-invalidas') // nada fora do lote
-          for (const t of r.telas) feitas.set(t.id, t)
-          publicar()
-        }
-        const lotes = []
-        for (let i = 0; i < mapa.length; i += LOTE) lotes.push(mapa.slice(i, i + LOTE))
-        await desenharLote(lotes[0], null)
-        const referencia = feitas.get(mapa[0].id) ?? null
-        const fila = lotes.slice(1)
-        const trabalhador = async () => {
-          for (let l = fila.shift(); l && !falhou; l = fila.shift()) {
-            try { await desenharLote(l, referencia) } catch (e) { falhou = true; throw e }
-          }
-        }
-        await Promise.all(Array.from({ length: Math.min(LOTES_JUNTOS, fila.length) }, trabalhador))
-        const telas = mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id))
-        if (!telas.length) throw new Error('telas-invalidas')
-        if (ler(pasta).versoes.length) return ler(pasta) // alguém gravou enquanto o Claude pensava
-        gravarVersao(pasta, 'Primeiras telas', telas)
-        return ler(pasta)
-        } finally { andamento.delete(pasta) }
+        const mapa = lerMapa(pasta) ?? await fazerMapa(pasta, nome, relato, est)
+        return fazerPintura(pasta, nome, est, mapa)
       })
     },
 
     /** Enquanto desenha: o mapa e as telas já prontas (a tela pergunta de tempos em tempos). Fora disso: null. */
     progresso(pasta) {
-      const a = andamento.get(String(pasta))
-      return a ? { mapa: a.mapa.map((t) => ({ ...t })), telas: a.telas.map((t) => ({ ...t })) } : null
+      pasta = String(pasta)
+      const a = andamento.get(pasta)
+      if (a) return { fase: a.fase, mapa: a.mapa.map((t) => ({ ...t })), telas: a.telas.map((t) => ({ ...t })) }
+      // Parado com o mapa pronto e nada desenhado ainda (esperando o estilo): o mapa continua visível.
+      let desenhado = true
+      try { desenhado = ler(pasta).versoes.length > 0 } catch { /* obra inexistente */ }
+      const m = desenhado ? null : lerMapa(pasta)
+      return m ? { fase: 'mapa', mapa: m.map((t) => ({ id: t.id, nome: t.nome })), telas: [] } : null
     },
 
     ajustar(pasta, pedido) {

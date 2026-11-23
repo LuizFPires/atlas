@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · 5 As contas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} .acao{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:50px;min-height:50px;padding:0 22px;box-sizing:border-box;border-radius:12px;font-family:'Geist',sans-serif;font-size:16px;font-weight:700;line-height:1;white-space:nowrap;flex:none;text-decoration:none;cursor:pointer} @keyframes pulso{0%{box-shadow:0 0 0 0 rgba(198,241,53,.7)}70%{box-shadow:0 0 0 12px rgba(198,241,53,0)}100%{box-shadow:0 0 0 0 rgba(198,241,53,0)}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:#2B2F35;font-family:'Geist',system-ui,sans-serif;display:flex;align-items:center;justify-content:center">
+ <div style="width:1220px;height:780px;background:{{t.bg}};color:{{t.text}};border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.45);display:flex;overflow:hidden">
+  <div style="width:230px;background:{{t.panel}};padding:32px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:26px;flex:none">
+   <div style="display:flex;align-items:center;gap:8px"><img src="{{t.mono}}" alt="" style="width:40px;height:22px;object-fit:contain"><img src="/_blob/c6750a5c1d7f64643b22288c9d2a18d2" alt="Atlas" style="width:96px;height:14px;object-fit:contain"></div>
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="5">
+    <div style="display:flex;align-items:center;gap:12px;font-size:15px;color:{{p.cor}};font-weight:{{p.peso}}"><span style="width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font:600 13px 'Geist Mono',monospace;background:{{p.bolaBg}};color:{{p.bolaCor}}">{{p.n}}</span>{{p.nome}}</div>
+   </sc-for>
+   <div style="margin-top:auto;font-size:13px;line-height:1.5;color:#9BA39A">Pode parar a qualquer hora. Quando voltar, o Atlas continua deste passo.</div>
+  </div>
+  <div style="flex:1;padding:30px 36px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px;min-width:0">
+   <div style="display:flex;gap:8px">
+    <sc-for list="{{abas}}" as="a" hint-placeholder-count="4"><button onClick="{{a.ir}}" style="display:flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:999px;border:1px solid {{a.borda}};background:{{a.bg}};color:{{a.cor}};font:600 14px 'Geist',sans-serif;cursor:pointer"><span style="width:18px;height:18px;border-radius:9px;background:{{a.bolaBg}};color:{{t.onLime}};font-size:11px;display:flex;align-items:center;justify-content:center">{{a.icone}}</span>{{a.nome}}</button></sc-for>
+   </div>
+   <div style="display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:28px;flex:1;min-height:0">
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+     <div style="display:flex;flex-direction:column;gap:6px">
+      <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">CONTA {{c.num}} DE 4 · {{c.nomeUp}}</span>
+      <h1 style="margin:0;font-size:28px;line-height:1.2;letter-spacing:-0.01em">{{c.oque}}</h1>
+      <span style="font-size:15px;line-height:1.5;color:{{t.mute}}">{{c.porque}}</span>
+     </div>
+     <sc-if value="{{guiado}}" hint-placeholder-val="{{ true }}">
+      <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+       <div style="display:flex;align-items:center;gap:10px"><span style="font:600 13px 'Geist Mono',monospace;color:{{t.limeTxt}}">PASSO {{passoNum}} DE {{passoTot}}</span><div style="flex:1;height:6px;border-radius:3px;background:{{t.trilho}};overflow:hidden"><div style="width:{{pct}}%;height:100%;background:{{t.lime}}"></div></div></div>
+       <span style="font-size:21px;line-height:1.4;font-weight:600">{{p.faca}}</span>
+       <sc-if value="{{temPalavra}}" hint-placeholder-val="{{ true }}">
+        <span style="align-self:flex-start;font-size:14px;background:{{t.soft}};border-radius:10px;padding:8px 12px"><b>{{p.en}}</b> quer dizer <b>"{{p.pt}}"</b></span>
+       </sc-if>
+       <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">{{p.calma}}</span>
+      </div>
+      <button onClick="{{verVideo}}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 16px;border-radius:12px;border:1px solid {{t.lime}};background:{{t.soft}};color:{{t.text}};font:600 15px 'Geist',sans-serif;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Ver a conta do {{c.nome}} em vídeo, do começo ao fim (1 min)</button>
+      <sc-if value="{{video}}" hint-placeholder-val="{{ false }}">
+       <div role="dialog" aria-label="Vídeo da conta" style="border-radius:16px;background:#0B0C0D;border:1px solid {{t.cardB}};overflow:hidden;display:flex;flex-direction:column">
+        <div style="height:220px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#EDEFEA"><span style="width:56px;height:56px;border-radius:50%;background:{{t.lime}};color:#141619;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span><span style="font-size:14px">Vídeo: criar a conta do {{c.nome}}, passo a passo, com a voz do Atlas</span></div>
+        <div style="display:flex;justify-content:flex-end;padding:10px"><button onClick="{{fecharVideo}}" style="height:36px;padding:0 14px;border-radius:10px;border:1px solid #2C3036;background:transparent;color:#EDEFEA;font:600 14px 'Geist',sans-serif;cursor:pointer">Fechar o vídeo</button></div>
+       </div>
+      </sc-if>
+      <div style="display:flex;align-items:center;gap:12px">
+       <button class="acao" onClick="{{voltar}}" style="padding:0 18px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font-weight:600;font-size:15px">← Voltar</button>
+       <button class="acao" onClick="{{avancar}}" style="display:{{dispBtn}};border:none;background:{{t.lime}};color:{{t.onLime}}">{{btnAvancar}}</button>
+       <a class="acao" href="CN7Comecar.dc.html" style="display:{{dispLink}};background:{{t.lime}};color:{{t.onLime}}">Último passo →</a>
+       
+      </div>
+      <button onClick="{{pedirAjuda}}" style="align-self:flex-start;padding:0;border:none;background:transparent;color:{{t.limeTxt}};font:600 15px 'Geist',sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Não consegui fazer este passo</button>
+      <sc-if value="{{ajuda}}" hint-placeholder-val="{{ false }}">
+       <div style="border:1px dashed {{t.lime}};border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px">
+        <b style="font-size:15px">Tudo bem, acontece com todo mundo.</b>
+        <div style="display:flex;gap:10px;flex-wrap:wrap"><button style="height:42px;padding:0 14px;border-radius:10px;border:none;background:{{t.lime}};color:{{t.onLime}};font:600 14px 'Geist',sans-serif">▶ Ver este passo em vídeo (40 s)</button><a href="CN6Contas.dc.html" style="height:42px;padding:0 14px;border-radius:10px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font:600 14px 'Geist',sans-serif;display:inline-flex;align-items:center;text-decoration:none;box-sizing:border-box">Pedir ajuda ao Atlas (mande um print)</a></div>
+       </div>
+      </sc-if>
+     </sc-if>
+     <sc-if value="{{opcional}}" hint-placeholder-val="{{ false }}">
+      <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px">
+       <span style="font-size:19px;line-height:1.45;font-weight:600">Você não precisa fazer isso agora.</span>
+       <span style="font-size:15px;line-height:1.5;color:{{t.mute}}">Se um dia o seu sistema for cobrar dos clientes, o Atlas te chama e ensina passo a passo, igual fez agora.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px"><a class="acao" href="CN7Comecar.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Último passo →</a><span style="font-size:14px;color:{{t.mute}}">Pagamentos fica para depois.</span></div>
+     </sc-if>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+     <span style="font-size:13px;color:{{t.mute2}}">É assim que vai aparecer na sua tela:</span>
+     <div style="flex:1;border-radius:14px;overflow:hidden;border:1px solid {{t.cardB}};background:#FFFFFF;display:flex;flex-direction:column;color:#1B1E22">
+      <div style="height:40px;background:#E9EBE6;display:flex;align-items:center;gap:8px;padding:0 12px;flex:none"><span style="width:10px;height:10px;border-radius:5px;background:#E46A5E"></span><span style="width:10px;height:10px;border-radius:5px;background:#E8BE4F"></span><span style="width:10px;height:10px;border-radius:5px;background:#69C25B"></span><span style="margin-left:10px;flex:1;height:24px;border-radius:6px;background:#FFFFFF;font:12px 'Geist Mono',monospace;color:#5F665C;display:flex;align-items:center;padding:0 10px">🔒 {{m.url}}</span></div>
+      <div style="flex:1;padding:30px 34px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center">
+       <b style="font-size:20px">{{m.titulo}}</b>
+       <sc-for list="{{m.itens}}" as="i" hint-placeholder-count="2">
+        <div style="position:relative;width:250px">
+         <div style="height:44px;border-radius:8px;display:flex;align-items:center;justify-content:{{i.alinhar}};padding:0 14px;font-size:15px;font-weight:{{i.peso}};background:{{i.bg}};color:{{i.cor}};border:{{i.borda}};animation:{{i.anim}}">{{i.txt}}</div>
+         <sc-if value="{{i.hl}}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;margin-top:8px;font:700 13px 'Geist',sans-serif;background:#1B1E22;color:#C6F135;padding:5px 10px;border-radius:8px;white-space:nowrap">👆 {{i.dica}}</span></sc-if>
+        </div>
+       </sc-for>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', panel: '#101214', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', soft: '#2A3A12', trilho: '#2C3036', off: '#3A3F46', mono: '/_blob/12f422513e54daca2767634612b51c95' },
+  claro: { bg: '#F2F3EE', panel: '#1F2226', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', soft: '#DDF59A', trilho: '#E6E8E1', off: '#C4C8BD', mono: '/_blob/cf1beaa186df4dada45f5f7027b51b02' }
+};
+const B = (txt, hl, dica) => ({ tipo: 'btn', txt, hl: !!hl, dica: dica || 'clique aqui' });
+const C = (txt, hl, dica) => ({ tipo: 'campo', txt, hl: !!hl, dica: dica || 'escreva aqui' });
+const CONTAS = [
+  { id: 'github', nome: 'GitHub', oque: 'O GitHub é um cofre.', porque: 'É onde fica guardado o seu sistema. Ele é seu para sempre, mesmo se um dia você parar de usar o Atlas.', passos: [
+    { faca: 'Clique no botão verde. O Atlas vai abrir o site do GitHub para você.', calma: 'O site é em inglês. Não tem problema: eu traduzo cada botão.', m: { url: 'github.com', titulo: 'GitHub', itens: [B('Sign up', true, 'este aqui')] }, en: 'Sign up', pt: 'Criar conta' },
+    { faca: 'Escreva o seu e-mail na caixinha. Depois clique em Continue.', calma: 'Use o mesmo e-mail que você usa no trabalho. Fica mais fácil de lembrar.', m: { url: 'github.com/signup', titulo: 'Welcome to GitHub!', itens: [C('seu e-mail', true), B('Continue')] } },
+    { faca: 'Invente uma senha e escreva na caixinha. Anote num papel e guarde.', calma: 'O Atlas nunca vê a sua senha. Ela é só sua.', m: { url: 'github.com/signup', titulo: 'Create a password', itens: [C('••••••••', true, 'sua senha'), B('Continue')] }, en: 'Password', pt: 'Senha' },
+    { faca: 'O GitHub mandou um número para o seu e-mail. Abra o e-mail, copie o número e cole lá.', calma: 'Não chegou? Olhe a caixa de spam. Pode levar 1 minutinho.', m: { url: 'github.com/signup', titulo: 'Enter code', itens: [C('_ _ _ _ _ _ _ _', true, 'cole aqui')] }, en: 'Enter code', pt: 'Digite o código' },
+    { faca: 'Pronto! O Atlas já viu que a sua conta está criada. ✓', calma: 'Pode voltar aqui. Agora vem a próxima conta.', m: { url: 'github.com', titulo: 'Bem-vindo, zé-barbearia 🎉', itens: [] } }
+  ] },
+  { id: 'supabase', nome: 'Supabase', oque: 'O Supabase é um caderno.', porque: 'É onde o seu sistema anota tudo: o nome dos clientes, os horários marcados, os pagamentos.', passos: [
+    { faca: 'Clique no botão verde. O Atlas vai abrir o site do Supabase.', calma: 'Você não vai precisar de senha nova: vai entrar com o GitHub que acabou de criar.', m: { url: 'supabase.com', titulo: 'Supabase', itens: [B('Start your project', true, 'este aqui')] }, en: 'Start your project', pt: 'Começar o seu projeto' },
+    { faca: 'Clique em Continue with GitHub.', calma: 'Assim você entra usando a conta do GitHub. Uma senha a menos para lembrar.', m: { url: 'supabase.com/dashboard/sign-in', titulo: 'Welcome back', itens: [B('Continue with GitHub', true), C('Email')] }, en: 'Continue with GitHub', pt: 'Entrar com o GitHub' },
+    { faca: 'Vai aparecer uma pergunta. Clique no botão verde Authorize.', calma: 'Isso só deixa o Supabase saber quem você é. É seguro.', m: { url: 'github.com/login/oauth', titulo: 'Authorize Supabase', itens: [B('Authorize supabase', true), B('Cancel')] }, en: 'Authorize', pt: 'Deixar / Permitir' },
+    { faca: 'Pronto! O Atlas já viu que o seu caderno está criado. ✓', calma: 'Não precisa criar nada lá dentro. O Atlas cuida do resto.', m: { url: 'supabase.com/dashboard', titulo: 'Your projects', itens: [] } }
+  ] },
+  { id: 'hosp', nome: 'Hospedagem', oque: 'A Vercel é a vitrine.', porque: 'É ela que deixa o seu sistema aberto na internet, com um endereço para os seus clientes acessarem.', passos: [
+    { faca: 'Clique no botão verde. O Atlas vai abrir o site da Vercel.', calma: 'É o último passo obrigatório. Falta pouco!', m: { url: 'vercel.com/signup', titulo: "Let's create your account", itens: [B('Hobby', true, 'é o grátis'), B('Pro')] }, en: 'Hobby', pt: 'Uso pessoal (grátis)' },
+    { faca: 'Clique em Continue with GitHub.', calma: 'De novo com o GitHub. Viu como fica fácil?', m: { url: 'vercel.com/signup', titulo: 'Sign up', itens: [B('Continue with GitHub', true), B('Continue with Email')] }, en: 'Continue with GitHub', pt: 'Entrar com o GitHub' },
+    { faca: 'Clique em Authorize, igual você fez antes.', calma: 'É a mesma pergunta de antes, agora para a Vercel.', m: { url: 'github.com/login/oauth', titulo: 'Authorize Vercel', itens: [B('Authorize Vercel', true), B('Cancel')] }, en: 'Authorize', pt: 'Deixar / Permitir' },
+    { faca: 'Pronto! As três contas estão criadas. Você conseguiu! 🎉', calma: 'Agora o Atlas tem tudo o que precisa para construir.', m: { url: 'vercel.com/dashboard', titulo: 'Welcome to Vercel', itens: [] } }
+  ] },
+  { id: 'pag', nome: 'Pagamentos', opcional: true, oque: 'Pagamentos online é opcional.', porque: 'Só serve se o seu sistema for cobrar dos clientes pelo celular (Pix, cartão).', passos: [
+    { faca: '', calma: '', m: { url: 'atlas-ia.app.br', titulo: 'Fica para depois', itens: [] } }
+  ] }
+];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { conta: 1, passo: 1, ajuda: false, feitas: { github: true } }; }
+  renderVals() {
+    const t = T[this.props.tema ?? 'escuro'] || T.escuro;
+    const nomes = ['A ideia', 'O visual', 'O nome', 'O protótipo', 'As contas', 'Começar'];
+    const passos = nomes.map((nome, i) => {
+      const n = i + 1, feito = n < 5, agora = n === 5;
+      return { n: feito ? '✓' : String(n), nome, cor: agora ? '#EDEFEA' : '#9BA39A', peso: agora ? 600 : 400, bolaBg: feito || agora ? t.lime : '#2A2E33', bolaCor: feito || agora ? '#141619' : '#9BA39A' };
+    });
+    const { conta, passo, ajuda, feitas } = this.state;
+    const cc = CONTAS[conta];
+    const abas = CONTAS.map((x, i) => {
+      const ok = !!feitas[x.id], ag = i === conta;
+      return { nome: x.nome, icone: ok ? '✓' : String(i + 1), bolaBg: ok || ag ? t.lime : t.off, borda: ag ? t.lime : t.cardB, bg: ag ? t.soft : 'transparent', cor: t.text, ir: () => this.setState({ conta: i, passo: 0, ajuda: false }) };
+    });
+    const p = cc.passos[passo];
+    const ultimo = passo === cc.passos.length - 1;
+    const fim = ultimo && conta === 2;
+    const m = { ...p.m, itens: p.m.itens.map(i => i.tipo === 'btn'
+      ? { ...i, alinhar: 'center', peso: 600, bg: i.hl ? '#1B1E22' : '#F2F3EE', cor: i.hl ? '#FFFFFF' : '#1B1E22', borda: i.hl ? '3px solid #C6F135' : '1px solid #DADDD3', anim: i.hl ? 'pulso 1.6s infinite' : 'none' }
+      : { ...i, alinhar: 'flex-start', peso: 400, bg: '#FFFFFF', cor: '#8E968C', borda: i.hl ? '3px solid #C6F135' : '1px solid #C4C8BD', anim: i.hl ? 'pulso 1.6s infinite' : 'none' }) };
+    const avancar = () => {
+      if (!ultimo) return this.setState({ passo: passo + 1, ajuda: false });
+      this.setState({ feitas: { ...feitas, [cc.id]: true }, conta: conta + 1, passo: 0, ajuda: false });
+    };
+    const voltar = () => passo > 0 ? this.setState({ passo: passo - 1, ajuda: false }) : (conta > 0 && this.setState({ conta: conta - 1, passo: 0, ajuda: false }));
+    return { t, passos, abas, p, m, video: !!this.state.video, verVideo: () => this.setState({ video: true }), fecharVideo: () => this.setState({ video: false }),
+      c: { ...cc, num: conta + 1, nomeUp: cc.nome.toUpperCase() },
+      guiado: !cc.opcional, opcional: !!cc.opcional,
+      passoNum: passo + 1, passoTot: cc.passos.length, pct: Math.round((passo + 1) / cc.passos.length * 100),
+      temPalavra: !!p.en, btnAvancar: passo === 0 ? 'Abrir o site →' : (ultimo ? 'Próxima conta →' : 'Fiz isso →'),
+      dispBtn: fim ? 'none' : 'inline-flex', dispLink: fim ? 'inline-flex' : 'none', ajuda, avancar, voltar, pedirAjuda: () => this.setState({ ajuda: !ajuda }) };
+  }
+}
+</script>
+</body>
+</html>

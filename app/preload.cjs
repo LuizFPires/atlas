@@ -1,7 +1,7 @@
 // Preload do app Atlas: a ÚNICA ponte entre a tela (renderer) e o processo principal.
 //
 // O QUE FAZ: expõe window.atlasDesktop (contextIsolation ligado, sandbox ligado, SEM nodeIntegration). Só os namespaces
-// que o front usa (src/app/ponte.ts): cofre, servidor, pagamento, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar, kit, atualizacao. Todo argumento vira String/boolean aqui e é
+// que o front usa (src/app/ponte.ts): cofre, servidor, pagamento, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar, kit, atualizacao, ideia. Todo argumento vira String/boolean aqui e é
 // revalidado de novo no processo principal (main.cjs); o renderer nunca recebe caminho de origem, módulo Node nem Electron.
 //
 // COMO TESTAR (Windows): `npx electron app/main.cjs`, abrir as ferramentas do desenvolvedor e digitar `window.atlasDesktop`:
@@ -85,6 +85,8 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     ler: () => chamar('atlas:modelo:ler'),
     gravar: (id) => chamar('atlas:modelo:gravar', String(id)),
   },
+  // Roteiro da ideia: quais tópicos o relato já respondeu e, no fim, o que faltou.
+  ideia: { conferir: (relato, fim) => chamar('atlas:ideia:conferir', String(relato ?? ''), fim === true) },
   prototipo: {
     estado: (pasta) => chamar('atlas:prototipo:estado', String(pasta)),
     desenhar: (pasta, obraNome, estilo, relato) => chamar('atlas:prototipo:desenhar', String(pasta), String(obraNome), JSON.parse(JSON.stringify(estilo ?? {})), String(relato ?? '')),
@@ -93,6 +95,8 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     linkCelular: (nome, documento) => chamar('atlas:prototipo:link', String(nome), String(documento)),
     whatsapp: (url) => chamar('atlas:prototipo:whatsapp', String(url)),
     progresso: (pasta) => chamar('atlas:prototipo:progresso', String(pasta)),
+    mapear: (pasta, obraNome, relato) => chamar('atlas:prototipo:mapear', String(pasta), String(obraNome), String(relato ?? '')),
+    pintar: (pasta, obraNome, estilo) => chamar('atlas:prototipo:pintar', String(pasta), String(obraNome), JSON.parse(JSON.stringify(estilo ?? {}))),
   },
   batismo: {
     sugerir: (pasta, obraNome, pedido) => chamar('atlas:batismo:sugerir', String(pasta), String(obraNome), JSON.parse(JSON.stringify(pedido ?? {}))),
