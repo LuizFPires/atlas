@@ -19,19 +19,22 @@ interface Props {
   segundos: number
   /** Ilustração animada opcional (ex.: o celular sendo pintado). */
   ilustracao?: ReactNode
+  /** Andamento real (ex.: telas prontas de um mapa). Quando dá, manda na barra, na etapa e no recado; null = estimativa pelo relógio. */
+  andamento?: (segundosPassados: number) => { pct: number; etapa: number; nota: string } | null
 }
 
 /** Espera do Claude com cara de progresso, para ninguém achar que travou: barra que anda, etapas, tempo passado. */
-export function Trabalhando({ titulo, etapas, segundos, ilustracao }: Props) {
+export function Trabalhando({ titulo, etapas, segundos, ilustracao, andamento }: Props) {
   const [passados, setPassados] = useState(0)
   useEffect(() => {
     const inicio = Date.now()
     const t = setInterval(() => setPassados((Date.now() - inicio) / 1000), 500)
     return () => clearInterval(t)
   }, [])
-  const pct = progressoEstimado(passados, segundos)
+  const real = andamento?.(passados) ?? null
+  const pct = real ? Math.max(0, Math.min(99, real.pct)) : progressoEstimado(passados, segundos)
   // A etapa atual acompanha a barra; a última fica "agora" até a tela terminar de verdade.
-  const atual = Math.min(etapas.length - 1, Math.floor((pct / 95) * etapas.length))
+  const atual = real ? Math.max(0, Math.min(etapas.length - 1, real.etapa)) : Math.min(etapas.length - 1, Math.floor((pct / 95) * etapas.length))
   return (
     <section className="at-trab" role="status" aria-label={titulo}>
       {ilustracao && <div className="at-trab__ilustra">{ilustracao}</div>}
@@ -54,7 +57,7 @@ export function Trabalhando({ titulo, etapas, segundos, ilustracao }: Props) {
             )
           })}
         </ol>
-        <span className="at-trab__nota">Leva {duracao(segundos)}. Pode deixar esta tela aberta: o Atlas segue trabalhando e mostra tudo quando terminar.</span>
+        <span className="at-trab__nota">{real ? real.nota : `Leva ${duracao(segundos)}.`} Pode deixar esta tela aberta: o Atlas segue trabalhando e mostra tudo quando terminar.</span>
       </div>
     </section>
   )
