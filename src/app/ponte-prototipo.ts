@@ -47,7 +47,11 @@ export interface PontePrototipo {
   ajustar(pasta: string, pedido: string): Promise<{ estado: EstadoProto; resposta: string }>
   /** Volta a ver uma versão anterior. Não apaga nem reescreve nada: só muda a versão atual. */
   voltar(pasta: string, numero: number): Promise<EstadoProto>
+  /** Enquanto desenha: o mapa de telas e as que já ficaram prontas (para aparecerem uma a uma). Fora disso: null. */
+  progresso?(pasta: string): Promise<ProgressoProto | null>
 }
+
+export interface ProgressoProto { mapa: { id: string; nome: string }[]; telas: TelaDesenhada[] }
 
 // ---- Segurança do preview -------------------------------------------------------------------------------------------------
 

@@ -82,6 +82,7 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     desenhar: (pasta, obraNome, estilo, relato) => chamar('atlas:prototipo:desenhar', String(pasta), String(obraNome), JSON.parse(JSON.stringify(estilo ?? {})), String(relato ?? '')),
     ajustar: (pasta, pedido) => chamar('atlas:prototipo:ajustar', String(pasta), String(pedido)),
     voltar: (pasta, numero) => chamar('atlas:prototipo:voltar', String(pasta), Number(numero)),
+    progresso: (pasta) => chamar('atlas:prototipo:progresso', String(pasta)),
   },
   batismo: {
     sugerir: (pasta, obraNome, pedido) => chamar('atlas:batismo:sugerir', String(pasta), String(obraNome), JSON.parse(JSON.stringify(pedido ?? {}))),

@@ -133,6 +133,7 @@ function pedidoAjustar(pedido, telas, versao) {
 /** `deps`: { raiz, disparo (criarDisparo de projeto-comum.cjs) }. */
 function criarPrototipo({ raiz, disparo }) {
   const ocupadas = new Set() // uma geração por obra por vez
+  const andamento = new Map() // pasta -> { mapa:[{id,nome}], telas:[{id,nome,html}] } enquanto desenha (a tela mostra ao vivo)
 
   function listarVersoes(pasta) {
     pastaDaObra(raiz, pasta)
@@ -199,12 +200,15 @@ function criarPrototipo({ raiz, disparo }) {
         const nome = String(obraNome ?? '')
         const est = estiloValido(estilo)
         const textoRelato = typeof relato === 'string' ? relato.slice(0, 20_000) : ''
+        andamento.set(pasta, { mapa: [], telas: [] })
+        try {
         if (textoRelato.trim()) {
           garantirSubpasta(raiz, pasta, 'prototipo')
           gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'relato.md'), `# Relato do cliente\n\n${textoRelato.trim()}\n`)
         }
         // Fase 1: mapa de telas a partir do relato.
         const mapa = mapaDoJson(extrairJson(await disparo.perguntar(pasta, pedidoMapa(nome, est, textoRelato), { timeoutMs: 600_000, maxSaida: 2_000_000 }), 'objeto'))
+        andamento.set(pasta, { mapa: mapa.map((t) => ({ id: t.id, nome: t.nome })), telas: [] })
         // Fase 2: desenho em lotes, com a primeira tela como referência visual dos lotes seguintes.
         const feitas = new Map()
         for (let i = 0; i < mapa.length; i += LOTE) {
@@ -214,13 +218,21 @@ function criarPrototipo({ raiz, disparo }) {
           const pedidos = new Set(lote.map((t) => t.id))
           if (!r.telas.every((t) => pedidos.has(t.id))) throw new Error('telas-invalidas') // nada fora do lote
           for (const t of r.telas) feitas.set(t.id, t)
+          andamento.set(pasta, { mapa: mapa.map((t) => ({ id: t.id, nome: t.nome })), telas: mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id)) })
         }
         const telas = mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id))
         if (!telas.length) throw new Error('telas-invalidas')
         if (ler(pasta).versoes.length) return ler(pasta) // alguém gravou enquanto o Claude pensava
         gravarVersao(pasta, 'Primeiras telas', telas)
         return ler(pasta)
+        } finally { andamento.delete(pasta) }
       })
+    },
+
+    /** Enquanto desenha: o mapa e as telas já prontas (a tela pergunta de tempos em tempos). Fora disso: null. */
+    progresso(pasta) {
+      const a = andamento.get(String(pasta))
+      return a ? { mapa: a.mapa.map((t) => ({ ...t })), telas: a.telas.map((t) => ({ ...t })) } : null
     },
 
     ajustar(pasta, pedido) {
