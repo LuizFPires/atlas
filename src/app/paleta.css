@@ -1,0 +1,21 @@
+/* Paleta de cores da identidade (F06b). Só tokens do Atlas. */
+.at-paleta { display: flex; flex-direction: column; gap: 12px; }
+.at-paleta__vagas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.at-paleta__vaga { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 14px; border: 1px dashed var(--card-b); background: var(--input); }
+.at-paleta__vaga--on { border-style: solid; }
+.at-paleta__amostra { position: relative; flex: none; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--card-b); display: grid; place-items: center; color: var(--mute); cursor: pointer; overflow: hidden; }
+.at-paleta__amostra input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.at-paleta__amostra input:disabled { cursor: default; }
+.at-paleta__codigo { min-width: 0; flex: 1; height: 36px; border: none; background: transparent; color: var(--text); font: 500 14px var(--font-mono); text-transform: uppercase; }
+.at-paleta__codigo::placeholder { color: var(--mute); }
+.at-paleta__codigo:disabled { opacity: 0.4; }
+.at-paleta__tirar { flex: none; width: 26px; height: 26px; border-radius: 13px; border: none; background: var(--card2); color: var(--mute); display: grid; place-items: center; cursor: pointer; }
+.at-paleta__dica { font-size: 13px; color: var(--mute); }
+.at-paleta__sugestoes { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 8px; }
+.at-paleta__sug { aspect-ratio: 1; border-radius: 10px; border: 1px solid var(--card-b); cursor: pointer; transition: transform 0.12s; }
+.at-paleta__sug:hover:not(:disabled) { transform: scale(1.08); }
+.at-paleta__sug:disabled { opacity: 0.3; cursor: default; }
+.at-paleta__sug:focus-visible, .at-paleta__amostra:focus-within { outline: 2px solid var(--lime); outline-offset: 2px; }
+.at-paleta__recado { margin: 0; font-size: 13px; color: var(--aviso, #F2B14A); }
+.at-paleta__resumo { margin: 0; font: 500 13px var(--font-mono); color: var(--mute); }
+@media (prefers-reduced-motion: reduce) { .at-paleta__sug { transition: none; } }
