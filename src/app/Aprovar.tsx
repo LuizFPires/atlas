@@ -26,7 +26,14 @@ export const recadoDoErroAprovar = (e: unknown) => {
     case 'claude-nao-logado': return 'O Claude não está conectado neste computador. Conecte o Claude (o Atlas te guia) e toque em Começar a obra de novo.'
     case 'claude-nao-instalado': return 'O Claude não está instalado neste computador. Peça ajuda ao Atlas no botão Falar com o Atlas: ele te guia para instalar.'
     case 'plan-nao-gravado': case 'plan-invalido': return 'Não consegui gravar o plano da obra na pasta. Confira se a pasta da obra existe e tente de novo.'
-    default: return 'Não consegui fazer isso agora. Tente de novo em instantes.'
+    case 'claude-falhou': return 'O Claude não respondeu agora (pode ser o limite do seu plano por algumas horas). Tente de novo daqui a pouco.'
+    case 'plano-invalido': return 'Não consegui ler o plano que o Claude montou. Toque em Começar a obra de novo: ele monta outro.'
+    case 'sem-etapas': return 'O plano da obra ainda não ficou pronto. Espere ele aparecer à esquerda e toque em Começar a obra.'
+    default: {
+      // Luiz, 23/11/2026: "erro na hora de começar uma obra" sem pista nenhuma. Um código curto (sem caminho nem dado) diz o que foi.
+      const m = e instanceof Error ? /^([A-Za-z][\w-]{1,30})/.exec(e.message)?.[1] : undefined
+      return `Não consegui começar a obra agora. Tente de novo em instantes.${m ? ` (código: ${m})` : ''}`
+    }
   }
 }
 
