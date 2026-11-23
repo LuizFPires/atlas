@@ -1,3 +1,4 @@
+import { criarAcumulador } from './voz-pcm'
 // Motor de voz do Atlas. Dois caminhos:
 //  - Site (navegador comum): reconhecimento de fala do próprio navegador (voz.ts).
 //  - Atlas instalado (Electron): o reconhecimento do navegador NÃO funciona dentro de apps Electron (erro "network"),
@@ -50,7 +51,7 @@ export const gravacaoSuportada = () =>
   typeof window !== 'undefined' && typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
 
 export function transcritorAtual(): Transcritor {
-  if (!transcritor) transcritor = criarTranscritorWhisper()
+  if (!transcritor) transcritor = criarTranscritorWhisper(temPlaca() ? MODELO_BOM : MODELO_BOM_SEM_PLACA)
   return transcritor
 }
 /** Whisper pequeno e rápido, só para o rascunho ao vivo (a pessoa vê as palavras quase na hora; o bom corrige depois). */
@@ -60,37 +61,37 @@ export function transcritorRapido(): Transcritor | null {
 }
 export const iniciarGravacao = () => gravador()
 
-/** Grava do microfone e, ao parar, converte para 16 kHz mono (o formato que o Whisper espera). */
+/** Grava do microfone direto em números (16 kHz mono, o formato do Whisper), sem decodificar arquivo: pegar o trecho de agora é
+ *  só copiar o que já chegou (voz-pcm.ts). */
 async function gravarDoMicrofone(): Promise<Gravacao> {
   const fluxo = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
-  const rec = new MediaRecorder(fluxo)
-  const partes: Blob[] = []
-  rec.ondataavailable = (e) => { if (e.data.size) partes.push(e.data) }
-  rec.start(1000)
-  const desligar = () => fluxo.getTracks().forEach((t) => t.stop())
-  // Decodifica tudo o que já foi gravado (os pedaços do MediaRecorder só tocam juntos, a partir do primeiro).
-  const decodificar = async () => {
-    const bruto = await new Blob(partes, { type: rec.mimeType }).arrayBuffer()
-    const ctx = new AudioContext({ sampleRate: 16000 })
-    try { return (await ctx.decodeAudioData(bruto)).getChannelData(0).slice() } finally { void ctx.close() }
+  const ctx = new AudioContext()
+  const fonte = ctx.createMediaStreamSource(fluxo)
+  // ScriptProcessor: simples e presente em todo Chromium; 4096 amostras ≈ 85 ms a 48 kHz.
+  const proc = ctx.createScriptProcessor(4096, 1, 1)
+  const acc = criarAcumulador(ctx.sampleRate)
+  proc.onaudioprocess = (e) => { acc.somar(e.inputBuffer.getChannelData(0)) }
+  fonte.connect(proc)
+  proc.connect(ctx.destination) // sem isso o Chromium não chama onaudioprocess (a saída é silêncio)
+  const desligar = () => {
+    try { proc.disconnect(); fonte.disconnect() } catch { /* já desligado */ }
+    fluxo.getTracks().forEach((t) => t.stop())
+    void ctx.close().catch(() => {})
   }
   return {
-    cancelar() { try { rec.stop() } catch { /* já parado */ } desligar() },
-    parcial: () => decodificar(),
-    parar: () => new Promise<Float32Array>((ok, erro) => {
-      rec.onstop = async () => {
-        desligar()
-        try { ok(await decodificar()) } catch (e) { erro(e) }
-      }
-      try { rec.stop() } catch (e) { erro(e) }
-    }),
+    cancelar: desligar,
+    parcial: async () => acc.tudo(),
+    parar: async () => { const tudo = acc.tudo(); desligar(); return tudo },
   }
 }
 
 /** Whisper num Worker (não trava a tela). O modelo é baixado uma vez e fica guardado no computador. */
 /** Modelos: o bom confirma o texto; o rápido (base) desenha o rascunho ao vivo. Cada um no seu Worker (não disputam fila). */
 export const MODELO_BOM = 'onnx-community/whisper-small'
-export const MODELO_RAPIDO = 'onnx-community/whisper-base'
+/** Sem placa de vídeo (WebGPU), o small leva segundos demais no processador: usa o base, ~3x mais rápido (Luiz, 23/11/2026). */
+export const MODELO_BOM_SEM_PLACA = 'onnx-community/whisper-base'
+export const MODELO_RAPIDO = 'onnx-community/whisper-tiny'
+const temPlaca = () => typeof navigator !== 'undefined' && 'gpu' in navigator
 
 function criarTranscritorWhisper(modelo: string = MODELO_BOM): Transcritor {
   let worker: Worker | null = null

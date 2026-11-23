@@ -139,8 +139,8 @@ function useVozWhisper(aoFalar: (texto: string) => void) {
         // Texto ao vivo (23/11/2026): a cada 1,5 s olha se já tem um trecho de uns 4 s terminado num respiro; ele vai para o campo
         // assim que o Whisper bom escreve, sempre na ordem da fala. Ao parar, falta só o finalzinho.
         if (g.parcial) {
-          const partes = criarTranscricaoEmPartes(transcritorAtual(), { minSegundos: 4, aoPronto: (x) => cb.current(x) })
-          const timer = setInterval(() => { void g.parcial!().then((a) => partes.adiantar(a)).catch(() => {}) }, 1500)
+          const partes = criarTranscricaoEmPartes(transcritorAtual(), { minSegundos: 3, aoPronto: (x) => cb.current(x) })
+          const timer = setInterval(() => { void g.parcial!().then((a) => partes.adiantar(a)).catch(() => {}) }, 1000)
           emPartes.current = { partes, timer }
           // Rascunho ao vivo ("sem delay na fala"): a cada ~1 s o Whisper rápido escreve o trecho ainda não confirmado, e ele
           // aparece no aviso "Ouvindo…". Um de cada vez: se o anterior ainda não voltou, pula a vez.
