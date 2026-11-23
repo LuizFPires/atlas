@@ -352,7 +352,7 @@ Notas: VISÃO pedida pelo usuário em 19/11/2026, para fazer DEPOIS — registra
 peso: 5
 spec: S9, S18, S4
 tela: prototipo/celular/Main.dc.html
-- [ ] Protótipo das telas do celular aprovado e registrado (prototipo/celular, 10 telas)
+- [x] Protótipo das telas do celular aprovado e registrado (prototipo/celular, 10 telas)
 - [ ] Servidor: canal celular ↔ computador (sinal do computador, fila de pedidos, estado do projeto, fotos de referência)
 - [ ] Computador: executa os pedidos do celular (obra nova, telas, ajustes, nomes, começar, pausar) e publica progresso, telas e status
 - [ ] PWA: entrar, Minhas obras (em andamento, concluídas, paradas, excluídas) e estado do notebook
