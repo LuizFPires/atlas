@@ -179,48 +179,67 @@ export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
   }
 }
 
-export interface DadosCortesia { validade_em: Date; /** Endereço de instalação com o token de uso único. */ link: string; /** Até quando o link vale. */ link_expira_em: Date }
+export interface DadosCortesia { validade_em: Date; /** Endereço de instalação com o token de uso único. */ link: string; /** Até quando o link vale. */ link_expira_em: Date; /** Nome de quem recebe (só o primeiro vai no assunto). */ nome?: string }
+
+/** Quem assina os e-mails de acesso: uma pessoa (o Gmail trata carta de pessoa como conversa, não como propaganda). */
+export const ASSINATURA = 'Luiz, do Atlas'
+
+/** Remetente de pessoa ("Luiz, do Atlas <ola@...>") com o endereço já configurado (ATLAS_EMAIL_FROM). Sem endereço válido: como veio. */
+export function remetentePessoal(de: string): string {
+  const m = /<([^<>\s]+@[^<>\s]+)>\s*$/.exec(de) ?? /^\s*([^<>\s]+@[^<>\s]+)\s*$/.exec(de)
+  return m ? `${ASSINATURA} <${m[1]}>` : de
+}
+
+/** Carta simples (Luiz, 23/11/2026: os e-mails caíam em Promoções): fundo branco, texto, um link sublinhado e assinatura. Sem faixa
+ *  de marca, sem botão colorido, sem caixas coloridas e sem imagem. */
+function carta(paragrafos: string[]): string {
+  const corpo = paragrafos.map((t) => `<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#1B1E22">${t}</p>`).join('')
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:24px 16px;background:#FFFFFF;font-family:Arial,Helvetica,sans-serif"><div style="max-width:560px">${corpo}</div></body></html>`
+}
+const linkTexto = (href: string, rotulo: string) => `<a href="${esc(href)}" style="color:#1A55C4;font-weight:700">${esc(rotulo)}</a>`
 
 /** Cortesia liberada pelo gestor: avisa do acesso liberado, até quando vale e traz o link de instalação. Sem promessa de atendimento humano. */
 export function montarCortesia(d: DadosCortesia): EmailMontado {
   const link = linkSeguro(d.link)
   const validade = d.validade_em.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' }) // dd/mm/aaaa
   const ate = quando(d.link_expira_em)
-  const html = moldura({
-    titulo: 'Seu acesso ao Atlas está liberado.',
-    subtitulo: `O acesso vale até ${validade}. Falta só instalar no computador.`,
-    preheader: 'Abra este e-mail no computador onde você vai trabalhar e clique no botão.',
-    corpo: [
-      p('Foi liberado um acesso ao Atlas para este e-mail. O Atlas é o jeito de construir os sistemas do seu negócio sem programar. Abra este e-mail <b>no computador onde você vai trabalhar</b> e clique no botão. Leva uns 10 minutos.'),
-      link ? botao(link, 'Instalar o Atlas neste computador') : '',
-      `<div style="margin:0 0 22px;border:2px solid ${COR.lime};background:${COR.caixa};border-radius:12px;padding:18px 20px;font-size:16px;line-height:1.6;color:${COR.corpo}"><b style="color:${COR.tinta};font-size:18px">O acesso vale até ${esc(validade)}.</b><br>É como um bilhete com data: no dia ${esc(validade)} o acesso acaba sozinho, sem você precisar fazer nada. Não fica nenhuma conta pendente.</div>`,
-      avisoClaude(),
-      avisoWindows(),
-            destaque('microfone', `<b style="color:${COR.tinta}">Você não vai precisar digitar.</b> No Atlas, tudo pode ser falado. É só apertar o microfone e conversar como se estivesse com um amigo na mesa de um restaurante.`),
-      rodape(`O botão funciona uma vez só e vale até ${esc(ate)} (48 horas). Abriu no celular? Abra de novo no computador.`),
-      `<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:${COR.claro}">${esc(AJUDA)}</p>`,
-    ].join(''),
-  })
+  const primeiro = soLetras(d.nome ?? '').split(' ')[0] ?? ''
+  const oi = primeiro ? `Oi, ${primeiro}!` : 'Oi!'
+  const linhasClaude = [`${AVISO_CLAUDE.titulo}.`, ...AVISO_CLAUDE.linhas]
+  const linhasWindows = [`${AVISO_WINDOWS.titulo}:`, ...AVISO_WINDOWS.linhas]
+  const html = carta([
+    esc(oi),
+    `Liberei um acesso ao Atlas para você, válido até <b>${esc(validade)}</b>. O Atlas é o jeito de construir os sistemas do seu negócio sem programar. No dia ${esc(validade)} o acesso acaba sozinho e não fica nenhuma conta pendente.`,
+    `Abra este e-mail <b>no computador onde você vai trabalhar</b> e clique no link: ${link ? linkTexto(link, 'Instalar o Atlas neste computador') : '(link indisponível)'}. Leva uns 10 minutos.`,
+    linhasWindows.map(esc).join('<br>'),
+    linhasClaude.map(esc).join('<br>'),
+    `No Atlas você não precisa digitar: é só apertar o microfone e conversar.`,
+    `O link funciona uma vez e vale até ${esc(ate)}. Se você recebeu mais de um e-mail com link, use o mais novo: os anteriores deixam de valer.`,
+    `${esc(AJUDA)}`,
+    `Um abraço,<br>${esc(ASSINATURA)}`,
+  ])
   return {
-    // Assunto com cara de aviso (sem palavras de promoção) e com a validade, para não virar conversa.
-    assunto: `Seu acesso ao Atlas está liberado (até ${validade.slice(0, 5)})`,
+    // Assunto de carta, com o primeiro nome; a validade continua no assunto para cada cortesia nova chegar como e-mail separado
+    // (pedido do Luiz em 22/11/2026: com o mesmo assunto, o Gmail juntava à conversa antiga e ela "não chegava").
+    assunto: `${primeiro ? `${primeiro}, seu` : 'Seu'} link para instalar o Atlas (até ${validade.slice(0, 5)})`,
     texto: [
-      'Oi! Foi liberado um acesso ao Atlas para este e-mail.',
+      oi,
       '',
-      `ATENÇÃO AO PRAZO: o acesso vale até ${validade}. No dia ${validade} o acesso acaba sozinho, sem você precisar fazer nada.`,
+      `Liberei um acesso ao Atlas para você, válido até ${validade}. No dia ${validade} o acesso acaba sozinho, sem você precisar fazer nada.`,
       '',
-      'Agora falta só instalar o Atlas no computador onde você vai construir.',
-      '',
-      'Abra este e-mail no computador e clique no link abaixo:',
+      'Abra este e-mail no computador onde você vai trabalhar e clique no link abaixo (leva uns 10 minutos):',
       d.link,
       '',
-      `O link funciona uma vez e vale até ${ate}.`,
+      `O link funciona uma vez e vale até ${ate}. Se você recebeu mais de um e-mail com link, use o mais novo: os anteriores deixam de valer.`,
       '',
       ...avisoClaudeTexto(),
       '',
       ...avisoWindowsTexto(),
       '',
       AJUDA,
+      '',
+      'Um abraço,',
+      ASSINATURA,
     ].join('\n'),
     html,
   }

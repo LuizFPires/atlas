@@ -3,7 +3,7 @@
 // (não basta existir) e o e-mail confirmado precisa estar na allowlist ATLAS_ADMIN_EMAILS (ambiente do servidor).
 // Cliente comum, mesmo logado no portal, recebe 403. Lista vazia = ninguém é admin (fail-closed).
 // O painel mostra agregados e dados operacionais: nunca token_hash, hash de computador, refs/contas do gateway ou chaves.
-import { gerarLink } from './links.ts'
+import { prepararLink } from './links.ts'
 import { REGIAO_DA_UF, type Regiao, UFS } from './geo.ts'
 import type { IdentidadePortal } from './portal.ts'
 import { VALOR_MENSALIDADE } from './pagamento/config.ts'
@@ -15,7 +15,7 @@ export interface DepsAdmin extends Deps {
   /** Allowlist de admins (ATLAS_ADMIN_EMAILS, separada por vírgula). */
   emailsAdmin: readonly string[]
   /** Envia o e-mail da cortesia (link de instalação de uso único). Produção: adaptador de e-mail (Resend). Ausente = não envia (email_enviado: false). */
-  enviarCortesia?: (email: string, dados: { token: string; expira_em: Date; validade_em: Date }) => Promise<void>
+  enviarCortesia?: (email: string, dados: { token: string; expira_em: Date; validade_em: Date; nome?: string }) => Promise<void>
 }
 
 export interface IdentidadeAdmin { auth_user_id: string; email: string }
@@ -220,7 +220,7 @@ export async function liberarCortesia(d: DepsAdmin, jwt: string, a: { email: unk
   if (r.resultado === 'ja_tem_paga') throw new ErroRegra('ja_tem_licenca_paga', 'Essa pessoa já tem uma licença paga. Não precisa de cortesia.', 409)
   await d.store.inserirOcorrencia({ cliente_id: r.licenca.cliente_id, tipo: 'cortesia', descricao: `Cortesia ${r.resultado === 'criada' ? 'liberada' : 'renovada'} até ${validade.toISOString()}`, autor: adm.email, resolvida: true, criada_em: agora })
   // silencioso (estender prazo): só suprime o aviso; as validações acima valem igual. Só o booleano true conta.
-  const email_enviado = a.silencioso === true ? false : await enviarEmailCortesia(d, email, validade)
+  const email_enviado = a.silencioso === true ? false : await enviarEmailCortesia(d, email, validade, nome)
   return { ok: true, nova: r.resultado === 'criada', licenca_id: r.licenca.id, validade_em: validade, email_enviado }
 }
 
@@ -228,13 +228,15 @@ export async function liberarCortesia(d: DepsAdmin, jwt: string, a: { email: unk
  * Gera um link de instalação de uso único e manda o e-mail da cortesia. NUNCA lança: se o link ou o envio falhar, a cortesia
  * continua valendo e devolve false (o gestor pode reenviar). Token e erro do provedor não vão para log.
  */
-async function enviarEmailCortesia(d: DepsAdmin, email: string, validade: Date): Promise<boolean> {
+async function enviarEmailCortesia(d: DepsAdmin, email: string, validade: Date, nome?: string): Promise<boolean> {
   if (!d.enviarCortesia) return false
   let etapa = 'gerar_link'
   try {
-    const link = await gerarLink(d, email)
+    // Só o link mais novo vale (Luiz, 23/11/2026): fecha os abertos e grava o novo na mesma operação.
+    const { token, expira_em, registro } = await prepararLink(d, email)
+    await d.store.trocarLinks(registro, d.agora())
     etapa = 'enviar'
-    await d.enviarCortesia(email, { token: link.token, expira_em: link.expira_em, validade_em: validade })
+    await d.enviarCortesia(email, { token, expira_em, validade_em: validade, nome: nome && nome !== 'Convidado' ? nome : undefined })
     return true
   } catch (e) {
     // Só a etapa e o nome do erro (curto, sem mensagem): a mensagem poderia carregar token, chave ou e-mail.
@@ -254,7 +256,7 @@ export async function reenviarCortesia(d: DepsAdmin, jwt: string, a: { email: un
   if (!lic || lic.tipo !== 'cortesia' || lic.status !== 'ativa' || cortesiaVencida(lic, d.agora()) || !lic.validade_em) {
     throw new ErroRegra('sem_cortesia', 'Não há uma cortesia ativa para esse e-mail. Libere a cortesia primeiro.', 404)
   }
-  return { ok: true, email_enviado: await enviarEmailCortesia(d, email, lic.validade_em) }
+  return { ok: true, email_enviado: await enviarEmailCortesia(d, email, lic.validade_em, cli.nome_tratamento ?? undefined) }
 }
 
 /** Cortesias em vigor (tipo cortesia, ativa, dentro do prazo): só e-mail, nome e validade — o que o gestor precisa para estender. */

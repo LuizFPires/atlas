@@ -86,7 +86,7 @@
 
 import type { CanalCelular, Pedido } from './celular.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { montarBoasVindas, montarConfirmacaoDegustacao, montarCortesia } from './emails.ts'
+import { montarBoasVindas, montarConfirmacaoDegustacao, montarCortesia, remetentePessoal } from './emails.ts'
 import { montarAvisoAtraso, montarCodigoAtivacao } from './emails-avisos.ts'
 import { criarFonteAtualizacaoStorage, criarLinkInstaladorStorage, lerConfigInstalador } from './instalador-storage.ts'
 
@@ -482,7 +482,7 @@ export const enviadorResend: EnviadorEmail = async (m) => {
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${chave}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: de, to: [m.para], subject: m.assunto, text: m.texto, html: m.html }),
+    body: JSON.stringify({ from: remetentePessoal(de), to: [m.para], subject: m.assunto, text: m.texto, html: m.html }),
   })
   if (!r.ok) throw new Error(`e-mail não enviado: o provedor respondeu ${r.status}.`) // sem corpo/chave no erro
 }
@@ -507,9 +507,9 @@ export async function enviarBoasVindas(email: string, d: { nome: string; empresa
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }
 
-export async function enviarCortesia(email: string, d: { token: string; expira_em: Date; validade_em: Date }) {
+export async function enviarCortesia(email: string, d: { token: string; expira_em: Date; validade_em: Date; nome?: string }) {
   const base = Deno.env.get('ATLAS_INSTALAR_URL') ?? 'https://atlas-ia.app.br/instalar'
-  const m = montarCortesia({ validade_em: d.validade_em, link_expira_em: d.expira_em, link: `${base}?t=${encodeURIComponent(d.token)}` })
+  const m = montarCortesia({ nome: d.nome, validade_em: d.validade_em, link_expira_em: d.expira_em, link: `${base}?t=${encodeURIComponent(d.token)}` })
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }
 
