@@ -1,5 +1,5 @@
 /* F07 Protótipo com o Claude (prototipo/F07Prototipo.dc.html). Só tokens do Atlas; as cores DENTRO do celular são da obra (iframe isolado). */
-.at-proto { display: flex; flex-direction: column; gap: 18px; min-width: 0; min-height: calc(100vh - 72px); }
+.at-proto { display: flex; flex-direction: column; gap: 18px; min-width: 0; min-height: calc(100vh - 72px); overflow-x: clip; }
 .at-proto h1 { margin: 0; font-size: 26px; }
 .at-proto__cab { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .at-proto__tit { display: flex; flex-direction: column; gap: 4px; }
@@ -10,11 +10,13 @@
 .at-proto__msg--eu { align-self: flex-end; background: var(--soft); }
 .at-proto__msg b { display: block; font-size: 12px; letter-spacing: 0.06em; margin-bottom: 4px; opacity: 0.75; }
 .at-proto__clipe { width: 48px; height: 48px; border-radius: 12px; border: 1px solid var(--card-b); background: transparent; color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.at-proto__abas { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.at-proto__abas { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: min(100%, 880px); }
 .at-proto__aba { height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 13px var(--font-text); cursor: pointer; }
 .at-proto__aba--on { background: var(--lime); border-color: var(--lime); color: var(--on-lime); }
-.at-proto__celular { height: clamp(520px, calc(100vh - 330px), 880px); aspect-ratio: 400 / 860; border-radius: 46px; background: #0b0c0d; padding: 12px; box-sizing: border-box; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35); }
-.at-proto__tela { width: 100%; height: 100%; border: 0; border-radius: 30px; background: #fff; display: block; }
+.at-proto__celular { height: clamp(520px, calc(100vh - 330px), 880px); aspect-ratio: 414 / 868; max-width: 100%; border-radius: 46px; background: #0b0c0d; padding: 12px; box-sizing: border-box; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35); }
+.at-proto__vidro { width: 100%; height: 100%; border-radius: 30px; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
+/* Tela no tamanho real de um telefone (390 × 844, no style do iframe) reduzida por transform para caber inteira: nunca rola de lado. */
+.at-proto__tela { flex: none; border: 0; background: #fff; display: block; transform-origin: center center; }
 .at-proto__seguro { width: 100%; height: 100%; border-radius: 30px; background: var(--card); color: var(--mute); display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; box-sizing: border-box; font-size: 14px; line-height: 1.5; }
 .at-proto__versoes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; justify-content: center; font-size: 13px; color: var(--mute); }
 .at-proto__versao { height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 13px var(--font-mono); cursor: pointer; }
@@ -23,7 +25,7 @@
 .at-proto__dica { padding: 0 14px 12px; font-size: 13px; color: var(--mute); }
 
 /* Palco: o protótipo ocupa o centro, o máximo possível. */
-.at-proto__palco { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 16px; min-height: 0; }
+.at-proto__palco { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 16px; min-height: 0; min-width: 0; max-width: 100%; }
 .at-proto__palco--obra { align-items: stretch; }
 .at-proto__vistas { display: inline-flex; padding: 3px; border-radius: 12px; background: var(--input); border: 1px solid var(--card-b); }
 .at-proto__vistas button { height: 34px; padding: 0 14px; border-radius: 9px; border: none; background: transparent; color: var(--mute); font: 600 14px var(--font-text); cursor: pointer; }
