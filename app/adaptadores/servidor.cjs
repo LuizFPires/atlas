@@ -14,9 +14,19 @@
 // tem de fazer o e-mail chegar (antes era barrado e a tela dizia "sem internet").
 'use strict'
 
-const ROTAS = ['/ativar/solicitar-codigo', '/ativar/solicitar-codigo-link', '/ativar/confirmar', '/verificar', '/licenca/resumo', '/pagamento/checkout']
+const ROTAS = ['/ativar/solicitar-codigo', '/ativar/solicitar-codigo-link', '/ativar/confirmar', '/verificar', '/licenca/resumo', '/pagamento/checkout',
+  // M33: o notebook busca os pedidos do celular e publica o resultado (e o status das obras, do M30).
+  '/celular/sinal', '/celular/resposta', '/celular/projeto', '/celular/referencia', '/status-obras/publicar']
 const MAX_CORPO = 20_000
 const MAX_RESPOSTA = 20_000
+// Limites próprios: as telas do protótipo sobem (até 1,5 MB), a foto de referência desce (até ~2,8 MB em base64) e a lista de
+// pedidos pode trazer relatos longos. Todo o resto continua no limite pequeno.
+const LIMITES = {
+  '/celular/projeto': { corpo: 1_600_000, resposta: MAX_RESPOSTA },
+  '/celular/referencia': { corpo: MAX_CORPO, resposta: 3_000_000 },
+  '/celular/sinal': { corpo: MAX_CORPO, resposta: 300_000 },
+  '/status-obras/publicar': { corpo: 80_000, resposta: MAX_RESPOSTA },
+}
 
 function enderecoDaApi(bruto) {
   if (typeof bruto !== 'string' || !bruto) return null
@@ -34,15 +44,16 @@ function criarServidor({ api = process.env.ATLAS_API_URL, buscar = globalThis.fe
       if (corpo === null || typeof corpo !== 'object' || Array.isArray(corpo)) throw new Error('corpo-invalido')
       let texto
       try { texto = JSON.stringify(corpo) } catch { throw new Error('corpo-invalido') }
-      if (typeof texto !== 'string' || texto.length > MAX_CORPO) throw new Error('corpo-invalido')
+      const lim = LIMITES[rota] ?? { corpo: MAX_CORPO, resposta: MAX_RESPOSTA }
+      if (typeof texto !== 'string' || texto.length > lim.corpo) throw new Error('corpo-invalido')
       const base = enderecoDaApi(api)
       if (!base || typeof buscar !== 'function') throw new Error('servidor-indisponivel')
       const headers = { 'Content-Type': 'application/json' }
       const disp = cabecalhos && typeof cabecalhos === 'object' ? cabecalhos['X-Atlas-Dispositivo'] : undefined
       if (typeof disp === 'string' && disp && disp.length <= 500 && !/[\r\n]/.test(disp)) headers['X-Atlas-Dispositivo'] = disp
       try {
-        const r = await buscar(`${base}${rota}`, { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(15_000), headers, body: texto })
-        return { status: r.status, corpo: (await r.text()).slice(0, MAX_RESPOSTA) }
+        const r = await buscar(`${base}${rota}`, { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(rota === '/celular/projeto' || rota === '/celular/referencia' ? 60_000 : 15_000), headers, body: texto })
+        return { status: r.status, corpo: (await r.text()).slice(0, lim.resposta) }
       } catch { throw new Error('sem-conexao') }
     },
   }

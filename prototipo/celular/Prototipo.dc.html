@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Protótipo navegável</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{color:#C6F135;text-decoration:none} a:hover{color:#d8ff5c}
+@keyframes m05pulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.55)}70%{box-shadow:0 0 0 20px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}
+.m05-gravando{animation:m05pulso 1.4s infinite}</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #101214; color: #EDEFEA; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden">
+ <header style="padding: 14px 16px 8px; display: flex; align-items: center; gap: 10px">
+  <a href="Main.dc.html" aria-label="Voltar para Minhas obras" style="width: 44px; height: 44px; border-radius: 22px; background: #1E2125; display: flex; align-items: center; justify-content: center; color: #EDEFEA; flex: none">
+   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+  <div style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+   <span style="font: 500 11px 'Geist Mono', monospace; letter-spacing: .12em; color: #8E968C">PROTÓTIPO · VERSÃO 2 · 9 TELAS</span>
+   <span style="font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{tituloTela}}</span>
+  </div>
+  <a href="Nome.dc.html" style="height: 44px; padding: 0 14px; border-radius: 12px; background: #C6F135; color: #141619; font: 700 15px 'Geist', sans-serif; display: flex; align-items: center; white-space: nowrap; flex: none">Aprovar</a>
+ </header>
+ <div style="display: flex; gap: 6px; overflow-x: auto; padding: 0 16px 10px">
+  <sc-for list="{{chips}}" as="c" hint-placeholder-count="5">
+   <button type="button" onClick="{{c.pick}}" style="{{c.estilo}}">{{c.nome}}</button>
+  </sc-for>
+ </div>
+ <div style="flex: 1; padding: 0 16px; display: flex; min-height: 0">
+  <div style="flex: 1; border-radius: 26px; background: #F4F1EA; color: #1B1E22; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #2C3036">
+   <sc-if value="{{t0}}" hint-placeholder-val="{{ true }}">
+    <div style="background: #10233B; color: #F4F1EA; padding: 20px 18px 22px; display: flex; flex-direction: column; gap: 6px">
+     <span style="font: 600 12px 'Geist Mono', monospace; letter-spacing: .14em; color: #E8C27A">BARBEARIA DO ZÉ</span>
+     <span style="font-size: 24px; font-weight: 700; line-height: 1.15">Seu corte, na hora certa.</span>
+     <span style="font-size: 13px; color: #B9C4D2">Rua das Acácias, 120 · aberto até 20h</span>
+    </div>
+    <div style="padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; flex: 1">
+     <button type="button" onClick="{{irAgenda}}" style="height: 52px; border-radius: 14px; border: 0; background: #E8C27A; color: #10233B; font: 700 16px 'Geist', sans-serif; cursor: pointer">Marcar horário</button>
+     <span style="font: 600 11px 'Geist Mono', monospace; letter-spacing: .12em; color: #6B6457">SEU PRÓXIMO HORÁRIO</span>
+     <div style="background: #FFFFFF; border-radius: 14px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center">
+      <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">Corte + barba</span><span style="font-size: 13px; color: #6B6457">Sáb, 28/11 · 10h30 · com Rafa</span></span>
+      <span style="font: 600 14px 'Geist Mono', monospace">R$ 65</span>
+     </div>
+     <span style="font: 600 11px 'Geist Mono', monospace; letter-spacing: .12em; color: #6B6457">BARBEIROS</span>
+     <div style="display: flex; gap: 10px">
+      <span style="flex: 1; background: #FFFFFF; border-radius: 14px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px"><span style="width: 40px; height: 40px; border-radius: 20px; background: #1C3A5E"></span>Rafa</span>
+      <span style="flex: 1; background: #FFFFFF; border-radius: 14px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px"><span style="width: 40px; height: 40px; border-radius: 20px; background: #E36B3C"></span>Leo</span>
+      <span style="flex: 1; background: #FFFFFF; border-radius: 14px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px"><span style="width: 40px; height: 40px; border-radius: 20px; background: #1F6F5C"></span>Zé</span>
+     </div>
+    </div>
+   </sc-if>
+   <sc-if value="{{t1}}" hint-placeholder-val="{{ false }}">
+    <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+     <span style="font: 600 11px 'Geist Mono', monospace; letter-spacing: .12em; color: #6B6457">AGENDA · SEXTA, 27/11</span>
+     <span style="font-size: 22px; font-weight: 700">Hoje: 14 horários</span>
+     <div style="display: flex; gap: 6px">
+      <span style="padding: 7px 12px; border-radius: 999px; background: #10233B; color: #F4F1EA; font-size: 13px">Todos</span><span style="padding: 7px 12px; border-radius: 999px; background: #E7E2D7; font-size: 13px">Rafa</span><span style="padding: 7px 12px; border-radius: 999px; background: #E7E2D7; font-size: 13px">Leo</span><span style="padding: 7px 12px; border-radius: 999px; background: #E7E2D7; font-size: 13px">Zé</span>
+     </div>
+     <sc-for list="{{agenda}}" as="h" hint-placeholder-count="5">
+      <div style="display: flex; gap: 12px; align-items: stretch">
+       <span style="font: 600 13px 'Geist Mono', monospace; width: 44px; padding-top: 10px">{{h.hora}}</span>
+       <span style="flex: 1; border-radius: 12px; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; {{h.estilo}}"><span style="font-weight: 600; font-size: 14px">{{h.cliente}}</span><span style="font-size: 12px; opacity: .8">{{h.servico}}</span></span>
+      </div>
+     </sc-for>
+    </div>
+   </sc-if>
+   <sc-if value="{{t2}}" hint-placeholder-val="{{ false }}">
+    <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+     <span style="font: 600 11px 'Geist Mono', monospace; letter-spacing: .12em; color: #6B6457">PASSO 1 DE 3</span>
+     <span style="font-size: 22px; font-weight: 700">Com quem você quer cortar?</span>
+     <sc-for list="{{barbeiros}}" as="b" hint-placeholder-count="3">
+      <button type="button" onClick="{{irServico}}" style="background: #FFFFFF; border: 1px solid #E2DCCF; border-radius: 16px; padding: 12px; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer; font-family: 'Geist', sans-serif; color: #1B1E22">
+       <span style="width: 48px; height: 48px; border-radius: 24px; flex: none; background: {{b.cor}}"></span>
+       <span style="display: flex; flex-direction: column; gap: 2px; flex: 1"><span style="font-weight: 600; font-size: 15px">{{b.nome}}</span><span style="font-size: 13px; color: #6B6457">{{b.livre}}</span></span>
+       <span style="font: 600 13px 'Geist Mono', monospace; color: #10233B">{{b.nota}}</span>
+      </button>
+     </sc-for>
+    </div>
+   </sc-if>
+   <sc-if value="{{t3}}" hint-placeholder-val="{{ false }}">
+    <div style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+     <span style="font: 600 11px 'Geist Mono', monospace; letter-spacing: .12em; color: #6B6457">PASSO 2 DE 3 · COM RAFA</span>
+     <span style="font-size: 22px; font-weight: 700">Qual serviço?</span>
+     <sc-for list="{{servicos}}" as="s" hint-placeholder-count="4">
+      <div style="background: #FFFFFF; border-radius: 14px; padding: 14px; display: flex; justify-content: space-between; align-items: center; {{s.borda}}">
+       <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 600">{{s.nome}}</span><span style="font-size: 13px; color: #6B6457">{{s.tempo}}</span></span>
+       <span style="font: 600 14px 'Geist Mono', monospace">{{s.preco}}</span>
+      </div>
+     </sc-for>
+     <button type="button" onClick="{{irInicio}}" style="height: 50px; border-radius: 14px; border: 0; background: #10233B; color: #F4F1EA; font: 700 16px 'Geist', sans-serif; cursor: pointer">Escolher o horário</button>
+    </div>
+   </sc-if>
+  </div>
+ </div>
+ <footer style="padding: 10px 16px 26px; display: flex; flex-direction: column; gap: 10px">
+  <sc-if value="{{temFala}}" hint-placeholder-val="{{ false }}">
+   <div style="display: flex; flex-direction: column; gap: 6px">
+    <span style="align-self: flex-end; max-width: 85%; background: #2A3A12; color: #EDEFEA; border-radius: 14px 14px 4px 14px; padding: 9px 12px; font-size: 14px; line-height: 1.4">Deixa o botão de marcar horário maior e põe a foto da fachada no topo.</span>
+    <span style="align-self: flex-start; font-size: 13px; color: #B4BBB2; display: flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 4px; background: #C6F135"></span>O notebook está ajustando a tela Início…</span>
+   </div>
+  </sc-if>
+  <div style="display: flex; align-items: center; gap: 12px; background: #1E2125; border: 1px solid #2C3036; border-radius: 20px; padding: 8px 8px 8px 16px">
+   <span style="flex: 1; font-size: 15px; color: #B4BBB2">{{textoBarra}}</span>
+   <button type="button" onClick="{{tocar}}" aria-label="{{rotuloMic}}" class="{{classeMic}}" style="{{estiloMic}}">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>
+   </button>
+  </div>
+ </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tela: 0, mic: 'livre' }; }
+  renderVals() {
+    const nomes = ['Início', 'Agenda do dia', 'Escolher barbeiro', 'Escolher serviço'];
+    const ir = (i) => () => this.setState({ tela: i });
+    const chips = nomes.concat(['Novo horário…']).map((nome, i) => {
+      const sel = i === this.state.tela, pronta = i < 4;
+      return { nome, pick: pronta ? ir(i) : () => {},
+        estilo: 'height:34px;padding:0 12px;border-radius:999px;font:500 13px Geist,sans-serif;white-space:nowrap;flex:none;cursor:pointer;' + (sel ? 'background:#2A3A12;color:#C6F135;border:1px solid #C6F135' : pronta ? 'background:transparent;color:#B4BBB2;border:1px solid #2C3036' : 'background:transparent;color:#6E756C;border:1px dashed #2C3036') };
+    });
+    const m = this.state.mic, ouvindo = m === 'ouvindo';
+    const agenda = [
+      ['09h00', 'Carlos M.', 'Corte · Rafa', 'background:#10233B;color:#F4F1EA'],
+      ['09h40', 'Pedro A.', 'Barba · Leo', 'background:#FFFFFF'],
+      ['10h30', 'Livre', 'Toque para encaixar', 'background:transparent;border:1px dashed #C9C2B3;color:#6B6457'],
+      ['11h00', 'João V.', 'Corte + barba · Zé', 'background:#E8C27A;color:#10233B'],
+      ['11h45', 'Marcos T.', 'Corte · Rafa', 'background:#FFFFFF']
+    ].map(([hora, cliente, servico, estilo]) => ({ hora, cliente, servico, estilo }));
+    const barbeiros = [['Rafa', 'Livre hoje a partir das 14h', '4,9', '#1C3A5E'], ['Leo', 'Livre amanhã cedo', '4,8', '#E36B3C'], ['Zé', 'Livre hoje às 16h30', '5,0', '#1F6F5C']].map(([nome, livre, nota, cor]) => ({ nome, livre, nota, cor }));
+    const servicos = [['Corte', '40 min', 'R$ 45', ''], ['Barba', '30 min', 'R$ 30', ''], ['Corte + barba', '1h', 'R$ 65', 'border:2px solid #10233B'], ['Sobrancelha', '15 min', 'R$ 15', '']].map(([nome, tempo, preco, borda]) => ({ nome, tempo, preco, borda }));
+    return {
+      chips, tituloTela: nomes[this.state.tela],
+      t0: this.state.tela === 0, t1: this.state.tela === 1, t2: this.state.tela === 2, t3: this.state.tela === 3,
+      irAgenda: ir(2), irServico: ir(3), irInicio: ir(0),
+      agenda, barbeiros, servicos,
+      temFala: m === 'falou',
+      tocar: () => this.setState({ mic: ouvindo ? 'falou' : 'ouvindo' }),
+      rotuloMic: ouvindo ? 'Parar de gravar' : 'Pedir um ajuste falando',
+      classeMic: ouvindo ? 'm05-gravando' : '',
+      estiloMic: 'width:52px;height:52px;border-radius:26px;border:0;flex:none;cursor:pointer;display:flex;align-items:center;justify-content:center;' + (ouvindo ? 'background:#F05A4F;color:#ffffff' : 'background:#C6F135;color:#141619'),
+      textoBarra: ouvindo ? 'Estou ouvindo… toque para terminar' : 'Peça um ajuste falando'
+    };
+  }
+}
+</script>
+</body>
+</html>

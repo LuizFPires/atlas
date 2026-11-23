@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Entrar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{color:#C6F135;text-decoration:none} a:hover{color:#d8ff5c}</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #141619; color: #EDEFEA; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; box-sizing: border-box; padding: 28px 24px 34px; overflow: hidden">
+ <div style="display: flex; align-items: center; gap: 8px"><img src="/_blob/d75562038b21cd8e298dcfc0c04ef9cd" alt="" style="width: 34px; height: 19px; object-fit: contain"><img src="/_blob/a100dc4e2e64acf4a114194b3e713597" alt="Atlas" style="width: 84px; height: 13px; object-fit: contain"></div>
+ <img src="/_blob/212adbee8fe55acdda68303347927aec" alt="O canteiro do Atlas: um prédio subindo" style="width: 342px; height: 230px; object-fit: cover; border-radius: 20px; margin-top: 28px">
+ <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 26px">
+  <h1 style="margin: 0; font-size: 30px; line-height: 1.12; letter-spacing: -0.02em">A sua obra, no bolso.</h1>
+  <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #B4BBB2">Conte a ideia, veja as telas e acompanhe a construção daqui. Quem trabalha é o seu notebook, ligado no escritório.</p>
+ </div>
+ <sc-if value="{{pedindo}}" hint-placeholder-val="{{ true }}">
+  <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 24px">
+   <label for="m00-email" style="font: 500 12px 'Geist Mono', monospace; letter-spacing: .12em; color: #8E968C">E-MAIL DA SUA COMPRA</label>
+   <input id="m00-email" type="email" value="ze@barbeariadoze.com.br" style="height: 54px; border-radius: 12px; border: 1px solid #2C3036; background: #16181B; color: #EDEFEA; padding: 0 16px; font: 400 16px 'Geist', sans-serif; box-sizing: border-box">
+  </div>
+  <button type="button" onClick="{{enviar}}" style="margin-top: auto; height: 56px; border-radius: 12px; border: 0; background: #C6F135; color: #141619; font: 700 17px 'Geist', sans-serif; cursor: pointer">Receber o código</button>
+ </sc-if>
+ <sc-if value="{{codigo}}" hint-placeholder-val="{{ false }}">
+  <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 24px">
+   <label for="m00-cod" style="font: 500 12px 'Geist Mono', monospace; letter-spacing: .12em; color: #8E968C">CÓDIGO DE 6 NÚMEROS</label>
+   <input id="m00-cod" inputmode="numeric" value="482 071" style="height: 54px; border-radius: 12px; border: 1px solid #C6F135; background: #16181B; color: #EDEFEA; padding: 0 16px; font: 500 22px 'Geist Mono', monospace; letter-spacing: .3em; box-sizing: border-box">
+   <span style="font-size: 13px; color: #8E968C">Mandamos para ze@barbeariadoze.com.br</span>
+  </div>
+  <a href="Main.dc.html" style="margin-top: auto; height: 56px; border-radius: 12px; background: #C6F135; color: #141619; font: 700 17px 'Geist', sans-serif; display: flex; align-items: center; justify-content: center">Entrar</a>
+ </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { codigo: false }; }
+  renderVals() {
+    return { pedindo: !this.state.codigo, codigo: this.state.codigo, enviar: () => this.setState({ codigo: true }) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Etapa 3 de 3: o nome</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{color:#C6F135;text-decoration:none} a:hover{color:#d8ff5c}</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #141619; color: #EDEFEA; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden">
+ <header style="padding: 18px 20px 0; display: flex; flex-direction: column; gap: 14px">
+  <div style="display: flex; align-items: center; justify-content: space-between">
+   <a href="Prototipo.dc.html" aria-label="Voltar para as telas" style="width: 44px; height: 44px; border-radius: 22px; background: #1E2125; display: flex; align-items: center; justify-content: center; color: #EDEFEA">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+   <span style="font: 500 12px 'Geist Mono', monospace; letter-spacing: .12em; color: #8E968C">ETAPA 3 DE 3 · O NOME</span>
+   <span style="width: 44px"></span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+   <span style="height: 4px; border-radius: 2px; background: #C6F135"></span><span style="height: 4px; border-radius: 2px; background: #C6F135"></span><span style="height: 4px; border-radius: 2px; background: #C6F135"></span>
+  </div>
+ </header>
+ <main style="flex: 1; overflow-y: auto; padding: 22px 20px 16px; display: flex; flex-direction: column; gap: 16px">
+  <h1 style="margin: 0; font-size: 28px; line-height: 1.15; letter-spacing: -0.02em">Como vai se chamar o seu sistema?</h1>
+  <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #B4BBB2">O notebook pensou em 3 nomes a partir da sua ideia. Escolha um ou diga o seu.</p>
+  <div style="display: flex; flex-direction: column; gap: 10px">
+   <sc-for list="{{nomes}}" as="n" hint-placeholder-count="3">
+    <button type="button" onClick="{{n.pick}}" aria-pressed="{{n.sel}}" style="{{n.estilo}}">
+     <span style="width: 52px; height: 52px; border-radius: 14px; flex: none; display: flex; align-items: center; justify-content: center; font: 700 20px 'Geist', sans-serif; background: #10233B; color: #E8C27A">{{n.sigla}}</span>
+     <span style="display: flex; flex-direction: column; gap: 3px; text-align: left; flex: 1">
+      <span style="font: 600 18px 'Geist', sans-serif; color: #EDEFEA; letter-spacing: -0.01em">{{n.nome}}</span>
+      <span style="font: 400 14px/1.4 'Geist', sans-serif; color: #B4BBB2">{{n.porque}}</span>
+     </span>
+    </button>
+   </sc-for>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 8px">
+   <label for="m06-outro" style="font: 500 12px 'Geist Mono', monospace; letter-spacing: .12em; color: #8E968C">OU DIGA O SEU</label>
+   <div style="display: flex; gap: 8px; align-items: center">
+    <input id="m06-outro" placeholder="Ex.: Agenda do Zé" style="flex: 1; height: 50px; border-radius: 12px; border: 1px solid #2C3036; background: #16181B; color: #EDEFEA; padding: 0 14px; font: 400 16px 'Geist', sans-serif; min-width: 0">
+    <button type="button" aria-label="Falar o nome" style="width: 50px; height: 50px; border-radius: 25px; border: 0; background: #C6F135; color: #141619; display: flex; align-items: center; justify-content: center; flex: none; cursor: pointer">
+     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></button>
+   </div>
+  </div>
+ </main>
+ <footer style="padding: 12px 20px 28px; border-top: 1px solid #2A2E33">
+  <a href="Aprovar.dc.html" style="height: 56px; border-radius: 12px; background: #C6F135; color: #141619; font: 700 17px 'Geist', sans-serif; display: flex; align-items: center; justify-content: center">Usar “{{escolhido}}”</a>
+ </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sel: 0 }; }
+  renderVals() {
+    const lista = [['Navalha', 'NV', 'Curto, forte e com cara de barbearia.'], ['Cadeira Livre', 'CL', 'Diz o que o cliente procura: um horário.'], ['Agenda do Zé', 'AZ', 'Leva o seu nome, como a barbearia.']];
+    const nomes = lista.map(([nome, sigla, porque], i) => {
+      const sel = this.state.sel === i;
+      return { nome, sigla, porque, sel: sel ? 'true' : 'false', pick: () => this.setState({ sel: i }),
+        estilo: 'display:flex;align-items:center;gap:14px;padding:14px;border-radius:16px;cursor:pointer;width:100%;box-sizing:border-box;' + (sel ? 'background:#2A3A12;border:1px solid #C6F135' : 'background:#1E2125;border:1px solid #2C3036') };
+    });
+    return { nomes, escolhido: lista[this.state.sel][0] };
+  }
+}
+</script>
+</body>
+</html>

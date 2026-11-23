@@ -1,6 +1,7 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
 import { dominioRegistravel, LIMIARES_AUDITORIA, PROVEDORES_COMUNS, protegeProvedor } from './auditoria.ts'
+import type { CanalCelular, Pedido, ProjetoCelular, Referencia } from './celular.ts'
 import type { Ativacao, BarradaTeste, EventoRadar, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, Personalizacao, StatusObraLinha, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
@@ -391,4 +392,40 @@ export class StoreMemoria implements Store {
   async entregasRecentes(limite: number) { return [...this.entregas].sort((a, b) => b.baixado_em.getTime() - a.baixado_em.getTime()).slice(0, limite) }
   async entregasDaLicenca(licencaId: string, limite: number) { return (await this.entregasRecentes(Infinity)).filter((e) => e.licenca_id === licencaId).slice(0, limite) }
   async entregasPorMarca(marca: string) { return this.entregas.filter((e) => e.marca_dagua === marca) }
+}
+
+/** M33: canal celular ↔ computador em memória (testes e modo fixture). Espelha as regras das tabelas celular_* (0029). */
+export function criarCanalCelularMemoria() {
+  const sinais = new Map<string, { visto_em: Date; ocupado: string | null }>()
+  const pedidos: Pedido[] = []
+  const projetos = new Map<string, ProjetoCelular>()
+  const referencias = new Map<string, Referencia>()
+  const copia = <T>(x: T): T => structuredClone(x)
+  const canal: CanalCelular & { pedidos: Pedido[]; referencias: Map<string, Referencia> } = {
+    pedidos, referencias,
+    async sinal(l, agora, ocupado) { sinais.set(l, { visto_em: agora, ocupado }) },
+    async ultimoSinal(l) { const s = sinais.get(l); return s ? copia(s) : null },
+    async criarPedido(p) { pedidos.push(copia(p)) },
+    async contarAbertos(l) { return pedidos.filter((p) => p.licenca_id === l && (p.estado === 'pendente' || p.estado === 'entregue')).length },
+    async levarPedidos(l, agora, reentregaMs, limite) {
+      const prontos = pedidos.filter((p) => p.licenca_id === l && (p.estado === 'pendente' || (p.estado === 'entregue' && p.entregue_em && agora.getTime() - p.entregue_em.getTime() > reentregaMs)))
+        .sort((a, b) => a.criado_em.getTime() - b.criado_em.getTime()).slice(0, limite)
+      for (const p of prontos) { p.estado = 'entregue'; p.entregue_em = agora }
+      return prontos.map(copia)
+    },
+    async responder(l, id, estado, mensagem) {
+      const p = pedidos.find((x) => x.id === id && x.licenca_id === l)
+      if (!p) return false
+      p.estado = estado; p.mensagem = mensagem
+      return true
+    },
+    async pedidosRecentes(l, limite) { return pedidos.filter((p) => p.licenca_id === l).sort((a, b) => b.criado_em.getTime() - a.criado_em.getTime()).slice(0, limite).map(copia) },
+    async salvarProjeto(l, p) { projetos.set(`${l}|${p.obra_id}`, copia(p)) },
+    async projetos(l) { return [...projetos.entries()].filter(([k]) => k.startsWith(`${l}|`)).map(([, v]) => copia(v)).sort((a, b) => b.atualizado_em.getTime() - a.atualizado_em.getTime()) },
+    async guardarReferencia(id, r) { referencias.set(id, copia(r)) },
+    async contarReferencias(l) { return [...referencias.values()].filter((r) => r.licenca_id === l).length },
+    async tirarReferencia(l, id) { const r = referencias.get(id); if (!r || r.licenca_id !== l) return null; referencias.delete(id); return r },
+    async referenciaExiste(l, id) { return referencias.get(id)?.licenca_id === l },
+  }
+  return canal
 }

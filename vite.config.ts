@@ -46,6 +46,9 @@ export default defineConfig(({ mode }) => {
         theme_color: '#141619',
         background_color: '#141619',
         display: 'standalone',
+        // M33: instalado na tela do celular, abre o app do dono (as obras), não a página de vendas.
+        start_url: '/app',
+        scope: '/',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

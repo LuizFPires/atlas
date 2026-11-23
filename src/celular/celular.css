@@ -1,0 +1,107 @@
+/* M33 — Atlas no celular (PWA). Fiel a prototipo/celular: tema escuro A, Geist, lima como destaque. */
+.cel button, .cel input, .cel textarea { font-family: 'Geist', system-ui, sans-serif; }
+.cel { --bg: #141619; --card: #1E2125; --cardB: #2C3036; --card2: #22262B; --text: #EDEFEA; --mute: #B4BBB2; --mute2: #8E968C; --lime: #C6F135; --onLime: #141619; --line: #2A2E33; --input: #16181B; --soft: #2A3A12; --aviso: #F2B14A; --erro: #F05A4F;
+  min-height: 100dvh; max-width: 480px; margin: 0 auto; background: var(--bg); color: var(--text); font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; -webkit-tap-highlight-color: transparent; }
+.cel * { box-sizing: border-box; }
+.cel a { color: var(--lime); }
+.cel-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 18px 20px 10px; }
+.cel-marca { display: flex; align-items: center; gap: 8px; font: 700 18px 'Geist', sans-serif; letter-spacing: .08em; }
+.cel-marca img { width: 34px; height: 19px; object-fit: contain; }
+.cel-voltar, .cel-redondo { width: 44px; height: 44px; border-radius: 22px; border: 0; background: var(--card); color: var(--text); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; font: 600 15px 'Geist', sans-serif; }
+.cel-rotulo { font: 500 12px 'Geist Mono', ui-monospace, monospace; letter-spacing: .12em; color: var(--mute2); text-transform: uppercase; }
+.cel-etapas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 0 20px; }
+.cel-etapas span { height: 4px; border-radius: 2px; background: var(--line); }
+.cel-etapas span.on { background: var(--lime); }
+.cel-corpo { flex: 1; padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 16px; }
+.cel-titulo { margin: 0; font-size: 28px; line-height: 1.15; letter-spacing: -0.02em; }
+.cel-texto { margin: 0; font-size: 16px; line-height: 1.5; color: var(--mute); }
+.cel-cartao { background: var(--card); border: 1px solid var(--cardB); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.cel-cartao--aviso { background: #3A2C10; border-color: var(--aviso); }
+.cel-linha { display: flex; align-items: center; gap: 14px; }
+.cel-bolinha { width: 44px; height: 44px; border-radius: 22px; display: inline-flex; align-items: center; justify-content: center; flex: none; background: var(--soft); color: var(--lime); }
+.cel-bolinha--lima { background: var(--lime); color: var(--onLime); }
+.cel-bolinha--aviso { background: #3A2C10; color: var(--aviso); }
+.cel-ponto { width: 8px; height: 8px; border-radius: 4px; background: var(--lime); flex: none; display: inline-block; }
+.cel-ponto--off { background: var(--aviso); }
+.cel-ponto--vivo { animation: cel-pisca 1.2s infinite; }
+@keyframes cel-pisca { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+.cel-sub { font-size: 13px; color: var(--mute); display: flex; align-items: center; gap: 6px; }
+.cel-forte { font-size: 15px; font-weight: 600; }
+.cel-botao { height: 56px; min-height: 56px; border-radius: 12px; border: 0; background: var(--lime); color: var(--onLime); font: 700 17px 'Geist', sans-serif; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; width: 100%; white-space: nowrap; }
+.cel-botao:disabled { opacity: .5; cursor: default; }
+.cel-botao--sec { background: transparent; color: var(--text); border: 1px solid var(--cardB); }
+.cel-link { background: none; border: 0; color: var(--lime); font: 600 15px 'Geist', sans-serif; cursor: pointer; min-height: 44px; }
+.cel-rodape { padding: 12px 20px calc(24px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--bg); position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 8px; }
+.cel-novo { background: var(--lime); color: var(--onLime); border: 0; border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 16px; text-align: left; cursor: pointer; font-family: 'Geist', sans-serif; }
+.cel-novo b { font-size: 19px; letter-spacing: -0.01em; display: block; }
+.cel-novo span { font-size: 14px; color: #2C3A06; }
+.cel-novo .cel-bolinha { width: 52px; height: 52px; border-radius: 26px; background: var(--onLime); color: var(--lime); }
+.cel-abas { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.cel-aba { height: 38px; padding: 0 14px; border-radius: 999px; font: 500 14px 'Geist', sans-serif; white-space: nowrap; cursor: pointer; flex: none; background: transparent; color: var(--mute); border: 1px solid var(--cardB); }
+.cel-aba[aria-selected='true'] { background: var(--soft); color: var(--lime); border-color: var(--lime); }
+.cel-obra { background: var(--card); border: 1px solid var(--cardB); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px; color: var(--text); text-align: left; cursor: pointer; font-family: 'Geist', sans-serif; width: 100%; }
+.cel-obra__nome { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.cel-selo { align-self: flex-start; flex: none; font: 600 12px 'Geist Mono', monospace; padding: 6px 10px; border-radius: 999px; white-space: nowrap; background: var(--soft); color: var(--lime); }
+.cel-selo--vez { background: #3A2C10; color: var(--aviso); }
+.cel-selo--neutro { background: var(--card2); color: var(--text); }
+.cel-barra { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; display: block; }
+.cel-barra > span { display: block; height: 100%; border-radius: 3px; background: var(--lime); transition: width .6s ease; }
+.cel-barra--grossa { height: 8px; }
+.cel-vazio { border: 1px dashed var(--cardB); border-radius: 18px; padding: 24px 18px; text-align: center; color: var(--mute); font-size: 14px; line-height: 1.5; }
+.cel-menu { display: flex; justify-content: space-around; padding: 10px 12px calc(18px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: #101214; position: sticky; bottom: 0; }
+.cel-menu button { background: none; border: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; font: 500 12px 'Geist', sans-serif; color: var(--mute); min-width: 72px; padding: 4px; cursor: pointer; }
+.cel-menu button[aria-current='page'] { color: var(--lime); }
+.cel-campo { display: flex; flex-direction: column; gap: 8px; }
+.cel-campo input, .cel-campo textarea { border-radius: 12px; border: 1px solid var(--cardB); background: var(--input); color: var(--text); padding: 0 16px; font: 400 16px 'Geist', sans-serif; height: 54px; width: 100%; }
+.cel-campo textarea { height: 240px; padding: 14px; line-height: 1.55; resize: none; }
+.cel-campo input:focus, .cel-campo textarea:focus { outline: 2px solid var(--lime); outline-offset: 1px; }
+.cel-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.cel-chips span { padding: 9px 12px; border-radius: 999px; border: 1px solid var(--cardB); font-size: 14px; color: var(--mute); }
+.cel-mic { width: 64px; height: 64px; border-radius: 32px; border: 0; flex: none; cursor: pointer; display: flex; align-items: center; justify-content: center; background: var(--lime); color: var(--onLime); }
+.cel-mic--grava { background: var(--erro); color: #fff; animation: cel-pulso 1.4s infinite; }
+.cel-mic--p { width: 52px; height: 52px; border-radius: 26px; }
+@keyframes cel-pulso { 0% { box-shadow: 0 0 0 0 rgba(240,90,79,.55) } 70% { box-shadow: 0 0 0 24px rgba(240,90,79,0) } 100% { box-shadow: 0 0 0 0 rgba(240,90,79,0) } }
+.cel-falar { display: flex; align-items: center; gap: 14px; }
+.cel-falar > div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.cel-opcao { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 16px; cursor: pointer; width: 100%; background: var(--card); border: 1px solid var(--cardB); text-align: left; font-family: 'Geist', sans-serif; color: var(--text); }
+.cel-opcao[aria-pressed='true'] { background: var(--soft); border-color: var(--lime); }
+.cel-opcao b { font-size: 16px; display: block; }
+.cel-opcao small { font-size: 14px; color: var(--mute); line-height: 1.4; }
+.cel-fotos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.cel-fotos img, .cel-fotos label { height: 150px; border-radius: 14px; width: 100%; object-fit: cover; }
+.cel-fotos label { border: 1.5px dashed var(--cardB); color: var(--mute); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-size: 13px; cursor: pointer; }
+.cel-fotos input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.cel-cores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.cel-cor { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 14px; cursor: pointer; text-align: left; background: var(--card); border: 1px solid var(--cardB); color: var(--text); font: 500 12px 'Geist Mono', monospace; }
+.cel-cor[aria-pressed='true'] { border-color: var(--lime); }
+.cel-cor i { height: 40px; border-radius: 10px; display: block; }
+.cel-amostras { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
+.cel-amostras button { height: 34px; border-radius: 17px; border: 2px solid var(--bg); outline: 1px solid var(--cardB); cursor: pointer; }
+.cel-mapa { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.cel-mapa li { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--mute2); }
+.cel-mapa i { height: 120px; border-radius: 12px; display: block; background: #1A1D21; border: 1px dashed var(--cardB); }
+.cel-mapa li.pronta { color: var(--text); }
+.cel-mapa li.pronta i { background: #F4F1EA; border: 0; background-image: linear-gradient(#E8C27A, #E8C27A), linear-gradient(#1C3A5E, #1C3A5E), linear-gradient(#DCD6CA, #DCD6CA), linear-gradient(#DCD6CA, #DCD6CA), linear-gradient(#10233B, #10233B); background-size: 55% 10px, calc(100% - 16px) 26px, calc(100% - 16px) 9px, 70% 9px, calc(100% - 16px) 16px; background-position: 8px 8px, 8px 24px, 8px 58px, 8px 72px, 8px calc(100% - 8px); background-repeat: no-repeat; }
+.cel-mapa li.agora i { border: 1px solid var(--lime); background: linear-gradient(90deg, #22262B 0, #2E343A 50%, #22262B 100%); background-size: 160px 100%; animation: cel-brilho 1.3s infinite linear; }
+@keyframes cel-brilho { 0% { background-position: -160px 0 } 100% { background-position: 160px 0 } }
+.cel-proto { flex: 1; display: flex; flex-direction: column; min-height: 0; background: #101214; }
+.cel-proto__quadro { flex: 1; margin: 0 16px; border: 1px solid var(--cardB); border-radius: 26px; background: #F4F1EA; min-height: 420px; width: calc(100% - 32px); }
+.cel-fala { align-self: flex-end; max-width: 85%; background: var(--soft); border-radius: 14px 14px 4px 14px; padding: 9px 12px; font-size: 14px; line-height: 1.4; }
+.cel-barra-voz { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--cardB); border-radius: 20px; padding: 8px 8px 8px 16px; }
+.cel-barra-voz input { flex: 1; min-width: 0; background: none; border: 0; color: var(--text); font: 400 15px 'Geist', sans-serif; height: 44px; }
+.cel-barra-voz input:focus { outline: none; }
+.cel-sigla { width: 52px; height: 52px; border-radius: 14px; flex: none; display: flex; align-items: center; justify-content: center; font: 700 20px 'Geist', sans-serif; background: #10233B; color: #E8C27A; }
+.cel-lista { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.cel-lista li { display: flex; align-items: center; gap: 12px; font-size: 15px; }
+.cel-num { width: 28px; height: 28px; border-radius: 14px; background: var(--card2); display: flex; align-items: center; justify-content: center; font: 600 13px 'Geist Mono', monospace; flex: none; }
+.cel-num--feita { background: var(--soft); color: var(--lime); }
+.cel-num--agora { background: var(--lime); color: var(--onLime); }
+.cel-dupla { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cel-canteiro { position: relative; border-radius: 20px; overflow: hidden; height: 210px; flex: none; }
+.cel-canteiro img { width: 100%; height: 210px; object-fit: cover; display: block; }
+.cel-canteiro > div { position: absolute; left: 12px; right: 12px; bottom: 12px; background: rgba(16,18,20,.86); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.cel-pct { font: 600 18px 'Geist Mono', monospace; color: var(--lime); }
+.cel-noticia { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.cel-noticia time { font: 500 13px 'Geist Mono', monospace; color: var(--mute2); width: 48px; flex: none; }
+.cel-erro { color: #FFB4AE; font-size: 14px; }
+.cel-carregando { flex: 1; display: grid; place-items: center; color: var(--mute); }

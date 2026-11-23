@@ -84,6 +84,7 @@
 // Invariantes: nenhum segredo em arquivo; pagamento é da conta do cliente (chaves STRIPE_<ref>_* resolvidas no index.ts);
 // marca d'água e aviso de licença são do /entregar-kit (kit.ts), não daqui.
 
+import type { CanalCelular, Pedido } from './celular.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { montarBoasVindas, montarConfirmacaoDegustacao, montarCortesia } from './emails.ts'
 import { montarAvisoAtraso, montarCodigoAtivacao } from './emails-avisos.ts'
@@ -516,4 +517,58 @@ export async function enviarConfirmacaoDegustacao(email: string, d: { token: str
   const base = Deno.env.get('ATLAS_DEGUSTACAO_URL') ?? 'https://atlas-ia.app.br/degustacao'
   const m = montarConfirmacaoDegustacao({ dias: d.dias, expira_em: d.expira_em, link: `${base}?t=${encodeURIComponent(d.token)}` })
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
+}
+
+/** M33: canal celular ↔ notebook nas tabelas celular_* (0029). Sempre filtrado pela licença. */
+export function criarCanalCelular(): CanalCelular {
+  const t = (n: string) => db().from(n)
+  const pedido = (r: any): Pedido => ({ ...r, dados: r.dados ?? {}, criado_em: new Date(r.criado_em), entregue_em: dt(r.entregue_em) })
+  return {
+    async sinal(l, agora, ocupado) { ok(await t('celular_sinal').upsert({ licenca_id: l, visto_em: iso(agora), ocupado }), 'celular sinal') },
+    async ultimoSinal(l) {
+      const r = ok(await t('celular_sinal').select('visto_em,ocupado').eq('licenca_id', l).maybeSingle(), 'celular ultimoSinal') as any
+      return r ? { visto_em: new Date(r.visto_em), ocupado: r.ocupado ?? null } : null
+    },
+    async criarPedido(p) {
+      ok(await t('celular_pedidos').insert({ id: p.id, licenca_id: p.licenca_id, tipo: p.tipo, obra_id: p.obra_id, dados: p.dados, estado: p.estado, mensagem: p.mensagem, criado_em: iso(p.criado_em) }), 'celular criarPedido')
+    },
+    async contarAbertos(l) {
+      const r = await t('celular_pedidos').select('id', { count: 'exact', head: true }).eq('licenca_id', l).in('estado', ['pendente', 'entregue'])
+      ok(r, 'celular contarAbertos')
+      return r.count ?? 0
+    },
+    async levarPedidos(l, agora, reentregaMs, limite) {
+      const linhas = (await rpc('levar_pedidos_celular', { p_licenca: l, p_agora: iso(agora), p_reentrega_ms: reentregaMs, p_limite: limite })) as any[]
+      return (linhas ?? []).map(pedido).sort((a, b) => a.criado_em.getTime() - b.criado_em.getTime())
+    },
+    async responder(l, id, estado, mensagem) {
+      const r = ok(await t('celular_pedidos').update({ estado, mensagem }).eq('id', id).eq('licenca_id', l).select('id'), 'celular responder') as any[]
+      return r.length > 0
+    },
+    async pedidosRecentes(l, limite) {
+      return (await ler(() => t('celular_pedidos').select('*').eq('licenca_id', l).order('criado_em', { ascending: false }), limite)).map(pedido)
+    },
+    async salvarProjeto(l, p) {
+      const { obra_id, telas_token, atualizado_em, ...dados } = p
+      ok(await t('celular_projetos').upsert({ licenca_id: l, obra_id, dados, telas_token, atualizado_em: iso(atualizado_em) }), 'celular salvarProjeto')
+    },
+    async projetos(l) {
+      const linhas = await ler(() => t('celular_projetos').select('obra_id,dados,telas_token,atualizado_em').eq('licenca_id', l).order('atualizado_em', { ascending: false }), 50)
+      return linhas.map((r: any) => ({ ...r.dados, obra_id: r.obra_id, telas_token: r.telas_token ?? null, atualizado_em: new Date(r.atualizado_em) }))
+    },
+    async guardarReferencia(id, r) { ok(await t('celular_referencias').insert({ id, licenca_id: r.licenca_id, imagem: r.imagem, criada_em: iso(r.criada_em) }), 'celular guardarReferencia') },
+    async contarReferencias(l) {
+      const r = await t('celular_referencias').select('id', { count: 'exact', head: true }).eq('licenca_id', l)
+      ok(r, 'celular contarReferencias')
+      return r.count ?? 0
+    },
+    async tirarReferencia(l, id) {
+      const r = ok(await t('celular_referencias').delete().eq('id', id).eq('licenca_id', l).select('licenca_id,imagem,criada_em'), 'celular tirarReferencia') as any[]
+      return r[0] ? { licenca_id: r[0].licenca_id, imagem: r[0].imagem, criada_em: new Date(r[0].criada_em) } : null
+    },
+    async referenciaExiste(l, id) {
+      const r = ok(await t('celular_referencias').select('id').eq('id', id).eq('licenca_id', l).maybeSingle(), 'celular referenciaExiste')
+      return !!r
+    },
+  }
 }

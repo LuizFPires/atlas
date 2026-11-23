@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Acompanhar a obra</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{color:#C6F135;text-decoration:none} a:hover{color:#d8ff5c}
+@keyframes m08pisca{0%,100%{opacity:1}50%{opacity:.35}}
+.m08-ponto{animation:m08pisca 1.2s infinite}</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #141619; color: #EDEFEA; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden">
+ <header style="padding: 14px 16px 10px; display: flex; align-items: center; gap: 10px">
+  <a href="Main.dc.html" aria-label="Voltar para Minhas obras" style="width: 44px; height: 44px; border-radius: 22px; background: #1E2125; display: flex; align-items: center; justify-content: center; color: #EDEFEA; flex: none">
+   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+  <div style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0">
+   <span style="font-size: 17px; font-weight: 700">Navalha</span>
+   <span style="font-size: 13px; color: #B4BBB2; display: flex; align-items: center; gap: 6px"><span class="{{classePonto}}" style="{{estiloPonto}}"></span>{{situacao}}</span>
+  </div>
+  <a href="Prototipo.dc.html" style="height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid #2C3036; color: #EDEFEA; font: 600 14px 'Geist', sans-serif; display: flex; align-items: center; white-space: nowrap">Ver telas</a>
+ </header>
+ <main style="flex: 1; overflow-y: auto; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 14px">
+  <div style="position: relative; border-radius: 20px; overflow: hidden; height: 210px; flex: none">
+   <img src="/_blob/212adbee8fe55acdda68303347927aec" alt="O canteiro da obra: o prédio na altura do 4º andar" style="width: 100%; height: 210px; object-fit: cover; display: block">
+   <div style="position: absolute; left: 12px; right: 12px; bottom: 12px; background: rgba(16,18,20,.86); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+    <div style="display: flex; justify-content: space-between; align-items: baseline">
+     <span style="font-size: 14px; font-weight: 600">Etapa 4 de 7 · Marcação pelo cliente</span>
+     <span style="font: 600 18px 'Geist Mono', monospace; color: #C6F135">62%</span>
+    </div>
+    <span style="height: 6px; border-radius: 3px; background: #2A2E33; display: block; overflow: hidden"><span style="display: block; height: 6px; width: 62%; border-radius: 3px; background: #C6F135"></span></span>
+   </div>
+  </div>
+  <div style="background: #3A2C10; border: 1px solid #F2B14A; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+   <span style="display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; color: #F6D28E">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F2B14A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2zM12 10v5M12 18v.5"></path></svg>Precisa de você: 1 minuto</span>
+   <span style="font-size: 14px; line-height: 1.45; color: #EDEFEA">Para mandar lembretes no WhatsApp, o Atlas precisa que você confirme o número da barbearia.</span>
+   <button type="button" style="height: 46px; border-radius: 12px; border: 0; background: #F2B14A; color: #141619; font: 700 15px 'Geist', sans-serif; cursor: pointer">Confirmar o número</button>
+  </div>
+  <div role="tablist" aria-label="O que ver" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; background: #1E2125; border-radius: 12px; padding: 4px">
+   <sc-for list="{{abas}}" as="a" hint-placeholder-count="2">
+    <button type="button" role="tab" aria-selected="{{a.sel}}" onClick="{{a.pick}}" style="{{a.estilo}}">{{a.nome}}</button>
+   </sc-for>
+  </div>
+  <sc-if value="{{verNoticias}}" hint-placeholder-val="{{ true }}">
+   <div style="display: flex; flex-direction: column; gap: 0">
+    <sc-for list="{{noticias}}" as="n" hint-placeholder-count="4">
+     <div style="display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #2A2E33">
+      <span style="font: 500 13px 'Geist Mono', monospace; color: #8E968C; width: 44px; flex: none; padding-top: 1px">{{n.hora}}</span>
+      <span style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 15px; line-height: 1.4">{{n.texto}}</span><span style="font-size: 13px; color: #8E968C">{{n.sub}}</span></span>
+     </div>
+    </sc-for>
+   </div>
+  </sc-if>
+  <sc-if value="{{verEtapas}}" hint-placeholder-val="{{ false }}">
+   <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+    <sc-for list="{{etapas}}" as="e" hint-placeholder-count="7">
+     <li style="display: flex; align-items: center; gap: 12px; font-size: 15px; color: {{e.cor}}">
+      <span style="{{e.bola}}">{{e.marca}}</span>{{e.nome}}</li>
+    </sc-for>
+   </ol>
+  </sc-if>
+ </main>
+ <footer style="padding: 10px 16px 26px; border-top: 1px solid #2A2E33; display: flex; gap: 10px">
+  <button type="button" onClick="{{pausar}}" style="flex: 1; height: 52px; border-radius: 12px; border: 1px solid #2C3036; background: transparent; color: #EDEFEA; font: 700 16px 'Geist', sans-serif; cursor: pointer">{{textoPausa}}</button>
+  <button type="button" aria-label="Falar com o Atlas" style="height: 52px; padding: 0 18px; border-radius: 12px; border: 0; background: #C6F135; color: #141619; font: 700 16px 'Geist', sans-serif; display: flex; align-items: center; gap: 8px; cursor: pointer; white-space: nowrap">
+   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>Falar com o Atlas</button>
+ </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { aba: 'noticias', pausada: false }; }
+  renderVals() {
+    const abas = [['noticias', 'Notícias'], ['etapas', 'Etapas']].map(([id, nome]) => {
+      const sel = this.state.aba === id;
+      return { nome, sel: sel ? 'true' : 'false', pick: () => this.setState({ aba: id }),
+        estilo: 'height:40px;border-radius:9px;border:0;font:600 14px Geist,sans-serif;cursor:pointer;' + (sel ? 'background:#2A3A12;color:#C6F135' : 'background:transparent;color:#B4BBB2') };
+    });
+    const noticias = [
+      ['09h52', 'Terminei a tela onde o cliente escolhe o barbeiro.', 'Etapa 4 · Marcação pelo cliente'],
+      ['09h20', 'Testei a agenda com 3 barbeiros ao mesmo tempo: nenhum horário duplicado.', 'Etapa 3 concluída'],
+      ['08h41', 'Liguei o login: cada barbeiro vê só a agenda dele.', 'Etapa 2 concluída'],
+      ['Ontem', 'A cota do Claude acabou às 22h10 e voltou às 03h00. A obra continuou sozinha.', 'Pausa automática']
+    ].map(([hora, texto, sub]) => ({ hora, texto, sub }));
+    const nomes = ['Preparar o canteiro', 'Banco de dados e login', 'Agenda e horários', 'Marcação pelo cliente', 'Lembretes no WhatsApp', 'Relatórios do mês', 'Testes e vistoria'];
+    const etapas = nomes.map((nome, i) => {
+      const feita = i < 3, agora = i === 3;
+      return { nome, marca: feita ? '✓' : String(i + 1), cor: feita ? '#B4BBB2' : '#EDEFEA',
+        bola: 'width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font:600 13px Geist Mono,monospace;flex:none;' + (feita ? 'background:#2A3A12;color:#C6F135' : agora ? 'background:#C6F135;color:#141619' : 'background:#22262B;color:#B4BBB2') };
+    });
+    const p = this.state.pausada;
+    return { abas, noticias, etapas, verNoticias: this.state.aba === 'noticias', verEtapas: this.state.aba === 'etapas',
+      situacao: p ? 'Pausada por você' : 'Construindo agora no notebook',
+      classePonto: p ? '' : 'm08-ponto', estiloPonto: 'width:8px;height:8px;border-radius:4px;flex:none;background:' + (p ? '#F2B14A' : '#C6F135'),
+      textoPausa: p ? 'Continuar a obra' : 'Pausar', pausar: () => this.setState({ pausada: !p }) };
+  }
+}
+</script>
+</body>
+</html>

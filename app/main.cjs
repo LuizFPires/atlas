@@ -133,6 +133,7 @@ handle('atlas:descricao', () => `${os.hostname().toUpperCase()} · Windows ${Num
 // Arquivos da obra, pasta das obras e Claude (portas de base).
 handle('atlas:arquivos:escolher', (tipo) => arquivos.escolher(String(tipo)))
 handle('atlas:arquivos:guardar', (pasta, destino, token) => arquivos.guardar(String(pasta), String(destino), String(token)))
+handle('atlas:arquivos:guardarImagem', (pasta, nome, dataUrl) => arquivos.guardarImagem(String(pasta), String(nome), String(dataUrl)))
 ipcMain.on('atlas:obras:raiz', (e) => { e.returnValue = confiavel(e) ? obras.raiz() : '' })
 handle('atlas:obras:listar', () => obras.listar())
 handle('atlas:obras:criar', (nome) => obras.criarSubpasta(String(nome)))

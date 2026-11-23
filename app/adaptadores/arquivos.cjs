@@ -11,7 +11,7 @@
 const fs = require('node:fs')
 const crypto = require('node:crypto')
 const path = require('node:path')
-const { caminhoSeguro, copiarExclusivo } = require('../seguro.cjs')
+const { caminhoSeguro, copiarExclusivo, criarArquivoExclusivo } = require('../seguro.cjs')
 
 // Espelham src/app/ponte-arquivos.ts (manter em sincronia).
 const EXTENSOES = {
@@ -97,6 +97,32 @@ function criarArquivos({ raiz, dialog, janela = () => null }) {
         try { copiarExclusivo(a.origem, caminho) } catch (e) { if (e.code === 'EEXIST') continue; throw e }
         emAberto.delete(token)
         return { nome, caminho }
+      }
+      throw new Error('sem-nome-livre')
+    },
+    // M33: foto de referência tirada no CELULAR (o notebook baixou do servidor). Só jpeg/png/webp, até 2 MB, sempre em
+    // estilo/referencias da obra, sem sobrescrever. O nome vem do app, mas é saneado do mesmo jeito.
+    async guardarImagem(pasta, nome, dataUrl) {
+      pasta = String(pasta); nome = String(nome); dataUrl = String(dataUrl)
+      const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataUrl)
+      if (!m) throw new Error('tipo-nao-aceito')
+      const bytes = Buffer.from(m[2], 'base64')
+      if (bytes.length > 2 * 1024 * 1024) throw new Error('grande-demais')
+      if (!PASTA_OK.test(pasta)) throw new Error('pasta-invalida')
+      const pastaObra = caminhoSeguro(raiz, pasta)
+      if (!fs.existsSync(pastaObra)) throw new Error('pasta-invalida')
+      let dir = pastaObra
+      for (const parte of ['estilo', 'referencias']) {
+        dir = caminhoSeguro(raiz, path.relative(raiz, path.join(dir, parte)))
+        try { fs.mkdirSync(dir) } catch (e) { if (e.code !== 'EEXIST') throw e }
+      }
+      const ext = m[1] === 'jpeg' ? 'jpg' : m[1]
+      const miolo = nomeArquivoSeguro(nome).replace(/\.[a-z0-9]+$/, '') || 'celular'
+      for (let i = 1; i < 1000; i++) {
+        const final = i === 1 ? `${miolo}.${ext}` : `${miolo}-${i}.${ext}`
+        const caminho = caminhoSeguro(raiz, path.relative(raiz, path.join(dir, final)))
+        try { criarArquivoExclusivo(caminho, bytes) } catch (e) { if (e.code === 'EEXIST') continue; throw e }
+        return { nome: final, caminho }
       }
       throw new Error('sem-nome-livre')
     },
