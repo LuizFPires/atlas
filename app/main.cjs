@@ -300,7 +300,7 @@ handle('atlas:navegador:pronta', (conta) => navegador.pronta(String(conta)))
 handle('atlas:navegador:fechar', () => navegador.fechar())
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois). O kit é apagado.
-// Atualização automática (atualizador.cjs): só no Atlas instalado no Windows. Confere 1 min depois de abrir e a cada 20 min;
+// Atualização automática (atualizador.cjs): só no Atlas instalado no Windows. Confere 10 s depois de abrir e a cada 2 min;
 // baixa em silêncio e instala quando o Atlas fecha (decisão do Luiz, 22/11/2026).
 const atualizador = criarAtualizador({
   versaoAtual: app.getVersion(), cofre, hashComputador: async () => hash(), api: process.env.ATLAS_API_URL,

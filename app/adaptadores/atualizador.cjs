@@ -19,10 +19,10 @@ const { CHAVE_COFRE, enderecoDaApi } = require('./licenca.cjs')
 const VERSAO_RE = /^\d{1,4}\.\d{1,4}\.\d{1,6}$/
 const SHA512_B64_RE = /^[A-Za-z0-9+/]{86}==$/
 const MAX_TAMANHO = 600 * 1024 * 1024
-/** Quando procurar versão nova: 1 min depois de abrir e, com o Atlas aberto, a cada 20 min (era de 6 em 6 h: quem abriu de manhã
+/** Quando procurar versão nova: 10 s depois de abrir e, com o Atlas aberto, a cada 2 min (Luiz, 23/11: "20 minutos é muito") (era de 6 em 6 h: quem abriu de manhã
  *  só recebia a versão da tarde à noite; caso do Guilherme, 23/11/2026). A conferência é um pedido pequeno; o download é uma vez só. */
-const PRIMEIRA_CONFERENCIA_MS = 60_000
-const INTERVALO_CONFERENCIA_MS = 20 * 60_000
+const PRIMEIRA_CONFERENCIA_MS = 10_000
+const INTERVALO_CONFERENCIA_MS = 2 * 60_000
 
 function compararVersoes(a, b) {
   const pa = a.split('.').map(Number), pb = b.split('.').map(Number)

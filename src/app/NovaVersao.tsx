@@ -28,7 +28,7 @@ type Props = { ponte?: PonteAtualizacao; intervaloMs?: number }
  * Faixa no topo do Atlas quando uma versão nova já está baixada (pedido do Luiz, 23/11/2026): um clique em "Atualizar agora"
  * fecha o Atlas, instala em silêncio e abre de novo. Sem versão pronta não aparece nada. Se não clicar, instala ao fechar (como antes).
  */
-export function NovaVersao({ ponte, intervaloMs = 60_000 }: Props) {
+export function NovaVersao({ ponte, intervaloMs = 10_000 }: Props) {
   const [versao, setVersao] = useState<string | null>(null)
   const [estado, setEstado] = useState<'parado' | 'instalando' | 'falhou'>('parado')
   const [situacao, setSituacao] = useState<SituacaoAtualizacao | null>(null)
