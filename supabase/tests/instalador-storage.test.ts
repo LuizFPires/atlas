@@ -65,3 +65,18 @@ describe('fonte da atualização no Storage', () => {
     expect(await criarFonteAtualizacaoStorage({ bucket: 'instalador', arquivo: 'a.exe' }, quebrado).manifesto()).toBeNull()
   })
 })
+
+describe('manifesto com o cliente de verdade do Supabase (método que usa this)', () => {
+  it('lê o atualizacao.json chamando download COMO MÉTODO (antes perdia o this e devolvia null: "servidor sem versão")', async () => {
+    class BucketDeVerdade {
+      constructor(private nome: string) {}
+      async download(arquivo: string) {
+        if (this.nome !== 'instalador') throw new Error('this perdido')
+        return { data: new Blob([JSON.stringify({ arquivo })]), error: null }
+      }
+      async createSignedUrl() { return { data: { signedUrl: 'https://x/assinado' }, error: null } }
+    }
+    const fonte = criarFonteAtualizacaoStorage({ bucket: 'instalador', arquivo: 'Atlas-Instalador.exe' }, (b) => new BucketDeVerdade(b))
+    expect(await fonte.manifesto()).toEqual({ arquivo: 'atualizacao.json' })
+  })
+})
