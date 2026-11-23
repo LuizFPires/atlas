@@ -14,6 +14,8 @@ interface Props {
   /** Ideia escolhida na lista de exemplos: vira o nome provisório da obra. */
   ideia?: string
   onVoltar: () => void
+  /** Obra recém-criada (voltando do estilo). */
+  criada?: ObraNova | null
   onConcluir: (obra: ObraNova) => void
   /** Segue para o estilo do sistema (F06b). Com ele, é o único caminho (o "Ver minhas obras" saía do fluxo no meio). Sem ele, só mostra "Ver minhas obras". */
   onEstilo?: (obra: ObraNova) => void
@@ -52,12 +54,13 @@ function BlocoVoz({ valor, onChange }: { valor: string; onChange: (v: string) =>
 }
 
 /** F06: nova obra com perguntas guiadas, uma por vez, cada uma com microfone (u06). Ao terminar cria a subpasta da obra em Atlas\Obras. */
-export function NovaObra({ obras, ideia = '', onVoltar, onConcluir, onEstilo }: Props) {
+export function NovaObra({ obras, ideia = '', criada = null, onVoltar, onConcluir, onEstilo }: Props) {
   const [i, setI] = useState(0)
   const [resp, setResp] = useState<Respostas>({ ...VAZIAS, nome: ideia })
   const [erro, setErro] = useState('')
   const [criando, setCriando] = useState(false)
-  const [pronta, setPronta] = useState<ObraNova | null>(null)
+  // Voltando do estilo: a obra já existe, mostra o "Obra começada!" dela (Voltar volta uma etapa, não para o início).
+  const [pronta, setPronta] = useState<ObraNova | null>(criada)
 
   const p = PERGUNTAS[i]
   const ultima = i === PERGUNTAS.length - 1
