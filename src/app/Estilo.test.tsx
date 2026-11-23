@@ -138,6 +138,20 @@ describe('3 estilos e design system', () => {
     expect(onConcluir).toHaveBeenCalled()
   })
 
+  test('depois de guardar o estilo, Voltar volta à escolha dos 3 estilos (uma etapa), não sai da tela', async () => {
+    const onVoltar = vi.fn()
+    render(<TemaProvider><Estilo obra={OBRA} arquivos={criarArquivosFixture()} estilo={criarEstiloFixture()} onVoltar={onVoltar} onConcluir={() => {}} /></TemaProvider>)
+    await preencher()
+    await clicar('Mostrar 3 estilos')
+    await userEvent.click((await screen.findAllByRole('radio'))[0])
+    await userEvent.click(screen.getByRole('button', { name: /e desenhar as telas →/ }))
+    await screen.findByText(/guardado!/)
+    await clicar('← Voltar')
+    expect(onVoltar).not.toHaveBeenCalled()
+    expect(screen.getAllByRole('radio')).toHaveLength(3)
+    expect(screen.queryByText(/guardado!/)).toBeNull()
+  })
+
   test('falha do Claude não perde as referências e mostra recado calmo', async () => {
     const { est } = montarCompleto({ ...criarEstiloFixture(), propor: async () => { throw new Error('x') } })
     expect(est).toBeTruthy()

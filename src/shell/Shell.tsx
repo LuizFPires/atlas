@@ -33,11 +33,13 @@ type Props = {
   modelo?: { atual: string; lista: { id: string; nome: string; explica: string; recomendado: boolean }[]; escolher(id: string): void } | null
   /** Com teste/cortesia: abre a compra de dentro do Atlas. Sem ele o botão não aparece. */
   onComprar?: () => void
+  /** Faixa no topo do conteúdo (ex.: "Nova versão do Atlas pronta"). */
+  topo?: ReactNode
   children?: ReactNode
 }
 
 /** Menu lateral sempre escuro, com um botão fixo só: "Falar com o Atlas" (abre a Ajuda já ouvindo; decisão no PLAN, M13). */
-export function Shell({ ativo, onNavegar, onFalar, licenca, plano, modelo, onComprar, onConectarClaude, children }: Props) {
+export function Shell({ ativo, onNavegar, onFalar, licenca, plano, modelo, onComprar, onConectarClaude, topo, children }: Props) {
   const { tema } = useTema()
   return (
     <div className="at-shell">
@@ -91,7 +93,7 @@ export function Shell({ ativo, onNavegar, onFalar, licenca, plano, modelo, onCom
           )}
         </div>
       </aside>
-      <main className="at-conteudo">{children}</main>
+      <main className="at-conteudo">{topo}{children}</main>
     </div>
   )
 }

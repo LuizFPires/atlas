@@ -315,7 +315,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
         </div>
       )}
       <div className="at-estilo__rodape">
-        <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
+        <Botao variante="secundario" onClick={() => (guardado ? setGuardado(null) : onVoltar())}>← Voltar</Botao>
         {guardado
           ? <Botao onClick={() => onConcluir?.(guardado)}>Desenhar as telas →</Botao>
           : modo === 'tenho'

@@ -1,7 +1,7 @@
 // Preload do app Atlas: a ÚNICA ponte entre a tela (renderer) e o processo principal.
 //
 // O QUE FAZ: expõe window.atlasDesktop (contextIsolation ligado, sandbox ligado, SEM nodeIntegration). Só os namespaces
-// que o front usa (src/app/ponte.ts): cofre, servidor, pagamento, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar, kit. Todo argumento vira String/boolean aqui e é
+// que o front usa (src/app/ponte.ts): cofre, servidor, pagamento, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar, kit, atualizacao. Todo argumento vira String/boolean aqui e é
 // revalidado de novo no processo principal (main.cjs); o renderer nunca recebe caminho de origem, módulo Node nem Electron.
 //
 // COMO TESTAR (Windows): `npx electron app/main.cjs`, abrir as ferramentas do desenvolvedor e digitar `window.atlasDesktop`:
@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
   hashComputador: () => chamar('atlas:hash'),
   descricaoComputador: () => chamar('atlas:descricao'),
   impedirSono: (ligado) => chamar('atlas:sono', !!ligado),
+  // Faixa "Nova versão" no topo: só o número da versão pronta e o pedido de atualizar agora (fecha, instala e reabre).
+  atualizacao: { pronta: () => chamar('atlas:atualizacao:pronta'), instalar: () => chamar('atlas:atualizacao:instalar') },
   // Compra de dentro do app: o processo principal só abre a página de pagamento da Stripe.
   pagamento: { abrir: (url) => chamar('atlas:pagamento:abrir', String(url)) },
   // Código do link de instalação chegando com o app já aberto (atlas://ativar?t=...): o processo principal valida e avisa a tela.

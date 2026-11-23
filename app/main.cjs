@@ -251,6 +251,11 @@ if (app.isPackaged && process.platform === 'win32') {
   setInterval(conferir, 6 * 60 * 60_000).unref()
 }
 
+// Faixa "Nova versão" no topo (NovaVersao.tsx): a tela só recebe o número da versão já baixada e conferida, e pede "atualizar agora".
+const atualizaAqui = app.isPackaged && process.platform === 'win32'
+handle('atlas:atualizacao:pronta', () => (atualizaAqui ? (atualizador.pronta()?.versao ?? null) : null))
+handle('atlas:atualizacao:instalar', () => atualizaAqui && atualizador.instalarAgora(() => setTimeout(() => app.quit(), 300)))
+
 app.on('before-quit', () => { construcao.encerrar(); painel.encerrar(); kit.descartarTudo(); if (app.isPackaged && process.platform === 'win32') atualizador.instalarAoSair() })
 kit.descartarTudo() // sobra de uma queda anterior
 
