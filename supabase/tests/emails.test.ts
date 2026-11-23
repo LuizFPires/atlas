@@ -71,8 +71,8 @@ describe('aviso de que o Atlas só funciona com uma assinatura do Claude', () =>
 test('cortesia: a validade vai no assunto, para cada presente chegar como e-mail separado', () => {
   const a = montarCortesia({ validade_em: new Date('2026-12-05T20:00:00Z'), link: LINK, link_expira_em: new Date('2026-11-23T12:00:00Z') })
   const b = montarCortesia({ validade_em: new Date('2026-11-24T02:59:59Z'), link: LINK, link_expira_em: new Date('2026-11-23T12:00:00Z') })
-  expect(a.assunto).toBe('Seu acesso ao Atlas está liberado (até 05/12)')
-  expect(b.assunto).toBe('Seu acesso ao Atlas está liberado (até 23/11)') // fim do dia em Brasília
+  expect(a.assunto).toBe('Seu link para instalar o Atlas (até 05/12)') // assunto de carta desde 23/11/2026; a data continua
+  expect(b.assunto).toBe('Seu link para instalar o Atlas (até 23/11)') // fim do dia em Brasília
   expect(a.assunto).not.toMatch(/ganhou|presente|grátis/i) // palavras que puxam o e-mail para a aba Promoções
   expect(a.assunto).not.toBe(b.assunto)
 })
@@ -95,4 +95,31 @@ describe('e-mails de acesso com cara de aviso de sistema (para cair na Principal
   it('sem palavras de promoção no assunto, no corpo e no texto', () => {
     for (const m of montados()) expect(`${m.assunto} ${m.html} ${m.texto}`).not.toMatch(/ganhou|presente|grátis|gratuit|oferta|promo/i)
   })
+})
+
+// Luiz, 23/11/2026 (foto do Gmail): os e-mails de acesso caíam em Promoções. Remetente de pessoa, assunto pessoal e corpo de carta.
+describe('cortesia com cara de carta (para a aba Principal)', () => {
+  const c = montarCortesia({ nome: 'Guilherme Souza', validade_em: new Date('2026-11-28T20:00:00Z'), link: LINK, link_expira_em: new Date('2026-11-25T12:00:00Z') })
+  it('assunto pessoal, com o primeiro nome, e a data (para não virar conversa com o anterior)', () => {
+    expect(c.assunto).toBe('Guilherme, seu link para instalar o Atlas (até 28/11)')
+    expect(montarCortesia({ validade_em: new Date('2026-11-28T20:00:00Z'), link: LINK, link_expira_em: new Date('2026-11-25T12:00:00Z') }).assunto).toBe('Seu link para instalar o Atlas (até 28/11)')
+  })
+  it('corpo de carta: sem faixa de marca, sem botão colorido, sem caixas coloridas; assinado pelo Luiz', () => {
+    expect(c.html).not.toContain('bgcolor')
+    expect(c.html).not.toMatch(/background:\s*#C6F135|border-left:4px/i)
+    expect(c.html).toContain('>Instalar o Atlas neste computador</a>')
+    expect(c.html).toContain('Luiz, do Atlas')
+    expect(c.texto).toContain('Luiz, do Atlas')
+    expect(c.html.length).toBeLessThan(5000)
+  })
+  it('avisa que só o link mais novo vale', () => {
+    expect(c.texto).toMatch(/recebeu mais de um e-mail.*use o mais novo/i)
+  })
+})
+
+test('remetente de pessoa: "Luiz, do Atlas" com o endereço configurado', async () => {
+  const { remetentePessoal } = await import('../functions/_shared/emails.ts')
+  expect(remetentePessoal('Atlas <ola@atlas-ia.app.br>')).toBe('Luiz, do Atlas <ola@atlas-ia.app.br>')
+  expect(remetentePessoal('ola@atlas-ia.app.br')).toBe('Luiz, do Atlas <ola@atlas-ia.app.br>')
+  expect(remetentePessoal('lixo sem arroba')).toBe('lixo sem arroba')
 })

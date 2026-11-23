@@ -162,6 +162,16 @@ describe('cortesia — e-mail com link de instalação', () => {
     expect(a.enviados).toHaveLength(2)
   })
 
+  it('o link novo substitui o anterior (só o mais novo vale) e o e-mail leva o nome de quem recebe', async () => {
+    const a = await comEmail()
+    await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(10), nome: 'Guilherme Souza' })
+    await a.ch('/admin/cortesia/reenviar', { email: 'novo@amigo.com' })
+    const abertos = a.store.links.filter((l: { usado_em: Date | null }) => !l.usado_em)
+    const doCliente = abertos.filter((l: { cliente_id: string }) => l.cliente_id === a.store.links.at(-1)!.cliente_id)
+    expect(doCliente).toHaveLength(1)
+    expect((a.enviados[0] as { nome?: string }).nome).toBe('Guilherme Souza')
+  })
+
   it('reenviar manda de novo com um link novo; sem cortesia ativa dá 404', async () => {
     const a = await comEmail()
     await a.ch('/admin/cortesia', { email: 'novo@amigo.com', validade_em: a.em(10) })
