@@ -374,3 +374,39 @@ tela: prototipo/caminho-novo/CN1Ideia.dc.html
 - [ ] Vídeos das contas (GitHub, Supabase, Vercel, Pagamentos) no botão "Ver o vídeo desta conta"
 - [ ] Navegador de verdade dentro do Atlas na tela das contas (aguarda o OK do Luiz)
 Notas: DECISÃO do Luiz (23/11/2026, "como a construção do protótipo é a alma do Atlas, a tela inicial ... quero que seja a tela do protótipo"), aprovada no protótipo https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG ("ficou muito bom"). Diverge do protótipo de 18/11 (F05→F06NovaObra→F06bEstilo→F07Prototipo→F07bBatismo→F08Aprovar; contas F04 na instalação): agora a obra começa pela ideia contada livremente com um roteiro (CN1), o Atlas pergunta só o que faltou (CN2; as 5 perguntas de F06NovaObra saíram, src/app/NovaObra.tsx removido), o mapa de telas sai em segundo plano logo depois (prototipo.cjs mapear → prototipo/mapa.json), a pessoa escolhe o estilo (CN3) e as telas são pintadas em segundo plano (pintar) enquanto ela dá o nome (CN4); depois confere o protótipo (CN5), abre as contas (CN6, o passo a passo didático de F04, agora antes de começar) e dá a partida (CN7). DECISÃO "começa pelo mapa, pinta depois do estilo" (opção A do Luiz). Offline não dá: o Claude precisa de internet; o que existe é segundo plano e retomada: cada tela pronta fica em prototipo/rascunho/ (com o estilo usado) e o Atlas retoma sozinho ao abrir (20 s) e a cada 2 min (retomarPendentes). A conferência do roteiro usa sempre o modelo rápido (claude-haiku-5-5), não o da obra. Na instalação, o Claude continua (o protótipo precisa dele) e as contas saíram (--tela=F04 ainda abre). LIMITE conhecido: editar a ideia depois de voltar do estilo não refaz o mapa já salvo.
+
+## Milestone 35 — Protótipo no computador e voz sem atraso (pós-protótipo)
+peso: 5
+spec: S9, S4
+tela: prototipo/caminho-novo/P1Computador.dc.html
+- [x] Protótipo aprovado e registrado (prototipo/caminho-novo P1Computador, P2Dicas, P3Versoes)
+- [ ] Cada tela do mapa diz onde é usada (celular ou computador); o Claude desenha no tamanho certo (390 px ou 1280 px)
+- [ ] Chave Celular · Computador no protótipo, com a contagem de telas; o computador aparece numa janela de navegador reduzida para caber
+- [ ] Voltar, caminho (Início › Equipe) e "Onde dá para tocar?" acima da prévia
+- [ ] Voz: texto aparece enquanto a pessoa fala (modelo pequeno e rápido) e o modelo bom corrige ao parar
+- [ ] Página de vendas e primeiro passo dizem: aplicativo, sistema ou site
+Notas: DECISÃO do Luiz (23/11/2026, "o Atlas é para resolver tanto aplicativos mobile quanto web"; "a transcrição tem que estar bem rápida, sem delay"), protótipo aprovado ("Tudo aprovado!") em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. Antes o protótipo só desenhava celular (390 px).
+
+## Milestone 36 — Dicas do Atlas e 3 versões de uma tela (pós-protótipo)
+peso: 4
+spec: S9
+tela: prototipo/caminho-novo/P2Dicas.dc.html
+- [ ] Dicas do Atlas no protótipo: uma por vez, conforme a tela, com "Outra dica" e dispensar
+- [ ] "Ver 3 versões" de uma tela, lado a lado, com "Bom para" e "Cuidado"; "Quero esta" grava a escolha numa versão nova do protótipo
+- [ ] Misturar versões por voz ("a foto da 3 com os passos da 2") e "Desenhar mais 3"
+- [ ] Botão sem tela avisa "ainda não foi desenhado · Desenhar agora"
+- [ ] Conferência automática antes de mostrar: botão sem destino, texto cortado, alvo pequeno, rolagem de lado
+Notas: DECISÃO do Luiz (23/11/2026, "Dicas do Atlas ... pedir 3 protótipos de uma tela ... para fazer alguma decisão"), aprovada em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG.
+
+## Milestone 37 — Canteiro de obras e Obras concluídas (pós-protótipo)
+peso: 4
+spec: S9
+tela: prototipo/caminho-novo/K1Canteiro.dc.html
+- [x] Protótipo aprovado e registrado (prototipo/caminho-novo K1Canteiro, K2Concluidas, K3Obra; menu novo no Shell)
+- [ ] Menu só com Nova obra, Canteiro de obras e Obras concluídas (Protótipo, Obra, Pós-obra e Como retomar saem do menu)
+- [ ] Canteiro: um cartão por obra (inacabada com selo âmbar e próximo passo; trabalhando; parada com Continuar; esperando o Claude), busca e filtro
+- [ ] Retrato do canteiro: cena parada, ganha vida com o mouse e guarda o retrato de quando o mouse sai
+- [ ] Obras concluídas: selo No ar, endereço; obra com mudança volta ao Canteiro enquanto constrói
+- [ ] Obra aberta: as 6 etapas com "Ver ou mudar", construção ao vivo, "Quer mudar alguma coisa?" e pós-obra
+- [ ] Obra parada: aviso no cartão e dentro da obra; ao ligar o computador continua abrindo o aviso (F12) com um botão que religa todas
+Notas: DECISÃO do Luiz (23/11/2026, "o protótipo devia estar dentro de uma obra"; "canteiro de obras ... vários cards ... com o cenáriozinho 3D"; "obras concluídas para tirar essas obras do canteiro"; Como retomar "também deveria ir para dentro de obra"), aprovada em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. Diverge de F05 (Minhas obras) e do menu de 5 itens.

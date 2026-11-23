@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · 3 versões de uma tela</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="canteiro" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:22px 32px 22px;display:flex;flex-direction:column;gap:16px">
+  <div style="display:flex;align-items:center;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+    <a href="P2Dicas.dc.html" style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">← VOLTAR AO PROTÓTIPO · MEU PONTO</a>
+    <h1 style="margin:0;font-size:26px;letter-spacing:-.01em">3 jeitos de cadastrar um funcionário</h1>
+   </div>
+   <span style="margin-left:auto;font-size:14px;color:{{t.mute}}">Toque nas versões para testar. Nada muda no seu protótipo até você escolher.</span>
+  </div>
+
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+   <sc-for list="{{versoes}}" as="v" hint-placeholder-count="3">
+    <section aria-label="{{v.aria}}" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px 16px 18px;border-radius:20px;background:{{t.card}};border:1px solid {{v.borda}}">
+     <div style="align-self:stretch;display:flex;flex-direction:column;gap:3px"><span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">{{v.rot}}</span><b style="font-size:17px">{{v.titulo}}</b><span style="font-size:13px;line-height:1.4;color:{{t.mute}}">{{v.desc}}</span></div>
+     <div style="height:470px;aspect-ratio:414/868;border-radius:36px;background:#0B0C0D;padding:9px;box-sizing:border-box">
+      <div style="width:100%;height:100%;border-radius:28px;background:#FBF7F2;color:#2F3A31;overflow:hidden;display:flex;flex-direction:column;font-size:12px">
+       <div style="background:#2F3A31;color:#FBF7F2;padding:20px 12px 12px"><b style="font-size:15px">Novo funcionário</b><span style="display:block;font-size:10px;opacity:.75;margin-top:2px">{{v.sub}}</span></div>
+       <sc-if value="{{v.foto}}" hint-placeholder-val="{{ false }}"><div style="margin:12px auto 2px;width:74px;height:74px;border-radius:37px;border:2px dashed #B5651D;display:flex;align-items:center;justify-content:center;color:#B5651D;font-weight:700;font-size:10px;text-align:center">Tirar foto</div></sc-if>
+       <sc-if value="{{v.passos}}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:4px;padding:10px 12px 0"><span style="flex:1;height:4px;border-radius:2px;background:#B5651D"></span><span style="flex:1;height:4px;border-radius:2px;background:#E2D8CC"></span><span style="flex:1;height:4px;border-radius:2px;background:#E2D8CC"></span></div></sc-if>
+       <div style="padding:10px 12px;display:flex;flex-direction:column;gap:7px">
+        <sc-for list="{{v.campos}}" as="c" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:10px;color:#6E7A6F">{{c}}</span><span style="height:28px;border-radius:7px;background:#FFF;border:1px solid #E2D8CC"></span></div></sc-for>
+       </div>
+       <span style="margin:auto 12px 14px;height:36px;border-radius:9px;background:#B5651D;color:#FFF;font-weight:700;display:flex;align-items:center;justify-content:center">{{v.botao}}</span>
+      </div>
+     </div>
+     <div style="align-self:stretch;display:flex;flex-direction:column;gap:4px;font-size:13px;color:{{t.mute}}"><span><b style="color:{{t.text}}">Bom para:</b> {{v.bom}}</span><span><b style="color:{{t.text}}">Cuidado:</b> {{v.cuidado}}</span></div>
+     <button type="button" style="align-self:stretch;height:46px;border-radius:12px;border:none;background:{{v.btnBg}};color:{{v.btnCor}};font:700 15px 'Geist',sans-serif;cursor:pointer">Quero esta</button>
+    </section>
+   </sc-for>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:{{t.card}};border:1px solid {{t.cardB}}">
+   <button type="button" aria-label="Falar como misturar as versões" style="width:46px;height:46px;flex:none;border-radius:50%;border:none;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+   <span style="flex:1;font-size:15px;color:{{t.mute}}">Gostou de partes de cada uma? Fale: <b style="color:{{t.text}}">"a foto da 3 com os passos da 2"</b></span>
+   <button type="button" style="height:42px;padding:0 16px;border-radius:12px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font:600 14px 'Geist',sans-serif">Desenhar mais 3</button>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)' }
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const base = (o) => Object.assign({ borda: t.cardB, btnBg: 'transparent', btnCor: t.text, foto: false, passos: false }, o, { aria: `Versão ${o.rot}: ${o.titulo}` });
+    const versoes = [
+      base({ rot: 'VERSÃO 1', titulo: 'Tudo numa tela só', desc: 'Todos os campos de uma vez, rolando para baixo.', sub: 'Preencha e salve', campos: ['Nome completo', 'CPF', 'Função', 'Obra principal', 'Celular'], botao: 'Salvar', bom: 'quem cadastra muita gente de uma vez.', cuidado: 'no celular, a tela fica comprida.' }),
+      base({ rot: 'VERSÃO 2', titulo: 'Passo a passo', desc: 'Três etapas curtas: pessoa, trabalho, contato.', sub: 'Passo 1 de 3 · Quem é', campos: ['Nome completo', 'CPF'], botao: 'Próximo', passos: true, bom: 'quem não tem pressa e erra pouco.', cuidado: 'um toque a mais para terminar.', borda: t.lime, btnBg: t.lime, btnCor: t.onLime }),
+      base({ rot: 'VERSÃO 3', titulo: 'Começa pela foto', desc: 'Tira a foto do documento e o Atlas preenche o resto.', sub: 'Foto do documento', campos: ['Nome (lido da foto)', 'CPF (lido da foto)', 'Função'], botao: 'Confirmar', foto: true, bom: 'cadastrar no canteiro, em pé.', cuidado: 'precisa de câmera e boa luz.' })
+    ];
+    return { tema, t, versoes };
+  }
+}
+</script>
+</body>
+</html>
