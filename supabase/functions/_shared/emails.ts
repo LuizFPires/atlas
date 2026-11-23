@@ -56,10 +56,6 @@ export const COR = {
 const FONTE = "'Geist',system-ui,-apple-system,'Segoe UI',Arial,sans-serif"
 export const MONO = "'Geist Mono',ui-monospace,Consolas,monospace"
 
-// Fonte das imagens da marca (servidas pelo site em produção). ATLAS_SITE pode sobrescrever a origem.
-// A faixa do topo é UMA imagem só (fundo escuro + logo embutidos): o Gmail não inverte imagem, então a marca
-// chega sempre fiel, diferente de cor de fundo em CSS (que o Gmail escurece/clareia no modo escuro).
-const SITE = (globalThis as { Deno?: { env?: { get(k: string): string | undefined } } }).Deno?.env?.get('ATLAS_SITE') || 'https://atlas-ia-plum.vercel.app'
 
 export const ICONES = {
   microfone: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
@@ -67,10 +63,6 @@ export const ICONES = {
   relogio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
 }
 /** Bolinha de ícone: imagem (círculo lime + ícone escuro embutidos), que o Gmail não escurece. */
-function bolinha(icone: keyof typeof ICONES): string {
-  if (icone === 'microfone') return `<img src="${SITE}/mic-pino.png" width="40" height="40" alt="" style="display:block;border:0;outline:none;text-decoration:none">`
-  return `<span style="display:inline-block;width:40px;height:40px;border-radius:20px;background:${COR.lime};color:${COR.limeTexto};text-align:center;line-height:40px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" style="vertical-align:middle">${ICONES[icone]}</svg></span>`
-}
 
 // Modo escuro dos apps de e-mail: tudo o que é lime (faixa do topo, botão, microfone) é IMAGEM, que o cliente
 // não inverte. Então aqui basta declarar que o e-mail suporta claro e escuro; o corpo é texto sobre o cartão,
@@ -88,9 +80,9 @@ export function moldura(o: { titulo: string; subtitulo: string; corpo: string; p
 <u></u><div class="corpo" style="background:${COR.fundo}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(o.preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${COR.fundo}"><tr><td align="center" style="padding:36px 12px">
-<table role="presentation" width="680" cellpadding="0" cellspacing="0" style="width:100%;max-width:680px;background:${COR.card};border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.08)">
-<tr><td class="hero" style="padding:0;background:${COR.hero};font-size:0;line-height:0">
-<img src="${SITE}/marca-banner.png" width="680" alt="Atlas" style="display:block;width:100%;max-width:680px;height:auto;border:0;outline:none;text-decoration:none">
+<table role="presentation" width="680" cellpadding="0" cellspacing="0" style="width:100%;max-width:680px;background:${COR.card};border-radius:16px;overflow:hidden">
+<tr><td class="hero" bgcolor="${COR.hero}" style="padding:18px 44px;background:${COR.hero}">
+<span style="font-family:${FONTE};font-size:20px;font-weight:800;letter-spacing:0.18em;color:${COR.lime}">ATLAS</span>
 </td></tr>
 <tr><td style="padding:34px 44px 6px;background:${COR.card};color:${COR.tinta}">
 <h1 style="margin:0;color:${COR.tinta};font-size:30px;line-height:1.18;letter-spacing:-0.01em;font-weight:600">${esc(o.titulo)}</h1>
@@ -103,23 +95,14 @@ export function moldura(o: { titulo: string; subtitulo: string; corpo: string; p
 
 export const p = (t: string, extra = '') => `<p style="margin:0 0 22px;font-size:16px;line-height:1.6;color:${COR.tinta};${extra}">${t}</p>`
 
-// Botão como IMAGEM clicável (lime + texto escuro embutidos): o Gmail não clareia o texto nem escurece o lime,
-// como faria com cor de CSS. O texto também é o rótulo alternativo (alt), caso as imagens estejam desligadas.
-const BOTOES: Record<string, { img: string; w: number; h: number }> = {
-  'Instalar o Atlas neste computador': { img: 'btn-instalar.png', w: 381, h: 49 },
-  'Liberar o meu teste': { img: 'btn-liberar.png', w: 243, h: 45 },
-}
-export const botao = (href: string, rotulo: string) => {
-  const b = BOTOES[rotulo]
-  const dentro = b
-    ? `<img src="${SITE}/${b.img}" width="${b.w}" height="${b.h}" alt="${esc(rotulo)}" style="display:block;border:0;outline:none;text-decoration:none">`
-    : `<span style="display:inline-block;padding:16px 26px;border-radius:12px;background:${COR.lime};color:${COR.limeTexto};font-weight:700;font-size:17px">${esc(rotulo)}</span>`
-  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 22px"><tr><td><a href="${esc(href)}" style="display:inline-block;text-decoration:none">${dentro}</a></td></tr></table>`
-}
+// Botão em TEXTO (célula com fundo lime + link). Imagem grande no e-mail faz o Gmail tratar como propaganda (aba Promoções);
+// decisão do Luiz em 22/11/2026: chegar na Principal vale mais que o lime perfeito no modo escuro.
+export const botao = (href: string, rotulo: string) =>
+  `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 22px"><tr><td bgcolor="${COR.lime}" style="border-radius:12px;background:${COR.lime}"><a href="${esc(href)}" style="display:inline-block;padding:15px 26px;border-radius:12px;font-family:${FONTE};font-size:17px;font-weight:700;color:${COR.limeTexto};text-decoration:none">${esc(rotulo)}</a></td></tr></table>`
 export const caixa = (titulo: string, linhas: string[]) =>
   `<div style="margin:0 0 22px;background:${COR.caixa};border-radius:12px;padding:18px 20px;font-size:15px;line-height:1.6;color:${COR.corpo}"><b style="color:${COR.tinta}">${esc(titulo)}</b>${linhas.map((l) => `<br>${esc(l)}`).join('')}</div>`
 export const destaque = (icone: keyof typeof ICONES, corpo: string) =>
-  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 22px;background:${COR.caixa};border-radius:12px"><tr><td width="56" valign="top" style="padding:18px 0 18px 18px">${bolinha(icone)}</td><td style="padding:18px 18px 18px 12px;font-size:15px;line-height:1.5;color:${COR.corpo}">${corpo}</td></tr></table>`
+  `<div data-icone="${icone}" style="margin:0 0 22px;background:${COR.caixa};border-left:4px solid ${COR.lime};border-radius:12px;padding:16px 20px;font-size:15px;line-height:1.5;color:${COR.corpo}">${corpo}</div>`
 /** Aviso da tela azul do Windows (SmartScreen): o instalador ainda não é assinado, então o cliente é avisado ANTES de ver a tela.
  *  Sai daqui quando o instalador for assinado ou for para a Microsoft Store. Mesmo texto da página /instalar. */
 export const AVISO_WINDOWS = {
@@ -198,19 +181,19 @@ export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
 
 export interface DadosCortesia { validade_em: Date; /** Endereço de instalação com o token de uso único. */ link: string; /** Até quando o link vale. */ link_expira_em: Date }
 
-/** Cortesia liberada pelo gestor: avisa do presente, até quando vale e traz o link de instalação. Sem promessa de atendimento humano. */
+/** Cortesia liberada pelo gestor: avisa do acesso liberado, até quando vale e traz o link de instalação. Sem promessa de atendimento humano. */
 export function montarCortesia(d: DadosCortesia): EmailMontado {
   const link = linkSeguro(d.link)
   const validade = d.validade_em.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' }) // dd/mm/aaaa
   const ate = quando(d.link_expira_em)
   const html = moldura({
-    titulo: 'Você ganhou um acesso de presente ao Atlas.',
-    subtitulo: `O seu presente vale até ${validade}. Falta só instalar no computador.`,
+    titulo: 'Seu acesso ao Atlas está liberado.',
+    subtitulo: `O acesso vale até ${validade}. Falta só instalar no computador.`,
     preheader: 'Abra este e-mail no computador onde você vai trabalhar e clique no botão.',
     corpo: [
-      p('Alguém quis te dar um presente: um acesso ao Atlas, o jeito de construir os sistemas do seu negócio sem programar. Abra este e-mail <b>no computador onde você vai trabalhar</b> e clique no botão. Leva uns 10 minutos.'),
+      p('Foi liberado um acesso ao Atlas para este e-mail. O Atlas é o jeito de construir os sistemas do seu negócio sem programar. Abra este e-mail <b>no computador onde você vai trabalhar</b> e clique no botão. Leva uns 10 minutos.'),
       link ? botao(link, 'Instalar o Atlas neste computador') : '',
-      `<div style="margin:0 0 22px;border:2px solid ${COR.lime};background:${COR.caixa};border-radius:12px;padding:18px 20px;font-size:16px;line-height:1.6;color:${COR.corpo}"><b style="color:${COR.tinta};font-size:18px">Seu presente vale até ${esc(validade)}.</b><br>É como um bilhete com data: no dia ${esc(validade)} o acesso acaba sozinho, sem você precisar fazer nada. Nada é cobrado e não fica nenhuma conta pendente.</div>`,
+      `<div style="margin:0 0 22px;border:2px solid ${COR.lime};background:${COR.caixa};border-radius:12px;padding:18px 20px;font-size:16px;line-height:1.6;color:${COR.corpo}"><b style="color:${COR.tinta};font-size:18px">O acesso vale até ${esc(validade)}.</b><br>É como um bilhete com data: no dia ${esc(validade)} o acesso acaba sozinho, sem você precisar fazer nada. Não fica nenhuma conta pendente.</div>`,
       avisoClaude(),
       avisoWindows(),
             destaque('microfone', `<b style="color:${COR.tinta}">Você não vai precisar digitar.</b> No Atlas, tudo pode ser falado. É só apertar o microfone e conversar como se estivesse com um amigo na mesa de um restaurante.`),
@@ -219,12 +202,12 @@ export function montarCortesia(d: DadosCortesia): EmailMontado {
     ].join(''),
   })
   return {
-    // Assunto com cara de aviso (sem "ganhou"/"presente", que puxam para a aba Promoções) e com a validade, para não virar conversa.
+    // Assunto com cara de aviso (sem palavras de promoção) e com a validade, para não virar conversa.
     assunto: `Seu acesso ao Atlas está liberado (até ${validade.slice(0, 5)})`,
     texto: [
-      'Oi! Você ganhou um acesso de presente ao Atlas.',
+      'Oi! Foi liberado um acesso ao Atlas para este e-mail.',
       '',
-      `ATENÇÃO AO PRAZO: o seu presente vale até ${validade}. No dia ${validade} o acesso acaba sozinho, sem você precisar fazer nada. Nada é cobrado.`,
+      `ATENÇÃO AO PRAZO: o acesso vale até ${validade}. No dia ${validade} o acesso acaba sozinho, sem você precisar fazer nada.`,
       '',
       'Agora falta só instalar o Atlas no computador onde você vai construir.',
       '',
@@ -252,9 +235,9 @@ export function montarConfirmacaoDegustacao(d: DadosConfirmacaoDegustacao): Emai
   const html = moldura({
     titulo: `Falta um clique para liberar o seu teste de ${d.dias} dias.`,
     subtitulo: 'Confirme que este e-mail é seu e eu libero o Atlas para você experimentar.',
-    preheader: 'Clique no botão para liberar o seu teste grátis do Atlas.',
+    preheader: 'Clique no botão para liberar o seu teste do Atlas.',
     corpo: [
-      p('Alguém (espero que você) pediu um teste grátis do Atlas com este e-mail. Para liberar, clique no botão abaixo.'),
+      p('Alguém (espero que você) pediu um teste do Atlas com este e-mail. Para liberar, clique no botão abaixo.'),
       link ? botao(link, 'Liberar o meu teste') : '',
       caixa('Como funciona', [`O teste vale ${d.dias} dias, contados a partir do clique.`, 'Quando acabar, o acesso fecha sozinho. Nada é cobrado.']),
       avisoClaude(),
@@ -265,7 +248,7 @@ export function montarConfirmacaoDegustacao(d: DadosConfirmacaoDegustacao): Emai
   return {
     assunto: 'Confirme o seu e-mail para liberar o teste do Atlas',
     texto: [
-      `Oi! Alguém (espero que você) pediu um teste grátis de ${d.dias} dias do Atlas com este e-mail.`,
+      `Oi! Alguém (espero que você) pediu um teste de ${d.dias} dias do Atlas com este e-mail.`,
       '',
       'Para liberar, abra o link abaixo:',
       d.link,
