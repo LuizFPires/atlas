@@ -82,17 +82,29 @@ export function montarSrcDoc(html: string): string | null {
   return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8">${html}`
 }
 
-/** Qualquer href que não seja âncora interna (#...) vira "#": o protótipo nunca navega para fora de si. */
-function soLinksInternos(html: string): string {
-  return html.replace(/(\shref\s*=\s*)(?:"(?!#)[^"]*"|'(?!#)[^']*'|(?!["'#])[^\s>]+)/gi, '$1"#"')
+/** Qualquer href que não seja âncora interna (#...) vira "#": o protótipo nunca navega para fora de si. Depois, todo link que não
+ *  leva a uma tela que existe (inclusive "#") vai para o aviso "ainda não foi desenhada" (Luiz, 23/11/2026: botão que não faz nada). */
+function soLinksInternos(html: string, ids: Set<string>): string {
+  return html
+    .replace(/(\shref\s*=\s*)(?:"(?!#)[^"]*"|'(?!#)[^']*'|(?!["'#])[^\s>]+)/gi, '$1"#"')
+    .replace(/(\shref\s*=\s*)(["'])#([^"']*)\2/gi, (_t, pre: string, _q: string, alvo: string) => {
+      const m = /^tela-([a-z0-9][a-z0-9-]*)$/.exec(alvo)
+      return `${pre}"#${m && ids.has(m[1]) ? `tela-${m[1]}` : 'tela-falta'}"`
+    })
 }
+
+/** Aviso de parte que ainda não foi desenhada (sem script: é só mais uma "tela" do documento). */
+const TELA_FALTA = (volta: string) => `<section id="tela-falta"><template shadowrootmode="open"><style>:host{display:block}div{min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px;text-align:center;font:16px/1.5 system-ui,sans-serif;background:#F4F5F0;color:#1B1E22}b{font-size:20px}a{display:inline-block;padding:12px 18px;border-radius:12px;background:#1B1E22;color:#fff;text-decoration:none;font-weight:600}</style><div><b>Esta parte ainda não foi desenhada.</b><span>Peça ao Atlas, na conversa ao lado: "desenhe a tela de …".</span><a href="#tela-${volta}">Voltar</a></div></template></section>`
+
+/** "Onde dá para tocar?": contorno em tudo que leva a outra tela (vai dentro de cada tela: o CSS de fora não entra no shadow root). */
+const REALCE = '<style>a[href^="#tela-"]{outline: 3px solid #C6F135 !important;outline-offset:2px;border-radius:6px}</style>'
 
 /**
  * Protótipo NAVEGÁVEL sem script: todas as telas num documento só, cada uma isolada no próprio shadow root (o CSS de uma
  * tela não vaza para a outra) e só uma aparece por vez. Os links <a href="#tela-ID"> trocam a tela (CSS :target).
  * Abre na tela `inicial`. Mesmo documento para o celular ao lado e para o link do celular. Devolve null se for grande demais.
  */
-export function montarNavegavel(telas: TelaDesenhada[], inicial: string): string | null {
+export function montarNavegavel(telas: TelaDesenhada[], inicial: string, o: { realce?: boolean } = {}): string | null {
   const total = telas.reduce((n, t) => n + t.html.length, 0)
   if (total > MAX_HTML * 2 || telas.length === 0) return null
   const ids = telas.map((t) => t.id).filter((id) => /^[a-z0-9][a-z0-9-]*$/.test(id))
@@ -100,8 +112,8 @@ export function montarNavegavel(telas: TelaDesenhada[], inicial: string): string
   const estilo = `<style>html,body{margin:0;padding:0}section{display:none;min-height:100vh}section:target{display:block}body:not(:has(section:target)) #tela-${abre}{display:block}</style>`
   const secoes = telas
     .filter((t) => ids.includes(t.id))
-    .map((t) => `<section id="tela-${t.id}"><template shadowrootmode="open">${soLinksInternos(t.html)}</template></section>`)
-    .join('')
+    .map((t) => `<section id="tela-${t.id}"><template shadowrootmode="open">${o.realce ? REALCE : ''}${soLinksInternos(t.html, new Set(ids))}</template></section>`)
+    .join('') + TELA_FALTA(abre)
   return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${estilo}${secoes}`
 }
 

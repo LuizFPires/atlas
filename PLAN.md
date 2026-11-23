@@ -382,7 +382,7 @@ tela: prototipo/caminho-novo/P1Computador.dc.html
 - [x] Protótipo aprovado e registrado (prototipo/caminho-novo P1Computador, P2Dicas, P3Versoes)
 - [x] Cada tela do mapa diz onde é usada (celular ou computador); o Claude desenha no tamanho certo (390 px ou 1280 px)
 - [x] Chave Celular · Computador no protótipo, com a contagem de telas; o computador aparece numa janela de navegador reduzida para caber
-- [ ] Voltar, caminho (Início › Equipe) e "Onde dá para tocar?" acima da prévia
+- [ ] Voltar, caminho (Início › Equipe) e "Onde dá para tocar?" acima da prévia (o "Onde dá para tocar?" já está)
 - [ ] Voz: texto aparece enquanto a pessoa fala (modelo pequeno e rápido) e o modelo bom corrige ao parar
 - [ ] Página de vendas e primeiro passo dizem: aplicativo, sistema ou site
 Notas: DECISÃO do Luiz (23/11/2026, "o Atlas é para resolver tanto aplicativos mobile quanto web"; "a transcrição tem que estar bem rápida, sem delay"), protótipo aprovado ("Tudo aprovado!") em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. Antes o protótipo só desenhava celular (390 px).
@@ -391,10 +391,10 @@ Notas: DECISÃO do Luiz (23/11/2026, "o Atlas é para resolver tanto aplicativos
 peso: 4
 spec: S9
 tela: prototipo/caminho-novo/P2Dicas.dc.html
-- [ ] Dicas do Atlas no protótipo: uma por vez, conforme a tela, com "Outra dica" e dispensar
+- [x] Dicas do Atlas no protótipo: uma por vez, conforme a tela, com "Outra dica" e dispensar
 - [ ] "Ver 3 versões" de uma tela, lado a lado, com "Bom para" e "Cuidado"; "Quero esta" grava a escolha numa versão nova do protótipo
 - [ ] Misturar versões por voz ("a foto da 3 com os passos da 2") e "Desenhar mais 3"
-- [ ] Botão sem tela avisa "ainda não foi desenhado · Desenhar agora"
+- [x] Botão sem tela avisa "ainda não foi desenhado · Desenhar agora"
 - [ ] Conferência automática antes de mostrar: botão sem destino, texto cortado, alvo pequeno, rolagem de lado
 Notas: DECISÃO do Luiz (23/11/2026, "Dicas do Atlas ... pedir 3 protótipos de uma tela ... para fazer alguma decisão"), aprovada em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG.
 

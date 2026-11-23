@@ -207,7 +207,7 @@ describe('protótipo navegável (sem script)', () => {
     expect(doc).toContain('Content-Security-Policy')
     expect(doc).toContain('<section id="tela-inicio"')
     expect(doc).toContain('<section id="tela-agenda"')
-    expect(doc.match(/<template shadowrootmode="open">/g)).toHaveLength(2) // CSS de uma tela não vaza para a outra
+    expect(doc.match(/<template shadowrootmode="open">/g)).toHaveLength(3) // as 2 telas + o aviso "ainda não foi desenhada"; CSS de uma não vaza para a outra
     expect(doc).toContain('href="#tela-agenda"')
     expect(doc).toMatch(/body:not\(:has\(section:target\)\) #tela-agenda\s*\{\s*display:\s*block/)
   })
@@ -395,5 +395,29 @@ describe('celular ou computador (sistemas web e sites)', () => {
     expect(tela.style.width).toBe('1280px')
     expect(tela.style.height).toBe('800px')
     expect(tela.getAttribute('sandbox')).toBe('')
+  })
+})
+
+describe('ajudas no protótipo (Luiz, 23/11/2026)', () => {
+  test('"Onde dá para tocar?" acende o que é clicável na tela', async () => {
+    const { user } = await montar()
+    const frame = await screen.findByTitle(/Tela Marcar horário no celular/)
+    expect(frame.getAttribute('srcdoc')).not.toContain('outline: 3px solid')
+    await user.click(screen.getByRole('button', { name: 'Onde dá para tocar?' }))
+    expect(screen.getByRole('button', { name: 'Onde dá para tocar?' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTitle(/Tela Marcar horário no celular/).getAttribute('srcdoc')).toContain('outline: 3px solid')
+  })
+
+  test('Dica do Atlas: uma por vez, "Outra dica" troca, o botão deixa o pedido escrito e o X dispensa', async () => {
+    const { user } = await montar()
+    const dica = await screen.findByRole('region', { name: 'Dica do Atlas' })
+    expect(dica).toHaveTextContent('DICA DO ATLAS · 1 DE')
+    const primeira = dica.textContent
+    await user.click(within(dica).getByRole('button', { name: 'Outra dica' }))
+    expect(dica.textContent).not.toBe(primeira)
+    await user.click(within(dica).getByRole('button', { name: /Usar a minha marca|Pedir|Simular|Ver 3 versões/ }))
+    expect((screen.getByRole('textbox', { name: 'Pedir ajuste' }) as HTMLTextAreaElement).value.length).toBeGreaterThan(10)
+    await user.click(within(dica).getByRole('button', { name: 'Dispensar as dicas' }))
+    expect(screen.queryByRole('region', { name: 'Dica do Atlas' })).toBeNull()
   })
 })

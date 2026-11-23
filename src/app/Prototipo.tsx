@@ -3,6 +3,8 @@ import { Botao, Icone, Microfone, Trabalhando, useVoz } from '../ui'
 import { andamentoDoDesenho } from './andamento-telas'
 import { Pintor } from './Pintor'
 import { JanelaCelular } from './JanelaCelular'
+import { DicaDoAtlas } from './DicaDoAtlas'
+import { dicasDaTela } from './dicas-do-atlas'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EstiloProposto } from './ponte-estilo'
 import { aparelhoDaTela, montarNavegavel, montarSrcDoc, SANDBOX_PREVIEW, type Aparelho, type EstadoProto, type PontePrototipo, type ProgressoProto, type TelaDesenhada } from './ponte-prototipo'
@@ -44,9 +46,9 @@ export function escalaDoCelular(largura: number, altura: number): number {
 /** Preview do celular: o HTML (gerado/importado, NÃO confiável) só vive dentro de um iframe com sandbox vazio. Nunca no DOM do app.
  *  O iframe tem SEMPRE o tamanho de um telefone de verdade (390 × 844) e é reduzido para caber: a tela fica igual à do celular,
  *  sem rolagem de lado nem texto quebrando diferente (antes ele tinha a largura da moldura, ~220 px num notebook). */
-export function CelularPreview({ html, titulo, telas, inicial }: { html: string; titulo: string; telas?: TelaDesenhada[]; inicial?: string }) {
+export function CelularPreview({ html, titulo, telas, inicial, realce = false }: { html: string; titulo: string; telas?: TelaDesenhada[]; inicial?: string; realce?: boolean }) {
   // Com todas as telas: protótipo NAVEGÁVEL (tocar num botão leva à outra tela). Sem elas: só esta tela.
-  const doc = telas && inicial ? montarNavegavel(telas, inicial) : montarSrcDoc(html)
+  const doc = telas && inicial ? montarNavegavel(telas, inicial, { realce }) : montarSrcDoc(html)
   const vidro = useRef<HTMLDivElement>(null)
   const [escala, setEscala] = useState(1)
   useEffect(() => {
@@ -75,8 +77,8 @@ export const LARGURA_COMPUTADOR = 1280
 export const ALTURA_COMPUTADOR = 800
 
 /** Prévia no computador: janela de navegador com a tela em 1280 × 800, reduzida para caber inteira (nunca rola de lado). */
-export function ComputadorPreview({ telas, inicial, titulo }: { telas: TelaDesenhada[]; inicial: string; titulo: string }) {
-  const doc = montarNavegavel(telas, inicial)
+export function ComputadorPreview({ telas, inicial, titulo, realce = false }: { telas: TelaDesenhada[]; inicial: string; titulo: string; realce?: boolean }) {
+  const doc = montarNavegavel(telas, inicial, { realce })
   const vidro = useRef<HTMLDivElement>(null)
   const [escala, setEscala] = useState(1)
   useEffect(() => {
@@ -116,6 +118,8 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
   const [desenhando, setDesenhando] = useState(false)
   const [andamento, setAndamento] = useState<ProgressoProto | null>(null)
   const [vista, setVista] = useState<'navegar' | 'todas'>('navegar')
+  const [realce, setRealce] = useState(false)
+  const [semDicas, setSemDicas] = useState(false)
   const [celular, setCelular] = useState(false)
   const iniciou = useRef(false)
   const [pedido, setPedido] = useState('')
@@ -385,9 +389,16 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
               <button key={t.id} type="button" role="tab" aria-selected={t.id === tela.id} className={`at-proto__aba ${t.id === tela.id ? 'at-proto__aba--on' : ''}`} onClick={() => setAba(t.id)}>{t.nome}</button>
             ))}
           </div>
+          <div className="at-proto__ferramentas">
+            <button type="button" aria-pressed={realce} className={`at-proto__ferr ${realce ? 'at-proto__ferr--on' : ''}`} onClick={() => setRealce((r) => !r)}><Icone nome="alvo" tamanho={16} />Onde dá para tocar?</button>
+          </div>
           {aparelho === 'computador'
-            ? <ComputadorPreview telas={telasAqui} inicial={tela.id} titulo={`Tela ${tela.nome} no computador (dá para clicar e navegar)`} />
-            : <CelularPreview html={tela.html} telas={telasAqui} inicial={tela.id} titulo={`Tela ${tela.nome} no celular (dá para tocar e navegar)`} />}
+            ? <ComputadorPreview telas={telasAqui} inicial={tela.id} realce={realce} titulo={`Tela ${tela.nome} no computador (dá para clicar e navegar)`} />
+            : <CelularPreview html={tela.html} telas={telasAqui} inicial={tela.id} realce={realce} titulo={`Tela ${tela.nome} no celular (dá para tocar e navegar)`} />}
+          {!semDicas && (
+            <DicaDoAtlas key={tela.id} dicas={dicasDaTela(tela, versao.telas)} onDispensar={() => setSemDicas(true)}
+              onUsar={(d) => { setPedido(d.pedido); requestAnimationFrame(() => { const c = document.getElementById('pedido') as HTMLTextAreaElement | null; c?.focus(); c?.setSelectionRange(c.value.length, c.value.length) }) }} />
+          )}
           {estado.versoes.length > 1 && (
             <div className="at-proto__versoes" role="group" aria-label="Versões do protótipo">
               <span>Versões guardadas:</span>
