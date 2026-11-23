@@ -107,3 +107,22 @@ test('"Não consegui" abre a ajuda do passo e leva o print do passo à Ajuda do 
   await clicar(/Pedir ajuda ao Atlas/)
   expect(onPedirAjuda).toHaveBeenCalledWith({ origem: 'F04', conta: 'GitHub', passo: 2, totalPassos: 5, print: { url: 'github.com/signup', titulo: 'Welcome to GitHub!', botaoCerto: 'seu e-mail' } })
 })
+
+// Luiz, 23/11/2026: "o passo a passo das contas tem que continuar existindo, bem didático e com os vídeos".
+describe('vídeo de cada conta', () => {
+  test('botão bem visível abre o vídeo da conta da vez; fechar volta para o passo', async () => {
+    montar()
+    await userEvent.click(screen.getByRole('button', { name: /Ver o vídeo desta conta/ }))
+    const janela = screen.getByRole('dialog', { name: 'Conta do GitHub em vídeo' })
+    expect(janela.querySelector('video')).toHaveAttribute('src', expect.stringContaining('video-conta-github'))
+    await userEvent.click(screen.getByRole('button', { name: 'Fechar o vídeo' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  test('em "Não consegui fazer este passo", o botão do vídeo também abre (não fica mais parado)', async () => {
+    montar()
+    await userEvent.click(screen.getByRole('button', { name: 'Não consegui fazer este passo' }))
+    await userEvent.click(screen.getByRole('button', { name: /Ver este passo em vídeo/ }))
+    expect(screen.getByRole('dialog', { name: 'Conta do GitHub em vídeo' })).toBeInTheDocument()
+  })
+})
