@@ -71,3 +71,16 @@ test('já atualizado ou sem internet momentânea: não incomoda ninguém', async
     unmount()
   }
 })
+
+test('a faixa aparece em até 10 s depois que a versão nova termina de baixar (sem esperar 1 minuto)', async () => {
+  vi.useFakeTimers()
+  try {
+    let versao: string | null = null
+    const p = { pronta: vi.fn(async () => versao), instalar: vi.fn(async () => true) }
+    render(<NovaVersao ponte={p} />)
+    await act(async () => {})
+    versao = '0.1.99'
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000) })
+    expect(screen.getByRole('status')).toHaveTextContent('0.1.99')
+  } finally { vi.useRealTimers() }
+})

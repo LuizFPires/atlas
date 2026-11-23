@@ -97,10 +97,10 @@ test('"Atualizar agora": com versão pronta fecha o Atlas (a instalação roda a
 })
 
 // Guilherme, 23/11/2026: abriu o Atlas às 11h30 e a versão das 13h só seria procurada às 17h30 (de 6 em 6 horas).
-test('com o Atlas aberto, procura versão nova de 20 em 20 minutos (não de 6 em 6 horas)', () => {
+test('com o Atlas aberto, procura versão nova de 2 em 2 minutos e logo 10 s depois de abrir (Luiz: "20 minutos é muito")', () => {
   const { INTERVALO_CONFERENCIA_MS, PRIMEIRA_CONFERENCIA_MS } = require('./atualizador.cjs')
-  assert.equal(INTERVALO_CONFERENCIA_MS, 20 * 60_000)
-  assert.equal(PRIMEIRA_CONFERENCIA_MS, 60_000)
+  assert.equal(INTERVALO_CONFERENCIA_MS, 2 * 60_000)
+  assert.equal(PRIMEIRA_CONFERENCIA_MS, 10_000)
 })
 
 test('diz por que não atualizou: rota inexistente no servidor (404) ≠ licença negada (401/403) ≠ sem internet', async () => {
