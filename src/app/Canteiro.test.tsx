@@ -65,3 +65,37 @@ test('sem obras: o Canteiro convida a começar a primeira', async () => {
   render(<Canteiro modo="canteiro" obras={vazia} painel={painel} onAbrir={() => {}} onNova={() => {}} />)
   expect(await screen.findByText(/Nenhuma obra no canteiro ainda/)).toBeInTheDocument()
 })
+
+describe('situação de cada obra em construção no cartão (K1Canteiro)', () => {
+  const SIT: Record<string, SituacaoObra> = { a: S({ estilo: true, prototipo: true, marca: true, plano: true }), b: S({ estilo: true, prototipo: true, marca: true, plano: true }), c: S({ estilo: true, prototipo: true, marca: true, plano: true }), d: S({ estilo: true, prototipo: true, marca: true, plano: true }), e: S({ estilo: true, prototipo: true, marca: true, plano: true }) }
+  const obras4 = { listar: async () => Object.keys(SIT), situacao: async (p: string) => SIT[p] } as unknown as PonteObras
+  const base = { pct: 50, parada: null, pausadaPorVoce: false, agora: [] as { sigla: string; quem: string; oque: string; tom: 'ativo' | 'espera' }[] }
+  const LER: Record<string, object> = {
+    a: { ...base, agora: [{ sigla: 'IM', quem: 'Implementador', oque: 'a tela de relatórios do mês', tom: 'ativo' }] },
+    b: { ...base, parada: 'cota' },
+    c: { ...base, parada: 'voce' },
+    d: { ...base, pausadaPorVoce: true },
+    e: { ...base },
+  }
+  const painel2 = { ler: async (p: string) => LER[p] as { pct: number } }
+  const retomar = { obraEmAndamento: async () => ({ nome: 'E', pasta: 'e', pct: 50, etapa: null, paradaEm: new Date(Date.now() - 3 * 3600_000).toISOString() }), continuar: vi.fn(async () => {}) }
+
+  test('trabalhando, esperando o Claude, precisa de você, pausada e parada (computador desligado)', async () => {
+    render(<Canteiro modo="canteiro" obras={obras4} painel={painel2} retomar={retomar} onAbrir={() => {}} onNova={() => {}} />)
+    const c = (n: string) => screen.findByRole('article', { name: new RegExp(`^${n}:`) })
+    expect(await c('A')).toHaveTextContent(/TRABALHANDO AGORA.*Trabalhando agora: a tela de relatórios do mês/)
+    expect(await c('B')).toHaveTextContent(/ESPERANDO O CLAUDE.*O limite do Claude acabou. A obra volta sozinha/)
+    expect(await c('C')).toHaveTextContent(/PRECISA DE VOCÊ.*Responder/)
+    expect(await c('D')).toHaveTextContent(/PAUSADA POR VOCÊ.*Continuar obra/)
+    expect(await c('E')).toHaveTextContent(/PARADA.*quando o computador desligou.*Continuar obra/)
+  })
+
+  test('na obra parada, o clique religa a obra (um clique) e abre', async () => {
+    const onAbrir = vi.fn()
+    render(<Canteiro modo="canteiro" obras={obras4} painel={painel2} retomar={retomar} onAbrir={onAbrir} onNova={() => {}} />)
+    const e = await screen.findByRole('article', { name: /^E:/ })
+    await userEvent.click(within(e).getByRole('button'))
+    expect(retomar.continuar).toHaveBeenCalledWith({ pasta: 'e' })
+    expect(onAbrir).toHaveBeenCalledWith(expect.objectContaining({ pasta: 'e', etapa: 'obra' }))
+  })
+})

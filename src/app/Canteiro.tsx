@@ -4,6 +4,8 @@ import canteiroImagem from '../assets/canteiro-3d.jpg'
 import type { PonteObras } from './ponte-obras'
 import { faseDaObra, nomeDaPasta, type EtapaObra, type FaseObra } from './fase-obra'
 import type { ObraParaContinuar } from './Obras'
+import type { ParadaReal, QuemTrabalha } from './ponte-painel'
+import { quandoParou, type PonteRetomar } from './ponte-retomar'
 import './canteiro.css'
 
 // Canteiro de obras e Obras concluídas (Milestone 37; protótipo prototipo/caminho-novo/K1Canteiro e K2Concluidas, aprovado pelo
@@ -18,19 +20,37 @@ const PASSO: Record<Exclude<EtapaObra, 'obra'>, { n: number; proximo: string }> 
   aprovar: { n: 5, proximo: 'abrir as contas' },
 }
 
-type Lida = { pasta: string; nome: string; fase: FaseObra }
+/** O que o painel da obra diz (só o que o cartão usa). */
+type LeituraPainel = { pct: number; parada?: ParadaReal | null; pausadaPorVoce?: boolean; agora?: QuemTrabalha[] }
+/** Situação de uma obra em construção, para o selo e a linha do cartão. */
+type Vivo = { selo: string; linha: string; acao: string; tom: 'lime' | 'cinza' | 'ambar'; religar?: boolean }
+type Lida = { pasta: string; nome: string; fase: FaseObra; vivo?: Vivo }
+
+function vivoDa(l: LeituraPainel | null, parouEm: string | null | undefined): Vivo | undefined {
+  if (!l) return undefined
+  if (l.parada === 'cota') return { selo: 'ESPERANDO O CLAUDE', linha: 'O limite do Claude acabou. A obra volta sozinha assim que ele renovar.', acao: 'Abrir a obra', tom: 'cinza' }
+  if (l.parada === 'voce') return { selo: 'PRECISA DE VOCÊ', linha: 'O Atlas precisa de uma resposta sua para seguir.', acao: 'Responder', tom: 'ambar' }
+  if (l.parada === 'billing') return { selo: 'PAGAMENTO PENDENTE', linha: 'Confira o pagamento do serviço para a obra seguir.', acao: 'Ver o que fazer', tom: 'ambar' }
+  if (l.pausadaPorVoce) return { selo: 'PAUSADA POR VOCÊ', linha: 'A obra está esperando você mandar seguir.', acao: 'Continuar obra', tom: 'cinza' }
+  if (parouEm !== undefined) return { selo: 'PARADA', linha: `Parou ${quandoParou(parouEm, new Date()) ?? 'há pouco'}, quando o computador desligou.`, acao: 'Continuar obra', tom: 'cinza', religar: true }
+  const ativo = l.agora?.find((q) => q.tom === 'ativo')
+  if (ativo) return { selo: 'TRABALHANDO AGORA', linha: `Trabalhando agora: ${ativo.oque}`, acao: 'Abrir a obra', tom: 'lime' }
+  return undefined
+}
 type Filtro = 'todas' | 'falta' | 'construcao'
 
 interface Props {
   modo: 'canteiro' | 'concluidas'
   obras: PonteObras
-  /** O % das obras em construção (painel da obra). */
-  painel?: { ler(pasta: string): Promise<{ pct: number }> }
+  /** O andamento das obras em construção (painel da obra): %, parada, pausa e quem trabalha agora. */
+  painel?: { ler(pasta: string): Promise<LeituraPainel> }
+  /** A obra que parou com o computador desligado: o cartão dela religa com um clique. */
+  retomar?: PonteRetomar
   onAbrir: (o: ObraParaContinuar) => void
   onNova: () => void
 }
 
-export function Canteiro({ modo, obras, painel, onAbrir, onNova }: Props) {
+export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova }: Props) {
   const [lidas, setLidas] = useState<Lida[] | null>(null)
   const [filtro, setFiltro] = useState<Filtro>('todas')
   const [busca, setBusca] = useState('')
@@ -39,17 +59,20 @@ export function Canteiro({ modo, obras, painel, onAbrir, onNova }: Props) {
     let vivo = true
     void (async () => {
       const l = await obras.listar().catch(() => [] as string[])
+      const parada = retomar ? await retomar.obraEmAndamento().catch(() => null) : null
       const out: Lida[] = []
       for (const pasta of l.slice(0, 200)) {
         const s = obras.situacao ? await obras.situacao(pasta).catch(() => null) : null
         if (!s) continue
-        const pct = s.plano && painel ? await painel.ler(pasta).then((e) => e.pct, () => null) : null
-        out.push({ pasta, nome: nomeDaPasta(pasta), fase: faseDaObra(s, pct) })
+        const leitura = s.plano && painel ? await painel.ler(pasta).catch(() => null) : null
+        const fase = faseDaObra(s, leitura ? leitura.pct : null)
+        const vivo = fase.etapa === 'obra' && !fase.concluida ? vivoDa(leitura, parada?.pasta === pasta ? parada.paradaEm : undefined) : undefined
+        out.push({ pasta, nome: nomeDaPasta(pasta), fase, vivo })
       }
       if (vivo) setLidas(out)
     })()
     return () => { vivo = false }
-  }, [obras, painel])
+  }, [obras, painel, retomar])
 
   const daqui = useMemo(() => {
     const todas = (lidas ?? []).filter((o) => (modo === 'concluidas' ? o.fase.concluida : !o.fase.concluida))
@@ -63,7 +86,11 @@ export function Canteiro({ modo, obras, painel, onAbrir, onNova }: Props) {
     .filter((o) => modo === 'concluidas' || filtro === 'todas' || (filtro === 'falta') === (o.fase.etapa !== 'obra'))
     .filter((o) => !termo || o.nome.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{M}/gu, '').includes(termo))
 
-  const abrir = (o: Lida) => onAbrir({ pasta: o.pasta, nome: o.nome, etapa: o.fase.etapa })
+  const abrir = async (o: Lida) => {
+    // Obra parada com o computador desligado: um clique religa e abre (como o "Continuar obra" do F12).
+    if (o.vivo?.religar && retomar) await retomar.continuar({ pasta: o.pasta }).catch(() => {})
+    onAbrir({ pasta: o.pasta, nome: o.nome, etapa: o.fase.etapa })
+  }
 
   return (
     <div className="at-ct">
@@ -103,7 +130,7 @@ export function Canteiro({ modo, obras, painel, onAbrir, onNova }: Props) {
       {lidas !== null && daqui.length > 0 && mostradas.length === 0 && <p className="at-ct__vazio">Nenhuma obra com esse nome.</p>}
 
       <div className="at-ct__cartoes">
-        {mostradas.map((o) => <Cartao key={o.pasta} o={o} onAbrir={() => abrir(o)} />)}
+        {mostradas.map((o) => <Cartao key={o.pasta} o={o} onAbrir={() => { void abrir(o) }} />)}
       </div>
     </div>
   )
@@ -113,11 +140,12 @@ function Cartao({ o, onAbrir }: { o: Lida; onAbrir: () => void }) {
   const { fase } = o
   const inacabada = fase.etapa !== 'obra'
   const passo = inacabada ? PASSO[fase.etapa as Exclude<EtapaObra, 'obra'>] : null
-  const selo = fase.concluida ? 'NO AR' : passo ? `FALTA TERMINAR · ETAPA ${passo.n} DE 6` : 'EM CONSTRUÇÃO'
-  const linha = fase.concluida ? 'Pronta. Abra para ver o endereço ou pedir uma mudança.' : passo ? 'O canteiro ainda não começou. Termine as etapas e o Atlas constrói sozinho.' : fase.rotulo
-  const acao = passo ? `Próximo: ${passo.proximo}` : 'Abrir a obra'
+  const vivo = o.vivo
+  const selo = fase.concluida ? 'NO AR' : passo ? `FALTA TERMINAR · ETAPA ${passo.n} DE 6` : vivo?.selo ?? 'EM CONSTRUÇÃO'
+  const linha = fase.concluida ? 'Pronta. Abra para ver o endereço ou pedir uma mudança.' : passo ? 'O canteiro ainda não começou. Termine as etapas e o Atlas constrói sozinho.' : vivo?.linha ?? fase.rotulo
+  const acao = passo ? `Próximo: ${passo.proximo}` : vivo?.acao ?? 'Abrir a obra'
   return (
-    <article className={`at-ct__cartao${inacabada ? ' at-ct__cartao--falta' : ''}${fase.concluida ? ' at-ct__cartao--pronta' : ''}`} aria-label={`${o.nome}: ${fase.concluida ? 'no ar' : passo ? `falta terminar, etapa ${passo.n} de 6` : `em construção${fase.pct !== undefined ? `, ${fase.pct}%` : ''}`}`}>
+    <article className={`at-ct__cartao${inacabada ? ' at-ct__cartao--falta' : ''}${fase.concluida ? ' at-ct__cartao--pronta' : ''}${vivo ? ` at-ct__cartao--${vivo.tom}` : ''}`} aria-label={`${o.nome}: ${fase.concluida ? 'no ar' : passo ? `falta terminar, etapa ${passo.n} de 6` : `${(vivo?.selo ?? 'em construção').toLocaleLowerCase('pt-BR')}${fase.pct !== undefined ? `, ${fase.pct}%` : ''}`}`}>
       <button type="button" className="at-ct__abrir" onClick={onAbrir}>
         <span className="at-ct__cena">
           {inacabada
