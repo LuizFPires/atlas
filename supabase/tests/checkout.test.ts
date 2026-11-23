@@ -128,3 +128,25 @@ describe('consentimento LGPD no checkout', () => {
     }
   })
 })
+
+describe('checkout com a cara do Atlas', () => {
+  it('toda sessão leva as cores e o nome do Atlas (fundo grafite, botão lima, cantos arredondados)', async () => {
+    for (const tipo of ['implantacao', 'mensalidade'] as const) {
+      const m = montarPag()
+      Object.assign(m.store.licencas[0], { conta_gateway_id: CONTA, gateway_cliente_ref: 'cus_1' })
+      await criarCheckout(m.deps, { conta_id: CONTA, tipo, email: 'ana@loja.com', aceite_termos_versao: '1.0', licenca_id: 'l1', ...urls })
+      const f = corpoDe(m.chamadas[0])
+      expect(f.get('branding_settings[display_name]')).toBe('Atlas')
+      expect(f.get('branding_settings[background_color]')).toBe('#141619')
+      expect(f.get('branding_settings[button_color]')).toBe('#C6F135')
+      expect(f.get('branding_settings[border_style]')).toBe('rounded')
+      expect(f.get('branding_settings[font_family]')).toBe('inter')
+    }
+  })
+
+  it('a criação da sessão fixa a versão da API que aceita branding_settings (não depende da versão padrão da conta)', async () => {
+    const m = montarPag()
+    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'ana@loja.com', aceite_termos_versao: '1.0', ...urls })
+    expect(m.chamadas[0].headers['Stripe-Version']).toBe('2025-09-30.clover')
+  })
+})

@@ -4,6 +4,9 @@
 import { ErroRegra } from '../tipos.ts'
 import { type DepsPagamento, planoDoTipo, SEGMENTOS_PRATELEIRA, type SegmentoPrateleira, VALOR_MENSALIDADE } from './config.ts'
 
+/** A página de pagamento da Stripe com a cara do Atlas (tokens do tema escuro A; Geist não está na lista da Stripe, Inter é a mais próxima). */
+export const MARCA_CHECKOUT = { display_name: 'Atlas', background_color: '#141619', button_color: '#C6F135', border_style: 'rounded', font_family: 'inter' } as const
+
 const VERSAO_RE = /^[0-9A-Za-z._-]{1,20}$/
 const centavos = (v: number) => Math.round(v * 100)
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -47,7 +50,7 @@ function urlsDeRetorno(base: string | null | undefined, origem?: 'app') {
 export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promise<{ url: string }> {
   const { conta, api } = await apiDaConta(d, p.conta_id)
   const meta: Record<string, string> = { atlas_conta: conta.id, atlas_tipo: p.tipo }
-  const base = { ...urlsDeRetorno(conta.base_retorno, p.tipo === 'implantacao' ? p.origem : undefined), locale: 'pt-BR' }
+  const base = { ...urlsDeRetorno(conta.base_retorno, p.tipo === 'implantacao' ? p.origem : undefined), locale: 'pt-BR', branding_settings: MARCA_CHECKOUT }
 
   if (p.tipo === 'implantacao' || p.tipo === 'prateleira') {
     if (p.tipo === 'prateleira') {
