@@ -95,3 +95,10 @@ test('"Atualizar agora": com versão pronta fecha o Atlas (a instalação roda a
   assert.equal(saiu, 1)
   assert.deepEqual(execs.map((e) => e.args), [['/S']], 'o instalador roda uma vez só, ao sair')
 })
+
+// Guilherme, 23/11/2026: abriu o Atlas às 11h30 e a versão das 13h só seria procurada às 17h30 (de 6 em 6 horas).
+test('com o Atlas aberto, procura versão nova de 20 em 20 minutos (não de 6 em 6 horas)', () => {
+  const { INTERVALO_CONFERENCIA_MS, PRIMEIRA_CONFERENCIA_MS } = require('./atualizador.cjs')
+  assert.equal(INTERVALO_CONFERENCIA_MS, 20 * 60_000)
+  assert.equal(PRIMEIRA_CONFERENCIA_MS, 60_000)
+})
