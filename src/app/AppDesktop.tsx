@@ -12,7 +12,9 @@ import { casosIndisponivel, criarCasosFixture, type PonteCasosAdmin } from './po
 import { Celular } from './Celular'
 import { Contas } from './Contas'
 import { Obras as ListaObras, type ObraParaContinuar } from './Obras'
-import { NovaObra, type ObraNova } from './NovaObra'
+import { Ideia } from './Ideia'
+import { EtapasObra, type EtapaDoCaminho } from './EtapasObra'
+import { criarIdeiaFixture, ideiaIndisponivel, type PonteIdeia } from './ponte-ideia'
 import { Estilo, type ObraDoEstilo } from './Estilo'
 import { TrazerPrototipo } from './Trazer'
 import { Prototipo } from './Prototipo'
@@ -105,11 +107,11 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const [dono, setDono] = useState('')
   const [paradaF12, setParadaF12] = useState<ObraParada | null>(null)
   // Dentro de Minhas obras: lista (F05), nova obra (F06) ou trazer protótipo (F06c, do M15).
-  const [fluxo, setFluxo] = useState<'lista' | 'nova' | 'trazer' | 'estilo' | 'telas' | 'batismo' | 'aprovar' | 'publicar' | 'publicando' | 'entrega'>('lista')
-  const [ideia, setIdeia] = useState('')
+  const [fluxo, setFluxo] = useState<'lista' | 'ideia' | 'trazer' | 'estilo' | 'telas' | 'batismo' | 'contas' | 'aprovar' | 'publicar' | 'publicando' | 'entrega'>('lista')
   const [obraAtual, setObraAtual] = useState<ObraDoEstilo | null>(null)
   // A obra que acabou de nascer em "Nova obra": o Voltar do estilo volta para ela ("Obra começada!"), não para o início.
-  const [obraNovaCriada, setObraNovaCriada] = useState<ObraNova | null>(null)
+  // Caminho novo: o relato da obra criada agora (para o Voltar do estilo mostrar de novo a ideia). null = obra que veio de Minhas obras.
+  const [relatoDaObra, setRelatoDaObra] = useState<string | null>(null)
   const [selecaoPub, setSelecaoPub] = useState<Selecao>({})
   const [enderecoNoAr, setEnderecoNoAr] = useState<string | null>(null)
   const [resumoEntrega, setResumoEntrega] = useState<ResumoEntrega | null>(null)
@@ -148,6 +150,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteImportar = useMemo<PonteImportar>(() => importar ?? (modoFixture() ? criarImportarFixture(ponteObras.raiz()) : (ponte.importar ?? importarIndisponivel)), [importar, ponteObras, ponte])
 
   // Idem para o Claude que desenha e ajusta as telas (HTML não confiável: só em iframe sandbox): sem adaptador real, não finge.
+  const ponteIdeia = useMemo<PonteIdeia>(() => (modoFixture() ? criarIdeiaFixture() : (ponte.ideia ?? ideiaIndisponivel)), [ponte])
   const pontePrototipo = useMemo<PontePrototipo>(() => prototipo ?? (modoFixture() ? criarPrototipoFixture(ponteObras.raiz()) : (ponte.prototipo ?? prototipoIndisponivel)), [prototipo, ponteObras, ponte])
 
   // Idem para o Claude que sugere os nomes e grava a marca na pasta da obra: sem adaptador real, não finge.
@@ -234,6 +237,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   }, [ponte])
   // "Conectar o Claude agora" de qualquer tela: vai para a tela de conectar e, ao terminar, volta para onde estava.
   const voltarDoClaude = useRef<string | null>(null)
+  const pastaAberta = obraAtual?.pasta ?? null
+  const progressoDaObra = useMemo(() => (pastaAberta && pontePrototipo.progresso ? () => pontePrototipo.progresso!(pastaAberta) : undefined), [pastaAberta, pontePrototipo])
   const conectarClaude = useCallback(() => { voltarDoClaude.current = tela; setTela(TELA_CLAUDE) }, [tela])
   const contextoLicenca = useMemo(() => ({ cartao: licencaNoApp.cartao, comprar: abrirCompra }), [licencaNoApp.cartao, abrirCompra])
 
@@ -272,7 +277,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Minhas obras → "Continuar": cada obra volta para a etapa em que parou (fase-obra.ts). O estilo escolhido fica no design-system.md da pasta.
   const continuarObra = (o: ObraParaContinuar) => {
     setObraAtual({ nome: o.nome, pasta: o.pasta })
-    setObraNovaCriada(null)
+    setRelatoDaObra(null)
     setEstiloEscolhido(null)
     if (o.etapa === 'obra') { setFluxo('lista'); setAtivo('obra'); return }
     setFluxo(o.etapa)
@@ -288,9 +293,10 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   if (tela === TELA_ATIVACAO) {
     return com(<Ativacao api={ativacao} computador={computador} onInstalando={setInstalando} onContinuar={() => { void licencaNoApp.conferir(); setTela(TELA_CLAUDE) }} />)
   }
-  if (tela === TELA_CLAUDE) return com(<Claude claude={ponteClaude} onContinuar={() => { const v = voltarDoClaude.current; voltarDoClaude.current = null; setTela(v ?? TELA_CONTAS) }} onPedirAjuda={() => abrirAjuda({ origem: 'menu', onde: 'a conexão com o Claude' })} />)
+  if (tela === TELA_CLAUDE) return com(<Claude claude={ponteClaude} onContinuar={() => { const v = voltarDoClaude.current; voltarDoClaude.current = null; setTela(v ?? TELA_CELULAR) }} onPedirAjuda={() => abrirAjuda({ origem: 'menu', onde: 'a conexão com o Claude' })} />)
+  // Caminho novo (23/11/2026): as contas saíram da instalação e vêm antes de começar a construção (fluxo 'contas'). --tela=F04 ainda abre.
   if (tela === TELA_CONTAS) return com(<Contas contas={ponteContas} onContinuar={() => setTela(TELA_CELULAR)} onPedirAjuda={pedirAjudaPasso} />)
-  if (tela === TELA_CELULAR) return com(<Celular celular={ponteCelular} onVoltar={() => setTela(TELA_CONTAS)} onConcluir={() => setTela('F05')} />)
+  if (tela === TELA_CELULAR) return com(<Celular celular={ponteCelular} onVoltar={() => setTela(TELA_CLAUDE)} onConcluir={() => setTela('F05')} />)
   if (tela === TELA_RETOMAR && paradaF12) {
     return com(
       <Retomar
@@ -305,22 +311,38 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Demais telas (F05+ vêm nos próximos milestones): por ora cai em Obras.
   let conteudo: ReactNode
   if (ativo === 'obras' && fluxo === 'trazer') conteudo = <TrazerPrototipo obras={ponteObras} importar={ponteImportar} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} />
-  else if (ativo === 'obras' && fluxo === 'estilo' && obraAtual) conteudo = <Estilo obra={obraAtual} arquivos={ponteArquivos} estilo={ponteEstilo} onVoltar={() => setFluxo(obraNovaCriada ? 'nova' : 'lista')} onConcluir={(r) => { setEstiloEscolhido(r.estilo); setFluxo('telas') }} />
-  else if (ativo === 'obras' && fluxo === 'telas' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setFluxo('estilo')} onConcluir={() => setFluxo('batismo')} />
-  else if (ativo === 'obras' && fluxo === 'batismo' && obraAtual) conteudo = <Batismo obra={obraAtual} batismo={ponteBatismo} nomes={ponteNomes} arquivos={ponteArquivos} onVoltar={() => setFluxo('telas')} onConcluir={() => setFluxo('aprovar')} />
+  else if (ativo === 'obras' && fluxo === 'estilo' && obraAtual) conteudo = <Estilo obra={obraAtual} arquivos={ponteArquivos} estilo={ponteEstilo} onVoltar={() => setFluxo(relatoDaObra !== null ? 'ideia' : 'lista')} onConcluir={(r) => { setEstiloEscolhido(r.estilo); void pontePrototipo.pintar?.(obraAtual.pasta, obraAtual.nome, r.estilo).catch(() => {}); setFluxo('batismo') }} />
+  else if (ativo === 'obras' && fluxo === 'telas' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setFluxo('batismo')} onConcluir={() => setFluxo('contas')} />
+  else if (ativo === 'obras' && fluxo === 'batismo' && obraAtual) conteudo = <Batismo obra={obraAtual} batismo={ponteBatismo} nomes={ponteNomes} arquivos={ponteArquivos} onVoltar={() => setFluxo('estilo')} onConcluir={() => setFluxo('telas')} />
   else if (ativo === 'posobra') conteudo = obraAtual ? <PosObra obra={obraAtual} posobra={pontePosObra} arquivos={ponteArquivos} licenca={ponteLicenca} onAcompanhar={() => setAtivo('obra')} /> : <p>Escolha uma obra em Minhas obras para pedir uma mudança nela.</p>
   else if (ativo === 'obra' && obraAtual && fluxo === 'publicar') conteudo = <Publicar slug={slugDaObra(obraAtual.nome)} onPublicar={(sel) => { setSelecaoPub(sel); setFluxo('publicando') }} onVoltar={() => setFluxo('lista')} />
   else if (ativo === 'obra' && obraAtual && fluxo === 'publicando') conteudo = <Publicando obra={obraAtual} selecao={selecaoPub} publicar={pontePublicar} onVoltar={() => setFluxo('publicar')} onConcluir={(noAr) => { setEnderecoNoAr(noAr); setResumoEntrega(null); void pontePainel.ler(obraAtual.pasta).then((e) => setResumoEntrega({ etapas: e.etapas.length, tarefas: e.feitas }), () => {}); setFluxo('entrega') }} onPedirAjuda={pedirAjudaPasso} onErro={(p, e) => abrirAjuda({ ...contextoDoPasso(p), origem: 'erro', onde: 'a publicação', erro: e })} />
   else if (ativo === 'obra' && obraAtual && fluxo === 'entrega') conteudo = <Entrega obra={obraAtual} endereco={enderecoNoAr} resumo={resumoEntrega} onMudar={() => setAtivo('posobra')} />
   else if (ativo === 'obra' && obraAtual) conteudo = <Painel obra={obraAtual} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => abrirAjuda({ origem: 'menu' })} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => setFluxo('publicar')} />
-  else if (ativo === 'obras' && fluxo === 'aprovar' && obraAtual) conteudo = <Aprovar obra={obraAtual} construcao={pontesModo.construcao} claude={ponteClaude} modos={pontesModo.modos} onVoltar={() => setFluxo('batismo')} onComecou={() => { setFluxo('lista'); setAtivo('obra') }} />
-  else if (ativo === 'obras' && fluxo === 'nova') conteudo = <NovaObra obras={ponteObras} ideia={ideia} criada={obraNovaCriada} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} onEstilo={(o: ObraNova) => { setObraNovaCriada(o); setObraAtual({ nome: o.respostas.nome, pasta: o.pasta.pasta }); setFluxo('estilo') }} />
+  else if (ativo === 'obras' && fluxo === 'aprovar' && obraAtual) conteudo = <Aprovar obra={obraAtual} construcao={pontesModo.construcao} claude={ponteClaude} modos={pontesModo.modos} onVoltar={() => setFluxo('contas')} onComecou={() => { setFluxo('lista'); setAtivo('obra') }} />
+  else if (ativo === 'obras' && fluxo === 'ideia') conteudo = <Ideia ideia={ponteIdeia} relatoInicial={relatoDaObra ?? undefined} onVoltar={() => setFluxo('lista')} onConcluir={async ({ relato, titulo }) => {
+    // Já criada nesta sessão (voltou do estilo): segue, sem criar outra pasta. Nova: cria a pasta e começa o mapa em segundo plano.
+    if (relatoDaObra !== null && obraAtual) { setRelatoDaObra(relato); setFluxo('estilo'); return }
+    const nome = titulo.trim() || 'Nova obra'
+    const criada = await ponteObras.criarSubpasta(nome)
+    setObraAtual({ nome, pasta: criada.pasta })
+    setRelatoDaObra(relato)
+    setEstiloEscolhido(null)
+    void pontePrototipo.mapear?.(criada.pasta, nome, relato).catch(() => {})
+    setFluxo('estilo')
+  }} />
+  else if (ativo === 'obras' && fluxo === 'contas') conteudo = <Contas contas={ponteContas} onContinuar={() => setFluxo('aprovar')} onPedirAjuda={pedirAjudaPasso} />
   else if (ativo === 'retomar') conteudo = paradaF12
     ? <Retomar obra={paradaF12} nome={dono || undefined} retomar={ponteRetomar} onContinuou={(o) => { setObraAtual({ nome: o.nome, pasta: o.pasta }); setFluxo('lista'); setAtivo('obra') }} onAgoraNao={() => setAtivo('obras')} />
     : <SemObra rotulo="COMO RETOMAR" titulo="Nenhuma obra parada agora." texto="Se o computador desligar ou a cota do Claude acabar, a obra para no ponto em que estava. Quando você ligar o computador, o Atlas abre sozinho aqui, com um botão só: Continuar obra." onIrObras={() => setAtivo('obras')} />
   else if (ativo === 'prototipo' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setAtivo('obras')} onConcluir={() => { setAtivo('obras'); setFluxo('batismo') }} />
   else if (ativo === 'prototipo' || ativo === 'obra') conteudo = <SemObra rotulo={ativo === 'prototipo' ? 'PROTÓTIPO' : 'OBRA'} titulo="Escolha uma obra primeiro." texto="Escolha uma obra em Minhas obras (ou comece a primeira). Depois é aqui que você vê as telas dela e acompanha a construção." onIrObras={() => setAtivo('obras')} />
-  else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} painel={pontePainel} nome={dono || undefined} onComecar={(i) => { setIdeia(i ?? ''); setObraNovaCriada(null); setFluxo('nova') }} onTrazer={() => setFluxo('trazer')} onContinuar={continuarObra} />
+  else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} painel={pontePainel} nome={dono || undefined} onComecar={() => { setRelatoDaObra(null); setFluxo('ideia') }} onTrazer={() => setFluxo('trazer')} onContinuar={continuarObra} />
+  // Caminho novo: faixa das 6 etapas no topo; fora das telas, o aviso do protótipo em segundo plano leva até elas.
+  const CAMINHO: readonly string[] = ['ideia', 'estilo', 'batismo', 'telas', 'contas', 'aprovar']
+  if (ativo === 'obras' && CAMINHO.includes(fluxo)) {
+    conteudo = <><EtapasObra atual={fluxo as EtapaDoCaminho} progresso={fluxo !== 'telas' ? progressoDaObra : undefined} onVerTelas={() => setFluxo('telas')} />{conteudo}</>
+  }
   // "Ajuda do Atlas" no menu abre o painel por cima da tela atual (não troca de tela).
   return com(<Obras ativo={ativo} onFalar={() => abrirAjuda({ origem: 'menu', ouvir: true })} onNavegar={(t) => (t === 'ajuda' ? abrirAjuda({ origem: 'menu' }) : setAtivo(t))}>{conteudo}</Obras>)
 }

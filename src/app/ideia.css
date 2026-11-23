@@ -1,0 +1,41 @@
+/* Caminho novo · passo 1: a ideia (prototipo/caminho-novo/CN1Ideia, CN2Complemento). Tokens do design system; verde = feito. */
+.at-ideia { display: flex; flex-direction: column; gap: 18px; min-height: calc(100vh - 64px); }
+.at-ideia__topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.at-ideia__topo h1 { margin: 4px 0 0; font-size: 26px; }
+.at-ideia__rotulo { font: 500 12px var(--font-mono); letter-spacing: .12em; color: var(--mute2); }
+.at-ideia__rotulo--lime { color: var(--lime-txt); }
+.at-ideia__grade { flex: 1; display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 24px; min-height: 0; }
+.at-ideia__roteiro { background: var(--card); border: 1px solid var(--card-b); border-radius: 20px; padding: 22px 20px; display: flex; flex-direction: column; gap: 6px; }
+.at-ideia__roteiro > p { margin: 2px 0 12px; font-size: 14px; line-height: 1.5; color: var(--mute); }
+.at-ideia__roteiro ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.at-ideia__topico { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; padding-bottom: 14px; }
+.at-ideia__topico > div { display: flex; flex-direction: column; gap: 3px; padding-top: 3px; }
+.at-ideia__topico b { font-size: 15px; font-weight: 500; color: var(--mute2); }
+.at-ideia__topico[data-estado='agora'] b { font-weight: 700; color: var(--text); }
+.at-ideia__topico[data-estado='feito'] b, .at-ideia__topico[data-estado='pulado'] b { color: var(--text); }
+.at-ideia__bola { width: 28px; height: 28px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--on-lime); transition: background .3s, border-color .3s; }
+.at-ideia__topico[data-estado='agora'] .at-ideia__bola { border-color: var(--lime); }
+.at-ideia__topico[data-estado='feito'] .at-ideia__bola { background: var(--lime); border-color: var(--lime); }
+.at-ideia__topico[data-estado='pulado'] .at-ideia__bola { border-style: dashed; }
+.at-ideia__dica { font-size: 13px; line-height: 1.45; color: var(--mute); }
+.at-ideia__resumo { font-size: 13px; color: var(--lime-txt); }
+.at-ideia__pular { align-self: flex-start; margin-top: 4px; padding: 0; min-height: 28px; border: 0; background: none; color: var(--mute2); font: 600 13px var(--font-text); text-decoration: underline; cursor: pointer; }
+.at-ideia__cartao { background: var(--card); border: 1px solid var(--card-b); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; }
+.at-ideia__cab-relato { padding: 22px 26px 0; display: flex; align-items: baseline; gap: 14px; }
+.at-ideia__cab-relato h2 { margin: 0; font-size: 22px; flex: 1; }
+.at-ideia__escondido { position: absolute; left: -9999px; }
+.at-ideia__relato { flex: 1; min-height: 260px; margin: 14px 26px; padding: 14px; box-sizing: border-box; resize: none; border-radius: 14px; border: 1px solid var(--card-b); background: var(--input); color: var(--text); font: 17px/1.7 var(--font-text); }
+.at-ideia__relato:focus-visible { outline: 2px solid var(--lime); outline-offset: 1px; }
+.at-ideia__rodape { border-top: 1px solid var(--line); padding: 18px 26px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.at-ideia__mic.at-mic { width: 68px; height: 68px; }
+.at-ideia__mic-txt { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 200px; }
+.at-ideia__mic-txt span { font-size: 13px; color: var(--mute); }
+.at-ideia--faltou .at-ideia__cartao { padding: 26px; gap: 18px; max-width: 860px; }
+.at-ideia__cab { display: flex; flex-direction: column; gap: 6px; }
+.at-ideia__cab h1 { margin: 0; font-size: 24px; }
+.at-ideia__cab p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--mute); }
+.at-ideia__falta { background: var(--card2); border: 1px solid var(--card-b); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+.at-ideia__porque { margin: 0; font-size: 14px; color: var(--mute); }
+.at-ideia__acoes { display: flex; justify-content: flex-end; gap: 10px; }
+@media (max-width: 900px) { .at-ideia__grade { grid-template-columns: 1fr; } }
+.at-ideia__erro { margin: 0 26px 16px; color: var(--erro); font-size: 14px; }

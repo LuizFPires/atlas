@@ -30,8 +30,9 @@ function pedido(relato, fim) {
     fim
       ? `Depois, olhe o relato inteiro e diga o que FALTOU para desenhar as telas do sistema: no máximo ${MAX_FALTAM} perguntas curtas, em português simples, cada uma com o porquê em uma frase ("Você não contou..."). Só o que for importante; se nada faltou, lista vazia.`
       : 'Não faça perguntas agora: "faltam" fica vazio.',
+    ...(fim ? ['Dê também um "titulo" provisório para o sistema: de 2 a 4 palavras, o que ele faz (ex.: "Agenda da barbearia"), sem inventar marca.'] : []),
     'Você não grava nada e não roda comandos.',
-    'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"cobertos":[{"id":"problema","resumo":"..."}],"faltam":[{"pergunta":"...?","porque":"..."}]}',
+    `Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"cobertos":[{"id":"problema","resumo":"..."}],"faltam":[{"pergunta":"...?","porque":"..."}]${fim ? ',"titulo":"..."' : ''}}`,
     '',
     'Relato do cliente:',
     ...blocoDoCliente(relato, '(vazio)'),
@@ -52,7 +53,9 @@ function criarIdeia({ disparo }) {
       const faltam = fim && Array.isArray(j.faltam)
         ? j.faltam.filter((f) => f && typeof f.pergunta === 'string' && f.pergunta.trim()).slice(0, MAX_FALTAM).map((f) => ({ pergunta: umaLinha(f.pergunta, 160), porque: umaLinha(f.porque, 200) }))
         : []
-      return { cobertos, faltam }
+      if (!fim) return { cobertos, faltam }
+      const t = umaLinha(j.titulo, 60)
+      return { cobertos, faltam, titulo: t.length > 40 ? t.slice(0, 40).replace(/\s+\S*$/, '') : t }
     },
   }
 }

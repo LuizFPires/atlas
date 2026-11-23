@@ -77,11 +77,11 @@ describe('obras começadas: um cartão por obra com "Continuar" (pedido do Luiz,
   test('em andamento: cada obra mostra onde parou e o Continuar leva para lá', async () => {
     const { onContinuar } = montarLista()
     const cartao = await screen.findByRole('article', { name: 'Agenda do ze' })
-    expect(cartao).toHaveTextContent('Parou em: as telas (já começadas)')
+    expect(cartao).toHaveTextContent('Parou em: dar o nome')
     expect(screen.getByRole('article', { name: 'Cartao de ponto' })).toHaveTextContent('Parou em: escolher o estilo')
     expect(screen.queryByRole('article', { name: 'Loja pronta' })).toBeNull()
     await userEvent.click(within(cartao).getByRole('button', { name: 'Continuar →' }))
-    expect(onContinuar).toHaveBeenCalledWith({ pasta: 'agenda-do-ze', nome: 'Agenda do ze', etapa: 'telas' })
+    expect(onContinuar).toHaveBeenCalledWith({ pasta: 'agenda-do-ze', nome: 'Agenda do ze', etapa: 'batismo' })
   })
 
   test('a aba Concluídas mostra as obras prontas', async () => {

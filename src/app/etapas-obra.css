@@ -1,0 +1,13 @@
+/* Faixa das 6 etapas do caminho novo + aviso do protótipo em segundo plano (prototipo/caminho-novo). */
+.at-etapas { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+.at-etapas__lista { flex: 1; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.at-etapas__lista li { display: flex; flex-direction: column; gap: 7px; font: 500 11px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mute2); }
+.at-etapas__lista li[data-estado='feito'], .at-etapas__lista li[data-estado='agora'] { color: var(--text); }
+.at-etapas__barra { height: 4px; border-radius: 2px; background: var(--line); }
+.at-etapas__lista li[data-estado='feito'] .at-etapas__barra, .at-etapas__lista li[data-estado='agora'] .at-etapas__barra { background: var(--lime); }
+.at-etapas__aviso { flex: none; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--card-b); background: var(--card); color: var(--text); font: 600 14px var(--font-text); cursor: pointer; }
+.at-etapas__aviso:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.at-etapas__giro { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--lime); border-right-color: transparent; animation: at-etapas-giro 1s linear infinite; }
+@keyframes at-etapas-giro { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .at-etapas__giro { animation: none; } }
+@media (max-width: 900px) { .at-etapas { flex-direction: column; align-items: stretch; } .at-etapas__lista { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

@@ -50,3 +50,13 @@ test('relato vazio não chama o Claude', async () => {
   assert.deepEqual(await ideia.conferir('   '), { cobertos: [], faltam: [] })
   assert.equal(chamadas.length, 0)
 })
+
+test('no fim, sugere um título curto para a obra (vira o nome da pasta; o nome de verdade vem depois)', async () => {
+  const { ideia } = montar({ cobertos: [], faltam: [], titulo: 'Controle de ponto das obras e mais um monte de palavras que sobram' })
+  const r = await ideia.conferir('x', { fim: true })
+  assert.ok(r.titulo.length <= 40)
+  assert.match(r.titulo, /^Controle de ponto/)
+  const { ideia: i2 } = montar({ cobertos: [], faltam: [] })
+  assert.equal((await i2.conferir('x', { fim: true })).titulo, '')
+  assert.equal((await i2.conferir('x')).titulo, undefined, 'só no fim')
+})

@@ -317,3 +317,36 @@ test('a janela do celular gera o link uma vez só, mesmo se a tela por trás se 
   rerender(<JanelaCelular gerar={async () => gerar()} onFechar={() => {}} />)
   expect(vezes).toBe(1)
 })
+
+// Caminho novo (Luiz, 23/11/2026): as telas são pintadas em segundo plano enquanto a pessoa dá o nome; ao abrir, a tela acompanha.
+describe('protótipo desenhado em segundo plano', () => {
+  const OBRA_BG = { nome: 'Meu Ponto', pasta: 'meu-ponto' }
+  const TELA = { id: 'inicio', nome: 'Início', html: '<div>oi</div>' }
+
+  test('já está pintando: acompanha as telas surgindo e mostra o protótipo quando termina, sem pedir o relato de novo', async () => {
+    let pronto = false
+    const p: PontePrototipo = {
+      ...prototipoIndisponivel,
+      async estado() { return pronto ? { versoes: [{ numero: 1, resumo: 'Primeiras telas', telas: [TELA] }], atual: 1 } : { versoes: [], atual: 0 } },
+      async progresso() { return pronto ? null : { fase: 'pintando', mapa: [{ id: 'inicio', nome: 'Início' }, { id: 'b', nome: 'B' }], telas: [TELA] } },
+    }
+    render(<TemaProvider><Prototipo obra={OBRA_BG} estilo={ESTILOS_EXEMPLO[0]} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
+    expect(await screen.findByRole('status', { name: 'O Claude está desenhando as telas' })).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: /Conte/ })).toBeNull()
+    pronto = true
+    expect(await screen.findByRole('button', { name: /Telas do meu jeito/ }, { timeout: 4000 })).toBeInTheDocument()
+  })
+
+  test('mapa pronto e nada pintado ainda: começa a pintar sozinho, com o estilo escolhido', async () => {
+    const pintar = vi.fn(async () => ({ versoes: [{ numero: 1, resumo: 'Primeiras telas', telas: [TELA] }], atual: 1 }))
+    const p: PontePrototipo = {
+      ...prototipoIndisponivel,
+      async estado() { return { versoes: [], atual: 0 } },
+      async progresso() { return { fase: 'mapa', mapa: [{ id: 'inicio', nome: 'Início' }], telas: [] } },
+      pintar,
+    }
+    render(<TemaProvider><Prototipo obra={OBRA_BG} estilo={ESTILOS_EXEMPLO[1]} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
+    expect(await screen.findByRole('button', { name: /Telas do meu jeito/ })).toBeInTheDocument()
+    expect(pintar).toHaveBeenCalledWith('meu-ponto', 'Meu Ponto', ESTILOS_EXEMPLO[1])
+  })
+})

@@ -12,7 +12,8 @@ export const TOPICOS: { id: IdTopico; pergunta: string; dica: string }[] = [
   { id: 'mais', pergunta: 'Algo mais que você imagina?', dica: 'Qualquer ideia solta vale.' },
 ]
 
-export type Conferencia = { cobertos: { id: IdTopico; resumo: string }[]; faltam: { pergunta: string; porque: string }[] }
+/** titulo: só no fim — 2 a 4 palavras do que o sistema faz (vira o nome da pasta; o nome de verdade vem no batismo). */
+export type Conferencia = { cobertos: { id: IdTopico; resumo: string }[]; faltam: { pergunta: string; porque: string }[]; titulo?: string }
 
 export interface PonteIdeia {
   /** Quais tópicos o relato já respondeu. fim = true: também o que faltou (no máximo 3 perguntas). */
@@ -34,7 +35,7 @@ export function criarIdeiaFixture(): PonteIdeia {
     async conferir(relato, fim) {
       const cobertos = TOPICOS.filter((t) => PISTAS[t.id].test(relato)).map((t) => ({ id: t.id, resumo: 'Você já contou isso.' }))
       const faltam = fim && cobertos.length < TOPICOS.length ? [{ pergunta: 'Como as pessoas entram no sistema?', porque: 'Você não contou se cada um tem login próprio.' }] : []
-      return { cobertos, faltam }
+      return fim ? { cobertos, faltam, titulo: 'Meu sistema' } : { cobertos, faltam }
     },
   }
 }

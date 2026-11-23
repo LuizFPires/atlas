@@ -22,8 +22,8 @@ test('obra que só ganhou nome: Continuar abre a escolha do estilo', async () =>
   expect(await screen.findByRole('heading', { name: /Qual é a cara do seu sistema\?/ })).toBeInTheDocument()
 })
 
-test('obra com o protótipo pela metade: Continuar abre as telas', async () => {
-  montar({ 'agenda-do-ze': { estilo: true, prototipo: true, marca: false, plano: false } })
+test('obra com nome e protótipo: Continuar abre as telas para conferir', async () => {
+  montar({ 'agenda-do-ze': { estilo: true, prototipo: true, marca: true, plano: false } })
   const cartao = await screen.findByRole('article', { name: 'Agenda do ze' })
   await userEvent.click(within(cartao).getByRole('button', { name: 'Continuar →' }))
   expect(await screen.findByText(/Projeto 2 de 3 · Telas/)).toBeInTheDocument()
@@ -33,5 +33,5 @@ test('menu Obra sem obra aberta → "Ir para Minhas obras" mostra a lista', asyn
   montar({ 'agenda-do-ze': { estilo: true, prototipo: false, marca: false, plano: false } })
   await userEvent.click(await screen.findByRole('link', { name: 'Obra' }))
   await userEvent.click(await screen.findByRole('button', { name: /Ir para Minhas obras/ }))
-  expect(await screen.findByRole('article', { name: 'Agenda do ze' })).toHaveTextContent('Parou em: desenhar as telas')
+  expect(await screen.findByRole('article', { name: 'Agenda do ze' })).toHaveTextContent('Parou em: dar o nome')
 })
