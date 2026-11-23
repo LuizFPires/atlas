@@ -18,6 +18,7 @@ const { criarEstilo } = require('./adaptadores/estilo.cjs')
 const { criarPrototipo } = require('./adaptadores/prototipo.cjs')
 const { criarAtualizador } = require('./adaptadores/atualizador.cjs')
 const { criarLinkCelular } = require('./adaptadores/link-celular.cjs')
+const { criarModelo } = require('./adaptadores/modelo.cjs')
 const { criarBatismo } = require('./adaptadores/batismo.cjs')
 const { criarNomes } = require('./adaptadores/nomes.cjs')
 const { criarPosObra } = require('./adaptadores/posobra.cjs')
@@ -54,7 +55,9 @@ const claude = criarClaude({ shell })
 const modos = criarModo({ raiz: obras.raiz() })
 // Kit por obra (PonteKit): plugin numa pasta temporária do app (fora da obra e do repositório), descartado ao fechar. Sem API configurada, vale ATLAS_KIT_PLUGIN.
 const kit = criarKit({ dadosApp: app.getPath('userData'), cofre, hashComputador: async () => hash() })
-const construcao = criarConstrucao({ raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
+// Modelo do Claude escolhido pelo cliente (um só para todo o Atlas; recomendado Opus 5.5).
+const modelo = criarModelo({ pasta: app.getPath('userData') })
+const construcao = criarConstrucao({ modelo: () => modelo.args(), raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
 const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
 const cota = criarCota({ raiz: obras.raiz(), construcao, painel, claudeEstado: () => claude.estado(), dadosApp: app.getPath('userData'), garantirKit: (pasta) => kit.garantir(String(pasta)) })
@@ -66,7 +69,7 @@ const celular = criarCelular({ dados: require('node:path').join(app.getPath('use
 const importar = criarImportar({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
 const retomar = criarRetomar({ raiz: obras.raiz(), painel, cota, construcao })
 // Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
-const disparo = criarDisparo({ raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
+const disparo = criarDisparo({ modelo: () => modelo.args(), raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
 const batismo = criarBatismo({ raiz: obras.raiz(), disparo })
@@ -185,13 +188,16 @@ handle('atlas:estilo:materializar', (pasta, origem) => estilo.materializar(Strin
 
 // Protótipo (F07): o Claude devolve as telas, o app grava versões imutáveis em <obra>/prototipo/versoes/vNNN; desfazer = ponteiro.
 handle('atlas:prototipo:estado', (pasta) => prototipo.estado(String(pasta)))
-handle('atlas:prototipo:desenhar', (pasta, nome, estilo) => prototipo.desenhar(String(pasta), String(nome), estilo))
+handle('atlas:prototipo:desenhar', (pasta, nome, estilo, relato) => prototipo.desenhar(String(pasta), String(nome), estilo, String(relato ?? '')))
 handle('atlas:prototipo:ajustar', (pasta, pedido) => prototipo.ajustar(String(pasta), String(pedido)))
 handle('atlas:prototipo:voltar', (pasta, numero) => prototipo.voltar(String(pasta), Number(numero)))
 // Link provisório para o celular (7 dias, servidor do Atlas): só o protótipo protegido sai; WhatsApp só do link recém-gerado.
 const linkCelular = criarLinkCelular({ cofre, hashComputador: async () => hash(), shell })
 handle('atlas:prototipo:link', (nome, documento) => linkCelular.publicar(String(nome), String(documento)))
 handle('atlas:prototipo:whatsapp', (url) => linkCelular.abrirWhatsApp(String(url)))
+handle('atlas:modelo:ler', () => ({ atual: modelo.ler(), lista: modelo.lista() }))
+handle('atlas:modelo:gravar', (id) => modelo.gravar(String(id)))
+handle('atlas:prototipo:progresso', (pasta) => prototipo.progresso(String(pasta)))
 
 // Batismo (F07b): 3 nomes (logo só de lista fechada) e marca/marca.md sem sobrescrever.
 handle('atlas:batismo:sugerir', (pasta, nome, pedido) => batismo.sugerir(String(pasta), String(nome), pedido))

@@ -25,19 +25,15 @@ describe('fidelidade ao protótipo F01Email', () => {
     expect(plano(html)).toContain(frase)
   })
 
-  // Divergência proposital (pedido do Luiz, 19/11/2026): tudo o que é lime (marca no topo, botão e bolinha do
-  // microfone) vira IMAGEM. O Gmail não inverte imagem; já cor de CSS ele escurece/clareia no modo escuro,
-  // transformando o lime em verde-musgo e clareando o texto escuro. Então a fidelidade da marca é verificada
-  // pelas imagens entregues, não mais por cor em CSS. O protótipo segue sendo a fonte da verdade do visual.
-  it('entrega a marca por imagem (topo, botão e microfone) e mantém o hero escuro', () => {
-    // Faixa do topo = uma imagem só (fundo escuro + logo embutidos), sobre o hero #141619.
-    expect(html).toContain('/marca-banner.png')
+  // Divergência proposital (decisão do Luiz, 22/11/2026, substitui a de 19/11): sem imagens. Banner, botão e ícones em
+  // imagem faziam o Gmail tratar o e-mail como propaganda (aba Promoções). A marca vira texto lime sobre o hero escuro
+  // e o botão é um link de texto sobre fundo lime. No modo escuro do Gmail o lime pode ficar mais apagado: aceito.
+  it('marca e botão em texto, sem nenhuma imagem, com o hero escuro e o lime', () => {
+    expect(html).not.toMatch(/<img\b/i)
     expect(html).toContain('background:#141619')
-    // Botão = imagem clicável; o rótulo fica no alt (equivalente acessível).
-    expect(html).toContain('/btn-instalar.png')
-    expect(html).toContain('alt="Instalar o Atlas neste computador"')
-    // Bolinha do microfone = imagem (círculo lime + ícone escuro).
-    expect(html).toContain('/mic-pino.png')
+    expect(html).toContain('>ATLAS</span>')
+    expect(html).toContain('>Instalar o Atlas neste computador</a>')
+    expect(html).toContain('#C6F135')
   })
 
   it('o protótipo (fonte da verdade) tem o lime e o ícone de microfone de traço', () => {

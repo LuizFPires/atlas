@@ -156,7 +156,7 @@ function resumirLinha(linha) {
  * `deps`: { raiz, modos (PonteModoObra real), claudeEstado (async () => {conectado}), pluginDir? (string ou (pasta) => string|null), home?, agora?,
  *           iniciarFluxo?, executar?, resolver? }  — os três últimos existem para teste (padrão: seguro.cjs).
  */
-function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude }) {
+function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [] }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
   const linhas = new Map()
   // `dadosApp` = userData do app (o MESMO que a cota recebe). Arquivos do git isolado ficam em <dadosApp>\git-isolado.
@@ -182,7 +182,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     if (linhas.has(pasta)) return // já rodando: idempotente
     if (linhas.size > 0) throw new Error('ja-rodando')
     garantirSemConfigDeProjeto(cwd, { permitirGit: !nova }) // config de projeto suspeita: não roda (obra nova: .git de fora também não)
-    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', FERRAMENTAS_LINHA, '--disallowedTools', FERRAMENTAS_NEGADAS]
+    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', FERRAMENTAS_LINHA, '--disallowedTools', FERRAMENTAS_NEGADAS]
     const plugin = typeof pluginDir === 'function' ? pluginDir(pasta) : pluginDir // função: kit por obra (kit.cjs), sem gravar na obra
     if (plugin) args.push('--plugin-dir', plugin)
     const reg = { parar: () => {}, recentes: [], desde: agora().toISOString() }
@@ -232,7 +232,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
       await claudePronto()
       garantirSemConfigDeProjeto(cwd) // de novo: a pasta pode ter mudado durante a espera
       const entrada = `${PEDIDO_PLANEJAR}\n\nNome da obra (dado):\n${comoDado(obraNome, 200).join(' ') || 'Obra'}\n`
-      const r = await executar(['-p', '--output-format', 'json', ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', 'Read,Glob,Grep', '--disallowedTools', `Edit,Write,Bash,Task,NotebookEdit,${FERRAMENTAS_NEGADAS}`], { cwd, entrada, timeoutMs: 300_000, maxSaida: 1_000_000, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dirGit) }) })
+      const r = await executar(['-p', '--output-format', 'json', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', 'Read,Glob,Grep', '--disallowedTools', `Edit,Write,Bash,Task,NotebookEdit,${FERRAMENTAS_NEGADAS}`], { cwd, entrada, timeoutMs: 300_000, maxSaida: 1_000_000, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dirGit) }) })
       if (r.codigo !== 0) throw new Error('claude-falhou')
       let texto = r.saida
       try { const j = JSON.parse(r.saida); if (j && typeof j.result === 'string') texto = j.result } catch { /* saída já era o texto */ }

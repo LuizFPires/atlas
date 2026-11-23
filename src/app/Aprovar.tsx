@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Botao, Icone } from '../ui'
+import { Botao, Icone, Trabalhando } from '../ui'
 import type { ObraDoEstilo } from './Estilo'
 import type { PonteClaude, Plano } from './ponte-claude'
 import { NOME_PLANO } from './claude-plano'
@@ -21,6 +21,11 @@ interface Props {
 export const recadoDoErroAprovar = (e: unknown) => {
   switch (e instanceof Error ? e.message : '') {
     case 'indisponivel': return 'Quem monta o plano da obra ainda não está ligado neste computador. Quando estiver, esta tela passa a funcionar; você não precisa refazer nada.'
+    case 'ja-iniciada': return 'Esta obra já foi começada antes. Nada se perdeu: é só abrir o painel da obra.'
+    case 'ja-rodando': return 'O Atlas já está trabalhando nesta obra. Abra o painel para acompanhar.'
+    case 'claude-nao-logado': return 'O Claude não está conectado neste computador. Conecte o Claude (o Atlas te guia) e toque em Começar a obra de novo.'
+    case 'claude-nao-instalado': return 'O Claude não está instalado neste computador. Peça ajuda ao Atlas no botão Falar com o Atlas: ele te guia para instalar.'
+    case 'plan-nao-gravado': case 'plan-invalido': return 'Não consegui gravar o plano da obra na pasta. Confira se a pasta da obra existe e tente de novo.'
     default: return 'Não consegui fazer isso agora. Tente de novo em instantes.'
   }
 }
@@ -39,6 +44,7 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou }
   const [plano, setPlano] = useState<Plano | undefined>()
   const [plan, setPlan] = useState<Planejamento | null>(null)
   const [erro, setErro] = useState('')
+  const [erroComecar, setErroComecar] = useState<{ codigo: string; texto: string } | null>(null)
   const [modo, setModo] = useState<ModoObra>(MODO_RECOMENDADO)
   const [guardado, setGuardado] = useState(false)
   const [ocupado, setOcupado] = useState(false)
@@ -63,11 +69,15 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou }
   const comecar = async () => {
     if (!plan || ocupado || comecou) return
     setOcupado(true)
-    setErro('')
+    setErroComecar(null)
     try {
       const r = await construcao.iniciar(obra.pasta, obra.nome, modo, plan.etapas)
       setComecou(r)
-    } catch (x) { setErro(recadoDoErroAprovar(x)) } finally { setOcupado(false) }
+      onComecou?.() // deu certo: direto para o painel da obra, onde o prédio começa a subir
+    } catch (x) {
+      // O recado fica logo acima do botão (não no topo da página, fora da vista de quem rolou até aqui).
+      setErroComecar({ codigo: x instanceof Error ? x.message : '', texto: recadoDoErroAprovar(x) })
+    } finally { setOcupado(false) }
   }
 
   const etapas: Etapa[] = plan?.etapas ?? []
@@ -83,7 +93,7 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou }
         <h1>Pronto para a obra. Confira antes de começar.</h1>
       </header>
       {erro && <p className="at-apr__erro" role="alert">{erro}</p>}
-      {!plan && !erro && <p role="status">O Atlas está montando o plano da obra…</p>}
+      {!plan && !erro && <Trabalhando titulo="O Atlas está montando o plano da obra" segundos={90} etapas={['Lendo as telas aprovadas do protótipo', 'Dividindo a obra em etapas', 'Calculando o prazo no seu plano do Claude', 'Conferindo o plano antes de mostrar']} />}
       {plan && (
         <div className="at-apr__grade">
           <section className="at-apr__card" aria-label="O que vai ser construído">
@@ -140,9 +150,17 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou }
                 {onComecou && <> <button type="button" className="at-apr__link" onClick={onComecou}>Ver minhas obras</button></>}
               </p>
             )}
-            <div className="at-apr__rodape">
-              <Botao variante="secundario" onClick={onVoltar}>Voltar ao protótipo</Botao>
-              <Botao className="at-apr__comecar" disabled={ocupado || !!comecou} onClick={() => void comecar()}>Começar a obra</Botao>
+            <div className="at-apr__fim" role="group" aria-label="Começar a obra">
+              {erroComecar && (
+                <div className="at-apr__erro at-apr__erro--perto" role="alert">
+                  <span>{erroComecar.texto}</span>
+                  {onComecou && (erroComecar.codigo === 'ja-iniciada' || erroComecar.codigo === 'ja-rodando') && <button type="button" className="at-apr__link" onClick={onComecou}>Ver a obra</button>}
+                </div>
+              )}
+              <div className="at-apr__rodape">
+                <Botao variante="secundario" onClick={onVoltar}>Voltar ao protótipo</Botao>
+                <Botao className="at-apr__comecar" disabled={ocupado || !!comecou} onClick={() => void comecar()}>{ocupado ? 'Começando a obra…' : 'Começar a obra'}</Botao>
+              </div>
             </div>
           </div>
         </div>

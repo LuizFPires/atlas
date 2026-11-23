@@ -77,13 +77,18 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     propor: (entrada, pasta) => chamar('atlas:estilo:propor', JSON.parse(JSON.stringify(entrada ?? {})), pasta ? String(pasta) : undefined),
     materializar: (pasta, origem) => chamar('atlas:estilo:materializar', String(pasta), JSON.parse(JSON.stringify(origem ?? {}))),
   },
+  modelo: {
+    ler: () => chamar('atlas:modelo:ler'),
+    gravar: (id) => chamar('atlas:modelo:gravar', String(id)),
+  },
   prototipo: {
     estado: (pasta) => chamar('atlas:prototipo:estado', String(pasta)),
-    desenhar: (pasta, obraNome, estilo) => chamar('atlas:prototipo:desenhar', String(pasta), String(obraNome), JSON.parse(JSON.stringify(estilo ?? {}))),
+    desenhar: (pasta, obraNome, estilo, relato) => chamar('atlas:prototipo:desenhar', String(pasta), String(obraNome), JSON.parse(JSON.stringify(estilo ?? {})), String(relato ?? '')),
     ajustar: (pasta, pedido) => chamar('atlas:prototipo:ajustar', String(pasta), String(pedido)),
     voltar: (pasta, numero) => chamar('atlas:prototipo:voltar', String(pasta), Number(numero)),
     linkCelular: (nome, documento) => chamar('atlas:prototipo:link', String(nome), String(documento)),
     whatsapp: (url) => chamar('atlas:prototipo:whatsapp', String(url)),
+    progresso: (pasta) => chamar('atlas:prototipo:progresso', String(pasta)),
   },
   batismo: {
     sugerir: (pasta, obraNome, pedido) => chamar('atlas:batismo:sugerir', String(pasta), String(obraNome), JSON.parse(JSON.stringify(pedido ?? {}))),

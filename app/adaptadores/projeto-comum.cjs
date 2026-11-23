@@ -89,7 +89,7 @@ function gravarSemSobrescrever(raiz, pasta, partes, nomeBase, texto) {
  * `deps`: { raiz, dadosApp, claudeEstado (async () => {conectado}), executar?, resolver? } (os dois últimos: teste).
  * `pasta === null`: pergunta SEM pasta (cwd = pasta vazia do app, nenhuma ferramenta) — só para quando a porta não informa a obra.
  */
-function criarDisparo({ raiz, dadosApp, claudeEstado, executar = executarClaude, resolver = resolverClaude }) {
+function criarDisparo({ raiz, dadosApp, claudeEstado, executar = executarClaude, resolver = resolverClaude, modelo = () => [] }) {
   async function claudePronto() {
     if (!resolver(process.env)) throw new Error('claude-nao-instalado')
     let e
@@ -105,7 +105,7 @@ function criarDisparo({ raiz, dadosApp, claudeEstado, executar = executarClaude,
       await claudePronto()
       garantirSemConfigDeProjeto(cwd, { permitirGit }) // de novo: a pasta pode ter mudado durante a espera
       const negadas = [...(pasta === null ? ['Read', 'Glob', 'Grep'] : []), 'Edit', 'Write', 'Bash', 'Task', 'NotebookEdit', 'WebFetch', 'WebSearch', FERRAMENTAS_NEGADAS]
-      const args = ['-p', '--output-format', 'json', ...ARGS_SEM_CONFIG_DE_PROJETO, ...(pasta === null ? [] : ['--allowedTools', 'Read,Glob,Grep']), ...(pasta === null ? [] : addDirs.flatMap((d) => ['--add-dir', d])), '--disallowedTools', negadas.join(',')]
+      const args = ['-p', '--output-format', 'json', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, ...(pasta === null ? [] : ['--allowedTools', 'Read,Glob,Grep']), ...(pasta === null ? [] : addDirs.flatMap((d) => ['--add-dir', d])), '--disallowedTools', negadas.join(',')]
       const r = await executar(args, { cwd, entrada: pedido, timeoutMs, maxSaida, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dadosApp) }) })
       let texto = r.saida
       let j = null

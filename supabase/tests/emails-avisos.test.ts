@@ -11,7 +11,7 @@ describe('e-mail do código de ativação', () => {
     expect(e.assunto).toBe('123456 é o seu código do Atlas')
     expect(e.html).toContain('>123456<')
     expect(e.html).toContain('10 minutos')
-    expect(e.html).toContain('<svg')
+    expect(e.html).not.toMatch(/<img\b|<svg\b/i) // sem ícones: e-mail com cara de aviso (22/11/2026)
     expect(e.texto).toContain('123456')
     expect(e.texto).toContain('Ajuda do Atlas')
     semHumano(e.html + e.texto)

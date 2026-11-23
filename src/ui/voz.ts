@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { definirEstadoVoz, estadoVoz, gravacaoSuportada, iniciarGravacao, noAtlasInstalado, RECADO_NAO_ESCREVI, RECADO_SEM_MICROFONE, transcritorAtual, type Gravacao } from './voz-motor'
 
 // Reconhecimento de fala do navegador (pt-BR). Não há tipos no lib.dom, então declaramos o mínimo.
 interface Reconhecedor {
@@ -14,7 +15,7 @@ interface Reconhecedor {
 type Fabrica = new () => Reconhecedor
 
 /** Erros em que religar não adianta: microfone bloqueado, sem microfone, sem serviço de voz. */
-const ERROS_DEFINITIVOS = new Set(['not-allowed', 'service-not-allowed', 'audio-capture', 'language-not-supported'])
+const ERROS_DEFINITIVOS = new Set(['not-allowed', 'service-not-allowed', 'audio-capture', 'language-not-supported', 'network'])
 
 function fabrica(): Fabrica | null {
   const w = window as unknown as { SpeechRecognition?: Fabrica; webkitSpeechRecognition?: Fabrica }
@@ -34,7 +35,7 @@ export function falaParaEmail(t: string): string {
  * Microfone de um campo de texto. A cada frase final chama `aoFalar(texto)`; o campo junta ao que já estava
  * escrito e o cliente pode editar à vontade (transcrição editável).
  */
-export function useVoz(aoFalar: (texto: string) => void) {
+function useVozDoNavegador(aoFalar: (texto: string) => void) {
   const [gravando, setGravando] = useState(false)
   const rec = useRef<Reconhecedor | null>(null)
   const querOuvir = useRef(false)
@@ -82,4 +83,65 @@ export function useVoz(aoFalar: (texto: string) => void) {
   }, [ligar, parar])
 
   return { gravando, alternar, suportado }
+}
+
+/**
+ * Microfone no Atlas instalado: grava até a pessoa apertar de novo e transcreve no computador (Whisper).
+ * O estado (preparando, ouvindo, escrevendo, erro) vai para o aviso global <StatusVoz/>.
+ */
+function useVozWhisper(aoFalar: (texto: string) => void) {
+  const [gravando, setGravando] = useState(false)
+  const gravacao = useRef<Gravacao | null>(null)
+  const ligando = useRef(false)
+  const cb = useRef(aoFalar)
+  useEffect(() => { cb.current = aoFalar })
+  useEffect(() => () => { gravacao.current?.cancelar(); gravacao.current = null; if (estadoVoz().fase === 'ouvindo') definirEstadoVoz({ fase: 'livre' }) }, [])
+
+  const suportado = gravacaoSuportada() || noAtlasInstalado()
+
+  const alternar = useCallback(() => {
+    const g = gravacao.current
+    if (g) {
+      gravacao.current = null
+      setGravando(false)
+      definirEstadoVoz({ fase: 'escrevendo' })
+      void (async () => {
+        try {
+          const audio = await g.parar()
+          const t = transcritorAtual()
+          await t.preparar((pct) => { if (pct < 100) definirEstadoVoz({ fase: 'preparando', progresso: pct }) })
+          definirEstadoVoz({ fase: 'escrevendo' })
+          const texto = (await t.transcrever(audio)).trim()
+          definirEstadoVoz({ fase: 'livre' })
+          if (texto) cb.current(texto)
+        } catch {
+          definirEstadoVoz({ fase: 'erro', recado: RECADO_NAO_ESCREVI })
+        }
+      })()
+      return
+    }
+    if (ligando.current) return
+    ligando.current = true
+    void (async () => {
+      try {
+        gravacao.current = await iniciarGravacao()
+        setGravando(true)
+        definirEstadoVoz({ fase: 'ouvindo' })
+        // Enquanto a pessoa fala, o modelo (só na primeira vez) já vai sendo preparado.
+        void transcritorAtual().preparar(() => {}).catch(() => {})
+      } catch {
+        definirEstadoVoz({ fase: 'erro', recado: RECADO_SEM_MICROFONE })
+      } finally { ligando.current = false }
+    })()
+  }, [])
+
+  return { gravando, alternar, suportado }
+}
+
+/** Microfone de um campo de texto: o Atlas instalado usa o Whisper no computador; o site usa a voz do navegador. */
+export function useVoz(aoFalar: (texto: string) => void) {
+  const whisper = noAtlasInstalado() || (fabrica() === null && gravacaoSuportada())
+  const doNavegador = useVozDoNavegador(aoFalar)
+  const local = useVozWhisper(aoFalar)
+  return whisper ? local : doNavegador
 }

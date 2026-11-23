@@ -28,7 +28,7 @@ function Pintor3D({ onFalhou }: { onFalhou: () => void }) {
  * Enquanto o Claude monta os 3 estilos: um pincel pinta a tela de um celular, parte por parte (sem personagem; pedido do
  * Luiz em 22/11/2026). Em 3D (cena-pintor.ts) quando há WebGL; senão, SVG de traço + CSS. Com "reduzir movimento", fica parado.
  */
-export function Pintor() {
+export function Pintor({ soCena = false }: { soCena?: boolean } = {}) {
   const [i, setI] = useState(0)
   const [em3d, setEm3d] = useState(temWebGL)
   const cair = useCallback(() => setEm3d(false), [])
@@ -61,8 +61,10 @@ export function Pintor() {
           </g>
         </svg>
       )}
-      <p className="at-pintor__fala" role="status" aria-label="O que o pintor está fazendo">{FALAS[i]}</p>
-      <span className="at-pintor__sub">O Atlas está pintando 3 estilos para o seu sistema. Leva um minutinho.</span>
+      {!soCena && <>
+        <p className="at-pintor__fala" role="status" aria-label="O que o pintor está fazendo">{FALAS[i]}</p>
+        <span className="at-pintor__sub">O Atlas está pintando 3 estilos para o seu sistema. Leva um minutinho.</span>
+      </>}
     </div>
   )
 }
