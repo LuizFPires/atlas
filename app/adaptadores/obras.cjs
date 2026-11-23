@@ -2,7 +2,7 @@
 //
 // O QUE FAZ: a pasta das obras é <home do usuário>\Atlas\Obras (nunca Desktop/Documentos por causa do OneDrive).
 // listar = subpastas reais (sem links); criarSubpasta = mkdir SEM recursive, EEXIST => próximo nome livre (obra, obra-2...);
-// abrirPasta = abre SÓ a raiz no Explorador. O nome da pasta vem de nomeParaPasta (mesma regra do front).
+// situacao = onde a obra parou (estilo, protótipo, marca, PLAN); abrirPasta = abre SÓ a raiz no Explorador. O nome da pasta vem de nomeParaPasta (mesma regra do front).
 //
 // COMO TESTAR (Windows): no app, criar uma obra nova: deve aparecer C:\Users\<você>\Atlas\Obras\<nome>; criar outra
 // com o mesmo nome gera <nome>-2; "Abrir pasta" abre o Explorador na raiz.
@@ -46,6 +46,20 @@ function criarObras({ raiz = raizPadrao(), shell } = {}) {
         return { pasta, caminho }
       }
       throw new Error('sem-nome-livre')
+    },
+    /** Onde a obra parou (Minhas obras → "Continuar"): só confere o que cada etapa deixou na pasta. Nada é lido para a tela.
+     *  estilo = design-system*.md na raiz; prototipo = ao menos uma versão em prototipo/versoes; marca = marca/marca*.md; plano = PLAN.md. */
+    async situacao(pasta) {
+      const dir = caminhoSeguro(raiz, String(pasta))
+      if (!fs.lstatSync(dir).isDirectory()) throw new Error('obra-inexistente')
+      const nomes = (...p) => { try { return fs.readdirSync(caminhoSeguro(raiz, String(pasta), ...p)) } catch { return [] } }
+      const existe = (...p) => { try { return fs.lstatSync(caminhoSeguro(raiz, String(pasta), ...p)).isFile() } catch { return false } }
+      return {
+        estilo: nomes().some((n) => /^design-system(-\d+)?\.md$/i.test(n)),
+        prototipo: nomes('prototipo', 'versoes').length > 0,
+        marca: nomes('marca').some((n) => /^marca(-\d+)?\.md$/i.test(n)),
+        plano: existe('PLAN.md'),
+      }
     },
     async abrirPasta() {
       garantirRaiz()

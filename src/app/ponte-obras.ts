@@ -9,6 +9,8 @@ export interface ObraCriada {
   caminho: string
 }
 
+import type { SituacaoObra } from './fase-obra'
+
 export interface PonteObras {
   /** Caminho da pasta das obras, para mostrar ("C:\Users\Zé\Atlas\Obras"). */
   raiz(): string
@@ -18,6 +20,8 @@ export interface PonteObras {
   criarSubpasta(nome: string): Promise<ObraCriada>
   /** Abre Atlas\Obras no Explorador de Arquivos. */
   abrirPasta(): Promise<void>
+  /** Onde a obra parou (Minhas obras → "Continuar"): o que cada etapa já deixou na pasta. */
+  situacao?(pasta: string): Promise<SituacaoObra>
 }
 
 /** Nome de obra vira nome de pasta: sem acento, minúsculo, só letras/números/hífen. Nada de "..", barras ou nomes reservados do Windows. */
@@ -68,6 +72,8 @@ export function criarObrasFixture(usuario = 'Zé', iniciais: string[] = []): Obr
       return { pasta, caminho: `${raizDasObras(usuario)}\\${pasta}` }
     },
     async abrirPasta() { aberturas++ },
+    // Fixture: obra criada aqui ainda não tem nenhuma etapa feita.
+    async situacao(pasta) { if (!criadas.includes(pasta)) throw new Error('obra-inexistente'); return { estilo: false, prototipo: false, marca: false, plano: false } },
   }
 }
 

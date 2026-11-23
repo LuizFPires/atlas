@@ -11,7 +11,7 @@ import { ajudaIndisponivel, contextoDoPasso, criarAjudaFixture, type ContextoAju
 import { casosIndisponivel, criarCasosFixture, type PonteCasosAdmin } from './ponte-ajuda-casos'
 import { Celular } from './Celular'
 import { Contas } from './Contas'
-import { Obras as ListaObras } from './Obras'
+import { Obras as ListaObras, type ObraParaContinuar } from './Obras'
 import { NovaObra, type ObraNova } from './NovaObra'
 import { Estilo, type ObraDoEstilo } from './Estilo'
 import { TrazerPrototipo } from './Trazer'
@@ -269,6 +269,14 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   }, [ponte, ponteRetomar])
 
   if (tela === null) return null
+  // Minhas obras → "Continuar": cada obra volta para a etapa em que parou (fase-obra.ts). O estilo escolhido fica no design-system.md da pasta.
+  const continuarObra = (o: ObraParaContinuar) => {
+    setObraAtual({ nome: o.nome, pasta: o.pasta })
+    setObraNovaCriada(null)
+    setEstiloEscolhido(null)
+    if (o.etapa === 'obra') { setFluxo('lista'); setAtivo('obra'); return }
+    setFluxo(o.etapa)
+  }
   const painelDeAjuda = painelAjuda ? <Ajuda key={painelAjuda.n} ajuda={ponteAjuda} casos={ponteCasos} contexto={painelAjuda.contexto} nome={dono.split(' ')[0] || undefined} onFechar={() => setPainelAjuda(null)} /> : null
   // Pagou: o cartão já virou "Licença ativa" e a tela de compra some sozinha.
   const compra = emailCompra && !licencaNoApp.pagou ? <ComprarAtlas aberto email={emailCompra} onFechar={() => setEmailCompra(null)} iniciar={iniciarCompraPeloApp} abrirPagamento={abrirPagamento} onPagamentoAberto={licencaNoApp.esperarPagamento} /> : null
@@ -312,7 +320,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     : <SemObra rotulo="COMO RETOMAR" titulo="Nenhuma obra parada agora." texto="Se o computador desligar ou a cota do Claude acabar, a obra para no ponto em que estava. Quando você ligar o computador, o Atlas abre sozinho aqui, com um botão só: Continuar obra." onIrObras={() => setAtivo('obras')} />
   else if (ativo === 'prototipo' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setAtivo('obras')} onConcluir={() => { setAtivo('obras'); setFluxo('batismo') }} />
   else if (ativo === 'prototipo' || ativo === 'obra') conteudo = <SemObra rotulo={ativo === 'prototipo' ? 'PROTÓTIPO' : 'OBRA'} titulo="Escolha uma obra primeiro." texto="Escolha uma obra em Minhas obras (ou comece a primeira). Depois é aqui que você vê as telas dela e acompanha a construção." onIrObras={() => setAtivo('obras')} />
-  else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} nome={dono || undefined} onComecar={(i) => { setIdeia(i ?? ''); setObraNovaCriada(null); setFluxo('nova') }} onTrazer={() => setFluxo('trazer')} />
+  else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} painel={pontePainel} nome={dono || undefined} onComecar={(i) => { setIdeia(i ?? ''); setObraNovaCriada(null); setFluxo('nova') }} onTrazer={() => setFluxo('trazer')} onContinuar={continuarObra} />
   // "Ajuda do Atlas" no menu abre o painel por cima da tela atual (não troca de tela).
   return com(<Obras ativo={ativo} onFalar={() => abrirAjuda({ origem: 'menu', ouvir: true })} onNavegar={(t) => (t === 'ajuda' ? abrirAjuda({ origem: 'menu' }) : setAtivo(t))}>{conteudo}</Obras>)
 }

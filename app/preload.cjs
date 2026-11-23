@@ -50,6 +50,7 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     listar: () => chamar('atlas:obras:listar'),
     criarSubpasta: (nome) => chamar('atlas:obras:criar', String(nome)),
     abrirPasta: () => chamar('atlas:obras:abrir'),
+    situacao: (pasta) => chamar('atlas:obras:situacao', String(pasta)),
   },
   claude: {
     abrirLogin: () => chamar('atlas:claude:login'),
