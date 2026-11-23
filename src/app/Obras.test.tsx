@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Obras } from './Obras'
@@ -47,10 +47,10 @@ test('"Já tenho um protótipo" encaminha ao fluxo de trazer', async () => {
   expect(onTrazer).toHaveBeenCalledTimes(1)
 })
 
-test('com obras já começadas, lista as pastas e oferece outra obra', async () => {
+test('com obras já começadas, oferece outra obra', async () => {
   montar(criarObrasFixture('Zé', ['agenda-online']))
   expect(await screen.findByRole('heading', { name: 'Comece outra obra' })).toBeInTheDocument()
-  expect(screen.getByText(/agenda-online/)).toBeInTheDocument()
+  expect(screen.getByText(/Você já tem 1 obra no Canteiro/)).toBeInTheDocument()
 })
 
 test('"Abrir a pasta" pede para abrir a pasta das obras', async () => {
@@ -59,36 +59,11 @@ test('"Abrir a pasta" pede para abrir a pasta das obras', async () => {
   expect(o.aberturas).toBe(1)
 })
 
-describe('obras começadas: um cartão por obra com "Continuar" (pedido do Luiz, 23/11/2026)', () => {
-  const situacoes: Record<string, { estilo: boolean; prototipo: boolean; marca: boolean; plano: boolean }> = {
-    'cartao-de-ponto': { estilo: false, prototipo: false, marca: false, plano: false },
-    'agenda-do-ze': { estilo: true, prototipo: true, marca: false, plano: false },
-    'loja-pronta': { estilo: true, prototipo: true, marca: true, plano: true },
-  }
-  const montarLista = () => {
-    const o = criarObrasFixture('Zé', Object.keys(situacoes))
-    const obras = { ...o, situacao: async (p: string) => situacoes[p] }
-    const painel = { ler: async () => ({ pct: 100 }) }
-    const onContinuar = vi.fn()
-    render(<TemaProvider><Obras obras={obras} painel={painel} onComecar={() => {}} onTrazer={() => {}} onContinuar={onContinuar} /></TemaProvider>)
-    return { onContinuar }
-  }
-
-  test('em andamento: cada obra mostra onde parou e o Continuar leva para lá', async () => {
-    const { onContinuar } = montarLista()
-    const cartao = await screen.findByRole('article', { name: 'Agenda do ze' })
-    expect(cartao).toHaveTextContent('Parou em: dar o nome')
-    expect(screen.getByRole('article', { name: 'Cartao de ponto' })).toHaveTextContent('Parou em: escolher o estilo')
-    expect(screen.queryByRole('article', { name: 'Loja pronta' })).toBeNull()
-    await userEvent.click(within(cartao).getByRole('button', { name: 'Continuar →' }))
-    expect(onContinuar).toHaveBeenCalledWith({ pasta: 'agenda-do-ze', nome: 'Agenda do ze', etapa: 'batismo' })
-  })
-
-  test('a aba Concluídas mostra as obras prontas', async () => {
-    montarLista()
-    await userEvent.click(await screen.findByRole('tab', { name: 'Concluídas (1)' }))
-    expect(screen.getByRole('article', { name: 'Loja pronta' })).toHaveTextContent('Obra pronta')
-    expect(screen.queryByRole('article', { name: 'Agenda do ze' })).toBeNull()
-    expect(screen.getByRole('tab', { name: 'Em andamento (2)' })).toHaveAttribute('aria-selected', 'false')
-  })
+// Milestone 37 (23/11/2026): os cartões das obras saíram daqui e foram para o Canteiro de obras (Canteiro.test.tsx).
+test('com obras já começadas, leva ao Canteiro de obras', async () => {
+  const onVerCanteiro = vi.fn()
+  render(<TemaProvider><Obras obras={criarObrasFixture('Zé', ['agenda-online', 'loja'])} onComecar={() => {}} onTrazer={() => {}} onVerCanteiro={onVerCanteiro} /></TemaProvider>)
+  expect(await screen.findByText(/Você já tem 2 obras no Canteiro/)).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Ver o Canteiro de obras' }))
+  expect(onVerCanteiro).toHaveBeenCalled()
 })

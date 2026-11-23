@@ -6,12 +6,18 @@ import { TemaProvider } from '../tema/tema'
 test('mostra itens, marca o ativo e tem um botão só: Falar com o Atlas', async () => {
   const onNavegar = vi.fn(), onFalar = vi.fn()
   render(<Shell ativo="obras" onNavegar={onNavegar} onFalar={onFalar} />)
-  expect(screen.getByRole('link', { name: 'Minhas obras' })).toHaveAttribute('aria-current', 'page')
+  expect(screen.getAllByRole('link').map((l) => l.textContent?.trim())).toEqual(['Nova obra', 'Canteiro de obras', 'Obras concluídas'])
+  expect(screen.getByRole('link', { name: 'Nova obra' })).toHaveAttribute('aria-current', 'page')
   await userEvent.click(screen.getByRole('button', { name: /Falar com o Atlas/ }))
   expect(onFalar).toHaveBeenCalled()
   expect(screen.queryByRole('link', { name: /Ajuda do Atlas/ })).not.toBeInTheDocument()
-  await userEvent.click(screen.getByRole('link', { name: 'Pós-obra' }))
-  expect(onNavegar).toHaveBeenCalledWith('posobra')
+  await userEvent.click(screen.getByRole('link', { name: 'Obras concluídas' }))
+  expect(onNavegar).toHaveBeenCalledWith('concluidas')
+})
+
+test('telas de dentro da obra (protótipo, obra, pós-obra) acendem o Canteiro de obras no menu', () => {
+  render(<Shell ativo="prototipo" onNavegar={() => {}} onFalar={() => {}} />)
+  expect(screen.getByRole('link', { name: 'Canteiro de obras' })).toHaveAttribute('aria-current', 'page')
 })
 
 test('no tema claro usa o monograma de fundo claro', async () => {

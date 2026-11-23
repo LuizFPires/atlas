@@ -1,0 +1,9 @@
+.at-abobra { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.at-abobra__voltar { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font: 500 12px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute2); min-height: 28px; }
+.at-abobra__voltar:hover { color: var(--text); }
+.at-abobra__voltar:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; border-radius: 4px; }
+.at-abobra__linha { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: flex-end; }
+.at-abobra__abas { display: inline-flex; padding: 4px; gap: 2px; border-radius: 14px; background: var(--card); border: 1px solid var(--card-b); }
+.at-abobra__aba { min-height: 38px; padding: 0 16px; border-radius: 10px; border: 0; background: transparent; color: var(--mute); font: 600 14px var(--font-text); cursor: pointer; }
+.at-abobra__aba--on { background: var(--lime); color: var(--on-lime); font-weight: 700; }
+.at-abobra__aba:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }

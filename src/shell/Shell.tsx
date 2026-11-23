@@ -4,15 +4,18 @@ import { useTema } from '../tema/tema'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import './shell.css'
 
-export type IdTela = 'obras' | 'prototipo' | 'obra' | 'posobra' | 'retomar' | 'ajuda'
+export type IdTela = 'obras' | 'canteiro' | 'concluidas' | 'prototipo' | 'obra' | 'posobra' | 'retomar' | 'ajuda'
 
+/** Menu (Milestone 37, aprovado pelo Luiz em 23/11/2026): tudo de uma obra mora dentro dela. Protótipo, Obra, Pós-obra e Como
+ *  retomar saíram do menu: são telas DENTRO da obra (o menu acende "Canteiro de obras" enquanto elas estão abertas). */
 export const ITENS_MENU: { id: Exclude<IdTela, 'ajuda'>; nome: string }[] = [
-  { id: 'obras', nome: 'Minhas obras' },
-  { id: 'prototipo', nome: 'Protótipo' },
-  { id: 'obra', nome: 'Obra' },
-  { id: 'posobra', nome: 'Pós-obra' },
-  { id: 'retomar', nome: 'Como retomar' },
+  { id: 'obras', nome: 'Nova obra' },
+  { id: 'canteiro', nome: 'Canteiro de obras' },
+  { id: 'concluidas', nome: 'Obras concluídas' },
 ]
+
+/** Qual item do menu acende: as telas de dentro da obra acendem o Canteiro. */
+export const itemDoMenu = (t: IdTela): IdTela => (t === 'prototipo' || t === 'obra' || t === 'posobra' || t === 'retomar' ? 'canteiro' : t)
 
 /** Cartão da licença na lateral. 'ativa' = a linha de sempre; 'contando'/'vencida' = teste grátis ou cortesia com prazo. */
 export type LicencaNoMenu =
@@ -50,7 +53,7 @@ export function Shell({ ativo, onNavegar, onFalar, licenca, plano, modelo, onCom
         </div>
         <nav className="at-lateral__nav" aria-label="Menu principal">
           {ITENS_MENU.map((i) => (
-            <a key={i.id} href={`#/${i.id}`} className={`at-item ${ativo === i.id ? 'at-item--ativo' : ''}`} aria-current={ativo === i.id ? 'page' : undefined}
+            <a key={i.id} href={`#/${i.id}`} className={`at-item ${itemDoMenu(ativo) === i.id ? 'at-item--ativo' : ''}`} aria-current={itemDoMenu(ativo) === i.id ? 'page' : undefined}
               onClick={(e) => { e.preventDefault(); onNavegar(i.id) }}>
               <span className="at-item__marca" />
               {i.nome}

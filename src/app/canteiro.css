@@ -1,0 +1,50 @@
+/* Canteiro de obras e Obras concluídas (prototipo/caminho-novo K1Canteiro, K2Concluidas). Só tokens do Atlas; âmbar = falta terminar. */
+.at-ct { --ambar: #F2B84B; --ambar-soft: rgba(242, 184, 75, 0.14); --terra: #2A2620; --terra-linha: #4A4134; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+:root[data-theme='claro'] .at-ct { --ambar: #A86A00; --ambar-soft: rgba(214, 150, 30, 0.14); --terra: #E9E2D4; --terra-linha: #CDBFA5; }
+.at-ct__cab { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.at-ct__titulo { display: flex; flex-direction: column; gap: 6px; margin-right: auto; }
+.at-ct__rotulo { font: 500 12px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2); }
+.at-ct__titulo h1 { margin: 0; font-size: 28px; letter-spacing: -0.01em; color: var(--text); }
+.at-ct__busca { display: flex; align-items: center; gap: 8px; height: 44px; width: min(280px, 100%); box-sizing: border-box; padding: 0 14px; border-radius: 12px; background: var(--input); border: 1px solid var(--card-b); color: var(--mute2); }
+.at-ct__busca input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--text); font: 15px var(--font-text); outline: none; }
+.at-ct__busca:focus-within { border-color: var(--lime); }
+.at-ct__nova { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 12px; border: 0; background: var(--lime); color: var(--on-lime); font: 700 15px var(--font-text); cursor: pointer; }
+.at-ct__filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+.at-ct__filtro { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 14px var(--font-text); cursor: pointer; }
+.at-ct__filtro[aria-pressed='true'] { background: var(--soft); border-color: var(--lime); }
+.at-ct__filtro .at-ct__ponto { background: var(--lime); }
+.at-ct__filtro--falta .at-ct__ponto { background: var(--ambar); }
+.at-ct__filtro--construcao .at-ct__ponto { background: var(--mute2); }
+.at-ct__n { font: 500 13px var(--font-mono); color: var(--mute); }
+.at-ct__ponto { width: 8px; height: 8px; border-radius: 4px; flex: none; background: var(--lime); }
+.at-ct__nota { margin: 0; max-width: 780px; font-size: 15px; line-height: 1.5; color: var(--mute); }
+.at-ct__vazio { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 28px; border-radius: 18px; border: 1px dashed var(--card-b); color: var(--mute); font-size: 15px; }
+.at-ct__vazio b { color: var(--text); font-size: 17px; }
+.at-ct__cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+.at-ct__cartao { border-radius: 18px; overflow: hidden; background: var(--card); border: 1px solid var(--card-b); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.at-ct__cartao--falta { border-color: var(--ambar); }
+.at-ct__cartao:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3); }
+.at-ct__abrir { all: unset; box-sizing: border-box; display: flex; flex-direction: column; width: 100%; height: 100%; cursor: pointer; }
+.at-ct__abrir:focus-visible { outline: 2px solid var(--lime); outline-offset: -2px; border-radius: 18px; }
+.at-ct__cena { position: relative; display: block; height: 150px; background: var(--card2); overflow: hidden; }
+.at-ct__cena img, .at-ct__cena svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+.at-ct__terra { fill: var(--terra); }
+.at-ct__terra-linha { stroke: var(--terra-linha); stroke-width: 1.5; fill: none; }
+.at-ct__estacas { stroke: var(--ambar); stroke-width: 2; stroke-linecap: round; fill: none; }
+.at-ct__fio { stroke-width: 1.4; stroke-dasharray: 5 5; }
+.at-ct__selo { position: absolute; left: 12px; top: 12px; display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 11px; border-radius: 999px; background: rgba(16, 18, 20, 0.84); color: #EDEFEA; font: 600 11px var(--font-mono); letter-spacing: 0.08em; }
+.at-ct__cartao--falta .at-ct__selo { color: #F2B84B; }
+.at-ct__cartao--falta .at-ct__selo .at-ct__ponto { background: #F2B84B; }
+.at-ct__cartao--pronta .at-ct__selo { background: var(--lime); color: var(--on-lime); font-weight: 700; }
+.at-ct__cartao--pronta .at-ct__selo .at-ct__ponto { display: none; }
+.at-ct__corpo { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px 18px; flex: 1; }
+.at-ct__nome-linha { display: flex; align-items: baseline; gap: 10px; }
+.at-ct__nome { font-size: 18px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.at-ct__pct { margin-left: auto; font: 600 14px var(--font-mono); color: var(--lime-txt, var(--lime)); }
+.at-ct__barra { display: block; height: 6px; border-radius: 3px; background: var(--card2); overflow: hidden; }
+.at-ct__barra i { display: block; height: 100%; border-radius: 3px; background: var(--lime); }
+.at-ct__cartao--falta .at-ct__barra i { background: var(--ambar); }
+.at-ct__linha { font-size: 14px; line-height: 1.45; color: var(--mute); }
+.at-ct__acao { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; font: 600 14px var(--font-text); color: var(--lime-txt, var(--lime)); }
+.at-ct__cartao--falta .at-ct__acao { color: var(--ambar); }
+@media (prefers-reduced-motion: reduce) { .at-ct__cartao { transition: none; } .at-ct__cartao:hover { transform: none; } }

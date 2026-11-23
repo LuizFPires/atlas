@@ -18,7 +18,7 @@ test('pelo botão "Falar com o Atlas": abre o painel por cima da tela e fecha no
   await userEvent.click(await screen.findByRole('button', { name: /Falar com o Atlas/ }))
   expect(await screen.findByRole('complementary', { name: 'Ajuda do Atlas' })).toBeInTheDocument()
   expect(screen.getByText(/Estou aqui, a qualquer hora/)).toBeInTheDocument()
-  expect(screen.getByText('Minhas obras')).toBeInTheDocument()
+  expect(screen.getByText('Canteiro de obras')).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Fechar a Ajuda' }))
   expect(screen.queryByRole('complementary', { name: 'Ajuda do Atlas' })).not.toBeInTheDocument()
 })
