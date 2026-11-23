@@ -7,6 +7,7 @@ import { DicaDoAtlas } from './DicaDoAtlas'
 import { VersoesDaTela } from './VersoesDaTela'
 import { ALTURA_CELULAR, ALTURA_COMPUTADOR, LARGURA_CELULAR, LARGURA_COMPUTADOR } from './tamanhos-tela'
 import { dicasDaTela } from './dicas-do-atlas'
+import { conferirTelas, pedidoDaConferencia } from './conferencia-telas'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EstiloProposto } from './ponte-estilo'
 import { aparelhoDaTela, montarNavegavel, montarSrcDoc, SANDBOX_PREVIEW, type Aparelho, type EstadoProto, type PontePrototipo, type ProgressoProto, type TelaDesenhada, type VersaoDaTela } from './ponte-prototipo'
@@ -409,6 +410,20 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
               <button key={t.id} type="button" role="tab" aria-selected={t.id === tela.id} className={`at-proto__aba ${t.id === tela.id ? 'at-proto__aba--on' : ''}`} onClick={() => setAba(t.id)}>{t.nome}</button>
             ))}
           </div>
+          {(() => {
+            const pontos = conferirTelas(versao.telas)
+            return (
+              <div className={`at-proto__conf${pontos.length ? ' at-proto__conf--pontos' : ''}`} role="status" aria-label="Conferência do Atlas">
+                <Icone nome={pontos.length ? 'alerta' : 'check'} tamanho={16} />
+                {pontos.length === 0
+                  ? <span>Conferi as {versao.telas.length} telas: tudo certo (botões, larguras e letras).</span>
+                  : <>
+                      <span><b>{pontos.length === 1 ? '1 ponto para conferir' : `${pontos.length} pontos para conferir`}:</b> {pontos.slice(0, 3).map((p) => `${p.tela}: ${p.texto}`).join(' ')}{pontos.length > 3 ? ' …' : ''}</span>
+                      <button type="button" className="at-proto__conf-btn" onClick={() => setPedido(pedidoDaConferencia(pontos))}>Pedir para corrigir</button>
+                    </>}
+              </div>
+            )
+          })()}
           <div className="at-proto__ferramentas">
             <button type="button" aria-pressed={realce} className={`at-proto__ferr ${realce ? 'at-proto__ferr--on' : ''}`} onClick={() => setRealce((r) => !r)}><Icone nome="alvo" tamanho={16} />Onde dá para tocar?</button>
           </div>

@@ -395,7 +395,7 @@ tela: prototipo/caminho-novo/P2Dicas.dc.html
 - [x] "Ver 3 versões" de uma tela, lado a lado, com "Bom para" e "Cuidado"; "Quero esta" grava a escolha numa versão nova do protótipo
 - [x] Misturar versões por voz ("a foto da 3 com os passos da 2") e "Desenhar mais 3"
 - [x] Botão sem tela avisa "ainda não foi desenhado · Desenhar agora"
-- [ ] Conferência automática antes de mostrar: botão sem destino, texto cortado, alvo pequeno, rolagem de lado
+- [x] Conferência automática antes de mostrar: botão sem destino, texto cortado, alvo pequeno, rolagem de lado (lê o HTML: botão sem destino, largura maior que o aparelho, letra miúda)
 Notas: DECISÃO do Luiz (23/11/2026, "Dicas do Atlas ... pedir 3 protótipos de uma tela ... para fazer alguma decisão"), aprovada em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG.
 
 ## Milestone 37 — Canteiro de obras e Obras concluídas (pós-protótipo)
@@ -404,7 +404,7 @@ spec: S9
 tela: prototipo/caminho-novo/K1Canteiro.dc.html
 - [x] Protótipo aprovado e registrado (prototipo/caminho-novo K1Canteiro, K2Concluidas, K3Obra; menu novo no Shell)
 - [x] Menu só com Nova obra, Canteiro de obras e Obras concluídas (Protótipo, Obra, Pós-obra e Como retomar saem do menu)
-- [ ] Canteiro: um cartão por obra (inacabada com selo âmbar e próximo passo; trabalhando; parada com Continuar; esperando o Claude), busca e filtro
+- [x] Canteiro: um cartão por obra (inacabada com selo âmbar e próximo passo; trabalhando; parada com Continuar; esperando o Claude), busca e filtro
 - [ ] Retrato do canteiro: cena parada, ganha vida com o mouse e guarda o retrato de quando o mouse sai
 - [ ] Obras concluídas: selo No ar, endereço; obra com mudança volta ao Canteiro enquanto constrói
 - [ ] Obra aberta: as 6 etapas com "Ver ou mudar", construção ao vivo, "Quer mudar alguma coisa?" e pós-obra
