@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Fidelidade · Inspeção na obra</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;family=Fraunces:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obra" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 30px;display:flex;flex-direction:column;gap:16px">
+  <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">OBRA · ETAPA 4 DE 7 · PAINEL DO ESCRITÓRIO</span><h1 style="margin:0;font-size:26px">O fiscal comparou com o protótipo que você aprovou</h1></div>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr 320px;gap:18px">
+   <sc-for list="{{lados}}" as="l" hint-placeholder-count="2">
+    <section style="display:flex;flex-direction:column;gap:8px;min-width:0">
+     <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.1em;color:{{l.cor}}">{{l.rot}}</span>
+     <div style="border-radius:10px;overflow:hidden;border:2px solid {{l.borda}};width:100%;height:340px"><div style="transform:scale(.37);transform-origin:0 0"><div style="width:1280px;height:800px;background:#FBF7F2;color:#2F3A31;font-family:'Geist',sans-serif;display:flex">
+      <div style="width:220px;background:#2F3A31;color:#FBF7F2;padding:22px 18px;display:flex;flex-direction:column;gap:6px"><b style="font:600 22px 'Fraunces',serif;margin-bottom:18px">Meu Ponto</b><span style="padding:10px 12px;border-radius:10px;background:rgba(251,247,242,.14);font-weight:600">Painel</span><span style="padding:10px 12px;opacity:.8">Equipe</span><span style="padding:10px 12px;opacity:.8">Obras</span><span style="padding:10px 12px;opacity:.8">Relatório do mês</span><span style="padding:10px 12px;opacity:.8">Ajustes de ponto</span></div>
+      <div style="flex:1;padding:28px 32px;display:flex;flex-direction:column;gap:18px">
+       <div style="display:flex;align-items:baseline;gap:12px"><b style="font:600 30px 'Fraunces',serif">Bom dia, Rafael</b><span style="color:#6E7A6F">Quinta, 27 de novembro</span><span style="margin-left:auto;padding:10px 16px;border-radius:12px;background:#B5651D;color:#fff;font-weight:600">Tirar relatório do mês</span></div>
+       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Na obra agora</span><b style="display:block;font-size:30px">38</b></div>
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Atrasos hoje</span><b style="display:block;font-size:30px;color:#B5651D">3</b></div>
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Horas no mês</span><b style="display:block;font-size:30px">6.412 h</b></div>
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Obras ativas</span><b style="display:block;font-size:30px">4</b></div>
+       </div>
+       <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;background:#F3ECE3;font-size:13px;font-weight:600;color:#6E7A6F"><span>Funcionário</span><span>Obra</span><span>Entrada</span><span>Situação</span></div>
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;border-top:1px solid #F0E8DE"><span>José Carlos da Silva</span><span>Residencial Vila Serena</span><span>06:56</span><span style="color:#2F7D4F">No horário</span></div>
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;border-top:1px solid #F0E8DE"><span>Maria Aparecida Gonçalves Ferreira</span><span>Edifício Mirante do Parque</span><span>07:24</span><span style="color:#B5651D">Atrasou 24 min</span></div>
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;border-top:1px solid #F0E8DE"><span>Antônio Pereira</span><span>Galpão Santa Luzia</span><span>06:48</span><span style="color:#2F7D4F">No horário</span></div>
+       </div>
+      </div>
+     </div></div></div>
+    </section>
+   </sc-for>
+   <aside style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px">
+    <span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">RESULTADO DA INSPEÇÃO</span>
+    <b style="font-size:30px">98% igual</b>
+    <span style="font-size:14px;color:{{t.mute}};line-height:1.5">A etapa só passa quando a tela construída fica igual à aprovada. Diferenças pequenas o Claude corrige sozinho antes de mostrar.</span>
+    <sc-for list="{{itens}}" as="i" hint-placeholder-count="4"><div style="display:flex;gap:10px;font-size:14px;line-height:1.45"><span style="flex:none;width:22px;height:22px;border-radius:50%;background:{{i.bg}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;font:700 12px 'Geist',sans-serif">{{i.m}}</span><span>{{i.t}}</span></div></sc-for>
+    <span style="margin-top:auto;font-size:13px;color:{{t.mute2}}">Viu algo diferente do que você queria? É só falar no painel da obra.</span>
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', line: '#2A2E33', alerta: '#F2B84B', erro: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', line: '#E6E8E1', alerta: '#9A6400', erro: '#C0392B' }
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const lados = [{ rot: 'APROVADA NO PROTÓTIPO', cor: t.mute2, borda: t.cardB }, { rot: 'CONSTRUÍDA PELO CLAUDE', cor: t.limeTxt, borda: t.lime }];
+    const ok = (x) => ({ m: '✓', bg: t.lime, t: x });
+    const itens = [ok('Mesmas cores, letras e espaçamentos'), ok('Mesmos botões, no mesmo lugar'), ok('Funciona de verdade: os números vêm do sistema'), { m: '!', bg: t.alerta, t: 'Corrigido: o botão "Tirar relatório" estava 4 px mais baixo' }];
+    return { tema, t, lados, itens };
+  }
+}
+</script>
+</body>
+</html>

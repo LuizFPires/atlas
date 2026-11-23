@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Fidelidade · Tamanho real</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;family=Fraunces:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:#0B0C0D;color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden">
+ <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 20px;background:#141619;border-bottom:1px solid #2C3036">
+  <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">TAMANHO REAL · PAINEL DO ESCRITÓRIO · 1280 × 800</span>
+  <span style="margin-left:auto;font-size:13px;color:#B4BBB2">É assim que vai aparecer num computador comum. Clique nos botões: o protótipo navega.</span>
+  <a href="F1Conferir.dc.html" style="display:inline-flex;align-items:center;height:40px;padding:0 16px;border-radius:10px;background:#C6F135;color:#141619;font:700 14px 'Geist',sans-serif">Fechar (Esc)</a>
+ </div>
+ <div style="flex:1;display:flex;align-items:flex-start;justify-content:center;padding-top:22px;overflow:hidden"><div style="width:1280px;height:800px;background:#FBF7F2;color:#2F3A31;font-family:'Geist',sans-serif;display:flex">
+      <div style="width:220px;background:#2F3A31;color:#FBF7F2;padding:22px 18px;display:flex;flex-direction:column;gap:6px"><b style="font:600 22px 'Fraunces',serif;margin-bottom:18px">Meu Ponto</b><span style="padding:10px 12px;border-radius:10px;background:rgba(251,247,242,.14);font-weight:600">Painel</span><span style="padding:10px 12px;opacity:.8">Equipe</span><span style="padding:10px 12px;opacity:.8">Obras</span><span style="padding:10px 12px;opacity:.8">Relatório do mês</span><span style="padding:10px 12px;opacity:.8">Ajustes de ponto</span></div>
+      <div style="flex:1;padding:28px 32px;display:flex;flex-direction:column;gap:18px">
+       <div style="display:flex;align-items:baseline;gap:12px"><b style="font:600 30px 'Fraunces',serif">Bom dia, Rafael</b><span style="color:#6E7A6F">Quinta, 27 de novembro</span><span style="margin-left:auto;padding:10px 16px;border-radius:12px;background:#B5651D;color:#fff;font-weight:600">Tirar relatório do mês</span></div>
+       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Na obra agora</span><b style="display:block;font-size:30px">38</b></div>
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Atrasos hoje</span><b style="display:block;font-size:30px;color:#B5651D">3</b></div>
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Horas no mês</span><b style="display:block;font-size:30px">6.412 h</b></div>
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Obras ativas</span><b style="display:block;font-size:30px">4</b></div>
+       </div>
+       <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;background:#F3ECE3;font-size:13px;font-weight:600;color:#6E7A6F"><span>Funcionário</span><span>Obra</span><span>Entrada</span><span>Situação</span></div>
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;border-top:1px solid #F0E8DE"><span>José Carlos da Silva</span><span>Residencial Vila Serena</span><span>06:56</span><span style="color:#2F7D4F">No horário</span></div>
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;border-top:1px solid #F0E8DE"><span>Maria Aparecida Gonçalves Ferreira</span><span>Edifício Mirante do Parque</span><span>07:24</span><span style="color:#B5651D">Atrasou 24 min</span></div>
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;border-top:1px solid #F0E8DE"><span>Antônio Pereira</span><span>Galpão Santa Luzia</span><span>06:48</span><span style="color:#2F7D4F">No horário</span></div>
+       </div>
+      </div>
+     </div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', line: '#2A2E33', alerta: '#F2B84B', erro: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', line: '#E6E8E1', alerta: '#9A6400', erro: '#C0392B' }
+};
+class Component extends DCLogic { renderVals() { const tema = this.props.tema ?? 'escuro'; return { tema, t: T[tema] || T.escuro }; } }
+</script>
+</body>
+</html>

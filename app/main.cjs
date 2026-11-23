@@ -19,7 +19,7 @@ const { criarRetomar } = require('./adaptadores/retomar.cjs')
 const { criarDisparo } = require('./adaptadores/projeto-comum.cjs')
 const { criarEstilo } = require('./adaptadores/estilo.cjs')
 const { criarPrototipo } = require('./adaptadores/prototipo.cjs')
-const { criarAtualizador } = require('./adaptadores/atualizador.cjs')
+const { criarAtualizador, PRIMEIRA_CONFERENCIA_MS, INTERVALO_CONFERENCIA_MS } = require('./adaptadores/atualizador.cjs')
 const { criarLinkCelular } = require('./adaptadores/link-celular.cjs')
 const { criarModelo } = require('./adaptadores/modelo.cjs')
 const { criarBatismo } = require('./adaptadores/batismo.cjs')
@@ -300,7 +300,7 @@ handle('atlas:navegador:pronta', (conta) => navegador.pronta(String(conta)))
 handle('atlas:navegador:fechar', () => navegador.fechar())
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois). O kit é apagado.
-// Atualização automática (atualizador.cjs): só no Atlas instalado no Windows. Confere 1 min depois de abrir e a cada 6 h;
+// Atualização automática (atualizador.cjs): só no Atlas instalado no Windows. Confere 1 min depois de abrir e a cada 20 min;
 // baixa em silêncio e instala quando o Atlas fecha (decisão do Luiz, 22/11/2026).
 const atualizador = criarAtualizador({
   versaoAtual: app.getVersion(), cofre, hashComputador: async () => hash(), api: process.env.ATLAS_API_URL,
@@ -309,8 +309,8 @@ const atualizador = criarAtualizador({
 })
 if (app.isPackaged && process.platform === 'win32') {
   const conferir = () => { void atualizador.verificarEBaixar().catch(() => {}) }
-  setTimeout(conferir, 60_000)
-  setInterval(conferir, 6 * 60 * 60_000).unref()
+  setTimeout(conferir, PRIMEIRA_CONFERENCIA_MS)
+  setInterval(conferir, INTERVALO_CONFERENCIA_MS).unref()
 }
 
 // Faixa "Nova versão" no topo (NovaVersao.tsx): a tela só recebe o número da versão já baixada e conferida, e pede "atualizar agora".

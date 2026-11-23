@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Fidelidade · Conferir o protótipo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;family=Fraunces:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="prototipo" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:22px 30px;display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;align-items:center;gap:14px">
+   <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">4 · O PROTÓTIPO · 14 TELAS · VERSÃO 2</span><h1 style="margin:0;font-size:26px">Meu Ponto</h1></div>
+   <div role="group" aria-label="Ver como" style="margin-left:auto;display:inline-flex;padding:4px;border-radius:12px;border:1px solid {{t.cardB}};gap:4px">
+    <sc-for list="{{aparelhos}}" as="a" hint-placeholder-count="2"><button onClick="{{a.ir}}" aria-pressed="{{a.on}}" style="height:38px;padding:0 14px;border-radius:9px;border:1px solid {{a.borda}};background:{{a.bg}};color:{{t.text}};font:600 14px 'Geist',sans-serif;cursor:pointer">{{a.nome}}</button></sc-for>
+   </div>
+   <a href="F2TamanhoReal.dc.html" style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-radius:12px;border:1px solid {{t.cardB}};color:{{t.text}};font:600 14px 'Geist',sans-serif"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Tamanho real</a>
+   <a href="F3Celular.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 16px;border-radius:12px;border:1px solid {{t.cardB}};color:{{t.text}};font:600 14px 'Geist',sans-serif">Abrir no meu celular</a>
+   <a href="F4Inspecao.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 18px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font:700 14px 'Geist',sans-serif">Do meu jeito: seguir →</a>
+  </div>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:230px minmax(0,1fr) 300px;gap:18px">
+   <nav aria-label="Telas" style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:4px;overflow:hidden">
+    <span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}};padding:4px 6px 8px">TELAS</span>
+    <sc-for list="{{telas}}" as="tl" hint-placeholder-count="9"><button onClick="{{tl.ir}}" style="display:flex;align-items:center;gap:8px;min-height:36px;padding:0 8px;border-radius:9px;border:1px solid {{tl.borda}};background:{{tl.bg}};color:{{t.text}};font:500 13px 'Geist',sans-serif;text-align:left;cursor:pointer"><span style="flex:1">{{tl.nome}}</span><span style="font:500 10px 'Geist Mono',monospace;letter-spacing:.08em;color:{{t.mute2}}">{{tl.onde}}</span></button></sc-for>
+   </nav>
+   <section aria-label="Tela" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-width:0">
+    <sc-if value="{{computador}}" hint-placeholder-val="{{ true }}">
+     <div style="width:100%;max-width:760px;border-radius:12px;overflow:hidden;border:1px solid {{t.cardB}};box-shadow:0 20px 50px rgba(0,0,0,.35)">
+      <div style="height:30px;background:#E9EBE6;display:flex;align-items:center;gap:6px;padding:0 10px"><i style="width:9px;height:9px;border-radius:50%;background:#E46A5E"></i><i style="width:9px;height:9px;border-radius:50%;background:#F4BF4F"></i><i style="width:9px;height:9px;border-radius:50%;background:#61C554"></i><span style="margin-left:10px;font:11px 'Geist Mono',monospace;color:#555">meuponto.com.br/painel</span></div>
+      <div style="width:760px;height:475px;overflow:hidden"><div style="transform:scale(.59375);transform-origin:0 0"><div style="width:1280px;height:800px;background:#FBF7F2;color:#2F3A31;font-family:'Geist',sans-serif;display:flex">
+      <div style="width:220px;background:#2F3A31;color:#FBF7F2;padding:22px 18px;display:flex;flex-direction:column;gap:6px"><b style="font:600 22px 'Fraunces',serif;margin-bottom:18px">Meu Ponto</b><span style="padding:10px 12px;border-radius:10px;background:rgba(251,247,242,.14);font-weight:600">Painel</span><span style="padding:10px 12px;opacity:.8">Equipe</span><span style="padding:10px 12px;opacity:.8">Obras</span><span style="padding:10px 12px;opacity:.8">Relatório do mês</span><span style="padding:10px 12px;opacity:.8">Ajustes de ponto</span></div>
+      <div style="flex:1;padding:28px 32px;display:flex;flex-direction:column;gap:18px">
+       <div style="display:flex;align-items:baseline;gap:12px"><b style="font:600 30px 'Fraunces',serif">Bom dia, Rafael</b><span style="color:#6E7A6F">Quinta, 27 de novembro</span><span style="margin-left:auto;padding:10px 16px;border-radius:12px;background:#B5651D;color:#fff;font-weight:600">Tirar relatório do mês</span></div>
+       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Na obra agora</span><b style="display:block;font-size:30px">38</b></div>
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Atrasos hoje</span><b style="display:block;font-size:30px;color:#B5651D">3</b></div>
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Horas no mês</span><b style="display:block;font-size:30px">6.412 h</b></div>
+        <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;padding:16px"><span style="color:#6E7A6F;font-size:13px">Obras ativas</span><b style="display:block;font-size:30px">4</b></div>
+       </div>
+       <div style="background:#fff;border:1px solid #E2D8CC;border-radius:14px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;background:#F3ECE3;font-size:13px;font-weight:600;color:#6E7A6F"><span>Funcionário</span><span>Obra</span><span>Entrada</span><span>Situação</span></div>
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;border-top:1px solid #F0E8DE"><span>José Carlos da Silva</span><span>Residencial Vila Serena</span><span>06:56</span><span style="color:#2F7D4F">No horário</span></div>
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;border-top:1px solid #F0E8DE"><span>Maria Aparecida Gonçalves Ferreira</span><span>Edifício Mirante do Parque</span><span>07:24</span><span style="color:#B5651D">Atrasou 24 min</span></div>
+        <div style="display:grid;grid-template-columns:2fr 2fr 1fr 1fr;padding:12px 16px;border-top:1px solid #F0E8DE"><span>Antônio Pereira</span><span>Galpão Santa Luzia</span><span>06:48</span><span style="color:#2F7D4F">No horário</span></div>
+       </div>
+      </div>
+     </div></div></div>
+     </div>
+     <span style="font-size:13px;color:{{t.mute2}}">Tela de computador · 1280 × 800 · mostrada a 59%. Para ver do tamanho de verdade, use "Tamanho real".</span>
+    </sc-if>
+    <sc-if value="{{celular}}" hint-placeholder-val="{{ false }}">
+     <div style="width:300px;height:620px;border-radius:40px;background:#0B0C0D;padding:12px;box-sizing:border-box"><div style="width:100%;height:100%;border-radius:30px;background:#FBF7F2;color:#2F3A31;overflow:hidden;display:flex;flex-direction:column"><div style="background:#2F3A31;color:#FBF7F2;padding:28px 16px 16px"><span style="font-size:12px;opacity:.75">Meu Ponto</span><b style="display:block;font:600 20px 'Fraunces',serif">Bom dia, Rafael</b></div><div style="padding:14px;display:flex;flex-direction:column;gap:10px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="background:#fff;border:1px solid #E2D8CC;border-radius:12px;padding:10px"><span style="font-size:11px;color:#6E7A6F">Na obra agora</span><b style="display:block;font-size:22px">38</b></div><div style="background:#fff;border:1px solid #E2D8CC;border-radius:12px;padding:10px"><span style="font-size:11px;color:#6E7A6F">Atrasos hoje</span><b style="display:block;font-size:22px;color:#B5651D">3</b></div></div><div style="background:#fff;border:1px solid #E2D8CC;border-radius:12px;padding:10px;font-size:13px"><b>Maria Aparecida Gonçalves Ferreira</b><span style="display:block;color:#B5651D">Atrasou 24 min · Edifício Mirante do Parque</span></div></div></div></div>
+     <span style="font-size:13px;color:{{t.mute2}}">A mesma tela no celular · 390 px de largura</span>
+    </sc-if>
+   </section>
+   <aside aria-label="Conferência do Atlas" style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px">
+    <span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">CONFERÊNCIA DO ATLAS</span>
+    <b style="font-size:16px">O Atlas conferiu as 14 telas antes de mostrar</b>
+    <sc-for list="{{conferencia}}" as="c" hint-placeholder-count="5"><div style="display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45"><span style="flex:none;width:22px;height:22px;border-radius:50%;background:{{c.bg}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;font:700 12px 'Geist',sans-serif">{{c.marca}}</span><span><b>{{c.t}}</b><span style="display:block;color:{{t.mute}}">{{c.d}}</span></span></div></sc-for>
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', line: '#2A2E33', alerta: '#F2B84B', erro: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', line: '#E6E8E1', alerta: '#9A6400', erro: '#C0392B' }
+};
+const TELAS = [['Entrar', 'CEL'], ['Bater o ponto', 'CEL'], ['Minhas horas', 'CEL'], ['Painel do escritório', 'PC'], ['Equipe por obra', 'PC + CEL'], ['Atrasos de hoje', 'PC + CEL'], ['Relatório do mês', 'PC'], ['Cadastro de obra', 'PC'], ['Ajustar um ponto', 'PC + CEL']];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { ap: 'pc', tela: 3 }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const ap = this.state.ap;
+    const aparelhos = [['pc', 'Computador'], ['cel', 'Celular']].map(([id, nome]) => ({ nome, on: String(ap === id), bg: ap === id ? t.soft : 'transparent', borda: ap === id ? t.lime : 'transparent', ir: () => this.setState({ ap: id }) }));
+    const telas = TELAS.map(([nome, onde], i) => ({ nome, onde, bg: i === this.state.tela ? t.soft : 'transparent', borda: i === this.state.tela ? t.lime : 'transparent', ir: () => this.setState({ tela: i }) }));
+    const ok = (x, d) => ({ marca: '✓', bg: t.lime, t: x, d });
+    const conferencia = [
+      ok('Todos os 62 botões levam a algum lugar', 'Nenhum botão "morto" no protótipo.'),
+      ok('Textos cabem na tela', 'Testado com nomes compridos, como "Maria Aparecida Gonçalves Ferreira".'),
+      ok('Toques grandes o bastante', 'Todo botão do celular tem pelo menos 44 px.'),
+      { marca: '!', bg: t.alerta, t: 'Corrigido sozinho: 1 texto vazava', d: 'Na tela "Relatório do mês", a coluna de valores passava da borda. O Claude ajustou na versão 2.' },
+      ok('Computador e celular conferidos', '6 telas de computador, 3 de celular e 5 nas duas.')
+    ];
+    return { tema, t, aparelhos, telas, conferencia, computador: ap === 'pc', celular: ap === 'cel' };
+  }
+}
+</script>
+</body>
+</html>
