@@ -1,6 +1,6 @@
 // Processo principal do app Atlas (Electron). Reaproveita o front (dist-app/, gerado por `npm run build:app`).
 'use strict'
-const { app, BrowserWindow, dialog, ipcMain, Menu, powerSaveBlocker, session, shell } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain, Menu, powerSaveBlocker, session, shell, WebContentsView } = require('electron')
 // Voz mais rápida (23/11/2026): libera o SharedArrayBuffer para o Whisper usar vários núcleos do processador.
 // Precisa vir antes do app ficar pronto. O app carrega só arquivos locais e nunca páginas de fora.
 app.commandLine.appendSwitch('enable-features', 'SharedArrayBuffer')
@@ -28,6 +28,7 @@ const { criarPosObra } = require('./adaptadores/posobra.cjs')
 const { criarLicenca } = require('./adaptadores/licenca.cjs')
 const { criarCota } = require('./adaptadores/cota.cjs')
 const { criarOcorrencias } = require('./adaptadores/ocorrencias.cjs')
+const { criarNavegador, urlPermitida } = require('./adaptadores/navegador.cjs')
 const { criarCelular } = require('./adaptadores/celular.cjs')
 const { criarImportar } = require('./adaptadores/importar.cjs')
 const { criarAjuda, criarCasos } = require('./adaptadores/ajuda.cjs')
@@ -248,6 +249,56 @@ handle('atlas:publicar:gravar', (pasta, p) => publicar.gravarProgresso(String(pa
 handle('atlas:kit:entregar', (obraId) => kit.entregar(String(obraId)))
 handle('atlas:kit:descartar', (obraId) => kit.descartar(String(obraId)))
 
+// Navegador de verdade dentro do Atlas, na tela das contas (navegador.cjs; pedido do Luiz, 23/11/2026). Isolado: sessão própria
+// (o login nos sites fica guardado só nela), sandbox, sem preload nem Node, sem nenhuma permissão (câmera, microfone, arquivos,
+// notificações) e sem download. Só os sites das contas abrem aqui; o resto vai para o navegador do computador.
+const PARTICAO_CONTAS = 'persist:atlas-contas'
+let sessaoContasPronta = false
+const sessaoContas = () => {
+  const ses = session.fromPartition(PARTICAO_CONTAS)
+  if (!sessaoContasPronta) {
+    ses.setPermissionRequestHandler((_wc, _p, ok) => ok(false))
+    ses.setPermissionCheckHandler(() => false)
+    ses.on('will-download', (e) => e.preventDefault())
+    sessaoContasPronta = true
+  }
+  return ses
+}
+const navegador = criarNavegador({
+  criarView: () => {
+    if (!janelaPrincipal) throw new Error('sem-janela')
+    sessaoContas()
+    const v = new WebContentsView({ webPreferences: { partition: PARTICAO_CONTAS, sandbox: true, contextIsolation: true, nodeIntegration: false, webviewTag: false, devTools: false } })
+    const wc = v.webContents
+    wc.setWindowOpenHandler(({ url }) => {
+      if (urlPermitida(url)) void wc.loadURL(url).catch(() => {})
+      else if (/^https:\/\//.test(url)) void shell.openExternal(url)
+      return { action: 'deny' }
+    })
+    janelaPrincipal.contentView.addChildView(v)
+    return {
+      loadURL: (u) => { void wc.loadURL(u).catch(() => {}) },
+      setBounds: (b) => v.setBounds(b),
+      setVisible: (sim) => v.setVisible(sim),
+      on: (n, f) => wc.on(n, f),
+      voltar: () => { if (wc.navigationHistory.canGoBack()) wc.navigationHistory.goBack() },
+      recarregar: () => wc.reload(),
+      destruir: () => { try { janelaPrincipal?.contentView.removeChildView(v) } catch { /* janela já fechou */ } wc.close() },
+    }
+  },
+  avisar: (d) => { if (janelaPrincipal && !janelaPrincipal.isDestroyed()) janelaPrincipal.webContents.send('atlas:navegador:pagina', d) },
+  abrirFora: (u) => { if (/^https:\/\//.test(u)) void shell.openExternal(u) },
+  logadoNoGithub: async () => (await sessaoContas().cookies.get({ url: 'https://github.com', name: 'logged_in' })).some((c) => c.value === 'yes'),
+})
+handle('atlas:navegador:abrir', (conta, b) => navegador.abrir(String(conta), b))
+handle('atlas:navegador:posicionar', (b) => navegador.posicionar(b))
+handle('atlas:navegador:mostrar', (sim) => navegador.mostrar(sim === true))
+handle('atlas:navegador:voltar', () => navegador.voltar())
+handle('atlas:navegador:recarregar', () => navegador.recarregar())
+handle('atlas:navegador:fora', (conta) => navegador.abrirNoComputador(String(conta)))
+handle('atlas:navegador:pronta', (conta) => navegador.pronta(String(conta)))
+handle('atlas:navegador:fechar', () => navegador.fechar())
+
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois). O kit é apagado.
 // Atualização automática (atualizador.cjs): só no Atlas instalado no Windows. Confere 1 min depois de abrir e a cada 6 h;
 // baixa em silêncio e instala quando o Atlas fecha (decisão do Luiz, 22/11/2026).
@@ -293,7 +344,7 @@ function abrir() {
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },
   })
   janelaPrincipal = janela
-  janela.on('closed', () => { janelaPrincipal = null })
+  janela.on('closed', () => { navegador.fechar(); janelaPrincipal = null })
   // Links e janelas novas nunca abrem dentro do app nem fora da allowlist.
   janela.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   janela.webContents.on('will-navigate', (ev) => ev.preventDefault())

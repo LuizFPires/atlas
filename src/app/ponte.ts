@@ -22,6 +22,8 @@ import type { PontePublicar } from './ponte-publicar'
 import type { PonteKit } from '../kit/entrega-kit'
 import type { PonteAtualizacao } from './NovaVersao'
 import type { PonteIdeia } from './ponte-ideia'
+import type { PonteNavegador } from './ponte-navegador'
+import type { PonteContas } from './ponte-contas'
 
 /** Cofre do sistema (Windows Credential Manager / DPAPI). NUNCA grava segredo em arquivo. */
 export interface Cofre {
@@ -74,6 +76,9 @@ export interface PonteDesktop {
   atualizacao?: PonteAtualizacao
   /** Roteiro da ideia (caminho novo): quais tópicos o relato já respondeu. */
   ideia?: PonteIdeia
+  /** Navegador de verdade dentro do Atlas (tela das contas) e as contas vistas por ele. */
+  navegador?: PonteNavegador
+  contas?: PonteContas
 }
 
 declare global {

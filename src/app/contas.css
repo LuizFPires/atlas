@@ -17,3 +17,6 @@
 /* Vídeo de cada conta: botão bem visível logo abaixo do passo (verde = destaque suave). */
 .at-contas__video { align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--lime); background: var(--soft); color: var(--text); font: 600 15px var(--font-text); cursor: pointer; }
 .at-contas__video:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.at-contas__aqui { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: var(--lime-txt); }
+.at-contas__grade--nav { grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr); gap: 22px; }
+.at-contas__grade--nav > :last-child { display: flex; flex-direction: column; min-height: 0; }

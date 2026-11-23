@@ -1,7 +1,7 @@
 // Preload do app Atlas: a ÚNICA ponte entre a tela (renderer) e o processo principal.
 //
 // O QUE FAZ: expõe window.atlasDesktop (contextIsolation ligado, sandbox ligado, SEM nodeIntegration). Só os namespaces
-// que o front usa (src/app/ponte.ts): cofre, servidor, pagamento, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar, kit, atualizacao, ideia. Todo argumento vira String/boolean aqui e é
+// que o front usa (src/app/ponte.ts): cofre, servidor, pagamento, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar, kit, atualizacao, ideia, navegador, contas. Todo argumento vira String/boolean aqui e é
 // revalidado de novo no processo principal (main.cjs); o renderer nunca recebe caminho de origem, módulo Node nem Electron.
 //
 // COMO TESTAR (Windows): `npx electron app/main.cjs`, abrir as ferramentas do desenvolvedor e digitar `window.atlasDesktop`:
@@ -85,6 +85,23 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     ler: () => chamar('atlas:modelo:ler'),
     gravar: (id) => chamar('atlas:modelo:gravar', String(id)),
   },
+  // Navegador dentro do Atlas (tela das contas): a tela diz QUAL conta e ONDE desenhar; o endereço é fixo no processo principal.
+  navegador: {
+    abrir: (conta, b) => chamar('atlas:navegador:abrir', String(conta), { x: Number(b?.x), y: Number(b?.y), width: Number(b?.width), height: Number(b?.height) }),
+    posicionar: (b) => chamar('atlas:navegador:posicionar', { x: Number(b?.x), y: Number(b?.y), width: Number(b?.width), height: Number(b?.height) }),
+    mostrar: (sim) => chamar('atlas:navegador:mostrar', sim === true),
+    voltar: () => chamar('atlas:navegador:voltar'),
+    recarregar: () => chamar('atlas:navegador:recarregar'),
+    fora: (conta) => chamar('atlas:navegador:fora', String(conta)),
+    fechar: () => chamar('atlas:navegador:fechar'),
+    aoMudarPagina: (f) => {
+      const ouvir = (_e, d) => { if (typeof f === 'function' && d && typeof d === 'object') f({ conta: String(d.conta), url: String(d.url), pronta: d.pronta === true }) }
+      ipcRenderer.on('atlas:navegador:pagina', ouvir)
+      return () => ipcRenderer.removeListener('atlas:navegador:pagina', ouvir)
+    },
+  },
+  // Contas do cliente: "abrir o site" (no navegador do computador) e se a conta já está pronta (visto pelo navegador do Atlas).
+  contas: { abrirSite: (conta) => chamar('atlas:navegador:fora', String(conta)), pronta: (conta) => chamar('atlas:navegador:pronta', String(conta)) },
   // Roteiro da ideia: quais tópicos o relato já respondeu e, no fim, o que faltou.
   ideia: { conferir: (relato, fim) => chamar('atlas:ideia:conferir', String(relato ?? ''), fim === true) },
   prototipo: {
