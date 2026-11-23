@@ -244,3 +244,41 @@ describe('relato livre antes de desenhar', () => {
     expect(screen.queryByRole('region', { name: 'Conte tudo o que você imagina' })).toBeNull()
   })
 })
+
+describe('palco do protótipo', () => {
+  test('enquanto o Claude desenha, o mapa aparece e cada tela pronta surge na hora (ao vivo)', async () => {
+    let soltar: () => void = () => {}
+    const base = criarPrototipoFixture()
+    const p: PontePrototipo = {
+      ...base,
+      desenhar: (...a) => new Promise((ok) => { soltar = () => void base.desenhar(...a).then(ok) }),
+      progresso: async () => ({ mapa: [{ id: 'inicio', nome: 'Início' }, { id: 'agenda', nome: 'Agenda' }], telas: [{ id: 'inicio', nome: 'Início', html: '<div>oi</div>' }] }),
+    }
+    await montar(p)
+    const mapa = await screen.findByRole('list', { name: 'Mapa de telas' }, { timeout: 4000 })
+    expect(within(mapa).getByTitle('Miniatura: Início')).toBeInTheDocument()
+    expect(within(mapa).getByText('Agenda')).toBeInTheDocument()
+    expect(within(mapa).queryByTitle('Miniatura: Agenda')).toBeNull() // ainda desenhando
+    soltar()
+    expect(await screen.findByRole('region', { name: 'Preview do celular' })).toBeInTheDocument()
+  })
+
+  test('"Todas as telas" mostra cada tela como miniatura; tocar numa abre ela grande para navegar', async () => {
+    const { user } = await montar()
+    await screen.findByRole('region', { name: 'Preview do celular' })
+    await user.click(screen.getByRole('button', { name: /Todas as telas/ }))
+    const todas = screen.getByRole('region', { name: 'Todas as telas' })
+    const abrir = within(todas).getAllByRole('button', { name: /^Abrir / })
+    expect(abrir.length).toBeGreaterThan(1)
+    await user.click(abrir[1])
+    expect(screen.getByRole('region', { name: 'Preview do celular' })).toBeInTheDocument()
+    expect(screen.getAllByRole('tab').find((t) => t.getAttribute('aria-selected') === 'true')).toBeTruthy()
+  })
+
+  test('a barra de voz fica embaixo, com o microfone, nas duas fases (relato e ajustes)', async () => {
+    await montar()
+    await screen.findByRole('region', { name: 'Preview do celular' })
+    expect(screen.getByLabelText('Pedir ajuste').closest('form')).toHaveClass('at-proto__barra')
+    expect(within(screen.getByLabelText('Pedir ajuste').closest('form')!).getByRole('button', { name: 'Falar' })).toBeInTheDocument()
+  })
+})

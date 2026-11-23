@@ -18,9 +18,10 @@ function montar() {
   const chamadas = []
   let proxima = resp(1)
   const fila = []
-  const executar = async (args, o) => { chamadas.push({ args, o }); const r = fila.length ? fila.shift() : proxima; return { codigo: 0, saida: JSON.stringify({ result: typeof r === 'string' ? r : JSON.stringify(r) }), erro: '' } }
+  let gancho = null
+  const executar = async (args, o) => { if (gancho) gancho(chamadas.length); chamadas.push({ args, o }); const r = fila.length ? fila.shift() : proxima; return { codigo: 0, saida: JSON.stringify({ result: typeof r === 'string' ? r : JSON.stringify(r) }), erro: '' } }
   const disparo = criarDisparo({ raiz, dadosApp: tmp(), claudeEstado: async () => ({ conectado: true }), executar, resolver: () => ({ cmd: 'x' }) })
-  return { raiz, chamadas, p: criarPrototipo({ raiz, disparo }), responder: (v) => { proxima = v }, emFila: (...v) => { fila.push(...v) } }
+  return { raiz, chamadas, p: criarPrototipo({ raiz, disparo }), responder: (v) => { proxima = v }, emFila: (...v) => { fila.push(...v) }, aoChamar: (f) => { gancho = f } }
 }
 
 test('desenhar cria v001 imutável e não refaz por cima', async () => {
@@ -163,4 +164,18 @@ test('mapa com mais de 40 telas é recusado', async () => {
   const { p, emFila } = montar()
   emFila({ telas: Array.from({ length: 41 }, (_, i) => ({ id: `t${i}`, nome: `T${i}` })) })
   await assert.rejects(p.desenhar('obra', 'Colore', ESTILO, 'x'))
+})
+
+test('andamento ao vivo: o mapa aparece primeiro e cada lote pronto já pode ser visto; no fim, limpa', async () => {
+  const { p, emFila, aoChamar } = montar()
+  assert.equal(p.progresso('obra'), null)
+  const ids = Array.from({ length: 7 }, (_, i) => `t${i + 1}`)
+  emFila({ telas: ids.map((id) => ({ id, nome: `Tela ${id}` })) }, { telas: ids.slice(0, 5).map(tela) }, { telas: ids.slice(5).map(tela) })
+  const vistos = []
+  let obra = null
+  aoChamar((n) => { const a = p.progresso('obra'); vistos.push(a ? `${n}:${a.mapa.length}:${a.telas.length}` : `${n}:-`) })
+  obra = await p.desenhar('obra', 'Colore', ESTILO, 'x')
+  assert.deepEqual(vistos, ['0:0:0', '1:7:0', '2:7:5']) // antes do mapa; mapa pronto; 1º lote pronto
+  assert.equal(p.progresso('obra'), null)
+  assert.equal(obra.versoes[0].telas.length, 7)
 })

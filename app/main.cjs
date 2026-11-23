@@ -187,6 +187,7 @@ handle('atlas:prototipo:estado', (pasta) => prototipo.estado(String(pasta)))
 handle('atlas:prototipo:desenhar', (pasta, nome, estilo, relato) => prototipo.desenhar(String(pasta), String(nome), estilo, String(relato ?? '')))
 handle('atlas:prototipo:ajustar', (pasta, pedido) => prototipo.ajustar(String(pasta), String(pedido)))
 handle('atlas:prototipo:voltar', (pasta, numero) => prototipo.voltar(String(pasta), Number(numero)))
+handle('atlas:prototipo:progresso', (pasta) => prototipo.progresso(String(pasta)))
 
 // Batismo (F07b): 3 nomes (logo só de lista fechada) e marca/marca.md sem sobrescrever.
 handle('atlas:batismo:sugerir', (pasta, nome, pedido) => batismo.sugerir(String(pasta), String(nome), pedido))
