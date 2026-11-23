@@ -49,3 +49,25 @@ test('fora do app instalado (sem ponte): não mostra nada', () => {
   const { container } = render(<NovaVersao ponte={undefined} />)
   expect(container).toBeEmptyDOMElement()
 })
+
+test('quando a procura falha por um motivo que não é "já está atualizado": diz o motivo e deixa procurar de novo', async () => {
+  let ultima: { estado: string; versaoAtual: string } = { estado: 'servidor-sem-rota', versaoAtual: '0.1.80' }
+  const p = { ...ponte(null), situacao: vi.fn(async () => ultima), procurar: vi.fn(async () => { ultima = { estado: 'atual', versaoAtual: '0.1.80' }; return ultima }) }
+  render(<NovaVersao ponte={p} />)
+  const aviso = await screen.findByRole('status')
+  expect(aviso).toHaveTextContent('Não consegui procurar versão nova')
+  expect(aviso).toHaveTextContent('0.1.80')
+  await userEvent.click(screen.getByRole('button', { name: 'Procurar de novo' }))
+  expect(p.procurar).toHaveBeenCalledTimes(1)
+  expect(await screen.findByText(/já está na versão mais nova/)).toBeInTheDocument()
+})
+
+test('já atualizado ou sem internet momentânea: não incomoda ninguém', async () => {
+  for (const estado of ['atual', 'sem-rede', 'ocupado']) {
+    const p = { ...ponte(null), situacao: vi.fn(async () => ({ estado, versaoAtual: '0.1.80' })), procurar: vi.fn() }
+    const { container, unmount } = render(<NovaVersao ponte={p} />)
+    await act(async () => {})
+    expect(container).toBeEmptyDOMElement()
+    unmount()
+  }
+})
