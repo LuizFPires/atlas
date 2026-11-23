@@ -46,6 +46,16 @@ export async function publicarPrototipo(
   return { url: `${origemSite}/p/${token}`, expira_em: expira.toISOString() }
 }
 
+/** M33: guarda as telas que o notebook publicou para o celular do dono (mesmo armazém e mesma validade do link). Devolve o token. */
+export async function guardarTelasDoProjeto(d: Deps, armazem: ArmazemPrototipos | undefined, nome: string, documento: unknown): Promise<string> {
+  if (typeof documento !== 'string' || !ehPrototipoProtegido(documento)) throw new ErroRegra('prototipo_invalido', 'Esse protótipo não pôde ser publicado.', 400)
+  if (!armazem) throw new ErroRegra('link_indisponivel', 'As telas para o celular ainda não estão disponíveis.', 503)
+  const agora = d.agora()
+  const token = tokenNovo()
+  await armazem.guardar(token, { nome: nome.slice(0, 60) || 'Protótipo', documento, criado_em: agora.toISOString(), expira_em: new Date(agora.getTime() + VALIDADE_LINK_PROTOTIPO_MS).toISOString() })
+  return token
+}
+
 export async function verPrototipo(d: Deps, armazem: ArmazemPrototipos | undefined, token: string): Promise<PrototipoGuardado> {
   if (typeof token !== 'string' || !TOKEN_RE.test(token) || !armazem) throw new ErroRegra('link_invalido', 'Esse link não existe.', 404)
   const p = await armazem.ler(token).catch(() => null)

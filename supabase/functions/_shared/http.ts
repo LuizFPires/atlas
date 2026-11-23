@@ -6,6 +6,7 @@ import { confirmarAtivacao, solicitarCodigo, solicitarCodigoPeloLink } from './a
 import { validarInstancia } from './instancia.ts'
 import { limparRadar, radar, resolverSinal } from './radar.ts'
 import { obrasDoPortal, publicarStatusObras } from './status-obras.ts'
+import { baixarReferencia, type CanalCelular, enviarReferencia, estadoDoCelular, pedirPeloCelular, publicarProjeto, responderPedido, sinalDoComputador } from './celular.ts'
 import { entregarKit, type CarregarKit } from './kit.ts'
 import { gerarLink } from './links.ts'
 import { type Deps, ErroRegra } from './tipos.ts'
@@ -31,6 +32,8 @@ export interface Contexto {
   atualizacao?: FonteAtualizacao
   /** Links provisórios do protótipo (pasta privada). Ausente = "link indisponível". */
   prototipos?: ArmazemPrototipos
+  /** M33: canal celular ↔ notebook (fila de pedidos, sinal, projetos, fotos). Ausente = rotas do celular respondem 503. */
+  celular?: CanalCelular
   /** Pagamento (Stripe do cliente). Ausente = rotas de pagamento respondem 503. */
   pagamento?: DepsPagamento
   /** Cadastro pós-pagamento (M4) e e-mail de boas-vindas. Ausente = /cadastro responde 503. */
@@ -168,6 +171,13 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await lerPersonalizacao(ctx.portal, jwt))
         case '/portal/personalizacao/salvar':
           return json(await salvarPersonalizacaoDoPortal(ctx.portal, jwt, b))
+        // M33: o celular como controle remoto do notebook do dono.
+        case '/portal/celular':
+          return json(await estadoDoCelular(ctx.portal, ctx.celular, jwt))
+        case '/portal/celular/pedido':
+          return json(await pedirPeloCelular(ctx.portal, ctx.celular, jwt, b as Record<string, unknown>))
+        case '/portal/celular/referencia':
+          return json(await enviarReferencia(ctx.portal, ctx.celular, jwt, (b as Record<string, unknown>).imagem))
         default:
           return json({ erro: 'nao_encontrado' }, 404)
       }
@@ -254,6 +264,17 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         return json(await validarInstancia(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, uf: ctx.ufDoAcesso ? ctx.ufDoAcesso(req) : null }))
       case '/status-obras/publicar':
         return json(await publicarStatusObras(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obras: (b as Record<string, unknown>).obras }))
+      // M33: o notebook do dono busca os pedidos do celular e publica o resultado.
+      case '/celular/sinal':
+        return json(await sinalDoComputador(ctx.deps, ctx.celular, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, ocupado: (b as Record<string, unknown>).ocupado }))
+      case '/celular/resposta':
+        return json(await responderPedido(ctx.deps, ctx.celular, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, pedido_id: b.pedido_id, estado: b.estado, mensagem: b.mensagem }))
+      case '/celular/projeto': {
+        const o = b as Record<string, unknown>
+        return json(await publicarProjeto(ctx.deps, ctx.celular, ctx.prototipos, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obra_id: o.obra_id, projeto: o.projeto, documento: o.documento }))
+      }
+      case '/celular/referencia':
+        return json(await baixarReferencia(ctx.deps, ctx.celular, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, id: b.id }), 200, { 'Cache-Control': 'no-store' })
       case '/prototipo/link': {
         const origem = (ctx.origemWeb ?? '').split(',').map((x) => x.trim()).find(Boolean)
         return json(await publicarPrototipo(ctx.deps, ctx.prototipos, origem, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, nome: s('nome'), documento: s('documento') }), 200, { 'Cache-Control': 'no-store' })
