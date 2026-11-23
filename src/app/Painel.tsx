@@ -58,7 +58,7 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
   const [estado, setEstado] = useState<EstadoObra | null>(null)
   const [modo, setModo] = useState<ModoObra | null>(null)
   const [modoLido, setModoLido] = useState(false)
-  const [trocando, setTrocando] = useState(false)
+  const [explicando, setExplicando] = useState(false) // gaveta (i) com a diferença dos modos
   const [detalhes, setDetalhes] = useState(false)
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
@@ -96,14 +96,13 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
   }
 
   const trocarModo = async (novo: ModoObra) => {
-    if (novo === modo) { setTrocando(false); return }
+    if (novo === modo) return
     setErro('')
     setAviso('')
     try {
       await modos.gravar(obra.pasta, novo)
       await painel.aplicarModo(obra.pasta, novo)
       setModo(novo)
-      setTrocando(false)
       setAviso(novo === 'automatico' ? 'Pronto: a obra segue sozinha daqui para frente.' : 'Pronto: ao fim de cada etapa o Atlas para e espera o seu OK.')
     } catch (x) { setErro(recadoDoErroPainel(x)) }
   }
@@ -165,35 +164,45 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
       {sit && AVISO_PARADA[sit] && <p className="at-pn__parada" role="status">{AVISO_PARADA[sit]}</p>}
 
       <section className="at-pn__modo" aria-label="Modo da obra">
-        <div className="at-pn__modo-cab">
-          <span className="at-pn__rotulo">MODO DA OBRA</span>
-          {modoLido && modo && (
-            <span className="at-pn__modo-ativo" data-modo={modo}>
-              <b>{modo === 'automatico' ? 'Automático' : 'Passo a passo'}</b>
-              <span>{modo === 'automatico' ? 'segue etapa após etapa, sem pedir seu OK' : 'para ao fim de cada etapa e pede o seu OK'}</span>
-            </span>
-          )}
-          {modoLido && !modo && <span className="at-pn__modo-ativo"><b>Você ainda não escolheu.</b><span>Por segurança, a obra espera o seu OK a cada etapa até você escolher.</span></span>}
-          <button type="button" className="at-pn__link" aria-expanded={trocando} onClick={() => setTrocando(!trocando)}>{trocando ? 'Fechar' : 'Trocar o modo'}</button>
+        <span className="at-pn__rotulo">MODO DA OBRA</span>
+        <div role="radiogroup" aria-label="Modo da obra" className="at-pn__modo-seg">
+          {MODOS_OBRA.map((m) => (
+            <button key={m} type="button" role="radio" aria-checked={modoLido && modo === m} className={`at-pn__seg ${modoLido && modo === m ? 'at-pn__seg--on' : ''}`} onClick={() => void trocarModo(m)}>
+              {m === 'automatico' ? 'Automático' : 'Passo a passo'}
+            </button>
+          ))}
         </div>
-        {trocando && (
-          <div className="at-pn__modo-troca">
-            <div role="radiogroup" aria-label="Trocar o modo da obra" className="at-pn__opcoes">
-              {MODOS_OBRA.map((m) => (
-                <button key={m} type="button" role="radio" aria-checked={modo === m} className={`at-pn__opcao ${modo === m ? 'at-pn__opcao--on' : ''}`} onClick={() => void trocarModo(m)}>
-                  <span className="at-pn__opcao-cab"><b>{TEXTO_MODO[m].titulo}</b>{m === MODO_RECOMENDADO && <span className="at-pn__recomendado">RECOMENDADO</span>}</span>
-                  <span className="at-pn__texto">{TEXTO_MODO[m].explica}</span>
-                </button>
-              ))}
+        <button type="button" className="at-pn__info" aria-label="Entender os modos" aria-expanded={explicando} onClick={() => setExplicando(true)}>i</button>
+        <span className="at-pn__modo-sub">
+          {modoLido && modo === 'automatico' && 'Segue etapa após etapa, sem pedir seu OK.'}
+          {modoLido && modo === 'passo-a-passo' && 'Para ao fim de cada etapa e pede o seu OK.'}
+          {modoLido && !modo && <><b>Você ainda não escolheu.</b> Por segurança, a obra espera o seu OK a cada etapa até você escolher.</>}
+        </span>
+        {aviso && <span className="at-pn__modo-aviso" role="status">{aviso}</span>}
+      </section>
+
+      {explicando && (
+        <div className="at-pn__gaveta-fundo" onClick={() => setExplicando(false)}>
+          <aside className="at-pn__gaveta" role="dialog" aria-modal="true" aria-label="Os dois modos da obra" onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === 'Escape') setExplicando(false) }}>
+            <div className="at-pn__gaveta-cab">
+              <span className="at-pn__rotulo">OS DOIS MODOS DA OBRA</span>
+              <button type="button" className="at-pn__gaveta-x" aria-label="Fechar a explicação" autoFocus onClick={() => setExplicando(false)}><Icone nome="x" tamanho={18} /></button>
             </div>
+            {MODOS_OBRA.map((m) => (
+              <div key={m} className={`at-pn__gaveta-modo ${modo === m ? 'at-pn__gaveta-modo--on' : ''}`}>
+                <span className="at-pn__opcao-cab"><b>{TEXTO_MODO[m].titulo}</b>{m === MODO_RECOMENDADO && <span className="at-pn__recomendado">RECOMENDADO</span>}</span>
+                <span className="at-pn__texto">{TEXTO_MODO[m].explica}</span>
+              </div>
+            ))}
             <div className="at-pn__paradas">
               <b>No automático o Atlas só para nas paradas de verdade:</b>
               {PARADAS_REAIS.map((t) => <span key={t} className="at-pn__item"><Icone nome="check" tamanho={16} />{t}</span>)}
             </div>
-          </div>
-        )}
-        {aviso && <span className="at-pn__texto" role="status">{aviso}</span>}
-      </section>
+            <span className="at-pn__texto">Pode trocar de modo a qualquer hora, sem perder nada.</span>
+          </aside>
+        </div>
+      )}
 
       <div className="at-pn__grade">
         <div className="at-pn__col">
