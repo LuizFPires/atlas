@@ -140,7 +140,7 @@ tela: prototipo/F05Obras.dc.html
 - [x] Criar a subpasta da obra em Atlas\Obras ao iniciar
 - [x] Montar a nova obra (F06NovaObra) com perguntas guiadas e microfone
 - [x] Conferir fidelidade com o protótipo (F05Obras e F06NovaObra)
-Notas: ⏩ Auto (recomendado): F05Obras (lista com analogia da casa + exemplos; primeira obra vazia com um botão claro) e F06NovaObra (perguntas guiadas em vez de caixa em branco, microfone com transcrição editável). "Começar do zero" e "Já tenho um protótipo" (leva ao F06c do M15). Criar a subpasta da obra em C:\Users\<nome>\Atlas\Obras ao iniciar — filesystem atrás de um port (mock em fixture; adaptador real p/ /entregar, sem segredo em arquivo). Modo fixture, sem deploy.
+Notas: ⏩ Auto (recomendado): F05Obras (lista com analogia da casa + exemplos; primeira obra vazia com um botão claro) e F06NovaObra (perguntas guiadas em vez de caixa em branco, microfone com transcrição editável). "Começar do zero" e "Já tenho um protótipo" (leva ao F06c do M15). Criar a subpasta da obra em C:\Users\<nome>\Atlas\Obras ao iniciar — filesystem atrás de um port (mock em fixture; adaptador real p/ /entregar, sem segredo em arquivo). Modo fixture, sem deploy. DIVERGÊNCIA DO PROTÓTIPO decidida pelo Luiz em 22/11/2026 (F05): "Comece a sua primeira obra" vai para o topo, com uma animação do prédio subindo ao lado ("Este prédio é o seu sistema. Cada andar é uma etapa pronta e conferida.", src/app/PredioSubindo.tsx, SVG + CSS, parado com prefers-reduced-motion); a analogia da casa fica logo abaixo; a seção "Ideias para barbearias" saiu da tela (os dados continuam em obras-dados para a fidelidade com o protótipo). O texto da pasta Atlas\Obras foi para o cartão do primeiro passo.
 
 ## Milestone 14 — App: projeto 1/3 (estilo)
 peso: 2
