@@ -114,6 +114,27 @@ function pedidoLote(obraNome, estilo, mapa, lote, referencia) {
   ].join('\n')
 }
 
+/** 3 versões de UMA tela (Milestone 36): três jeitos diferentes de resolver a mesma tela, para o cliente comparar e escolher. */
+function pedidoVersoes(tela, pastaVersao) {
+  return [
+    REGRA_CONTEUDO_CLIENTE,
+    `Desenhe 3 jeitos DIFERENTES da tela "${tela.nome}" (id ${tela.id}, aparelho ${tela.aparelho ?? 'celular'}), para o cliente comparar e escolher. A tela atual está em prototipo/versoes/${pastaVersao}/telas/${tela.id}.html (você pode ler).`,
+    '- As 3 devem resolver a MESMA tarefa de jeitos realmente diferentes (ex.: tudo numa tela só; passo a passo; começar por uma foto ou por uma lista), não só trocar cores.',
+    '- Mantenha a mesma linguagem visual das outras telas (cores, cantos, letra, barra de navegação) e os mesmos links (href="#tela-ID").',
+    '- Para cada uma, diga em poucas palavras para quem ela é boa e qual o cuidado.',
+    'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"versoes":[{"titulo":"até 30 letras","desc":"1 frase","bom":"para quem é boa (curto)","cuidado":"o cuidado (curto)","html":"<style>…</style><div>…</div>"}]} com EXATAMENTE 3 itens. Cada html segue as mesmas regras das telas: CSS no próprio trecho, sem script, sem imagens externas, sem links externos.',
+  ].join('\n')
+}
+
+/** Valida as 3 versões (dado de fora). Lança 'versoes-invalidas'. */
+function versoesDoJson(obj) {
+  if (!obj || !Array.isArray(obj.versoes) || obj.versoes.length !== 3) throw new Error('versoes-invalidas')
+  return obj.versoes.map((v) => {
+    if (!v || typeof v.html !== 'string' || v.html.length === 0 || v.html.length > MAX_HTML || PERIGOSO.test(v.html) || v.html.includes('\0')) throw new Error('versoes-invalidas')
+    return { titulo: umaLinha(v.titulo, 40, 'Versão'), desc: umaLinha(v.desc, 160), bom: umaLinha(v.bom, 120), cuidado: umaLinha(v.cuidado, 120), html: v.html }
+  })
+}
+
 function pedidoAjustar(pedido, telas, versao) {
   return [
     REGRA_CONTEUDO_CLIENTE,
@@ -393,6 +414,37 @@ function criarPrototipo({ raiz, disparo }) {
         if (!telas.length || telas.length > MAX_TELAS || (!r.telas.length && !remover.size)) throw new Error('telas-invalidas')
         const numero = gravarVersao(pasta, r.resumo, telas)
         return { estado: ler(pasta), resposta: r.resposta || `Pronto, fiz o ajuste. Está na versão ${numero}.` }
+      })
+    },
+
+    /** 3 jeitos de uma tela, para comparar. Não grava nada: a escolha vira versão nova em escolherVersao. */
+    versoesDaTela(pasta, telaId) {
+      pasta = String(pasta)
+      return exclusivo(pasta, async () => {
+        const e = ler(pasta)
+        const atual = e.versoes.find((v) => v.numero === e.atual)
+        const tela = atual?.telas.find((t) => t.id === String(telaId))
+        if (!tela) throw new Error('tela-inexistente')
+        const bruto = extrairJson(await disparo.perguntar(pasta, pedidoVersoes(tela, nomeVersao(atual.numero)), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto')
+        const v = versoesDoJson(bruto)
+        // Guardadas na obra para o "misturar" ("a foto da 3 com os passos da 2"): o Claude lê daqui no ajuste.
+        fs.mkdirSync(caminhoSeguro(raiz, pasta, 'prototipo', 'comparar'), { recursive: true })
+        v.forEach((x, i) => gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'comparar', `${tela.id}-${i + 1}.html`), x.html))
+        return v
+      })
+    },
+
+    /** "Quero esta": troca só aquela tela numa versão NOVA (o nome e o aparelho da tela ficam). */
+    escolherVersao(pasta, telaId, html, titulo) {
+      pasta = String(pasta)
+      return exclusivo(pasta, async () => {
+        const e = ler(pasta)
+        const atual = e.versoes.find((v) => v.numero === e.atual)
+        const tela = atual?.telas.find((t) => t.id === String(telaId))
+        if (!tela) throw new Error('tela-inexistente')
+        const [nova] = telasDoJson({ telas: [{ id: tela.id, nome: tela.nome, html: String(html ?? ''), aparelho: tela.aparelho }] }).telas
+        gravarVersao(pasta, umaLinha(`${tela.nome} escolhido: ${umaLinha(titulo, 40, 'versão')}`, 80, 'Versão escolhida'), atual.telas.map((t) => (t.id === tela.id ? nova : t)))
+        return ler(pasta)
       })
     },
 

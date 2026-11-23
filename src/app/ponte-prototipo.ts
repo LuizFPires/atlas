@@ -25,6 +25,8 @@ export interface TelaDesenhada {
 }
 
 export type Aparelho = 'celular' | 'computador'
+/** Uma das 3 versões de uma tela: o jeito, para quem é boa, o cuidado e o HTML (NÃO CONFIÁVEL: só em iframe sandbox). */
+export interface VersaoDaTela { titulo: string; desc: string; bom: string; cuidado: string; html: string }
 export const aparelhoDaTela = (t: { aparelho?: Aparelho }): Aparelho => (t.aparelho === 'computador' ? 'computador' : 'celular')
 
 export interface VersaoProto {
@@ -52,6 +54,10 @@ export interface PontePrototipo {
   ajustar(pasta: string, pedido: string): Promise<{ estado: EstadoProto; resposta: string }>
   /** Volta a ver uma versão anterior. Não apaga nem reescreve nada: só muda a versão atual. */
   voltar(pasta: string, numero: number): Promise<EstadoProto>
+  /** 3 jeitos de uma tela, para comparar (Milestone 36). Não grava nada. */
+  versoesDaTela?(pasta: string, telaId: string): Promise<VersaoDaTela[]>
+  /** "Quero esta": troca só aquela tela numa versão NOVA. */
+  escolherVersao?(pasta: string, telaId: string, html: string, titulo: string): Promise<EstadoProto>
   /** Link provisório (7 dias) para abrir o protótipo navegável no celular. `documento` = montarNavegavel(...). */
   linkCelular?(nome: string, documento: string): Promise<{ url: string; expira_em: string }>
   /** Abre o WhatsApp com o link que acabou de ser gerado. */
@@ -256,6 +262,28 @@ export function criarPrototipoFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): Pr
       return { url: `https://atlas-ia.app.br/p/${'Ex'.repeat(22)}`, expira_em: new Date(Date.now() + 7 * 86_400_000).toISOString() }
     },
     async whatsapp() {},
+    async versoesDaTela(pasta, telaId) {
+      const o = obras.get(pasta)
+      const tela = o?.estado.versoes.find((v) => v.numero === o.estado.atual)?.telas.find((t) => t.id === telaId)
+      if (!o || !tela) throw new Error('tela-inexistente')
+      const jeito = (titulo: string, desc: string, bom: string, cuidado: string, cor: string) => ({ titulo, desc, bom, cuidado, html: `<style>.v{padding:24px;font-family:system-ui;background:${cor}}</style><div class="v"><b>${tela.nome}</b><p>${desc}</p></div>` })
+      return [
+        jeito('Tudo numa tela só', 'Todos os campos de uma vez, rolando para baixo.', 'quem cadastra muita gente de uma vez', 'no celular, a tela fica comprida', '#FBF7F2'),
+        jeito('Passo a passo', 'Três etapas curtas.', 'quem não tem pressa e erra pouco', 'um toque a mais para terminar', '#F2F7FB'),
+        jeito('Começa pela foto', 'Tira a foto do documento e o resto se preenche.', 'cadastrar em pé, no canteiro', 'precisa de câmera e boa luz', '#F5FBF2'),
+      ]
+    },
+    async escolherVersao(pasta, telaId, html, titulo) {
+      const o = obras.get(pasta)
+      const atual = o?.estado.versoes.find((v) => v.numero === o.estado.atual)
+      const tela = atual?.telas.find((t) => t.id === telaId)
+      if (!o || !atual || !tela) throw new Error('tela-inexistente')
+      const numero = Math.max(...o.estado.versoes.map((v) => v.numero)) + 1
+      const v: VersaoProto = { numero, resumo: `${tela.nome} escolhido: ${titulo}`.slice(0, 80), telas: atual.telas.map((t) => (t.id === telaId ? { ...t, html } : { ...t })) }
+      gravar(pasta, v)
+      o.estado = { versoes: [...o.estado.versoes, v], atual: numero }
+      return copia(o.estado)
+    },
     async voltar(pasta, numero) {
       const o = obras.get(pasta)
       if (!o || !o.estado.versoes.some((v) => v.numero === numero)) throw new Error('versao-inexistente')

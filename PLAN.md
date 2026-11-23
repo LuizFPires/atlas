@@ -392,8 +392,8 @@ peso: 4
 spec: S9
 tela: prototipo/caminho-novo/P2Dicas.dc.html
 - [x] Dicas do Atlas no protótipo: uma por vez, conforme a tela, com "Outra dica" e dispensar
-- [ ] "Ver 3 versões" de uma tela, lado a lado, com "Bom para" e "Cuidado"; "Quero esta" grava a escolha numa versão nova do protótipo
-- [ ] Misturar versões por voz ("a foto da 3 com os passos da 2") e "Desenhar mais 3"
+- [x] "Ver 3 versões" de uma tela, lado a lado, com "Bom para" e "Cuidado"; "Quero esta" grava a escolha numa versão nova do protótipo
+- [x] Misturar versões por voz ("a foto da 3 com os passos da 2") e "Desenhar mais 3"
 - [x] Botão sem tela avisa "ainda não foi desenhado · Desenhar agora"
 - [ ] Conferência automática antes de mostrar: botão sem destino, texto cortado, alvo pequeno, rolagem de lado
 Notas: DECISÃO do Luiz (23/11/2026, "Dicas do Atlas ... pedir 3 protótipos de uma tela ... para fazer alguma decisão"), aprovada em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG.
