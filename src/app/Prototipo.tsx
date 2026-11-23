@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Botao, Icone, Microfone, useVoz } from '../ui'
+import { Botao, Icone, Microfone, Trabalhando, useVoz } from '../ui'
+import { Pintor } from './Pintor'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EstiloProposto } from './ponte-estilo'
 import { montarSrcDoc, SANDBOX_PREVIEW, type EstadoProto, type PontePrototipo } from './ponte-prototipo'
@@ -132,7 +133,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
       </header>
 
       {erro && <p className="at-nova__erro" role="alert">{erro}</p>}
-      {!pronto && <p role="status">O Claude está desenhando as telas…</p>}
+      {!pronto && <Trabalhando titulo="O Claude está desenhando as telas" segundos={240} ilustracao={<Pintor soCena />} etapas={['Lendo o que você contou da obra', 'Pensando em cada tela e no caminho entre elas', 'Aplicando o seu estilo: cores, letras e botões', 'Caprichando nos detalhes e conferindo tudo']} />}
 
       <div className="at-proto__grade">
         <section className="at-proto__chat" aria-label="Conversa com o Claude">

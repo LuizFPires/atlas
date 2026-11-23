@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Botao, Icone } from '../ui'
+import { Botao, Icone, Trabalhando } from '../ui'
 import type { ObraDoEstilo } from './Estilo'
 import type { PonteClaude, Plano } from './ponte-claude'
 import { NOME_PLANO } from './claude-plano'
@@ -83,7 +83,7 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou }
         <h1>Pronto para a obra. Confira antes de começar.</h1>
       </header>
       {erro && <p className="at-apr__erro" role="alert">{erro}</p>}
-      {!plan && !erro && <p role="status">O Atlas está montando o plano da obra…</p>}
+      {!plan && !erro && <Trabalhando titulo="O Atlas está montando o plano da obra" segundos={90} etapas={['Lendo as telas aprovadas do protótipo', 'Dividindo a obra em etapas', 'Calculando o prazo no seu plano do Claude', 'Conferindo o plano antes de mostrar']} />}
       {plan && (
         <div className="at-apr__grade">
           <section className="at-apr__card" aria-label="O que vai ser construído">

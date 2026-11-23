@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Botao, CampoFalado, Icone, Microfone, useVoz } from '../ui'
+import { Botao, CampoFalado, Icone, Microfone, Trabalhando, useVoz } from '../ui'
 import { type PonteArquivos } from './ponte-arquivos'
 import type { ObraDoEstilo } from './Estilo'
 import { limparNome, LOGOS, resumoDaConferencia, type Conferencia, type Marca, type NomeProposto, type PonteBatismo, type PonteNomes } from './ponte-batismo'
@@ -171,7 +171,7 @@ export function Batismo({ obra, batismo, nomes: conferidor, arquivos, onVoltar, 
         </div>
 
         {erro && <p className="at-nova__erro" role="alert">{erro}</p>}
-        {modo === 'sugerir' && !pronto && <p role="status">O Claude está pensando nos nomes…</p>}
+        {modo === 'sugerir' && !pronto && <Trabalhando titulo="O Claude está pensando nos nomes" segundos={60} etapas={['Relendo o que o sistema faz e para quem é', 'Criando nomes que combinam com o seu negócio', 'Desenhando uma logo e um slogan para cada um', 'Conferindo nomes parecidos e endereços livres']} />}
 
         {modo === 'sugerir' && (<>
         <div className="at-bat__nomes" role="radiogroup" aria-label="Nomes sugeridos">
