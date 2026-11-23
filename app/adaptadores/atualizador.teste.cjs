@@ -102,3 +102,39 @@ test('com o Atlas aberto, procura versão nova de 20 em 20 minutos (não de 6 em
   assert.equal(INTERVALO_CONFERENCIA_MS, 20 * 60_000)
   assert.equal(PRIMEIRA_CONFERENCIA_MS, 60_000)
 })
+
+test('diz por que não atualizou: rota inexistente no servidor (404) ≠ licença negada (401/403) ≠ sem internet', async () => {
+  const casos = [
+    [{ status: 404, resposta: { erro: 'nao-encontrado' } }, 'servidor-sem-rota'],
+    [{ status: 401, resposta: { erro: 'negado' } }, 'sem-licenca'],
+    [{ status: 403, resposta: { erro: 'negado' } }, 'sem-licenca'],
+    [{ status: 500, resposta: { erro: 'x' } }, 'erro-servidor'],
+    [{ resposta: { atualizar: false } }, 'atual'],
+  ]
+  for (const [caso, esperado] of casos) {
+    const { a } = montar(caso)
+    assert.equal((await a.verificarEBaixar()).estado, esperado, JSON.stringify(caso))
+  }
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-atu-'))
+  const semRede = criarAtualizador({ versaoAtual: '0.1.0', cofre: cofre(), hashComputador: async () => 'h', api: 'https://api.test/x', buscar: async () => { throw new TypeError('fetch failed') }, pasta, executar: () => {} })
+  assert.equal((await semRede.verificarEBaixar()).estado, 'sem-rede')
+})
+
+test('guarda a última conferência (estado e quando), para a tela mostrar', async () => {
+  const { a } = montar({ resposta: { atualizar: false } })
+  assert.equal(a.ultima(), null)
+  await a.verificarEBaixar()
+  const u = a.ultima()
+  assert.equal(u.estado, 'atual')
+  assert.equal(u.versaoAtual, '0.1.0')
+  assert.ok(Math.abs(Date.now() - u.quando) < 5000)
+})
+
+test('servidor responde "sem versão" por falta de configuração/arquivo: não é "atualizado", é problema do servidor', async () => {
+  for (const motivo of ['sem-configuracao', 'sem-manifesto', 'sem-link']) {
+    const { a } = montar({ resposta: { atualizar: false, motivo } })
+    assert.deepEqual(await a.verificarEBaixar(), { estado: 'servidor-sem-versao', motivo })
+  }
+  const { a } = montar({ resposta: { atualizar: false, motivo: 'atual' } })
+  assert.equal((await a.verificarEBaixar()).estado, 'atual')
+})

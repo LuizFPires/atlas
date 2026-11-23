@@ -36,7 +36,7 @@ describe('/atualizacao', () => {
     const m = montar()
     await m.ativar()
     const f = fonte(NOVA)
-    expect(await verAtualizacao(m.deps, f, { email, computador_hash: H1, token_dispositivo: TOKEN, versao: '0.1.42' })).toEqual({ atualizar: false })
+    expect(await verAtualizacao(m.deps, f, { email, computador_hash: H1, token_dispositivo: TOKEN, versao: '0.1.42' })).toMatchObject({ atualizar: false })
     expect(f.nomes).toEqual([])
   })
   it('sem licença ativada neste computador (token errado ou outro computador): negado, sem link', async () => {
@@ -56,9 +56,21 @@ describe('/atualizacao', () => {
     const m = montar()
     await m.ativar()
     const a = { email, computador_hash: H1, token_dispositivo: TOKEN, versao: '0.1.0' }
-    expect(await verAtualizacao(m.deps, undefined, a)).toEqual({ atualizar: false })
-    expect(await verAtualizacao(m.deps, fonte({ versao: 'x' }), a)).toEqual({ atualizar: false })
-    expect(await verAtualizacao(m.deps, fonte(NOVA, 'http://inseguro'), a)).toEqual({ atualizar: false })
-    expect(await verAtualizacao(m.deps, fonte(NOVA, null), a)).toEqual({ atualizar: false })
+    expect(await verAtualizacao(m.deps, undefined, a)).toMatchObject({ atualizar: false })
+    expect(await verAtualizacao(m.deps, fonte({ versao: 'x' }), a)).toMatchObject({ atualizar: false })
+    expect(await verAtualizacao(m.deps, fonte(NOVA, 'http://inseguro'), a)).toMatchObject({ atualizar: false })
+    expect(await verAtualizacao(m.deps, fonte(NOVA, null), a)).toMatchObject({ atualizar: false })
+  })
+})
+
+describe('/atualizacao diz o motivo quando não manda versão (caso do Guilherme, 23/11/2026)', () => {
+  it('atual, sem configuração, sem manifesto e sem link são motivos diferentes', async () => {
+    const m = montar()
+    await m.ativar()
+    const pedir = (f: FonteAtualizacao | undefined, versao = '0.1.0') => verAtualizacao(m.deps, f, { email, computador_hash: H1, token_dispositivo: TOKEN, versao })
+    expect(await pedir(fonte(NOVA), '0.1.42')).toMatchObject({ atualizar: false, motivo: 'atual' })
+    expect(await pedir(undefined)).toMatchObject({ atualizar: false, motivo: 'sem-configuracao' })
+    expect(await pedir(fonte(null))).toMatchObject({ atualizar: false, motivo: 'sem-manifesto' })
+    expect(await pedir(fonte(NOVA, null))).toMatchObject({ atualizar: false, motivo: 'sem-link' })
   })
 })

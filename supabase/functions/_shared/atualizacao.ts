@@ -13,7 +13,9 @@ export interface FonteAtualizacao {
   /** Endereço temporário do .exe, baixando com o nome pedido. */
   link(nomeDoDownload: string): Promise<string | null>
 }
-export type RespostaAtualizacao = { atualizar: false } | ({ atualizar: true; url: string } & Manifesto)
+/** motivo: por que não há versão para baixar (o app mostra quando não é 'atual'). */
+export type MotivoSemVersao = 'atual' | 'sem-configuracao' | 'sem-manifesto' | 'sem-link'
+export type RespostaAtualizacao = { atualizar: false; motivo: MotivoSemVersao } | ({ atualizar: true; url: string } & Manifesto)
 
 const VERSAO_RE = /^\d{1,4}\.\d{1,4}\.\d{1,6}$/
 const SHA512_B64_RE = /^[A-Za-z0-9+/]{86}==$/
@@ -42,10 +44,11 @@ export async function verAtualizacao(
   if (!VERSAO_RE.test(a.versao)) throw new ErroRegra('versao_invalida', 'Versão do app inválida.')
   const v = await verificar(d, a)
   if (!v.licenca_id) throw new ErroRegra('negado', 'Não foi possível conferir a atualização.', 403)
-  if (!fonte) return { atualizar: false }
+  if (!fonte) return { atualizar: false, motivo: 'sem-configuracao' }
   const m = manifestoValido(await fonte.manifesto().catch(() => null))
-  if (!m || compararVersoes(m.versao, a.versao) <= 0) return { atualizar: false }
+  if (!m) return { atualizar: false, motivo: 'sem-manifesto' }
+  if (compararVersoes(m.versao, a.versao) <= 0) return { atualizar: false, motivo: 'atual' }
   const url = await fonte.link(`Atlas-Atualizacao-${m.versao}.exe`).catch(() => null)
-  if (!url || !/^https:\/\//.test(url)) return { atualizar: false }
+  if (!url || !/^https:\/\//.test(url)) return { atualizar: false, motivo: 'sem-link' }
   return { atualizar: true, ...m, url }
 }

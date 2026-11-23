@@ -35,6 +35,8 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
   const arqPronta = path.join(pasta, 'pronta.json')
   let instalou = false
   let ocupado = false
+  /** Última conferência (23/11/2026, caso do Guilherme): sem isso, "não atualizou" não tinha explicação nenhuma. */
+  let ultima = null
 
   const limpar = () => { try { for (const n of fs.readdirSync(pasta)) fs.rmSync(path.join(pasta, n), { force: true }) } catch { /* nada */ } }
 
@@ -78,13 +80,7 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
     }
   }
 
-  return {
-    pronta,
-
-    async verificarEBaixar() {
-      if (ocupado) return { estado: 'ocupado' }
-      ocupado = true
-      try {
+  async function conferir() {
         const ja = pronta()
         if (ja) return { estado: 'baixada', versao: ja.versao }
         const base = enderecoDaApi(api)
@@ -94,7 +90,7 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
           const g = JSON.parse((await cofre.ler(CHAVE_COFRE)) || 'null')
           if (g && typeof g.token === 'string' && g.token) ativ = { token: g.token, email: typeof g.email === 'string' ? g.email : '' }
         } catch { /* cofre indisponível */ }
-        if (!ativ) return { estado: 'sem-licenca' }
+        if (!ativ) return { estado: 'nao-ativado' } // ainda instalando: não é problema, não avisa
         let info = null
         try {
           const r = await buscar(`${base}/atualizacao`, {
@@ -103,17 +99,33 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
             body: JSON.stringify({ email: ativ.email, computador_hash: await hashComputador(), versao: versaoAtual }),
           })
           const texto = await r.text()
-          if (!r.ok || texto.length > 4096) return { estado: 'sem-licenca' }
+          if (r.status === 404) return { estado: 'servidor-sem-rota' }
+          if (r.status === 401 || r.status === 403) return { estado: 'sem-licenca' }
+          if (!r.ok || texto.length > 4096) return { estado: 'erro-servidor' }
           info = JSON.parse(texto)
-        } catch { return { estado: 'erro' } }
+        } catch (e) { return { estado: e instanceof TypeError || e?.name === 'TimeoutError' ? 'sem-rede' : 'erro-servidor' } }
+        if (info && info.atualizar === false && ['sem-configuracao', 'sem-manifesto', 'sem-link'].includes(info.motivo)) return { estado: 'servidor-sem-versao', motivo: info.motivo }
         if (!info || info.atualizar !== true) return { estado: 'atual' }
         const ok = typeof info.url === 'string' && /^https:\/\//.test(info.url)
           && VERSAO_RE.test(info.versao) && compararVersoes(info.versao, versaoAtual) > 0
           && SHA512_B64_RE.test(info.sha512) && Number.isInteger(info.tamanho) && info.tamanho > 0 && info.tamanho <= MAX_TAMANHO
         if (!ok) return { estado: 'erro' }
         return await baixar(info)
-      } finally { ocupado = false }
+  }
+
+  return {
+    pronta,
+
+    ultima: () => ultima,
+
+    async verificarEBaixar() {
+      if (ocupado) return { estado: 'ocupado' }
+      ocupado = true
+      const r = await conferir().finally(() => { ocupado = false })
+      ultima = { ...r, versaoAtual, quando: Date.now() }
+      return r
     },
+
 
     /** Botão "Atualizar agora" (23/11/2026): com versão pronta, fecha o Atlas (sair = app.quit); a instalação roda ao sair e o
      *  instalador reabre o Atlas. Sem versão pronta não fecha nada. */
