@@ -27,3 +27,15 @@
 .at-proto__versao--on { border-color: var(--lime); background: var(--soft); }
 .at-proto__so-leitor { position: absolute; left: -9999px; }
 .at-proto__dica { padding: 0 14px 12px; font-size: 13px; color: var(--mute); }
+/* Relato livre (antes de desenhar): o microfone é o protagonista. */
+.at-proto__relato { display: flex; flex-direction: column; gap: 16px; padding: 28px; border-radius: 20px; background: var(--card); border: 1px solid var(--card-b); max-width: 920px; }
+.at-proto__relato-cab { display: flex; gap: 22px; align-items: center; }
+.at-proto__relato-cab h2 { margin: 0 0 8px; font-size: 26px; }
+.at-proto__relato-cab p { margin: 0; color: var(--mute); font-size: 16px; line-height: 1.55; }
+.at-proto__relato-mic { flex: none; width: 96px !important; height: 96px !important; border-radius: 48px !important; }
+.at-proto__relato-mic svg { width: 38px; height: 38px; }
+.at-proto__relato-rot { font-size: 14px; color: var(--mute); }
+.at-proto__relato textarea { border-radius: 14px; border: 1px solid var(--card-b); background: var(--input); color: var(--text); padding: 16px; font: 16px/1.6 var(--font-text); resize: vertical; min-height: 170px; }
+.at-proto__relato-dica { font-size: 13px; color: var(--mute); }
+.at-proto__relato-acoes { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.at-proto__relato-acoes > span { font: 500 13px var(--font-mono); color: var(--mute2); }

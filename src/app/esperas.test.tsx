@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Prototipo } from './Prototipo'
 import { Aprovar } from './Aprovar'
@@ -19,6 +20,9 @@ test.each([
   ['nomes', () => <Batismo obra={obra} batismo={{ ...criarBatismoFixture(), sugerir: () => nunca() }} nomes={criarNomesFixture()} arquivos={criarArquivosFixture()} onVoltar={() => {}} onConcluir={() => {}} />, 'O Claude está pensando nos nomes'],
 ])('espera de %s: barra que anda, etapas e tempo (nunca só uma frase parada)', async (_n, tela, titulo) => {
   render(<TemaProvider>{tela()}</TemaProvider>)
+  // Telas: primeiro o relato livre do cliente; o desenho (e a espera) começa no botão.
+  const relato = await screen.findByRole('textbox', { name: /Conte tudo o que você imagina/ }).catch(() => null)
+  if (relato) { const u = userEvent.setup(); await u.type(relato, 'agenda do dia'); await u.click(screen.getByRole('button', { name: 'Desenhar as telas' })) }
   const caixa = await screen.findByRole('status', { name: titulo })
   expect(within(caixa).getByRole('progressbar')).toBeInTheDocument()
   expect(within(caixa).getAllByRole('listitem').length).toBeGreaterThanOrEqual(3)

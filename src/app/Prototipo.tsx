@@ -49,29 +49,42 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [erro, setErro] = useState('')
   const [pronto, setPronto] = useState(false)
+  // Obra sem telas: primeiro o RELATO livre do cliente (falado), que vira a base de todas as telas.
+  const [pedeRelato, setPedeRelato] = useState(false)
+  const [relato, setRelato] = useState('')
   const iniciou = useRef(false)
   const [pedido, setPedido] = useState('')
   const [prints, setPrints] = useState<string[]>([])
   const [ocupado, setOcupado] = useState(false)
   // Microfone: a transcrição cai no campo e continua editável antes de enviar.
   const { gravando, alternar, suportado } = useVoz((falado) => setPedido((p) => [p, falado].filter(Boolean).join(' ')))
+  const vozRelato = useVoz((falado) => setRelato((r) => [r, falado].filter(Boolean).join(' ')))
 
   useEffect(() => {
     if (iniciou.current) return
     iniciou.current = true
     void (async () => {
       try {
-        let e = await prototipo.estado(obra.pasta)
-        if (!e.versoes.length) {
-          // Sem um dos 3 estilos (veio de "Já tenho a minha identidade visual"): o Claude segue o design-system.md da pasta da obra.
-          e = await prototipo.desenhar(obra.pasta, obra.nome, estilo ?? null)
-          setMsgs([{ quem: 'CLAUDE', txt: estilo ? 'Fiz as primeiras telas no estilo que você escolheu. Dá uma olhada no celular ao lado e me diga o que quer mudar.' : 'Fiz as primeiras telas com a sua identidade visual. Dá uma olhada no celular ao lado e me diga o que quer mudar.' }])
-        }
+        const e = await prototipo.estado(obra.pasta)
+        if (!e.versoes.length) { setPedeRelato(true); return }
         setEstado(e)
         setAba(e.versoes.find((v) => v.numero === e.atual)?.telas[0]?.id ?? '')
       } catch (x) { setErro(recadoDoErroProto(x)) } finally { setPronto(true) }
     })()
-  }, [prototipo, obra, estilo])
+  }, [prototipo, obra])
+
+  // Desenha a partir do relato. Sem um dos 3 estilos (veio de "Já tenho a minha identidade visual"): o Claude segue o design-system.md.
+  const desenhar = async () => {
+    setPedeRelato(false)
+    setPronto(false)
+    setErro('')
+    try {
+      const e = await prototipo.desenhar(obra.pasta, obra.nome, estilo ?? null, relato.trim())
+      setMsgs([{ quem: 'CLAUDE', txt: estilo ? 'Fiz as primeiras telas no estilo que você escolheu, a partir do que você contou. Toque nos botões do celular ao lado para navegar e me diga o que quer mudar.' : 'Fiz as primeiras telas com a sua identidade visual, a partir do que você contou. Toque nos botões do celular ao lado para navegar e me diga o que quer mudar.' }])
+      setEstado(e)
+      setAba(e.versoes.find((v) => v.numero === e.atual)?.telas[0]?.id ?? '')
+    } catch (x) { setErro(recadoDoErroProto(x)); setPedeRelato(true) } finally { setPronto(true) }
+  }
 
   const anexar = async () => {
     if (!arquivos) return
@@ -134,7 +147,25 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
       </header>
 
       {erro && <p className="at-nova__erro" role="alert">{erro}</p>}
-      {!pronto && <Trabalhando titulo="O Claude está desenhando as telas" segundos={240} ilustracao={<Pintor soCena />} etapas={['Lendo o que você contou da obra', 'Pensando em cada tela e no caminho entre elas', 'Aplicando o seu estilo: cores, letras e botões', 'Caprichando nos detalhes e conferindo tudo']} />}
+      {pedeRelato && (
+        <section className="at-proto__relato" aria-label="Conte tudo o que você imagina">
+          <div className="at-proto__relato-cab">
+            <Microfone gravando={vozRelato.gravando} onAlternar={vozRelato.alternar} className="at-proto__relato-mic" />
+            <div>
+              <h2>Conte tudo o que você imagina.</h2>
+              <p>Aperte o microfone e fale o tempo que quiser, sem pressa, como se contasse para um amigo: o que o sistema faz, quem usa, cada tela, cada botão, o que aparece em cada lista. Quanto mais detalhe, mais o protótipo fica com a sua cara. O Claude desenha <b>todas</b> as telas que você contar.</p>
+            </div>
+          </div>
+          <label htmlFor="relato" className="at-proto__relato-rot">Conte tudo o que você imagina (o que você falar aparece aqui; pode corrigir à vontade)</label>
+          <textarea id="relato" rows={8} value={relato} onChange={(e) => setRelato(e.target.value)} placeholder="Ex.: Quero abrir o app e ver a agenda do dia. Cada horário mostra o cliente e o serviço. Tocando no horário, vejo o telefone e posso remarcar…" />
+          {!vozRelato.suportado && <span className="at-proto__relato-dica">Este computador não liberou o microfone. Pode digitar normalmente.</span>}
+          <div className="at-proto__relato-acoes">
+            <span>{relato.trim() ? `${relato.trim().split(/\s+/).length} palavras` : 'Comece falando ou digitando'}</span>
+            <Botao disabled={!relato.trim() || vozRelato.gravando} onClick={() => void desenhar()}>Desenhar as telas</Botao>
+          </div>
+        </section>
+      )}
+      {!pronto && !pedeRelato && <Trabalhando titulo="O Claude está desenhando as telas" segundos={480} ilustracao={<Pintor soCena />} etapas={['Lendo tudo o que você contou', 'Montando o mapa de telas: nada do que você falou fica de fora', 'Desenhando as telas, em lotes, no seu estilo', 'Ligando as telas entre si para dar para navegar', 'Caprichando nos detalhes e conferindo tudo']} />}
 
       <div className="at-proto__grade">
         <section className="at-proto__chat" aria-label="Conversa com o Claude">

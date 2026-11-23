@@ -41,7 +41,8 @@ export interface PontePrototipo {
   estado(pasta: string): Promise<EstadoProto>
   /** Pede ao Claude as telas no estilo escolhido: cria a versão 1. */
   /** estilo null = a obra já tem identidade própria: o Claude segue o design-system.md da pasta. */
-  desenhar(pasta: string, obraNome: string, estilo: EstiloProposto | null): Promise<EstadoProto>
+  /** relato = o que o cliente contou (falando) sobre o sistema: base de TODAS as telas, sem limite fixo de quantidade. */
+  desenhar(pasta: string, obraNome: string, estilo: EstiloProposto | null, relato?: string): Promise<EstadoProto>
   /** O pedido do cliente (fala ou texto) vira uma versão NOVA. Devolve também o que o Claude diz de volta. */
   ajustar(pasta: string, pedido: string): Promise<{ estado: EstadoProto; resposta: string }>
   /** Volta a ver uma versão anterior. Não apaga nem reescreve nada: só muda a versão atual. */
