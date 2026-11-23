@@ -6,6 +6,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,3 +18,24 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  # A voz do Atlas instalado é o Whisper rodando no computador (o reconhecimento do navegador não funciona em app Electron).
+  # Aqui o teste é de verdade: baixa o modelo, gera uma fala em português e confere a transcrição.
+  voz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng ffmpeg
+      - name: Fala de teste em português
+        run: |
+          espeak-ng -v pt-br -s 140 -w fala.wav "Quero uma agenda para a minha barbearia"
+          ffmpeg -loglevel error -i fala.wav -ar 16000 -ac 1 -f f32le fala.f32
+      - run: node scripts/teste-voz.mjs fala.f32

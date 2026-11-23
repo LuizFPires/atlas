@@ -17,6 +17,8 @@ permissions:
   contents: write
 
 env:
+  # O pacote da voz traz um motor de servidor com placa de vídeo que o Atlas não usa: não baixar.
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
   # Endereços públicos do projeto no Supabase (os mesmos que o site usa; não são segredo).
   SUPABASE_URL: https://jwnrzcyudurdrxhjfdua.supabase.co
   ATLAS_API: https://jwnrzcyudurdrxhjfdua.supabase.co/functions/v1/api
