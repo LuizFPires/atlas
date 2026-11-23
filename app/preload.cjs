@@ -30,7 +30,7 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
   descricaoComputador: () => chamar('atlas:descricao'),
   impedirSono: (ligado) => chamar('atlas:sono', !!ligado),
   // Faixa "Nova versão" no topo: só o número da versão pronta e o pedido de atualizar agora (fecha, instala e reabre).
-  atualizacao: { pronta: () => chamar('atlas:atualizacao:pronta'), instalar: () => chamar('atlas:atualizacao:instalar'), situacao: () => chamar('atlas:atualizacao:situacao'), procurar: () => chamar('atlas:atualizacao:procurar') },
+  atualizacao: { pronta: () => chamar('atlas:atualizacao:pronta'), instalar: () => chamar('atlas:atualizacao:instalar'), situacao: () => chamar('atlas:atualizacao:situacao'), procurar: () => chamar('atlas:atualizacao:procurar'), andamento: () => chamar('atlas:atualizacao:andamento') },
   // Compra de dentro do app: o processo principal só abre a página de pagamento da Stripe.
   pagamento: { abrir: (url) => chamar('atlas:pagamento:abrir', String(url)) },
   // Código do link de instalação chegando com o app já aberto (atlas://ativar?t=...): o processo principal valida e avisa a tela.

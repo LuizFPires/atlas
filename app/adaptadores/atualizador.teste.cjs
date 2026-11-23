@@ -138,3 +138,28 @@ test('servidor responde "sem versão" por falta de configuração/arquivo: não 
   const { a } = montar({ resposta: { atualizar: false, motivo: 'atual' } })
   assert.equal((await a.verificarEBaixar()).estado, 'atual')
 })
+
+test('enquanto baixa, diz quanto já veio (para a barra de progresso com tempo previsto)', async () => {
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-atu-'))
+  const metade = EXE.subarray(0, 10), resto = EXE.subarray(10)
+  let soltar
+  const segura = new Promise((ok) => { soltar = ok })
+  const corpo = new ReadableStream({
+    async start(c) { c.enqueue(metade); await segura; c.enqueue(resto); c.close() },
+  })
+  const buscar = async (url) => url.endsWith('/atualizacao')
+    ? new Response(JSON.stringify({ atualizar: true, versao: '0.1.42', sha512: SHA, tamanho: EXE.length, url: 'https://s/a' }))
+    : new Response(corpo)
+  const a = criarAtualizador({ versaoAtual: '0.1.0', cofre: cofre(), hashComputador: async () => 'h', api: 'https://api.test/x', buscar, pasta, executar: () => {} })
+  assert.equal(a.andamento(), null)
+  const fim = a.verificarEBaixar()
+  for (let i = 0; i < 50 && !a.andamento()?.baixados; i++) await new Promise((r) => setTimeout(r, 5))
+  const meio = a.andamento()
+  assert.equal(meio.versao, '0.1.42')
+  assert.equal(meio.baixados, 10)
+  assert.equal(meio.total, EXE.length)
+  assert.ok(typeof meio.inicio === 'number')
+  soltar()
+  assert.equal((await fim).estado, 'baixada')
+  assert.equal(a.andamento(), null, 'terminou: some a barra (aparece o botão)')
+})

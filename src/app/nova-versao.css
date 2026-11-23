@@ -7,3 +7,9 @@
 .at-novaversao__botao:disabled { opacity: .6; cursor: progress; }
 .at-novaversao__botao:focus-visible { outline: 2px solid var(--text, #EDEFEA); outline-offset: 2px; }
 @media (max-width: 640px) { .at-novaversao { flex-wrap: wrap; } .at-novaversao__botao { width: 100%; } }
+/* Barra de progresso da atualização (download e instalação). Sem número de tempo inventado: vem de tempo-atualizacao.ts. */
+.at-novaversao__barra { display: block; height: 6px; margin: 6px 0 4px; border-radius: 999px; background: var(--line, rgba(237, 239, 234, .12)); overflow: hidden; }
+.at-novaversao__barra > span { display: block; height: 100%; border-radius: inherit; background: var(--lime, #C6F135); transition: width .6s ease; }
+.at-novaversao__barra--continua > span { width: 35%; animation: at-novaversao-vai 1.4s ease-in-out infinite; }
+@keyframes at-novaversao-vai { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+@media (prefers-reduced-motion: reduce) { .at-novaversao__barra--continua > span { animation: none; width: 100%; opacity: .5; } }

@@ -17,7 +17,7 @@ test('versão nova pronta: um clique em "Atualizar agora" instala na hora', asyn
   render(<NovaVersao ponte={p} />)
   const aviso = await screen.findByRole('status')
   expect(aviso).toHaveTextContent('Nova versão do Atlas')
-  expect(aviso).toHaveTextContent('fecha por alguns segundos e abre de novo')
+  expect(aviso).toHaveTextContent('Leva uns 20 segundos: o Atlas fecha e abre de novo')
   await userEvent.click(screen.getByRole('button', { name: 'Atualizar agora' }))
   expect(p.instalar).toHaveBeenCalledTimes(1)
   expect(screen.getByRole('button', { name: 'Atualizando…' })).toBeDisabled()
@@ -83,4 +83,24 @@ test('a faixa aparece em até 10 s depois que a versão nova termina de baixar (
     await act(async () => { await vi.advanceTimersByTimeAsync(10_000) })
     expect(screen.getByRole('status')).toHaveTextContent('0.1.99')
   } finally { vi.useRealTimers() }
+})
+
+test('enquanto baixa: barra de progresso com a porcentagem e o tempo previsto', async () => {
+  const agora = Date.now()
+  const p = { ...ponte(null), andamento: vi.fn(async () => ({ versao: '0.1.95', baixados: 50, total: 100, inicio: agora - 30_000 })) }
+  render(<NovaVersao ponte={p} />)
+  const barra = await screen.findByRole('progressbar')
+  expect(barra).toHaveAttribute('aria-valuenow', '50')
+  const aviso = screen.getByRole('status')
+  expect(aviso).toHaveTextContent('Baixando a versão nova do Atlas')
+  expect(aviso).toHaveTextContent('50%')
+  expect(aviso).toHaveTextContent(/falta cerca de 1 minuto/i)
+})
+
+test('ao clicar em "Atualizar agora": avisa quanto tempo o Atlas leva para voltar', async () => {
+  const p = ponte('0.1.42')
+  render(<NovaVersao ponte={p} />)
+  await userEvent.click(await screen.findByRole('button', { name: 'Atualizar agora' }))
+  expect(screen.getByRole('status')).toHaveTextContent(/volta sozinho em uns 20 segundos/)
+  expect(screen.getByRole('progressbar')).toBeInTheDocument()
 })
