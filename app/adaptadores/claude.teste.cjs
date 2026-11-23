@@ -19,3 +19,29 @@ test('valor estranho na assinatura é ignorado', () => {
   assert.deepEqual(lerEstado('não é json'), { conectado: false })
   assert.deepEqual(lerEstado(JSON.stringify({ loggedIn: false })), { conectado: false })
 })
+
+// Conectar com um clique: o Atlas chama o login OFICIAL do Claude Code (o navegador abre na autorização) e não espera por ele.
+const { criarClaude: criarC } = require('./claude.cjs')
+test('abrirLogin roda `claude auth login --claudeai` sem esperar terminar, e não abre um segundo ao mesmo tempo', async () => {
+  const chamadas = []
+  let terminar
+  const executar = (args, op) => { chamadas.push({ args, op }); return new Promise((r) => { terminar = r }) }
+  let conectou = 0
+  const c = criarC({ shell: {}, executar, aoConectar: () => { conectou++ } })
+  await c.abrirLogin()
+  await c.abrirLogin()
+  assert.equal(chamadas.length, 1)
+  assert.deepEqual(chamadas[0].args, ['auth', 'login', '--claudeai'])
+  assert.ok(chamadas[0].op.timeoutMs >= 5 * 60_000)
+  terminar({ codigo: 0, saida: 'Login successful', erro: '' })
+  await new Promise((r) => setImmediate(r))
+  assert.equal(conectou, 1)
+  // Terminou: um novo clique abre de novo.
+  await c.abrirLogin()
+  assert.equal(chamadas.length, 2)
+})
+
+test('abrirLogin: Claude Code não instalado vira erro para a tela avisar', async () => {
+  const c = criarC({ shell: {}, executar: () => Promise.reject(new Error('claude-nao-instalado')) })
+  await assert.rejects(c.abrirLogin(), /claude-nao-instalado/)
+})

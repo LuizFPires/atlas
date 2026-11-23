@@ -62,3 +62,10 @@
 .at-claude__antes-titulo { font-size: 20px; line-height: 1.25; margin: 0; }
 .at-claude__botoes { display: flex; flex-wrap: wrap; gap: 12px; }
 .at-claude__caminho { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.5; }
+
+/* Vídeo do passo a passo (conectar o Claude em um clique), dentro do próprio Atlas. */
+.at-claude__video-fundo { position: fixed; inset: 0; background: rgba(8, 9, 11, .82); display: grid; place-items: center; z-index: 60; padding: 32px; }
+.at-claude__video { position: relative; width: min(1100px, 100%); border-radius: 18px; overflow: hidden; border: 1px solid #2C3036; background: #0f1113; box-shadow: 0 30px 80px rgba(0, 0, 0, .55); }
+.at-claude__video video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #0f1113; }
+.at-claude__video-fechar { position: absolute; top: 12px; right: 12px; width: 44px; height: 44px; border-radius: 22px; border: 0; background: rgba(20, 22, 25, .9); color: #EDEFEA; display: grid; place-items: center; cursor: pointer; }
+.at-claude__video-fechar:focus-visible { outline: 3px solid #C6F135; outline-offset: 2px; }

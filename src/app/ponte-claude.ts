@@ -1,4 +1,5 @@
-// Porta entre o app e o Claude Code do cliente. O Atlas NUNCA faz o login do Claude: quem entra é o cliente,
+// Porta entre o app e o Claude Code do cliente. O Atlas NUNCA faz o login do Claude: quem entra é o cliente (pelo login oficial do
+// Claude Code, `claude auth login`, que abre a autorização no navegador dele),
 // no claude.ai dele (regra da Anthropic: sem OAuth de assinatura em app de terceiros). O Atlas só guia e DETECTA.
 // O adaptador real (rodar o CLI do Claude e ler conta/plano) fica para /entregar (app/PENDENTE-ENTREGAR.md).
 
@@ -17,7 +18,7 @@ export interface EstadoClaude {
 export type SiteClaude = 'criar-conta' | 'planos'
 
 export interface PonteClaude {
-  /** Abre o claude.ai no navegador do cliente para ele entrar. Não recebe nem guarda senha, código ou token. */
+  /** Chama o login oficial do Claude Code: o navegador do cliente abre na autorização do Claude. Não recebe nem guarda senha, código ou token. */
   abrirLogin(): Promise<void>
   /** Abre uma página do site do Claude (criar conta ou ver planos). O upgrade é feito lá, nunca no Atlas. */
   abrirSite(alvo: SiteClaude): Promise<void>
