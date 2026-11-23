@@ -3,7 +3,6 @@ import { Botao, CampoFalado, Icone, useVoz } from '../ui'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EntradaEstilo, EstiloProposto, PonteEstilo } from './ponte-estilo'
 import { FASES, linkCurto, MAX_REFERENCIAS, MIN_REFERENCIAS, MODOS, normalizarLink, SENTIMENTOS, UPLOADS } from './estilo-dados'
-import { ContextoPlano } from './plano-no-menu'
 import { ContextoConectarClaude } from './conectar-claude'
 import { PaletaCores } from './PaletaCores'
 import { Pintor } from './Pintor'
@@ -46,7 +45,6 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
   const [escolhido, setEscolhido] = useState('')
   const [ocupado, setOcupado] = useState<'' | 'propondo' | 'guardando'>('')
   const [erro, setErro] = useState('')
-  const plano = useContext(ContextoPlano)
   const conectarClaude = useContext(ContextoConectarClaude)
   const [guardado, setGuardado] = useState<{ estilo: EstiloProposto | null; caminho: string } | null>(null)
   const [modo, setModo] = useState<'criar' | 'tenho'>('criar')
@@ -92,9 +90,9 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
   const faltaRef = total < MIN_REFERENCIAS
   const faltaSentir = sentir.length === 0 && !extra.trim()
 
-  const claudeDesligado = plano?.valor === 'Não conectado'
+  // Não bloqueia pelo cartão do menu (a leitura dele pode estar velha, caso do Guilherme em 23/11/2026): quem diz se está
+  // conectado é o próprio Claude, na hora de montar os estilos.
   const propor = async () => {
-    if (claudeDesligado) { setErro(SEM_CLAUDE); return }
     if (faltaRef) { setErro('Mande pelo menos 1 referência: link, print ou falando.'); return }
     if (faltaSentir) { setErro('Escolha pelo menos um jeito que o seu cliente deve se sentir.'); return }
     setErro('')
@@ -103,7 +101,10 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
       const p = await estilo.propor(entrada(), obra.pasta)
       setPropostos(p)
       setEscolhido(p[0]?.id ?? '')
-    } catch { setErro('Não consegui montar os estilos agora. Suas referências continuam aqui; tente de novo em instantes.') }
+    } catch (e) {
+      const codigo = e instanceof Error ? e.message : ''
+      setErro(codigo === 'claude-nao-logado' || codigo === 'claude-nao-instalado' ? SEM_CLAUDE : 'Não consegui montar os estilos agora. Suas referências continuam aqui; tente de novo em instantes.')
+    }
     finally { setOcupado('') }
   }
 

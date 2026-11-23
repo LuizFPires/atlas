@@ -168,17 +168,31 @@ test('sem WebGL (computador antigo ou teste) o pincel cai no desenho em SVG', as
 })
 
 describe('Claude não conectado neste computador', () => {
-  test('ao pedir os estilos, explica o motivo e leva direto para conectar o Claude (sem chamar o Claude)', async () => {
+  // Guilherme, 23/11/2026: a tela de conexão dizia "Conectado · plano Pro", o menu ainda mostrava a leitura velha "Não conectado"
+  // e a tela de estilo bloqueava sem nem chamar o Claude. Quem decide é o Claude de verdade, não o cartão do menu.
+  test('menu ainda com a leitura velha "Não conectado": chama o Claude mesmo assim e mostra os estilos', async () => {
     const est = criarEstiloFixture()
-    const conectar = vi.fn()
-    render(<TemaProvider><ContextoPlano.Provider value={{ valor: 'Não conectado', sub: 'Conecte o Claude para construir' }}><ContextoConectarClaude.Provider value={conectar}>
+    render(<TemaProvider><ContextoPlano.Provider value={{ valor: 'Não conectado', sub: 'Conecte o Claude para construir' }}>
       <Estilo obra={OBRA} arquivos={criarArquivosFixture()} estilo={est} onVoltar={() => {}} />
-    </ContextoConectarClaude.Provider></ContextoPlano.Provider></TemaProvider>)
+    </ContextoPlano.Provider></TemaProvider>)
     await colar('aesop.com')
     await clicar('Confiança')
     await clicar('Mostrar 3 estilos')
-    expect(screen.getByRole('alert')).toHaveTextContent('O Claude ainda não está conectado neste computador')
-    expect(est.pedidos).toHaveLength(0)
+    expect(est.pedidos).toHaveLength(1)
+    expect(screen.queryByText(/ainda não está conectado/)).toBeNull()
+  })
+
+  test('o Claude responde que não está logado: explica o motivo e leva direto para conectar', async () => {
+    const est = criarEstiloFixture()
+    est.propor = async () => { throw new Error('claude-nao-logado') }
+    const conectar = vi.fn()
+    render(<TemaProvider><ContextoConectarClaude.Provider value={conectar}>
+      <Estilo obra={OBRA} arquivos={criarArquivosFixture()} estilo={est} onVoltar={() => {}} />
+    </ContextoConectarClaude.Provider></TemaProvider>)
+    await colar('aesop.com')
+    await clicar('Confiança')
+    await clicar('Mostrar 3 estilos')
+    expect(await screen.findByRole('alert')).toHaveTextContent('O Claude ainda não está conectado neste computador')
     await clicar('Conectar o Claude agora')
     expect(conectar).toHaveBeenCalled()
   })
