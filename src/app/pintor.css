@@ -1,0 +1,43 @@
+/* O pintor dos estilos (F06b). Só tokens do Atlas e SVG de traço. Ciclo de 6 s: a arte aparece por partes e recomeça. */
+.at-pintor { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 12px 22px; text-align: center; }
+.at-pintor__cena { width: 100%; max-width: 440px; height: auto; overflow: visible; }
+.at-pintor__chao { fill: var(--card2); }
+.at-pintor__cavalete line { stroke: var(--mute2); stroke-width: 5; stroke-linecap: round; }
+.at-pintor__tela { fill: #F5F2EA; stroke: var(--card-b); stroke-width: 2; }
+.at-pintor__p { fill: none; stroke: #2A2E33; stroke-width: 2.5; stroke-dasharray: 440; animation: at-pintor-traco 6s ease-in-out infinite; }
+.at-pintor__f { opacity: 0; transform-box: fill-box; transform-origin: left center; animation: at-pintor-pinta 6s ease-out infinite; }
+.at-pintor__f--topo { fill: var(--lime); animation-delay: 0.6s; }
+.at-pintor__f--a { fill: #1D3557; animation-delay: 1.4s; }
+.at-pintor__f--b { fill: none; stroke: #9AA19A; stroke-width: 1.5; animation-delay: 1.7s; }
+.at-pintor__f--c { fill: #C9CCC4; animation-delay: 2.2s; }
+.at-pintor__f--d { fill: #D8B45A; animation-delay: 2.8s; }
+.at-pintor__f--e { fill: none; stroke: #9AA19A; stroke-width: 1.5; animation-delay: 3.1s; }
+.at-pintor__f--botao { fill: #1D3557; animation-delay: 3.7s; }
+.at-pintor__pincelada { fill: none; stroke: var(--lime); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 70; stroke-dashoffset: 70; opacity: 0.8; animation: at-pintor-pincelada 1.2s ease-in-out infinite; }
+.at-pintor__traco { fill: none; stroke: var(--text); stroke-width: 5; stroke-linecap: round; }
+.at-pintor__corpo { fill: #3B4250; stroke: var(--text); stroke-width: 3; stroke-linejoin: round; }
+.at-pintor__avental { fill: var(--soft); stroke: var(--lime); stroke-width: 2; stroke-linejoin: round; }
+.at-pintor__olho { fill: #1B1E22; }
+.at-pintor__sorriso { fill: none; stroke: #1B1E22; stroke-width: 2; stroke-linecap: round; }
+.at-pintor__cabeca { fill: #E2BC94; stroke: var(--text); stroke-width: 3; }
+.at-pintor__boina { fill: var(--lime); }
+.at-pintor__paleta { fill: #C8A57A; stroke: var(--text); stroke-width: 2; }
+.at-pintor__tinta--1 { fill: var(--lime); }
+.at-pintor__tinta--2 { fill: #1D3557; }
+.at-pintor__tinta--3 { fill: #D8B45A; }
+.at-pintor__pincel { stroke: #8B5E3C; stroke-width: 4; stroke-linecap: round; }
+.at-pintor__ponta { fill: var(--lime); }
+.at-pintor__braco { transform-box: view-box; transform-origin: 122px 158px; animation: at-pintor-braco 1.2s ease-in-out infinite; }
+.at-pintor__pessoa { transform-box: view-box; transform-origin: 112px 280px; animation: at-pintor-balanca 2.4s ease-in-out infinite; }
+.at-pintor__fala { margin: 4px 0 0; font: 600 17px var(--font-text); color: var(--text); min-height: 24px; }
+.at-pintor__sub { font-size: 14px; color: var(--mute); max-width: 340px; line-height: 1.5; }
+@keyframes at-pintor-braco { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(9deg); } }
+@keyframes at-pintor-balanca { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(1.5deg); } }
+@keyframes at-pintor-pincelada { 0% { stroke-dashoffset: 70; } 60%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes at-pintor-traco { 0% { stroke-dashoffset: 440; } 12%, 88% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes at-pintor-pinta { 0% { opacity: 0; transform: scaleX(0.1); } 6%, 85% { opacity: 1; transform: scaleX(1); } 100% { opacity: 0; transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .at-pintor__braco, .at-pintor__pessoa, .at-pintor__pincelada, .at-pintor__p, .at-pintor__f { animation: none; }
+  .at-pintor__f { opacity: 1; }
+  .at-pintor__p { stroke-dashoffset: 0; }
+}

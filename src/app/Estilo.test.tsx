@@ -103,6 +103,21 @@ describe('3 estilos e design system', () => {
     expect(est.pedidos).toHaveLength(0)
   })
 
+  test('enquanto monta os estilos, um pintor pinta a "arte" do sistema; quando chegam, os 3 aparecem', async () => {
+    let soltar: () => void = () => {}
+    const base = criarEstiloFixture()
+    const est = { ...base, propor: (e: Parameters<typeof base.propor>[0], p: string) => new Promise<Awaited<ReturnType<typeof base.propor>>>((ok) => { soltar = () => void base.propor(e, p).then(ok) }) }
+    montarCompleto(est as EstiloFixture)
+    await preencher()
+    await clicar('Mostrar 3 estilos')
+    const atelie = screen.getByRole('img', { name: /pintor/i })
+    expect(atelie).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'O que o pintor está fazendo' })).toHaveTextContent(/cores|letras|botões|acabamento/)
+    soltar()
+    expect(await screen.findAllByRole('radio')).toHaveLength(3)
+    expect(screen.queryByRole('img', { name: /pintor/i })).toBeNull()
+  })
+
   test('propõe 3 estilos pela porta e o escolhido vira o design-system.md na pasta da obra', async () => {
     const { est, onConcluir } = montarCompleto()
     await preencher()

@@ -3,6 +3,7 @@ import { Botao, CampoFalado, Icone, useVoz } from '../ui'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EntradaEstilo, EstiloProposto, PonteEstilo } from './ponte-estilo'
 import { FASES, linkCurto, MAX_REFERENCIAS, MIN_REFERENCIAS, MODOS, normalizarLink, SENTIMENTOS, UPLOADS } from './estilo-dados'
+import { Pintor } from './Pintor'
 import './estilo.css'
 
 /** A obra que acabou de ser criada (nome e subpasta dentro de Atlas\Obras). */
@@ -256,7 +257,9 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
 
       {modo === 'criar' && <section className="at-estilo__estilos" aria-label="Estilos">
         <div className="at-estilo__estilos-cab"><b>O Atlas montou 3 estilos para você</b><span>toque para escolher</span></div>
-        {propostos ? (
+        {ocupado === 'propondo' ? (
+          <Pintor />
+        ) : propostos ? (
           <div className="at-estilo__tres" role="radiogroup" aria-label="Escolha um estilo">
             {propostos.map((e) => (
               <button key={e.id} type="button" role="radio" aria-checked={e.id === escolhido} className={`at-estilo__opcao ${e.id === escolhido ? 'at-estilo__opcao--on' : ''}`} onClick={() => { setEscolhido(e.id); setGuardado(null) }}>
