@@ -141,7 +141,7 @@ class Component extends DCLogic {
     const tema = this.props.tema ?? 'escuro';
     return { tema, t: T[tema] || T.escuro,
       etapas: [
-        { n: '1', nome: 'Projeto', txt: 'Você escolhe o estilo, conta o que quer e vê as telas no celular antes de tudo.' },
+        { n: '1', nome: 'Projeto', txt: 'Você conta a ideia, escolhe o estilo e o nome, e vê as telas no celular antes de tudo.' },
         { n: '2', nome: 'Orçamento', txt: 'O Atlas mostra as etapas e o prazo. Nada começa sem você aprovar.' },
         { n: '3', nome: 'Obra', txt: 'A IA constrói, testa e confere sozinha. Você acompanha pelo celular.' },
         { n: '4', nome: 'Chaves', txt: 'O sistema fica no ar, com o seu nome e endereço, no celular e no computador.' },
@@ -157,8 +157,8 @@ class Component extends DCLogic {
         { t: 'Ajuda a qualquer hora.', d: 'Travou? O próprio Atlas vê o que aconteceu e te guia, passo a passo.' }
       ],
       tres: [
-        { n: '1', nome: 'Mostre o que você gosta.', apoio: 'Fotos, prints, um app que te inspira.', d: 'M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM7.2 10a1.8 1.8 0 1 0 3.6 0 1.8 1.8 0 1 0-3.6 0M21 16l-5-5-9 9' },
-        { n: '2', nome: 'Explique como você quer.', apoio: 'Fala ou escreve, do seu jeito.', d: 'M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3' },
+        { n: '1', nome: 'Conte a sua ideia.', apoio: 'Falando, do seu jeito, com um roteiro do lado. As telas começam a nascer na hora.', d: 'M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3' },
+        { n: '2', nome: 'Mostre o que você gosta.', apoio: 'Fotos, prints, um app que te inspira.', d: 'M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM7.2 10a1.8 1.8 0 1 0 3.6 0 1.8 1.8 0 1 0-3.6 0M21 16l-5-5-9 9' },
         { n: '3', nome: 'Escolha um nome.', apoio: 'Um nome pro seu app. Só isso.', d: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z' }
       ],
       exemplos: [

@@ -24,9 +24,10 @@ export const prateleira: Array<{ segmento: SegmentoPronto; icone: NomeIcone; nom
   { segmento: 'academia', icone: 'haltere', nome: 'Academia', txt: 'Alunos, treino do dia, check-in e mensalidades num lugar só.' },
 ]
 
+// Ordem do caminho novo (pedido do Luiz, 23/11/2026): a ideia primeiro; as telas começam a nascer enquanto você segue.
 export const tresPassos: Array<{ nome: string; icone: NomeIcone; apoio: string }> = [
+  { nome: 'Conte a sua ideia.', icone: 'microfone', apoio: 'Falando, do seu jeito, com um roteiro do lado. As telas começam a nascer na hora.' },
   { nome: 'Mostre o que você gosta.', icone: 'imagem', apoio: 'Fotos, prints, um app que te inspira.' },
-  { nome: 'Explique como você quer.', icone: 'microfone', apoio: 'Fala ou escreve, do seu jeito.' },
   { nome: 'Escolha um nome.', icone: 'brilho', apoio: 'Um nome pro seu app. Só isso.' },
 ]
 
@@ -48,7 +49,7 @@ export const formas: Array<{ icone: NomeIcone; txt: string }> = [
 ]
 
 export const etapas = [
-  { n: '1', nome: 'Projeto', txt: 'Você escolhe o estilo, conta o que quer e vê as telas no celular antes de tudo.' },
+  { n: '1', nome: 'Projeto', txt: 'Você conta a ideia, escolhe o estilo e o nome, e vê as telas no celular antes de tudo.' },
   { n: '2', nome: 'Orçamento', txt: 'O Atlas mostra as etapas e o prazo. Nada começa sem você aprovar.' },
   { n: '3', nome: 'Obra', txt: 'A IA constrói, testa e confere sozinha. Você acompanha pelo celular.' },
   { n: '4', nome: 'Chaves', txt: 'O sistema fica no ar, com o seu nome e endereço, no celular e no computador.' },
