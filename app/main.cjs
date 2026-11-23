@@ -142,6 +142,7 @@ ipcMain.on('atlas:obras:raiz', (e) => { e.returnValue = confiavel(e) ? obras.rai
 handle('atlas:obras:listar', () => obras.listar())
 handle('atlas:obras:criar', (nome) => obras.criarSubpasta(String(nome)))
 handle('atlas:obras:abrir', () => obras.abrirPasta())
+handle('atlas:obras:situacao', (pasta) => obras.situacao(String(pasta)))
 handle('atlas:claude:login', () => claude.abrirLogin())
 handle('atlas:claude:site', (alvo) => claude.abrirSite(String(alvo)))
 handle('atlas:claude:estado', () => claude.estado())
