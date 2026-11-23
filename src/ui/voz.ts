@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { criarTranscricaoEmPartes } from './voz-partes'
 import { definirEstadoVoz, estadoVoz, gravacaoSuportada, iniciarGravacao, noAtlasInstalado, RECADO_NAO_ESCREVI, RECADO_SEM_MICROFONE, transcritorAtual, type Gravacao } from './voz-motor'
 
 // Reconhecimento de fala do navegador (pt-BR). Não há tipos no lib.dom, então declaramos o mínimo.
@@ -92,10 +93,11 @@ function useVozDoNavegador(aoFalar: (texto: string) => void) {
 function useVozWhisper(aoFalar: (texto: string) => void) {
   const [gravando, setGravando] = useState(false)
   const gravacao = useRef<Gravacao | null>(null)
+  const emPartes = useRef<{ partes: ReturnType<typeof criarTranscricaoEmPartes>; timer: ReturnType<typeof setInterval> } | null>(null)
   const ligando = useRef(false)
   const cb = useRef(aoFalar)
   useEffect(() => { cb.current = aoFalar })
-  useEffect(() => () => { gravacao.current?.cancelar(); gravacao.current = null; if (estadoVoz().fase === 'ouvindo') definirEstadoVoz({ fase: 'livre' }) }, [])
+  useEffect(() => () => { if (emPartes.current) clearInterval(emPartes.current.timer); gravacao.current?.cancelar(); gravacao.current = null; if (estadoVoz().fase === 'ouvindo') definirEstadoVoz({ fase: 'livre' }) }, [])
 
   const suportado = gravacaoSuportada() || noAtlasInstalado()
 
@@ -105,13 +107,17 @@ function useVozWhisper(aoFalar: (texto: string) => void) {
       gravacao.current = null
       setGravando(false)
       definirEstadoVoz({ fase: 'escrevendo' })
+      const ep = emPartes.current
+      emPartes.current = null
+      if (ep) clearInterval(ep.timer)
       void (async () => {
         try {
           const audio = await g.parar()
           const t = transcritorAtual()
           await t.preparar((pct) => { if (pct < 100) definirEstadoVoz({ fase: 'preparando', progresso: pct }) })
           definirEstadoVoz({ fase: 'escrevendo' })
-          const texto = (await t.transcrever(audio)).trim()
+          // Os trechos já falados foram sendo escritos durante a gravação; aqui falta só o finalzinho.
+          const texto = (ep ? await ep.partes.terminar(audio) : await t.transcrever(audio)).trim()
           definirEstadoVoz({ fase: 'livre' })
           if (texto) cb.current(texto)
         } catch {
@@ -124,11 +130,18 @@ function useVozWhisper(aoFalar: (texto: string) => void) {
     ligando.current = true
     void (async () => {
       try {
-        gravacao.current = await iniciarGravacao()
+        const g = await iniciarGravacao()
+        gravacao.current = g
         setGravando(true)
         definirEstadoVoz({ fase: 'ouvindo' })
         // Enquanto a pessoa fala, o modelo (só na primeira vez) já vai sendo preparado.
         void transcritorAtual().preparar(() => {}).catch(() => {})
+        // E os trechos já falados vão sendo escritos (a cada 4 s olha se já tem um trecho de uns 12 s pronto).
+        if (g.parcial) {
+          const partes = criarTranscricaoEmPartes(transcritorAtual())
+          const timer = setInterval(() => { void g.parcial!().then((a) => partes.adiantar(a)).catch(() => {}) }, 4000)
+          emPartes.current = { partes, timer }
+        }
       } catch {
         definirEstadoVoz({ fase: 'erro', recado: RECADO_SEM_MICROFONE })
       } finally { ligando.current = false }

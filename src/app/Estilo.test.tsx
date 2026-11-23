@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Estilo } from './Estilo'
+import { ContextoPlano } from './plano-no-menu'
+import { ContextoConectarClaude } from './conectar-claude'
 import { criarEstiloFixture, type EstiloFixture } from './ponte-estilo'
 import { criarArquivosFixture, type ArquivosFixture } from './ponte-arquivos'
 
@@ -18,10 +20,10 @@ const colar = async (txt: string) => {
   await clicar('Adicionar link')
 }
 
-test('pede 2 ou 3 referências e o sentimento, com microfone nos campos de texto', () => {
+test('pede de 1 a 3 referências e o sentimento, com microfone nos campos de texto', () => {
   montar()
   expect(screen.getByRole('heading', { name: 'Qual é a cara do seu sistema?' })).toBeInTheDocument()
-  expect(screen.getByText('Mande 2 ou 3 sites ou apps que você acha bonitos')).toBeInTheDocument()
+  expect(screen.getByText('Mande 1 a 3 sites ou apps que você acha bonitos')).toBeInTheDocument()
   expect(screen.getByText('O que o seu cliente deve sentir ao abrir o sistema?')).toBeInTheDocument()
   expect(screen.getByText(/PROJETO · AGENDA DA BARBEARIA DO ZÉ/)).toBeInTheDocument()
   expect(screen.getAllByRole('button', { name: 'Falar' }).length).toBeGreaterThanOrEqual(2)
@@ -92,12 +94,11 @@ describe('3 estilos e design system', () => {
     await clicar('Tradição')
   }
 
-  test('sem 2 referências ou sem sentimento não propõe, com recado amigo', async () => {
+  test('sem nenhuma referência ou sem sentimento não propõe; uma referência já basta', async () => {
     const { est } = montarCompleto()
     await clicar('Mostrar 3 estilos')
-    expect(screen.getByRole('alert')).toHaveTextContent('pelo menos 2 referências')
+    expect(screen.getByRole('alert')).toHaveTextContent('pelo menos 1 referência')
     await colar('aesop.com')
-    await colar('nubank.com.br')
     await clicar('Mostrar 3 estilos')
     expect(screen.getByRole('alert')).toHaveTextContent('jeito que o seu cliente deve se sentir')
     expect(est.pedidos).toHaveLength(0)
@@ -150,4 +151,26 @@ describe('3 estilos e design system', () => {
 test('sem WebGL (computador antigo ou teste) o pincel cai no desenho em SVG', async () => {
   const { temWebGL } = await import('./Pintor')
   expect(temWebGL()).toBe(false)
+})
+
+describe('Claude não conectado neste computador', () => {
+  test('ao pedir os estilos, explica o motivo e leva direto para conectar o Claude (sem chamar o Claude)', async () => {
+    const est = criarEstiloFixture()
+    const conectar = vi.fn()
+    render(<TemaProvider><ContextoPlano.Provider value={{ valor: 'Não conectado', sub: 'Conecte o Claude para construir' }}><ContextoConectarClaude.Provider value={conectar}>
+      <Estilo obra={OBRA} arquivos={criarArquivosFixture()} estilo={est} onVoltar={() => {}} />
+    </ContextoConectarClaude.Provider></ContextoPlano.Provider></TemaProvider>)
+    await colar('aesop.com')
+    await clicar('Confiança')
+    await clicar('Mostrar 3 estilos')
+    expect(screen.getByRole('alert')).toHaveTextContent('O Claude ainda não está conectado neste computador')
+    expect(est.pedidos).toHaveLength(0)
+    await clicar('Conectar o Claude agora')
+    expect(conectar).toHaveBeenCalled()
+  })
+
+  test('o botão "Usar … e desenhar as telas" só aparece depois que os 3 estilos chegam', () => {
+    montar()
+    expect(screen.queryByRole('button', { name: /e desenhar as telas/ })).toBeNull()
+  })
 })

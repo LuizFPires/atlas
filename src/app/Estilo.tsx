@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { Botao, CampoFalado, Icone, useVoz } from '../ui'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EntradaEstilo, EstiloProposto, PonteEstilo } from './ponte-estilo'
 import { FASES, linkCurto, MAX_REFERENCIAS, MIN_REFERENCIAS, MODOS, normalizarLink, SENTIMENTOS, UPLOADS } from './estilo-dados'
+import { ContextoPlano } from './plano-no-menu'
+import { ContextoConectarClaude } from './conectar-claude'
 import { PaletaCores } from './PaletaCores'
 import { Pintor } from './Pintor'
 import './estilo.css'
@@ -31,6 +33,8 @@ const recadoPrint = (e: unknown) => recado(e, 'PNG, JPG ou WEBP', 'um print meno
 const recadoUpload = (e: unknown) => recado(e, 'PNG, JPG, WEBP, PDF ou o design-system.md', 'um menor')
 
 /** F06b: estilo do sistema (projeto 1/3). Referências (link, print ou fala) e o sentimento desejado. */
+const SEM_CLAUDE = 'O Claude ainda não está conectado neste computador. É ele quem monta os estilos: conecte agora (leva um clique) e depois toque em Mostrar 3 estilos de novo. Suas referências continuam aqui.'
+
 export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) {
   const [refs, setRefs] = useState<Ref[]>([])
   const [link, setLink] = useState('')
@@ -42,6 +46,8 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
   const [escolhido, setEscolhido] = useState('')
   const [ocupado, setOcupado] = useState<'' | 'propondo' | 'guardando'>('')
   const [erro, setErro] = useState('')
+  const plano = useContext(ContextoPlano)
+  const conectarClaude = useContext(ContextoConectarClaude)
   const [guardado, setGuardado] = useState<{ estilo: EstiloProposto | null; caminho: string } | null>(null)
   const [modo, setModo] = useState<'criar' | 'tenho'>('criar')
   // Identidade que o cliente já tem: nomes dos arquivos guardados na obra, por tipo.
@@ -86,8 +92,10 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
   const faltaRef = total < MIN_REFERENCIAS
   const faltaSentir = sentir.length === 0 && !extra.trim()
 
+  const claudeDesligado = plano?.valor === 'Não conectado'
   const propor = async () => {
-    if (faltaRef) { setErro('Mande pelo menos 2 referências: link, print ou falando.'); return }
+    if (claudeDesligado) { setErro(SEM_CLAUDE); return }
+    if (faltaRef) { setErro('Mande pelo menos 1 referência: link, print ou falando.'); return }
     if (faltaSentir) { setErro('Escolha pelo menos um jeito que o seu cliente deve se sentir.'); return }
     setErro('')
     setOcupado('propondo')
@@ -167,7 +175,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
       <div className="at-estilo__grade">
       {modo === 'criar' && (
       <div className="at-estilo__card">
-        <b className="at-estilo__tit">Mande 2 ou 3 sites ou apps que você acha bonitos</b>
+        <b className="at-estilo__tit">Mande 1 a 3 sites ou apps que você acha bonitos</b>
         <span className="at-estilo__sub">Pode ser de qualquer ramo: uma loja, um banco, um restaurante. Vale link ou print da tela.</span>
 
         <ul className="at-estilo__refs" aria-label="Referências que você mandou">
@@ -291,13 +299,14 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
           </div>
         ) : (
           <div className="at-estilo__vazio">
-            <span>Mande 2 ou 3 referências e diga o que o seu cliente deve sentir. Aí eu monto 3 estilos para você escolher.</span>
+            <span>Mande de 1 a 3 referências e diga o que o seu cliente deve sentir. Aí eu monto 3 estilos para você escolher.</span>
           </div>
         )}
       </section>}
       </div>
 
       {erro && <p className="at-nova__erro" role="alert">{erro}</p>}
+      {erro === SEM_CLAUDE && conectarClaude && <Botao onClick={conectarClaude}>Conectar o Claude agora</Botao>}
       {guardado && (
         <div className="at-estilo__feito" role="status">
           <b>{guardado.estilo ? `Estilo "${guardado.estilo.nome}" guardado!` : 'Identidade visual guardada!'}</b>
@@ -311,7 +320,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
           ? <Botao onClick={() => onConcluir?.(guardado)}>Desenhar as telas →</Botao>
           : modo === 'tenho'
             ? <Botao disabled={!temIdentidade || ocupado !== ''} onClick={usarIdentidade}>{ocupado === 'guardando' ? 'Guardando…' : 'Usar a minha identidade e desenhar as telas →'}</Botao>
-            : <Botao disabled={!propostos || ocupado !== ''} onClick={usar}>{ocupado === 'guardando' ? 'Guardando…' : `Usar "${propostos?.find((p) => p.id === escolhido)?.nome ?? ''}" e desenhar as telas →`}</Botao>}
+            : propostos && <Botao disabled={ocupado !== ''} onClick={usar}>{ocupado === 'guardando' ? 'Guardando…' : `Usar "${propostos?.find((p) => p.id === escolhido)?.nome ?? ''}" e desenhar as telas →`}</Botao>}
         <span>Vira o design system do seu sistema. Dá para ajustar depois.</span>
       </div>
     </div>

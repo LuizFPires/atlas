@@ -1,6 +1,9 @@
 // Processo principal do app Atlas (Electron). Reaproveita o front (dist-app/, gerado por `npm run build:app`).
 'use strict'
 const { app, BrowserWindow, dialog, ipcMain, Menu, powerSaveBlocker, session, shell } = require('electron')
+// Voz mais rápida (23/11/2026): libera o SharedArrayBuffer para o Whisper usar vários núcleos do processador.
+// Precisa vir antes do app ficar pronto. O app carrega só arquivos locais e nunca páginas de fora.
+app.commandLine.appendSwitch('enable-features', 'SharedArrayBuffer')
 const crypto = require('node:crypto')
 const os = require('node:os')
 const path = require('node:path')

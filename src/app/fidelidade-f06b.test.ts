@@ -31,7 +31,6 @@ test('textos fixos da tela batem com o protótipo', () => {
     'Qual é a cara do seu sistema?',
     'Antes de desenhar as telas, vamos escolher as cores, as letras e o jeito dos botões. Assim o protótipo já nasce com a cara da sua barbearia.',
     'PROJETO · AGENDA DA BARBEARIA DO ZÉ',
-    'Mande 2 ou 3 sites ou apps que você acha bonitos',
     'Pode ser de qualquer ramo: uma loja, um banco, um restaurante. Vale link ou print da tela.',
     'Mandar print',
     'Falar o que você gosta',
