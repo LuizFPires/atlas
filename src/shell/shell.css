@@ -61,3 +61,7 @@
 .at-plano__modelo { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
 .at-plano__modelo-rot { font: 500 11px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute2); }
 .at-plano__modelo select { height: 34px; border-radius: 9px; border: 1px solid #2C3036; background: #16181B; color: #EDEFEA; font: 600 13px var(--font-text); padding: 0 8px; }
+
+/* Claude não conectado: atalho direto no cartão do plano. */
+.at-plano__conectar { margin-top: 8px; min-height: 40px; border-radius: 10px; border: 0; background: var(--lime, #C6F135); color: var(--on-lime, #141619); font: 700 14px 'Geist', sans-serif; cursor: pointer; padding: 0 12px; }
+.at-plano__conectar:focus-visible { outline: 2px solid var(--texto, #EDEFEA); outline-offset: 2px; }

@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { StatusVoz } from '../ui'
 import { Shell, type IdTela } from '../shell/Shell'
 import { ImagemAssinatura } from '../marca/Marca'
@@ -43,6 +43,7 @@ import { celularIndisponivel, criarCelularFixture, type PonteCelular } from './p
 import { contasIndisponivel, criarContasFixture, type PonteContas } from './ponte-contas'
 import { claudeIndisponivel, criarClaudeFixture, type PonteClaude } from './ponte-claude'
 import { ContextoPlano, usePlanoNoMenu } from './plano-no-menu'
+import { ContextoConectarClaude } from './conectar-claude'
 import { ContextoModelo, criarModeloFixture, useModeloNoMenu, type PonteModelo } from './ponte-modelo'
 import { criarAtivacaoApi, criarAtivacaoFixture, lerAtivacao, modoFixture, type AtivacaoApi } from './ativacao-api'
 import { fetchPelaPonte } from './ponte-servidor'
@@ -75,8 +76,9 @@ function Obras({ ativo, onNavegar, onFalar, children }: { ativo: IdTela; onNaveg
   const licenca = useContext(ContextoLicenca)
   const plano = useContext(ContextoPlano)
   const modelo = useContext(ContextoModelo)
+  const conectarClaude = useContext(ContextoConectarClaude)
   return (
-    <Shell ativo={ativo} onNavegar={onNavegar} onFalar={onFalar ?? (() => {})} licenca={licenca?.cartao} plano={plano} modelo={modelo} onComprar={licenca?.comprar}>
+    <Shell ativo={ativo} onNavegar={onNavegar} onFalar={onFalar ?? (() => {})} licenca={licenca?.cartao} plano={plano} modelo={modelo} onComprar={licenca?.comprar} onConectarClaude={conectarClaude ?? undefined}>
       {children ?? (
         <>
           <p className="rotulo">Minhas obras</p>
@@ -227,6 +229,9 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     if (ponte.pagamento) return ponte.pagamento.abrir(url)
     if (!modoFixture()) throw new Error('pagamento-indisponivel') // sem o processo principal não há como abrir o navegador: não finge
   }, [ponte])
+  // "Conectar o Claude agora" de qualquer tela: vai para a tela de conectar e, ao terminar, volta para onde estava.
+  const voltarDoClaude = useRef<string | null>(null)
+  const conectarClaude = useCallback(() => { voltarDoClaude.current = tela; setTela(TELA_CLAUDE) }, [tela])
   const contextoLicenca = useMemo(() => ({ cartao: licencaNoApp.cartao, comprar: abrirCompra }), [licencaNoApp.cartao, abrirCompra])
 
   // M33: o celular como controle remoto deste notebook. Só no Atlas instalado, ativado e com acesso em dia; nunca no modo fixture.
@@ -262,7 +267,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const painelDeAjuda = painelAjuda ? <Ajuda key={painelAjuda.n} ajuda={ponteAjuda} casos={ponteCasos} contexto={painelAjuda.contexto} nome={dono.split(' ')[0] || undefined} onFechar={() => setPainelAjuda(null)} /> : null
   // Pagou: o cartão já virou "Licença ativa" e a tela de compra some sozinha.
   const compra = emailCompra && !licencaNoApp.pagou ? <ComprarAtlas aberto email={emailCompra} onFechar={() => setEmailCompra(null)} iniciar={iniciarCompraPeloApp} abrirPagamento={abrirPagamento} onPagamentoAberto={licencaNoApp.esperarPagamento} /> : null
-  const com = (n: ReactNode) => <ContextoPlano.Provider value={planoNoMenu}><ContextoModelo.Provider value={modeloNoMenu}><ContextoLicenca.Provider value={contextoLicenca}>{n}{painelDeAjuda}{compra}<StatusVoz /></ContextoLicenca.Provider></ContextoModelo.Provider></ContextoPlano.Provider>
+  const com = (n: ReactNode) => <ContextoConectarClaude.Provider value={conectarClaude}><ContextoPlano.Provider value={planoNoMenu}><ContextoModelo.Provider value={modeloNoMenu}><ContextoLicenca.Provider value={contextoLicenca}>{n}{painelDeAjuda}{compra}<StatusVoz /></ContextoLicenca.Provider></ContextoModelo.Provider></ContextoPlano.Provider></ContextoConectarClaude.Provider>
   // Cortesia/teste vencido: nada funciona, nenhum menu, nenhuma Ajuda. Só o aviso e a compra (que fecha sozinha ao pagar).
   if (licencaNoApp.encerrado && tela !== TELA_ATIVACAO) {
     return <>{<AcessoEncerrado encerrado={licencaNoApp.encerrado} onComprar={abrirCompra} />}{compra}</>
@@ -270,7 +275,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   if (tela === TELA_ATIVACAO) {
     return com(<Ativacao api={ativacao} computador={computador} onInstalando={setInstalando} onContinuar={() => { void licencaNoApp.conferir(); setTela(TELA_CLAUDE) }} />)
   }
-  if (tela === TELA_CLAUDE) return com(<Claude claude={ponteClaude} onContinuar={() => setTela(TELA_CONTAS)} onPedirAjuda={() => abrirAjuda({ origem: 'menu', onde: 'a conexão com o Claude' })} />)
+  if (tela === TELA_CLAUDE) return com(<Claude claude={ponteClaude} onContinuar={() => { const v = voltarDoClaude.current; voltarDoClaude.current = null; setTela(v ?? TELA_CONTAS) }} onPedirAjuda={() => abrirAjuda({ origem: 'menu', onde: 'a conexão com o Claude' })} />)
   if (tela === TELA_CONTAS) return com(<Contas contas={ponteContas} onContinuar={() => setTela(TELA_CELULAR)} onPedirAjuda={pedirAjudaPasso} />)
   if (tela === TELA_CELULAR) return com(<Celular celular={ponteCelular} onVoltar={() => setTela(TELA_CONTAS)} onConcluir={() => setTela('F05')} />)
   if (tela === TELA_RETOMAR && paradaF12) {

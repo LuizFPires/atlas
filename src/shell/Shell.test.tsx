@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Shell } from './Shell'
+import { TemaProvider } from '../tema/tema'
 
 test('mostra itens, marca o ativo e tem um bot찾o s처: Falar com o Atlas', async () => {
   const onNavegar = vi.fn(), onFalar = vi.fn()
@@ -72,4 +73,11 @@ test('cart찾o do plano: mostra s처 o que o app leu do Claude; nunca cota ou hor�
   rerender(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} />)
   expect(screen.queryByText('Plano Claude')).toBeNull()
   expect(screen.queryByText(/64% da cota|Renova hoje/)).toBeNull()
+})
+
+test('Claude n찾o conectado: o cart찾o do plano leva a conectar o Claude', async () => {
+  const conectar = vi.fn()
+  render(<TemaProvider><Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} plano={{ valor: 'N찾o conectado', sub: 'Conecte o Claude para construir' }} onConectarClaude={conectar}><p>x</p></Shell></TemaProvider>)
+  await userEvent.click(screen.getByRole('button', { name: 'Conectar o Claude' }))
+  expect(conectar).toHaveBeenCalled()
 })

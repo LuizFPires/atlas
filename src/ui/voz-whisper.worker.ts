@@ -10,7 +10,9 @@ env.useBrowserCache = true
 const onnx = env.backends.onnx as { wasm?: { wasmPaths?: string; numThreads?: number } }
 if (onnx.wasm) {
   onnx.wasm.wasmPaths = new URL('../ort/', import.meta.url).href
-  onnx.wasm.numThreads = 1 // sem SharedArrayBuffer no file://
+  // Vários núcleos do processador quando o Atlas libera o SharedArrayBuffer (main.cjs); senão, um só, como antes.
+  const nucleos = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 2 : 2
+  onnx.wasm.numThreads = typeof SharedArrayBuffer !== 'undefined' ? Math.max(1, Math.min(4, nucleos - 1)) : 1
 }
 
 let asr: Promise<AutomaticSpeechRecognitionPipeline> | null = null
@@ -36,7 +38,11 @@ function carregar() {
   return asr
 }
 
-self.onmessage = async (ev: MessageEvent) => {
+// Uma transcrição por vez (os trechos chegam enquanto a pessoa ainda fala): fila simples, na ordem.
+let fila: Promise<unknown> = Promise.resolve()
+self.onmessage = (ev: MessageEvent) => { fila = fila.then(() => tratar(ev)) }
+
+async function tratar(ev: MessageEvent) {
   const m = ev.data as { tipo: string; id: number; audio?: Float32Array }
   try {
     if (m.tipo === 'preparar') {

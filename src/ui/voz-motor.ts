@@ -23,7 +23,12 @@ export interface Transcritor {
   transcrever(audio16k: Float32Array): Promise<string>
 }
 /** Gravação em andamento: `parar` devolve o áudio em 16 kHz, mono. */
-export interface Gravacao { parar(): Promise<Float32Array>; cancelar(): void }
+export interface Gravacao {
+  parar(): Promise<Float32Array>
+  cancelar(): void
+  /** O áudio gravado até agora, sem parar (para ir transcrevendo em partes). */
+  parcial?(): Promise<Float32Array>
+}
 
 let transcritor: Transcritor | null = null
 let gravador: () => Promise<Gravacao> = gravarDoMicrofone
@@ -56,18 +61,19 @@ async function gravarDoMicrofone(): Promise<Gravacao> {
   rec.ondataavailable = (e) => { if (e.data.size) partes.push(e.data) }
   rec.start(1000)
   const desligar = () => fluxo.getTracks().forEach((t) => t.stop())
+  // Decodifica tudo o que já foi gravado (os pedaços do MediaRecorder só tocam juntos, a partir do primeiro).
+  const decodificar = async () => {
+    const bruto = await new Blob(partes, { type: rec.mimeType }).arrayBuffer()
+    const ctx = new AudioContext({ sampleRate: 16000 })
+    try { return (await ctx.decodeAudioData(bruto)).getChannelData(0).slice() } finally { void ctx.close() }
+  }
   return {
     cancelar() { try { rec.stop() } catch { /* já parado */ } desligar() },
+    parcial: () => decodificar(),
     parar: () => new Promise<Float32Array>((ok, erro) => {
       rec.onstop = async () => {
         desligar()
-        try {
-          const bruto = await new Blob(partes, { type: rec.mimeType }).arrayBuffer()
-          const ctx = new AudioContext({ sampleRate: 16000 })
-          const audio = await ctx.decodeAudioData(bruto)
-          void ctx.close()
-          ok(audio.getChannelData(0).slice())
-        } catch (e) { erro(e) }
+        try { ok(await decodificar()) } catch (e) { erro(e) }
       }
       try { rec.stop() } catch (e) { erro(e) }
     }),
