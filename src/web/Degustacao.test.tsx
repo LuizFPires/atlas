@@ -21,6 +21,7 @@ test('oferta ligada: mostra o bloco, pede o e-mail e avisa para clicar no link',
   await userEvent.click(screen.getByRole('button', { name: /Quero testar 5 dias grátis/ }))
   expect(pedir).toHaveBeenCalledWith('ana@exemplo.com')
   expect(await screen.findByRole('status')).toHaveTextContent(/Te enviei um e-mail.*Clica no link/)
+  expect(screen.getByRole('status')).toHaveTextContent(/Não achou o e-mail\? Olhe também nas abas Promoções e Atualizações do Gmail e na caixa de spam/)
 })
 
 test('oferta desligada: o bloco e o botão somem', async () => {

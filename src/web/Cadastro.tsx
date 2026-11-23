@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AVISO_EMAIL } from '../ui/aviso-email'
 import { CampoFalado, Icone } from '../ui'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { useTema } from '../tema/tema'
@@ -83,7 +84,8 @@ export function Cadastro({ onEnviar, temProva = sessionIdDaUrl() !== '' }: { onE
                 <a className="v-acao" href="/personalizar" data-tema={tema}>Deixar o app com a minha cara <Icone nome="seta" /></a>
               </>
             )}
-            <p className="c-mute">Não chegou? Veja também a caixa de spam. Dentro do Atlas, a Ajuda do Atlas te guia no que precisar.</p>
+            <p className="aviso-email">{AVISO_EMAIL}</p>
+            <p className="c-mute">Dentro do Atlas, a Ajuda do Atlas te guia no que precisar.</p>
           </div>
         ) : (
           <form className="c-form" onSubmit={enviar} noValidate>

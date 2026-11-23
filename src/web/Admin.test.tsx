@@ -496,6 +496,19 @@ describe('cortesia manual no painel', () => {
     expect(within(form).getByText(/Pode ser só hoje/)).toBeInTheDocument()
   })
 
+  it('e-mail enviado: lembra o gestor de avisar a pessoa sobre Promoções, Atualizações e spam', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const { api } = ambiente((url) => (url.endsWith('/admin/cortesia') ? resp({ ok: true, nova: true, validade_em: '2026-11-28T02:59:59.000Z', email_enviado: true }) : undefined))
+    montar(api)
+    await irParaAcoes()
+    const form = screen.getByRole('region', { name: 'Liberar cortesia' })
+    await userEvent.type(within(form).getByLabelText('E-mail da pessoa'), 'amigo@email.com')
+    await userEvent.type(within(form).getByLabelText('Vale até'), '2026-11-27')
+    await userEvent.click(within(form).getByRole('button', { name: 'Liberar cortesia' }))
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Avisamos a pessoa por e-mail'))
+    expect(screen.getByRole('status')).toHaveTextContent('Avise a pessoa: se não achar, olhar nas abas Promoções e Atualizações do Gmail e no spam.')
+  })
+
   it('se o servidor recusar, mostra o erro e NÃO diz que liberou', async () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api } = ambiente((url) => (url.endsWith('/admin/cortesia') ? resp({ erro: 'ja_tem_licenca_paga', mensagem: 'Essa pessoa já tem uma licença paga. Não precisa de cortesia.' }, 409) : undefined))
