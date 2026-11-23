@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · 1 Complemento</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes cnpulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.5)}70%{box-shadow:0 0 0 22px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}
+@keyframes cnonda{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes cngiro{to{transform:rotate(360deg)}}
+@keyframes cnpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.cn-grav{animation:cnpulso 1.4s infinite}
+.cn-onda span{display:block;width:4px;border-radius:2px;background:#F05A4F;animation:cnonda 1s infinite ease-in-out}
+.cn-giro{animation:cngiro 1s linear infinite}
+.cn-pisca{animation:cnpisca 1.2s infinite}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:center;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA · 1 · A IDEIA</span><h1 style="margin:0;font-size:26px;letter-spacing:-.01em">Só o que faltou</h1></div>
+   <div style="margin-left:auto;display:flex;align-items:center;gap:10px"><a href="CN5Prototipo.dc.html" style="display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 16px;border-radius:999px;border:1px solid {{t.cardB}};background:{{t.card}};color:{{t.text}};font:600 14px 'Geist',sans-serif"><span class="cn-giro" style="width:14px;height:14px;border-radius:50%;border:2px solid {{t.lime}};border-right-color:transparent"></span>Mapa de telas · montando</a></div>
+  </div>
+  <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="6"><li style="display:flex;flex-direction:column;gap:7px"><span style="height:4px;border-radius:2px;background:{{p.barra}}"></span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{p.cor}}">{{p.rot}}</span></li></sc-for>
+  </ol>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:24px">
+   <section style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;padding:26px;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;flex-direction:column;gap:6px"><h2 style="margin:0;font-size:22px">Entendi quase tudo. Só faltaram 2 coisas.</h2><p style="margin:0;font-size:15px;line-height:1.55;color:{{t.mute}}">O Atlas só pergunta o que não ficou claro no que você contou. Responda falando ou pule: dá para mudar depois, no protótipo.</p></div>
+    <sc-for list="{{perguntas}}" as="q" hint-placeholder-count="2">
+     <div style="background:{{t.card2}};border:1px solid {{t.cardB}};border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px">
+      <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.limeTxt}}">{{q.rot}}</span>
+      <b style="font-size:17px">{{q.p}}</b>
+      <span style="font-size:14px;color:{{t.mute}}">{{q.porque}}</span>
+      <div style="display:flex;gap:10px;align-items:center"><button aria-label="Responder falando" style="width:48px;height:48px;flex:none;border-radius:50%;border:none;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button><div style="flex:1;min-height:48px;box-sizing:border-box;border-radius:12px;border:1px solid {{t.cardB}};background:{{t.input}};padding:12px 14px;font-size:15px;color:{{q.corResp}}">{{q.resp}}</div></div>
+     </div>
+    </sc-for>
+    <div style="margin-top:auto;display:flex;gap:10px;justify-content:flex-end"><a href="CN1Ideia.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 16px;border-radius:12px;border:1px solid {{t.cardB}};color:{{t.text}};font:600 15px 'Geist',sans-serif">← Voltar à conversa</a><a href="CN3Visual.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 20px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font:700 15px 'Geist',sans-serif">Seguir para o visual →</a></div>
+   </section>
+   <aside style="display:flex;flex-direction:column;gap:16px">
+    <div style="background:{{t.card}};border:1px solid {{t.lime}};border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:12px">
+     <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">EM SEGUNDO PLANO</span>
+     <b style="font-size:18px">O Atlas já começou o seu protótipo</b>
+     <p style="margin:0;font-size:14px;line-height:1.55;color:{{t.mute}}">Enquanto você responde e escolhe o visual, o Claude monta o mapa de telas: o que cada tela mostra e como uma leva à outra. As telas são pintadas assim que você escolher o estilo.</p>
+     <div style="display:flex;align-items:center;gap:10px;font-size:14px"><span class="cn-giro" style="width:14px;height:14px;border-radius:50%;border:2px solid {{t.lime}};border-right-color:transparent"></span>Montando o mapa de telas…</div>
+     <div style="height:6px;border-radius:3px;background:{{t.line}};overflow:hidden"><i style="display:block;width:30%;height:100%;background:{{t.lime}}"></i></div>
+    </div>
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:8px">
+     <b style="font-size:15px">Pode fechar esta tela</b>
+     <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">O protótipo continua no seu computador, mesmo se você sair. Ele precisa de internet: o Claude trabalha pela sua assinatura.</span>
+    </div>
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', cinza: '#3A3F46', verm: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', cinza: '#C9CDC4', verm: '#D8483D' }
+};
+const PASSOS = ['1 · A IDEIA', '2 · O VISUAL', '3 · O NOME', '4 · O PROTÓTIPO', '5 · AS CONTAS', '6 · COMEÇAR'];
+const passos = (t, atual) => PASSOS.map((rot, i) => ({ rot, barra: i < atual ? t.lime : i === atual ? t.lime : t.line, cor: i <= atual ? t.text : t.mute2 }));
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const perguntas = [
+      { rot: 'FALTOU 1 DE 2', p: 'Os funcionários entram com o quê?', porque: 'Você não contou como cada pedreiro entra no aplicativo.', resp: 'Com o CPF e uma senha de 4 números.', corResp: t.text },
+      { rot: 'FALTOU 2 DE 2', p: 'Quem avisa quando alguém atrasa, e para quem?', porque: 'Você falou do aviso de atraso, mas não de quem recebe.', resp: 'Toque no microfone ou escreva…', corResp: t.mute2 }
+    ];
+    return { tema, t, passos: passos(t, 0), perguntas };
+  }
+}
+</script>
+</body>
+</html>

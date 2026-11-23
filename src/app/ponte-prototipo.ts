@@ -51,11 +51,17 @@ export interface PontePrototipo {
   linkCelular?(nome: string, documento: string): Promise<{ url: string; expira_em: string }>
   /** Abre o WhatsApp com o link que acabou de ser gerado. */
   whatsapp?(url: string): Promise<void>
-  /** Enquanto desenha: o mapa de telas e as que já ficaram prontas (para aparecerem uma a uma). Fora disso: null. */
+  /** Caminho novo, parte 1 (logo depois da ideia, em segundo plano): o mapa de telas, guardado na obra. Não refaz o que já existe. */
+  mapear?(pasta: string, obraNome: string, relato: string): Promise<{ id: string; nome: string }[]>
+  /** Caminho novo, parte 2 (depois do estilo): pinta as telas do mapa salvo; se o mapa ainda está saindo, espera por ele. */
+  pintar?(pasta: string, obraNome: string, estilo: EstiloProposto | null): Promise<EstadoProto>
+  /** O mapa de telas e as que já ficaram prontas (para aparecerem uma a uma), também com o mapa pronto esperando o estilo. Nada: null. */
   progresso?(pasta: string): Promise<ProgressoProto | null>
 }
 
-export interface ProgressoProto { mapa: { id: string; nome: string }[]; telas: TelaDesenhada[] }
+/** fase: 'mapeando' (montando o mapa), 'mapa' (mapa pronto, esperando o estilo), 'pintando' (desenhando as telas). */
+/** parado: a pintura começou e parou no meio (sem internet, computador desligado); o Atlas continua sozinho em instantes. */
+export interface ProgressoProto { fase?: 'mapeando' | 'mapa' | 'pintando'; parado?: boolean; mapa: { id: string; nome: string }[]; telas: TelaDesenhada[] }
 
 // ---- Segurança do preview -------------------------------------------------------------------------------------------------
 
@@ -169,6 +175,7 @@ export interface PrototipoFixture extends PontePrototipo {
 
 /** Mock do modo fixture: devolve telas de exemplo no estilo e guarda as versões só na memória. Cor/palavras do pedido mudam a tela de verdade. */
 export function criarPrototipoFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): PrototipoFixture {
+  const mapas = new Map<string, { id: string; nome: string }[]>()
   const obras = new Map<string, { nome: string; estilo: EstiloProposto; avisos: string[]; destaque?: string; estado: EstadoProto }>()
   const linksGerados: string[] = []
   const pedidos: string[] = []
@@ -180,6 +187,21 @@ export function criarPrototipoFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): Pr
     escritos,
     linksGerados,
     async estado(pasta) { return copia(obras.get(pasta)?.estado ?? { versoes: [], atual: 0 }) },
+    async mapear(pasta, obraNome) {
+      const salvo = mapas.get(pasta)
+      if (salvo) return salvo.map((t) => ({ ...t }))
+      const m = telasDoEstilo(obraNome, ESTILOS_EXEMPLO[0]).map((t) => ({ id: t.id, nome: t.nome }))
+      mapas.set(pasta, m)
+      return m.map((t) => ({ ...t }))
+    },
+    async pintar(pasta, obraNome, estilo) {
+      if (!mapas.has(pasta)) throw new Error('sem-mapa')
+      return this.desenhar(pasta, obraNome, estilo)
+    },
+    async progresso(pasta) {
+      const m = mapas.get(pasta)
+      return m && !obras.get(pasta)?.estado.versoes.length ? { fase: 'mapa' as const, mapa: m.map((t) => ({ ...t })), telas: [] } : null
+    },
     async desenhar(pasta, obraNome, estilo) {
       const existente = obras.get(pasta)
       if (existente && existente.estado.versoes.length) return copia(existente.estado) // nunca refaz por cima

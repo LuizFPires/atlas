@@ -44,6 +44,8 @@ export function CelularPreview({ html, titulo, telas, inicial }: { html: string;
   )
 }
 
+const PAROU = 'O desenho parou no meio: sem internet ou o Claude não respondeu. Nada se perdeu: o protótipo continua sozinho quando der. Deixe o Atlas aberto.'
+
 /** F07: telas desenhadas com o Claude no estilo escolhido, com o celular ao lado. */
 export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcluir }: Props) {
   const [estado, setEstado] = useState<EstadoProto>({ versoes: [], atual: 0 })
@@ -66,23 +68,78 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
   const { gravando, alternar, suportado } = useVoz((falado) => setPedido((p) => [p, falado].filter(Boolean).join(' ')))
   const vozRelato = useVoz((falado) => setRelato((r) => [r, falado].filter(Boolean).join(' ')))
 
+  // Estimativa real (andamento-telas.ts): quando o desenho começou e quando o mapa de telas saiu.
+  const inicioDesenho = useRef(0)
+  const mapaSaiuEm = useRef<number | null>(null)
+
+  const mostrarPrimeiras = (e: EstadoProto) => {
+    setMsgs([{ quem: 'CLAUDE', txt: estilo ? 'Fiz as primeiras telas no estilo que você escolheu, a partir do que você contou. Toque nos botões do celular ao lado para navegar e me diga o que quer mudar.' : 'Fiz as primeiras telas com a sua identidade visual, a partir do que você contou. Toque nos botões do celular ao lado para navegar e me diga o que quer mudar.' }])
+    setEstado(e)
+    setAba(e.versoes.find((v) => v.numero === e.atual)?.telas[0]?.id ?? '')
+  }
+
+  // Caminho novo: 'mapa' = mapa pronto e nada pintado (começa a pintar agora, com o estilo escolhido);
+  // 'mapeando'/'pintando' = o Atlas já está trabalhando: só acompanha até a 1ª versão aparecer.
+  const seguirSegundoPlano = async (fase: NonNullable<ProgressoProto['fase']>) => {
+    setErro('')
+    setDesenhando(true)
+    inicioDesenho.current = 0
+    mapaSaiuEm.current = null
+    const espiar = () => prototipo.progresso?.(obra.pasta).then((a) => {
+      if (!a) return
+      const agora = Date.now()
+      if (inicioDesenho.current === 0) inicioDesenho.current = agora - 1500
+      if (a.mapa.length > 0 && mapaSaiuEm.current === null) mapaSaiuEm.current = (agora - inicioDesenho.current) / 1000
+      setAndamento(a)
+    }, () => {})
+    if (fase === 'mapa' && prototipo.pintar) {
+      const t = setInterval(() => { void espiar() }, 1500)
+      let ok = false
+      try { mostrarPrimeiras(await prototipo.pintar(obra.pasta, obra.nome, estilo ?? null)); ok = true } catch { /* sem internet ou o Claude parou: o Atlas tenta de novo sozinho */ } finally { clearInterval(t) }
+      if (ok) { setDesenhando(false); setAndamento(null); setPronto(true); return }
+      setErro(PAROU)
+    }
+    await new Promise<void>((fim) => {
+      const t = setInterval(() => {
+        void (async () => {
+          await espiar()
+          const e = await prototipo.estado(obra.pasta).catch(() => null)
+          if (e?.versoes.length) { clearInterval(t); mostrarPrimeiras(e); fim(); return }
+          const a = await prototipo.progresso?.(obra.pasta).catch(() => null)
+          if (a?.fase === 'mapa' && !a.parado && prototipo.pintar) { clearInterval(t); fim(); void seguirSegundoPlano('mapa') }
+          else if (a?.fase === 'mapa' && a.parado) setErro(PAROU) // o Atlas tenta de novo sozinho (a cada 2 min); segue acompanhando
+          else if (a?.fase === 'pintando') setErro('')
+          else if (!a) { clearInterval(t); setErro('O desenho das telas parou. Conte de novo o que você quer e o Atlas desenha.'); setPedeRelato(true); fim() }
+        })()
+      }, 1500)
+    })
+    setDesenhando(false)
+    setAndamento(null)
+    setPronto(true)
+  }
+
   useEffect(() => {
     if (iniciou.current) return
     iniciou.current = true
     void (async () => {
       try {
         const e = await prototipo.estado(obra.pasta)
-        if (!e.versoes.length) { setPedeRelato(true); return }
+        if (!e.versoes.length) {
+          // Caminho novo: o mapa (e talvez as telas) já está saindo em segundo plano. Acompanha em vez de pedir o relato de novo.
+          const a = prototipo.progresso ? await prototipo.progresso(obra.pasta).catch(() => null) : null
+          if (a?.fase) { void seguirSegundoPlano(a.fase); return }
+          // (seguirSegundoPlano é estável o bastante: só lê props da obra aberta; a tela é remontada ao trocar de obra)
+          setPedeRelato(true)
+          return
+        }
         setEstado(e)
         setAba(e.versoes.find((v) => v.numero === e.atual)?.telas[0]?.id ?? '')
       } catch (x) { setErro(recadoDoErroProto(x)) } finally { setPronto(true) }
     })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- roda uma vez por obra (iniciou); seguirSegundoPlano muda a cada render
   }, [prototipo, obra])
 
   // Desenha a partir do relato. Sem um dos 3 estilos (veio de "Já tenho a minha identidade visual"): o Claude segue o design-system.md.
-  // Estimativa real (andamento-telas.ts): quando o desenho começou e quando o mapa de telas saiu.
-  const inicioDesenho = useRef(0)
-  const mapaSaiuEm = useRef<number | null>(null)
   const desenhar = async () => {
     setPedeRelato(false)
     setPronto(false)

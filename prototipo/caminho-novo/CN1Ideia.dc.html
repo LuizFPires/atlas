@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · 1 A ideia</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes cnpulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.5)}70%{box-shadow:0 0 0 22px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}
+@keyframes cnonda{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes cngiro{to{transform:rotate(360deg)}}
+@keyframes cnpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.cn-grav{animation:cnpulso 1.4s infinite}
+.cn-onda span{display:block;width:4px;border-radius:2px;background:#F05A4F;animation:cnonda 1s infinite ease-in-out}
+.cn-giro{animation:cngiro 1s linear infinite}
+.cn-pisca{animation:cnpisca 1.2s infinite}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:center;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA · PRIMEIRO PASSO</span><h1 style="margin:0;font-size:26px;letter-spacing:-.01em">Conte a sua ideia para o Atlas</h1></div>
+   <div style="margin-left:auto;display:flex;align-items:center;gap:10px"><a href="CN1Ideia.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 16px;border-radius:12px;border:1px solid {{t.cardB}};color:{{t.text}};font:600 15px 'Geist',sans-serif">← Minhas obras</a></div>
+  </div>
+  <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="6"><li style="display:flex;flex-direction:column;gap:7px"><span style="height:4px;border-radius:2px;background:{{p.barra}}"></span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{p.cor}}">{{p.rot}}</span></li></sc-for>
+  </ol>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:340px minmax(0,1fr);gap:24px">
+   <aside aria-label="Roteiro da conversa" style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;padding:22px 20px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">ROTEIRO · {{feitos}} DE {{total}}</span>
+    <p style="margin:2px 0 12px;font-size:14px;line-height:1.5;color:{{t.mute}}">É só um guia. Fale do seu jeito: o Atlas percebe o que você já contou e marca sozinho.</p>
+    <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column">
+     <sc-for list="{{topicos}}" as="tp" hint-placeholder-count="7">
+      <li style="display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;padding-bottom:14px;position:relative">
+       <span style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:{{tp.bolaBg}};border:2px solid {{tp.bolaBorda}};color:{{t.onLime}};box-sizing:border-box">{{tp.marca}}</span>
+       <div style="display:flex;flex-direction:column;gap:3px;padding-top:3px">
+        <b style="font-size:15px;font-weight:{{tp.peso}};color:{{tp.cor}}">{{tp.pergunta}}</b>
+        <sc-if value="{{tp.agora}}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;line-height:1.45;color:{{t.mute}}">{{tp.dica}}</span><button onClick="{{pular}}" style="align-self:flex-start;margin-top:4px;padding:0;border:none;background:none;color:{{t.mute2}};font:600 13px 'Geist',sans-serif;text-decoration:underline;cursor:pointer">Pular este tópico</button></sc-if>
+        <sc-if value="{{tp.feito}}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:{{t.limeTxt}}">{{tp.resumo}}</span></sc-if>
+       </div>
+      </li>
+     </sc-for>
+    </ol>
+   </aside>
+   <section aria-label="O que você contou" style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;display:flex;flex-direction:column;overflow:hidden">
+    <div style="padding:22px 26px 0;display:flex;align-items:baseline;gap:14px">
+     <h2 style="margin:0;font-size:22px">{{perguntaAtual}}</h2>
+     <span style="margin-left:auto;font:500 12px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">{{palavras}} PALAVRAS</span>
+    </div>
+    <div style="flex:1;min-height:0;padding:16px 26px;overflow:hidden;font-size:17px;line-height:1.7;color:{{t.text}}">
+     <sc-for list="{{trechos}}" as="tr" hint-placeholder-count="4"><span style="color:{{tr.cor}};background:{{tr.bg}};border-radius:6px;padding:{{tr.pad}}">{{tr.txt}} </span></sc-for>
+     <sc-if value="{{gravando}}" hint-placeholder-val="{{ true }}"><span class="cn-pisca" style="display:inline-flex;align-items:center;gap:6px;font:500 13px 'Geist Mono',monospace;color:{{t.mute2}}">● escrevendo enquanto você fala</span></sc-if>
+    </div>
+    <div style="border-top:1px solid {{t.line}};padding:18px 26px;display:flex;align-items:center;gap:18px">
+     <button onClick="{{alternar}}" aria-label="{{micRot}}" class="{{micClasse}}" style="width:68px;height:68px;flex:none;border-radius:50%;border:none;background:{{micBg}};color:#FFFFFF;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+     <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+      <sc-if value="{{gravando}}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;gap:10px"><span class="cn-onda" style="display:flex;align-items:center;gap:3px;height:22px"><span style="height:10px"></span><span style="height:20px;animation-delay:.15s"></span><span style="height:14px;animation-delay:.3s"></span><span style="height:22px;animation-delay:.45s"></span><span style="height:12px;animation-delay:.6s"></span></span><b style="font-size:15px">Ouvindo… o texto aparece a cada pausa</b></div></sc-if>
+      <sc-if value="{{parado}}" hint-placeholder-val="{{ false }}"><b style="font-size:15px">Toque no microfone e conte com as suas palavras</b></sc-if>
+      <span style="font-size:13px;color:{{t.mute}}">Pode corrigir o texto depois. Nada é construído sem você aprovar.</span>
+     </div>
+     <a href="CN2Complemento.dc.html" style="margin-left:auto;display:inline-flex;align-items:center;height:52px;padding:0 22px;border-radius:12px;background:{{btnBg}};color:{{btnCor}};font:700 16px 'Geist',sans-serif;white-space:nowrap">{{btnTxt}}</a>
+    </div>
+   </section>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', cinza: '#3A3F46', verm: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', cinza: '#C9CDC4', verm: '#D8483D' }
+};
+const PASSOS = ['1 · A IDEIA', '2 · O VISUAL', '3 · O NOME', '4 · O PROTÓTIPO', '5 · AS CONTAS', '6 · COMEÇAR'];
+const passos = (t, atual) => PASSOS.map((rot, i) => ({ rot, barra: i < atual ? t.lime : i === atual ? t.lime : t.line, cor: i <= atual ? t.text : t.mute2 }));
+const TOP = [
+  { pergunta: 'Qual problema você resolve?', dica: 'O que dá trabalho hoje? O que você quer que fique fácil?', resumo: 'Controle de ponto da equipe nas obras, hoje no papel.', fala: 'Hoje o ponto da minha equipe é tudo no papel, cada encarregado anota numa folha e no fim do mês eu perco um dia inteiro somando horas.' },
+  { pergunta: 'Quem vai usar?', dica: 'Você, a equipe, os clientes? Pelo celular ou pelo computador?', resumo: 'Os pedreiros pelo celular; você no computador.', fala: 'Quem vai usar são os pedreiros e serventes, pelo celular, na obra. E eu e o escritório no computador.' },
+  { pergunta: 'O que a pessoa faz primeiro?', dica: 'Conte o caminho: abre o aplicativo e faz o quê?', resumo: 'Abre e bate o ponto com a localização da obra.', fala: 'Ele abre, aparece o nome da obra onde ele está e um botão grande de bater o ponto, e o aplicativo confere se ele está mesmo na obra.' },
+  { pergunta: 'O que não pode faltar?', dica: 'As 3 coisas sem as quais o sistema não serve.', resumo: 'Ponto com localização, horas do mês, aviso de atraso.', fala: 'Não pode faltar o ponto com a localização, o total de horas do mês de cada um e um aviso quando alguém atrasa.' },
+  { pergunta: 'Que informações aparecem?', dica: 'Telas, relatórios, números que você quer ver.', resumo: 'Horas por pessoa e por obra; relatório do mês.', fala: 'Eu quero ver as horas por pessoa e por obra, e tirar o relatório do mês para o pagamento.' },
+  { pergunta: 'Já usa alguma coisa hoje?', dica: 'Planilha, papel, outro aplicativo? O que você gosta e o que não gosta?', resumo: '', fala: '' },
+  { pergunta: 'Algo mais que você imagina?', dica: 'Qualquer ideia solta vale.', resumo: '', fala: '' }
+];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { feitos: 3, gravando: true }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const { feitos, gravando } = this.state;
+    const topicos = TOP.map((tp, i) => {
+      const feito = i < feitos, agora = i === feitos;
+      return { ...tp, feito, agora, marca: feito ? '✓' : '', bolaBg: feito ? t.lime : 'transparent', bolaBorda: feito ? t.lime : agora ? t.lime : t.cinza, cor: agora || feito ? t.text : t.mute2, peso: agora ? 700 : 500 };
+    });
+    const ditos = TOP.slice(0, feitos + 1).map((x) => x.fala).filter(Boolean);
+    const trechos = ditos.map((txt, i) => { const ultimo = i === ditos.length - 1 && gravando; return { txt, cor: ultimo ? t.text : t.mute, bg: ultimo ? t.soft : 'transparent', pad: ultimo ? '1px 4px' : '0' }; });
+    const palavras = ditos.join(' ').split(/\s+/).filter(Boolean).length;
+    const pronto = feitos >= 4;
+    return {
+      tema, t, passos: passos(t, 0), topicos, trechos, palavras, gravando, parado: !gravando,
+      feitos, total: TOP.length, perguntaAtual: (TOP[feitos] || TOP[TOP.length - 1]).pergunta,
+      micBg: gravando ? t.verm : t.lime, micClasse: gravando ? 'cn-grav' : '', micRot: gravando ? 'Parar de gravar' : 'Falar',
+      btnBg: pronto ? t.lime : t.line, btnCor: pronto ? t.onLime : t.mute2, btnTxt: pronto ? 'Pronto: começar o protótipo →' : 'Conte um pouco mais…',
+      alternar: () => this.setState(gravando ? { gravando: false, feitos: Math.min(feitos + 1, TOP.length - 2) } : { gravando: true }),
+      pular: () => this.setState({ feitos: Math.min(feitos + 1, TOP.length - 1) })
+    };
+  }
+}
+</script>
+</body>
+</html>

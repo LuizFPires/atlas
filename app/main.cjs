@@ -74,8 +74,15 @@ const importar = criarImportar({ raiz: obras.raiz(), dialog, janela: () => janel
 const retomar = criarRetomar({ raiz: obras.raiz(), painel, cota, construcao })
 // Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
 const disparo = criarDisparo({ modelo: () => modelo.args(), raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
+// Roteiro da ideia (caminho novo, 23/11/2026): conferência rápida a cada pausa, sempre com o modelo mais rápido (não o da obra).
+const ideia = require('./adaptadores/ideia.cjs').criarIdeia({ disparo: criarDisparo({ modelo: () => ['--model', 'claude-haiku-5-5'], raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() }) })
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
+// Protótipo que parou no meio (sem internet, computador desligado; pedido do Luiz, 23/11/2026): ao abrir o Atlas e a cada 2 min,
+// continua sozinho de onde parou (as telas prontas ficam salvas). Ainda sem internet: tenta de novo na próxima volta.
+const retomarPrototipos = () => { void prototipo.retomarPendentes().catch(() => {}) }
+setTimeout(retomarPrototipos, 20_000).unref?.()
+setInterval(retomarPrototipos, 2 * 60_000).unref?.()
 const batismo = criarBatismo({ raiz: obras.raiz(), disparo })
 const nomes = criarNomes()
 // Pós-obra: roda pela MESMA linha da obra (construcao.linha) e só com licença em dia, conferida AQUI no processo principal (token do cofre).
@@ -204,6 +211,9 @@ handle('atlas:prototipo:whatsapp', (url) => linkCelular.abrirWhatsApp(String(url
 handle('atlas:modelo:ler', () => ({ atual: modelo.ler(), lista: modelo.lista() }))
 handle('atlas:modelo:gravar', (id) => modelo.gravar(String(id)))
 handle('atlas:prototipo:progresso', (pasta) => prototipo.progresso(String(pasta)))
+handle('atlas:ideia:conferir', (relato, fim) => ideia.conferir(String(relato ?? ''), { fim: fim === true }))
+handle('atlas:prototipo:mapear', (pasta, nome, relato) => prototipo.mapear(String(pasta), String(nome), String(relato ?? '')))
+handle('atlas:prototipo:pintar', (pasta, nome, estilo) => prototipo.pintar(String(pasta), String(nome), estilo))
 
 // Batismo (F07b): 3 nomes (logo só de lista fechada) e marca/marca.md sem sobrescrever.
 handle('atlas:batismo:sugerir', (pasta, nome, pedido) => batismo.sugerir(String(pasta), String(nome), pedido))

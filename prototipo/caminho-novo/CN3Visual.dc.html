@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · 2 O visual</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes cnpulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.5)}70%{box-shadow:0 0 0 22px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}
+@keyframes cnonda{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes cngiro{to{transform:rotate(360deg)}}
+@keyframes cnpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.cn-grav{animation:cnpulso 1.4s infinite}
+.cn-onda span{display:block;width:4px;border-radius:2px;background:#F05A4F;animation:cnonda 1s infinite ease-in-out}
+.cn-giro{animation:cngiro 1s linear infinite}
+.cn-pisca{animation:cnpisca 1.2s infinite}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:center;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA · 2 · O VISUAL</span><h1 style="margin:0;font-size:26px;letter-spacing:-.01em">Cartão de Ponto</h1></div>
+   <div style="margin-left:auto;display:flex;align-items:center;gap:10px"><a href="CN5Prototipo.dc.html" style="display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 16px;border-radius:999px;border:1px solid {{t.cardB}};background:{{t.card}};color:{{t.text}};font:600 14px 'Geist',sans-serif"><span class="cn-giro" style="width:14px;height:14px;border-radius:50%;border:2px solid {{t.lime}};border-right-color:transparent"></span>Mapa pronto · 14 telas</a></div>
+  </div>
+  <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="6"><li style="display:flex;flex-direction:column;gap:7px"><span style="height:4px;border-radius:2px;background:{{p.barra}}"></span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{p.cor}}">{{p.rot}}</span></li></sc-for>
+  </ol>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px">
+   <section style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:16px;overflow:hidden">
+    <div style="display:flex;flex-direction:column;gap:6px"><h2 style="margin:0;font-size:22px">Qual é a cara do seu sistema?</h2><p style="margin:0;font-size:15px;color:{{t.mute}}">Mande de 1 a 3 sites ou apps que você acha bonitos e diga o que o seu cliente deve sentir. O Atlas monta 3 estilos.</p></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><sc-for list="{{refs}}" as="r" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:999px;background:{{t.soft}};border:1px solid {{t.lime}};font-size:14px">{{r}}</span></sc-for><span style="display:inline-flex;align-items:center;height:40px;padding:0 14px;border-radius:999px;border:1px dashed {{t.cardB}};color:{{t.mute}};font-size:14px">+ link, print ou falar</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{sentir}}" as="s" hint-placeholder-count="6"><span style="height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid {{s.borda}};background:{{s.bg}};font-size:14px">{{s.n}}</span></sc-for></div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;flex:1;min-height:0">
+     <sc-for list="{{estilos}}" as="e" hint-placeholder-count="3">
+      <button onClick="{{e.escolher}}" style="text-align:left;border-radius:16px;border:2px solid {{e.borda}};background:{{t.card2}};padding:14px;display:flex;flex-direction:column;gap:10px;cursor:pointer;color:{{t.text}};font-family:'Geist',sans-serif">
+       <div style="height:150px;border-radius:12px;background:{{e.fundo}};display:flex;flex-direction:column;overflow:hidden"><div style="height:44px;background:{{e.topo}}"></div><div style="padding:12px;display:flex;flex-direction:column;gap:8px"><span style="height:10px;width:70%;border-radius:5px;background:{{e.linha}}"></span><span style="height:10px;width:50%;border-radius:5px;background:{{e.linha}}"></span><span style="margin-top:8px;height:30px;border-radius:{{e.raio}};background:{{e.destaque}}"></span></div></div>
+       <b style="font-size:16px">{{e.nome}}</b><span style="font-size:13px;color:{{t.mute}}">{{e.de}}</span>
+      </button>
+     </sc-for>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px"><a href="CN2Complemento.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 16px;border-radius:12px;border:1px solid {{t.cardB}};color:{{t.text}};font:600 15px 'Geist',sans-serif">← Voltar</a><a href="CN4Nome.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 20px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font:700 15px 'Geist',sans-serif">Usar este estilo e pintar as telas →</a></div>
+   </section>
+   <aside style="background:{{t.card}};border:1px solid {{t.lime}};border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">SEU PROTÓTIPO · MAPA PRONTO</span>
+    <b style="font-size:18px">14 telas, esperando o estilo</b>
+    <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">Nada do que você falou ficou de fora. Assim que você escolher o estilo, o Claude pinta todas.</span>
+    <ol style="list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;overflow:hidden">
+     <sc-for list="{{mapa}}" as="m" hint-placeholder-count="10"><li style="display:flex;align-items:center;gap:10px;font-size:14px;padding:8px 10px;border-radius:10px;background:{{t.card2}}"><span style="font:500 11px 'Geist Mono',monospace;color:{{t.mute2}};width:20px">{{m.n}}</span>{{m.nome}}</li></sc-for>
+    </ol>
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', cinza: '#3A3F46', verm: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', cinza: '#C9CDC4', verm: '#D8483D' }
+};
+const PASSOS = ['1 · A IDEIA', '2 · O VISUAL', '3 · O NOME', '4 · O PROTÓTIPO', '5 · AS CONTAS', '6 · COMEÇAR'];
+const passos = (t, atual) => PASSOS.map((rot, i) => ({ rot, barra: i < atual ? t.lime : i === atual ? t.lime : t.line, cor: i <= atual ? t.text : t.mute2 }));
+const MAPA = ['Entrar com CPF', 'Bater o ponto', 'Confirmar que está na obra', 'Ponto registrado', 'Minhas horas do mês', 'Avisos', 'Painel do escritório', 'Equipe por obra', 'Atrasos de hoje', 'Relatório do mês', 'Cadastro de obra', 'Cadastro de funcionário', 'Ajustar um ponto', 'Configurações'];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { e: 1 }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const base = [
+      { nome: 'Concreto e lima', de: 'Moderno e direto, como um app de banco.', fundo: '#F4F5F1', topo: '#1C1F23', linha: '#D6D9D0', destaque: '#9BC31D', raio: '10px' },
+      { nome: 'Areia serena', de: 'Calmo e confiável, tons de terra.', fundo: '#FBF7F2', topo: '#2F3A31', linha: '#E2D8CC', destaque: '#B5651D', raio: '14px' },
+      { nome: 'Canteiro', de: 'Forte e visível no sol da obra.', fundo: '#FFFFFF', topo: '#F2A900', linha: '#E5E5E5', destaque: '#1C1C1C', raio: '6px' }
+    ];
+    const estilos = base.map((e, i) => ({ ...e, borda: i === this.state.e ? t.lime : t.cardB, escolher: () => this.setState({ e: i }) }));
+    const sentir = ['Confiança', 'Rapidez', 'Simplicidade', 'Tradição', 'Modernidade', 'Alegria'].map((n, i) => ({ n, bg: i < 3 ? t.soft : 'transparent', borda: i < 3 ? t.lime : t.cardB }));
+    return { tema, t, passos: passos(t, 1), refs: ['nubank.com.br', 'Print da tela do Waze'], sentir, estilos, mapa: MAPA.map((nome, i) => ({ nome, n: String(i + 1).padStart(2, '0') })) };
+  }
+}
+</script>
+</body>
+</html>

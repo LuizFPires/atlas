@@ -2,11 +2,12 @@ import { faseDaObra, nomeDaPasta } from './fase-obra'
 
 const sit = (p: Partial<{ estilo: boolean; prototipo: boolean; marca: boolean; plano: boolean }> = {}) => ({ estilo: false, prototipo: false, marca: false, plano: false, ...p })
 
-test('cada etapa do projeto leva o "Continuar" ao ponto certo', () => {
+test('cada etapa do projeto leva o "Continuar" ao ponto certo, na ordem do caminho novo', () => {
   expect(faseDaObra(sit(), null)).toMatchObject({ etapa: 'estilo', concluida: false, rotulo: 'Parou em: escolher o estilo' })
-  expect(faseDaObra(sit({ estilo: true }), null)).toMatchObject({ etapa: 'telas', rotulo: 'Parou em: desenhar as telas' })
-  expect(faseDaObra(sit({ estilo: true, prototipo: true }), null)).toMatchObject({ etapa: 'telas', rotulo: 'Parou em: as telas (já começadas)' })
-  expect(faseDaObra(sit({ estilo: true, prototipo: true, marca: true }), null)).toMatchObject({ etapa: 'aprovar', rotulo: 'Parou em: aprovar e começar a construção' })
+  expect(faseDaObra(sit({ estilo: true }), null)).toMatchObject({ etapa: 'batismo', rotulo: 'Parou em: dar o nome' })
+  expect(faseDaObra(sit({ estilo: true, prototipo: true }), null)).toMatchObject({ etapa: 'batismo', rotulo: 'Parou em: dar o nome' })
+  expect(faseDaObra(sit({ estilo: true, marca: true }), null)).toMatchObject({ etapa: 'telas', rotulo: 'Parou em: as telas (sendo desenhadas)' })
+  expect(faseDaObra(sit({ estilo: true, prototipo: true, marca: true }), null)).toMatchObject({ etapa: 'telas', rotulo: 'Parou em: conferir o protótipo' })
 })
 
 test('construção começada: painel da obra com o %; 100% = concluída', () => {

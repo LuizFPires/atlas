@@ -1,9 +1,10 @@
 // Onde cada obra parou (Minhas obras → "Continuar", pedido do Luiz em 23/11/2026). A regra lê só o que cada etapa deixou na pasta
 // (app/adaptadores/obras.cjs, situacao): estilo escolhido = design-system.md; telas = prototipo/versoes; nome = marca/marca.md;
+// (a ordem segue o caminho novo de 23/11/2026: estilo → nome → telas → contas → começar)
 // construção = PLAN.md (o % vem do painel).
 
 export type SituacaoObra = { estilo: boolean; prototipo: boolean; marca: boolean; plano: boolean }
-export type EtapaObra = 'estilo' | 'telas' | 'aprovar' | 'obra'
+export type EtapaObra = 'estilo' | 'batismo' | 'telas' | 'aprovar' | 'obra'
 export type FaseObra = { etapa: EtapaObra; concluida: boolean; rotulo: string; pct?: number }
 
 export function faseDaObra(s: SituacaoObra, pct: number | null): FaseObra {
@@ -14,9 +15,11 @@ export function faseDaObra(s: SituacaoObra, pct: number | null): FaseObra {
     }
     return { etapa: 'obra', concluida: false, rotulo: 'Construindo' }
   }
-  if (s.marca) return { etapa: 'aprovar', concluida: false, rotulo: 'Parou em: aprovar e começar a construção' }
-  if (s.prototipo) return { etapa: 'telas', concluida: false, rotulo: 'Parou em: as telas (já começadas)' }
-  if (s.estilo) return { etapa: 'telas', concluida: false, rotulo: 'Parou em: desenhar as telas' }
+  // Caminho novo (23/11/2026): ideia → estilo → nome → conferir as telas → contas → começar. As telas são pintadas em segundo
+  // plano a partir do estilo, então depois do estilo vem o nome; com o nome dado, falta conferir o protótipo (e daí as contas).
+  if (s.marca) return { etapa: 'telas', concluida: false, rotulo: s.prototipo ? 'Parou em: conferir o protótipo' : 'Parou em: as telas (sendo desenhadas)' }
+  if (s.estilo) return { etapa: 'batismo', concluida: false, rotulo: 'Parou em: dar o nome' }
+  if (s.prototipo) return { etapa: 'telas', concluida: false, rotulo: 'Parou em: as telas (já começadas)' } // protótipo trazido de outra IA
   return { etapa: 'estilo', concluida: false, rotulo: 'Parou em: escolher o estilo' }
 }
 

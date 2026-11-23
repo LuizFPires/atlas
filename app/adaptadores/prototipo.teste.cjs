@@ -1,6 +1,7 @@
 // Teste do adaptador de protótipo (node --test app/adaptadores/*.teste.cjs). Sem Claude real: o disparo é simulado.
 'use strict'
 const test = require('node:test')
+const { describe } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const os = require('node:os')
@@ -70,7 +71,7 @@ test('HTML perigoso, id ruim e excesso de telas são recusados e nada é gravado
     responder(ruim)
     await assert.rejects(p.desenhar('obra', 'B', ESTILO))
   }
-  assert.ok(!fs.existsSync(path.join(raiz, 'obra', 'prototipo')))
+  assert.ok(!fs.existsSync(path.join(raiz, 'obra', 'prototipo', 'versoes')) || fs.readdirSync(path.join(raiz, 'obra', 'prototipo', 'versoes')).length === 0, 'nenhuma versão gravada (o mapa pode ficar, para tentar de novo)')
   assert.throws(() => telasDoJson({ telas: [] }), /telas-invalidas/)
 })
 
@@ -95,7 +96,7 @@ test('identidade própria (estilo vazio): desenha seguindo o design-system.md da
   const { p, chamadas } = montar()
   const e = await p.desenhar('obra', 'B', {})
   assert.equal(e.versoes.length, 1)
-  assert.match(String(chamadas[0].o?.entrada ?? JSON.stringify(chamadas[0])), /siga o design-system\.md/)
+  assert.match(String(chamadas[1].o?.entrada ?? JSON.stringify(chamadas[1])), /siga o design-system\.md/) // a pintura (o mapa não depende do estilo)
 })
 
 test('protótipo premium: todo pedido ao Claude leva a direção de arte, a navegação por âncora e a conferência final', async () => {
@@ -229,6 +230,148 @@ test('um lote paralelo que falha para tudo: nada é gravado e o andamento some',
   const p = criarPrototipo({ raiz, disparo })
   await assert.rejects(p.desenhar('obra', 'Colore', ESTILO, 'x'))
   await new Promise((ok) => setTimeout(ok, 60)) // deixa os outros lotes terminarem
-  assert.equal(p.progresso('obra'), null)
+  const depois = p.progresso('obra')
+  assert.equal(depois.fase, 'mapa', 'falhou a pintura: volta para "mapa pronto"')
+  assert.equal(depois.parado, true, 'a pintura parou no meio: continua sozinha depois')
+  assert.ok(depois.telas.every((t) => t.id !== 'intrusa'), 'só telas válidas, que ficaram guardadas para a próxima tentativa')
   assert.equal(p.estado ? (await p.estado('obra')).versoes.length : 0, 0)
+})
+
+// Caminho novo (Luiz, 23/11/2026): o mapa sai logo depois da ideia, em segundo plano; as telas são pintadas depois do estilo.
+describe('protótipo em duas partes: mapear (depois da ideia) e pintar (depois do estilo)', () => {
+  const MAPA = { telas: ['a', 'b', 'c'].map((id) => ({ id, nome: `Tela ${id}`, descricao: `faz ${id}` })) }
+
+  test('mapear grava o relato e o mapa; de novo não chama o Claude; depois o progresso mostra o mapa pronto', async () => {
+    const { p, raiz, chamadas, emFila } = montar()
+    emFila(MAPA)
+    const m = await p.mapear('obra', 'Meu Ponto', 'ponto da equipe nas obras')
+    assert.deepEqual(m.map((t) => t.id), ['a', 'b', 'c'])
+    assert.ok(fs.existsSync(path.join(raiz, 'obra', 'prototipo', 'mapa.json')))
+    assert.match(fs.readFileSync(path.join(raiz, 'obra', 'prototipo', 'relato.md'), 'utf8'), /ponto da equipe/)
+    assert.match(pedidoDe(chamadas[0]), /FASE 1 de 2/)
+    assert.doesNotMatch(pedidoDe(chamadas[0]), /Estilo escolhido/, 'o mapa não depende do estilo')
+    await p.mapear('obra', 'Meu Ponto', 'ponto da equipe nas obras')
+    assert.equal(chamadas.length, 1, 'o mapa salvo não é refeito')
+    const a = p.progresso('obra')
+    assert.equal(a.fase, 'mapa')
+    assert.deepEqual(a.mapa.map((t) => t.id), ['a', 'b', 'c'])
+    assert.deepEqual(a.telas, [])
+  })
+
+  test('pintar sem mapa: recusa com sem-mapa', async () => {
+    const { p } = montar()
+    await assert.rejects(p.pintar('obra', 'Meu Ponto', ESTILO), /sem-mapa/)
+  })
+
+  test('pintar usa o mapa salvo (só pede os lotes), com o estilo, e grava a 1ª versão', async () => {
+    const { p, chamadas, emFila } = montar()
+    emFila(MAPA)
+    await p.mapear('obra', 'Meu Ponto', 'x')
+    emFila({ telas: ['a', 'b', 'c'].map(tela) })
+    const e = await p.pintar('obra', 'Meu Ponto', ESTILO)
+    assert.equal(chamadas.length, 2)
+    assert.match(pedidoDe(chamadas[1]), /FASE 2 de 2/)
+    assert.match(pedidoDe(chamadas[1]), /Couro/)
+    assert.deepEqual(e.versoes[0].telas.map((t) => t.id), ['a', 'b', 'c'])
+    assert.equal(p.progresso('obra'), null, 'com a versão gravada, não há mais nada em andamento')
+  })
+
+  test('escolheu o estilo antes de o mapa ficar pronto: a pintura espera o mapa e segue sozinha', async () => {
+    const raiz = tmp()
+    fs.mkdirSync(path.join(raiz, 'obra'))
+    let soltarMapa
+    const mapaPronto = new Promise((ok) => { soltarMapa = ok })
+    const executar = async (args, o) => {
+      const pedido = String(o.entrada)
+      let r
+      if (/FASE 1 de 2/.test(pedido)) { await mapaPronto; r = MAPA } else r = { telas: /\(ids: ([^)]+)\)/.exec(pedido)[1].split(', ').map(tela) }
+      return { codigo: 0, saida: JSON.stringify({ result: JSON.stringify(r) }), erro: '' }
+    }
+    const disparo = criarDisparo({ raiz, dadosApp: tmp(), claudeEstado: async () => ({ conectado: true }), executar, resolver: () => ({ cmd: 'x' }) })
+    const p = criarPrototipo({ raiz, disparo })
+    const mapeando = p.mapear('obra', 'Meu Ponto', 'x')
+    await new Promise((ok) => setTimeout(ok, 5))
+    assert.equal(p.progresso('obra').fase, 'mapeando')
+    const pintando = p.pintar('obra', 'Meu Ponto', ESTILO)
+    soltarMapa()
+    await mapeando
+    const e = await pintando
+    assert.equal(e.versoes[0].telas.length, 3)
+  })
+})
+
+// Luiz, 23/11/2026: "se ficar offline ou desligar o computador, o protótipo continua de onde parou?"
+describe('protótipo que para no meio (sem internet, computador desligado) continua de onde parou', () => {
+  const ids = Array.from({ length: 12 }, (_, i) => `t${i + 1}`)
+  function montarComFalha({ falhaEm = null } = {}) {
+    const raiz = tmp()
+    fs.mkdirSync(path.join(raiz, 'obra'))
+    const pedidos = []
+    let falhar = falhaEm
+    const executar = async (args, o) => {
+      const pedido = String(o.entrada)
+      pedidos.push(pedido)
+      let r
+      if (/FASE 2 de 2/.test(pedido)) {
+        const lista = /\(ids: ([^)]+)\)/.exec(pedido)[1].split(', ')
+        if (falhar && lista.includes(falhar)) return { codigo: 1, saida: '', erro: 'sem internet' }
+        r = { telas: lista.map(tela) }
+      } else r = { telas: ids.map((id) => ({ id, nome: `Tela ${id}` })) }
+      return { codigo: 0, saida: JSON.stringify({ result: JSON.stringify(r) }), erro: '' }
+    }
+    const disparo = criarDisparo({ raiz, dadosApp: tmp(), claudeEstado: async () => ({ conectado: true }), executar, resolver: () => ({ cmd: 'x' }) })
+    return { raiz, pedidos, p: criarPrototipo({ raiz, disparo }), voltarInternet: () => { falhar = null } }
+  }
+  const lotesPedidos = (pedidos) => pedidos.filter((x) => /FASE 2 de 2/.test(x)).map((x) => /\(ids: ([^)]+)\)/.exec(x)[1])
+
+  test('as telas prontas ficam salvas: a nova tentativa só desenha o que faltou, no mesmo estilo', async () => {
+    const { p, pedidos, voltarInternet } = montarComFalha({ falhaEm: 't11' })
+    await p.mapear('obra', 'Meu Ponto', 'x')
+    await assert.rejects(p.pintar('obra', 'Meu Ponto', ESTILO))
+    const parado = p.progresso('obra')
+    assert.equal(parado.fase, 'mapa')
+    assert.equal(parado.parado, true, 'a tela sabe que parou no meio')
+    assert.ok(parado.telas.length >= 5, 'o que já estava pronto continua visível')
+    voltarInternet()
+    pedidos.length = 0
+    const e = await p.pintar('obra', 'Meu Ponto', null) // retomada sem saber o estilo: usa o que foi salvo
+    assert.deepEqual(e.versoes[0].telas.map((t) => t.id), ids)
+    const refeitos = lotesPedidos(pedidos).join(', ').split(', ')
+    assert.ok(!refeitos.includes('t1'), 'o 1º lote não é desenhado de novo')
+    assert.ok(refeitos.includes('t11'))
+    assert.match(pedidos.find((x) => /FASE 2 de 2/.test(x)), /Couro/, 'mesmo estilo de antes')
+  })
+
+  test('retomar: ao abrir o Atlas, continua sozinho o mapa e a pintura que ficaram pela metade', async () => {
+    const { p, raiz, voltarInternet } = montarComFalha({ falhaEm: 't1' })
+    // obra A: pintura começou (estilo escolhido) e parou
+    await p.mapear('obra', 'Meu Ponto', 'x')
+    await assert.rejects(p.pintar('obra', 'Meu Ponto', ESTILO))
+    // obra B: só o mapa saiu, estilo ainda não escolhido: não pinta sozinha
+    fs.mkdirSync(path.join(raiz, 'b'))
+    await p.mapear('b', 'Agenda', 'y')
+    voltarInternet()
+    const r = await p.retomarPendentes()
+    assert.deepEqual(r, ['obra'])
+    await p.esperarTudo()
+    assert.equal((await p.estado('obra')).versoes.length, 1)
+    assert.equal((await p.estado('b')).versoes.length, 0)
+  })
+
+  test('retomar: mapa interrompido (relato guardado, mapa não) é refeito sozinho', async () => {
+    const { p, raiz } = montarComFalha()
+    fs.mkdirSync(path.join(raiz, 'obra', 'prototipo'), { recursive: true })
+    fs.writeFileSync(path.join(raiz, 'obra', 'prototipo', 'relato.md'), '# Relato do cliente\n\nponto na obra\n')
+    fs.writeFileSync(path.join(raiz, 'obra', 'prototipo', 'obra.json'), JSON.stringify({ nome: 'Meu Ponto' }))
+    assert.deepEqual(await p.retomarPendentes(), ['obra'])
+    await p.esperarTudo()
+    assert.equal(p.progresso('obra').fase, 'mapa')
+  })
+
+  test('retomar não briga com o que já está rodando nem repete obra já desenhada', async () => {
+    const { p } = montarComFalha()
+    await p.mapear('obra', 'Meu Ponto', 'x')
+    await p.pintar('obra', 'Meu Ponto', ESTILO)
+    assert.deepEqual(await p.retomarPendentes(), [])
+  })
 })

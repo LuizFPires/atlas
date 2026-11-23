@@ -1,0 +1,58 @@
+import { useEffect, useState } from 'react'
+import type { ProgressoProto } from './ponte-prototipo'
+import './etapas-obra.css'
+
+export type EtapaDoCaminho = 'ideia' | 'estilo' | 'batismo' | 'telas' | 'contas' | 'aprovar'
+const ETAPAS: { id: EtapaDoCaminho; rot: string }[] = [
+  { id: 'ideia', rot: '1 · A ideia' },
+  { id: 'estilo', rot: '2 · O visual' },
+  { id: 'batismo', rot: '3 · O nome' },
+  { id: 'telas', rot: '4 · O protótipo' },
+  { id: 'contas', rot: '5 · As contas' },
+  { id: 'aprovar', rot: '6 · Começar' },
+]
+
+const recado = (a: ProgressoProto): string | null => {
+  if (a.fase === 'mapeando') return 'montando o mapa de telas'
+  if (a.fase === 'mapa') return `mapa pronto · ${a.mapa.length} telas`
+  if (a.fase === 'pintando') return `pintando ${a.telas.length} de ${a.mapa.length}`
+  return null
+}
+
+interface Props {
+  atual: EtapaDoCaminho
+  /** Andamento do protótipo da obra aberta (segundo plano). Sem ele, o aviso não aparece. */
+  progresso?: () => Promise<ProgressoProto | null>
+  onVerTelas?: () => void
+  intervaloMs?: number
+}
+
+/** Faixa do caminho novo (prototipo/caminho-novo): as 6 etapas e o aviso do protótipo que roda em segundo plano. */
+export function EtapasObra({ atual, progresso, onVerTelas, intervaloMs = 3000 }: Props) {
+  const [aviso, setAviso] = useState<string | null>(null)
+  useEffect(() => {
+    if (!progresso) return
+    let vivo = true
+    const ler = () => { void progresso().then((a) => { if (vivo) setAviso(a ? recado(a) : null) }, () => {}) }
+    ler()
+    const t = setInterval(ler, intervaloMs)
+    return () => { vivo = false; clearInterval(t) }
+  }, [progresso, intervaloMs])
+  const i = ETAPAS.findIndex((e) => e.id === atual)
+  return (
+    <div className="at-etapas">
+      <ol className="at-etapas__lista" aria-label="Etapas da obra">
+        {ETAPAS.map((e, k) => (
+          <li key={e.id} data-estado={k < i ? 'feito' : k === i ? 'agora' : 'depois'} aria-current={k === i ? 'step' : undefined}>
+            <span className="at-etapas__barra" aria-hidden="true" />{e.rot}
+          </li>
+        ))}
+      </ol>
+      {aviso && onVerTelas && (
+        <button type="button" className="at-etapas__aviso" onClick={onVerTelas}>
+          <span className="at-etapas__giro" aria-hidden="true" />Protótipo: {aviso}
+        </button>
+      )}
+    </div>
+  )
+}
