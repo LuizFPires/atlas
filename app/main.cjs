@@ -4,7 +4,7 @@ const { app, BrowserWindow, dialog, ipcMain, Menu, powerSaveBlocker, session, sh
 const crypto = require('node:crypto')
 const os = require('node:os')
 const path = require('node:path')
-const { execFileSync } = require('node:child_process')
+const { execFileSync, spawn } = require('node:child_process')
 const { criarCofre } = require('./cofre.cjs')
 const { criarObras } = require('./adaptadores/obras.cjs')
 const { criarArquivos } = require('./adaptadores/arquivos.cjs')
@@ -16,6 +16,7 @@ const { criarRetomar } = require('./adaptadores/retomar.cjs')
 const { criarDisparo } = require('./adaptadores/projeto-comum.cjs')
 const { criarEstilo } = require('./adaptadores/estilo.cjs')
 const { criarPrototipo } = require('./adaptadores/prototipo.cjs')
+const { criarAtualizador } = require('./adaptadores/atualizador.cjs')
 const { criarBatismo } = require('./adaptadores/batismo.cjs')
 const { criarNomes } = require('./adaptadores/nomes.cjs')
 const { criarPosObra } = require('./adaptadores/posobra.cjs')
@@ -221,7 +222,20 @@ handle('atlas:kit:entregar', (obraId) => kit.entregar(String(obraId)))
 handle('atlas:kit:descartar', (obraId) => kit.descartar(String(obraId)))
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois). O kit é apagado.
-app.on('before-quit', () => { construcao.encerrar(); painel.encerrar(); kit.descartarTudo() })
+// Atualização automática (atualizador.cjs): só no Atlas instalado no Windows. Confere 1 min depois de abrir e a cada 6 h;
+// baixa em silêncio e instala quando o Atlas fecha (decisão do Luiz, 22/11/2026).
+const atualizador = criarAtualizador({
+  versaoAtual: app.getVersion(), cofre, hashComputador: async () => hash(), api: process.env.ATLAS_API_URL,
+  pasta: require('node:path').join(app.getPath('userData'), 'atualizacao'),
+  executar: (cmd, args) => spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true }).unref(),
+})
+if (app.isPackaged && process.platform === 'win32') {
+  const conferir = () => { void atualizador.verificarEBaixar().catch(() => {}) }
+  setTimeout(conferir, 60_000)
+  setInterval(conferir, 6 * 60 * 60_000).unref()
+}
+
+app.on('before-quit', () => { construcao.encerrar(); painel.encerrar(); kit.descartarTudo(); if (app.isPackaged && process.platform === 'win32') atualizador.instalarAoSair() })
 kit.descartarTudo() // sobra de uma queda anterior
 
 // O computador é o canteiro: durante a obra ele não pode dormir.

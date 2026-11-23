@@ -12,6 +12,7 @@ import { type Deps, ErroRegra } from './tipos.ts'
 import { trocarComputador } from './troca.ts'
 import { verificar } from './verificar.ts'
 import { criarCheckout } from './pagamento/checkout.ts'
+import { type FonteAtualizacao, verAtualizacao } from './atualizacao.ts'
 import type { DepsPagamento } from './pagamento/config.ts'
 import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts'
 import { processarAtrasos } from './pagamento/atraso.ts'
@@ -25,6 +26,8 @@ import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, ex
 export interface Contexto {
   deps: Deps
   carregarKit: CarregarKit
+  /** Atualização automática do app: manifesto + endereço temporário do .exe. Ausente = "nada a atualizar". */
+  atualizacao?: FonteAtualizacao
   /** Pagamento (Stripe do cliente). Ausente = rotas de pagamento respondem 503. */
   pagamento?: DepsPagamento
   /** Cadastro pós-pagamento (M4) e e-mail de boas-vindas. Ausente = /cadastro responde 503. */
@@ -248,6 +251,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         return json(await validarInstancia(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, uf: ctx.ufDoAcesso ? ctx.ufDoAcesso(req) : null }))
       case '/status-obras/publicar':
         return json(await publicarStatusObras(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obras: (b as Record<string, unknown>).obras }))
+      case '/atualizacao':
+        return json(await verAtualizacao(ctx.deps, ctx.atualizacao, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, versao: s('versao') }), 200, { 'Cache-Control': 'no-store' })
       case '/entregar-kit': {
         const r = await entregarKit(ctx.deps, ctx.carregarKit, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, obra_id: s('obra_id') })
         const { cabecalhos, ...corpo } = r
