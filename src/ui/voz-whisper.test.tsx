@@ -72,3 +72,27 @@ test('sair da tela no meio da gravação desliga o microfone', async () => {
   unmount()
   expect(chamadas).toContain('cancelar')
 })
+
+// Luiz, 23/11/2026: "vai falando e o Atlas vai escrevendo". O texto aparece no campo ANTES de a pessoa parar de gravar.
+test('enquanto a pessoa fala, o trecho já falado aparece no campo antes de parar a gravação', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  try {
+    const TAXA = 16000
+    const voz = Float32Array.from({ length: 7 * TAXA }, (_, i) => Math.sin(i / 3) * 0.5)
+    const ateAgora = new Float32Array(voz.length + Math.round(0.6 * TAXA) + 2 * TAXA)
+    ateAgora.set(voz)
+    ateAgora.set(voz.subarray(0, 2 * TAXA), voz.length + Math.round(0.6 * TAXA))
+    let n = 0
+    const t: Transcritor = { preparar: async () => {}, transcrever: async () => (++n === 1 ? 'quero uma agenda' : 'para a barbearia') }
+    usarMotorDeVoz(t, async () => ({ parar: async () => ateAgora, cancelar: () => {}, parcial: async () => ateAgora }), { forcar: true })
+    const falado: string[] = []
+    const { result } = renderHook(() => useVoz((x) => falado.push(x)))
+    await act(async () => { result.current.alternar() })
+    await waitFor(() => expect(result.current.gravando).toBe(true))
+    await act(async () => { await vi.advanceTimersByTimeAsync(2500) })
+    expect(result.current.gravando).toBe(true)
+    expect(falado).toEqual(['quero uma agenda'])
+    await act(async () => { result.current.alternar() })
+    await waitFor(() => expect(falado).toEqual(['quero uma agenda', 'para a barbearia']))
+  } finally { vi.useRealTimers() }
+})

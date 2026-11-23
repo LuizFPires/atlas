@@ -19,7 +19,7 @@ export function StatusVoz() {
   const pct = e.progresso ?? 0
   return (
     <div className={`at-svoz at-svoz--${e.fase}`} role="status">
-      {e.fase === 'ouvindo' && <><span className="at-svoz__ponto" aria-hidden="true" /><span><b>Ouvindo…</b> Fale à vontade. Quando terminar, aperte o microfone de novo.</span></>}
+      {e.fase === 'ouvindo' && <><span className="at-svoz__ponto" aria-hidden="true" /><span><b>Ouvindo…</b> Fale à vontade: o texto vai aparecendo a cada pausa. Quando terminar, aperte o microfone de novo.</span></>}
       {e.fase === 'escrevendo' && <><span className="at-svoz__giro" aria-hidden="true" /><span><b>Escrevendo o que você falou…</b> Leva só uns segundos.</span></>}
       {e.fase === 'preparando' && (
         <div className="at-svoz__prep">

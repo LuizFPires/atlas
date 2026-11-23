@@ -136,10 +136,11 @@ function useVozWhisper(aoFalar: (texto: string) => void) {
         definirEstadoVoz({ fase: 'ouvindo' })
         // Enquanto a pessoa fala, o modelo (só na primeira vez) já vai sendo preparado.
         void transcritorAtual().preparar(() => {}).catch(() => {})
-        // E os trechos já falados vão sendo escritos (a cada 4 s olha se já tem um trecho de uns 12 s pronto).
+        // Texto ao vivo (23/11/2026): a cada 2 s olha se já tem um trecho de uns 6 s terminado num respiro; ele vai para o campo
+        // assim que o Whisper escreve, sempre na ordem da fala. Ao parar, falta só o finalzinho.
         if (g.parcial) {
-          const partes = criarTranscricaoEmPartes(transcritorAtual())
-          const timer = setInterval(() => { void g.parcial!().then((a) => partes.adiantar(a)).catch(() => {}) }, 4000)
+          const partes = criarTranscricaoEmPartes(transcritorAtual(), { minSegundos: 6, aoPronto: (x) => cb.current(x) })
+          const timer = setInterval(() => { void g.parcial!().then((a) => partes.adiantar(a)).catch(() => {}) }, 2000)
           emPartes.current = { partes, timer }
         }
       } catch {

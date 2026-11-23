@@ -47,3 +47,43 @@ test('fala curta (menos que um trecho): uma transcrição só, como antes', asyn
   expect(await p.terminar(fala(4))).toBe('tudo')
   expect(pedidos).toHaveLength(1)
 })
+
+// Luiz, 23/11/2026: "vai falando e o Atlas vai escrevendo, como no Claude".
+describe('texto ao vivo: cada trecho vai para o campo assim que fica pronto', () => {
+  test('entrega cada trecho na ordem, durante a fala; ao parar, entrega o resto e não repete nada', async () => {
+    const vistos: string[] = []
+    let n = 0
+    const t = { preparar: async () => {}, transcrever: async () => `parte${++n}` }
+    const p = criarTranscricaoEmPartes(t, { minSegundos: 6, aoPronto: (s) => vistos.push(s) })
+    const a = juntar(fala(6), silencio(0.6), fala(3))
+    await p.adiantar(a)
+    await new Promise((ok) => setTimeout(ok, 0))
+    expect(vistos).toEqual(['parte1'])
+    const resto = await p.terminar(juntar(a, fala(2)))
+    expect(vistos).toEqual(['parte1', 'parte2'])
+    expect(resto).toBe('')
+  })
+
+  test('um trecho que termina antes do anterior espera a vez: o texto nunca sai fora de ordem', async () => {
+    const vistos: string[] = []
+    const atrasos = [40, 0]
+    let n = 0
+    const t = { preparar: async () => {}, transcrever: async () => { const i = n++; await new Promise((ok) => setTimeout(ok, atrasos[i] ?? 0)); return `parte${i + 1}` } }
+    const p = criarTranscricaoEmPartes(t, { minSegundos: 6, aoPronto: (s) => vistos.push(s) })
+    const a = juntar(fala(6), silencio(0.6), fala(1))
+    await p.adiantar(a)
+    await p.terminar(juntar(a, fala(2)))
+    expect(vistos).toEqual(['parte1', 'parte2'])
+  })
+
+  test('trecho vazio (silêncio) não vira espaço sobrando no campo', async () => {
+    const vistos: string[] = []
+    const textos = ['  ', 'oi']
+    let n = 0
+    const p = criarTranscricaoEmPartes({ preparar: async () => {}, transcrever: async () => textos[n++] }, { minSegundos: 6, aoPronto: (s) => vistos.push(s) })
+    const a = juntar(fala(6), silencio(0.6), fala(1))
+    await p.adiantar(a)
+    await p.terminar(juntar(a, fala(2)))
+    expect(vistos).toEqual(['oi'])
+  })
+})
