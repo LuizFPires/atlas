@@ -53,7 +53,7 @@ let bloqueio = null
 let janelaPrincipal = null
 
 // Adaptadores reais (um por porta do front). Pendentes: ver app/PENDENTE-ENTREGAR.md.
-const obras = criarObras({ shell })
+const obras = criarObras({ shell, pararLinha: (pasta) => construcao.linha.parar(pasta) }) // construcao existe quando alguém excluir
 const arquivos = criarArquivos({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
 // Ao terminar o login do Claude Code (o cliente clicou em Autorizar no navegador), traz o Atlas de volta para a frente.
 const claude = criarClaude({ shell, aoConectar: () => { const j = janelaPrincipal; if (j && !j.isDestroyed()) { if (j.isMinimized()) j.restore(); j.show(); j.focus() } } })
@@ -151,6 +151,7 @@ handle('atlas:obras:listar', () => obras.listar())
 handle('atlas:obras:criar', (nome) => obras.criarSubpasta(String(nome)))
 handle('atlas:obras:abrir', () => obras.abrirPasta())
 handle('atlas:obras:situacao', (pasta) => obras.situacao(String(pasta)))
+handle('atlas:obras:excluir', (pasta) => obras.excluir(String(pasta)))
 handle('atlas:claude:login', () => claude.abrirLogin())
 handle('atlas:claude:site', (alvo) => claude.abrirSite(String(alvo)))
 handle('atlas:claude:estado', () => claude.estado())

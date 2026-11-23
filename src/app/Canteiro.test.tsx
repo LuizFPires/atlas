@@ -99,3 +99,28 @@ describe('situação de cada obra em construção no cartão (K1Canteiro)', () =
     expect(onAbrir).toHaveBeenCalledWith(expect.objectContaining({ pasta: 'e', etapa: 'obra' }))
   })
 })
+
+describe('excluir obra (Luiz, 23/11/2026)', () => {
+  test('lixeira em cada obra do Canteiro; pede confirmação avisando que não tem volta; exclui e some da lista', async () => {
+    const excluidas: string[] = []
+    const comExcluir = { ...ponte, excluir: async (p: string) => { excluidas.push(p) } } as PonteObras
+    render(<Canteiro modo="canteiro" obras={comExcluir} painel={painel} onAbrir={() => {}} onNova={() => {}} />)
+    const cartao = await screen.findByRole('article', { name: /^Academia do ze/ })
+    await userEvent.click(within(cartao).getByRole('button', { name: 'Excluir a obra Academia do ze' }))
+    const dlg = screen.getByRole('alertdialog', { name: 'Excluir a obra "Academia do ze"?' })
+    expect(dlg).toHaveTextContent(/não tem volta/i)
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Cancelar' }))
+    expect(excluidas).toEqual([])
+    await userEvent.click(within(cartao).getByRole('button', { name: 'Excluir a obra Academia do ze' }))
+    await userEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Excluir para sempre' }))
+    expect(excluidas).toEqual(['academia-do-ze'])
+    expect(screen.queryByRole('article', { name: /^Academia do ze/ })).toBeNull()
+  })
+
+  test('obra concluída nunca tem lixeira', async () => {
+    const comExcluir = { ...ponte, excluir: async () => {} } as PonteObras
+    render(<Canteiro modo="concluidas" obras={comExcluir} painel={painel} onAbrir={() => {}} onNova={() => {}} />)
+    const [c] = await screen.findAllByRole('article')
+    expect(within(c).queryByRole('button', { name: /Excluir/ })).toBeNull()
+  })
+})

@@ -28,3 +28,23 @@ test('situação: pasta vazia de versões não conta como protótipo; pasta fora
   await assert.rejects(() => o.situacao('../fora'))
   await assert.rejects(() => o.situacao('nao-existe'))
 })
+
+test('excluir obra (Luiz, 23/11/2026): só em andamento; para a construção e manda a pasta para a Lixeira', async () => {
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-obras-'))
+  const lixo = []
+  const paradas = []
+  const o = criarObras({ raiz, shell: { trashItem: async (p) => { lixo.push(p); fs.rmSync(p, { recursive: true }) } }, pararLinha: (p) => paradas.push(p) })
+  fs.mkdirSync(path.join(raiz, 'meio'))
+  fs.writeFileSync(path.join(raiz, 'meio', 'PLAN.md'), '## Milestone 1\n- [x] a\n- [ ] b\n')
+  fs.mkdirSync(path.join(raiz, 'pronta'))
+  fs.writeFileSync(path.join(raiz, 'pronta', 'PLAN.md'), '## Milestone 1\n- [x] a\n- [x] b\n')
+  fs.mkdirSync(path.join(raiz, 'so-ideia'))
+  await o.excluir('meio')
+  await o.excluir('so-ideia')
+  assert.deepEqual(paradas, ['meio', 'so-ideia'])
+  assert.deepEqual(lixo.map((p) => path.basename(p)), ['meio', 'so-ideia'])
+  await assert.rejects(o.excluir('pronta'), /obra-concluida/)
+  assert.ok(fs.existsSync(path.join(raiz, 'pronta')))
+  await assert.rejects(o.excluir('../fora'), /./)
+  await assert.rejects(o.excluir('nao-existe'), /obra-inexistente/)
+})

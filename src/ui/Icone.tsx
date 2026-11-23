@@ -132,6 +132,11 @@ const CAMINHOS = {
     </>
   ),
   mais: <path d="M12 5v14M5 12h14" />,
+  lixeira: (
+    <>
+      <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+    </>
+  ),
   raio: <path d="M13 2 3 14 12 14 11 22 21 10 12 10Z" />,
 } as const
 

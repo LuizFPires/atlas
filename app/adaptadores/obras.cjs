@@ -27,8 +27,9 @@ function nomeParaPasta(nome) {
 
 const raizPadrao = () => path.join(os.homedir(), 'Atlas', 'Obras')
 
-/** `deps`: { raiz, shell } (shell só para abrirPasta). Garante a raiz (único mkdir recursivo, fixo e sem dado do cliente). */
-function criarObras({ raiz = raizPadrao(), shell } = {}) {
+/** `deps`: { raiz, shell, pararLinha } (shell para abrirPasta e para a Lixeira; pararLinha derruba a construção antes de excluir).
+ *  Garante a raiz (único mkdir recursivo, fixo e sem dado do cliente). */
+function criarObras({ raiz = raizPadrao(), shell, pararLinha } = {}) {
   const garantirRaiz = () => { fs.mkdirSync(raiz, { recursive: true }) }
   return {
     raiz: () => raiz,
@@ -60,6 +61,20 @@ function criarObras({ raiz = raizPadrao(), shell } = {}) {
         marca: nomes('marca').some((n) => /^marca(-\d+)?\.md$/i.test(n)),
         plano: existe('PLAN.md'),
       }
+    },
+    /** Excluir obra (Luiz, 23/11/2026): só obra em andamento, NUNCA concluída (PLAN.md com tudo marcado). Para a construção e
+     *  manda a pasta para a Lixeira do Windows (o Atlas não desfaz; a Lixeira é a última rede de segurança). */
+    async excluir(pasta) {
+      pasta = String(pasta)
+      const dir = caminhoSeguro(raiz, pasta)
+      let st
+      try { st = fs.lstatSync(dir) } catch { throw new Error('obra-inexistente') }
+      if (!st.isDirectory() || st.isSymbolicLink()) throw new Error('obra-inexistente')
+      let plan = null
+      try { plan = fs.readFileSync(caminhoSeguro(raiz, pasta, 'PLAN.md'), 'utf8') } catch { /* sem plano: ainda no projeto */ }
+      if (plan !== null && /^\s*[-*]\s+\[[xX]\]/m.test(plan) && !/^\s*[-*]\s+\[ \]/m.test(plan)) throw new Error('obra-concluida')
+      if (pararLinha) pararLinha(pasta)
+      await shell.trashItem(dir)
     },
     async abrirPasta() {
       garantirRaiz()
