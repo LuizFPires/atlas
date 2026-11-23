@@ -51,7 +51,8 @@ let janelaPrincipal = null
 // Adaptadores reais (um por porta do front). Pendentes: ver app/PENDENTE-ENTREGAR.md.
 const obras = criarObras({ shell })
 const arquivos = criarArquivos({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
-const claude = criarClaude({ shell })
+// Ao terminar o login do Claude Code (o cliente clicou em Autorizar no navegador), traz o Atlas de volta para a frente.
+const claude = criarClaude({ shell, aoConectar: () => { const j = janelaPrincipal; if (j && !j.isDestroyed()) { if (j.isMinimized()) j.restore(); j.show(); j.focus() } } })
 const modos = criarModo({ raiz: obras.raiz() })
 // Kit por obra (PonteKit): plugin numa pasta temporária do app (fora da obra e do repositório), descartado ao fechar. Sem API configurada, vale ATLAS_KIT_PLUGIN.
 const kit = criarKit({ dadosApp: app.getPath('userData'), cofre, hashComputador: async () => hash() })

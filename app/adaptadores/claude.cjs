@@ -1,7 +1,11 @@
 // Adaptador real do PonteClaude (src/app/ponte-claude.ts) — processo principal do Electron (só Windows).
 //
-// O QUE FAZ: o Atlas NUNCA faz o login do Claude (regra da Anthropic: sem OAuth de assinatura em app de terceiros) — só guia e detecta.
-//  - abrirLogin / abrirSite: shell.openExternal com URLs FIXAS do claude.ai (allowlist em seguro.cjs); nada vindo do renderer vira URL.
+// O QUE FAZ: o Atlas NUNCA faz o login do Claude (regra da Anthropic: sem OAuth de assinatura em app de terceiros) — só abre e detecta.
+//  - abrirLogin (23/11/2026, conectar com um clique): roda o login OFICIAL do Claude Code, `claude auth login --claudeai`
+//    (args fixos, sem shell). Quem abre o navegador na página de autorização do Claude e guarda a credencial é o próprio Claude
+//    Code; o Atlas não vê nada disso. Não espera terminar: a tela confere o estado sozinha. Ao conectar, `aoConectar` traz o Atlas
+//    para a frente. Um login por vez.
+//  - abrirSite: shell.openExternal com URLs FIXAS do claude.ai (allowlist em seguro.cjs); nada vindo do renderer vira URL.
 //  - estado: roda `claude auth status` (args fixos, sem shell, timeout) e lê loggedIn / email / subscriptionType (pro|max).
 //    Não lê nem guarda senha, código ou token; o CLI guarda a credencial dele.
 //  - renovarConexao: o Atlas não reentra por ele; só lê o estado de novo (o cliente reentra no navegador e o CLI passa a enxergar o plano novo).
@@ -31,8 +35,11 @@ function lerEstado(saida) {
   return estado
 }
 
-/** `deps`: { shell, executar } — `executar` existe para teste (padrão: executarClaude). */
-function criarClaude({ shell, executar = executarClaude }) {
+const LOGIN_MS = 10 * 60_000
+
+/** `deps`: { shell, executar, aoConectar } — `executar` existe para teste (padrão: executarClaude). */
+function criarClaude({ shell, executar = executarClaude, aoConectar = () => {} }) {
+  let login = null
   const estado = async () => {
     try {
       const r = await executar(['auth', 'status'], { timeoutMs: 15_000, maxSaida: 100_000 })
@@ -40,7 +47,15 @@ function criarClaude({ shell, executar = executarClaude }) {
     } catch { return { conectado: false } } // CLI ausente/lento: a tela mostra "ainda não conectado"
   }
   return {
-    abrirLogin: () => abrirExterno(shell, SITES.login),
+    async abrirLogin() {
+      if (login) return // já tem uma janela de autorização aberta: o cliente só precisa clicar em Autorizar
+      const p = executar(['auth', 'login', '--claudeai'], { timeoutMs: LOGIN_MS, maxSaida: 100_000 })
+      login = p
+      p.then((r) => { if (r && r.codigo === 0) aoConectar() }, () => {}).finally(() => { login = null })
+      // Falha logo de cara (Claude Code não instalado): a tela avisa. Senão, segue esperando o clique em Autorizar.
+      const erroCedo = await Promise.race([p.then(() => null, (e) => e), new Promise((r) => setTimeout(() => r(null), 300))])
+      if (erroCedo) throw erroCedo
+    },
     abrirSite: (alvo) => {
       if (alvo !== 'criar-conta' && alvo !== 'planos') return Promise.reject(new Error('site-invalido'))
       return abrirExterno(shell, SITES[alvo])
