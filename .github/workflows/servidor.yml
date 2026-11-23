@@ -27,7 +27,7 @@ jobs:
             echo "::warning::Falta o segredo SUPABASE_ACCESS_TOKEN: o servidor NÃO foi atualizado. Publique à mão ou crie o segredo."
             exit 0
           fi
-          npx --yes supabase@latest functions deploy api --no-verify-jwt --project-ref jwnrzcyudurdrxhjfdua
+          npx --yes supabase@latest functions deploy api --no-verify-jwt --project-ref jwnrzcyudurdrxhjfdua --yes
       - name: Conferir que a rota da atualização existe (404 = servidor velho)
         if: env.TEM == 'sim'
         env:
