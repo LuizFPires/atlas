@@ -19,7 +19,6 @@ interface Props {
 
 const MODOS = [['sugerir', 'Quero sugestões do Atlas'], ['tenho', 'Já tenho nome e logomarca']] as const
 
-const FASES = [['✓', 'Estilo', true], ['✓', 'Telas', true], ['3', 'Nome e marca', false]] as const
 
 export const recadoDoErroBatismo = (e: unknown) => {
   switch (e instanceof Error ? e.message : '') {
@@ -158,8 +157,7 @@ export function Batismo({ obra, batismo, nomes: conferidor, arquivos, onVoltar, 
     <div className="at-bat">
       <div className="at-bat__principal">
         <div className="at-bat__fases">
-          {FASES.map(([n, nome, feito]) => <div key={nome} className={`at-bat__fase ${feito ? '' : 'at-bat__fase--agora'}`} aria-current={feito ? undefined : 'step'}><span>{n}</span>{nome}</div>)}
-          <span className="at-bat__proj">PROJETO · {obra.nome.toUpperCase()}</span>
+          <span className="at-bat__proj">OBRA · {obra.nome.toUpperCase()}</span>
         </div>
         <header className="at-bat__cab">
           <h1>Hora do batismo.</h1>

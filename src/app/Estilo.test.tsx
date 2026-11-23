@@ -16,8 +16,8 @@ const montar = (arquivos: ArquivosFixture = criarArquivosFixture()) => {
 }
 const clicar = (n: string | RegExp) => userEvent.click(screen.getByRole('button', { name: n }))
 const colar = async (txt: string) => {
-  await userEvent.type(screen.getByLabelText(/Cole um link/), txt)
-  await clicar('Adicionar link')
+  await userEvent.type(screen.getByLabelText(/Cole o link de um site ou app/), txt)
+  await clicar('Adicionar')
 }
 
 test('pede de 1 a 3 referências e o sentimento, com microfone nos campos de texto', () => {
@@ -25,7 +25,7 @@ test('pede de 1 a 3 referências e o sentimento, com microfone nos campos de tex
   expect(screen.getByRole('heading', { name: 'Qual é a cara do seu sistema?' })).toBeInTheDocument()
   expect(screen.getByText('Mande 1 a 3 sites ou apps que você acha bonitos')).toBeInTheDocument()
   expect(screen.getByText('O que o seu cliente deve sentir ao abrir o sistema?')).toBeInTheDocument()
-  expect(screen.getByText(/PROJETO · AGENDA DA BARBEARIA DO ZÉ/)).toBeInTheDocument()
+  expect(screen.getByText(/OBRA · AGENDA DA BARBEARIA DO ZÉ/)).toBeInTheDocument()
   expect(screen.getAllByRole('button', { name: 'Falar' }).length).toBeGreaterThanOrEqual(2)
   expect(screen.getByRole('button', { name: 'Falar o que você gosta' })).toBeInTheDocument()
 })

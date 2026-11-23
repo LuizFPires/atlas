@@ -31,3 +31,17 @@ test('mapa sendo montado e mapa pronto têm o seu próprio recado; sem nada em a
   await act(async () => { await new Promise((ok) => setTimeout(ok, 60)) })
   expect(screen.queryByRole('button', { name: /Protótipo:/ })).toBeNull()
 })
+
+// Luiz, 23/11/2026: "o usuário tem que poder navegar entre etapas".
+describe('navegar entre as etapas', () => {
+  test('etapas já alcançadas são botões que levam a elas; as que ainda não chegaram ficam só como rótulo', async () => {
+    const onIr = vi.fn()
+    render(<EtapasObra atual="telas" alcancada="contas" onIr={onIr} />)
+    await userEvent.click(screen.getByRole('button', { name: /1 · A ideia/i }))
+    expect(onIr).toHaveBeenCalledWith('ideia')
+    await userEvent.click(screen.getByRole('button', { name: /5 · As contas/i }))
+    expect(onIr).toHaveBeenCalledWith('contas')
+    expect(screen.queryByRole('button', { name: /6 · Começar/i })).toBeNull()
+    expect(screen.getByRole('button', { name: /4 · O protótipo/i })).toHaveAttribute('aria-current', 'step')
+  })
+})

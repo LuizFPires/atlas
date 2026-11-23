@@ -417,6 +417,12 @@ function criarPrototipo({ raiz, disparo }) {
       })
     },
 
+    /** O que o cliente contou (prototipo/relato.md), para voltar à etapa da ideia sem perder nada. */
+    async relato(pasta) {
+      pasta = String(pasta)
+      try { return lerTexto(caminhoSeguro(raiz, pasta, 'prototipo', 'relato.md'), 200_000) ?? '' } catch { return '' }
+    },
+
     /** 3 jeitos de uma tela, para comparar. Não grava nada: a escolha vira versão nova em escolherVersao. */
     versoesDaTela(pasta, telaId) {
       pasta = String(pasta)

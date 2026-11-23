@@ -26,8 +26,9 @@
 .at-estilo__ref-txt--vazio { color: var(--mute2); }
 .at-estilo__ref-st { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--lime-txt); white-space: nowrap; }
 .at-estilo__tirar { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--mute); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.at-estilo__link { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
-.at-estilo__link .at-campo { align-self: stretch; }
+.at-estilo__link { display: flex; gap: 10px; align-items: flex-end; }
+.at-estilo__link > .at-botao { flex: none; min-height: 52px; }
+.at-estilo__link .at-campo { flex: 1; min-width: 0; }
 .at-estilo__acoes { display: flex; gap: 8px; flex-wrap: wrap; }
 .at-estilo__btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 14px var(--font-text); cursor: pointer; }
 .at-estilo__btn--lime { background: var(--lime); border-color: var(--lime); color: var(--on-lime); }
@@ -88,3 +89,4 @@
 .at-estilo__paleta { display: flex; flex-direction: column; gap: 10px; }
 .at-estilo__paleta-tit { font-size: 15px; color: var(--mute); }
 .at-estilo__paleta-tit b { color: var(--text); }
+.at-estilo__avancar { margin-left: auto; }

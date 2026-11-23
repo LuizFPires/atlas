@@ -452,3 +452,11 @@ describe('3 versões de uma tela (Luiz, 23/11/2026: "pedir 3 protótipos de uma 
     await assert.rejects(p.escolherVersao('obra', 'agenda', '<iframe></iframe>', 'x'), /telas-invalidas/)
   })
 })
+
+test('relato: devolve o que o cliente contou (para voltar à etapa da ideia); sem relato, vazio', async () => {
+  const { p, raiz } = montar()
+  assert.equal(await p.relato('obra'), '')
+  fs.mkdirSync(path.join(raiz, 'obra', 'prototipo'), { recursive: true })
+  fs.writeFileSync(path.join(raiz, 'obra', 'prototipo', 'relato.md'), 'Quero bater o ponto pelo celular.')
+  assert.equal(await p.relato('obra'), 'Quero bater o ponto pelo celular.')
+})
