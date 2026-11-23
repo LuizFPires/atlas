@@ -41,7 +41,8 @@ export interface PontePrototipo {
   estado(pasta: string): Promise<EstadoProto>
   /** Pede ao Claude as telas no estilo escolhido: cria a versão 1. */
   /** estilo null = a obra já tem identidade própria: o Claude segue o design-system.md da pasta. */
-  desenhar(pasta: string, obraNome: string, estilo: EstiloProposto | null): Promise<EstadoProto>
+  /** relato = o que o cliente contou (falando) sobre o sistema: base de TODAS as telas, sem limite fixo de quantidade. */
+  desenhar(pasta: string, obraNome: string, estilo: EstiloProposto | null, relato?: string): Promise<EstadoProto>
   /** O pedido do cliente (fala ou texto) vira uma versão NOVA. Devolve também o que o Claude diz de volta. */
   ajustar(pasta: string, pedido: string): Promise<{ estado: EstadoProto; resposta: string }>
   /** Volta a ver uma versão anterior. Não apaga nem reescreve nada: só muda a versão atual. */
@@ -60,6 +61,29 @@ const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-
 export function montarSrcDoc(html: string): string | null {
   if (html.length > MAX_HTML) return null
   return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8">${html}`
+}
+
+/** Qualquer href que não seja âncora interna (#...) vira "#": o protótipo nunca navega para fora de si. */
+function soLinksInternos(html: string): string {
+  return html.replace(/(\shref\s*=\s*)(?:"(?!#)[^"]*"|'(?!#)[^']*'|(?!["'#])[^\s>]+)/gi, '$1"#"')
+}
+
+/**
+ * Protótipo NAVEGÁVEL sem script: todas as telas num documento só, cada uma isolada no próprio shadow root (o CSS de uma
+ * tela não vaza para a outra) e só uma aparece por vez. Os links <a href="#tela-ID"> trocam a tela (CSS :target).
+ * Abre na tela `inicial`. Mesmo documento para o celular ao lado e para o link do celular. Devolve null se for grande demais.
+ */
+export function montarNavegavel(telas: TelaDesenhada[], inicial: string): string | null {
+  const total = telas.reduce((n, t) => n + t.html.length, 0)
+  if (total > MAX_HTML * 2 || telas.length === 0) return null
+  const ids = telas.map((t) => t.id).filter((id) => /^[a-z0-9][a-z0-9-]*$/.test(id))
+  const abre = ids.includes(inicial) ? inicial : ids[0]
+  const estilo = `<style>html,body{margin:0;padding:0}section{display:none;min-height:100vh}section:target{display:block}body:not(:has(section:target)) #tela-${abre}{display:block}</style>`
+  const secoes = telas
+    .filter((t) => ids.includes(t.id))
+    .map((t) => `<section id="tela-${t.id}"><template shadowrootmode="open">${soLinksInternos(t.html)}</template></section>`)
+    .join('')
+  return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${estilo}${secoes}`
 }
 
 // ---- Versões na pasta da obra ---------------------------------------------------------------------------------------------
