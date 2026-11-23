@@ -366,3 +366,34 @@ test('a pintura parou (sem internet): avisa que continua sozinho e segue acompan
   volta = true
   expect(await screen.findByRole('button', { name: /Telas do meu jeito/ }, { timeout: 4000 })).toBeInTheDocument()
 })
+
+describe('celular ou computador (sistemas web e sites)', () => {
+  /** Fixture em que "Agenda do dia" é uma tela de computador (painel do escritório). */
+  const comComputador = (): PontePrototipo => {
+    const f = criarPrototipoFixture()
+    const marcar = <T extends { versoes: { telas: { id: string }[] }[] }>(e: T): T => ({ ...e, versoes: e.versoes.map((v) => ({ ...v, telas: v.telas.map((t) => (t.id === 'agenda' ? { ...t, aparelho: 'computador' as const } : t)) })) })
+    return { ...f, estado: async (p) => marcar(await f.estado(p)), desenhar: async (...a) => marcar(await f.desenhar(...a)), voltar: async (...a) => marcar(await f.voltar(...a)), ajustar: async (...a) => { const r = await f.ajustar(...a); return { ...r, estado: marcar(r.estado) } } }
+  }
+
+  test('só celular: nem aparece a chave Celular · Computador', async () => {
+    await montar()
+    await screen.findByTitle(/Tela Marcar horário no celular/)
+    expect(screen.queryByRole('group', { name: 'Ver o protótipo em' })).toBeNull()
+  })
+
+  test('com as duas partes: a chave mostra quantas telas cada uma tem e troca o aparelho e as abas', async () => {
+    const { user } = await montar(comComputador())
+    const chave = await screen.findByRole('group', { name: 'Ver o protótipo em' })
+    const cel = within(chave).getByRole('button', { name: /Celular · 3 telas/ })
+    const comp = within(chave).getByRole('button', { name: /Computador · 1 tela/ })
+    expect(cel).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).not.toContain('Agenda do dia')
+    await user.click(comp)
+    expect(comp).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Agenda do dia'])
+    const tela = screen.getByTitle(/Tela Agenda do dia no computador/)
+    expect(tela.style.width).toBe('1280px')
+    expect(tela.style.height).toBe('800px')
+    expect(tela.getAttribute('sandbox')).toBe('')
+  })
+})

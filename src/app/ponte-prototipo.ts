@@ -20,7 +20,12 @@ export interface TelaDesenhada {
   nome: string
   /** HTML da tela. NÃO CONFIÁVEL: só renderiza em iframe sandbox (ver montarSrcDoc). */
   html: string
+  /** Onde a tela é usada: celular (390 px) ou computador (1280 px). Sem: celular (protótipos antigos). */
+  aparelho?: Aparelho
 }
+
+export type Aparelho = 'celular' | 'computador'
+export const aparelhoDaTela = (t: { aparelho?: Aparelho }): Aparelho => (t.aparelho === 'computador' ? 'computador' : 'celular')
 
 export interface VersaoProto {
   numero: number

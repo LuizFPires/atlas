@@ -375,3 +375,45 @@ describe('protótipo que para no meio (sem internet, computador desligado) conti
     assert.deepEqual(await p.retomarPendentes(), [])
   })
 })
+
+describe('celular ou computador (Luiz, 23/11/2026: "o Atlas é para mobile e web")', () => {
+  test('cada tela diz o aparelho; sem dizer (ou lixo) é celular', () => {
+    const r = telasDoJson({ telas: [
+      { id: 'painel', nome: 'Painel', html: '<div/>', aparelho: 'computador' },
+      { id: 'ponto', nome: 'Ponto', html: '<div/>', aparelho: 'celular' },
+      { id: 'velha', nome: 'Velha', html: '<div/>' },
+      { id: 'lixo', nome: 'Lixo', html: '<div/>', aparelho: 'tv<script>' },
+    ] })
+    assert.deepEqual(r.telas.map((t) => t.aparelho), ['computador', 'celular', 'celular', 'celular'])
+  })
+
+  test('o aparelho fica gravado na versão e volta ao ler', async () => {
+    const { p, responder } = montar()
+    responder({ resumo: 'r', resposta: 'ok', telas: [
+      { id: 'painel', nome: 'Painel', descricao: 'tabela', html: '<div>p</div>', aparelho: 'computador' },
+      { id: 'ponto', nome: 'Ponto', descricao: 'botão', html: '<div>c</div>', aparelho: 'celular' },
+    ] })
+    const e = await p.desenhar('obra', 'Meu Ponto', ESTILO)
+    assert.deepEqual(e.versoes[0].telas.map((t) => [t.id, t.aparelho]), [['painel', 'computador'], ['ponto', 'celular']])
+    assert.deepEqual((await p.estado('obra')).versoes[0].telas.map((t) => t.aparelho), ['computador', 'celular'])
+  })
+
+  test('o pedido ao Claude explica os dois tamanhos (390 px e 1280 px) e pede o aparelho no mapa', async () => {
+    const { p, chamadas } = montar()
+    await p.desenhar('obra', 'B', ESTILO)
+    const mapa = chamadas[0].o.entrada
+    const lote = chamadas[1].o.entrada
+    assert.match(mapa, /"aparelho":"celular" ou "computador"/)
+    assert.match(lote, /390 px/)
+    assert.match(lote, /1280 px/)
+  })
+})
+
+test('ajuste que não repete o aparelho mantém o da tela (o painel não vira celular)', async () => {
+  const { p, responder } = montar()
+  responder({ resumo: 'r', resposta: 'ok', telas: [{ id: 'painel', nome: 'Painel', descricao: 't', html: '<div>p</div>', aparelho: 'computador' }] })
+  await p.desenhar('obra', 'Meu Ponto', ESTILO)
+  responder({ resumo: 'cor', resposta: 'ok', telas: [{ id: 'painel', nome: 'Painel', html: '<div>p2</div>' }] })
+  const r = await p.ajustar('obra', 'troque a cor')
+  assert.equal(r.estado.versoes[1].telas[0].aparelho, 'computador')
+})

@@ -380,8 +380,8 @@ peso: 5
 spec: S9, S4
 tela: prototipo/caminho-novo/P1Computador.dc.html
 - [x] Protótipo aprovado e registrado (prototipo/caminho-novo P1Computador, P2Dicas, P3Versoes)
-- [ ] Cada tela do mapa diz onde é usada (celular ou computador); o Claude desenha no tamanho certo (390 px ou 1280 px)
-- [ ] Chave Celular · Computador no protótipo, com a contagem de telas; o computador aparece numa janela de navegador reduzida para caber
+- [x] Cada tela do mapa diz onde é usada (celular ou computador); o Claude desenha no tamanho certo (390 px ou 1280 px)
+- [x] Chave Celular · Computador no protótipo, com a contagem de telas; o computador aparece numa janela de navegador reduzida para caber
 - [ ] Voltar, caminho (Início › Equipe) e "Onde dá para tocar?" acima da prévia
 - [ ] Voz: texto aparece enquanto a pessoa fala (modelo pequeno e rápido) e o modelo bom corrige ao parar
 - [ ] Página de vendas e primeiro passo dizem: aplicativo, sistema ou site

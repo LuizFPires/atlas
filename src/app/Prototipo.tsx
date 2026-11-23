@@ -5,7 +5,7 @@ import { Pintor } from './Pintor'
 import { JanelaCelular } from './JanelaCelular'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EstiloProposto } from './ponte-estilo'
-import { montarNavegavel, montarSrcDoc, SANDBOX_PREVIEW, type EstadoProto, type PontePrototipo, type ProgressoProto, type TelaDesenhada } from './ponte-prototipo'
+import { aparelhoDaTela, montarNavegavel, montarSrcDoc, SANDBOX_PREVIEW, type Aparelho, type EstadoProto, type PontePrototipo, type ProgressoProto, type TelaDesenhada } from './ponte-prototipo'
 import type { ObraDoEstilo } from './Estilo'
 import './prototipo.css'
 
@@ -65,6 +65,37 @@ export function CelularPreview({ html, titulo, telas, inicial }: { html: string;
           ? <div className="at-proto__seguro" role="img" aria-label="Tela grande demais para mostrar">Esta tela é grande demais para eu mostrar aqui com segurança. O Claude vai deixá-la mais leve.</div>
           : <iframe className="at-proto__tela" title={titulo} sandbox={SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer"
               style={{ width: `${LARGURA_CELULAR}px`, height: `${ALTURA_CELULAR}px`, transform: `scale(${escala})` }} />}
+      </div>
+    </div>
+  )
+}
+
+/** Tamanho de uma tela de computador comum (notebook): as telas de sistema web e site são desenhadas para isso. */
+export const LARGURA_COMPUTADOR = 1280
+export const ALTURA_COMPUTADOR = 800
+
+/** Prévia no computador: janela de navegador com a tela em 1280 × 800, reduzida para caber inteira (nunca rola de lado). */
+export function ComputadorPreview({ telas, inicial, titulo }: { telas: TelaDesenhada[]; inicial: string; titulo: string }) {
+  const doc = montarNavegavel(telas, inicial)
+  const vidro = useRef<HTMLDivElement>(null)
+  const [escala, setEscala] = useState(1)
+  useEffect(() => {
+    const el = vidro.current
+    if (!el) return
+    const medir = () => setEscala(el.clientWidth > 0 && el.clientHeight > 0 ? Math.min(1, el.clientWidth / LARGURA_COMPUTADOR, el.clientHeight / ALTURA_COMPUTADOR) : 1)
+    medir()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(medir) : null
+    ro?.observe(el)
+    return () => ro?.disconnect()
+  }, [])
+  return (
+    <div className="at-proto__computador">
+      <div className="at-proto__janela" aria-hidden="true"><span /><span /><span /></div>
+      <div className="at-proto__vidro at-proto__vidro--computador" ref={vidro}>
+        {doc === null
+          ? <div className="at-proto__seguro" role="img" aria-label="Tela grande demais para mostrar">Esta tela é grande demais para eu mostrar aqui com segurança. O Claude vai deixá-la mais leve.</div>
+          : <iframe className="at-proto__tela" title={titulo} sandbox={SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer"
+              style={{ width: `${LARGURA_COMPUTADOR}px`, height: `${ALTURA_COMPUTADOR}px`, transform: `scale(${escala})` }} />}
       </div>
     </div>
   )
@@ -237,6 +268,11 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
     } catch (x) { setErro(recadoDoErroProto(x)) } finally { setOcupado(false) }
   }
   const tela = versao?.telas.find((t) => t.id === aba) ?? versao?.telas[0]
+  // Celular ou computador (Luiz, 23/11/2026): mostra só as telas do aparelho da tela aberta; a chave troca de aparelho.
+  const aparelho = tela ? aparelhoDaTela(tela) : 'celular'
+  const doAparelho = (a: Aparelho) => versao?.telas.filter((t) => aparelhoDaTela(t) === a) ?? []
+  const telasAqui = doAparelho(aparelho)
+  const temOsDois = doAparelho('celular').length > 0 && doAparelho('computador').length > 0
 
   const barra = (inicio: boolean) => (
     <form className="at-proto__barra" onSubmit={(e) => { e.preventDefault(); if (inicio) { if (relato.trim() && !vozRelato.gravando) void desenhar() } else void enviar() }}>
@@ -330,12 +366,28 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
 
       {versao && vista === 'navegar' && tela && (
         <section className="at-proto__palco" aria-label="Preview do celular">
+          {temOsDois && (
+            <div className="at-proto__aparelhos" role="group" aria-label="Ver o protótipo em">
+              {(['celular', 'computador'] as const).map((a) => {
+                const n = doAparelho(a).length
+                return (
+                  <button key={a} type="button" aria-pressed={a === aparelho} className={`at-proto__aparelho ${a === aparelho ? 'at-proto__aparelho--on' : ''}`}
+                    onClick={() => { if (a !== aparelho) setAba(doAparelho(a)[0]?.id ?? '') }}>
+                    <Icone nome={a === 'celular' ? 'celular' : 'computador'} tamanho={18} />
+                    {a === 'celular' ? 'Celular' : 'Computador'} · {n} {n === 1 ? 'tela' : 'telas'}
+                  </button>
+                )
+              })}
+            </div>
+          )}
           <div className="at-proto__abas" role="tablist" aria-label="Telas do sistema">
-            {versao.telas.map((t) => (
+            {telasAqui.map((t) => (
               <button key={t.id} type="button" role="tab" aria-selected={t.id === tela.id} className={`at-proto__aba ${t.id === tela.id ? 'at-proto__aba--on' : ''}`} onClick={() => setAba(t.id)}>{t.nome}</button>
             ))}
           </div>
-          <CelularPreview html={tela.html} telas={versao.telas} inicial={tela.id} titulo={`Tela ${tela.nome} no celular (dá para tocar e navegar)`} />
+          {aparelho === 'computador'
+            ? <ComputadorPreview telas={telasAqui} inicial={tela.id} titulo={`Tela ${tela.nome} no computador (dá para clicar e navegar)`} />
+            : <CelularPreview html={tela.html} telas={telasAqui} inicial={tela.id} titulo={`Tela ${tela.nome} no celular (dá para tocar e navegar)`} />}
           {estado.versoes.length > 1 && (
             <div className="at-proto__versoes" role="group" aria-label="Versões do protótipo">
               <span>Versões guardadas:</span>
