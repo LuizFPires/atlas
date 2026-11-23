@@ -65,3 +65,14 @@
 @keyframes at-proto-gira { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .at-proto__miniatura--pronta, .at-proto__mini-vazio, .at-proto__mini-giro { animation: none; } }
 .at-proto__barra-mic:not(.at-mic--gravando) { background: var(--lime) !important; color: var(--on-lime) !important; border-color: var(--lime) !important; }
+
+/* Celular ou computador (Luiz, 23/11/2026: o Atlas faz app, sistema web e site). */
+.at-proto__aparelhos { display: inline-flex; padding: 4px; gap: 2px; border-radius: 14px; background: var(--card); border: 1px solid var(--card-b); }
+.at-proto__aparelho { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px; border-radius: 10px; border: 0; background: transparent; color: var(--mute); font: 600 14px var(--font-text); cursor: pointer; }
+.at-proto__aparelho--on { background: var(--lime); color: var(--on-lime); font-weight: 700; }
+.at-proto__aparelho:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+/* Janela de navegador: a tela de 1280 × 800 reduzida (transform) para caber inteira. */
+.at-proto__computador { width: min(100%, 1100px); aspect-ratio: 1280 / 830; max-height: calc(100vh - 300px); display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; border: 1px solid var(--card-b); background: #2B2F33; }
+.at-proto__janela { height: 30px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 12px; }
+.at-proto__janela span { width: 10px; height: 10px; border-radius: 5px; background: #5A5F66; }
+.at-proto__vidro--computador { border-radius: 0; flex: 1; min-height: 0; }

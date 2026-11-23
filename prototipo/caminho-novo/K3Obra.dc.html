@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Obra aberta</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes kpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.k-pisca{animation:kpisca 1.2s infinite}
+@media (prefers-reduced-motion: reduce){.k-pisca{animation:none}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="canteiro" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:22px 36px 26px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:center;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+    <a href="K1Canteiro.dc.html" style="display:flex;align-items:center;gap:6px;font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>CANTEIRO DE OBRAS</a>
+    <div style="display:flex;align-items:center;gap:12px"><h1 style="margin:0;font-size:28px;letter-spacing:-.01em">Meu Ponto</h1><span style="display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:{{t.soft}};color:{{t.limeTxt}};font:600 11px 'Geist Mono',monospace;letter-spacing:.08em"><span class="k-pisca" style="width:7px;height:7px;border-radius:4px;background:{{t.lime}}"></span>EM CONSTRUÇÃO · 64%</span></div>
+   </div>
+   <button type="button" style="margin-left:auto;display:flex;align-items:center;gap:10px;height:48px;padding:0 18px;border-radius:12px;border:none;background:{{t.lime}};color:{{t.onLime}};font:700 15px 'Geist',sans-serif;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Mudar algo nesta obra</button>
+  </div>
+
+  <ol aria-label="Etapas da obra" style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px">
+   <sc-for list="{{etapas}}" as="e" hint-placeholder-count="6">
+    <li style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:{{e.bg}};border:1px solid {{e.borda}};min-height:118px;box-sizing:border-box">
+     <div style="display:flex;align-items:center;gap:8px"><span style="width:22px;height:22px;border-radius:50%;background:{{e.bola}};color:{{e.bolaTxt}};display:flex;align-items:center;justify-content:center;font:700 11px 'Geist Mono',monospace">{{e.n}}</span><b style="font-size:15px">{{e.nome}}</b></div>
+     <span style="font-size:13px;line-height:1.4;color:{{t.mute}}">{{e.resumo}}</span>
+     <a href="{{e.href}}" aria-label="{{e.aria}}" style="margin-top:auto;font:600 13px 'Geist',sans-serif;color:{{t.limeTxt}}">{{e.acao}}</a>
+    </li>
+   </sc-for>
+  </ol>
+
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px">
+   <section aria-label="Construção" style="display:flex;flex-direction:column;border-radius:20px;overflow:hidden;background:{{t.card}};border:1px solid {{t.lime}}">
+    <div style="position:relative;flex:1;min-height:0;background:#1A1D21">
+     <img src="/_blob/43c73c51d3fb529d426014fb2be78397" alt="O canteiro da obra Meu Ponto em 3D, com o prédio na metade e a equipe trabalhando" style="width:100%;height:100%;object-fit:cover;display:block">
+     <span style="position:absolute;left:16px;top:16px;display:flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;background:rgba(16,18,20,.82);color:#EDEFEA;font:600 11px 'Geist Mono',monospace;letter-spacing:.1em"><span class="k-pisca" style="width:7px;height:7px;border-radius:4px;background:#C6F135"></span>AO VIVO</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;padding:18px 22px 20px">
+     <div style="display:flex;align-items:baseline;gap:10px"><b style="font-size:17px">Fazendo agora: a tela de relatórios do mês</b><span style="margin-left:auto;font:600 15px 'Geist Mono',monospace;color:{{t.limeTxt}}">7 DE 11 PARTES</span></div>
+     <span style="height:8px;border-radius:4px;background:{{t.line}};overflow:hidden"><span style="display:block;height:100%;width:64%;border-radius:4px;background:{{t.lime}}"></span></span>
+     <span style="font-size:14px;color:{{t.mute}}">Pronto em cerca de 2 dias, no ritmo de hoje. Pode fechar o Atlas: a obra para e continua de onde parou.</span>
+    </div>
+   </section>
+
+   <aside style="display:flex;flex-direction:column;gap:14px">
+    <section aria-label="Mudar algo nesta obra" style="display:flex;flex-direction:column;gap:12px;padding:20px;border-radius:20px;background:{{t.card}};border:1px solid {{t.cardB}}">
+     <h2 style="margin:0;font-size:18px">Quer mudar alguma coisa?</h2>
+     <p style="margin:0;font-size:14px;line-height:1.5;color:{{t.mute}}">Fale com o Atlas. Ele muda o protótipo, você confere, e a mudança entra na construção sozinha.</p>
+     <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <sc-for list="{{exemplos}}" as="x" hint-placeholder-count="3"><button type="button" style="height:34px;padding:0 12px;border-radius:999px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font:500 13px 'Geist',sans-serif;cursor:pointer">{{x}}</button></sc-for>
+     </div>
+     <div style="display:flex;align-items:center;gap:10px">
+      <button type="button" aria-label="Falar com o Atlas" style="flex:none;width:52px;height:52px;border-radius:26px;border:none;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+      <label style="flex:1;min-width:0"><span style="position:absolute;left:-9999px">O que você quer mudar</span><input type="text" placeholder="Ou escreva aqui o que quer mudar" style="width:100%;box-sizing:border-box;height:52px;padding:0 14px;border-radius:12px;border:1px solid {{t.cardB}};background:{{t.input}};color:{{t.text}};font:15px 'Geist',sans-serif"></label>
+     </div>
+    </section>
+    <section aria-label="Pós-obra" style="display:flex;flex-direction:column;gap:6px;padding:18px 20px;border-radius:20px;background:{{t.card2}};border:1px dashed {{t.cardB}}">
+     <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">DEPOIS DE PRONTA</span>
+     <b style="font-size:15px">Publicar e ganhar o endereço</b>
+     <span style="font-size:13px;line-height:1.45;color:{{t.mute}}">Quando chegar a 100%, a obra vai para Obras concluídas, já no ar.</span>
+    </section>
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1' }
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const pronta = (n, nome, resumo, href) => ({ n, nome, resumo, href, acao: 'Ver ou mudar', aria: `${nome}: ver ou mudar`, bg: t.card, borda: t.cardB, bola: t.lime, bolaTxt: t.onLime });
+    const etapas = [
+      pronta('1', 'A ideia', 'Ponto da equipe nas obras, pelo celular.', 'CN1Ideia.dc.html'),
+      pronta('2', 'O visual', 'Estilo "Areia serena".', 'CN3Visual.dc.html'),
+      pronta('3', 'O nome', 'Meu Ponto.', 'CN4Nome.dc.html'),
+      pronta('4', 'O protótipo', '14 telas · versão 3.', 'CN5Prototipo.dc.html'),
+      pronta('5', 'As contas', 'GitHub, Supabase e Vercel ligados.', 'CN6Contas.dc.html'),
+      { n: '6', nome: 'Construção', resumo: '64% · trabalhando agora.', href: 'K3Obra.dc.html', acao: 'Acompanhando ↓', aria: 'Construção: acompanhando abaixo', bg: t.soft, borda: t.lime, bola: t.lime, bolaTxt: t.onLime }
+    ];
+    const exemplos = ['Troque a cor dos botões', 'Crie uma tela de estoque', 'Mude o nome para "Ponto Certo"'];
+    return { tema, t, etapas, exemplos };
+  }
+}
+</script>
+</body>
+</html>

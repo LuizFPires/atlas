@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Dicas do Atlas no protótipo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes pbrilho{0%,100%{box-shadow:0 0 0 0 rgba(198,241,53,.55)}50%{box-shadow:0 0 0 6px rgba(198,241,53,0)}}
+.p-alvo{outline:2.5px solid #C6F135;outline-offset:3px;animation:pbrilho 1.4s infinite}
+@media (prefers-reduced-motion: reduce){.p-alvo{animation:none}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="canteiro" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:22px 32px 24px;display:flex;flex-direction:column;gap:16px">
+  <div style="display:flex;align-items:center;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+    <a href="K3Obra.dc.html" style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">← MEU PONTO · O PROTÓTIPO · 18 TELAS · VERSÃO 3</a>
+    <h1 style="margin:0;font-size:26px;letter-spacing:-.01em">App da equipe</h1>
+   </div>
+   <div role="group" aria-label="Ver o protótipo em" style="margin-left:auto;display:flex;padding:4px;border-radius:14px;background:{{t.card}};border:1px solid {{t.cardB}}">
+    <button type="button" aria-pressed="true" style="display:flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:none;background:{{t.lime}};color:{{t.onLime}};font:700 14px 'Geist',sans-serif"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg>Celular · 12 telas</button>
+    <a href="P1Computador.dc.html" style="display:flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;color:{{t.mute}};font:600 14px 'Geist',sans-serif"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Computador · 6 telas</a>
+   </div>
+  </div>
+
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:330px minmax(0,1fr) 340px;gap:22px">
+   <section aria-label="Conversa sobre o protótipo" style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;display:flex;flex-direction:column;overflow:hidden">
+    <div style="flex:1;padding:18px;display:flex;flex-direction:column;gap:12px">
+     <div style="align-self:flex-start;max-width:88%;background:{{t.bolha}};border-radius:14px;padding:11px 14px;font-size:14px;line-height:1.5"><b style="display:block;font-size:11px;letter-spacing:.06em;margin-bottom:3px;opacity:.75">ATLAS</b>Toque nos botões do celular como se fosse o app pronto. O que estiver aceso dá para tocar.</div>
+    </div>
+    <div style="border-top:1px solid {{t.line}};padding:12px;display:flex;gap:10px;align-items:center">
+     <button type="button" aria-label="Falar o que quer mudar" style="width:46px;height:46px;flex:none;border-radius:50%;border:none;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+     <span style="flex:1;font-size:14px;color:{{t.mute2}}">Fale o que quer mudar…</span>
+    </div>
+   </section>
+
+   <section aria-label="Prévia no celular" style="display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0">
+    <div style="display:flex;align-items:center;gap:8px;width:100%">
+     <button type="button" aria-label="Voltar à tela anterior" style="width:38px;height:38px;border-radius:10px;border:1px solid {{t.cardB}};background:{{t.card}};color:{{t.text}};display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+     <nav aria-label="Caminho" style="font-size:14px;color:{{t.mute}}">Início <span style="color:{{t.mute2}}">›</span> <b style="color:{{t.text}}">Equipe</b></nav>
+     <button type="button" aria-pressed="true" style="margin-left:auto;display:flex;align-items:center;gap:7px;height:38px;padding:0 12px;border-radius:10px;border:1px solid {{t.lime}};background:{{t.soft}};color:{{t.text}};font:600 13px 'Geist',sans-serif"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 3v4M3 9h4M5.5 5.5l2.5 2.5M12 12l8 3-3.5 1.5L15 20z"/></svg>Onde dá para tocar?</button>
+    </div>
+    <div style="position:relative;height:600px;aspect-ratio:414/868;border-radius:44px;background:#0B0C0D;padding:12px;box-sizing:border-box">
+     <div style="width:100%;height:100%;border-radius:32px;background:#FBF7F2;color:#2F3A31;overflow:hidden;display:flex;flex-direction:column">
+      <div style="background:#2F3A31;color:#FBF7F2;padding:26px 16px 16px;display:flex;flex-direction:column;gap:3px"><span style="font-size:11px;opacity:.75">Residencial Vila Serena</span><b style="font-size:19px">Equipe de hoje</b></div>
+      <div style="padding:12px;display:flex;flex-direction:column;gap:8px">
+       <sc-for list="{{equipe}}" as="p" hint-placeholder-count="4"><div class="p-alvo" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:#FFF;border:1px solid #E2D8CC;font-size:13px"><span style="width:30px;height:30px;border-radius:15px;background:#E9DCCB;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">{{p.i}}</span><span style="flex:1">{{p.n}}</span><b>{{p.h}}</b></div></sc-for>
+       <span class="p-alvo" style="margin-top:6px;height:44px;border-radius:12px;background:#B5651D;color:#FFF;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center">+ Cadastrar funcionário</span>
+      </div>
+     </div>
+     <div role="status" style="position:absolute;left:-30px;right:-30px;bottom:30px;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:{{t.card}};border:1px solid {{t.cardB}};box-shadow:0 14px 30px rgba(0,0,0,.35);font-size:13px;line-height:1.4">
+      <span style="flex:1">"Exportar" ainda não foi desenhado.</span>
+      <button type="button" style="height:34px;padding:0 12px;border-radius:9px;border:none;background:{{t.lime}};color:{{t.onLime}};font:700 13px 'Geist',sans-serif">Desenhar agora</button>
+     </div>
+    </div>
+   </section>
+
+   <aside aria-label="Dicas do Atlas" style="display:flex;flex-direction:column;gap:14px">
+    <section style="display:flex;flex-direction:column;gap:12px;padding:20px;border-radius:20px;background:{{t.card}};border:1px solid {{t.lime}}">
+     <div style="display:flex;align-items:center;gap:10px">
+      <span style="width:36px;height:36px;border-radius:18px;background:{{t.soft}};display:flex;align-items:center;justify-content:center"><img src="{{t.mono}}" alt="" style="width:22px;height:12px;object-fit:contain"></span>
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">DICA DO ATLAS · 1 DE 4</span>
+      <button type="button" aria-label="Dispensar dica" style="margin-left:auto;width:32px;height:32px;border-radius:8px;border:none;background:transparent;color:{{t.mute}};display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+     </div>
+     <b style="font-size:18px;line-height:1.3">Na dúvida sobre o cadastro? Veja 3 jeitos antes de escolher.</b>
+     <p style="margin:0;font-size:14px;line-height:1.5;color:{{t.mute}}">Eu desenho três versões do "Cadastrar funcionário", lado a lado. Você toca em cada uma e fica com a melhor, ou mistura o que gostou.</p>
+     <a href="P3Versoes.dc.html" style="display:flex;align-items:center;justify-content:center;height:46px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font:700 15px 'Geist',sans-serif">Ver 3 versões do cadastro</a>
+     <button type="button" style="height:40px;border-radius:12px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font:600 14px 'Geist',sans-serif">Outra dica</button>
+    </section>
+    <section style="display:flex;flex-direction:column;gap:10px;padding:18px 20px;border-radius:20px;background:{{t.card2}};border:1px solid {{t.cardB}}">
+     <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">OUTRAS COISAS QUE VOCÊ PODE PEDIR</span>
+     <sc-for list="{{ideias}}" as="i" hint-placeholder-count="3"><button type="button" style="text-align:left;padding:10px 12px;border-radius:10px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font:500 14px 'Geist',sans-serif;line-height:1.35">{{i}}</button></sc-for>
+    </section>
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', line: '#2A2E33', bolha: '#262A2F', mono: '/_blob/12f422513e54daca2767634612b51c95' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', line: '#E6E8E1', bolha: '#F0F1EC', mono: '/_blob/cf1beaa186df4dada45f5f7027b51b02' }
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const equipe = [{ i: 'AS', n: 'Ana Serena', h: '06h56' }, { i: 'BL', n: 'Bruno Lima', h: '07h02' }, { i: 'CD', n: 'Carla Dias', h: '06h48' }, { i: 'DR', n: 'Diego Rocha', h: '—' }];
+    const ideias = ['Mostre como fica com o logo da minha empresa', 'Como esta tela fica no computador?', 'Simule um dia com 30 funcionários'];
+    return { tema, t, equipe, ideias };
+  }
+}
+</script>
+</body>
+</html>

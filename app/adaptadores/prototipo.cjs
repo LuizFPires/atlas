@@ -34,6 +34,9 @@ const LOTES_JUNTOS = 3 // lotes desenhados ao mesmo tempo depois do 1º (mais r�
 const ID_TELA = /^[a-z0-9][a-z0-9-]{0,40}$/
 const PERIGOSO = /<\s*(script|iframe|object|embed)\b/i
 
+/** Onde a tela é usada (Luiz, 23/11/2026: "o Atlas é para mobile e web"): celular (390 px) ou computador (1280 px). Sem dizer: celular. */
+const aparelhoDe = (x) => (x === 'computador' ? 'computador' : 'celular')
+
 const nomeVersao = (n) => `v${String(n).padStart(3, '0')}`
 
 /** Valida as telas devolvidas pelo Claude (dado de fora). Lança 'telas-invalidas'. */
@@ -44,7 +47,7 @@ function telasDoJson(obj, { podeVazio = false } = {}) {
     if (!t || typeof t !== 'object' || typeof t.id !== 'string' || !ID_TELA.test(t.id) || ids.has(t.id)) throw new Error('telas-invalidas')
     if (typeof t.html !== 'string' || t.html.length === 0 || t.html.length > MAX_HTML || PERIGOSO.test(t.html) || t.html.includes('\0')) throw new Error('telas-invalidas')
     ids.add(t.id)
-    return { id: t.id, nome: umaLinha(t.nome, 60, t.id), html: t.html }
+    return { id: t.id, nome: umaLinha(t.nome, 60, t.id), html: t.html, aparelho: aparelhoDe(t.aparelho) }
   })
   return {
     telas,
@@ -53,7 +56,7 @@ function telasDoJson(obj, { podeVazio = false } = {}) {
   }
 }
 
-const FORMATO = 'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"resumo":"até 80 letras do que mudou","resposta":"1 ou 2 frases em português simples para o cliente","telas":[{"id":"minusculas-e-hifen","nome":"nome para o cliente","html":"<style>…</style><div>…</div>"}]}. Cada html é um trecho de página PARA CELULAR (≈390 px), com CSS no próprio trecho, sem script, sem imagens externas, sem links externos; links entre telas só com href="#tela-<id>".'
+const FORMATO = 'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"resumo":"até 80 letras do que mudou","resposta":"1 ou 2 frases em português simples para o cliente","telas":[{"id":"minusculas-e-hifen","nome":"nome para o cliente","aparelho":"celular","html":"<style>…</style><div>…</div>"}]}. Cada html é um trecho de página no tamanho do APARELHO da tela (o mesmo do mapa): "celular" = tela de telefone com 390 px de largura (uma coluna, botões grandes para o dedo, barra de navegação embaixo); "computador" = tela de sistema web ou site com 1280 px de largura (menu lateral ou no topo, tabelas e painéis lado a lado, aproveitando a largura). Use larguras relativas (100%, fr) e nunca uma largura fixa maior que o aparelho: nada pode rolar para o lado. CSS no próprio trecho, sem script, sem imagens externas, sem links externos; links entre telas só com href="#tela-<id>".'
 
 const linhaDoEstilo = (estilo) => (estilo ? [JSON.stringify({ nome: estilo.nome, fundo: estilo.fundo, topo: estilo.topo, topoTxt: estilo.topoTxt, destaque: estilo.destaque, destTxt: estilo.destTxt, linha: estilo.linha, raio: estilo.raio, fonte: estilo.fonte })] : ['(siga o design-system.md)'])
 
@@ -64,11 +67,11 @@ function mapaDoJson(obj) {
   return obj.telas.map((t) => {
     if (!t || typeof t.id !== 'string' || !ID_TELA.test(t.id) || ids.has(t.id)) throw new Error('mapa-invalido')
     ids.add(t.id)
-    return { id: t.id, nome: umaLinha(t.nome, 60, t.id), descricao: umaLinha(t.descricao, 400) }
+    return { id: t.id, nome: umaLinha(t.nome, 60, t.id), descricao: umaLinha(t.descricao, 400), aparelho: aparelhoDe(t.aparelho) }
   })
 }
 
-const FORMATO_MAPA = 'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"telas":[{"id":"minusculas-e-hifen","nome":"nome para o cliente","descricao":"o que a tela mostra, o que dá para fazer nela e para quais telas ela leva"}]}.'
+const FORMATO_MAPA = 'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"telas":[{"id":"minusculas-e-hifen","nome":"nome para o cliente","aparelho":"celular","descricao":"o que a tela mostra, o que dá para fazer nela e para quais telas ela leva"}]}. Em cada tela, "aparelho":"celular" ou "computador": onde quem usa essa tela vai usá-la. Aplicativo de quem está na rua, no canteiro ou com o cliente = celular; painel do escritório, sistema de gestão, relatórios grandes e site = computador. Um mesmo sistema pode ter as duas partes (ex.: o app da equipe no celular e o painel do escritório no computador). Se o relato não deixar claro, use celular.'
 
 function pedidoMapa(obraNome, estilo, relato) {
   return [
@@ -99,8 +102,8 @@ function pedidoLote(obraNome, estilo, mapa, lote, referencia) {
     '',
     FORMATO,
     '',
-    'Mapa completo de telas (ids, nomes e o que cada uma faz):',
-    ...mapa.map((t) => `- ${t.id} | ${t.nome} | ${t.descricao}`),
+    'Mapa completo de telas (id | nome | aparelho | o que faz):',
+    ...mapa.map((t) => `- ${t.id} | ${t.nome} | ${t.aparelho ?? "celular"} | ${t.descricao}`),
     '',
     ...(referencia ? ['Tela de referência JÁ desenhada (mantenha EXATAMENTE a mesma linguagem visual: cores, cantos, tipografia, espaçamentos, barra de navegação):', referencia.html, ''] : []),
     'Nome da obra:',
@@ -151,7 +154,7 @@ function criarPrototipo({ raiz, disparo }) {
         if (!t || typeof t.id !== 'string' || !ID_TELA.test(t.id)) continue
         const html = lerTexto(caminhoSeguro(raiz, pasta, 'prototipo', 'versoes', nome, 'telas', `${t.id}.html`), MAX_HTML)
         if (html === null) continue
-        telas.push({ id: t.id, nome: umaLinha(t.nome, 60, t.id), html })
+        telas.push({ id: t.id, nome: umaLinha(t.nome, 60, t.id), html, aparelho: aparelhoDe(t.aparelho) })
       }
       if (telas.length) out.push({ numero, resumo: umaLinha(meta.resumo, 80, 'Versão'), telas })
     }
@@ -175,7 +178,7 @@ function criarPrototipo({ raiz, disparo }) {
       try { fs.mkdirSync(alvo) } catch (e) { if (e.code === 'EEXIST') continue; throw e }
       garantirSubpasta(raiz, pasta, 'prototipo', 'versoes', nomeVersao(numero), 'telas')
       for (const t of telas) criarArquivoExclusivo(caminhoSeguro(raiz, pasta, 'prototipo', 'versoes', nomeVersao(numero), 'telas', `${t.id}.html`), t.html)
-      criarArquivoExclusivo(caminhoSeguro(raiz, pasta, 'prototipo', 'versoes', nomeVersao(numero), 'versao.json'), JSON.stringify({ versao: 1, numero, resumo, telas: telas.map((t) => ({ id: t.id, nome: t.nome })) }) + '\n')
+      criarArquivoExclusivo(caminhoSeguro(raiz, pasta, 'prototipo', 'versoes', nomeVersao(numero), 'versao.json'), JSON.stringify({ versao: 1, numero, resumo, telas: telas.map((t) => ({ id: t.id, nome: t.nome, aparelho: aparelhoDe(t.aparelho) })) }) + '\n')
       gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'atual.json'), JSON.stringify({ versao: 1, atual: numero }) + '\n')
       return numero
     }
@@ -246,7 +249,11 @@ function criarPrototipo({ raiz, disparo }) {
         const r = telasDoJson({ ...extrairJson(await disparo.perguntar(pasta, pedidoLote(nome, est, mapa, lote, referencia), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto') })
         const pedidos = new Set(lote.map((t) => t.id))
         if (!r.telas.every((t) => pedidos.has(t.id))) throw new Error('telas-invalidas') // nada fora do lote
-        for (const t of r.telas) { feitas.set(t.id, t); guardarNoRascunho(pasta, t) }
+        for (const t of r.telas) {
+          const doMapa = mapa.find((m) => m.id === t.id)
+          const tela = doMapa ? { ...t, aparelho: doMapa.aparelho } : t // quem decide o aparelho é o mapa
+          feitas.set(t.id, tela); guardarNoRascunho(pasta, tela)
+        }
         publicar()
       }
       const faltam = mapa.filter((t) => !feitas.has(t.id))
@@ -373,13 +380,16 @@ function criarPrototipo({ raiz, disparo }) {
         const e = ler(pasta)
         const atual = e.versoes.find((v) => v.numero === e.atual)
         if (!atual) throw new Error('sem-prototipo')
-        const bruto = extrairJson(await disparo.perguntar(pasta, pedidoAjustar(String(pedido), atual.telas.map((t) => `${t.id} (${t.nome})`), atual.numero), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto')
+        const bruto = extrairJson(await disparo.perguntar(pasta, pedidoAjustar(String(pedido), atual.telas.map((t) => `${t.id} (${t.nome}, ${t.aparelho ?? "celular"})`), atual.numero), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto')
         const r = telasDoJson(bruto, { podeVazio: true })
         const remover = new Set(Array.isArray(bruto.remover) ? bruto.remover.filter((id) => typeof id === 'string' && ID_TELA.test(id)) : [])
         // Só o que mudou vem do Claude: as outras telas passam iguais; novas entram no fim; `remover` tira.
-        const novas = new Map(r.telas.map((t) => [t.id, t]))
+        // Aparelho que o Claude não repetiu num ajuste: fica o da tela (o painel do computador não vira celular).
+        const disse = new Set((Array.isArray(bruto.telas) ? bruto.telas : []).filter((t) => t && (t.aparelho === 'celular' || t.aparelho === 'computador')).map((t) => t.id))
+        const antes = new Map(atual.telas.map((t) => [t.id, t.aparelho]))
+        const novas = new Map(r.telas.map((t) => [t.id, disse.has(t.id) || !antes.has(t.id) ? t : { ...t, aparelho: antes.get(t.id) }]))
         const telas = atual.telas.filter((t) => !remover.has(t.id)).map((t) => novas.get(t.id) ?? t)
-        for (const t of r.telas) if (!atual.telas.some((x) => x.id === t.id)) telas.push(t)
+        for (const t of r.telas) if (!atual.telas.some((x) => x.id === t.id)) telas.push(novas.get(t.id))
         if (!telas.length || telas.length > MAX_TELAS || (!r.telas.length && !remover.size)) throw new Error('telas-invalidas')
         const numero = gravarVersao(pasta, r.resumo, telas)
         return { estado: ler(pasta), resposta: r.resposta || `Pronto, fiz o ajuste. Está na versão ${numero}.` }
