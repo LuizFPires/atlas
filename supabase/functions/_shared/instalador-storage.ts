@@ -22,7 +22,11 @@ export function lerConfigInstalador(env: (nome: string) => string | undefined): 
 /** A parte do cliente do Supabase que usamos: `storage.from(bucket)`. */
 export type DoBucket = (bucket: string) => {
   createSignedUrl: (arquivo: string, validadeS: number, opcoes?: { download?: string }) => Promise<{ data: { signedUrl: string } | null; error: unknown }>
+  download?: (arquivo: string) => Promise<{ data: Blob | null; error: unknown }>
 }
+
+/** Manifesto da atualização automática, escrito pelo workflow ao lado do .exe (mesma pasta privada). */
+export const ARQUIVO_MANIFESTO = 'atualizacao.json'
 
 /** Devolve a função que pede o endereço temporário, baixando com o nome pedido (abertura.ts põe nele o código do link). Qualquer dúvida devolve null (nunca um endereço inventado). */
 export function criarLinkInstaladorStorage(cfg: ConfigInstalador, doBucket: DoBucket): (nomeDoDownload: string) => Promise<string | null> {
@@ -33,5 +37,24 @@ export function criarLinkInstaladorStorage(cfg: ConfigInstalador, doBucket: DoBu
     } catch {
       return null
     }
+  }
+}
+
+/** Atualização automática: o manifesto (atualizacao.json) e o endereço temporário do MESMO .exe da página de instalação.
+ *  Qualquer dúvida devolve null; quem valida o conteúdo do manifesto é atualizacao.ts. */
+export function criarFonteAtualizacaoStorage(cfg: ConfigInstalador, doBucket: DoBucket) {
+  return {
+    async manifesto(): Promise<unknown> {
+      try {
+        const baixar = doBucket(cfg.bucket).download
+        if (!baixar) return null
+        const { data, error } = await baixar(ARQUIVO_MANIFESTO)
+        if (error || !data || data.size > 4096) return null
+        return JSON.parse(await data.text())
+      } catch {
+        return null
+      }
+    },
+    link: criarLinkInstaladorStorage(cfg, doBucket),
   }
 }

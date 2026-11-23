@@ -28,6 +28,18 @@ describe('http', () => {
     expect(k.headers.get('Cache-Control')).toBe('no-store')
     expect((await k.json()).arquivos[0].conteudo).toContain('Lei 9.609/98')
   })
+  it('/atualizacao: só com a credencial do dispositivo no cabeçalho; resposta sem cache', async () => {
+    const { m, c } = ctx()
+    await m.ativar()
+    const sha512 = 'A'.repeat(86) + '=='
+    const cc = { ...c, atualizacao: { manifesto: async () => ({ versao: '0.1.9', sha512, tamanho: 10 }), link: async () => 'https://x.test/assinado' } }
+    const corpo = { email: 'ana@loja.com', computador_hash: H1, versao: '0.1.0' }
+    expect((await post(cc, '/atualizacao', { ...corpo, token_dispositivo: TOKEN })).status).toBe(403)
+    const r = await post(cc, '/atualizacao', corpo, { 'X-Atlas-Dispositivo': TOKEN })
+    expect(r.status).toBe(200)
+    expect(r.headers.get('Cache-Control')).toBe('no-store')
+    expect(await r.json()).toMatchObject({ atualizar: true, versao: '0.1.9', url: 'https://x.test/assinado' })
+  })
   it('/licenca/resumo: só com a credencial do dispositivo no cabeçalho', async () => {
     const { m, c } = ctx()
     await m.ativar()
