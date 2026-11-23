@@ -317,6 +317,7 @@ if (app.isPackaged && process.platform === 'win32') {
 const atualizaAqui = app.isPackaged && process.platform === 'win32'
 handle('atlas:atualizacao:pronta', () => (atualizaAqui ? (atualizador.pronta()?.versao ?? null) : null))
 handle('atlas:atualizacao:situacao', () => (atualizaAqui ? atualizador.ultima() : null))
+handle('atlas:atualizacao:andamento', () => (atualizaAqui ? atualizador.andamento() : null))
 handle('atlas:atualizacao:procurar', async () => { if (!atualizaAqui) return { estado: 'atual', versaoAtual: app.getVersion() }; const r = await atualizador.verificarEBaixar(); return atualizador.ultima() ?? { ...r, versaoAtual: app.getVersion() } })
 handle('atlas:atualizacao:instalar', () => atualizaAqui && atualizador.instalarAgora(() => setTimeout(() => app.quit(), 300)))
 

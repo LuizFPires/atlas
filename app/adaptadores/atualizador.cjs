@@ -37,6 +37,8 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
   let ocupado = false
   /** Última conferência (23/11/2026, caso do Guilherme): sem isso, "não atualizou" não tinha explicação nenhuma. */
   let ultima = null
+  /** Download em curso (barra de progresso, pedido do Luiz 23/11): { versao, baixados, total, inicio } ou null. */
+  let andamento = null
 
   const limpar = () => { try { for (const n of fs.readdirSync(pasta)) fs.rmSync(path.join(pasta, n), { force: true }) } catch { /* nada */ } }
 
@@ -60,10 +62,12 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
       let total = 0
       const saida = fs.createWriteStream(parcial)
       const leitor = r.body.getReader()
+      andamento = { versao: info.versao, baixados: 0, total: info.tamanho, inicio: Date.now() }
       for (;;) {
         const { done, value } = await leitor.read()
         if (done) break
         total += value.length
+        andamento = { ...andamento, baixados: total }
         if (total > info.tamanho) throw new Error('grande-demais')
         hash.update(value)
         if (!saida.write(value)) await new Promise((ok) => saida.once('drain', ok))
@@ -77,7 +81,7 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
       fs.rmSync(parcial, { force: true })
       fs.rmSync(destino, { force: true })
       return { estado: 'erro' }
-    }
+    } finally { andamento = null }
   }
 
   async function conferir() {
@@ -117,6 +121,7 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
     pronta,
 
     ultima: () => ultima,
+    andamento: () => andamento,
 
     async verificarEBaixar() {
       if (ocupado) return { estado: 'ocupado' }
