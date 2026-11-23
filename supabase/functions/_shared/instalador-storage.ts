@@ -46,9 +46,10 @@ export function criarFonteAtualizacaoStorage(cfg: ConfigInstalador, doBucket: Do
   return {
     async manifesto(): Promise<unknown> {
       try {
-        const baixar = doBucket(cfg.bucket).download
-        if (!baixar) return null
-        const { data, error } = await baixar(ARQUIVO_MANIFESTO)
+        // Chamar COMO MÉTODO: o cliente do Supabase usa this (separar a função perdia o this e o manifesto vinha null; 23/11/2026).
+        const pasta = doBucket(cfg.bucket)
+        if (!pasta.download) return null
+        const { data, error } = await pasta.download(ARQUIVO_MANIFESTO)
         if (error || !data || data.size > 4096) return null
         return JSON.parse(await data.text())
       } catch {
