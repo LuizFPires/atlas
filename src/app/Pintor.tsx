@@ -1,7 +1,28 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import './pintor.css'
 
 const FALAS = ['Misturando as cores…', 'Escolhendo as letras…', 'Desenhando os botões…', 'Testando no celular…', 'Dando o acabamento…']
+
+/** WebGL disponível? (sem ele, ou no teste, o pintor é o desenho em SVG). */
+export function temWebGL(): boolean {
+  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')) } catch { return false }
+}
+
+/** O pintor em 3D (Three.js carregado só aqui). Se a cena não montar, avisa para cair no SVG. */
+function Pintor3D({ onFalhou }: { onFalhou: () => void }) {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    let parar: (() => void) | null = null
+    let vivo = true
+    const parado = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    import('./cena-pintor').then(({ montarCenaPintor }) => {
+      if (!vivo || !ref.current) return
+      try { parar = montarCenaPintor(ref.current, { parado }).parar } catch { onFalhou() }
+    }, onFalhou)
+    return () => { vivo = false; parar?.() }
+  }, [onFalhou])
+  return <canvas ref={ref} className="at-pintor__cena3d" role="img" aria-label="Um pintor em 3D pinta no cavalete a arte do seu sistema" />
+}
 
 /**
  * Enquanto o Claude monta os 3 estilos: um pintor no cavalete pinta a "arte" do sistema (a tela de um celular).
@@ -9,13 +30,15 @@ const FALAS = ['Misturando as cores…', 'Escolhendo as letras…', 'Desenhando 
  */
 export function Pintor() {
   const [i, setI] = useState(0)
+  const [em3d, setEm3d] = useState(temWebGL)
+  const cair = useCallback(() => setEm3d(false), [])
   useEffect(() => {
     const t = setInterval(() => setI((n) => (n + 1) % FALAS.length), 2400)
     return () => clearInterval(t)
   }, [])
   return (
     <div className="at-pintor">
-      <svg className="at-pintor__cena" viewBox="0 0 420 300" role="img" aria-label="Um pintor pinta no cavalete a arte do seu sistema">
+      {em3d ? <Pintor3D onFalhou={cair} /> : <svg className="at-pintor__cena" viewBox="0 0 420 300" role="img" aria-label="Um pintor pinta no cavalete a arte do seu sistema">
         {/* chão */}
         <ellipse cx="210" cy="282" rx="190" ry="10" className="at-pintor__chao" />
         {/* cavalete */}
@@ -64,7 +87,7 @@ export function Pintor() {
             <circle cx="238" cy="123" r="4" className="at-pintor__ponta" />
           </g>
         </g>
-      </svg>
+      </svg>}
       <p className="at-pintor__fala" role="status" aria-label="O que o pintor está fazendo">{FALAS[i]}</p>
       <span className="at-pintor__sub">O Atlas está pintando 3 estilos para o seu sistema. Leva um minutinho.</span>
     </div>

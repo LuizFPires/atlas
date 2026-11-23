@@ -146,3 +146,8 @@ describe('3 estilos e design system', () => {
     expect(screen.getByText('aesop.com')).toBeInTheDocument()
   })
 })
+
+test('sem WebGL (computador antigo ou teste) o pintor cai no desenho em SVG', async () => {
+  const { temWebGL } = await import('./Pintor')
+  expect(temWebGL()).toBe(false)
+})
