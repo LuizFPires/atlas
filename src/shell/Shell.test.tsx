@@ -81,3 +81,9 @@ test('Claude não conectado: o cartão do plano leva a conectar o Claude', async
   await userEvent.click(screen.getByRole('button', { name: 'Conectar o Claude' }))
   expect(conectar).toHaveBeenCalled()
 })
+
+test('a faixa do topo (ex.: nova versão) vem antes do conteúdo da tela', () => {
+  const { container } = render(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} topo={<p>faixa</p>}><h1>tela</h1></Shell>)
+  const main = container.querySelector('main.at-conteudo')!
+  expect(main.firstElementChild).toHaveTextContent('faixa')
+})

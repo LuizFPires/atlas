@@ -111,6 +111,14 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
       } finally { ocupado = false }
     },
 
+    /** Botão "Atualizar agora" (23/11/2026): com versão pronta, fecha o Atlas (sair = app.quit); a instalação roda ao sair e o
+     *  instalador reabre o Atlas. Sem versão pronta não fecha nada. */
+    instalarAgora(sair) {
+      if (instalou || !pronta()) return false
+      sair()
+      return true
+    },
+
     /** Chamar quando o Atlas fecha. true = o instalador silencioso foi disparado. */
     instalarAoSair() {
       if (instalou) return false

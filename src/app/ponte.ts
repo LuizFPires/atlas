@@ -20,6 +20,7 @@ import type { PonteAjuda } from './ponte-ajuda'
 import type { PonteCasosAdmin } from './ponte-ajuda-casos'
 import type { PontePublicar } from './ponte-publicar'
 import type { PonteKit } from '../kit/entrega-kit'
+import type { PonteAtualizacao } from './NovaVersao'
 
 /** Cofre do sistema (Windows Credential Manager / DPAPI). NUNCA grava segredo em arquivo. */
 export interface Cofre {
@@ -68,6 +69,8 @@ export interface PonteDesktop {
   publicar?: PontePublicar
   /** Kit por obra (entrega-kit.ts): o processo principal guarda numa pasta temporária do app, fora da obra. */
   kit?: PonteKit
+  /** Atualizador (atualizador.cjs): versão nova já baixada e "Atualizar agora". Só no Atlas instalado no Windows. */
+  atualizacao?: PonteAtualizacao
 }
 
 declare global {

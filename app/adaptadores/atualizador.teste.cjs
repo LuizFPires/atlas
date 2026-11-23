@@ -84,3 +84,14 @@ test('a versão pronta sobrevive a reabrir o Atlas; depois de instalada, a sobra
   assert.equal(jaNova.pronta(), null)
   assert.deepEqual(fs.readdirSync(m.pasta), [])
 })
+
+test('"Atualizar agora": com versão pronta fecha o Atlas (a instalação roda ao sair); sem versão pronta não fecha nada', async () => {
+  const { a, execs } = montar()
+  let saiu = 0
+  assert.equal(a.instalarAgora(() => { saiu++ }), false)
+  assert.equal(saiu, 0)
+  await a.verificarEBaixar()
+  assert.equal(a.instalarAgora(() => { saiu++; a.instalarAoSair() }), true)
+  assert.equal(saiu, 1)
+  assert.deepEqual(execs.map((e) => e.args), [['/S']], 'o instalador roda uma vez só, ao sair')
+})
