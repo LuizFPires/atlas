@@ -101,3 +101,10 @@ test('pendente: o áudio que ainda não foi mandado para o Whisper bom (para o r
   expect(p.pendente(ate).length).toBeLessThan(2 * TAXA)
   expect(p.pendente(ate).length).toBeGreaterThan(0)
 })
+
+test('tira as marcas de ruído que o Whisper inventa ([Música], [Som de fio], (risos)) e espaços sobrando', async () => {
+  const { limparTranscricao } = await import('./voz-partes')
+  expect(limparTranscricao('[Som de fio] É um aplicativo para... controle de ponto de funcionários. [Música]')).toBe('É um aplicativo para... controle de ponto de funcionários.')
+  expect(limparTranscricao('(risos) oi  ')).toBe('oi')
+  expect(limparTranscricao('[Música]')).toBe('')
+})
