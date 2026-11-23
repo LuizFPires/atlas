@@ -207,7 +207,7 @@ describe('protótipo navegável (sem script)', () => {
     expect(doc).toContain('Content-Security-Policy')
     expect(doc).toContain('<section id="tela-inicio"')
     expect(doc).toContain('<section id="tela-agenda"')
-    expect(doc.match(/<template shadowrootmode="open">/g)).toHaveLength(2) // CSS de uma tela não vaza para a outra
+    expect(doc.match(/<template shadowrootmode="open">/g)).toHaveLength(3) // as 2 telas + o aviso "ainda não foi desenhada"; CSS de uma não vaza para a outra
     expect(doc).toContain('href="#tela-agenda"')
     expect(doc).toMatch(/body:not\(:has\(section:target\)\) #tela-agenda\s*\{\s*display:\s*block/)
   })
@@ -395,5 +395,61 @@ describe('celular ou computador (sistemas web e sites)', () => {
     expect(tela.style.width).toBe('1280px')
     expect(tela.style.height).toBe('800px')
     expect(tela.getAttribute('sandbox')).toBe('')
+  })
+})
+
+describe('ajudas no protótipo (Luiz, 23/11/2026)', () => {
+  test('"Onde dá para tocar?" acende o que é clicável na tela', async () => {
+    const { user } = await montar()
+    const frame = await screen.findByTitle(/Tela Marcar horário no celular/)
+    expect(frame.getAttribute('srcdoc')).not.toContain('outline: 3px solid')
+    await user.click(screen.getByRole('button', { name: 'Onde dá para tocar?' }))
+    expect(screen.getByRole('button', { name: 'Onde dá para tocar?' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTitle(/Tela Marcar horário no celular/).getAttribute('srcdoc')).toContain('outline: 3px solid')
+  })
+
+  test('Dica do Atlas: uma por vez, "Outra dica" troca, o botão deixa o pedido escrito e o X dispensa', async () => {
+    const { user } = await montar()
+    const dica = await screen.findByRole('region', { name: 'Dica do Atlas' })
+    expect(dica).toHaveTextContent('DICA DO ATLAS · 1 DE')
+    const primeira = dica.textContent
+    await user.click(within(dica).getByRole('button', { name: 'Outra dica' }))
+    expect(dica.textContent).not.toBe(primeira)
+    await user.click(within(dica).getByRole('button', { name: /Usar a minha marca|Pedir|Simular|Ver 3 versões/ }))
+    expect((screen.getByRole('textbox', { name: 'Pedir ajuste' }) as HTMLTextAreaElement).value.length).toBeGreaterThan(10)
+    await user.click(within(dica).getByRole('button', { name: 'Dispensar as dicas' }))
+    expect(screen.queryByRole('region', { name: 'Dica do Atlas' })).toBeNull()
+  })
+})
+
+describe('3 versões de uma tela (prototipo/caminho-novo/P3Versoes)', () => {
+  test('a dica de cadastro abre 3 versões lado a lado; "Quero esta" vira versão nova e volta ao protótipo', async () => {
+    const p = criarPrototipoFixture()
+    const { user } = await montar(p)
+    await screen.findByTitle(/Tela Marcar horário no celular/)
+    const dica = screen.getByRole('region', { name: 'Dica do Atlas' })
+    await user.click(within(dica).getByRole('button', { name: /Ver 3 versões de "Marcar horário"/ }))
+    const comp = await screen.findByRole('region', { name: '3 jeitos de Marcar horário' })
+    const versoes = within(comp).getAllByRole('group')
+    expect(versoes).toHaveLength(3)
+    expect(versoes[1]).toHaveTextContent('Passo a passo')
+    expect(versoes[1]).toHaveTextContent('Bom para: quem não tem pressa')
+    expect(within(versoes[0]).getByTitle(/Versão 1: Tudo numa tela só/).getAttribute('sandbox')).toBe('')
+    await user.click(within(versoes[1]).getByRole('button', { name: 'Quero esta' }))
+    expect(await screen.findByText(/Versão 2/)).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: '3 jeitos de Marcar horário' })).toBeNull()
+  })
+
+  test('misturar por texto vira um ajuste que cita as versões guardadas', async () => {
+    const p = criarPrototipoFixture()
+    const { user } = await montar(p)
+    await screen.findByTitle(/Tela Marcar horário no celular/)
+    await user.click(within(screen.getByRole('region', { name: 'Dica do Atlas' })).getByRole('button', { name: /Ver 3 versões/ }))
+    const comp = await screen.findByRole('region', { name: '3 jeitos de Marcar horário' })
+    await user.type(within(comp).getByRole('textbox', { name: 'Misturar as versões' }), 'a foto da 3 com os passos da 2')
+    await user.click(within(comp).getByRole('button', { name: 'Misturar' }))
+    expect(await screen.findByText(/Versão 2/)).toBeInTheDocument()
+    expect(p.pedidos.at(-1)).toContain('prototipo/comparar/')
+    expect(p.pedidos.at(-1)).toContain('a foto da 3 com os passos da 2')
   })
 })

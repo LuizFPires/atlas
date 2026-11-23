@@ -76,3 +76,41 @@
 .at-proto__janela { height: 30px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 12px; }
 .at-proto__janela span { width: 10px; height: 10px; border-radius: 5px; background: #5A5F66; }
 .at-proto__vidro--computador { border-radius: 0; flex: 1; min-height: 0; }
+
+/* Ferramentas da prévia e Dica do Atlas (prototipo/caminho-novo/P2Dicas). */
+.at-proto__ferramentas { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.at-proto__ferr { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--card-b); background: var(--card); color: var(--text); font: 600 13px var(--font-text); cursor: pointer; }
+.at-proto__ferr--on { border-color: var(--lime); background: var(--soft); }
+.at-dica { width: min(100%, 420px); box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 18px; background: var(--card); border: 1px solid var(--lime); }
+.at-dica__cab { display: flex; align-items: center; gap: 10px; }
+.at-dica__marca { width: 34px; height: 34px; border-radius: 17px; background: var(--soft); display: grid; place-items: center; flex: none; }
+.at-dica__rot { font: 600 12px var(--font-mono); letter-spacing: 0.12em; color: var(--lime-txt, var(--lime)); }
+.at-dica__x { margin-left: auto; width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; color: var(--mute); display: grid; place-items: center; cursor: pointer; }
+.at-dica__tit { font-size: 17px; line-height: 1.3; color: var(--text); }
+.at-dica__txt { margin: 0; font-size: 14px; line-height: 1.5; color: var(--mute); }
+.at-dica__acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.at-dica__usar { min-height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--lime); color: var(--on-lime); font: 700 14px var(--font-text); cursor: pointer; }
+.at-dica__outra { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 14px var(--font-text); cursor: pointer; }
+.at-dica__x:focus-visible, .at-dica__usar:focus-visible, .at-dica__outra:focus-visible, .at-proto__ferr:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+
+/* 3 versões de uma tela, lado a lado (prototipo/caminho-novo/P3Versoes). */
+.at-versoes { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+.at-versoes__cab { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.at-versoes__cab h2 { margin: 4px 0 0; font-size: 24px; color: var(--text); }
+.at-versoes__voltar { all: unset; cursor: pointer; font: 500 12px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute2); }
+.at-versoes__voltar:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.at-versoes__nota { margin-left: auto; font-size: 14px; color: var(--mute); }
+.at-versoes__lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 900px) { .at-versoes__lista { grid-template-columns: 1fr; } }
+.at-versoes__item { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 20px; background: var(--card); border: 1px solid var(--card-b); min-width: 0; }
+.at-versoes__item > b { font-size: 17px; color: var(--text); }
+.at-versoes__rot { font: 600 12px var(--font-mono); letter-spacing: 0.12em; color: var(--lime-txt, var(--lime)); }
+.at-versoes__desc { font-size: 13px; line-height: 1.45; color: var(--mute); }
+.at-versoes__desc b { color: var(--text); }
+.at-versoes__moldura { width: min(100%, 260px); align-self: center; box-sizing: border-box; padding: 9px; border-radius: 36px; background: #0B0C0D; }
+.at-versoes__moldura--computador { width: 100%; padding: 6px; border-radius: 12px; }
+.at-versoes__vidro { width: 100%; height: 100%; border-radius: 28px; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
+.at-versoes__moldura--computador .at-versoes__vidro { border-radius: 8px; }
+.at-versoes__tela { width: 100%; height: 100%; border: 0; display: block; background: #fff; }
+.at-versoes__mistura { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px; border-radius: 16px; background: var(--card); border: 1px solid var(--card-b); }
+.at-versoes__mistura input { flex: 1; min-width: 240px; min-height: 46px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; border: 1px solid var(--card-b); background: var(--input); color: var(--text); font: 15px var(--font-text); }

@@ -417,3 +417,38 @@ test('ajuste que não repete o aparelho mantém o da tela (o painel não vira ce
   const r = await p.ajustar('obra', 'troque a cor')
   assert.equal(r.estado.versoes[1].telas[0].aparelho, 'computador')
 })
+
+describe('3 versões de uma tela (Luiz, 23/11/2026: "pedir 3 protótipos de uma tela para decidir")', () => {
+  const tres = { versoes: [
+    { titulo: 'Tudo numa tela', desc: 'Todos os campos', bom: 'muita gente', cuidado: 'tela comprida', html: '<div>v1</div>' },
+    { titulo: 'Passo a passo', desc: '3 etapas', bom: 'quem erra pouco', cuidado: 'um toque a mais', html: '<div>v2</div>' },
+    { titulo: 'Começa pela foto', desc: 'Foto do documento', bom: 'no canteiro', cuidado: 'precisa de luz', html: '<div>v3</div>' },
+  ] }
+
+  test('versoesDaTela pede 3 jeitos da tela e NÃO grava versão nenhuma; html perigoso é recusado', async () => {
+    const { p, responder, chamadas, raiz } = montar()
+    await p.desenhar('obra', 'B', ESTILO)
+    responder(tres)
+    const v = await p.versoesDaTela('obra', 'agenda')
+    assert.equal(v.length, 3)
+    assert.deepEqual(v.map((x) => x.titulo), ['Tudo numa tela', 'Passo a passo', 'Começa pela foto'])
+    assert.match(chamadas.at(-1).o.entrada, /3 jeitos DIFERENTES/)
+    assert.equal((await p.estado('obra')).versoes.length, 1)
+    assert.equal(fs.readFileSync(path.join(raiz, 'obra', 'prototipo', 'comparar', 'agenda-2.html'), 'utf8'), '<div>v2</div>') // para o "misturar"
+    responder({ versoes: [{ ...tres.versoes[0], html: '<script>x</script>' }, tres.versoes[1], tres.versoes[2]] })
+    await assert.rejects(p.versoesDaTela('obra', 'agenda'), /versoes-invalidas/)
+    await assert.rejects(p.versoesDaTela('obra', 'nao-existe'), /tela-inexistente/)
+  })
+
+  test('escolherVersao troca só aquela tela numa versão NOVA (mantém nome e aparelho) e não toca a anterior', async () => {
+    const { p } = montar()
+    await p.desenhar('obra', 'B', ESTILO)
+    const e = await p.escolherVersao('obra', 'agenda', '<div>escolhida</div>', 'Passo a passo')
+    assert.equal(e.atual, 2)
+    const nova = e.versoes[1]
+    assert.equal(nova.resumo, 'Cadastro escolhido: Passo a passo'.replace('Cadastro', 'Agenda'))
+    assert.equal(nova.telas.find((t) => t.id === 'agenda').html, '<div>escolhida</div>')
+    assert.equal(nova.telas.find((t) => t.id === 'inicio').html, e.versoes[0].telas.find((t) => t.id === 'inicio').html)
+    await assert.rejects(p.escolherVersao('obra', 'agenda', '<iframe></iframe>', 'x'), /telas-invalidas/)
+  })
+})

@@ -25,6 +25,8 @@ export interface TelaDesenhada {
 }
 
 export type Aparelho = 'celular' | 'computador'
+/** Uma das 3 versões de uma tela: o jeito, para quem é boa, o cuidado e o HTML (NÃO CONFIÁVEL: só em iframe sandbox). */
+export interface VersaoDaTela { titulo: string; desc: string; bom: string; cuidado: string; html: string }
 export const aparelhoDaTela = (t: { aparelho?: Aparelho }): Aparelho => (t.aparelho === 'computador' ? 'computador' : 'celular')
 
 export interface VersaoProto {
@@ -52,6 +54,10 @@ export interface PontePrototipo {
   ajustar(pasta: string, pedido: string): Promise<{ estado: EstadoProto; resposta: string }>
   /** Volta a ver uma versão anterior. Não apaga nem reescreve nada: só muda a versão atual. */
   voltar(pasta: string, numero: number): Promise<EstadoProto>
+  /** 3 jeitos de uma tela, para comparar (Milestone 36). Não grava nada. */
+  versoesDaTela?(pasta: string, telaId: string): Promise<VersaoDaTela[]>
+  /** "Quero esta": troca só aquela tela numa versão NOVA. */
+  escolherVersao?(pasta: string, telaId: string, html: string, titulo: string): Promise<EstadoProto>
   /** Link provisório (7 dias) para abrir o protótipo navegável no celular. `documento` = montarNavegavel(...). */
   linkCelular?(nome: string, documento: string): Promise<{ url: string; expira_em: string }>
   /** Abre o WhatsApp com o link que acabou de ser gerado. */
@@ -82,17 +88,29 @@ export function montarSrcDoc(html: string): string | null {
   return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8">${html}`
 }
 
-/** Qualquer href que não seja âncora interna (#...) vira "#": o protótipo nunca navega para fora de si. */
-function soLinksInternos(html: string): string {
-  return html.replace(/(\shref\s*=\s*)(?:"(?!#)[^"]*"|'(?!#)[^']*'|(?!["'#])[^\s>]+)/gi, '$1"#"')
+/** Qualquer href que não seja âncora interna (#...) vira "#": o protótipo nunca navega para fora de si. Depois, todo link que não
+ *  leva a uma tela que existe (inclusive "#") vai para o aviso "ainda não foi desenhada" (Luiz, 23/11/2026: botão que não faz nada). */
+function soLinksInternos(html: string, ids: Set<string>): string {
+  return html
+    .replace(/(\shref\s*=\s*)(?:"(?!#)[^"]*"|'(?!#)[^']*'|(?!["'#])[^\s>]+)/gi, '$1"#"')
+    .replace(/(\shref\s*=\s*)(["'])#([^"']*)\2/gi, (_t, pre: string, _q: string, alvo: string) => {
+      const m = /^tela-([a-z0-9][a-z0-9-]*)$/.exec(alvo)
+      return `${pre}"#${m && ids.has(m[1]) ? `tela-${m[1]}` : 'tela-falta'}"`
+    })
 }
+
+/** Aviso de parte que ainda não foi desenhada (sem script: é só mais uma "tela" do documento). */
+const TELA_FALTA = (volta: string) => `<section id="tela-falta"><template shadowrootmode="open"><style>:host{display:block}div{min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px;text-align:center;font:16px/1.5 system-ui,sans-serif;background:#F4F5F0;color:#1B1E22}b{font-size:20px}a{display:inline-block;padding:12px 18px;border-radius:12px;background:#1B1E22;color:#fff;text-decoration:none;font-weight:600}</style><div><b>Esta parte ainda não foi desenhada.</b><span>Peça ao Atlas, na conversa ao lado: "desenhe a tela de …".</span><a href="#tela-${volta}">Voltar</a></div></template></section>`
+
+/** "Onde dá para tocar?": contorno em tudo que leva a outra tela (vai dentro de cada tela: o CSS de fora não entra no shadow root). */
+const REALCE = '<style>a[href^="#tela-"]{outline: 3px solid #C6F135 !important;outline-offset:2px;border-radius:6px}</style>'
 
 /**
  * Protótipo NAVEGÁVEL sem script: todas as telas num documento só, cada uma isolada no próprio shadow root (o CSS de uma
  * tela não vaza para a outra) e só uma aparece por vez. Os links <a href="#tela-ID"> trocam a tela (CSS :target).
  * Abre na tela `inicial`. Mesmo documento para o celular ao lado e para o link do celular. Devolve null se for grande demais.
  */
-export function montarNavegavel(telas: TelaDesenhada[], inicial: string): string | null {
+export function montarNavegavel(telas: TelaDesenhada[], inicial: string, o: { realce?: boolean } = {}): string | null {
   const total = telas.reduce((n, t) => n + t.html.length, 0)
   if (total > MAX_HTML * 2 || telas.length === 0) return null
   const ids = telas.map((t) => t.id).filter((id) => /^[a-z0-9][a-z0-9-]*$/.test(id))
@@ -100,8 +118,8 @@ export function montarNavegavel(telas: TelaDesenhada[], inicial: string): string
   const estilo = `<style>html,body{margin:0;padding:0}section{display:none;min-height:100vh}section:target{display:block}body:not(:has(section:target)) #tela-${abre}{display:block}</style>`
   const secoes = telas
     .filter((t) => ids.includes(t.id))
-    .map((t) => `<section id="tela-${t.id}"><template shadowrootmode="open">${soLinksInternos(t.html)}</template></section>`)
-    .join('')
+    .map((t) => `<section id="tela-${t.id}"><template shadowrootmode="open">${o.realce ? REALCE : ''}${soLinksInternos(t.html, new Set(ids))}</template></section>`)
+    .join('') + TELA_FALTA(abre)
   return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${estilo}${secoes}`
 }
 
@@ -244,6 +262,28 @@ export function criarPrototipoFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): Pr
       return { url: `https://atlas-ia.app.br/p/${'Ex'.repeat(22)}`, expira_em: new Date(Date.now() + 7 * 86_400_000).toISOString() }
     },
     async whatsapp() {},
+    async versoesDaTela(pasta, telaId) {
+      const o = obras.get(pasta)
+      const tela = o?.estado.versoes.find((v) => v.numero === o.estado.atual)?.telas.find((t) => t.id === telaId)
+      if (!o || !tela) throw new Error('tela-inexistente')
+      const jeito = (titulo: string, desc: string, bom: string, cuidado: string, cor: string) => ({ titulo, desc, bom, cuidado, html: `<style>.v{padding:24px;font-family:system-ui;background:${cor}}</style><div class="v"><b>${tela.nome}</b><p>${desc}</p></div>` })
+      return [
+        jeito('Tudo numa tela só', 'Todos os campos de uma vez, rolando para baixo.', 'quem cadastra muita gente de uma vez', 'no celular, a tela fica comprida', '#FBF7F2'),
+        jeito('Passo a passo', 'Três etapas curtas.', 'quem não tem pressa e erra pouco', 'um toque a mais para terminar', '#F2F7FB'),
+        jeito('Começa pela foto', 'Tira a foto do documento e o resto se preenche.', 'cadastrar em pé, no canteiro', 'precisa de câmera e boa luz', '#F5FBF2'),
+      ]
+    },
+    async escolherVersao(pasta, telaId, html, titulo) {
+      const o = obras.get(pasta)
+      const atual = o?.estado.versoes.find((v) => v.numero === o.estado.atual)
+      const tela = atual?.telas.find((t) => t.id === telaId)
+      if (!o || !atual || !tela) throw new Error('tela-inexistente')
+      const numero = Math.max(...o.estado.versoes.map((v) => v.numero)) + 1
+      const v: VersaoProto = { numero, resumo: `${tela.nome} escolhido: ${titulo}`.slice(0, 80), telas: atual.telas.map((t) => (t.id === telaId ? { ...t, html } : { ...t })) }
+      gravar(pasta, v)
+      o.estado = { versoes: [...o.estado.versoes, v], atual: numero }
+      return copia(o.estado)
+    },
     async voltar(pasta, numero) {
       const o = obras.get(pasta)
       if (!o || !o.estado.versoes.some((v) => v.numero === numero)) throw new Error('versao-inexistente')

@@ -3,9 +3,13 @@ import { Botao, Icone, Microfone, Trabalhando, useVoz } from '../ui'
 import { andamentoDoDesenho } from './andamento-telas'
 import { Pintor } from './Pintor'
 import { JanelaCelular } from './JanelaCelular'
+import { DicaDoAtlas } from './DicaDoAtlas'
+import { VersoesDaTela } from './VersoesDaTela'
+import { ALTURA_CELULAR, ALTURA_COMPUTADOR, LARGURA_CELULAR, LARGURA_COMPUTADOR } from './tamanhos-tela'
+import { dicasDaTela } from './dicas-do-atlas'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EstiloProposto } from './ponte-estilo'
-import { aparelhoDaTela, montarNavegavel, montarSrcDoc, SANDBOX_PREVIEW, type Aparelho, type EstadoProto, type PontePrototipo, type ProgressoProto, type TelaDesenhada } from './ponte-prototipo'
+import { aparelhoDaTela, montarNavegavel, montarSrcDoc, SANDBOX_PREVIEW, type Aparelho, type EstadoProto, type PontePrototipo, type ProgressoProto, type TelaDesenhada, type VersaoDaTela } from './ponte-prototipo'
 import type { ObraDoEstilo } from './Estilo'
 import './prototipo.css'
 
@@ -31,9 +35,7 @@ export const recadoDoErroProto = (e: unknown) => {
   }
 }
 
-/** Tamanho real da tela de um telefone (iPhone 14/15): as telas são desenhadas para isso. */
-export const LARGURA_CELULAR = 390
-export const ALTURA_CELULAR = 844
+export { LARGURA_CELULAR, ALTURA_CELULAR, LARGURA_COMPUTADOR, ALTURA_COMPUTADOR } from './tamanhos-tela'
 
 /** Quanto reduzir o telefone para caber INTEIRO na moldura (pedido do Luiz, 23/11/2026: nada de rolar para o lado). Nunca aumenta. */
 export function escalaDoCelular(largura: number, altura: number): number {
@@ -44,9 +46,9 @@ export function escalaDoCelular(largura: number, altura: number): number {
 /** Preview do celular: o HTML (gerado/importado, NÃO confiável) só vive dentro de um iframe com sandbox vazio. Nunca no DOM do app.
  *  O iframe tem SEMPRE o tamanho de um telefone de verdade (390 × 844) e é reduzido para caber: a tela fica igual à do celular,
  *  sem rolagem de lado nem texto quebrando diferente (antes ele tinha a largura da moldura, ~220 px num notebook). */
-export function CelularPreview({ html, titulo, telas, inicial }: { html: string; titulo: string; telas?: TelaDesenhada[]; inicial?: string }) {
+export function CelularPreview({ html, titulo, telas, inicial, realce = false }: { html: string; titulo: string; telas?: TelaDesenhada[]; inicial?: string; realce?: boolean }) {
   // Com todas as telas: protótipo NAVEGÁVEL (tocar num botão leva à outra tela). Sem elas: só esta tela.
-  const doc = telas && inicial ? montarNavegavel(telas, inicial) : montarSrcDoc(html)
+  const doc = telas && inicial ? montarNavegavel(telas, inicial, { realce }) : montarSrcDoc(html)
   const vidro = useRef<HTMLDivElement>(null)
   const [escala, setEscala] = useState(1)
   useEffect(() => {
@@ -70,13 +72,10 @@ export function CelularPreview({ html, titulo, telas, inicial }: { html: string;
   )
 }
 
-/** Tamanho de uma tela de computador comum (notebook): as telas de sistema web e site são desenhadas para isso. */
-export const LARGURA_COMPUTADOR = 1280
-export const ALTURA_COMPUTADOR = 800
 
 /** Prévia no computador: janela de navegador com a tela em 1280 × 800, reduzida para caber inteira (nunca rola de lado). */
-export function ComputadorPreview({ telas, inicial, titulo }: { telas: TelaDesenhada[]; inicial: string; titulo: string }) {
-  const doc = montarNavegavel(telas, inicial)
+export function ComputadorPreview({ telas, inicial, titulo, realce = false }: { telas: TelaDesenhada[]; inicial: string; titulo: string; realce?: boolean }) {
+  const doc = montarNavegavel(telas, inicial, { realce })
   const vidro = useRef<HTMLDivElement>(null)
   const [escala, setEscala] = useState(1)
   useEffect(() => {
@@ -116,6 +115,9 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
   const [desenhando, setDesenhando] = useState(false)
   const [andamento, setAndamento] = useState<ProgressoProto | null>(null)
   const [vista, setVista] = useState<'navegar' | 'todas'>('navegar')
+  const [realce, setRealce] = useState(false)
+  const [semDicas, setSemDicas] = useState(false)
+  const [comparando, setComparando] = useState<string | null>(null)
   const [celular, setCelular] = useState(false)
   const iniciou = useRef(false)
   const [pedido, setPedido] = useState('')
@@ -251,6 +253,23 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
     } catch (x) { setErro(recadoDoErroProto(x)); setPedido(texto) } finally { setOcupado(false) }
   }
 
+  // 3 versões de uma tela: "Quero esta" e "Misturar" (o misturar é um ajuste que cita as versões guardadas na obra).
+  const escolherVersao = async (telaId: string, v: VersaoDaTela) => {
+    if (!prototipo.escolherVersao) return
+    const e = await prototipo.escolherVersao(obra.pasta, telaId, v.html, v.titulo)
+    setEstado(e)
+    setMsgs((m) => [...m, { quem: 'CLAUDE', txt: `Pronto: fiquei com "${v.titulo}". Está na versão ${e.atual}; a anterior continua guardada.` }])
+    setComparando(null)
+  }
+  const misturarVersoes = async (t: TelaDesenhada, texto: string) => {
+    const pedidoMistura = `Na tela "${t.nome}" (id ${t.id}), misture as 3 versões que eu comparei (estão em prototipo/comparar/${t.id}-1.html, ${t.id}-2.html e ${t.id}-3.html): ${texto}`
+    setMsgs((m) => [...m, { quem: 'VOCÊ', txt: texto }])
+    const r = await prototipo.ajustar(obra.pasta, pedidoMistura)
+    setEstado(r.estado)
+    setMsgs((m) => [...m, { quem: 'CLAUDE', txt: r.resposta }])
+    setComparando(null)
+  }
+
   const versao = estado.versoes.find((v) => v.numero === estado.atual)
   const anterior = [...estado.versoes].reverse().find((v) => v.numero < estado.atual)
 
@@ -364,7 +383,12 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
         </section>
       )}
 
-      {versao && vista === 'navegar' && tela && (
+      {versao && comparando && prototipo.versoesDaTela && (() => {
+        const t = versao.telas.find((x) => x.id === comparando)
+        return t ? <VersoesDaTela tela={t} carregar={() => prototipo.versoesDaTela!(obra.pasta, t.id)} onEscolher={(v) => escolherVersao(t.id, v)} onMisturar={(x) => misturarVersoes(t, x)} onFechar={() => setComparando(null)} /> : null
+      })()}
+
+      {versao && !comparando && vista === 'navegar' && tela && (
         <section className="at-proto__palco" aria-label="Preview do celular">
           {temOsDois && (
             <div className="at-proto__aparelhos" role="group" aria-label="Ver o protótipo em">
@@ -385,9 +409,16 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
               <button key={t.id} type="button" role="tab" aria-selected={t.id === tela.id} className={`at-proto__aba ${t.id === tela.id ? 'at-proto__aba--on' : ''}`} onClick={() => setAba(t.id)}>{t.nome}</button>
             ))}
           </div>
+          <div className="at-proto__ferramentas">
+            <button type="button" aria-pressed={realce} className={`at-proto__ferr ${realce ? 'at-proto__ferr--on' : ''}`} onClick={() => setRealce((r) => !r)}><Icone nome="alvo" tamanho={16} />Onde dá para tocar?</button>
+          </div>
           {aparelho === 'computador'
-            ? <ComputadorPreview telas={telasAqui} inicial={tela.id} titulo={`Tela ${tela.nome} no computador (dá para clicar e navegar)`} />
-            : <CelularPreview html={tela.html} telas={telasAqui} inicial={tela.id} titulo={`Tela ${tela.nome} no celular (dá para tocar e navegar)`} />}
+            ? <ComputadorPreview telas={telasAqui} inicial={tela.id} realce={realce} titulo={`Tela ${tela.nome} no computador (dá para clicar e navegar)`} />
+            : <CelularPreview html={tela.html} telas={telasAqui} inicial={tela.id} realce={realce} titulo={`Tela ${tela.nome} no celular (dá para tocar e navegar)`} />}
+          {!semDicas && (
+            <DicaDoAtlas key={tela.id} dicas={dicasDaTela(tela, versao.telas)} onDispensar={() => setSemDicas(true)}
+              onUsar={(d) => { if (d.tipo === 'versoes' && prototipo.versoesDaTela) { setComparando(tela.id); return } setPedido(d.pedido); requestAnimationFrame(() => { const c = document.getElementById('pedido') as HTMLTextAreaElement | null; c?.focus(); c?.setSelectionRange(c.value.length, c.value.length) }) }} />
+          )}
           {estado.versoes.length > 1 && (
             <div className="at-proto__versoes" role="group" aria-label="Versões do protótipo">
               <span>Versões guardadas:</span>
@@ -399,7 +430,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
         </section>
       )}
 
-      {versao && vista === 'todas' && (
+      {versao && !comparando && vista === 'todas' && (
         <section className="at-proto__palco" aria-label="Todas as telas">
           <ul className="at-proto__galeria">
             {versao.telas.map((t) => {
