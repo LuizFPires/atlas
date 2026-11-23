@@ -5,6 +5,11 @@ import type { Transcritor } from './voz-motor'
 
 export const TAXA = 16000
 
+/** O Whisper às vezes "escreve" o barulho: [Música], [Som de fio], (risos). Isso nunca vai para o campo. */
+export function limparTranscricao(t: string): string {
+  return t.replace(/\[[^\]]{1,40}\]|\([^)]{1,40}\)|♪+/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
 /** Índice de corte entre `de` e `ate`: o meio da janela de 0,3 s mais silenciosa nos últimos 3 s. Sem respiro claro, `ate`. */
 export function pontoDeCorte(audio: Float32Array, de: number, ate: number): number {
   const janela = Math.round(0.3 * TAXA)

@@ -2,6 +2,7 @@
 // Modelo: whisper-small (multilíngue), quantizado q8: no teste do CI acertou a frase inteira; o base errava palavras. Baixado uma vez do Hugging Face e guardado no cache do app.
 // Os arquivos do motor (onnxruntime .wasm) vão junto do app em ./ort/ (nada de CDN): ver o plugin em vite.config.ts.
 import { env, pipeline, type AutomaticSpeechRecognitionPipeline } from '@huggingface/transformers'
+import { limparTranscricao } from './voz-partes'
 
 // Qual modelo vem em cada mensagem (voz-motor.ts): o bom (small) confirma o texto; o rápido (base) faz o rascunho ao vivo.
 // Cada um roda no seu próprio Worker. Sem modelo na mensagem: o bom.
@@ -70,7 +71,7 @@ async function tratar(ev: MessageEvent) {
     if (m.tipo === 'transcrever' && m.audio) {
       const t = await carregar(modelo)
       const r = await t(m.audio, { language: 'portuguese', task: 'transcribe', chunk_length_s: 30, stride_length_s: 5 })
-      const texto = (Array.isArray(r) ? r.map((x) => x.text).join(' ') : r.text).trim()
+      const texto = limparTranscricao(Array.isArray(r) ? r.map((x) => x.text).join(' ') : r.text)
       self.postMessage({ tipo: 'texto', id: m.id, texto })
     }
   } catch (e) {
