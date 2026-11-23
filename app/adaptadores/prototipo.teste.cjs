@@ -88,3 +88,10 @@ test('pedido vazio, obra sem protótipo e obra inválida', async () => {
   await assert.rejects(p.ajustar('obra', 'algo'), /sem-prototipo/)
   await assert.rejects(p.estado('../fora'), /obra-invalida/)
 })
+
+test('identidade própria (estilo vazio): desenha seguindo o design-system.md da obra', async () => {
+  const { p, chamadas } = montar()
+  const e = await p.desenhar('obra', 'B', {})
+  assert.equal(e.versoes.length, 1)
+  assert.match(String(chamadas[0].o?.entrada ?? JSON.stringify(chamadas[0])), /siga o design-system\.md/)
+})

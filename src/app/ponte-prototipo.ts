@@ -11,7 +11,7 @@
 //  - As versões ficam na subpasta da obra (caminhoDaVersao): nunca sobrescreve uma versão, voltar é só mover o ponteiro "atual".
 // Nunca guarda segredo.
 
-import { blocoDoCliente, comoDado, REGRA_CONTEUDO_CLIENTE, type EstiloProposto } from './ponte-estilo'
+import { blocoDoCliente, comoDado, ESTILOS_EXEMPLO, REGRA_CONTEUDO_CLIENTE, type EstiloProposto } from './ponte-estilo'
 
 export interface TelaDesenhada {
   /** Nome curto e seguro ([a-z0-9-]); vira o arquivo telas/<id>.html dentro da versão. */
@@ -40,7 +40,8 @@ export interface PontePrototipo {
   /** O que já existe para a obra (vazio se ainda não foi desenhado). */
   estado(pasta: string): Promise<EstadoProto>
   /** Pede ao Claude as telas no estilo escolhido: cria a versão 1. */
-  desenhar(pasta: string, obraNome: string, estilo: EstiloProposto): Promise<EstadoProto>
+  /** estilo null = a obra já tem identidade própria: o Claude segue o design-system.md da pasta. */
+  desenhar(pasta: string, obraNome: string, estilo: EstiloProposto | null): Promise<EstadoProto>
   /** O pedido do cliente (fala ou texto) vira uma versão NOVA. Devolve também o que o Claude diz de volta. */
   ajustar(pasta: string, pedido: string): Promise<{ estado: EstadoProto; resposta: string }>
   /** Volta a ver uma versão anterior. Não apaga nem reescreve nada: só muda a versão atual. */
@@ -146,9 +147,10 @@ export function criarPrototipoFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): Pr
     async desenhar(pasta, obraNome, estilo) {
       const existente = obras.get(pasta)
       if (existente && existente.estado.versoes.length) return copia(existente.estado) // nunca refaz por cima
-      const v: VersaoProto = { numero: 1, resumo: 'Primeiras telas', telas: telasDoEstilo(obraNome, estilo) }
+      const est = estilo ?? ESTILOS_EXEMPLO[0] // fixture: a identidade do cliente vira um estilo de exemplo
+      const v: VersaoProto = { numero: 1, resumo: 'Primeiras telas', telas: telasDoEstilo(obraNome, est) }
       gravar(pasta, v)
-      obras.set(pasta, { nome: obraNome, estilo, avisos: [], estado: { versoes: [v], atual: 1 } })
+      obras.set(pasta, { nome: obraNome, estilo: est, avisos: [], estado: { versoes: [v], atual: 1 } })
       return copia(obras.get(pasta)!.estado)
     },
     async ajustar(pasta, pedido) {
