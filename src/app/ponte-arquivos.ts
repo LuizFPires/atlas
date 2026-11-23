@@ -22,6 +22,8 @@ export interface ArquivoGuardado {
 }
 
 export interface PonteArquivos {
+  /** M33: grava em estilo/referencias da obra uma foto que veio do celular (data URL jpeg/png/webp, até 2 MB). Nunca sobrescreve. */
+  guardarImagem?(pasta: string, nome: string, dataUrl: string): Promise<ArquivoGuardado>
   /** Abre o "Escolher arquivo" do computador, já filtrado pelo tipo. Devolve null se o cliente desistir. */
   escolher(tipo: TipoArquivo): Promise<ArquivoEscolhido | null>
   /**

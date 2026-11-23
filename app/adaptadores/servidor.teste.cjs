@@ -60,3 +60,16 @@ test('rede fora vira sem-conexao; resposta grande demais é cortada', async () =
   const { s } = montar({ status: 200, corpo: 'x'.repeat(50_000) })
   assert.equal((await s.postar('/verificar', {}, {})).corpo.length, 20_000)
 })
+
+test('M33: as rotas do celular passam, com limites próprios para as telas e as fotos', async () => {
+  for (const r of ['/celular/sinal', '/celular/resposta', '/celular/projeto', '/celular/referencia', '/status-obras/publicar']) assert.ok(ROTAS.includes(r), r)
+  const grande = 'x'.repeat(3_500_000)
+  const s = criarServidor({ api: 'https://api.test', buscar: async () => new Response(grande, { status: 200 }) })
+  // As telas (até 1,5 MB) sobem; o mesmo tamanho em outra rota é recusado.
+  await s.postar('/celular/projeto', { documento: 'd'.repeat(1_500_000) }, {})
+  await assert.rejects(s.postar('/verificar', { documento: 'd'.repeat(1_500_000) }, {}), /corpo-invalido/)
+  // A foto de referência (até ~2,8 MB em base64) desce inteira; nas outras rotas a resposta continua cortada.
+  assert.equal((await s.postar('/celular/referencia', {}, {})).corpo.length, 3_000_000)
+  assert.equal((await s.postar('/celular/sinal', {}, {})).corpo.length, 300_000)
+  assert.equal((await s.postar('/verificar', {}, {})).corpo.length, 20_000)
+})

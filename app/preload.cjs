@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
   arquivos: {
     escolher: (tipo) => chamar('atlas:arquivos:escolher', String(tipo)),
     guardar: (pasta, destino, token) => chamar('atlas:arquivos:guardar', String(pasta), String(destino), String(token)),
+    guardarImagem: (pasta, nome, dataUrl) => chamar('atlas:arquivos:guardarImagem', String(pasta), String(nome), String(dataUrl)),
   },
   obras: {
     // raiz() é síncrona na porta; o valor é fixo (home\Atlas\Obras), então lemos uma vez.

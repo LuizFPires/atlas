@@ -50,6 +50,8 @@ import { useTokenDoLink } from './link-instalacao'
 import { lerResumo, type ResumoLicenca } from './licenca-resumo'
 import { ContextoLicenca, useLicencaNoApp } from './licenca-no-app'
 import { AcessoEncerrado } from './AcessoEncerrado'
+import { criarExecutorRemoto, criarMemoriaRemotoLocal, ligarCelularRemoto } from './celular-remoto'
+import { criarCanalRemotoApi } from './celular-canal'
 import { ComprarAtlas, type PedidoCompraNoApp } from './ComprarAtlas'
 import { configCompra, iniciarCompra, type ResultadoCompra } from '../web/compra'
 import { criarPonteFixture, ponteDoAmbiente, type PonteDesktop } from './ponte'
@@ -226,6 +228,16 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     if (!modoFixture()) throw new Error('pagamento-indisponivel') // sem o processo principal não há como abrir o navegador: não finge
   }, [ponte])
   const contextoLicenca = useMemo(() => ({ cartao: licencaNoApp.cartao, comprar: abrirCompra }), [licencaNoApp.cartao, abrirCompra])
+
+  // M33: o celular como controle remoto deste notebook. Só no Atlas instalado, ativado e com acesso em dia; nunca no modo fixture.
+  const remotoLigado = tela !== null && tela !== TELA_ATIVACAO && !licencaNoApp.encerrado && !modoFixture() && !!ponte.servidor
+  useEffect(() => {
+    const url = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/[/]+$/, '')
+    if (!remotoLigado || !url || !ponte.servidor) return
+    const canal = criarCanalRemotoApi(ponte, url, fetchPelaPonte(ponte.servidor, url))
+    const ex = criarExecutorRemoto({ obras: ponteObras, prototipo: pontePrototipo, estilo: ponteEstilo, batismo: ponteBatismo, construcao: pontesModo.construcao, modos: pontesModo.modos, painel: pontePainel, arquivos: ponteArquivos }, canal, criarMemoriaRemotoLocal())
+    return ligarCelularRemoto(ex)
+  }, [remotoLigado, ponte, ponteObras, pontePrototipo, ponteEstilo, ponteBatismo, pontesModo, pontePainel, ponteArquivos])
 
   useEffect(() => {
     let vivo = true
