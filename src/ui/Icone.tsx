@@ -125,6 +125,13 @@ const CAMINHOS = {
     </>
   ),
   // Raio: lembra "ação" — o que você liga, bloqueia ou libera na mão.
+  lupa: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </>
+  ),
+  mais: <path d="M12 5v14M5 12h14" />,
   raio: <path d="M13 2 3 14 12 14 11 22 21 10 12 10Z" />,
 } as const
 

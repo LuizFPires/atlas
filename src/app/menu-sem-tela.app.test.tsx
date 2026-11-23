@@ -8,11 +8,12 @@ import { criarCofreMemoria, criarPonteFixture } from './ponte'
 const ponte = () => criarPonteFixture([], criarCofreMemoria({ [CHAVE_COFRE]: JSON.stringify({ token: 't', email: 'a@b.co', nome: 'Zé' }) }))
 const api = { pedirCodigo: async () => ({ ok: true as const }), confirmar: async () => ({ ok: true as const, nome: 'Zé' }) }
 
+// Milestone 37 (23/11/2026): o menu tem só Nova obra, Canteiro de obras e Obras concluídas; cada um tem a sua tela, mesmo sem obra.
 test.each([
-  ['Como retomar', /Nenhuma obra parada agora/],
-  ['Protótipo', /Escolha uma obra em Minhas obras/],
-  ['Obra', /Escolha uma obra em Minhas obras/],
-])('menu "%s" sem obra aberta tem uma tela própria, nunca cai no "Bem-vindo"', async (item, texto) => {
+  ['Canteiro de obras', /Nenhuma obra no canteiro ainda/],
+  ['Obras concluídas', /Nenhuma obra pronta ainda/],
+  ['Nova obra', /Comece a sua primeira obra/],
+])('menu "%s" sem obra tem uma tela própria, nunca cai no "Bem-vindo"', async (item, texto) => {
   render(<TemaProvider><AppDesktop ponte={ponte()} api={api} /></TemaProvider>)
   await userEvent.click(await screen.findByRole('link', { name: item }))
   expect(await screen.findByText(texto)).toBeInTheDocument()

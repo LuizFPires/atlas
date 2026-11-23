@@ -43,10 +43,10 @@ test('computador já ativado abre em Minhas obras (F05)', async () => {
 })
 
 // O instalador reabre o Atlas com --tela=F02 também depois de cada atualização silenciosa (atlas-install.nsh).
-// Já ativado, a flag é ignorada: abre em Minhas obras (decisão de 23/11/2026; antes caía na ativação).
-test('--tela=F02 num computador já ativado (reabertura depois de atualizar): abre em Minhas obras', async () => {
+// Já ativado, a flag é ignorada: abre no começo (Nova obra; decisão de 23/11/2026; antes caía na ativação).
+test('--tela=F02 num computador já ativado (reabertura depois de atualizar): abre em Nova obra', async () => {
   montar(criarPonteFixture(['--tela=F02', '--instalador=Atlas-0.1.42.exe'], criarCofreMemoria({ [CHAVE_COFRE]: JSON.stringify({ token: 't' }) })))
-  expect(await screen.findByRole('link', { name: 'Minhas obras' })).toHaveAttribute('aria-current', 'page')
+  expect(await screen.findByRole('link', { name: 'Nova obra' })).toHaveAttribute('aria-current', 'page')
   expect(screen.queryByRole('heading', { name: /Vamos ativar/ })).not.toBeInTheDocument()
 })
 

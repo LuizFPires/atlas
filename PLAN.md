@@ -403,7 +403,7 @@ peso: 4
 spec: S9
 tela: prototipo/caminho-novo/K1Canteiro.dc.html
 - [x] Protótipo aprovado e registrado (prototipo/caminho-novo K1Canteiro, K2Concluidas, K3Obra; menu novo no Shell)
-- [ ] Menu só com Nova obra, Canteiro de obras e Obras concluídas (Protótipo, Obra, Pós-obra e Como retomar saem do menu)
+- [x] Menu só com Nova obra, Canteiro de obras e Obras concluídas (Protótipo, Obra, Pós-obra e Como retomar saem do menu)
 - [ ] Canteiro: um cartão por obra (inacabada com selo âmbar e próximo passo; trabalhando; parada com Continuar; esperando o Claude), busca e filtro
 - [ ] Retrato do canteiro: cena parada, ganha vida com o mouse e guarda o retrato de quando o mouse sai
 - [ ] Obras concluídas: selo No ar, endereço; obra com mudança volta ao Canteiro enquanto constrói
