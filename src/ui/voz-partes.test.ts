@@ -87,3 +87,17 @@ describe('texto ao vivo: cada trecho vai para o campo assim que fica pronto', ()
     expect(vistos).toEqual(['oi'])
   })
 })
+
+test('pendente: o áudio que ainda não foi mandado para o Whisper bom (para o rascunho ao vivo)', async () => {
+  const TAXA = 16000
+  const t = { preparar: async () => {}, transcrever: async () => 'x' }
+  const voz = Float32Array.from({ length: 5 * TAXA }, (_, i) => Math.sin(i / 3) * 0.5)
+  const ate = new Float32Array(voz.length + Math.round(0.6 * TAXA) + 1 * TAXA)
+  ate.set(voz)
+  ate.set(voz.subarray(0, TAXA), voz.length + Math.round(0.6 * TAXA))
+  const p = criarTranscricaoEmPartes(t, { minSegundos: 4 })
+  expect(p.pendente(ate).length).toBe(ate.length)
+  await p.adiantar(ate)
+  expect(p.pendente(ate).length).toBeLessThan(2 * TAXA)
+  expect(p.pendente(ate).length).toBeGreaterThan(0)
+})

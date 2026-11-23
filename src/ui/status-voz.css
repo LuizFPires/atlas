@@ -14,3 +14,4 @@
 @keyframes at-svoz-pulsa { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
 @keyframes at-svoz-gira { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .at-svoz, .at-svoz__ponto, .at-svoz__giro { animation: none; } }
+.at-svoz__rascunho span { color: var(--mute); font-style: italic; }

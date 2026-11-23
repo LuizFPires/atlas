@@ -6,7 +6,7 @@
 // O estado (preparando/ouvindo/escrevendo/erro) é um só para o app inteiro: <StatusVoz/> mostra para o cliente.
 
 export type FaseVoz = 'livre' | 'preparando' | 'ouvindo' | 'escrevendo' | 'erro'
-export interface EstadoVoz { fase: FaseVoz; /** 0..100 enquanto baixa o modelo na primeira vez. */ progresso?: number; recado?: string }
+export interface EstadoVoz { fase: FaseVoz; /** 0..100 enquanto baixa o modelo na primeira vez. */ progresso?: number; recado?: string; /** Enquanto ouve: rascunho ao vivo do trecho ainda não confirmado (modelo rápido). */ rascunho?: string }
 
 let estado: EstadoVoz = { fase: 'livre' }
 const ouvintes = new Set<() => void>()
@@ -31,11 +31,13 @@ export interface Gravacao {
 }
 
 let transcritor: Transcritor | null = null
+let rapido: Transcritor | null | undefined
 let gravador: () => Promise<Gravacao> = gravarDoMicrofone
 let forcarWhisper = false
 /** Só para testes: troca o transcritor/gravador e liga o caminho do Atlas instalado. */
-export function usarMotorDeVoz(t: Transcritor | null, g?: () => Promise<Gravacao>, o: { forcar?: boolean } = {}) {
+export function usarMotorDeVoz(t: Transcritor | null, g?: () => Promise<Gravacao>, o: { forcar?: boolean; rapido?: Transcritor | null } = {}) {
   transcritor = t
+  rapido = t ? (o.rapido ?? null) : undefined // nos testes, sem `rapido` não há rascunho
   gravador = g ?? gravarDoMicrofone
   if (o.forcar !== undefined) forcarWhisper = o.forcar
   definirEstadoVoz({ fase: 'livre' })
@@ -50,6 +52,11 @@ export const gravacaoSuportada = () =>
 export function transcritorAtual(): Transcritor {
   if (!transcritor) transcritor = criarTranscritorWhisper()
   return transcritor
+}
+/** Whisper pequeno e rápido, só para o rascunho ao vivo (a pessoa vê as palavras quase na hora; o bom corrige depois). */
+export function transcritorRapido(): Transcritor | null {
+  if (rapido === undefined) rapido = criarTranscritorWhisper(MODELO_RAPIDO)
+  return rapido
 }
 export const iniciarGravacao = () => gravador()
 
@@ -81,7 +88,11 @@ async function gravarDoMicrofone(): Promise<Gravacao> {
 }
 
 /** Whisper num Worker (não trava a tela). O modelo é baixado uma vez e fica guardado no computador. */
-function criarTranscritorWhisper(): Transcritor {
+/** Modelos: o bom confirma o texto; o rápido (base) desenha o rascunho ao vivo. Cada um no seu Worker (não disputam fila). */
+export const MODELO_BOM = 'onnx-community/whisper-small'
+export const MODELO_RAPIDO = 'onnx-community/whisper-base'
+
+function criarTranscritorWhisper(modelo: string = MODELO_BOM): Transcritor {
   let worker: Worker | null = null
   let pronto: Promise<void> | null = null
   let seq = 0
@@ -105,7 +116,7 @@ function criarTranscritorWhisper(): Transcritor {
   const pedir = (msg: Record<string, unknown>, transferir: Transferable[] = []) => new Promise<string>((ok, erro) => {
     const id = ++seq
     pendentes.set(id, { ok, erro })
-    obter().postMessage({ ...msg, id }, transferir)
+    obter().postMessage({ ...msg, id, modelo }, transferir)
   })
   return {
     preparar(onProgresso) {

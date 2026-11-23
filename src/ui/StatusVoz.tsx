@@ -4,6 +4,9 @@ import { assinarVoz, definirEstadoVoz, estadoVoz } from './voz-motor'
 import './status-voz.css'
 
 /** Aviso único da voz, para o app inteiro: ouvindo, preparando (primeira vez, com barra), escrevendo ou erro. */
+/** Só o fim do rascunho (cabe numa linha e acompanha a fala). */
+const ultimasPalavras = (t: string) => { const p = t.trim().split(/\s+/); return p.length > 14 ? `…${p.slice(-14).join(' ')}` : t.trim() }
+
 export function StatusVoz() {
   const e = useSyncExternalStore(assinarVoz, estadoVoz, estadoVoz)
   if (e.fase === 'livre') return null
@@ -19,7 +22,9 @@ export function StatusVoz() {
   const pct = e.progresso ?? 0
   return (
     <div className={`at-svoz at-svoz--${e.fase}`} role="status">
-      {e.fase === 'ouvindo' && <><span className="at-svoz__ponto" aria-hidden="true" /><span><b>Ouvindo…</b> Fale à vontade: o texto vai aparecendo a cada pausa. Quando terminar, aperte o microfone de novo.</span></>}
+      {e.fase === 'ouvindo' && !e.rascunho && <><span className="at-svoz__ponto" aria-hidden="true" /><span><b>Ouvindo…</b> Fale à vontade: o texto vai aparecendo a cada pausa. Quando terminar, aperte o microfone de novo.</span></>}
+      {/* Rascunho ao vivo (Luiz, 23/11/2026: "sem delay na fala"): as últimas palavras faladas, já escritas; o campo recebe a versão revisada. */}
+      {e.fase === 'ouvindo' && e.rascunho && <><span className="at-svoz__ponto" aria-hidden="true" /><span className="at-svoz__rascunho"><b>Ouvindo…</b> <span>{ultimasPalavras(e.rascunho)}</span></span></>}
       {e.fase === 'escrevendo' && <><span className="at-svoz__giro" aria-hidden="true" /><span><b>Escrevendo o que você falou…</b> Leva só uns segundos.</span></>}
       {e.fase === 'preparando' && (
         <div className="at-svoz__prep">
