@@ -22,6 +22,8 @@ export interface PonteObras {
   abrirPasta(): Promise<void>
   /** Onde a obra parou (Minhas obras → "Continuar"): o que cada etapa já deixou na pasta. */
   situacao?(pasta: string): Promise<SituacaoObra>
+  /** Exclui uma obra em andamento (nunca concluída): para a construção e manda a pasta para a Lixeira. */
+  excluir?(pasta: string): Promise<void>
 }
 
 /** Nome de obra vira nome de pasta: sem acento, minúsculo, só letras/números/hífen. Nada de "..", barras ou nomes reservados do Windows. */

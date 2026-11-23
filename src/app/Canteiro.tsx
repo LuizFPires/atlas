@@ -54,6 +54,21 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova }: Prop
   const [lidas, setLidas] = useState<Lida[] | null>(null)
   const [filtro, setFiltro] = useState<Filtro>('todas')
   const [busca, setBusca] = useState('')
+  const [excluindo, setExcluindo] = useState<Lida | null>(null)
+  const [ocupado, setOcupado] = useState(false)
+  const [erroExcluir, setErroExcluir] = useState('')
+  const excluir = async (o: Lida) => {
+    if (!obras.excluir) return
+    setOcupado(true)
+    setErroExcluir('')
+    try {
+      await obras.excluir(o.pasta)
+      setLidas((l) => (l ?? []).filter((x) => x.pasta !== o.pasta))
+      setExcluindo(null)
+    } catch (e) {
+      setErroExcluir(e instanceof Error && e.message === 'obra-concluida' ? 'Obra concluída não pode ser excluída.' : 'Não consegui excluir agora. Feche a pasta da obra se ela estiver aberta e tente de novo.')
+    } finally { setOcupado(false) }
+  }
 
   useEffect(() => {
     let vivo = true
@@ -130,13 +145,28 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova }: Prop
       {lidas !== null && daqui.length > 0 && mostradas.length === 0 && <p className="at-ct__vazio">Nenhuma obra com esse nome.</p>}
 
       <div className="at-ct__cartoes">
-        {mostradas.map((o) => <Cartao key={o.pasta} o={o} onAbrir={() => { void abrir(o) }} />)}
+        {mostradas.map((o) => <Cartao key={o.pasta} o={o} onAbrir={() => { void abrir(o) }} onExcluir={modo === 'canteiro' && obras.excluir && !o.fase.concluida ? () => { setErroExcluir(''); setExcluindo(o) } : undefined} />)}
       </div>
+
+      {excluindo && (
+        <div className="at-ct__fundo">
+          <div className="at-ct__confirma" role="alertdialog" aria-modal="true" aria-labelledby="ct-exc-tit" aria-describedby="ct-exc-txt">
+            <span className="at-ct__confirma-ico" aria-hidden="true"><Icone nome="lixeira" tamanho={22} /></span>
+            <h2 id="ct-exc-tit">Excluir a obra "{excluindo.nome}"?</h2>
+            <p id="ct-exc-txt">Isso <b>não tem volta</b> pelo Atlas: a construção para, a obra sai do Canteiro e a pasta dela vai para a Lixeira do Windows, com o protótipo e tudo o que já foi feito.</p>
+            {erroExcluir && <p className="at-ct__confirma-erro" role="alert">{erroExcluir}</p>}
+            <div className="at-ct__confirma-acoes">
+              <button type="button" className="at-ct__cancelar" autoFocus onClick={() => setExcluindo(null)} disabled={ocupado}>Cancelar</button>
+              <button type="button" className="at-ct__excluir" onClick={() => { void excluir(excluindo) }} disabled={ocupado}>{ocupado ? 'Excluindo…' : 'Excluir para sempre'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function Cartao({ o, onAbrir }: { o: Lida; onAbrir: () => void }) {
+function Cartao({ o, onAbrir, onExcluir }: { o: Lida; onAbrir: () => void; onExcluir?: () => void }) {
   const { fase } = o
   const inacabada = fase.etapa !== 'obra'
   const passo = inacabada ? PASSO[fase.etapa as Exclude<EtapaObra, 'obra'>] : null
@@ -160,6 +190,7 @@ function Cartao({ o, onAbrir }: { o: Lida; onAbrir: () => void }) {
           <span className="at-ct__acao">{acao}<Icone nome="seta" tamanho={16} /></span>
         </span>
       </button>
+      {onExcluir && <button type="button" className="at-ct__lixeira" aria-label={`Excluir a obra ${o.nome}`} title="Excluir a obra" onClick={onExcluir}><Icone nome="lixeira" tamanho={16} /></button>}
     </article>
   )
 }
