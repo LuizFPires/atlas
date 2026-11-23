@@ -72,3 +72,28 @@ test('fixture: código 482071 ativa, outro não; token no cofre', async () => {
   expect((await api.confirmar('ze@x.com.br', '482071')).ok).toBe(true)
   expect(await ponte.cofre.ler(CHAVE_COFRE)).toContain('fixture-token')
 })
+
+// Pedido do Luiz (22/11/2026): com o link do e-mail, o app manda o código sozinho; a pessoa não digita o e-mail de novo.
+test('pelo link: pede o código só com o token e mostra o e-mail mascarado', async () => {
+  const f = vi.fn(async () => resp({ ok: true, email_mascarado: 'a***@gmail.com' }))
+  const { api } = montar(f as never)
+  expect(api.pedirCodigoPeloLink).toBeTypeOf('function')
+  expect(await api.pedirCodigoPeloLink!()).toEqual({ ok: true, emailMascarado: 'a***@gmail.com' })
+  const [url, init] = f.mock.calls[0] as unknown as [string, { body: string }]
+  expect(url).toBe('https://api.atlas.test/ativar/solicitar-codigo-link')
+  expect(JSON.parse(init.body)).toEqual({ token: 'link-123' })
+})
+
+test('pelo link: sem token não existe; link vencido vira recado', async () => {
+  expect(montar(vi.fn() as never, '').api.pedirCodigoPeloLink).toBeUndefined()
+  const r = await montar((async () => resp({ erro: 'link_expirado', mensagem: 'Esse link venceu. Peça outro.' }, 410)) as never).api.pedirCodigoPeloLink!()
+  expect(r).toEqual({ ok: false, mensagem: 'Esse link venceu. Peça outro.' })
+})
+
+test('pelo link: confirma sem e-mail e guarda o e-mail que o servidor devolve', async () => {
+  const f = vi.fn(async () => resp({ licenca_id: 'l1', nome_tratamento: 'Zé', email: 'appbomdia@gmail.com', token_dispositivo: 'seg' }))
+  const { api, cofre } = montar(f as never)
+  expect(await api.confirmar('', '482071')).toEqual({ ok: true, nome: 'Zé' })
+  expect(JSON.parse((f.mock.calls[0] as unknown as [string, { body: string }])[1].body)).toMatchObject({ email: '', token: 'link-123' })
+  expect((await lerAtivacao(cofre))?.email).toBe('appbomdia@gmail.com')
+})

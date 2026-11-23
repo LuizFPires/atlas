@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Botao, CampoFalado, Icone, Microfone, useVoz, type NomeIcone } from '../ui'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from '../web/compra'
@@ -8,6 +8,8 @@ import './app.css'
 export interface AtivacaoTela {
   pedirCodigo(email: string): Promise<{ ok: true } | { ok: false; mensagem: string }>
   confirmar(email: string, codigo: string): Promise<{ ok: true; nome: string } | { ok: false; mensagem: string }>
+  /** Abriu pelo link do e-mail: o código vai sozinho e a pessoa não digita o e-mail. */
+  pedirCodigoPeloLink?(): Promise<{ ok: true; emailMascarado: string } | { ok: false; mensagem: string }>
 }
 
 export type FaseAtivacao = 'email' | 'codigo' | 'instalando'
@@ -76,6 +78,16 @@ export function Ativacao({ api, computador, faseInicial = 'email', emailInicial 
   const [ocupado, setOcupado] = useState(false)
   const entrada = useRef<HTMLInputElement>(null)
   const voz = useVoz((falado) => setCodigo(falaParaCodigo(falado)))
+  /** E-mail mascarado quando o código foi pelo link (a***@gmail.com); null = caminho de sempre, com o e-mail digitado. */
+  const [peloLink, setPeloLink] = useState<string | null>(null)
+  const pediuPeloLink = useRef(false)
+  useEffect(() => {
+    if (pediuPeloLink.current || faseInicial !== 'email' || !api.pedirCodigoPeloLink) return
+    pediuPeloLink.current = true
+    void api.pedirCodigoPeloLink().then((r) => {
+      if (r.ok) { setPeloLink(r.emailMascarado); setFase('codigo') } else setErro(r.mensagem)
+    })
+  }, [api, faseInicial])
 
   const agora = fase === 'instalando' ? 2 : 1
   const resolver = async <T extends { ok: boolean }>(p: Promise<T>): Promise<T | null> => {
@@ -85,7 +97,7 @@ export function Ativacao({ api, computador, faseInicial = 'email', emailInicial 
 
   const pedir = async (e?: React.FormEvent) => {
     e?.preventDefault()
-    const r = await resolver(api.pedirCodigo(email))
+    const r = await resolver(peloLink && api.pedirCodigoPeloLink ? api.pedirCodigoPeloLink() : api.pedirCodigo(email))
     if (!r) return
     if (!r.ok) return setErro(r.mensagem)
     setCodigo('')
@@ -94,7 +106,7 @@ export function Ativacao({ api, computador, faseInicial = 'email', emailInicial 
   }
   const confirmar = async (e: React.FormEvent) => {
     e.preventDefault()
-    const r = await resolver(api.confirmar(email, codigo))
+    const r = await resolver(api.confirmar(peloLink ? '' : email, codigo))
     if (!r) return
     if (!r.ok) return setErro(r.mensagem)
     setNome(r.nome)
@@ -122,7 +134,7 @@ export function Ativacao({ api, computador, faseInicial = 'email', emailInicial 
           {fase === 'codigo' && (
             <form className="at-ativ__form" onSubmit={confirmar}>
               <h1>Confirme que é você</h1>
-              <p className="at-ativ__txt">Mandamos um código de 6 números para <b>{email.trim().toLowerCase()}</b>. Ele vale por 10 minutos.</p>
+              <p className="at-ativ__txt">Mandamos um código de 6 números para <b>{peloLink ?? email.trim().toLowerCase()}</b>. Ele vale por 10 minutos.</p>
               <div className="at-ativ__codigo" onClick={() => entrada.current?.focus()}>
                 {Array.from({ length: 6 }, (_, i) => (
                   <div key={i} className={`at-ativ__digito ${codigo[i] || i === codigo.length ? 'at-ativ__digito--on' : ''}`} aria-hidden="true">{codigo[i] ?? ''}</div>

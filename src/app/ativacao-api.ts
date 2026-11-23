@@ -10,6 +10,8 @@ export interface AtivacaoApi {
   pedirCodigo(email: string): Promise<Resp>
   /** Confirma o código, registra este computador e guarda o token no cofre. */
   confirmar(email: string, codigo: string): Promise<Resp<{ nome: string }>>
+  /** Só existe quando o app abriu pelo link do e-mail: o servidor manda o código para o e-mail do link. */
+  pedirCodigoPeloLink?(): Promise<Resp<{ emailMascarado: string }>>
 }
 
 export const CHAVE_COFRE = 'atlas/dispositivo'
@@ -52,7 +54,18 @@ export function criarAtivacaoApi(
     return { r, d: (await r.json().catch(() => ({}))) as Record<string, unknown> & { mensagem?: string } }
   }
   const emailOk = (email: string) => EMAIL_RE.test(email.trim().toLowerCase())
+  // Com o link do e-mail, o código vai sozinho para o e-mail de quem recebeu o link (decisão do Luiz, 22/11/2026).
+  const peloLink: Pick<AtivacaoApi, 'pedirCodigoPeloLink'> = cfg?.linkToken ? {
+    async pedirCodigoPeloLink() {
+      try {
+        const { r, d } = await post('/ativar/solicitar-codigo-link', { token: cfg.linkToken })
+        if (r.ok && typeof d.email_mascarado === 'string') return { ok: true, emailMascarado: d.email_mascarado }
+        return { ok: false, mensagem: d.mensagem ?? 'Não deu para mandar o código agora. Digite o seu e-mail.' }
+      } catch { return { ok: false, mensagem: MSG_REDE } }
+    },
+  } : {}
   return {
+    ...peloLink,
     async pedirCodigo(email) {
       if (!emailOk(email)) return { ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' }
       if (!cfg) return { ok: false, mensagem: MSG_OFF }
@@ -69,13 +82,14 @@ export function criarAtivacaoApi(
       if (!cfg) return { ok: false, mensagem: MSG_OFF }
       if (!cfg.linkToken) return { ok: false, mensagem: 'Falta liberar este computador. Abra de novo a página do e-mail, clique em "O Atlas pediu para liberar este computador?" e depois em "Liberar o Atlas neste computador".' }
       try {
-        const e = email.trim().toLowerCase()
+        const e = email.trim().toLowerCase() // vazio = veio pelo link; o servidor sabe de quem é
         const { r, d } = await post('/ativar/confirmar', { email: e, codigo: c, token: cfg.linkToken, computador_hash: await ponte.hashComputador() })
         if (!r.ok || typeof d.token_dispositivo !== 'string') {
           return { ok: false, mensagem: d.mensagem ?? 'Código incorreto ou vencido. Peça um novo.' }
         }
         const nome = typeof d.nome_tratamento === 'string' ? d.nome_tratamento : ''
-        await ponte.cofre.guardar(CHAVE_COFRE, JSON.stringify({ token: d.token_dispositivo, email: e, nome } satisfies Guardado))
+        const dono = typeof d.email === 'string' && d.email ? d.email.toLowerCase() : e
+        await ponte.cofre.guardar(CHAVE_COFRE, JSON.stringify({ token: d.token_dispositivo, email: dono, nome } satisfies Guardado))
         return { ok: true, nome }
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },

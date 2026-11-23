@@ -35,6 +35,7 @@ test('só as rotas da lista; a tela não escolhe outro endereço', async () => {
   }
   assert.equal(pedidos.length, 0)
   assert.ok(ROTAS.includes('/ativar/solicitar-codigo') && ROTAS.includes('/ativar/confirmar') && ROTAS.includes('/verificar'))
+  assert.ok(ROTAS.includes('/ativar/solicitar-codigo-link')) // código automático pelo link do e-mail (22/11/2026)
 })
 
 test('corpo precisa ser um objeto simples e pequeno', async () => {
