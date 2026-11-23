@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs'
 import { pipeline } from '@huggingface/transformers'
 
-export const MODELO = 'onnx-community/whisper-base'
+export const MODELO = 'onnx-community/whisper-small'
 export const OPCOES = { language: 'portuguese', task: 'transcribe', chunk_length_s: 30, stride_length_s: 5 }
 
 const arquivo = process.argv[2]

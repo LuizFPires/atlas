@@ -1,9 +1,9 @@
 // Worker do Whisper (transcrição no computador). Roda fora da tela para não travar nada.
-// Modelo: whisper-base (multilíngue, português), quantizado. Baixado uma vez do Hugging Face e guardado no cache do app.
+// Modelo: whisper-small (multilíngue), quantizado q8: no teste do CI acertou a frase inteira; o base errava palavras. Baixado uma vez do Hugging Face e guardado no cache do app.
 // Os arquivos do motor (onnxruntime .wasm) vão junto do app em ./ort/ (nada de CDN): ver o plugin em vite.config.ts.
 import { env, pipeline, type AutomaticSpeechRecognitionPipeline } from '@huggingface/transformers'
 
-const MODELO = 'onnx-community/whisper-base'
+const MODELO = 'onnx-community/whisper-small'
 
 env.allowLocalModels = false
 env.useBrowserCache = true
