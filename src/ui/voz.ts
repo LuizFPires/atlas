@@ -7,11 +7,14 @@ interface Reconhecedor {
   interimResults: boolean
   onresult: ((e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null
   onend: (() => void) | null
-  onerror: (() => void) | null
+  onerror: ((e?: { error?: string }) => void) | null
   start(): void
   stop(): void
 }
 type Fabrica = new () => Reconhecedor
+
+/** Erros em que religar não adianta: microfone bloqueado, sem microfone, sem serviço de voz. */
+const ERROS_DEFINITIVOS = new Set(['not-allowed', 'service-not-allowed', 'audio-capture', 'language-not-supported'])
 
 function fabrica(): Fabrica | null {
   const w = window as unknown as { SpeechRecognition?: Fabrica; webkitSpeechRecognition?: Fabrica }
@@ -34,32 +37,49 @@ export function falaParaEmail(t: string): string {
 export function useVoz(aoFalar: (texto: string) => void) {
   const [gravando, setGravando] = useState(false)
   const rec = useRef<Reconhecedor | null>(null)
+  const querOuvir = useRef(false)
+  const religar = useRef<() => void>(() => {})
   const cb = useRef(aoFalar)
   useEffect(() => { cb.current = aoFalar })
-  useEffect(() => () => rec.current?.stop(), [])
+  useEffect(() => () => { querOuvir.current = false; rec.current?.stop() }, [])
 
   const suportado = typeof window !== 'undefined' && fabrica() !== null
 
-  const alternar = useCallback(() => {
-    if (rec.current) { rec.current.stop(); return }
+  // Fica ouvindo até a PESSOA apertar de novo. O navegador encerra a escuta sozinho numa pausa (ou depois de
+  // um tempo); quando isso acontece sem a pessoa ter pedido, o Atlas religa na hora. Só desliga de vez se ela
+  // apertar de novo ou se o microfone estiver bloqueado/indisponível (aí não adianta insistir).
+  const parar = useCallback(() => { querOuvir.current = false; const r = rec.current; rec.current = null; setGravando(false); r?.stop() }, [])
+
+  const ligar = useCallback(() => {
     const F = fabrica()
-    if (!F) return
+    if (!F) { parar(); return }
     const r = new F()
     r.lang = 'pt-BR'
-    r.continuous = false
+    r.continuous = true
     r.interimResults = false
     r.onresult = (e) => {
       let texto = ''
       for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) texto += e.results[i][0].transcript
       if (texto.trim()) cb.current(texto.trim())
     }
-    const fim = () => { rec.current = null; setGravando(false) }
-    r.onend = fim
-    r.onerror = fim
+    r.onerror = (e) => { if (e?.error && ERROS_DEFINITIVOS.has(e.error)) querOuvir.current = false }
+    r.onend = () => {
+      if (rec.current !== r) return
+      if (querOuvir.current) religar.current()
+      else { rec.current = null; setGravando(false) }
+    }
     rec.current = r
+    try { r.start() } catch { parar() }
+  }, [parar])
+  useEffect(() => { religar.current = ligar }, [ligar])
+
+  const alternar = useCallback(() => {
+    if (querOuvir.current) { parar(); return }
+    if (!fabrica()) return
+    querOuvir.current = true
     setGravando(true)
-    try { r.start() } catch { fim() }
-  }, [])
+    ligar()
+  }, [ligar, parar])
 
   return { gravando, alternar, suportado }
 }

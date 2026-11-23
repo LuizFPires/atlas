@@ -85,3 +85,26 @@ describe('fix m25 — humano e segredo', () => {
         expect(normalizarResposta(r)).toEqual({ texto: RECADO_SEM_HUMANO })
   })
 })
+
+test('aberta pelo "Falar com o Atlas", a Ajuda já começa ouvindo', async () => {
+  const inicios: number[] = []
+  class Rec { lang = ''; continuous = false; interimResults = false; onresult = null; onend = null; onerror = null; start() { inicios.push(1) } stop() {} }
+  const w = window as unknown as { SpeechRecognition?: unknown }
+  w.SpeechRecognition = Rec
+  try {
+    render(<TemaProvider><Ajuda ajuda={criarAjudaFixture()} contexto={{ origem: 'menu', ouvir: true }} nome="Zé" onFechar={() => {}} /></TemaProvider>)
+    expect(await screen.findByRole('button', { name: /Parar/ })).toBeInTheDocument()
+    expect(inicios).toHaveLength(1)
+  } finally { delete w.SpeechRecognition }
+})
+
+test('aberta por um erro, a Ajuda não liga o microfone sozinha', () => {
+  const inicios: number[] = []
+  class Rec { lang = ''; continuous = false; interimResults = false; onresult = null; onend = null; onerror = null; start() { inicios.push(1) } stop() {} }
+  const w = window as unknown as { SpeechRecognition?: unknown }
+  w.SpeechRecognition = Rec
+  try {
+    render(<TemaProvider><Ajuda ajuda={criarAjudaFixture()} contexto={ctx} nome="Zé" onFechar={() => {}} /></TemaProvider>)
+    expect(inicios).toHaveLength(0)
+  } finally { delete w.SpeechRecognition }
+})

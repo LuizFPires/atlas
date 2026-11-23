@@ -64,12 +64,12 @@ function resumoDeDemonstracao(): ResumoLicenca | null {
 /** Estamos dentro do app desktop (Electron) ou no modo fixture de desenvolvimento (?app=1)? */
 export const noAppDesktop = () => ponteDoAmbiente() !== null
 
-function Obras({ ativo, onNavegar, children }: { ativo: IdTela; onNavegar: (t: IdTela) => void; children?: ReactNode }) {
+function Obras({ ativo, onNavegar, onFalar, children }: { ativo: IdTela; onNavegar: (t: IdTela) => void; onFalar?: () => void; children?: ReactNode }) {
   // Contador do teste grátis / cortesia e a compra de dentro do app (docs/prd-contador-degustacao.md).
   const licenca = useContext(ContextoLicenca)
   const plano = useContext(ContextoPlano)
   return (
-    <Shell ativo={ativo} onNavegar={onNavegar} onFalar={() => {}} licenca={licenca?.cartao} plano={plano} onComprar={licenca?.comprar}>
+    <Shell ativo={ativo} onNavegar={onNavegar} onFalar={onFalar ?? (() => {})} licenca={licenca?.cartao} plano={plano} onComprar={licenca?.comprar}>
       {children ?? (
         <>
           <p className="rotulo">Minhas obras</p>
@@ -276,5 +276,5 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'obras' && fluxo === 'nova') conteudo = <NovaObra obras={ponteObras} ideia={ideia} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} onEstilo={(o: ObraNova) => { setObraAtual({ nome: o.respostas.nome, pasta: o.pasta.pasta }); setFluxo('estilo') }} />
   else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} nome={dono || undefined} onComecar={(i) => { setIdeia(i ?? ''); setFluxo('nova') }} onTrazer={() => setFluxo('trazer')} />
   // "Ajuda do Atlas" no menu abre o painel por cima da tela atual (não troca de tela).
-  return com(<Obras ativo={ativo} onNavegar={(t) => (t === 'ajuda' ? abrirAjuda({ origem: 'menu' }) : setAtivo(t))}>{conteudo}</Obras>)
+  return com(<Obras ativo={ativo} onFalar={() => abrirAjuda({ origem: 'menu', ouvir: true })} onNavegar={(t) => (t === 'ajuda' ? abrirAjuda({ origem: 'menu' }) : setAtivo(t))}>{conteudo}</Obras>)
 }

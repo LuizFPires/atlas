@@ -13,9 +13,9 @@ import { OBRA_PARADA_EXEMPLO, criarRetomarFixture } from './ponte-retomar'
 const ponte = () => criarPonteFixture([], criarCofreMemoria({ [CHAVE_COFRE]: JSON.stringify({ token: 't', email: 'a@b.co', nome: 'Zé' }) }))
 const api = { pedirCodigo: async () => ({ ok: true as const }), confirmar: async () => ({ ok: true as const, nome: 'Zé' }) }
 
-test('pelo menu "Ajuda do Atlas": abre o painel por cima da tela e fecha no ×', async () => {
+test('pelo botão "Falar com o Atlas": abre o painel por cima da tela e fecha no ×', async () => {
   render(<TemaProvider><AppDesktop ponte={ponte()} api={api} ajuda={criarAjudaFixture()} /></TemaProvider>)
-  await userEvent.click(await screen.findByRole('link', { name: /Ajuda do Atlas/ }))
+  await userEvent.click(await screen.findByRole('button', { name: /Falar com o Atlas/ }))
   expect(await screen.findByRole('complementary', { name: 'Ajuda do Atlas' })).toBeInTheDocument()
   expect(screen.getByText(/Estou aqui, a qualquer hora/)).toBeInTheDocument()
   expect(screen.getByText('Minhas obras')).toBeInTheDocument()

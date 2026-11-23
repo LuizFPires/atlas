@@ -15,21 +15,13 @@ export const IDEIAS = [
   { nome: 'Estoque', desc: 'Produtos, validade e reposição' },
 ] as const
 
-export const QUEM_USA = [
-  { id: 'dono', nome: 'Eu, o dono' },
-  { id: 'barbeiros', nome: 'Os barbeiros' },
-  { id: 'recepcao', nome: 'Recepção' },
-  { id: 'clientes', nome: 'Os clientes da barbearia' },
-  { id: 'contador', nome: 'Contador' },
-] as const
-
 export type IdPergunta = 'nome' | 'problema' | 'quem' | 'precisa' | 'parecido'
 
 /** Cinco perguntas, uma por vez (u06: "quantas antes de cansar?" fica a validar; começamos com 5, como o protótipo). */
 export const PERGUNTAS: { id: IdPergunta; titulo: string; dica: string }[] = [
   { id: 'nome', titulo: 'Como você quer chamar esta obra?', dica: 'Pode ser um nome provisório. Mais tarde vocês escolhem o nome de verdade, juntos.' },
   { id: 'problema', titulo: 'O que está te incomodando hoje?', dica: 'Conte como funciona hoje e o que dá errado. Sem pressa, do seu jeito.' },
-  { id: 'quem', titulo: 'Quem vai usar o sistema?', dica: 'Toque em todos que valem. Depois, se quiser, conte mais pelo microfone.' },
+  { id: 'quem', titulo: 'Quem vai usar o sistema?', dica: 'Conte quem vai mexer nele no dia a dia: só você, a sua equipe, os seus clientes… do seu jeito.' },
   { id: 'precisa', titulo: 'O que não pode faltar de jeito nenhum?', dica: 'Diga as coisas mais importantes, uma atrás da outra. Pode ser bem simples.' },
   { id: 'parecido', titulo: 'Você conhece algo parecido que gosta?', dica: 'Um aplicativo, um site, uma planilha. Se não conhecer nenhum, tudo bem: pode pular.' },
 ]

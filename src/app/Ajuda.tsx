@@ -50,6 +50,14 @@ export function Ajuda({ ajuda, casos, contexto, nome, onFechar }: Props) {
   const reqId = useRef(0)
   const { gravando, alternar, suportado } = useVoz((t) => { setTexto((a) => [a, t].filter(Boolean).join(' ')); setFalado(true) })
 
+  // "Falar com o Atlas": a Ajuda abre já ouvindo. Uma vez por abertura (o painel é recriado a cada abertura).
+  const ouviu = useRef(false)
+  useEffect(() => {
+    if (!contexto.ouvir || !suportado || ouviu.current) return
+    ouviu.current = true
+    alternar()
+  }, [contexto.ouvir, suportado, alternar])
+
   useEffect(() => { fim.current?.scrollIntoView?.({ block: 'end' }) }, [msgs, ocupado])
 
   const ultimaAcao = [...msgs].reverse().find((m) => m.de === 'atlas')
