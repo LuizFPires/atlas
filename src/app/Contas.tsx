@@ -3,6 +3,8 @@ import { Botao, Icone } from '../ui'
 import { LateralPassos } from './Ativacao'
 import type { PedidoAjudaPasso } from './ajuda-passo'
 import { CartaoPasso, PreviaSite } from './GuiaConta'
+import { NavegadorEmbutido } from './NavegadorEmbutido'
+import type { PonteNavegador } from './ponte-navegador'
 import { CONTAS, TEXTO_OPCIONAL, type IdConta } from './contas-passos'
 import { CONTAS_OBRIGATORIAS, type ContaObrigatoria, type PonteContas } from './ponte-contas'
 import './app.css'
@@ -23,10 +25,12 @@ interface Props {
   sondagemMs?: number
   /** Abre a Ajuda do Atlas (F17) já com o print do passo. */
   onPedirAjuda?: (pedido: PedidoAjudaPasso) => void
+  /** Navegador de verdade dentro do Atlas (só no Atlas instalado): o site real fica ao lado, no lugar da imagem de exemplo. */
+  navegador?: PonteNavegador
 }
 
 /** F04: abrir as contas (prototipo/F04Contas). GitHub, Supabase e Vercel, uma por vez, um passo por vez. As contas são do próprio cliente. */
-export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }: Props) {
+export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda, navegador }: Props) {
   const [conta, setConta] = useState(0)
   const [passo, setPasso] = useState(0)
   const [feitas, setFeitas] = useState<Partial<Record<IdConta, boolean>>>({})
@@ -77,11 +81,20 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
     return () => { vivo = false; clearInterval(id) }
   }, [conta, idAtual, jaFeita, contas, sondagemMs])
 
+  // O site avisou que a conta ficou pronta (navegador dentro do Atlas): verde na hora, sem esperar a próxima olhada.
+  const prontaNoSite = (id: IdConta) => {
+    const atual = CONTAS[contaRef.current]
+    if (atual.opcional || atual.id !== id) return
+    setFeitas((f) => ({ ...f, [id]: true }))
+    setDetectada(id)
+    setPasso(atual.passos.length - 1)
+  }
+
   const ir = (nova: number) => { trocarConta(nova); setPasso(0); setAviso(''); setDetectada(null); setAjuda(false) }
 
   const avancar = async () => {
     setAviso('')
-    if (passo === 0) {
+    if (passo === 0 && !navegador) {
       try { await contas.abrirSite(c.id as ContaObrigatoria) } catch { setAviso(`Não consegui abrir o site do ${c.nome} agora. Abra ele no seu navegador e siga os passos daqui mesmo.`) }
     }
     if (!ultimo) { setPasso(passo + 1); setAjuda(false); return }
@@ -109,7 +122,7 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
               </button>
             ))}
           </div>
-          <div className="at-contas__grade">
+          <div className={`at-contas__grade ${navegador && !c.opcional ? 'at-contas__grade--nav' : ''}`}>
             <div className="at-claude__col">
               <div className="at-claude__cab">
                 <span className="at-claude__rotulo">CONTA {conta + 1} DE {CONTAS.length} · {c.nome.toUpperCase()}</span>
@@ -120,11 +133,12 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
               {!c.opcional && p && (
                 <>
                   <CartaoPasso passo={p} n={passo + 1} total={c.passos.length} />
+                  {navegador && passo === 0 && <p className="at-contas__aqui"><Icone nome="seta" tamanho={16} /> O site do {c.id === 'hosp' ? 'Vercel' : c.nome} já está aberto aqui ao lado: é ali que você clica. Se preferir, use "Abrir no meu navegador".</p>}
                   {VIDEOS[c.id] && <button type="button" className="at-contas__video" onClick={() => setVideo(true)}><Icone nome="play" tamanho={16} /> Ver o vídeo desta conta, do começo ao fim (40 s)</button>}
                   {detectada === c.id && <p className="at-contas__detectada" role="status"><Icone nome="check" tamanho={16} /> O Atlas viu sozinho: a sua conta do {c.nome} está pronta.</p>}
                   <div className="at-ativ__rodape at-claude__acoes">
                     <Botao variante="secundario" onClick={voltar} disabled={conta === 0 && passo === 0}>← Voltar</Botao>
-                    {fim ? <Botao onClick={onContinuar}>Último passo →</Botao> : <Botao onClick={() => void avancar()}>{passo === 0 ? 'Abrir o site →' : ultimo ? 'Próxima conta →' : 'Fiz isso →'}</Botao>}
+                    {fim ? <Botao onClick={onContinuar}>Último passo →</Botao> : <Botao onClick={() => void avancar()}>{passo === 0 && !navegador ? 'Abrir o site →' : ultimo ? 'Próxima conta →' : 'Fiz isso →'}</Botao>}
                   </div>
                   {aviso && <p className="at-ativ__erro" role="alert">{aviso}</p>}
                   <button type="button" className="at-ativ__link at-claude__nao-consegui" onClick={() => setAjuda(!ajuda)} aria-expanded={ajuda}>Não consegui fazer este passo</button>
@@ -153,7 +167,9 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
                 </>
               )}
             </div>
-            {p && <PreviaSite site={p.site} />}
+            {navegador && !c.opcional
+              ? <NavegadorEmbutido navegador={navegador} conta={c.id} onPronta={prontaNoSite} />
+              : p && <PreviaSite site={p.site} />}
           </div>
         </section>
       </div>

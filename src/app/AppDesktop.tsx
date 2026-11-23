@@ -132,7 +132,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const abrirAjuda = (contexto: ContextoAjuda) => setPainelAjuda((a) => ({ contexto: { obra: obraAtual?.nome, pasta: obraAtual?.pasta, ...contexto }, n: (a?.n ?? 0) + 1 }))
   const pedirAjudaPasso = (p: PedidoAjudaPasso) => abrirAjuda(contextoDoPasso(p))
 
-  const ponteContas = useMemo<PonteContas>(() => contas ?? (modoFixture() ? criarContasFixture() : contasIndisponivel), [contas])
+  const ponteContas = useMemo<PonteContas>(() => contas ?? (modoFixture() ? criarContasFixture() : (ponte.contas ?? contasIndisponivel)), [contas, ponte])
 
   // Idem para o celular (Remote Control): sem adaptador real, não finge que o celular está ligado.
   const ponteCelular = useMemo<PonteCelular>(() => celular ?? (modoFixture() ? criarCelularFixture() : (ponte.celular ?? celularIndisponivel)), [celular, ponte])
@@ -295,7 +295,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   }
   if (tela === TELA_CLAUDE) return com(<Claude claude={ponteClaude} onContinuar={() => { const v = voltarDoClaude.current; voltarDoClaude.current = null; setTela(v ?? TELA_CELULAR) }} onPedirAjuda={() => abrirAjuda({ origem: 'menu', onde: 'a conexão com o Claude' })} />)
   // Caminho novo (23/11/2026): as contas saíram da instalação e vêm antes de começar a construção (fluxo 'contas'). --tela=F04 ainda abre.
-  if (tela === TELA_CONTAS) return com(<Contas contas={ponteContas} onContinuar={() => setTela(TELA_CELULAR)} onPedirAjuda={pedirAjudaPasso} />)
+  if (tela === TELA_CONTAS) return com(<Contas contas={ponteContas} navegador={modoFixture() ? undefined : ponte.navegador} onContinuar={() => setTela(TELA_CELULAR)} onPedirAjuda={pedirAjudaPasso} />)
   if (tela === TELA_CELULAR) return com(<Celular celular={ponteCelular} onVoltar={() => setTela(TELA_CLAUDE)} onConcluir={() => setTela('F05')} />)
   if (tela === TELA_RETOMAR && paradaF12) {
     return com(
@@ -331,7 +331,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     void pontePrototipo.mapear?.(criada.pasta, nome, relato).catch(() => {})
     setFluxo('estilo')
   }} />
-  else if (ativo === 'obras' && fluxo === 'contas') conteudo = <Contas contas={ponteContas} onContinuar={() => setFluxo('aprovar')} onPedirAjuda={pedirAjudaPasso} />
+  else if (ativo === 'obras' && fluxo === 'contas') conteudo = <Contas contas={ponteContas} navegador={modoFixture() ? undefined : ponte.navegador} onContinuar={() => setFluxo('aprovar')} onPedirAjuda={pedirAjudaPasso} />
   else if (ativo === 'retomar') conteudo = paradaF12
     ? <Retomar obra={paradaF12} nome={dono || undefined} retomar={ponteRetomar} onContinuou={(o) => { setObraAtual({ nome: o.nome, pasta: o.pasta }); setFluxo('lista'); setAtivo('obra') }} onAgoraNao={() => setAtivo('obras')} />
     : <SemObra rotulo="COMO RETOMAR" titulo="Nenhuma obra parada agora." texto="Se o computador desligar ou a cota do Claude acabar, a obra para no ponto em que estava. Quando você ligar o computador, o Atlas abre sozinho aqui, com um botão só: Continuar obra." onIrObras={() => setAtivo('obras')} />

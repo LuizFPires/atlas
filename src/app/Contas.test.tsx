@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Contas } from './Contas'
@@ -124,5 +124,35 @@ describe('vídeo de cada conta', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Não consegui fazer este passo' }))
     await userEvent.click(screen.getByRole('button', { name: /Ver este passo em vídeo/ }))
     expect(screen.getByRole('dialog', { name: 'Conta do GitHub em vídeo' })).toBeInTheDocument()
+  })
+})
+
+describe('com o navegador dentro do Atlas', () => {
+  function navFalso() {
+    let ouvinte: ((p: { conta: 'github' | 'supabase' | 'hosp' | 'pag'; url: string; pronta: boolean }) => void) | null = null
+    const n = {
+      abrir: vi.fn(async () => {}), posicionar: vi.fn(async () => {}), mostrar: vi.fn(async () => {}), voltar: vi.fn(async () => {}),
+      recarregar: vi.fn(async () => {}), fora: vi.fn(async () => {}), fechar: vi.fn(async () => {}),
+      aoMudarPagina: vi.fn((f: typeof ouvinte) => { ouvinte = f; return () => { ouvinte = null } }),
+    }
+    return { n, pagina: (p: Parameters<NonNullable<typeof ouvinte>>[0]) => ouvinte?.(p) }
+  }
+
+  test('o site de verdade aparece ao lado (no lugar da imagem de exemplo) e o 1º passo não abre outro navegador', async () => {
+    const { n } = navFalso()
+    const c = criarContasFixture()
+    montar(c, { navegador: n })
+    expect(screen.getByLabelText('Site da conta')).toBeInTheDocument()
+    expect(n.abrir).toHaveBeenCalledWith('github', expect.anything())
+    expect(screen.getByText(/já está aberto aqui ao lado/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Fiz isso →' }))
+    expect(c.abertos).toEqual([])
+  })
+
+  test('a conta ficou pronta no site: o passo fica verde sozinho, sem esperar', async () => {
+    const { n, pagina } = navFalso()
+    montar(criarContasFixture(), { navegador: n })
+    act(() => pagina({ conta: 'github', url: 'https://github.com/', pronta: true }))
+    expect(await screen.findByText(/O Atlas viu sozinho: a sua conta do GitHub está pronta/)).toBeInTheDocument()
   })
 })

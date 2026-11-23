@@ -1,0 +1,9 @@
+/* Navegador de verdade na tela das contas: barra com endereço e botões; o site é desenhado por cima de .at-nav__area. */
+.at-nav { flex: 1; min-height: 0; display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; border: 1px solid var(--card-b); background: #fff; }
+.at-nav__barra { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #E9EBE6; color: #1B1E22; }
+.at-nav__botao { width: 36px; height: 36px; border-radius: 9px; border: 0; background: transparent; color: #1B1E22; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.at-nav__botao:hover { background: rgba(0, 0, 0, .06); }
+.at-nav__url { flex: 1; min-width: 0; height: 32px; border-radius: 16px; background: #fff; display: flex; align-items: center; gap: 6px; padding: 0 12px; font: 13px var(--font-mono); color: #444; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.at-nav__fora { flex: none; min-height: 36px; padding: 0 12px; border-radius: 9px; border: 1px solid #C9CDC4; background: #fff; color: #1B1E22; font: 600 13px var(--font-text); cursor: pointer; }
+.at-nav__botao:focus-visible, .at-nav__fora:focus-visible { outline: 2px solid #1B1E22; outline-offset: 2px; }
+.at-nav__area { flex: 1; min-height: 420px; background: #fff; }
