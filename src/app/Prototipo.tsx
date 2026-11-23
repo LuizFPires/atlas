@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Botao, Icone, Microfone, Trabalhando, useVoz } from '../ui'
 import { Pintor } from './Pintor'
+import { JanelaCelular } from './JanelaCelular'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EstiloProposto } from './ponte-estilo'
 import { montarNavegavel, montarSrcDoc, SANDBOX_PREVIEW, type EstadoProto, type PontePrototipo, type ProgressoProto, type TelaDesenhada } from './ponte-prototipo'
@@ -55,6 +56,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
   const [desenhando, setDesenhando] = useState(false)
   const [andamento, setAndamento] = useState<ProgressoProto | null>(null)
   const [vista, setVista] = useState<'navegar' | 'todas'>('navegar')
+  const [celular, setCelular] = useState(false)
   const iniciou = useRef(false)
   const [pedido, setPedido] = useState('')
   const [prints, setPrints] = useState<string[]>([])
@@ -173,6 +175,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
           </div>
         )}
         <div className="at-proto__acoes">
+          {versao && prototipo.linkCelular && <Botao variante="secundario" onClick={() => setCelular(true)}>Ver no celular</Botao>}
           {anterior && <Botao variante="secundario" disabled={ocupado} onClick={() => void irPara(anterior.numero)}>↶ Voltar à versão {anterior.numero}</Botao>}
           <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
           <Botao disabled={!versao} onClick={() => onConcluir ? onConcluir() : onVoltar()}>Telas do meu jeito: dar o nome →</Botao>
@@ -180,6 +183,18 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
       </header>
 
       {erro && <p className="at-nova__erro" role="alert">{erro}</p>}
+      {celular && versao && prototipo.linkCelular && (
+        <JanelaCelular
+          gerar={async () => {
+            // Vai o protótipo NAVEGÁVEL (o mesmo do celular ao lado), começando na primeira tela.
+            const doc = montarNavegavel(versao.telas, versao.telas[0].id)
+            if (!doc) throw new Error('prototipo-invalido')
+            return prototipo.linkCelular!(obra.nome, doc)
+          }}
+          whatsapp={prototipo.whatsapp ? (u) => prototipo.whatsapp!(u) : undefined}
+          onFechar={() => setCelular(false)}
+        />
+      )}
 
       {pedeRelato && (
         <section className="at-proto__convite" aria-label="Conte tudo o que você imagina">

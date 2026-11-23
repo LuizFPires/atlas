@@ -79,3 +79,23 @@ describe('http', () => {
     expect((await tratar(c, new Request('https://x.test/verificar'))).status).toBe(405)
   })
 })
+
+describe('/prototipo/link e /prototipo/ver', () => {
+  it('o app publica com a credencial no cabeçalho; o site lê pelo token; resposta sem cache', async () => {
+    const { m, c } = ctx()
+    await m.ativar()
+    const guardados = new Map<string, unknown>()
+    const cc = { ...c, origemWeb: 'https://atlas-ia.app.br', prototipos: { guardar: async (t: string, v: unknown) => { guardados.set(t, v) }, ler: async (t: string) => (guardados.get(t) as never) ?? null } }
+    const doc = '<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><section id="tela-a">oi</section>'
+    const corpo = { email: 'ana@loja.com', computador_hash: H1, nome: 'Colore', documento: doc }
+    expect((await post(cc, '/prototipo/link', { ...corpo, token_dispositivo: TOKEN })).status).toBe(403)
+    const r = await post(cc, '/prototipo/link', corpo, { 'X-Atlas-Dispositivo': TOKEN })
+    expect(r.status).toBe(200)
+    const { url } = await r.json()
+    const token = url.split('/p/')[1]
+    const v = await post(cc, '/prototipo/ver', { token })
+    expect(v.status).toBe(200)
+    expect(v.headers.get('Cache-Control')).toBe('no-store')
+    expect(await v.json()).toMatchObject({ nome: 'Colore', documento: doc })
+  })
+})

@@ -435,6 +435,28 @@ export function criarCarregarKit() {
 // ── Instalador para baixar (pasta PRIVADA do Storage; a página só recebe um endereço temporário) ──
 /** Liga o download quando ATLAS_INSTALADOR_ARQUIVO está definido (ver instalador-storage.ts).
  *  Sem ele devolve undefined: a página continua dizendo que o instalador ainda não está disponível. */
+/** Links provisórios do protótipo: pasta PRIVADA "prototipos" (criada na primeira vez), um <token>.json por link. */
+export function criarArmazemPrototipos() {
+  const BUCKET = 'prototipos'
+  const pasta = () => db().storage.from(BUCKET)
+  return {
+    async guardar(token: string, p: unknown) {
+      const corpo = new Blob([JSON.stringify(p)], { type: 'application/json' })
+      let r = await pasta().upload(`${token}.json`, corpo, { upsert: false, contentType: 'application/json' })
+      if (r.error && /not.?found|bucket/i.test(String((r.error as { message?: string }).message ?? r.error))) {
+        await db().storage.createBucket(BUCKET, { public: false })
+        r = await pasta().upload(`${token}.json`, corpo, { upsert: false, contentType: 'application/json' })
+      }
+      if (r.error) throw new Error(`prototipo upload: ${String((r.error as { message?: string }).message ?? r.error)}`)
+    },
+    async ler(token: string) {
+      const { data, error } = await pasta().download(`${token}.json`)
+      if (error || !data || data.size > 2_000_000) return null
+      return JSON.parse(await data.text())
+    },
+  }
+}
+
 /** Atualização automática do app: mesma pasta e mesmo .exe do instalador, mais o atualizacao.json. Sem configuração: undefined. */
 export function criarAtualizacao() {
   const cfg = lerConfigInstalador((nome) => Deno.env.get(nome))

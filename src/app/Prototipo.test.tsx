@@ -282,3 +282,38 @@ describe('palco do protótipo', () => {
     expect(within(screen.getByLabelText('Pedir ajuste').closest('form')!).getByRole('button', { name: 'Falar' })).toBeInTheDocument()
   })
 })
+
+describe('ver no celular', () => {
+  test('"Ver no celular" gera o link do protótipo navegável e mostra QR, link, copiar e WhatsApp', async () => {
+    const p = criarPrototipoFixture()
+    const zap: string[] = []
+    p.whatsapp = async (u) => { zap.push(u) }
+    const { user } = await montar(p)
+    await user.click(await screen.findByRole('button', { name: /Ver no celular/ }))
+    const janela = await screen.findByRole('dialog', { name: 'Abra no seu celular' })
+    expect(within(janela).getByRole('img', { name: /QR code/ })).toBeInTheDocument()
+    expect(within(janela).getByText(/atlas-ia\.app\.br\/p\//)).toBeInTheDocument()
+    expect(within(janela).getByText(/vale até/)).toBeInTheDocument()
+    expect(p.linksGerados).toEqual([obra.nome])
+    await user.click(within(janela).getByRole('button', { name: /Mandar pelo WhatsApp/ }))
+    expect(zap).toHaveLength(1)
+  })
+  test('sem servidor do link: o botão nem aparece (não promete o que não faz)', async () => {
+    const p = criarPrototipoFixture()
+    delete (p as Partial<typeof p>).linkCelular
+    await montar(p)
+    await screen.findByText(/Fiz as primeiras telas/)
+    expect(screen.queryByRole('button', { name: /Ver no celular/ })).toBeNull()
+  })
+})
+
+test('a janela do celular gera o link uma vez só, mesmo se a tela por trás se atualizar', async () => {
+  const { JanelaCelular } = await import('./JanelaCelular')
+  let vezes = 0
+  const gerar = async () => { vezes++; return { url: `https://atlas-ia.app.br/p/${'Ab'.repeat(22)}`, expira_em: '2026-11-30T03:00:00.000Z' } }
+  const { rerender } = render(<JanelaCelular gerar={gerar} onFechar={() => {}} />)
+  await screen.findByRole('img', { name: /QR code/ })
+  rerender(<JanelaCelular gerar={async () => gerar()} onFechar={() => {}} />)
+  rerender(<JanelaCelular gerar={async () => gerar()} onFechar={() => {}} />)
+  expect(vezes).toBe(1)
+})
