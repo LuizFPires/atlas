@@ -33,16 +33,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng ffmpeg
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg && pip install -q edge-tts
+      # Voz neural natural em português (parecida com uma pessoa falando); a voz robótica do espeak engana até modelos grandes.
       - name: Fala de teste em português
         run: |
-          espeak-ng -v pt-br -s 140 -w fala.wav "Quero uma agenda para a minha barbearia"
-          ffmpeg -loglevel error -i fala.wav -ar 16000 -ac 1 -f f32le fala.f32
-      - name: Fala humana (gravação real em português, para comparar)
-        run: |
-          curl -sSL -o humana.mp3 "https://upload.wikimedia.org/wikipedia/commons/transcoded/0/0e/Pt-br-Ol%C3%A1.ogg/Pt-br-Ol%C3%A1.ogg.mp3" || true
+          edge-tts --voice pt-BR-AntonioNeural --text "Quero uma agenda para a minha barbearia, com os horários dos barbeiros." --write-media fala.mp3
+          ffmpeg -loglevel error -i fala.mp3 -ar 16000 -ac 1 -f f32le fala.f32
       - name: Comparar modelos (temporário)
-        run: |
-          node scripts/comparar-voz.mjs fala.f32 2>&1 | grep RESULTADO || true
-          du -sh ~/.cache/huggingface 2>/dev/null || true; du -sh node_modules/@huggingface/transformers/.cache 2>/dev/null || true
+        run: node scripts/comparar-voz.mjs fala.f32 2>&1 | grep RESULTADO || true
       - run: node scripts/teste-voz.mjs fala.f32

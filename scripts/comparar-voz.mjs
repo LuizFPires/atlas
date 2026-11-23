@@ -10,7 +10,7 @@ const casos = [
   ['onnx-community/whisper-base', 'fp32'],
   ['onnx-community/whisper-small', { encoder_model: 'fp32', decoder_model_merged: 'q4' }],
   ['onnx-community/whisper-small', 'q8'],
-  ['onnx-community/whisper-large-v3-turbo', { encoder_model: 'q4', decoder_model_merged: 'q4' }],
+  ['onnx-community/whisper-small', 'fp32'],
 ]
 for (const [m, dtype] of casos) {
   try {
