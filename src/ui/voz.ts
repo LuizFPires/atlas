@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { criarTranscricaoEmPartes } from './voz-partes'
-import { definirEstadoVoz, estadoVoz, gravacaoSuportada, iniciarGravacao, noAtlasInstalado, RECADO_NAO_ESCREVI, RECADO_SEM_MICROFONE, transcritorAtual, type Gravacao } from './voz-motor'
+import { definirEstadoVoz, estadoVoz, gravacaoSuportada, iniciarGravacao, noAtlasInstalado, RECADO_NAO_ESCREVI, RECADO_SEM_MICROFONE, transcritorAtual, transcritorRapido, type Gravacao } from './voz-motor'
 
 // Reconhecimento de fala do navegador (pt-BR). Não há tipos no lib.dom, então declaramos o mínimo.
 interface Reconhecedor {
@@ -93,11 +93,11 @@ function useVozDoNavegador(aoFalar: (texto: string) => void) {
 function useVozWhisper(aoFalar: (texto: string) => void) {
   const [gravando, setGravando] = useState(false)
   const gravacao = useRef<Gravacao | null>(null)
-  const emPartes = useRef<{ partes: ReturnType<typeof criarTranscricaoEmPartes>; timer: ReturnType<typeof setInterval> } | null>(null)
+  const emPartes = useRef<{ partes: ReturnType<typeof criarTranscricaoEmPartes>; timer: ReturnType<typeof setInterval>; rascunho?: ReturnType<typeof setInterval> } | null>(null)
   const ligando = useRef(false)
   const cb = useRef(aoFalar)
   useEffect(() => { cb.current = aoFalar })
-  useEffect(() => () => { if (emPartes.current) clearInterval(emPartes.current.timer); gravacao.current?.cancelar(); gravacao.current = null; if (estadoVoz().fase === 'ouvindo') definirEstadoVoz({ fase: 'livre' }) }, [])
+  useEffect(() => () => { if (emPartes.current) { clearInterval(emPartes.current.timer); clearInterval(emPartes.current.rascunho) } gravacao.current?.cancelar(); gravacao.current = null; if (estadoVoz().fase === 'ouvindo') definirEstadoVoz({ fase: 'livre' }) }, [])
 
   const suportado = gravacaoSuportada() || noAtlasInstalado()
 
@@ -109,7 +109,7 @@ function useVozWhisper(aoFalar: (texto: string) => void) {
       definirEstadoVoz({ fase: 'escrevendo' })
       const ep = emPartes.current
       emPartes.current = null
-      if (ep) clearInterval(ep.timer)
+      if (ep) { clearInterval(ep.timer); clearInterval(ep.rascunho) }
       void (async () => {
         try {
           const audio = await g.parar()
@@ -136,12 +136,28 @@ function useVozWhisper(aoFalar: (texto: string) => void) {
         definirEstadoVoz({ fase: 'ouvindo' })
         // Enquanto a pessoa fala, o modelo (só na primeira vez) já vai sendo preparado.
         void transcritorAtual().preparar(() => {}).catch(() => {})
-        // Texto ao vivo (23/11/2026): a cada 2 s olha se já tem um trecho de uns 6 s terminado num respiro; ele vai para o campo
-        // assim que o Whisper escreve, sempre na ordem da fala. Ao parar, falta só o finalzinho.
+        // Texto ao vivo (23/11/2026): a cada 1,5 s olha se já tem um trecho de uns 4 s terminado num respiro; ele vai para o campo
+        // assim que o Whisper bom escreve, sempre na ordem da fala. Ao parar, falta só o finalzinho.
         if (g.parcial) {
-          const partes = criarTranscricaoEmPartes(transcritorAtual(), { minSegundos: 6, aoPronto: (x) => cb.current(x) })
-          const timer = setInterval(() => { void g.parcial!().then((a) => partes.adiantar(a)).catch(() => {}) }, 2000)
+          const partes = criarTranscricaoEmPartes(transcritorAtual(), { minSegundos: 4, aoPronto: (x) => cb.current(x) })
+          const timer = setInterval(() => { void g.parcial!().then((a) => partes.adiantar(a)).catch(() => {}) }, 1500)
           emPartes.current = { partes, timer }
+          // Rascunho ao vivo ("sem delay na fala"): a cada ~1 s o Whisper rápido escreve o trecho ainda não confirmado, e ele
+          // aparece no aviso "Ouvindo…". Um de cada vez: se o anterior ainda não voltou, pula a vez.
+          const r = transcritorRapido()
+          if (r) {
+            void r.preparar(() => {}).catch(() => {})
+            let ocupadoR = false
+            emPartes.current.rascunho = setInterval(() => {
+              if (ocupadoR || gravacao.current !== g) return
+              ocupadoR = true
+              void g.parcial!()
+                .then((a) => { const resto = partes.pendente(a).slice(-12 * 16000); return resto.length > 0.4 * 16000 ? r.transcrever(resto.slice()) : '' })
+                .then((x) => { if (gravacao.current === g && estadoVoz().fase === 'ouvindo') definirEstadoVoz({ fase: 'ouvindo', rascunho: x.trim() || undefined }) })
+                .catch(() => {})
+                .finally(() => { ocupadoR = false })
+            }, 1000)
+          }
         }
       } catch {
         definirEstadoVoz({ fase: 'erro', recado: RECADO_SEM_MICROFONE })

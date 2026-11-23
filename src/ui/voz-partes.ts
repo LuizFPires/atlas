@@ -43,6 +43,8 @@ export function criarTranscricaoEmPartes(t: Transcritor, o: { minSegundos?: numb
     }
   }
   return {
+    /** O áudio que ainda não foi mandado para o Whisper bom: o que o rascunho ao vivo mostra. */
+    pendente: (ateAgora: Float32Array) => ateAgora.subarray(Math.min(cortado, ateAgora.length)),
     /** Recebe o áudio gravado até agora; se já tem um trecho grande o bastante, manda transcrever. */
     async adiantar(ateAgora: Float32Array) {
       if (ateAgora.length - cortado < min) return

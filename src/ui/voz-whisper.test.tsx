@@ -96,3 +96,26 @@ test('enquanto a pessoa fala, o trecho já falado aparece no campo antes de para
     await waitFor(() => expect(falado).toEqual(['quero uma agenda', 'para a barbearia']))
   } finally { vi.useRealTimers() }
 })
+
+// Luiz, 23/11/2026: "essa transcrição tem que estar bem rápida, sem delay na fala". Um Whisper pequeno escreve um rascunho
+// ao vivo (a cada ~1 s) do trecho ainda não confirmado; o Whisper bom confirma e o texto vai para o campo.
+test('rascunho ao vivo: o trecho que ainda não foi confirmado aparece em ~1 s, pelo modelo rápido', async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  try {
+    const TAXA = 16000
+    const ateAgora = Float32Array.from({ length: 2 * TAXA }, (_, i) => Math.sin(i / 3) * 0.5)
+    const bom: Transcritor = { preparar: async () => {}, transcrever: async () => 'texto bom' }
+    const rapidos: number[] = []
+    const rapido: Transcritor = { preparar: async () => {}, transcrever: async (a) => { rapidos.push(a.length); return 'quero uma agen' } }
+    usarMotorDeVoz(bom, async () => ({ parar: async () => ateAgora, cancelar: () => {}, parcial: async () => ateAgora }), { forcar: true, rapido })
+    const { result } = renderHook(() => useVoz(() => {}))
+    await act(async () => { result.current.alternar() })
+    await waitFor(() => expect(result.current.gravando).toBe(true))
+    await act(async () => { await vi.advanceTimersByTimeAsync(1300) })
+    expect(estadoVoz()).toMatchObject({ fase: 'ouvindo', rascunho: 'quero uma agen' })
+    expect(rapidos[0]).toBe(2 * TAXA) // só o trecho ainda não confirmado (aqui, tudo)
+    await act(async () => { result.current.alternar() })
+    await waitFor(() => expect(estadoVoz().fase).toBe('livre'))
+    expect(estadoVoz().rascunho).toBeUndefined()
+  } finally { vi.useRealTimers() }
+})

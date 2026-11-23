@@ -27,3 +27,11 @@ test('erro: mostra o recado e dá para fechar', () => {
   act(() => screen.getByRole('button', { name: 'Fechar o aviso' }).click())
   expect(screen.queryByRole('alert')).toBeNull()
 })
+
+test('ouvindo com rascunho: mostra as palavras que acabaram de ser faladas, sem esperar a pausa', () => {
+  render(<StatusVoz />)
+  act(() => definirEstadoVoz({ fase: 'ouvindo', rascunho: 'quero bater o ponto pelo celu' }))
+  const s = screen.getByRole('status')
+  expect(s).toHaveTextContent('quero bater o ponto pelo celu')
+  expect(s).not.toHaveTextContent(/a cada pausa/)
+})
