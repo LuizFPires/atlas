@@ -3,6 +3,7 @@ import { Botao, CampoFalado, Icone, useVoz } from '../ui'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EntradaEstilo, EstiloProposto, PonteEstilo } from './ponte-estilo'
 import { FASES, linkCurto, MAX_REFERENCIAS, MIN_REFERENCIAS, MODOS, normalizarLink, SENTIMENTOS, UPLOADS } from './estilo-dados'
+import { PaletaCores } from './PaletaCores'
 import './estilo.css'
 
 /** A obra que acabou de ser criada (nome e subpasta dentro de Atlas\Obras). */
@@ -45,6 +46,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
   // Identidade que o cliente já tem: nomes dos arquivos guardados na obra, por tipo.
   const [enviados, setEnviados] = useState<Record<string, string[]>>({})
   const [coresTxt, setCoresTxt] = useState('')
+  const [paleta, setPaleta] = useState<string[]>([])
   const [figma, setFigma] = useState('')
   // Nome REALMENTE gravado na raiz da obra do design-system.md pronto ('' = não veio nenhum).
   const [prontoDS, setProntoDS] = useState('')
@@ -126,7 +128,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
   }
   const figmaOk = figma.trim() ? normalizarLink(figma) : null
   const todosArquivos = Object.values(enviados).flat()
-  const temIdentidade = todosArquivos.length > 0 || !!coresTxt.trim() || !!figmaOk
+  const temIdentidade = todosArquivos.length > 0 || paleta.length > 0 || !!coresTxt.trim() || !!figmaOk
 
   const usarIdentidade = async () => {
     if (!temIdentidade) { setErro('Mande pelo menos uma coisa: a logo, as cores ou o manual.'); return }
@@ -136,7 +138,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
     try {
       const { caminho } = await estilo.materializar(obra.pasta, {
         tipo: 'identidade',
-        identidade: { arquivos: todosArquivos.filter((n) => n !== prontoDS), cores: [coresTxt.trim(), figmaOk ?? ''].filter(Boolean).join(String.fromCharCode(10)), prontoDS: prontoDS || undefined },
+        identidade: { arquivos: todosArquivos.filter((n) => n !== prontoDS), cores: [paleta.length ? `Cores da marca: ${paleta.join(', ')}` : '', coresTxt.trim(), figmaOk ?? ''].filter(Boolean).join(String.fromCharCode(10)), prontoDS: prontoDS || undefined },
       })
       setGuardado({ estilo: null, caminho })
     } catch { setErro('Não consegui guardar o design system na pasta da obra agora. O que você mandou continua aqui; tente de novo em instantes.') }
@@ -237,7 +239,11 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
               </div>
             )
           })}
-          <CampoFalado rotulo="Os códigos das cores" obs="(opcional)" valor={coresTxt} onChange={setCoresTxt} placeholder="Ex.: azul #1D3557, dourado #D8B45A" />
+          <div className="at-estilo__paleta">
+            <span className="at-estilo__paleta-tit"><b>As cores da sua marca</b> (opcional)</span>
+            <PaletaCores cores={paleta} onChange={setPaleta} />
+          </div>
+          <CampoFalado rotulo="Ou conte as cores com as suas palavras" obs="(opcional)" valor={coresTxt} onChange={setCoresTxt} placeholder="Ex.: azul-marinho com detalhes dourados" />
           <CampoFalado rotulo="Link do manual ou do Figma" obs="(opcional)" valor={figma} onChange={setFigma} placeholder="figma.com/..." />
           {aviso && <p className="at-nova__erro" role="alert">{aviso}</p>}
         </div>
