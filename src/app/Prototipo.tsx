@@ -31,15 +31,41 @@ export const recadoDoErroProto = (e: unknown) => {
   }
 }
 
-/** Preview do celular: o HTML (gerado/importado, NÃO confiável) só vive dentro de um iframe com sandbox vazio. Nunca no DOM do app. */
+/** Tamanho real da tela de um telefone (iPhone 14/15): as telas são desenhadas para isso. */
+export const LARGURA_CELULAR = 390
+export const ALTURA_CELULAR = 844
+
+/** Quanto reduzir o telefone para caber INTEIRO na moldura (pedido do Luiz, 23/11/2026: nada de rolar para o lado). Nunca aumenta. */
+export function escalaDoCelular(largura: number, altura: number): number {
+  if (!(largura > 0) || !(altura > 0)) return 1
+  return Math.min(1, largura / LARGURA_CELULAR, altura / ALTURA_CELULAR)
+}
+
+/** Preview do celular: o HTML (gerado/importado, NÃO confiável) só vive dentro de um iframe com sandbox vazio. Nunca no DOM do app.
+ *  O iframe tem SEMPRE o tamanho de um telefone de verdade (390 × 844) e é reduzido para caber: a tela fica igual à do celular,
+ *  sem rolagem de lado nem texto quebrando diferente (antes ele tinha a largura da moldura, ~220 px num notebook). */
 export function CelularPreview({ html, titulo, telas, inicial }: { html: string; titulo: string; telas?: TelaDesenhada[]; inicial?: string }) {
   // Com todas as telas: protótipo NAVEGÁVEL (tocar num botão leva à outra tela). Sem elas: só esta tela.
   const doc = telas && inicial ? montarNavegavel(telas, inicial) : montarSrcDoc(html)
+  const vidro = useRef<HTMLDivElement>(null)
+  const [escala, setEscala] = useState(1)
+  useEffect(() => {
+    const el = vidro.current
+    if (!el) return
+    const medir = () => setEscala(escalaDoCelular(el.clientWidth, el.clientHeight))
+    medir()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(medir) : null
+    ro?.observe(el)
+    return () => ro?.disconnect()
+  }, [])
   return (
     <div className="at-proto__celular">
-      {doc === null
-        ? <div className="at-proto__seguro" role="img" aria-label="Tela grande demais para mostrar">Esta tela é grande demais para eu mostrar aqui com segurança. O Claude vai deixá-la mais leve.</div>
-        : <iframe className="at-proto__tela" title={titulo} sandbox={SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer" />}
+      <div className="at-proto__vidro" ref={vidro}>
+        {doc === null
+          ? <div className="at-proto__seguro" role="img" aria-label="Tela grande demais para mostrar">Esta tela é grande demais para eu mostrar aqui com segurança. O Claude vai deixá-la mais leve.</div>
+          : <iframe className="at-proto__tela" title={titulo} sandbox={SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer"
+              style={{ width: `${LARGURA_CELULAR}px`, height: `${ALTURA_CELULAR}px`, transform: `scale(${escala})` }} />}
+      </div>
     </div>
   )
 }
