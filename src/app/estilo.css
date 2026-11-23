@@ -84,3 +84,7 @@
 .at-estilo__enviados { list-style: none; margin: 0; padding: 0 4px; display: flex; flex-direction: column; gap: 4px; }
 .at-estilo__enviados li { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--lime-txt); }
 .at-estilo__enviados em { font-style: normal; color: var(--mute); }
+/* Paleta das cores da marca (identidade própria). */
+.at-estilo__paleta { display: flex; flex-direction: column; gap: 10px; }
+.at-estilo__paleta-tit { font-size: 15px; color: var(--mute); }
+.at-estilo__paleta-tit b { color: var(--text); }

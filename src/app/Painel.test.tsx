@@ -102,19 +102,31 @@ test.each(['automatico', 'passo-a-passo'] as const)('parada real (cota) vale no 
   }
 })
 
-test('mostra claramente o modo ativo e deixa trocar a qualquer momento (regrava o modo.json e a linha de produção)', async () => {
+test('o modo fica sempre à vista, em dois botões discretos, sem abrir nem fechar (regrava o modo.json e a linha de produção)', async () => {
   const { fx, user, modos } = montar('automatico')
   const caixa = await screen.findByRole('region', { name: 'Modo da obra' })
-  expect(within(caixa).getByText('Automático')).toBeInTheDocument()
-  expect(within(caixa).getByText(/sem pedir seu OK/)).toBeInTheDocument()
-  await user.click(screen.getByRole('button', { name: 'Trocar o modo' }))
-  expect(screen.getAllByRole('radio')).toHaveLength(2)
-  expect(screen.getByText('RECOMENDADO')).toBeInTheDocument()
-  await user.click(screen.getByRole('radio', { name: /Me chamar para aprovar cada etapa/ }))
+  expect(within(caixa).queryByRole('button', { name: /Trocar o modo|Fechar/ })).toBeNull()
+  expect(within(caixa).getAllByRole('radio')).toHaveLength(2)
+  expect(within(caixa).getByRole('radio', { name: 'Automático' })).toHaveAttribute('aria-checked', 'true')
+  await user.click(within(caixa).getByRole('radio', { name: 'Passo a passo' }))
   expect(await modos.ler(obra.pasta)).toBe('passo-a-passo')
   expect(fx.modoAplicado).toBe('passo-a-passo')
-  expect(await screen.findByText(/para ao fim de cada etapa e pede o seu OK/)).toBeInTheDocument()
+  expect(within(caixa).getByRole('radio', { name: 'Passo a passo' })).toHaveAttribute('aria-checked', 'true')
   expect(screen.getByText(/Pronto: ao fim de cada etapa/)).toBeInTheDocument()
+})
+
+test('o (i) abre uma gaveta lateral explicando a diferença dos dois modos', async () => {
+  const { user } = montar('automatico')
+  await screen.findByRole('region', { name: 'Modo da obra' })
+  expect(screen.queryByRole('dialog', { name: 'Os dois modos da obra' })).toBeNull()
+  await user.click(screen.getByRole('button', { name: 'Entender os modos' }))
+  const gaveta = screen.getByRole('dialog', { name: 'Os dois modos da obra' })
+  expect(within(gaveta).getByText(/Automático do começo ao fim/)).toBeInTheDocument()
+  expect(within(gaveta).getByText(/Me chamar para aprovar cada etapa/)).toBeInTheDocument()
+  expect(within(gaveta).getByText('RECOMENDADO')).toBeInTheDocument()
+  expect(within(gaveta).getByText(/só para nas paradas de verdade/)).toBeInTheDocument()
+  await user.click(within(gaveta).getByRole('button', { name: 'Fechar a explicação' }))
+  expect(screen.queryByRole('dialog', { name: 'Os dois modos da obra' })).toBeNull()
 })
 
 test('trocar para o automático com uma etapa esperando o OK libera a obra', async () => {
@@ -124,8 +136,7 @@ test('trocar para o automático com uma etapa esperando o OK libera a obra', asy
   await user.click(screen.getByRole('button', { name: 'Pausar obra' }))
   await user.click(screen.getByRole('button', { name: 'Continuar obra' }))
   expect(await screen.findByRole('button', { name: 'Pode seguir' })).toBeInTheDocument()
-  await user.click(screen.getByRole('button', { name: 'Trocar o modo' }))
-  await user.click(screen.getByRole('radio', { name: /Automático do começo ao fim/ }))
+  await user.click(screen.getByRole('radio', { name: 'Automático' }))
   await waitFor(() => expect(fx.chamadas).toContain('aprovarEtapa'))
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Pode seguir' })).toBeNull())
 })

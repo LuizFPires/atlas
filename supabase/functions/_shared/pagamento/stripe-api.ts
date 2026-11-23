@@ -4,6 +4,9 @@ import { ErroRegra } from '../tipos.ts'
 
 export type FetchFn = (url: string, init: { method: string; headers: Record<string, string>; body?: string }) => Promise<{ status: number; json(): Promise<unknown> }>
 
+/** branding_settings (cores e nome na página de pagamento) só existe a partir desta versão. Fixada só na criação do checkout. */
+export const VERSAO_CHECKOUT = '2025-09-30.clover'
+
 export interface SessaoCheckout { id: string; url: string }
 
 export interface StripeApi {
@@ -34,8 +37,9 @@ export function codificarForm(obj: Record<string, unknown>, prefixo = ''): strin
 }
 
 export function criarStripeApi(chaveSecreta: string, fetchFn: FetchFn, base = 'https://api.stripe.com'): StripeApi {
-  async function chamar(metodo: string, caminho: string, corpo: Record<string, unknown> | null, idem?: string) {
+  async function chamar(metodo: string, caminho: string, corpo: Record<string, unknown> | null, idem?: string, versao?: string) {
     const headers: Record<string, string> = { Authorization: `Bearer ${chaveSecreta}`, 'Content-Type': 'application/x-www-form-urlencoded' }
+    if (versao) headers['Stripe-Version'] = versao
     if (idem) headers['Idempotency-Key'] = idem
     const r = await fetchFn(`${base}${caminho}`, { method: metodo, headers, body: corpo ? codificarForm(corpo).join('&') : undefined })
     const dados = (await r.json().catch(() => ({}))) as Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -47,7 +51,7 @@ export function criarStripeApi(chaveSecreta: string, fetchFn: FetchFn, base = 'h
   }
   return {
     async criarCheckout(p, idem) {
-      const s = await chamar('POST', '/v1/checkout/sessions', p, idem)
+      const s = await chamar('POST', '/v1/checkout/sessions', p, idem, VERSAO_CHECKOUT)
       if (typeof s.id !== 'string' || typeof s.url !== 'string') throw new ErroRegra('gateway_erro', 'Resposta inesperada do pagamento.', 502)
       return { id: s.id, url: s.url }
     },

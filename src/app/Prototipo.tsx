@@ -61,9 +61,9 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
       try {
         let e = await prototipo.estado(obra.pasta)
         if (!e.versoes.length) {
-          if (!estilo) throw new Error('indisponivel')
-          e = await prototipo.desenhar(obra.pasta, obra.nome, estilo)
-          setMsgs([{ quem: 'CLAUDE', txt: 'Fiz as primeiras telas no estilo que você escolheu. Dá uma olhada no celular ao lado e me diga o que quer mudar.' }])
+          // Sem um dos 3 estilos (veio de "Já tenho a minha identidade visual"): o Claude segue o design-system.md da pasta da obra.
+          e = await prototipo.desenhar(obra.pasta, obra.nome, estilo ?? null)
+          setMsgs([{ quem: 'CLAUDE', txt: estilo ? 'Fiz as primeiras telas no estilo que você escolheu. Dá uma olhada no celular ao lado e me diga o que quer mudar.' : 'Fiz as primeiras telas com a sua identidade visual. Dá uma olhada no celular ao lado e me diga o que quer mudar.' }])
         }
         setEstado(e)
         setAba(e.versoes.find((v) => v.numero === e.atual)?.telas[0]?.id ?? '')

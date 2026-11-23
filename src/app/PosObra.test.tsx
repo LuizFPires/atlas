@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { PosObra } from './PosObra'
@@ -191,4 +191,10 @@ test('"Pode fazer" executa o pedido explicado (snapshot), não o texto editado d
   await screen.findByText(/Combinado! Comecei/)
   expect(posobra.executados).toHaveLength(1)
   expect(posobra.executados[0].texto).toBe('texto explicado e outra coisa')
+})
+
+test('sem pedidos anteriores: o histórico mostra um vazio calmo, do mesmo tamanho do card do pedido', async () => {
+  montar({ posobra: { ...criarPosObraFixture(), historico: async () => [] } })
+  const lado = screen.getByRole('complementary', { name: 'Pedidos anteriores' })
+  expect(await within(lado).findByText('Nenhum pedido ainda.')).toBeInTheDocument()
 })

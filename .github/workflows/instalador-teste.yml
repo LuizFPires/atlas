@@ -33,6 +33,11 @@ jobs:
           cache: npm
       - run: npm ci
 
+      # Cada instalador tem um número próprio (0.1.<rodada>): é assim que o Atlas instalado percebe que há versão nova.
+      - name: Versão deste instalador
+        shell: bash
+        run: npm version "0.1.${{ github.run_number }}" --no-git-tag-version --allow-same-version
+
       - name: Tela do app (dist-app) com o endereço do servidor
         run: npm run build:app
         env:
@@ -135,6 +140,18 @@ jobs:
             [ "$codigo" = "413" ] && echo "::error::O Supabase recusou pelo tamanho. Aumente o limite de tamanho de arquivo nas configuracoes do Storage (o instalador tem mais de 100 MB)."
             exit 1
           fi
+
+          # Atualização automática: o manifesto (versão + impressão digital sha512 + tamanho) vai DEPOIS do .exe, para nunca
+          # apontar para um arquivo que ainda não subiu. O app confere a impressão digital antes de instalar.
+          node -e "
+            const fs = require('fs'), crypto = require('crypto')
+            const b = fs.readFileSync(process.argv[1])
+            fs.writeFileSync('atualizacao.json', JSON.stringify({ versao: require('./package.json').version, sha512: crypto.createHash('sha512').update(b).digest('base64'), tamanho: b.length }))
+          " "$arquivo"
+          cat atualizacao.json; echo
+          codigo=$(curl -sS -o envio-manifesto.json -w '%{http_code}' -X POST "${auth[@]}" -H 'Content-Type: application/json' -H 'x-upsert: true' --data-binary @atualizacao.json "$base/object/instalador/atualizacao.json")
+          echo "Enviar manifesto da atualizacao: HTTP $codigo"
+          if [ "$codigo" != "200" ]; then cat envio-manifesto.json; echo; exit 1; fi
 
           # Confere como a página vai receber: endereço temporário baixa o arquivo inteiro, sem nenhuma credencial...
           assinado=$(curl -sS "${auth[@]}" -H 'Content-Type: application/json' -d '{"expiresIn":600}' "$base/object/sign/instalador/Atlas-Instalador.exe" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{process.stdout.write(JSON.parse(d).signedURL||'')}catch{}})")

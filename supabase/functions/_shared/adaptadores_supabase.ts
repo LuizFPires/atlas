@@ -87,7 +87,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { montarBoasVindas, montarConfirmacaoDegustacao, montarCortesia } from './emails.ts'
 import { montarAvisoAtraso, montarCodigoAtivacao } from './emails-avisos.ts'
-import { criarLinkInstaladorStorage, lerConfigInstalador } from './instalador-storage.ts'
+import { criarFonteAtualizacaoStorage, criarLinkInstaladorStorage, lerConfigInstalador } from './instalador-storage.ts'
 
 function env(nome: string): string {
   const v = Deno.env.get(nome)
@@ -435,6 +435,12 @@ export function criarCarregarKit() {
 // ── Instalador para baixar (pasta PRIVADA do Storage; a página só recebe um endereço temporário) ──
 /** Liga o download quando ATLAS_INSTALADOR_ARQUIVO está definido (ver instalador-storage.ts).
  *  Sem ele devolve undefined: a página continua dizendo que o instalador ainda não está disponível. */
+/** Atualização automática do app: mesma pasta e mesmo .exe do instalador, mais o atualizacao.json. Sem configuração: undefined. */
+export function criarAtualizacao() {
+  const cfg = lerConfigInstalador((nome) => Deno.env.get(nome))
+  return cfg ? criarFonteAtualizacaoStorage(cfg, (bucket) => db().storage.from(bucket)) : undefined
+}
+
 export function criarInstalador(): { link: (nomeDoDownload: string) => Promise<string | null> } | undefined {
   const cfg = lerConfigInstalador((nome) => Deno.env.get(nome))
   return cfg ? { link: criarLinkInstaladorStorage(cfg, (bucket) => db().storage.from(bucket)) } : undefined

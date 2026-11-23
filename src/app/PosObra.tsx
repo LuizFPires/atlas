@@ -103,7 +103,7 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar }: Prop
 
   return (
     <main className="at-pos">
-      <div className="at-pos__col">
+      <header className="at-pos__topo">
         <div className="at-pos__tit">
           <span className="at-pos__rotulo">PÓS-OBRA · {textoDaObra(obra.nome, 60).toUpperCase()}</span>
           <h1>O que você quer mudar?</h1>
@@ -113,6 +113,8 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar }: Prop
             <button key={k.id} type="button" aria-pressed={k.id === tipo} className={`at-pos__tipo ${k.id === tipo ? 'at-pos__tipo--on' : ''}`} disabled={entendendo} onClick={() => { setTipo(k.id); mudouPedido() }}>{k.nome}</button>
           ))}
         </div>
+      </header>
+      <div className="at-pos__col">
         <div className="at-pos__card">
           <div className="at-pos__fala">
             <Microfone gravando={gravando} onAlternar={alternar} className="at-pos__mic" />
@@ -121,7 +123,7 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar }: Prop
               <span>Ou escreva, se preferir. O Atlas escreve o que você falar aqui embaixo.</span>
             </div>
           </div>
-          <textarea id="pedido" rows={3} value={texto} disabled={entendendo} onChange={(e) => { setTexto(e.target.value); mudouPedido() }} />
+          <textarea id="pedido" rows={6} value={texto} disabled={entendendo} onChange={(e) => { setTexto(e.target.value); mudouPedido() }} />
           {!suportado && <span className="at-pos__dica">Este navegador não escuta a sua voz. Pode digitar normalmente.</span>}
           {prints.length > 0 && <span className="at-pos__dica"><Icone nome="imagem" tamanho={14} /> Vai junto: {prints.join(', ')}</span>}
           <div className="at-pos__acoes">
@@ -152,6 +154,13 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar }: Prop
       </div>
       <aside className="at-pos__lado" aria-label="Pedidos anteriores">
         <span className="at-pos__rotulo">PEDIDOS ANTERIORES</span>
+        {historico.length === 0 && (
+          <div className="at-pos__vazio">
+            <Icone nome="relogio" tamanho={22} />
+            <b>Nenhum pedido ainda.</b>
+            <span>Quando você pedir uma mudança, ela aparece aqui com o andamento: em teste, no ar ou desfeita.</span>
+          </div>
+        )}
         {historico.map((h) => (
           <div key={h.id} className="at-pos__hist">
             <div><b>{textoDaObra(h.nome, 60)}</b><span className={`at-pos__st at-pos__st--${h.status}`}>{ROTULO_STATUS[h.status]}</span></div>

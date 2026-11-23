@@ -184,3 +184,10 @@ test('voltar para versão que não existe é recusado e o fixture nunca reescrev
   expect(p.escritos).toHaveLength(antes)
   expect((await p.estado('obra-a')).versoes).toHaveLength(1)
 })
+
+test('veio de "Já tenho a minha identidade visual" (sem um dos 3 estilos): desenha seguindo o design-system.md, sem dizer que o Claude não está ligado', async () => {
+  const p = criarPrototipoFixture(RAIZ)
+  render(<TemaProvider><Prototipo obra={obra} estilo={null} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
+  expect(await screen.findByText(/Fiz as primeiras telas/)).toBeInTheDocument()
+  expect(screen.queryByText(/não está ligado/)).toBeNull()
+})

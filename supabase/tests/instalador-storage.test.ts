@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { criarLinkInstaladorStorage, lerConfigInstalador, VALIDADE_LINK_INSTALADOR_S } from '../functions/_shared/instalador-storage.ts'
+import { criarFonteAtualizacaoStorage, criarLinkInstaladorStorage, lerConfigInstalador, VALIDADE_LINK_INSTALADOR_S } from '../functions/_shared/instalador-storage.ts'
 
 const env = (v: Record<string, string>) => (k: string) => v[k]
 const TEMPORARIO = 'https://projeto.supabase.co/storage/v1/object/sign/instalador/Atlas-Instalador.exe?token=abc'
@@ -43,5 +43,25 @@ describe('endereço temporário do instalador (pasta privada do Storage)', () =>
     expect(await criarLinkInstaladorStorage(cfg, storage({ data: { signedUrl: '' }, error: null }).de)('a.exe')).toBeNull()
     const cai = () => ({ createSignedUrl: async () => { throw new Error('fora') } })
     expect(await criarLinkInstaladorStorage(cfg, cai)('a.exe')).toBeNull()
+  })
+})
+
+describe('fonte da atualização no Storage', () => {
+  it('lê o atualizacao.json da mesma pasta privada e assina o mesmo .exe', async () => {
+    const pedidos: string[] = []
+    const doBucket = (b: string) => ({
+      createSignedUrl: async (arq: string, _s: number, o?: { download?: string }) => { pedidos.push(`${b}/${arq}/${o?.download}`); return { data: { signedUrl: 'https://s/assinado' }, error: null } },
+      download: async (arq: string) => { pedidos.push(`baixar ${b}/${arq}`); return { data: new Blob(['{"versao":"0.1.2"}']), error: null } },
+    })
+    const f = criarFonteAtualizacaoStorage({ bucket: 'instalador', arquivo: 'Atlas-Instalador.exe' }, doBucket)
+    expect(await f.manifesto()).toEqual({ versao: '0.1.2' })
+    expect(await f.link('Atlas-Atualizacao-0.1.2.exe')).toBe('https://s/assinado')
+    expect(pedidos).toEqual(['baixar instalador/atualizacao.json', 'instalador/Atlas-Instalador.exe/Atlas-Atualizacao-0.1.2.exe'])
+  })
+  it('sem manifesto ou com JSON quebrado: null (o app segue sem atualizar)', async () => {
+    const semArquivo = () => ({ createSignedUrl: async () => ({ data: null, error: 'x' }), download: async () => ({ data: null, error: 'nao existe' }) })
+    expect(await criarFonteAtualizacaoStorage({ bucket: 'instalador', arquivo: 'a.exe' }, semArquivo).manifesto()).toBeNull()
+    const quebrado = () => ({ createSignedUrl: async () => ({ data: null, error: 'x' }), download: async () => ({ data: new Blob(['{quebr']), error: null }) })
+    expect(await criarFonteAtualizacaoStorage({ bucket: 'instalador', arquivo: 'a.exe' }, quebrado).manifesto()).toBeNull()
   })
 })

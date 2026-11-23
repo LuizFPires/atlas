@@ -18,13 +18,8 @@
 .at-pn__ok { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--soft); border: 1px solid var(--lime); border-radius: 18px; padding: 16px 22px; }
 .at-pn__ok .at-pn__pronta-txt b { font-size: 18px; }
 .at-pn__parada, .at-pn__erro { margin: 0; background: var(--card2); border-radius: 12px; padding: 12px 16px; font-size: 14px; line-height: 1.5; color: var(--text); }
-.at-pn__modo { display: flex; flex-direction: column; gap: 12px; background: var(--card); border: 1px solid var(--card-b); border-radius: 18px; padding: 14px 22px; }
-.at-pn__modo-cab { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.at-pn__modo-ativo { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 14px; color: var(--mute); }
-.at-pn__modo-ativo b { color: var(--text); font-size: 15px; }
+.at-pn__modo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; background: var(--card); border: 1px solid var(--card-b); border-radius: 18px; padding: 12px 18px; }
 .at-pn__link { background: none; border: 0; padding: 0; margin-left: auto; color: var(--lime-txt, var(--lime)); font: 600 14px var(--font-text); cursor: pointer; text-decoration: underline; }
-.at-pn__modo-troca { display: flex; flex-direction: column; gap: 12px; }
-.at-pn__opcoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .at-pn__opcao { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 14px 16px; border-radius: 14px; border: 2px solid var(--card-b); background: transparent; color: var(--text); font: 15px var(--font-text); cursor: pointer; }
 .at-pn__opcao--on { border-color: var(--lime); background: var(--soft); }
 .at-pn__opcao-cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -61,3 +56,20 @@
 .at-pn__canteiro-legenda { position: absolute; left: 16px; right: 16px; bottom: 14px; font-size: 14px; color: #edefea; background: rgb(10 12 14 / 0.7); padding: 10px 12px; border-radius: 10px; pointer-events: none; }
 .at-pn__rodape { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--mute2); }
 .at-pn__ponto { width: 8px; height: 8px; border-radius: 4px; background: var(--lime); }
+/* Modo da obra: sempre à vista, discreto (dois botões), com o (i) que abre a gaveta explicando. */
+.at-pn__modo-seg { display: inline-flex; padding: 3px; border-radius: 12px; background: var(--input); border: 1px solid var(--card-b); }
+.at-pn__seg { height: 32px; padding: 0 14px; border-radius: 9px; border: none; background: transparent; color: var(--mute); font: 600 14px var(--font-text); cursor: pointer; }
+.at-pn__seg--on { background: var(--soft); color: var(--text); box-shadow: inset 0 0 0 1px var(--lime); }
+.at-pn__info { width: 26px; height: 26px; border-radius: 13px; border: 1px solid var(--card-b); background: transparent; color: var(--mute); font: italic 700 14px Georgia, serif; cursor: pointer; display: grid; place-items: center; }
+.at-pn__info:hover, .at-pn__info:focus-visible { color: var(--lime-txt, var(--lime)); border-color: var(--lime); }
+.at-pn__modo-sub { font-size: 14px; color: var(--mute); }
+.at-pn__modo-sub b { color: var(--text); }
+.at-pn__modo-aviso { flex-basis: 100%; font-size: 13px; color: var(--mute); }
+.at-pn__gaveta-fundo { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.45); display: flex; justify-content: flex-end; }
+.at-pn__gaveta { width: min(460px, 92vw); height: 100%; box-sizing: border-box; overflow-y: auto; background: var(--card); border-left: 1px solid var(--card-b); padding: 26px; display: flex; flex-direction: column; gap: 16px; animation: at-pn-gaveta 0.22s ease-out; }
+.at-pn__gaveta-cab { display: flex; align-items: center; justify-content: space-between; }
+.at-pn__gaveta-x { width: 34px; height: 34px; border-radius: 17px; border: 1px solid var(--card-b); background: transparent; color: var(--text); display: grid; place-items: center; cursor: pointer; }
+.at-pn__gaveta-modo { display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: 14px; border: 1px solid var(--card-b); background: var(--card2); }
+.at-pn__gaveta-modo--on { border-color: var(--lime); background: var(--soft); }
+@keyframes at-pn-gaveta { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .at-pn__gaveta { animation: none; } }
