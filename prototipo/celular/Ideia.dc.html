@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Etapa 1 de 3: a ideia</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{color:#C6F135;text-decoration:none} a:hover{color:#d8ff5c}
+@keyframes m02pulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.55)}70%{box-shadow:0 0 0 26px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}
+@keyframes m02onda{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+.m02-gravando{animation:m02pulso 1.4s infinite}
+.m02-onda span{display:block;width:4px;border-radius:2px;background:#F05A4F;animation:m02onda 1s infinite ease-in-out}</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #141619; color: #EDEFEA; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden">
+ <header style="padding: 18px 20px 0; display: flex; flex-direction: column; gap: 14px">
+  <div style="display: flex; align-items: center; justify-content: space-between">
+   <a href="Main.dc.html" aria-label="Voltar para Minhas obras" style="width: 44px; height: 44px; border-radius: 22px; background: #1E2125; display: flex; align-items: center; justify-content: center; color: #EDEFEA">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+   <span style="font: 500 12px 'Geist Mono', monospace; letter-spacing: .12em; color: #8E968C">ETAPA 1 DE 3 · A IDEIA</span>
+   <span style="width: 44px"></span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+   <span style="height: 4px; border-radius: 2px; background: #C6F135"></span><span style="height: 4px; border-radius: 2px; background: #2A2E33"></span><span style="height: 4px; border-radius: 2px; background: #2A2E33"></span>
+  </div>
+ </header>
+ <main style="flex: 1; overflow-y: auto; padding: 22px 20px 16px; display: flex; flex-direction: column; gap: 16px">
+  <h1 style="margin: 0; font-size: 28px; line-height: 1.15; letter-spacing: -0.02em">Conte tudo o que você imagina.</h1>
+  <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #B4BBB2">Fale como se estivesse com um amigo na mesa de um restaurante. Quanto mais detalhe, mais certeiras ficam as telas.</p>
+  <sc-if value="{{livre}}" hint-placeholder-val="{{ true }}">
+   <div style="display: flex; flex-direction: column; gap: 10px">
+    <span style="font: 500 12px 'Geist Mono', monospace; letter-spacing: .12em; color: #8E968C">IDEIAS DO QUE CONTAR</span>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px">
+     <span style="padding: 9px 12px; border-radius: 999px; border: 1px solid #2C3036; font-size: 14px; color: #B4BBB2">Como é hoje, no papel</span>
+     <span style="padding: 9px 12px; border-radius: 999px; border: 1px solid #2C3036; font-size: 14px; color: #B4BBB2">O que mais te incomoda</span>
+     <span style="padding: 9px 12px; border-radius: 999px; border: 1px solid #2C3036; font-size: 14px; color: #B4BBB2">Quem vai usar</span>
+     <span style="padding: 9px 12px; border-radius: 999px; border: 1px solid #2C3036; font-size: 14px; color: #B4BBB2">O que o cliente vê</span>
+     <span style="padding: 9px 12px; border-radius: 999px; border: 1px solid #2C3036; font-size: 14px; color: #B4BBB2">Relatórios que você quer</span>
+    </div>
+   </div>
+  </sc-if>
+  <sc-if value="{{ouvindo}}" hint-placeholder-val="{{ false }}">
+   <div style="background: #1E2125; border: 1px solid #2C3036; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: center">
+    <div class="m02-onda" aria-hidden="true" style="display: flex; align-items: center; gap: 5px; height: 40px">
+     <span style="height: 18px; animation-delay: 0s"></span><span style="height: 34px; animation-delay: .1s"></span><span style="height: 26px; animation-delay: .2s"></span><span style="height: 40px; animation-delay: .3s"></span><span style="height: 22px; animation-delay: .4s"></span><span style="height: 36px; animation-delay: .5s"></span><span style="height: 16px; animation-delay: .6s"></span><span style="height: 30px; animation-delay: .7s"></span>
+    </div>
+    <span style="font: 500 15px 'Geist Mono', monospace; color: #F05A4F">Ouvindo · 1:42</span>
+    <span style="font-size: 14px; color: #B4BBB2; text-align: center">Pode falar à vontade, sem pressa. Toque de novo quando terminar.</span>
+   </div>
+  </sc-if>
+  <sc-if value="{{escrito}}" hint-placeholder-val="{{ false }}">
+   <div style="display: flex; flex-direction: column; gap: 8px">
+    <label for="m02-relato" style="font: 500 12px 'Geist Mono', monospace; letter-spacing: .12em; color: #8E968C">O QUE O ATLAS ESCREVEU · PODE MEXER</label>
+    <textarea id="m02-relato" style="height: 250px; border-radius: 14px; border: 1px solid #2C3036; background: #16181B; color: #EDEFEA; padding: 14px; font: 400 15px/1.55 'Geist', sans-serif; resize: none; box-sizing: border-box">Tenho uma barbearia com 3 cadeiras. Hoje a agenda é num caderno e no WhatsApp, e vive dando horário duplicado. Quero que o cliente marque sozinho pelo celular, escolhendo o barbeiro e o serviço, e receba um lembrete no dia. Eu quero ver a agenda de cada barbeiro, quanto cada um faturou no mês e quem não aparece há mais de 30 dias, para chamar de volta.</textarea>
+    <span style="font-size: 13px; color: #8E968C">Esqueceu algo? Toque no microfone e continue falando: o Atlas junta ao que já está aqui.</span>
+   </div>
+  </sc-if>
+ </main>
+ <footer style="padding: 12px 20px 28px; display: flex; align-items: center; gap: 14px; border-top: 1px solid #2A2E33; background: #141619">
+  <button type="button" onClick="{{tocar}}" aria-label="{{rotuloMic}}" class="{{classeMic}}" style="{{estiloMic}}">
+   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>
+  </button>
+  <div style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+   <span style="font-size: 16px; font-weight: 600">{{tituloMic}}</span>
+   <span style="font-size: 13px; color: #8E968C">{{subMic}}</span>
+  </div>
+  <sc-if value="{{escrito}}" hint-placeholder-val="{{ false }}">
+   <a href="Visual.dc.html" style="height: 52px; padding: 0 18px; border-radius: 12px; background: #C6F135; color: #141619; font: 700 16px 'Geist', sans-serif; display: flex; align-items: center; white-space: nowrap">Continuar</a>
+  </sc-if>
+ </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { fase: 'livre' }; }
+  renderVals() {
+    const f = this.state.fase;
+    const prox = { livre: 'ouvindo', ouvindo: 'escrito', escrito: 'ouvindo' };
+    const ouvindo = f === 'ouvindo';
+    return {
+      livre: f === 'livre', ouvindo, escrito: f === 'escrito',
+      tocar: () => this.setState({ fase: prox[f] }),
+      rotuloMic: ouvindo ? 'Parar de gravar' : 'Gravar a sua ideia',
+      classeMic: ouvindo ? 'm02-gravando' : '',
+      estiloMic: 'width:64px;height:64px;border-radius:32px;border:0;flex:none;cursor:pointer;display:flex;align-items:center;justify-content:center;' + (ouvindo ? 'background:#F05A4F;color:#ffffff' : 'background:#C6F135;color:#141619'),
+      tituloMic: ouvindo ? 'Estou ouvindo' : f === 'escrito' ? 'Falar mais' : 'Aperte e fale',
+      subMic: ouvindo ? 'Toque para terminar' : f === 'escrito' ? 'Junta ao texto acima' : 'Até 10 minutos de uma vez'
+    };
+  }
+}
+</script>
+</body>
+</html>

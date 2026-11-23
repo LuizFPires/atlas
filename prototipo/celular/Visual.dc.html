@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Etapa 2 de 3: o visual</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{color:#C6F135;text-decoration:none} a:hover{color:#d8ff5c}</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #141619; color: #EDEFEA; font-family: 'Geist', system-ui, sans-serif; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden">
+ <header style="padding: 18px 20px 0; display: flex; flex-direction: column; gap: 14px">
+  <div style="display: flex; align-items: center; justify-content: space-between">
+   <a href="Ideia.dc.html" aria-label="Voltar para a ideia" style="width: 44px; height: 44px; border-radius: 22px; background: #1E2125; display: flex; align-items: center; justify-content: center; color: #EDEFEA">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+   <span style="font: 500 12px 'Geist Mono', monospace; letter-spacing: .12em; color: #8E968C">ETAPA 2 DE 3 · O VISUAL</span>
+   <span style="width: 44px"></span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+   <span style="height: 4px; border-radius: 2px; background: #C6F135"></span><span style="height: 4px; border-radius: 2px; background: #C6F135"></span><span style="height: 4px; border-radius: 2px; background: #2A2E33"></span>
+  </div>
+ </header>
+ <main style="flex: 1; overflow-y: auto; padding: 22px 20px 16px; display: flex; flex-direction: column; gap: 16px">
+  <h1 style="margin: 0; font-size: 28px; line-height: 1.15; letter-spacing: -0.02em">Com que cara vai ficar?</h1>
+  <p style="margin: 0; font-size: 16px; line-height: 1.5; color: #B4BBB2">Mostre o que você gosta. O notebook usa isso para desenhar as telas.</p>
+  <div style="display: flex; flex-direction: column; gap: 10px">
+   <sc-for list="{{opcoes}}" as="o" hint-placeholder-count="3">
+    <button type="button" onClick="{{o.pick}}" aria-pressed="{{o.sel}}" style="{{o.estilo}}">
+     <span style="width: 44px; height: 44px; border-radius: 22px; background: #C6F135; color: #141619; display: flex; align-items: center; justify-content: center; flex: none">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{o.icone}}"></path></svg>
+     </span>
+     <span style="display: flex; flex-direction: column; gap: 3px; text-align: left">
+      <span style="font: 600 16px 'Geist', sans-serif; color: #EDEFEA">{{o.titulo}}</span>
+      <span style="font: 400 14px/1.4 'Geist', sans-serif; color: #B4BBB2">{{o.sub}}</span>
+     </span>
+    </button>
+   </sc-for>
+  </div>
+  <sc-if value="{{prints}}" hint-placeholder-val="{{ true }}">
+   <div style="display: flex; flex-direction: column; gap: 10px">
+    <span style="font: 500 12px 'Geist Mono', monospace; letter-spacing: .12em; color: #8E968C">SUAS REFERÊNCIAS · 2</span>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+     <div style="height: 150px; border-radius: 14px; background: #F4F1EA; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px" role="img" aria-label="Print de um app de agenda, claro">
+      <span style="height: 10px; width: 60%; border-radius: 5px; background: #1B1E22"></span>
+      <span style="height: 34px; border-radius: 8px; background: #E36B3C"></span>
+      <span style="height: 14px; border-radius: 5px; background: #DCD6CA"></span><span style="height: 14px; border-radius: 5px; background: #DCD6CA"></span><span style="height: 14px; border-radius: 5px; background: #DCD6CA"></span>
+     </div>
+     <div style="height: 150px; border-radius: 14px; background: #10233B; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px" role="img" aria-label="Foto da fachada da barbearia">
+      <span style="flex: 1; border-radius: 8px; background: #1C3A5E"></span>
+      <span style="height: 12px; width: 70%; border-radius: 5px; background: #E8C27A"></span>
+     </div>
+     <button type="button" aria-label="Tirar foto ou escolher print" style="height: 150px; border-radius: 14px; border: 1.5px dashed #2C3036; background: transparent; color: #B4BBB2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font: 500 13px 'Geist', sans-serif; cursor: pointer">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>Foto ou print</button>
+    </div>
+    <label for="m03-obs" style="font-size: 14px; color: #B4BBB2">O que você gostou nelas</label>
+    <div style="display: flex; gap: 8px; align-items: center">
+     <input id="m03-obs" value="A agenda do primeiro, com as cores da fachada" style="flex: 1; height: 48px; border-radius: 12px; border: 1px solid #2C3036; background: #16181B; color: #EDEFEA; padding: 0 14px; font: 400 15px 'Geist', sans-serif; min-width: 0">
+     <button type="button" aria-label="Falar em vez de digitar" style="width: 48px; height: 48px; border-radius: 24px; border: 0; background: #C6F135; color: #141619; display: flex; align-items: center; justify-content: center; flex: none; cursor: pointer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg></button>
+    </div>
+   </div>
+  </sc-if>
+  <div style="display: flex; flex-direction: column; gap: 10px">
+   <span style="font: 500 12px 'Geist Mono', monospace; letter-spacing: .12em; color: #8E968C">CORES · TOQUE PARA TROCAR</span>
+   <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+    <sc-for list="{{slots}}" as="s" hint-placeholder-count="3">
+     <button type="button" onClick="{{s.pick}}" style="{{s.estilo}}">
+      <span style="height: 40px; border-radius: 10px; display: block; background: {{s.cor}}"></span>
+      <span style="font: 500 12px 'Geist Mono', monospace; color: #EDEFEA">{{s.cor}}</span>
+      <span style="font: 400 12px 'Geist', sans-serif; color: #8E968C">{{s.nome}}</span>
+     </button>
+    </sc-for>
+   </div>
+   <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px">
+    <sc-for list="{{amostras}}" as="a" hint-placeholder-count="8">
+     <button type="button" onClick="{{a.pick}}" aria-label="Usar a cor {{a.cor}}" style="height: 34px; border-radius: 17px; border: 2px solid #141619; outline: 1px solid #2C3036; cursor: pointer; background: {{a.cor}}"></button>
+    </sc-for>
+   </div>
+  </div>
+ </main>
+ <footer style="padding: 12px 20px 28px; border-top: 1px solid #2A2E33">
+  <a href="Desenhando.dc.html" style="height: 56px; border-radius: 12px; background: #C6F135; color: #141619; font: 700 17px 'Geist', sans-serif; display: flex; align-items: center; justify-content: center; gap: 10px">
+   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M2 20h20"></path></svg>Mandar o notebook desenhar</a>
+ </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { op: 'prints', slot: 0, cores: ['#10233B', '#E8C27A', '#F4F1EA'] }; }
+  renderVals() {
+    const ops = [
+      ['prints', 'Mostrar apps que eu gosto', 'Tire foto da tela ou escolha prints da galeria.', 'M4 8h3l2-3h6l2 3h3v11H4zM12 16.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7'],
+      ['marca', 'Já tenho a minha marca', 'Mande a logo e as cores que você já usa.', 'M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z'],
+      ['sugere', 'O Atlas sugere 3 estilos', 'Você escolhe um e ajusta falando.', 'M4 20l4-1L19 8l-3-3L5 16zM14 7l3 3']
+    ];
+    const opcoes = ops.map(([id, titulo, sub, icone]) => {
+      const sel = this.state.op === id;
+      return { titulo, sub, icone, sel: sel ? 'true' : 'false', pick: () => this.setState({ op: id }),
+        estilo: 'display:flex;align-items:center;gap:14px;padding:14px;border-radius:16px;cursor:pointer;width:100%;box-sizing:border-box;' + (sel ? 'background:#2A3A12;border:1px solid #C6F135' : 'background:#1E2125;border:1px solid #2C3036') };
+    });
+    const nomes = ['Principal', 'Destaque', 'Fundo'];
+    const slots = this.state.cores.map((cor, i) => ({ cor, nome: nomes[i], pick: () => this.setState({ slot: i }),
+      estilo: 'display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:14px;cursor:pointer;text-align:left;background:#1E2125;' + (this.state.slot === i ? 'border:1px solid #C6F135' : 'border:1px solid #2C3036') }));
+    const amostras = ['#10233B', '#1F6F5C', '#C6F135', '#E8C27A', '#E36B3C', '#B4314C', '#6C4AB6', '#F4F1EA'].map((cor) => ({ cor, pick: () => { const c = this.state.cores.slice(); c[this.state.slot] = cor; this.setState({ cores: c }); } }));
+    return { opcoes, prints: this.state.op === 'prints', slots, amostras };
+  }
+}
+</script>
+</body>
+</html>

@@ -51,3 +51,20 @@ Todas as telas têm tema escuro (padrão) e claro. As cores de cada tema estão 
 | Identidade | Main, OpcaoA, OpcaoB, OpcaoC | Direções visuais; A (escuro) e B (claro) foram as escolhidas |
 
 As notas amarelas do `canvas.json` (u00 a u17) explicam as regras de cada tela.
+
+## Atlas no celular (PWA) — aprovado em 23/11/2026
+
+Pasta `celular/`, com o próprio `canvas.json`. Canvas navegável: https://claude.ai/artifact/NGEAJp3GeaMCEsUYfS5NFX (comece em M00 · Entrar). As imagens usam os `/_blob/` desse canvas: monograma d75562038b21cd8e298dcfc0c04ef9cd, nome a100dc4e2e64acf4a114194b3e713597, canteiro 212adbee8fe55acdda68303347927aec.
+
+| Tela | O que é |
+|---|---|
+| Entrar | E-mail da compra e código de 6 números |
+| Main | Minhas obras: estado do notebook, começar obra nova, abas Em andamento · Concluídas · Paradas · Excluídas |
+| Ideia | Etapa 1 de 3: o relato livre falado, com o texto editável |
+| Visual | Etapa 2 de 3: fotos/prints de referência, marca própria ou 3 estilos; cores |
+| Desenhando | O notebook desenhando: progresso e o mapa de telas surgindo |
+| Prototipo | O app do cliente navegável em tela cheia; ajuste falado na barra de baixo; Aprovar |
+| Nome | Etapa 3 de 3: 3 nomes sugeridos ou o nome falado |
+| Aprovar | Resumo, 7 etapas, prazo, modo automático ou etapa por etapa; Deixar o Atlas construir |
+| Obra | Canteiro com %, "precisa de você", notícias e etapas, pausar, falar com o Atlas |
+| Desligado | Notebook desligado: o pedido fica guardado e começa sozinho |
