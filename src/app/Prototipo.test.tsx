@@ -453,3 +453,9 @@ describe('3 versões de uma tela (prototipo/caminho-novo/P3Versoes)', () => {
     expect(p.pedidos.at(-1)).toContain('a foto da 3 com os passos da 2')
   })
 })
+
+test('conferência do Atlas: diz quando está tudo certo nas telas', async () => {
+  await montar()
+  await screen.findByTitle(/Tela Marcar horário no celular/)
+  expect(screen.getByRole('status', { name: 'Conferência do Atlas' })).toHaveTextContent(/Conferi as \d+ telas: tudo certo/)
+})

@@ -48,3 +48,12 @@
 .at-ct__acao { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; font: 600 14px var(--font-text); color: var(--lime-txt, var(--lime)); }
 .at-ct__cartao--falta .at-ct__acao { color: var(--ambar); }
 @media (prefers-reduced-motion: reduce) { .at-ct__cartao { transition: none; } .at-ct__cartao:hover { transform: none; } }
+/* Situação da obra em construção no selo (trabalhando = lime; parada/esperando = cinza; precisa de você = âmbar). */
+.at-ct__cartao--cinza .at-ct__selo .at-ct__ponto { background: #8E968C; }
+.at-ct__cartao--ambar { border-color: var(--ambar); }
+.at-ct__cartao--ambar .at-ct__selo { color: #F2B84B; }
+.at-ct__cartao--ambar .at-ct__selo .at-ct__ponto { background: #F2B84B; }
+.at-ct__cartao--ambar .at-ct__acao { color: var(--ambar); }
+.at-ct__cartao--lime .at-ct__selo .at-ct__ponto { animation: at-ct-pisca 1.2s infinite; }
+@keyframes at-ct-pisca { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .at-ct__cartao--lime .at-ct__selo .at-ct__ponto { animation: none; } }
