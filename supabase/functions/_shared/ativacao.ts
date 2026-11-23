@@ -31,23 +31,48 @@ export async function solicitarCodigo(d: Deps, email: string, finalidade: Finali
     throw new ErroRegra('muitas_solicitacoes', 'Você pediu códigos demais. Espere uns 15 minutos e tente de novo.', 429)
   }
   const cliente = await d.store.clientePorEmail(norm(email))
-  const lic = cliente && (await d.store.licencaDoCliente(cliente.id))
-  if (cliente && lic && lic.status !== 'cancelada') {
-    if (await d.store.tentarEvento(`emissao:cliente:${cliente.id}:${finalidade}`, MAX_EMISSOES, JANELA_LIMITE_MS, d.agora())) {
-      const c = codigo6()
-      await d.store.inserirCodigo(
-        {
-          cliente_id: cliente.id,
-          finalidade,
-          codigo_hash: await hashCodigo(d, cliente.id, finalidade, c),
-          expira_em: new Date(d.agora().getTime() + VALIDADE_CODIGO_MS),
-        },
-        d.agora(),
-      )
-      await d.enviarCodigoPorEmail(cliente.email_compra, c)
-    }
-  }
+  if (cliente) await emitirCodigo(d, cliente, finalidade)
   return { ok: true }
+}
+
+/** Gera e manda o código, se a licença estiver ativa e o limite por cliente deixar. Silencioso quando não manda. */
+async function emitirCodigo(d: Deps, cliente: { id: string; email_compra: string }, finalidade: Finalidade) {
+  const lic = await d.store.licencaDoCliente(cliente.id)
+  if (!lic || lic.status === 'cancelada') return
+  if (!(await d.store.tentarEvento(`emissao:cliente:${cliente.id}:${finalidade}`, MAX_EMISSOES, JANELA_LIMITE_MS, d.agora()))) return
+  const c = codigo6()
+  await d.store.inserirCodigo(
+    {
+      cliente_id: cliente.id,
+      finalidade,
+      codigo_hash: await hashCodigo(d, cliente.id, finalidade, c),
+      expira_em: new Date(d.agora().getTime() + VALIDADE_CODIGO_MS),
+    },
+    d.agora(),
+  )
+  await d.enviarCodigoPorEmail(cliente.email_compra, c)
+}
+
+/** "ana@loja.com" -> "a***@loja.com": o suficiente para a pessoa reconhecer o próprio e-mail, sem expô-lo inteiro. */
+export function mascararEmail(email: string): string {
+  const [u, dom] = email.split('@')
+  return `${(u ?? '').slice(0, 1)}***@${dom ?? ''}`
+}
+
+/**
+ * Código automático pelo link do e-mail (decisão do Luiz, 22/11/2026): o app abre com o token do link, e o servidor manda o
+ * código para o e-mail de quem recebeu o link. A pessoa só digita os 6 números; não precisa escrever o e-mail de novo.
+ * O código continua obrigatório: o instalador (com o token no nome) pode ter sido repassado a outra pessoa.
+ */
+export async function solicitarCodigoPeloLink(d: Deps, token: string, ip = 'desconhecido') {
+  if (!(await d.store.tentarEvento(`emissao:ip:${ip}`, MAX_EMISSOES, JANELA_LIMITE_MS, d.agora()))) {
+    throw new ErroRegra('muitas_solicitacoes', 'Você pediu códigos demais. Espere uns 15 minutos e tente de novo.', 429)
+  }
+  const link = await validarLink(d, token)
+  const cliente = await d.store.clientePorId(link.cliente_id)
+  if (!cliente) throw new ErroRegra('link_invalido', 'Esse link não existe.', 404)
+  await emitirCodigo(d, cliente, 'ativacao')
+  return { ok: true, email_mascarado: mascararEmail(cliente.email_compra) }
 }
 
 /** Confere e consome o código (usado também pela troca de computador). Tudo por UPDATE atômico no store. */
@@ -74,7 +99,8 @@ export async function consumirCodigo(d: Deps, clienteId: string, finalidade: Fin
 export async function confirmarAtivacao(d: Deps, a: { email: string; codigo: string; token: string; computador_hash: string }) {
   if (!HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
   const link = await validarLink(d, a.token)
-  const cliente = await d.store.clientePorEmail(norm(a.email))
+  // Sem e-mail (veio pelo link, com o código automático): o dono é quem recebeu o link.
+  const cliente = a.email.trim() ? await d.store.clientePorEmail(norm(a.email)) : await d.store.clientePorId(link.cliente_id)
   if (!cliente || cliente.id !== link.cliente_id) throw new ErroRegra('codigo_invalido', 'E-mail ou código não conferem.', 400)
   const lic = await d.store.licencaDoCliente(cliente.id)
   if (!lic || lic.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Licença não encontrada.', 404)
@@ -98,5 +124,5 @@ export async function confirmarAtivacao(d: Deps, a: { email: string; codigo: str
     if (dispositivo && !(await d.store.registrarDispositivoTeste(dispositivo, lic.id, d.agora()))) throw new ErroRegra('ja_testou_neste_computador', MSG_JA_TESTOU, 409)
     await d.store.inserirAtivacao(lic.id, a.computador_hash, d.agora(), tokenHash)
   }
-  return { licenca_id: lic.id, nome_tratamento: cliente.nome_tratamento, token_dispositivo }
+  return { licenca_id: lic.id, nome_tratamento: cliente.nome_tratamento, email: cliente.email_compra, token_dispositivo }
 }

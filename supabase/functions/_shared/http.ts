@@ -2,7 +2,7 @@
 import { abrirLink, baixarInstalador, reenviarParaComputador } from './abertura.ts'
 import { resumoDaLicenca } from './licenca-resumo.ts'
 import { registrarCasoAjuda } from './ajuda-caso.ts'
-import { confirmarAtivacao, solicitarCodigo } from './ativacao.ts'
+import { confirmarAtivacao, solicitarCodigo, solicitarCodigoPeloLink } from './ativacao.ts'
 import { validarInstancia } from './instancia.ts'
 import { limparRadar, radar, resolverSinal } from './radar.ts'
 import { obrasDoPortal, publicarStatusObras } from './status-obras.ts'
@@ -187,6 +187,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         return json(await confirmarDegustacao(ctx.degustacao, { token: (b as Record<string, unknown>).token, ip: ipDe(req) }))
       case '/ativar/solicitar-codigo':
         return json(await solicitarCodigo(ctx.deps, s('email'), 'ativacao', ipDe(req)))
+      case '/ativar/solicitar-codigo-link':
+        return json(await solicitarCodigoPeloLink(ctx.deps, s('token'), ipDe(req)))
       case '/ativar/confirmar':
         return json(await confirmarAtivacao(ctx.deps, { email: s('email'), codigo: s('codigo'), token: s('token'), computador_hash: s('computador_hash') }))
       case '/trocar-computador/solicitar-codigo':

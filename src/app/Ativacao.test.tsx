@@ -75,3 +75,31 @@ test('falaParaCodigo entende números falados', () => {
   expect(falaParaCodigo('quatro oito dois zero sete um')).toBe('482071')
   expect(falaParaCodigo('482 071')).toBe('482071')
 })
+
+test('com o link do e-mail: manda o código sozinho e já abre a tela do código, sem pedir o e-mail', async () => {
+  const a = api({ pedirCodigoPeloLink: vi.fn(async () => ({ ok: true, emailMascarado: 'a***@gmail.com' }) as const) })
+  montar(a)
+  expect(await screen.findByRole('heading', { name: 'Confirme que é você' })).toBeInTheDocument()
+  expect(screen.getByText(/código de 6 números para/)).toHaveTextContent('a***@gmail.com')
+  expect(a.pedirCodigo).not.toHaveBeenCalled()
+  await userEvent.type(screen.getByLabelText('Código de 6 números'), '123456')
+  await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }))
+  await waitFor(() => expect(a.confirmar).toHaveBeenCalledWith('', '123456'))
+})
+
+test('com o link: reenviar pede pelo link; se o link falhar, volta a pedir o e-mail com o recado', async () => {
+  const pelo = vi.fn(async () => ({ ok: true, emailMascarado: 'a***@gmail.com' }) as const)
+  const a = api({ pedirCodigoPeloLink: pelo })
+  montar(a)
+  await screen.findByRole('heading', { name: 'Confirme que é você' })
+  await userEvent.click(screen.getByRole('button', { name: 'Reenviar código' }))
+  await waitFor(() => expect(pelo).toHaveBeenCalledTimes(2))
+  expect(a.pedirCodigo).not.toHaveBeenCalled()
+})
+
+test('com o link vencido: fica na tela do e-mail, com o recado do servidor', async () => {
+  const a = api({ pedirCodigoPeloLink: vi.fn(async () => ({ ok: false, mensagem: 'Esse link venceu. Peça outro.' }) as const) })
+  montar(a)
+  expect(await screen.findByRole('alert')).toHaveTextContent('Esse link venceu.')
+  expect(screen.getByRole('heading', { name: 'Vamos ativar o seu Atlas' })).toBeInTheDocument()
+})
