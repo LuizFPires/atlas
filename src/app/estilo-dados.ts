@@ -9,7 +9,8 @@ export const FASES = [
 ] as const
 
 export const MAX_REFERENCIAS = 3
-export const MIN_REFERENCIAS = 2
+// 23/11/2026 (Luiz): "Referência pode deixar com pelo menos uma".
+export const MIN_REFERENCIAS = 1
 
 export const MODOS = [
   { id: 'criar', nome: 'Me ajude a criar' },

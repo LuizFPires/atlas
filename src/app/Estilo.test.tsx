@@ -18,10 +18,10 @@ const colar = async (txt: string) => {
   await clicar('Adicionar link')
 }
 
-test('pede 2 ou 3 referências e o sentimento, com microfone nos campos de texto', () => {
+test('pede de 1 a 3 referências e o sentimento, com microfone nos campos de texto', () => {
   montar()
   expect(screen.getByRole('heading', { name: 'Qual é a cara do seu sistema?' })).toBeInTheDocument()
-  expect(screen.getByText('Mande 2 ou 3 sites ou apps que você acha bonitos')).toBeInTheDocument()
+  expect(screen.getByText('Mande 1 a 3 sites ou apps que você acha bonitos')).toBeInTheDocument()
   expect(screen.getByText('O que o seu cliente deve sentir ao abrir o sistema?')).toBeInTheDocument()
   expect(screen.getByText(/PROJETO · AGENDA DA BARBEARIA DO ZÉ/)).toBeInTheDocument()
   expect(screen.getAllByRole('button', { name: 'Falar' }).length).toBeGreaterThanOrEqual(2)
@@ -92,12 +92,11 @@ describe('3 estilos e design system', () => {
     await clicar('Tradição')
   }
 
-  test('sem 2 referências ou sem sentimento não propõe, com recado amigo', async () => {
+  test('sem nenhuma referência ou sem sentimento não propõe; uma referência já basta', async () => {
     const { est } = montarCompleto()
     await clicar('Mostrar 3 estilos')
-    expect(screen.getByRole('alert')).toHaveTextContent('pelo menos 2 referências')
+    expect(screen.getByRole('alert')).toHaveTextContent('pelo menos 1 referência')
     await colar('aesop.com')
-    await colar('nubank.com.br')
     await clicar('Mostrar 3 estilos')
     expect(screen.getByRole('alert')).toHaveTextContent('jeito que o seu cliente deve se sentir')
     expect(est.pedidos).toHaveLength(0)

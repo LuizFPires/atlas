@@ -87,7 +87,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
   const faltaSentir = sentir.length === 0 && !extra.trim()
 
   const propor = async () => {
-    if (faltaRef) { setErro('Mande pelo menos 2 referências: link, print ou falando.'); return }
+    if (faltaRef) { setErro('Mande pelo menos 1 referência: link, print ou falando.'); return }
     if (faltaSentir) { setErro('Escolha pelo menos um jeito que o seu cliente deve se sentir.'); return }
     setErro('')
     setOcupado('propondo')
@@ -167,7 +167,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
       <div className="at-estilo__grade">
       {modo === 'criar' && (
       <div className="at-estilo__card">
-        <b className="at-estilo__tit">Mande 2 ou 3 sites ou apps que você acha bonitos</b>
+        <b className="at-estilo__tit">Mande 1 a 3 sites ou apps que você acha bonitos</b>
         <span className="at-estilo__sub">Pode ser de qualquer ramo: uma loja, um banco, um restaurante. Vale link ou print da tela.</span>
 
         <ul className="at-estilo__refs" aria-label="Referências que você mandou">
@@ -291,7 +291,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir }: Props) 
           </div>
         ) : (
           <div className="at-estilo__vazio">
-            <span>Mande 2 ou 3 referências e diga o que o seu cliente deve sentir. Aí eu monto 3 estilos para você escolher.</span>
+            <span>Mande de 1 a 3 referências e diga o que o seu cliente deve sentir. Aí eu monto 3 estilos para você escolher.</span>
           </div>
         )}
       </section>}
