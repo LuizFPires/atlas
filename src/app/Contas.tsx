@@ -8,6 +8,12 @@ import { CONTAS_OBRIGATORIAS, type ContaObrigatoria, type PonteContas } from './
 import './app.css'
 import './claude.css'
 import './contas.css'
+import videoGithub from '../assets/video-conta-github.mp4'
+import videoSupabase from '../assets/video-conta-supabase.mp4'
+import videoHosp from '../assets/video-conta-hosp.mp4'
+
+/** Vídeo de cada conta (40 s, feito a partir destes mesmos passos; pedido do Luiz, 23/11/2026). Pagamentos fica para depois: sem vídeo. */
+const VIDEOS: Partial<Record<IdConta, string>> = { github: videoGithub, supabase: videoSupabase, hosp: videoHosp }
 
 interface Props {
   contas: PonteContas
@@ -26,6 +32,7 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
   const [feitas, setFeitas] = useState<Partial<Record<IdConta, boolean>>>({})
   const [aviso, setAviso] = useState('')
   const [ajuda, setAjuda] = useState(false)
+  const [video, setVideo] = useState(false)
   const [detectada, setDetectada] = useState<IdConta | null>(null)
 
   const contaRef = useRef(0) // conta atual, sempre em dia: resultados de outra conta são ignorados
@@ -113,6 +120,7 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
               {!c.opcional && p && (
                 <>
                   <CartaoPasso passo={p} n={passo + 1} total={c.passos.length} />
+                  {VIDEOS[c.id] && <button type="button" className="at-contas__video" onClick={() => setVideo(true)}><Icone nome="play" tamanho={16} /> Ver o vídeo desta conta, do começo ao fim (40 s)</button>}
                   {detectada === c.id && <p className="at-contas__detectada" role="status"><Icone nome="check" tamanho={16} /> O Atlas viu sozinho: a sua conta do {c.nome} está pronta.</p>}
                   <div className="at-ativ__rodape at-claude__acoes">
                     <Botao variante="secundario" onClick={voltar} disabled={conta === 0 && passo === 0}>← Voltar</Botao>
@@ -124,7 +132,7 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
                     <div className="at-claude__ajuda">
                       <b>Tudo bem, acontece com todo mundo.</b>
                       <div className="at-claude__ajuda-acoes">
-                        <Botao><Icone nome="play" tamanho={16} /> Ver este passo em vídeo (40 s)</Botao>
+                        {VIDEOS[c.id] && <Botao onClick={() => setVideo(true)}><Icone nome="play" tamanho={16} /> Ver este passo em vídeo (40 s)</Botao>}
                         <Botao variante="secundario" onClick={() => onPedirAjuda?.({ origem: 'F04', conta: c.nome, passo: passo + 1, totalPassos: c.passos.length, print: { url: p.site.url, titulo: p.site.titulo, botaoCerto: p.site.itens.find((i) => i.destaque)?.txt } })}><Icone nome="ajuda" tamanho={16} /> Pedir ajuda ao Atlas (mande um print)</Botao>
                       </div>
                     </div>
@@ -149,6 +157,14 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda }:
           </div>
         </section>
       </div>
+      {video && VIDEOS[c.id] && (
+        <div className="at-claude__video-fundo" onClick={() => setVideo(false)}>
+          <div role="dialog" aria-modal="true" aria-label={`Conta do ${c.id === 'hosp' ? 'Vercel' : c.nome} em vídeo`} className="at-claude__video" onClick={(e) => e.stopPropagation()}>
+            <video src={VIDEOS[c.id]} controls autoPlay playsInline />
+            <button type="button" className="at-claude__video-fechar" aria-label="Fechar o vídeo" onClick={() => setVideo(false)}><Icone nome="x" /></button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
