@@ -179,3 +179,56 @@ test('andamento ao vivo: o mapa aparece primeiro e cada lote pronto já pode ser
   assert.equal(p.progresso('obra'), null)
   assert.equal(obra.versoes[0].telas.length, 7)
 })
+
+// Luiz, 23/11/2026: "direto no Claude é muito mais rápido que pelo Atlas". Os lotes iam um depois do outro.
+test('depois do 1º lote (a referência), os outros lotes são desenhados ao mesmo tempo, até 3 de uma vez', async () => {
+  const raiz = tmp()
+  fs.mkdirSync(path.join(raiz, 'obra'))
+  const ids = Array.from({ length: 23 }, (_, i) => `t${i + 1}`)
+  let rodando = 0, maximo = 0
+  const pedidos = []
+  const executar = async (args, o) => {
+    const pedido = String(o.entrada)
+    pedidos.push(pedido)
+    rodando++; maximo = Math.max(maximo, rodando)
+    await new Promise((ok) => setTimeout(ok, 20))
+    rodando--
+    let r
+    if (/FASE 2 de 2/.test(pedido)) {
+      const m = /\(ids: ([^)]+)\)/.exec(pedido)
+      r = { telas: m[1].split(', ').map(tela) }
+    } else r = { telas: ids.map((id) => ({ id, nome: `Tela ${id}` })) }
+    return { codigo: 0, saida: JSON.stringify({ result: JSON.stringify(r) }), erro: '' }
+  }
+  const disparo = criarDisparo({ raiz, dadosApp: tmp(), claudeEstado: async () => ({ conectado: true }), executar, resolver: () => ({ cmd: 'x' }) })
+  const p = criarPrototipo({ raiz, disparo })
+  const e = await p.desenhar('obra', 'Colore', ESTILO, 'muitas telas')
+  assert.deepEqual(e.versoes[0].telas.map((t) => t.id), ids, 'a ordem das telas segue o mapa')
+  assert.equal(maximo, 3, 'no máximo 3 pedidos ao Claude ao mesmo tempo')
+  const lotes = pedidos.filter((x) => /FASE 2 de 2/.test(x))
+  assert.equal(lotes.length, 5)
+  assert.doesNotMatch(lotes[0], /<div>t1<\/div>/, 'o 1º lote não tem referência')
+  for (const l of lotes.slice(1)) assert.match(l, /<div>t1<\/div>/, 'os outros lotes usam a 1ª tela como referência')
+})
+
+test('um lote paralelo que falha para tudo: nada é gravado e o andamento some', async () => {
+  const raiz = tmp()
+  fs.mkdirSync(path.join(raiz, 'obra'))
+  const ids = Array.from({ length: 16 }, (_, i) => `t${i + 1}`)
+  const executar = async (args, o) => {
+    const pedido = String(o.entrada)
+    await new Promise((ok) => setTimeout(ok, /t6/.test(pedido) ? 5 : 30))
+    let r
+    if (/FASE 2 de 2/.test(pedido)) {
+      const lista = /\(ids: ([^)]+)\)/.exec(pedido)[1].split(', ')
+      r = { telas: lista.includes('t6') ? [tela('intrusa')] : lista.map(tela) }
+    } else r = { telas: ids.map((id) => ({ id, nome: id })) }
+    return { codigo: 0, saida: JSON.stringify({ result: JSON.stringify(r) }), erro: '' }
+  }
+  const disparo = criarDisparo({ raiz, dadosApp: tmp(), claudeEstado: async () => ({ conectado: true }), executar, resolver: () => ({ cmd: 'x' }) })
+  const p = criarPrototipo({ raiz, disparo })
+  await assert.rejects(p.desenhar('obra', 'Colore', ESTILO, 'x'))
+  await new Promise((ok) => setTimeout(ok, 60)) // deixa os outros lotes terminarem
+  assert.equal(p.progresso('obra'), null)
+  assert.equal(p.estado ? (await p.estado('obra')).versoes.length : 0, 0)
+})

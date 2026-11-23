@@ -5,7 +5,8 @@
 //    design-system.md e a versão atual, e DEVOLVE as telas em JSON ({resumo, resposta, telas:[{id,nome,html}]}). Quem grava no disco
 //    é este adaptador, depois de validar: id [a-z0-9-], até 40 telas, HTML até 500 KB e sem <script>/<iframe>/<object>/<embed>.
 //    Desenhar parte do RELATO livre do cliente (áudio transcrito, guardado em <obra>\prototipo\relato.md) e tem duas fases:
-//    1) mapa de telas (todas que o relato pede, sem limite fixo); 2) desenho em lotes de 5, com a 1ª tela como referência.
+//    1) mapa de telas (todas que o relato pede, sem limite fixo); 2) desenho em lotes de 5: o 1º sozinho
+//    (a 1ª tela vira a referência), os outros até 3 ao mesmo tempo.
 //    Ajustar devolve só as telas que mudaram (+ novas e `remover`); as outras passam iguais para a versão nova.
 //    O pedido do cliente (fala/texto/nome de print) entra por stdin como DADO delimitado (blocoDoCliente + REGRA_CONTEUDO_CLIENTE).
 //  Versões IMUTÁVEIS: <obra>\prototipo\versoes\vNNN\telas\<id>.html + versao.json (escrito POR ÚLTIMO: sem ele a pasta é ignorada).
@@ -29,6 +30,7 @@ const { DIRECAO_DE_ARTE } = require('./prototipo-direcao.cjs')
 const MAX_HTML = 500_000
 const MAX_TELAS = 40 // teto técnico; quem decide quantas é o relato do cliente
 const LOTE = 5
+const LOTES_JUNTOS = 3 // lotes desenhados ao mesmo tempo depois do 1º (mais rápido, sem disparar dezenas de pedidos de uma vez)
 const ID_TELA = /^[a-z0-9][a-z0-9-]{0,40}$/
 const PERIGOSO = /<\s*(script|iframe|object|embed)\b/i
 
@@ -209,17 +211,29 @@ function criarPrototipo({ raiz, disparo }) {
         // Fase 1: mapa de telas a partir do relato.
         const mapa = mapaDoJson(extrairJson(await disparo.perguntar(pasta, pedidoMapa(nome, est, textoRelato), { timeoutMs: 600_000, maxSaida: 2_000_000 }), 'objeto'))
         andamento.set(pasta, { mapa: mapa.map((t) => ({ id: t.id, nome: t.nome })), telas: [] })
-        // Fase 2: desenho em lotes, com a primeira tela como referência visual dos lotes seguintes.
+        // Fase 2: desenho em lotes. O 1º lote sai sozinho (a 1ª tela vira a referência visual); os outros saem AO MESMO TEMPO,
+        // até LOTES_JUNTOS por vez (pedido do Luiz, 23/11/2026: em fila, era bem mais lento que o Claude direto).
         const feitas = new Map()
-        for (let i = 0; i < mapa.length; i += LOTE) {
-          const lote = mapa.slice(i, i + LOTE)
-          const referencia = feitas.size ? feitas.get(mapa[0].id) : null
+        let falhou = false // um lote falhou: os que rodam juntos não publicam mais nada nem pegam lote novo
+        const publicar = () => falhou || andamento.set(pasta, { mapa: mapa.map((t) => ({ id: t.id, nome: t.nome })), telas: mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id)) })
+        const desenharLote = async (lote, referencia) => {
           const r = telasDoJson({ ...extrairJson(await disparo.perguntar(pasta, pedidoLote(nome, est, mapa, lote, referencia), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto') })
           const pedidos = new Set(lote.map((t) => t.id))
           if (!r.telas.every((t) => pedidos.has(t.id))) throw new Error('telas-invalidas') // nada fora do lote
           for (const t of r.telas) feitas.set(t.id, t)
-          andamento.set(pasta, { mapa: mapa.map((t) => ({ id: t.id, nome: t.nome })), telas: mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id)) })
+          publicar()
         }
+        const lotes = []
+        for (let i = 0; i < mapa.length; i += LOTE) lotes.push(mapa.slice(i, i + LOTE))
+        await desenharLote(lotes[0], null)
+        const referencia = feitas.get(mapa[0].id) ?? null
+        const fila = lotes.slice(1)
+        const trabalhador = async () => {
+          for (let l = fila.shift(); l && !falhou; l = fila.shift()) {
+            try { await desenharLote(l, referencia) } catch (e) { falhou = true; throw e }
+          }
+        }
+        await Promise.all(Array.from({ length: Math.min(LOTES_JUNTOS, fila.length) }, trabalhador))
         const telas = mapa.filter((t) => feitas.has(t.id)).map((t) => feitas.get(t.id))
         if (!telas.length) throw new Error('telas-invalidas')
         if (ler(pasta).versoes.length) return ler(pasta) // alguém gravou enquanto o Claude pensava

@@ -24,3 +24,12 @@ test('mostra o que está fazendo: barra que anda, etapas que vão sendo marcadas
   expect(within(caixa).getByText('1:30')).toBeInTheDocument()
   expect(within(caixa).getByText(/Leva uns 2 minutos/)).toBeInTheDocument()
 })
+
+test('com o andamento real: a barra, a etapa e o recado vêm do trabalho, não do relógio', () => {
+  render(<Trabalhando titulo="Desenhando" segundos={480} etapas={['a', 'b', 'c', 'd', 'e']} andamento={() => ({ pct: 38, etapa: 2, nota: 'Faltam 8 de 12 telas · mais ou menos 9 minutos.' })} />)
+  const caixa = screen.getByRole('status', { name: 'Desenhando' })
+  expect(within(caixa).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '38')
+  expect(within(caixa).getByText(/Faltam 8 de 12 telas · mais ou menos 9 minutos\./)).toBeInTheDocument()
+  expect(within(caixa).queryByText(/Leva uns/)).toBeNull()
+  expect(within(caixa).getByText('c').closest('li')).toHaveAttribute('data-fase', 'agora')
+})

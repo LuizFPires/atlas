@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Botao, Icone, Microfone, Trabalhando, useVoz } from '../ui'
+import { andamentoDoDesenho } from './andamento-telas'
 import { Pintor } from './Pintor'
 import { JanelaCelular } from './JanelaCelular'
 import type { PonteArquivos } from './ponte-arquivos'
@@ -79,6 +80,9 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
   }, [prototipo, obra])
 
   // Desenha a partir do relato. Sem um dos 3 estilos (veio de "Já tenho a minha identidade visual"): o Claude segue o design-system.md.
+  // Estimativa real (andamento-telas.ts): quando o desenho começou e quando o mapa de telas saiu.
+  const inicioDesenho = useRef(0)
+  const mapaSaiuEm = useRef<number | null>(null)
   const desenhar = async () => {
     setPedeRelato(false)
     setPronto(false)
@@ -86,7 +90,17 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
     setAndamento(null)
     setErro('')
     // Ao vivo: o mapa e cada tela pronta aparecem no palco enquanto o Claude desenha o resto.
-    const espiar = prototipo.progresso ? setInterval(() => { void prototipo.progresso?.(obra.pasta).then((a) => { if (a) setAndamento(a) }, () => {}) }, 1500) : null
+    inicioDesenho.current = 0
+    mapaSaiuEm.current = null
+    const espiar = prototipo.progresso ? setInterval(() => {
+      void prototipo.progresso?.(obra.pasta).then((a) => {
+        if (!a) return
+        const agora = Date.now()
+        if (inicioDesenho.current === 0) inicioDesenho.current = agora - 1500 // a 1ª espiada sai 1,5 s depois do início
+        if (a.mapa.length > 0 && mapaSaiuEm.current === null) mapaSaiuEm.current = (agora - inicioDesenho.current) / 1000
+        setAndamento(a)
+      }, () => {})
+    }, 1500) : null
     try {
       const e = await prototipo.desenhar(obra.pasta, obra.nome, estilo ?? null, relato.trim())
       setMsgs([{ quem: 'CLAUDE', txt: estilo ? 'Fiz as primeiras telas no estilo que você escolheu, a partir do que você contou. Toque nos botões do celular ao lado para navegar e me diga o que quer mudar.' : 'Fiz as primeiras telas com a sua identidade visual, a partir do que você contou. Toque nos botões do celular ao lado para navegar e me diga o que quer mudar.' }])
@@ -211,7 +225,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
 
       {desenhando && (
         <section className="at-proto__palco at-proto__palco--obra" aria-label="Telas sendo desenhadas">
-          <Trabalhando titulo="O Claude está desenhando as telas" segundos={480} etapas={['Lendo tudo o que você contou', 'Montando o mapa de telas: nada do que você falou fica de fora', 'Desenhando as telas, em lotes, no seu estilo', 'Ligando as telas entre si para dar para navegar', 'Caprichando nos detalhes e conferindo tudo']} />
+          <Trabalhando titulo="O Claude está desenhando as telas" segundos={480} andamento={prototipo.progresso ? (seg) => andamentoDoDesenho({ segundos: seg, total: mapaAoVivo.length, prontas: mapaAoVivo.filter((m) => prontasAoVivo.has(m.id)).length, segundosAteMapa: mapaSaiuEm.current }) : undefined} etapas={['Lendo tudo o que você contou', 'Montando o mapa de telas: nada do que você falou fica de fora', 'Desenhando as telas, em lotes, no seu estilo', 'Ligando as telas entre si para dar para navegar', 'Caprichando nos detalhes e conferindo tudo']} />
           {mapaAoVivo.length > 0
             ? <ul className="at-proto__galeria" aria-label="Mapa de telas">
                 {mapaAoVivo.map((m) => {
