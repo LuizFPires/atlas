@@ -56,6 +56,11 @@ export interface PortalApi {
   /** LGPD: exclui a conta de forma definitiva (anonimiza os dados, para a cobrança e apaga o login). Só vale com o servidor confirmando. */
   excluirConta(): Promise<Resp>
   sair(): void
+  /** M33: o celular como controle remoto do notebook (estado, pedidos, fotos e as telas do projeto). */
+  celular?(): Promise<Resp<Record<string, unknown>>>
+  pedirCelular?(tipo: string, obra_id: string | null, dados: object): Promise<Resp<{ id: string; obra_id: string }>>
+  fotoCelular?(imagem: string): Promise<Resp<{ id: string }>>
+  verTelas?(token: string): Promise<Resp<{ documento: string }>>
 }
 
 export interface ConfigPortal { api: string; authUrl: string; anonKey: string }
@@ -157,5 +162,9 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
       return r
     },
     sair() { token = ''; guardarSessao('') },
+    celular: () => servidor<Record<string, unknown>>('/portal/celular'),
+    pedirCelular: (tipo, obra_id, dados) => servidor<{ id: string; obra_id: string }>('/portal/celular/pedido', { tipo, ...(obra_id ? { obra_id } : {}), dados }),
+    fotoCelular: (imagem) => servidor<{ id: string }>('/portal/celular/referencia', { imagem }),
+    verTelas: (t) => servidor<{ documento: string }>('/prototipo/ver', { token: t }),
   }
 }

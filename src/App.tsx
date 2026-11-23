@@ -1,7 +1,5 @@
 import { VerPrototipo } from './web/VerPrototipo'
 import { lazy, Suspense, useState } from 'react'
-import { Shell, type IdTela } from './shell/Shell'
-import { ImagemAssinatura } from './marca/Marca'
 import { Vendas } from './web/Vendas'
 import { ModalCompra } from './web/ModalCompra'
 import { Cadastro } from './web/Cadastro'
@@ -21,6 +19,8 @@ import { criarAdminFixture } from './web/admin-fixture'
 import { PaginaLegal } from './web/Legal'
 import { idLegalDoCaminho } from './web/textos-legais'
 import { AppDesktop, noAppDesktop } from './app/AppDesktop'
+import { AppCelular } from './celular/AppCelular'
+import { criarApiCelularFixture, criarApiCelularPortal } from './celular/api'
 // App-modelo carregado sob demanda: não pesa no bundle principal.
 const AppBarbearia = lazy(() => import('./modelos/barbearia/AppBarbearia').then((m) => ({ default: m.AppBarbearia })))
 const AppRestaurante = lazy(() => import('./modelos/restaurante/AppRestaurante').then((m) => ({ default: m.AppRestaurante })))
@@ -35,16 +35,10 @@ const personalizacao = modoFixture() ? criarPersonalizacaoFixture() : criarPerso
 // (escopada pelo login). Enquanto o computador não publicou, a lista vem vazia e a seção explica isso com jeito.
 const statusObras = modoFixture() ? criarStatusObrasFixture() : criarStatusObrasPortal(portalApi)
 
-/** O aplicativo (PWA) fica em "/app". */
+// M33: o aplicativo do dono no celular (PWA) fica em "/app": o projeto e a obra, com o notebook do escritório trabalhando.
+const apiCelular = modoFixture() ? criarApiCelularFixture() : criarApiCelularPortal(portalApi)
 function Aplicativo() {
-  const [ativo, setAtivo] = useState<IdTela>('obras')
-  return (
-    <Shell ativo={ativo} onNavegar={setAtivo} onFalar={() => {}}>
-      <p className="rotulo">Minhas obras</p>
-      <h1>Bem-vindo ao Atlas</h1>
-      <ImagemAssinatura />
-    </Shell>
-  )
+  return <AppCelular api={apiCelular} />
 }
 
 function PaginaVendas() {

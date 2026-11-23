@@ -332,3 +332,8 @@ Teste sem Electron/Claude/rede: `node --test app/adaptadores/*.teste.cjs` (ajuda
 - **Conferir num Windows real, com o app instalado e ativado numa licença de teste:** (a) o contador aparece e bate com a validade; (b) "Quero o Atlas" → "Ir para o pagamento" abre a Stripe no navegador padrão; (c) depois de pagar (modo teste da Stripe), a lateral volta a "Licença ativa" em até 10 s sem reabrir o app; (d) fechar o navegador sem voltar à página: o app ainda percebe.
 - **Depende de deploy:** função `api` publicada com `/licenca/resumo` e `origem: 'app'`; `base_retorno` da conta de pagamento apontando para o site (as páginas `/compra/pelo-app` ficam nele).
 - **Build do app:** precisa de `VITE_API_URL` e `VITE_CONTA_ID` (o workflow do instalador já passa os dois).
+
+## M33 — Atlas no celular (23/11/2026)
+- **Aplicar a migration `0029_celular.sql`** no Supabase de produção e **publicar a função `api`** de novo. Sem a migration, as rotas do celular respondem erro de banco.
+- **Conferir no Windows:** com o Atlas aberto e ativado, o celular (atlas-ia.app.br/app) mostra "Ligado"; uma obra nova pedida pelo celular cria a pasta em Atlas\Obras, desenha e as telas aparecem no celular.
+- **Limpeza agendada:** chamar a RPC `limpar_celular(now())` uma vez por dia (pedidos respondidos há mais de 30 dias e fotos não baixadas em 7 dias). Hoje o freio é o limite de 6 fotos e 20 pedidos abertos por licença.
