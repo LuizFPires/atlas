@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Aprovar, textoCota, textoDias } from './Aprovar'
@@ -138,4 +138,42 @@ test('se a construção não puder começar, avisa com calma e deixa tentar de n
   await user.click(await screen.findByRole('button', { name: 'Começar a obra' }))
   expect(await screen.findByRole('alert')).toHaveTextContent(/ainda não está ligado/)
   expect(screen.getByRole('button', { name: 'Começar a obra' })).toBeEnabled()
+})
+
+describe('"Começar a obra" sempre responde perto do botão', () => {
+  const falhando = (codigo: string): PonteConstrucao => ({ ...criarConstrucaoFixture(), iniciar: async () => { throw new Error(codigo) } })
+  test.each([
+    ['ja-iniciada', /já foi começada/],
+    ['ja-rodando', /já está trabalhando/],
+    ['claude-nao-logado', /Claude não está conectado/],
+    ['claude-nao-instalado', /Claude não está instalado/],
+    ['plan-nao-gravado', /não consegui gravar o plano/i],
+  ])('erro %s: recado claro logo acima do botão, sem ficar escondido no topo', async (codigo, texto) => {
+    const { user } = montar(falhando(codigo))
+    await user.click(await screen.findByRole('button', { name: 'Começar a obra' }))
+    const rodape = screen.getByRole('group', { name: 'Começar a obra' })
+    expect(await within(rodape).findByRole('alert')).toHaveTextContent(texto)
+  })
+
+  test('obra já começada: oferece ir para o painel da obra', async () => {
+    const onComecou = vi.fn()
+    const user = userEvent.setup()
+    render(<TemaProvider><Aprovar obra={obra} construcao={falhando('ja-iniciada')} claude={criarClaudeFixture({ conectado: true, plano: 'pro' })} modos={criarModoObraFixture()} onVoltar={() => {}} onComecou={onComecou} /></TemaProvider>)
+    await user.click(await screen.findByRole('button', { name: 'Começar a obra' }))
+    await user.click(await screen.findByRole('button', { name: 'Ver a obra' }))
+    expect(onComecou).toHaveBeenCalled()
+  })
+
+  test('enquanto começa, o botão diz o que está fazendo; deu certo, vai direto para o painel da obra', async () => {
+    let soltar: () => void = () => {}
+    const base = criarConstrucaoFixture()
+    const construcao: PonteConstrucao = { ...base, iniciar: (...a) => new Promise((ok) => { soltar = () => void base.iniciar(...a).then(ok) }) }
+    const onComecou = vi.fn()
+    const user = userEvent.setup()
+    render(<TemaProvider><Aprovar obra={obra} construcao={construcao} claude={criarClaudeFixture({ conectado: true, plano: 'pro' })} modos={criarModoObraFixture()} onVoltar={() => {}} onComecou={onComecou} /></TemaProvider>)
+    await user.click(await screen.findByRole('button', { name: 'Começar a obra' }))
+    expect(screen.getByRole('button', { name: /Começando a obra/ })).toBeDisabled()
+    soltar()
+    await vi.waitFor(() => expect(onComecou).toHaveBeenCalled())
+  })
 })
