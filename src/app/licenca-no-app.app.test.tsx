@@ -56,3 +56,53 @@ test('pagou: a tela de compra some sozinha e a lateral volta a "Licença ativa"'
     expect(screen.queryByRole('dialog', { name: 'Ficar com o Atlas' })).toBeNull()
   } finally { vi.useRealTimers() }
 })
+
+const vencida: ResumoLicenca = { tipo: 'cortesia', origem: null, validade_em: '2026-11-22T15:00:00.000Z', vencida: true, agora: AGORA }
+
+describe('cortesia ou teste vencido: o Atlas inteiro fica travado', () => {
+  beforeEach(() => { localStorage.clear() })
+
+  test('mostra só o aviso no meio da tela e o botão de compra; menu, microfone e o resto somem', async () => {
+    render(<TemaProvider><AppDesktop ponte={ativado()} api={api} resumoLicenca={async () => vencida} /></TemaProvider>)
+    const aviso = await screen.findByRole('alertdialog', { name: 'Sua cortesia acabou' })
+    expect(within(aviso).getByRole('button', { name: 'Quero o Atlas' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button')).toHaveLength(1)
+    expect(screen.queryByRole('navigation')).toBeNull()
+    expect(screen.queryByText('Minhas obras')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Falar com o Atlas/ })).toBeNull()
+  })
+
+  test('teste grátis vencido usa o texto do teste', async () => {
+    render(<TemaProvider><AppDesktop ponte={ativado()} api={api} resumoLicenca={async () => ({ ...vencida, origem: 'degustacao' })} /></TemaProvider>)
+    expect(await screen.findByRole('alertdialog', { name: 'Seu teste acabou' })).toBeInTheDocument()
+  })
+
+  test('o botão abre a compra com o e-mail da ativação', async () => {
+    render(<TemaProvider><AppDesktop ponte={ativado()} api={api} resumoLicenca={async () => vencida} iniciarCompraNoApp={async () => ({ ok: true, url: 'https://checkout.stripe.com/c/pay/x' })} /></TemaProvider>)
+    await userEvent.click(await screen.findByRole('button', { name: 'Quero o Atlas' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Ficar com o Atlas' })
+    expect(within(dialogo).getByText('ana@loja.com')).toBeInTheDocument()
+  })
+
+  test('abrir de novo sem internet continua travado', async () => {
+    const { unmount } = render(<TemaProvider><AppDesktop ponte={ativado()} api={api} resumoLicenca={async () => vencida} /></TemaProvider>)
+    await screen.findByRole('alertdialog', { name: 'Sua cortesia acabou' })
+    unmount()
+    render(<TemaProvider><AppDesktop ponte={ativado()} api={api} resumoLicenca={async () => null} /></TemaProvider>)
+    expect(await screen.findByRole('alertdialog', { name: /acabou/ })).toBeInTheDocument()
+    expect(screen.queryByText('Minhas obras')).toBeNull()
+  })
+
+  test('pagou: destrava sozinho', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      let atual: ResumoLicenca = vencida
+      render(<TemaProvider><AppDesktop ponte={ativado()} api={api} resumoLicenca={async () => atual} /></TemaProvider>)
+      await screen.findByRole('alertdialog', { name: 'Sua cortesia acabou' })
+      atual = paga
+      await vi.advanceTimersByTimeAsync(10 * 60_000)
+      expect(await screen.findByText('Licença ativa · este computador')).toBeInTheDocument()
+      expect(screen.queryByRole('alertdialog')).toBeNull()
+    } finally { vi.useRealTimers() }
+  })
+})

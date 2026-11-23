@@ -49,6 +49,7 @@ import { fetchPelaPonte } from './ponte-servidor'
 import { useTokenDoLink } from './link-instalacao'
 import { lerResumo, type ResumoLicenca } from './licenca-resumo'
 import { ContextoLicenca, useLicencaNoApp } from './licenca-no-app'
+import { AcessoEncerrado } from './AcessoEncerrado'
 import { ComprarAtlas, type PedidoCompraNoApp } from './ComprarAtlas'
 import { configCompra, iniciarCompra, type ResultadoCompra } from '../web/compra'
 import { criarPonteFixture, ponteDoAmbiente, type PonteDesktop } from './ponte'
@@ -250,6 +251,10 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Pagou: o cartão já virou "Licença ativa" e a tela de compra some sozinha.
   const compra = emailCompra && !licencaNoApp.pagou ? <ComprarAtlas aberto email={emailCompra} onFechar={() => setEmailCompra(null)} iniciar={iniciarCompraPeloApp} abrirPagamento={abrirPagamento} onPagamentoAberto={licencaNoApp.esperarPagamento} /> : null
   const com = (n: ReactNode) => <ContextoPlano.Provider value={planoNoMenu}><ContextoModelo.Provider value={modeloNoMenu}><ContextoLicenca.Provider value={contextoLicenca}>{n}{painelDeAjuda}{compra}<StatusVoz /></ContextoLicenca.Provider></ContextoModelo.Provider></ContextoPlano.Provider>
+  // Cortesia/teste vencido: nada funciona, nenhum menu, nenhuma Ajuda. Só o aviso e a compra (que fecha sozinha ao pagar).
+  if (licencaNoApp.encerrado && tela !== TELA_ATIVACAO) {
+    return <>{<AcessoEncerrado encerrado={licencaNoApp.encerrado} onComprar={abrirCompra} />}{compra}</>
+  }
   if (tela === TELA_ATIVACAO) {
     return com(<Ativacao api={ativacao} computador={computador} onInstalando={setInstalando} onContinuar={() => { void licencaNoApp.conferir(); setTela(TELA_CLAUDE) }} />)
   }
