@@ -24,7 +24,7 @@ export interface ErroAjuda {
 }
 
 export interface ContextoAjuda {
-  /** Quem abriu: o erro sozinho, o menu "Ajuda do Atlas" ou o "Não consegui" de um passo. */
+  /** Quem abriu: o erro sozinho, o "Falar com o Atlas" do menu ou o "Não consegui" de um passo. */
   origem: 'erro' | 'menu' | 'passo'
   obra?: string
   /** Onde o cliente estava ("a publicação"). */
@@ -34,6 +34,8 @@ export interface ContextoAjuda {
   pasta?: string
   erro?: ErroAjuda
   print?: PrintAjuda | null
+  /** Aberta pelo "Falar com o Atlas": já começa ouvindo (microfone ligado). */
+  ouvir?: boolean
 }
 
 export interface Turno {

@@ -32,7 +32,7 @@ type Props = {
   children?: ReactNode
 }
 
-/** Menu lateral sempre escuro, com "Falar com o Atlas" e "Ajuda do Atlas" fixos (prototipo/Shell.dc.html). */
+/** Menu lateral sempre escuro, com um botão fixo só: "Falar com o Atlas" (abre a Ajuda já ouvindo; decisão no PLAN, M13). */
 export function Shell({ ativo, onNavegar, onFalar, licenca, plano, onComprar, children }: Props) {
   const { tema } = useTema()
   return (
@@ -56,10 +56,6 @@ export function Shell({ ativo, onNavegar, onFalar, licenca, plano, onComprar, ch
             <Icone nome="microfone" />
             Falar com o Atlas
           </button>
-          <a href="#/ajuda" className={`at-ajuda ${ativo === 'ajuda' ? 'at-ajuda--ativo' : ''}`} aria-current={ativo === 'ajuda' ? 'page' : undefined} onClick={(e) => { e.preventDefault(); onNavegar('ajuda') }}>
-            <Icone nome="ajuda" tamanho={18} />
-            Ajuda do Atlas
-          </a>
           {plano && (
             <div className="at-plano">
               <span className="rotulo at-plano__rotulo">Plano Claude</span>
