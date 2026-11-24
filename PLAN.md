@@ -483,9 +483,9 @@ Notas: DECISÃO do Luiz (24/11/2026, "No primeiro momento, o Claude desenha 40 t
 peso: 3
 spec: S15
 tela: prototipo/caminho-novo/PalcoObra.dc.html
-- [ ] O canteiro 3D ocupa a área da obra inteira; o avanço (%), a etapa e as tarefas flutuam por cima, em vidro escuro, no canto de cima à esquerda
-- [ ] Término esperado e quanto falta no canto de cima à direita
-- [ ] Barra de baixo com a frase do momento, as últimas linhas do diário, as ações e "Ver o diário completo"
-- [ ] Chip "Andares · N de M prontos" abre a gaveta dos andares: cada etapa é um andar, de baixo para cima (pronto verde, atual piscando, os que faltam apagados) e "Ver no cronograma"
-- [ ] Os balões técnicos do canteiro 3D somem no app; fica um balão só, em português simples
+- [x] O canteiro 3D ocupa a área da obra inteira; o avanço (%), a etapa e as tarefas flutuam por cima, em vidro escuro, no canto de cima à esquerda
+- [x] Término esperado e quanto falta no canto de cima à direita
+- [x] Barra de baixo com a frase do momento, as últimas linhas do diário, as ações e "Ver o diário completo"
+- [x] Chip "Andares · N de M prontos" abre a gaveta dos andares: cada etapa é um andar, de baixo para cima (pronto verde, atual piscando, os que faltam apagados) e "Ver no cronograma"
+- [x] Os balões técnicos do canteiro 3D somem no app; fica um balão só, em português simples
 Notas: DECISÃO do Luiz (24/11/2026, "O mais legal é o prédio subindo. Preciso ver 3 opções de layout ... com ênfase no prédio subindo"; escolheu "a opção do protótipo A, com opção de clicar em um 'chip' chamado 'andares' que abre um drawer lateral para pegar a ideia do C"; aprovado: "Vamos nessa última opção de protótipo"). Telas L4PalcoAndares e L5PalcoAndaresAberto (componente PalcoObra) em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. DIVERGÊNCIA: substitui a grade da F09/M41 (cartões de avanço e "agora na obra" ao lado do canteiro) pelo palco em tela cheia; o modo da obra desce para baixo do palco.
