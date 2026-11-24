@@ -505,6 +505,33 @@ export async function enviarCodigo(email: string, codigo: string) {
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }
 
+/** Código de entrada (celular/conta): o e-mail do Atlas, não o envio padrão do Supabase Auth. */
+export async function enviarCodigoEntrada(email: string, codigo: string, nome?: string) {
+  const m = montarCodigoAtivacao({ codigo, nome, finalidade: 'entrada', validade_min: 60 })
+  await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
+}
+
+/** Gera o código de entrada no Supabase Auth com a service_role, SEM mandar e-mail (admin/generate_link, tipo magiclink → email_otp).
+ *  Se o login ainda não existe (cortesia ou compra que nunca entrou), cria já confirmado: só chega aqui quem tem licença. */
+export async function gerarCodigoEntrada(email: string): Promise<string> {
+  const url = Deno.env.get('SUPABASE_URL')
+  const chave = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!url || !chave) throw new Error('auth não configurado')
+  const h = { Authorization: `Bearer ${chave}`, apikey: chave, 'Content-Type': 'application/json' }
+  const gerar = () => fetch(`${url}/auth/v1/admin/generate_link`, { method: 'POST', headers: h, body: JSON.stringify({ type: 'magiclink', email }) })
+  let r = await gerar()
+  if (!r.ok) {
+    const c = await fetch(`${url}/auth/v1/admin/users`, { method: 'POST', headers: h, body: JSON.stringify({ email, email_confirm: true }) })
+    if (!c.ok && c.status !== 422) throw new Error(`auth admin users: ${c.status}`)
+    r = await gerar()
+  }
+  if (!r.ok) throw new Error(`auth generate_link: ${r.status}`)
+  const j = await r.json()
+  const otp = String(j?.email_otp ?? j?.properties?.email_otp ?? '')
+  if (!/^\d{6,10}$/.test(otp)) throw new Error('auth generate_link: sem código')
+  return otp
+}
+
 export async function enviarAvisoAtraso(email: string, aviso: { n: 1 | 2 | 3; pausa_em: Date; nome: string }) {
   const m = montarAvisoAtraso(aviso)
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })

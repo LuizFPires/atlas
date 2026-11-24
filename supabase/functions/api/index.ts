@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
   const sk = Deno.env.get('ATLAS_SIGN_SK')
   if (!segredo || !servico || !sk) return new Response('configuração ausente', { status: 503 })
   const { criarStoreSupabase, criarCarregarKit, enviarCodigo } = await import('../_shared/adaptadores_supabase.ts')
-  const { criarArmazemPrototipos, criarCanalCelular, criarAtualizacao, criarInstalador, enviarAvisoAtraso, enviarBoasVindas, enviarConfirmacaoDegustacao, enviarCortesia } = await import('../_shared/adaptadores_supabase.ts')
+  const { criarArmazemPrototipos, criarCanalCelular, criarAtualizacao, criarInstalador, enviarAvisoAtraso, enviarBoasVindas, enviarConfirmacaoDegustacao, enviarCortesia, gerarCodigoEntrada, enviarCodigoEntrada } = await import('../_shared/adaptadores_supabase.ts')
   const deps = { store: criarStoreSupabase(), agora: () => new Date(), enviarCodigoPorEmail: enviarCodigo, segredo, chaveAssinatura: await importarChavePrivada(sk) }
   // Pagamento: a conta Stripe é SEMPRE do cliente. Chaves por conta (STRIPE_<ref>_SK / STRIPE_<ref>_WHSEC) vêm dos
   // segredos do Supabase, resolvidas por referência guardada em contas_gateway. Nunca uma conta central do Luiz.
@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     if (!r.ok && r.status !== 404) throw new Error(`auth admin delete: ${r.status}`)
   }
   const degustacao = { ...deps, enviarConfirmacaoDegustacao }
-  const portal = { ...pagamento, ...cadastro, autenticarPortal, removerUsuarioAuth }
+  const portal = { ...pagamento, ...cadastro, autenticarPortal, removerUsuarioAuth, gerarCodigoEntrada, enviarCodigoEntrada }
   // Painel do admin (M7): mesma validação de JWT do portal + allowlist ATLAS_ADMIN_EMAILS (vazia = ninguém entra).
   const admin = { ...deps, enviarCortesia, autenticarPortal, emailsAdmin: lerEmailsAdmin(Deno.env.get('ATLAS_ADMIN_EMAILS')) }
   return tratar(
