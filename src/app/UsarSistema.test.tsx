@@ -16,7 +16,7 @@ async function abrir() {
   const p = criarPrototipoFixture()
   const e = await p.desenhar('obra', 'Colore', ESTILOS_EXEMPLO[0], 'agenda')
   const telas = e.versoes[0].telas
-  const mandar = vi.fn(async (_p: string) => {})
+  const mandar = vi.fn<(pedido: string) => Promise<void>>(async () => {})
   const user = userEvent.setup()
   render(<TemaProvider><UsarSistema obraNome="Colore" telas={telas} inicial={telas[0].id} onFechar={() => {}} onPedirMudanca={() => {}}
     sugerir={(id, x, y) => p.sugerirMarcacao!('obra', id, x, y)} onMandar={mandar} /></TemaProvider>)
