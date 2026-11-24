@@ -7,7 +7,7 @@ import { criarPainelFixture, painelIndisponivel, type PontePainel } from './pont
 
 const obra = { nome: 'Agenda da Barbearia do Zé', pasta: 'agenda' }
 const agora = () => new Date(2026, 10, 18, 14, 40)
-const PCT = /^54,\d%$/
+const PCT = /^54,\d\d%$/
 
 const montar = (modo: ModoObra | null = 'automatico', opcoes: { painel?: PontePainel; modos?: PonteModoObra; endereco?: string | null; sondagemMs?: number } = {}) => {
   const fx = criarPainelFixture({ agora, endereco: opcoes.endereco })

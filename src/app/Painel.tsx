@@ -1,3 +1,4 @@
+import { textoAvanco } from './avanco'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Botao, Icone } from '../ui'
 import { Canteiro3D } from './Canteiro3D'
@@ -128,7 +129,7 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
 
   const concluida = sit === 'concluida'
   const pct = estado?.pct ?? 0
-  const pctTxt = (concluida ? 100 : pct).toLocaleString('pt-BR')
+  const pctTxt = textoAvanco(concluida ? 100 : pct)
   const pendencia = sit === 'precisa-de-voce' || sit === 'billing' ? 'tem uma pendência sua' : sit === 'espera-ok' ? 'esperando o seu OK' : 'nenhuma pendência sua'
 
   return (

@@ -1,3 +1,4 @@
+import { textoAvanco } from './avanco'
 import { useEffect, useMemo, useState } from 'react'
 import { Icone } from '../ui'
 import canteiroImagem from '../assets/canteiro-3d.jpg'
@@ -221,7 +222,7 @@ function Cartao({ o, onAbrir, onExcluir }: { o: Lida; onAbrir: () => void; onExc
   const linha = fase.concluida ? 'Pronta. Abra para ver o endereço ou pedir uma mudança.' : passo ? 'O canteiro ainda não começou. Termine as etapas e o Atlas constrói sozinho.' : vivo?.linha ?? fase.rotulo
   const acao = passo ? `Próximo: ${passo.proximo}` : vivo?.acao ?? 'Abrir a obra'
   return (
-    <article className={`at-ct__cartao${inacabada ? ' at-ct__cartao--falta' : ''}${fase.concluida ? ' at-ct__cartao--pronta' : ''}${vivo ? ` at-ct__cartao--${vivo.tom}` : ''}`} aria-label={`${o.nome}: ${fase.concluida ? 'no ar' : passo ? `falta terminar, etapa ${passo.n} de 6` : `${(vivo?.selo ?? 'em construção').toLocaleLowerCase('pt-BR')}${fase.pct !== undefined ? `, ${fase.pct}%` : ''}`}`}>
+    <article className={`at-ct__cartao${inacabada ? ' at-ct__cartao--falta' : ''}${fase.concluida ? ' at-ct__cartao--pronta' : ''}${vivo ? ` at-ct__cartao--${vivo.tom}` : ''}`} aria-label={`${o.nome}: ${fase.concluida ? 'no ar' : passo ? `falta terminar, etapa ${passo.n} de 6` : `${(vivo?.selo ?? 'em construção').toLocaleLowerCase('pt-BR')}${fase.pct !== undefined ? `, ${textoAvanco(fase.pct)}%` : ''}`}`}>
       <button type="button" className="at-ct__abrir" onClick={onAbrir}>
         <span className="at-ct__cena">
           {inacabada
@@ -230,7 +231,7 @@ function Cartao({ o, onAbrir, onExcluir }: { o: Lida; onAbrir: () => void; onExc
           <span className="at-ct__selo"><span className="at-ct__ponto" aria-hidden="true" />{selo}</span>
         </span>
         <span className="at-ct__corpo">
-          <span className="at-ct__nome-linha"><b className="at-ct__nome" title={o.pasta}>{o.nome}</b>{!inacabada && !fase.concluida && fase.pct !== undefined && <span className="at-ct__pct">{fase.pct}%</span>}</span>
+          <span className="at-ct__nome-linha"><b className="at-ct__nome" title={o.pasta}>{o.nome}</b>{!inacabada && !fase.concluida && fase.pct !== undefined && <span className="at-ct__pct">{textoAvanco(fase.pct)}%</span>}</span>
           {!fase.concluida && <span className="at-ct__barra" aria-hidden="true"><i style={{ width: `${inacabada ? ((passo!.n - 1) / 6) * 100 : (fase.pct ?? 0)}%` }} /></span>}
           <span className="at-ct__linha">{linha}</span>
           {vivo?.volta && !passo && !fase.concluida && <span className="at-ct__volta">{vivo.volta}</span>}

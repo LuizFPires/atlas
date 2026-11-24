@@ -27,7 +27,7 @@ const fs = require('node:fs')
 const http = require('node:http')
 const path = require('node:path')
 const crypto = require('node:crypto')
-const { spawn } = require('node:child_process')
+const { spawn, spawnSync } = require('node:child_process')
 const net = require('node:net')
 const { caminhoSeguro, envMinimo } = require('../seguro.cjs')
 const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson, lerTexto } = require('./obra-fs.cjs')
@@ -63,6 +63,43 @@ function lerPlanoDoTexto(texto) {
 }
 
 /** Igual a textoRestante / textoPrevisao de ponte-painel.ts. */
+/** Avanço fino (pedido do Luiz, 24/11/2026: "o 0% pregado na tela" dá a sensação de obra parada). Uma tarefa só vira [x] depois
+ *  de revisada, então a etapa em andamento ganha crédito parcial pelo roteiro da /construir, SEM chegar ao valor dela inteira
+ *  (só a medição completa a etapa): começou 3%, planejada 15%, cada commit do item até 60%, PR aberto 60%, revisada 85%.
+ *  Duas casas, sempre arredondando para baixo (nunca promete mais do que foi feito). */
+function parcialDaEtapa(etapa, commits, total) {
+  const e = Number(etapa) || 0
+  if (e >= 3) return 0.85
+  if (e === 2) return 0.6
+  if (e === 1) return 0.15 + 0.45 * Math.min(1, total ? commits / total : 0)
+  return 0.03 + 0.12 * Math.min(1, total ? commits / total : 0)
+}
+function avancoFino(p, roteiro, contarCommits) {
+  const nRot = roteiro && typeof roteiro.milestone === 'string' ? Number((roteiro.milestone.match(/\d+/) || [])[0]) : NaN
+  let pesoTotal = 0, pesoFeito = 0
+  for (const m of p.milestones) {
+    let frac = m.total ? m.feitas / m.total : 0
+    if (m.n === nRot && m.total && m.feitas < m.total) {
+      let commits = 0
+      try { commits = Number(contarCommits(roteiro.branch)) || 0 } catch { commits = 0 }
+      frac = Math.max(frac, m.feitas / m.total + (1 - m.feitas / m.total) * parcialDaEtapa(roteiro.etapa_concluida, commits, m.total - m.feitas))
+    }
+    pesoTotal += m.peso; pesoFeito += m.peso * frac
+  }
+  if (!pesoTotal) return 0
+  return Math.min(100, Math.floor((pesoFeito / pesoTotal) * 10000 + 1e-6) / 100)
+}
+
+/** Quantos commits a branch da etapa tem a mais que a main (cada item da /construir é um commit). Qualquer falha: 0. */
+function commitsDaBranch(cwd, branch) {
+  if (typeof branch !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._/-]{0,119}$/.test(branch) || branch.includes('..')) return 0
+  for (const base of ['main', 'master']) {
+    const r = spawnSync('git', ['rev-list', '--count', `${base}..${branch}`], { cwd, env: envMinimo(), timeout: 3000, windowsHide: true, encoding: 'utf8' })
+    if (r.status === 0) return Number(String(r.stdout).trim()) || 0
+  }
+  return 0
+}
+
 function textoRestante(minutos) {
   if (minutos <= 0) return 'nada'
   if (minutos < 60) return `≈ ${Math.max(1, Math.round(minutos))} min`
@@ -113,7 +150,7 @@ function kitDirDoApp({ empacotado, recursos }) {
  * `porta` (teste): fixa a porta; padrão = porta livre aleatória a cada subida. `subir` (teste): substitui o spawn do canteiro
  * (sem nonce: o servidor falso do teste não o conhece). Padrão de kitDir (hooks/ e canteiro/): a pasta .claude do app (ATLAS_KIT_DIR).
  */
-function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir }) {
+function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir, contarCommits }) {
   const hooks = path.join(kitDir, 'hooks')
   const canteiroDir = path.join(kitDir, 'canteiro')
   const linha = construcao.linha
@@ -136,6 +173,12 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
     if (kit && typeof kit.lerPlano === 'function') { try { const p = kit.lerPlano(cwd); if (p) return p } catch { /* cai na porta local */ } }
     const t = lerTexto(path.join(cwd, 'PLAN.md'))
     return t === null ? null : lerPlanoDoTexto(t)
+  }
+
+  /** roteiro.json da /construir (.codex primeiro, como o kit). Quebrado ou ausente: null. */
+  function lerRoteiroDa(cwd) {
+    for (const r of ['.codex/roteiro.json', '.claude/roteiro.json']) { const j = lerJson(path.join(cwd, r)); if (j && typeof j === 'object') return j }
+    return null
   }
 
   function prazoDa(cwd, p) {
@@ -215,7 +258,7 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
       const { restante, previsao } = prazoDa(cwd, p)
       const feito = linha.recentes(pasta).slice(-1)[0]
       return {
-        pct: p.pct, tarefas: p.tarefas, feitas: p.feitas,
+        pct: acabou ? 100 : avancoFino(p, lerRoteiroDa(cwd), (branch) => (contarCommits ? contarCommits(cwd, branch) : commitsDaBranch(cwd, branch))), tarefas: p.tarefas, feitas: p.feitas,
         etapa: prox ? { n: prox.n, nome: nomeCurto(prox.titulo) } : null,
         etapas: p.milestones.map((m) => ({ n: m.n, nome: nomeCurto(m.titulo), feitas: m.feitas, total: m.total, pct: m.pct })),
         restante, previsao,
@@ -323,4 +366,4 @@ function responde(porta, nonce = null) {
   })
 }
 
-module.exports = { kitDirDoApp, criarPainel, portaLivre, responde, lerPlanoDoTexto, paradaDeOcorrencias, textoRestante, textoPrevisao, RE_ENDERECO }
+module.exports = { avancoFino, parcialDaEtapa, kitDirDoApp, criarPainel, portaLivre, responde, lerPlanoDoTexto, paradaDeOcorrencias, textoRestante, textoPrevisao, RE_ENDERECO }

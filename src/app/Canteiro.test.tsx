@@ -24,7 +24,7 @@ test('Canteiro: só as obras vivas (inacabadas primeiro), com o que falta e o pr
   expect(within(cartoes[0]).getByText(/FALTA TERMINAR · ETAPA 3 DE 6/)).toBeInTheDocument()
   expect(within(cartoes[0]).getByText(/Próximo: escolher o nome/)).toBeInTheDocument()
   expect(within(cartoes[1]).getByText(/Próximo: escolher o visual/)).toBeInTheDocument()
-  expect(within(cartoes[2]).getByText('64%')).toBeInTheDocument()
+  expect(within(cartoes[2]).getByText('64,00%')).toBeInTheDocument()
   expect(screen.queryByText(/Barbearia do ze/)).toBeNull()
 })
 
