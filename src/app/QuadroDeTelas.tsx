@@ -48,12 +48,31 @@ export function QuadroDeTelas({ telas, marcada, onMarcar, onUsar }: Props) {
   const [z, setZ] = useState(1) // índice em ZOOMS: começa em 40%
   const zoom = ZOOMS[z]
   const { visivel, guardar } = useTelasVisiveis(telas.map((t) => t.id))
+  // "Ver todas" (P4 aprovado): o quadro ocupa a janela inteira, as telas em grade, no menor tamanho.
+  const [cheia, setCheia] = useState(false)
+  const zAntes = useRef(1)
+  const abrirCheia = () => { zAntes.current = z; setZ(0); setCheia(true) }
+  const fecharCheia = () => { setCheia(false); setZ(zAntes.current) }
+  useEffect(() => {
+    if (!cheia) return
+    const tecla = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || document.querySelector('.at-play')) return // com o Play aberto, o Esc é dele
+      setCheia(false); setZ(zAntes.current)
+    }
+    window.addEventListener('keydown', tecla)
+    return () => window.removeEventListener('keydown', tecla)
+  }, [cheia])
   return (
-    <section className="at-quadro" aria-label="Quadro de telas">
+    <section className={`at-quadro${cheia ? ' at-quadro--cheia' : ''}`} aria-label={cheia ? 'Todas as telas do protótipo' : 'Quadro de telas'}
+      {...(cheia ? { role: 'dialog', 'aria-modal': true } : {})}>
       <div className="at-quadro__zoom" role="group" aria-label="Tamanho das telas">
         <button type="button" aria-label="Diminuir" disabled={z === 0} onClick={() => setZ((v) => Math.max(0, v - 1))}><Icone nome="zoom-menos" tamanho={16} /></button>
         <span role="status" aria-label="Zoom do quadro">{Math.round(zoom * 100)}%</span>
         <button type="button" aria-label="Aumentar" disabled={z === ZOOMS.length - 1} onClick={() => setZ((v) => Math.min(ZOOMS.length - 1, v + 1))}><Icone nome="zoom-mais" tamanho={16} /></button>
+        {cheia
+          ? <button type="button" className="at-quadro__todas" aria-label="Fechar a tela cheia" title="Fechar (Esc)" onClick={fecharCheia}><Icone nome="x" tamanho={16} /><span>Fechar</span></button>
+          : <button type="button" className="at-quadro__todas" aria-label="Ver todas as telas em tela cheia" title="Ver todas as telas em tela cheia" onClick={abrirCheia}><span>Ver todas</span></button>}
+        {cheia && <em className="at-quadro__conta">{telas.length} {telas.length === 1 ? 'tela' : 'telas'}</em>}
       </div>
       <ol className="at-quadro__palco">
         {telas.map((t, i) => {
