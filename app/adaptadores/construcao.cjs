@@ -68,12 +68,23 @@ const FERRAMENTAS_LINHA = [
   // publicar: as CLIs da Vercel e do Supabase instaladas pelo Atlas (contas-cli.cjs), logadas pela tela das contas
   'Bash(vercel:*)', 'Bash(supabase:*)',
   'Bash(gh pr create:*)', 'Bash(gh pr view:*)', 'Bash(gh pr checks:*)', 'Bash(gh pr merge:*)', 'Bash(gh run:*)',
+  // "rodar liso" (24/11, eventos da obra do Guilherme): o trabalho comum de uma obra não pode cair em negação e fazer a linha girar
+  // em falso. node e npm run rodam só código da própria obra (mesma confiança do npm test); os atalhos perigosos seguem negados.
+  'Bash(cd:*)', 'Bash(node:*)', 'Bash(npm audit)', 'Bash(npm audit:*)', 'Bash(npm pkg:*)', 'Bash(npm outdated:*)',
+  'Bash(git status:*)', 'Bash(git show:*)', 'Bash(git grep:*)', 'Bash(git ls-files:*)', 'Bash(git mv:*)', 'Bash(git rm:*)',
+  'Bash(git restore:*)', 'Bash(git stash:*)', 'Bash(git tag:*)',
+  'Bash(git --no-pager diff:*)', 'Bash(git --no-pager log:*)', 'Bash(git --no-pager show:*)',
+  'Bash(pnpm install)', 'Bash(pnpm build)', 'Bash(pnpm test)', 'Bash(pnpm run:*)',
+  // entregar: só as ferramentas oficiais pelo npx, nunca o npx solto
+  'Bash(npx eas-cli:*)', 'Bash(npx expo-doctor:*)', 'Bash(npx vercel:*)', 'Bash(npx supabase:*)',
+  'Bash(gh api rate_limit)', 'WebFetch',
 ].join(',')
 /** Negados explícitos (valem mesmo que uma regra de permissão mais larga apareça). Config do projeto/kit não se edita. */
 const FERRAMENTAS_NEGADAS = [
-  'Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node -e:*)', 'Bash(node --eval:*)', 'Bash(node -p:*)', 'Bash(node --print:*)', 'Bash(node -r:*)', 'Bash(node --require:*)', 'Bash(node -i:*)', 'Bash(npx:*)', 'Bash(curl:*)', 'Bash(wget:*)', 'Bash(powershell:*)', 'Bash(cmd:*)',
+  'Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node -e:*)', 'Bash(node --eval:*)', 'Bash(node -p:*)', 'Bash(node --print:*)', 'Bash(node -r:*)', 'Bash(node --require:*)', 'Bash(node -i:*)', 'Bash(node --input-type:*)', 'Bash(curl:*)', 'Bash(wget:*)', 'Bash(powershell:*)', 'Bash(cmd:*)',
   'Bash(vercel logout:*)', 'Bash(vercel login:*)', 'Bash(vercel remove:*)', 'Bash(vercel rm:*)', 'Bash(vercel tokens:*)', 'Bash(vercel teams:*)',
   'Bash(supabase logout:*)', 'Bash(supabase login:*)', 'Bash(supabase projects delete:*)', 'Bash(supabase orgs:*)',
+  'Bash(gh auth setup-git:*)', 'Bash(gh auth token:*)',
   'Write(.claude/**)', 'Edit(.claude/**)', 'Write(CLAUDE.md)', 'Edit(CLAUDE.md)', 'Write(.git/**)', 'Edit(.git/**)',
 ].join(',')
 /**
@@ -257,6 +268,9 @@ function garantirEspecificacao(cwd) {
 /** Uma linha que "conclui" antes disso com a obra por terminar não trabalhou de verdade. */
 const MIN_TRABALHO_MS = 3 * 60_000
 /** A linha terminou pedindo algo que só a pessoa faz (o despachante e a /construir escrevem "USUÁRIO: …"). */
+// Pedido que o cliente não tem como atender (permissão, terminal, comando): a trava é do Atlas. Não vira "precisa de você";
+// fica sem-avanço para o vigia tentar de novo e, sem solução, mostrar "com defeito".
+const RE_TRAVA_DO_ATLAS = /\/permissions|update-config|permiss[aãoõ]|num terminal|no terminal|rode no (?:prompt|powershell|cmd)|aprove o comando|libere o comando/i
 const RE_PEDE_PESSOA = /USU[AÁ]RIO\s*:|precis[ao] (?:que voc[eê]|de voc[eê])|\b(?:ligue|ligar|conecte|conectar) (?:o|a) (?:GitHub|Vercel|Supabase)|reinstale o Atlas|aguardando (?:voc[eê]|sua)|s[oó] (?:voc[eê]|o usu[aá]rio) pode/i
 
 function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [] }) {
@@ -331,7 +345,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
         if (pctAgora < 100) motivo = 'sem-avanco'
       }
       // Parou rápido pedindo algo que só a pessoa faz (ex.: "USUÁRIO: Ligue o GitHub…"): não é falha para tentar de novo, é pedido.
-      if ((motivo === 'sem-avanco' || motivo === 'concluiu') && reg.fala && RE_PEDE_PESSOA.test(reg.fala)) {
+      if ((motivo === 'sem-avanco' || motivo === 'concluiu') && reg.fala && RE_PEDE_PESSOA.test(reg.fala) && !RE_TRAVA_DO_ATLAS.test(reg.fala)) {
         let pctAgora = 0
         try { const t = lerTexto(path.join(cwd, 'PLAN.md')); if (t !== null) pctAgora = lerPlanoDoTexto(t).pct } catch { pctAgora = 0 }
         if (pctAgora < 100) motivo = 'precisa-voce'

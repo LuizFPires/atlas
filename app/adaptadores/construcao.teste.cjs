@@ -111,7 +111,7 @@ test('Claude da obra: subcomandos exatos, ignora config de projeto, env mínimo'
   const val = (f) => a[a.indexOf(f) + 1]
   assert.equal(val('--setting-sources'), 'user')
   const permitidas = val('--allowedTools'); const negadas = val('--disallowedTools')
-  for (const curinga of ['Bash(git:*)', 'Bash(gh:*)', 'Bash(npm:*)', 'Bash(npx:*)', 'Bash(node:*)']) assert.ok(!permitidas.split(',').includes(curinga))
+  for (const curinga of ['Bash(git:*)', 'Bash(gh:*)', 'Bash(npm:*)', 'Bash(npx:*)']) assert.ok(!permitidas.split(',').includes(curinga))
   for (const n of ['Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node -e:*)', 'Bash(curl:*)', 'Bash(powershell:*)', 'Write(.claude/**)', 'Edit(CLAUDE.md)']) assert.ok(negadas.split(',').includes(n), n)
   assert.ok(!('ANTHROPIC_API_KEY' in chamadas[0].o.env) && chamadas[0].o.env.CLAUDE_PROJECT_DIR)
 })
@@ -237,8 +237,9 @@ test('caminho completo: a linha pode preparar o projeto (npm install, git init, 
     assert.ok(ok.includes(f), `falta ${f}`)
   }
   // nada que mostre ou troque a credencial, nem execução solta
-  assert.ok(!ok.some((f) => /gh auth (login|token|refresh|logout)|gh api|npm exec|Bash\(\*\)/.test(f)))
-  for (const f of ['Bash(npx:*)', 'Bash(node -e:*)', 'Bash(git config:*)', 'Bash(curl:*)']) assert.ok(FERRAMENTAS_NEGADAS.split(',').includes(f))
+  assert.ok(!ok.some((f) => /gh auth (login|token|refresh|logout)|gh api(?! rate_limit\))|npm exec|Bash\(\*\)/.test(f)))
+  for (const f of ['Bash(node -e:*)', 'Bash(git config:*)', 'Bash(curl:*)']) assert.ok(FERRAMENTAS_NEGADAS.split(',').includes(f))
+  assert.ok(!ok.includes('Bash(npx:*)')) // npx solto nunca: só as ferramentas oficiais listadas
 })
 
 test('git isolado: os commits têm autor e o push para o GitHub usa o login do gh (sem senha guardada)', (t) => {
@@ -326,7 +327,22 @@ test('a linha que para pedindo algo à pessoa (ex.: ligar o GitHub) vira "precis
   assert.match(l.fala, /Ligue o GitHub na tela As contas do Atlas/)
 })
 
-test('a linha pode rodar as ferramentas do kit (e só elas): node solto e node -e continuam negados', async () => {
+// Obra do Guilherme (24/11): a linha parou dizendo "precisam de você… libere com /permissions… rode no terminal". A trava era do Atlas,
+// e o cliente não tem como resolver. Isso não pode virar "precisa de você": fica "sem-avanço" para o vigia tentar de novo e, se não
+// resolver, mostrar "com defeito".
+test('pedido de permissão ou de terminal não vira "precisa de você" (a trava é do Atlas, não do cliente)', async () => {
+  let t = Date.UTC(2026, 10, 24, 9, 0)
+  const { raiz, c, chamadas, terminar } = montar({ agora: () => new Date(t) })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  chamadas[0].o.onLinha(JSON.stringify({ type: 'result', is_error: false, result: 'Parei: isso precisa de você. Só você pode liberar. Num terminal, rode gh auth setup-git. Libere o comando com /permissions.' }))
+  t += 40_000
+  terminar({ codigo: 0, parado: false })
+  await new Promise((r) => setTimeout(r, 20))
+  const l = JSON.parse(fs.readFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), 'utf8'))
+  assert.equal(l.motivo, 'sem-avanco')
+})
+
+test('a linha pode rodar as ferramentas do kit e os arquivos da obra; node -e e companhia continuam negados', async () => {
   const { c, chamadas } = montar({ comandosDoKit: () => ['Bash(node "C:/kit/obra/hooks/progresso.cjs":*)'] })
   await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
   const a = chamadas[0].args
@@ -334,8 +350,7 @@ test('a linha pode rodar as ferramentas do kit (e só elas): node solto e node -
   const negados = a[a.indexOf('--disallowedTools') + 1]
   assert.ok(permitidos.includes('Bash(node "C:/kit/obra/hooks/progresso.cjs":*)'))
   assert.ok(!negados.split(',').includes('Bash(node:*)'))
-  for (const n of ['Bash(node -e:*)', 'Bash(node --eval:*)', 'Bash(node -p:*)', 'Bash(node --print:*)', 'Bash(node -r:*)', 'Bash(node --require:*)', 'Bash(node -i:*)', 'Bash(npx:*)']) assert.ok(negados.split(',').includes(n), n)
-  assert.ok(!permitidos.includes('Bash(node:*)'))
+  for (const n of ['Bash(node -e:*)', 'Bash(node --eval:*)', 'Bash(node -p:*)', 'Bash(node --print:*)', 'Bash(node -r:*)', 'Bash(node --require:*)', 'Bash(node -i:*)']) assert.ok(negados.split(',').includes(n), n)
 })
 
 test('o despachante consegue conferir git e gh (antes "git --version" era negado e ele mandava reinstalar o Atlas)', () => {
@@ -385,4 +400,45 @@ test('git isolado: o caminho do gh com espaço chega ao git com as aspas (push f
 test('a linha pode rodar os scripts da própria obra (npm run …)', () => {
   const ok = require('./construcao.cjs').FERRAMENTAS_LINHA.split(',')
   assert.ok(ok.includes('Bash(npm run:*)'))
+})
+
+// "O Atlas tem que rodar liso" (24/11): toda ordem de comando que o próprio kit dá à linha precisa estar liberada.
+// Este teste lê os agentes e as skills do kit e confere cada comando contra as regras, do jeito que o Claude Code casa:
+// "Bash(x)" = exatamente x; "Bash(x:*)" = começa com x; negado vence liberado; comando com ; && || | vale por partes.
+test('todo comando que o kit manda a linha rodar está liberado (nenhuma trava nossa no meio da obra)', () => {
+  const { FERRAMENTAS_LINHA, FERRAMENTAS_NEGADAS } = require('./construcao.cjs')
+  const regras = (s) => s.split(',').filter((r) => r.startsWith('Bash(')).map((r) => r.slice(5, -1))
+  const casa = (cmd, r) => (r.endsWith(':*') ? cmd === r.slice(0, -2) || cmd.startsWith(r.slice(0, -2) + ' ') : cmd === r)
+  const ok = regras(FERRAMENTAS_LINHA); const nao = regras(FERRAMENTAS_NEGADAS)
+  // fora da obra do Atlas (o próprio texto do kit diz "fora do Atlas") ou trocados por ferramenta própria
+  const FORA = [/^git config --global/, /^gh api user/, /^node \.claude\/canteiro\/server\.cjs/]
+  const raizKit = path.join(__dirname, '..', '..', '.claude')
+  const arquivos = []
+  for (const d of ['agents', 'skills']) {
+    const andar = (p) => { for (const n of fs.readdirSync(p, { withFileTypes: true })) { const f = path.join(p, n.name); if (n.isDirectory()) andar(f); else if (f.endsWith('.md')) arquivos.push(f) } }
+    andar(path.join(raizKit, d))
+  }
+  const faltando = new Set()
+  for (const f of arquivos) {
+    for (const m of fs.readFileSync(f, 'utf8').matchAll(/`((?:npm|npx|node|git|gh|vercel|supabase|pnpm) [^`]+)`/g)) {
+      const cmd = m[1].replace(/<[^>]+>/g, 'X').replace(/"[^"]*"|'[^']*'/g, 'Q').replace(/\s+/g, ' ').trim()
+      if (FORA.some((re) => re.test(cmd))) continue
+      for (const parte of cmd.split(/\s*(?:&&|\|\||;|\|)\s*/)) {
+        const p = parte.replace(/\s*2>&1$/, '').trim()
+        if (!p || /^(head|tail|grep|wc|sort)\b/.test(p)) continue
+        if (/^node \.claude\/hooks\//.test(p)) continue // reescrito para o kit da obra (kit.comandos)
+        if (nao.some((r) => casa(p, r)) || !ok.some((r) => casa(p, r))) faltando.add(`${path.basename(path.dirname(f))}/${path.basename(f)}: ${p}`)
+      }
+    }
+  }
+  assert.deepEqual([...faltando], [])
+})
+
+// Visto no eventos.jsonl da obra do Guilherme: comandos comuns de trabalho que eram negados e faziam a linha girar em falso.
+test('comandos comuns de trabalho na obra estão liberados (e os perigosos continuam negados)', () => {
+  const { FERRAMENTAS_LINHA, FERRAMENTAS_NEGADAS } = require('./construcao.cjs')
+  const ok = FERRAMENTAS_LINHA.split(','); const nao = FERRAMENTAS_NEGADAS.split(',')
+  for (const f of ['Bash(cd:*)', 'Bash(node:*)', 'Bash(npm audit:*)', 'Bash(npm pkg:*)', 'Bash(git --no-pager diff:*)', 'Bash(git show:*)', 'Bash(git mv:*)', 'Bash(git rm:*)', 'Bash(git tag:*)', 'WebFetch']) assert.ok(ok.includes(f), `falta ${f}`)
+  for (const f of ['Bash(git config:*)', 'Bash(git -c:*)', 'Bash(node -e:*)', 'Bash(curl:*)', 'Bash(gh auth setup-git:*)']) assert.ok(nao.includes(f), `devia negar ${f}`)
+  assert.ok(!ok.some((f) => /^Bash\(git --no-pager:\*\)$|^Bash\(npx:\*\)$|gh api(?! rate_limit\))/.test(f)))
 })

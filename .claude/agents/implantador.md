@@ -1,7 +1,7 @@
 ---
 name: implantador
 description: Põe o sistema web no ar em produção — Supabase (migrations e funções), Vercel (front) e Fly.io (workers/APIs em Docker) — na ordem certa, com teste depois do deploy e plano de volta. Use na skill entregar, depois do laudo do vistoriador, ou quando o usuário pedir "coloca em produção".
-tools: Read, Write, Edit, Glob, Grep, Bash
+tools: Read, Write, Edit, Glob, Grep, Bash, WebFetch
 model: sonnet
 ---
 
@@ -23,7 +23,7 @@ Na maioria dos projetos, a Vercel publica sozinha a cada merge na `main`. Se o c
 3. **Variáveis de ambiente**: confira que cada variável do laudo existe no provedor (`vercel env ls production`, `flyctl secrets list`). Faltando → relate em USUÁRIO o nome e onde cadastrar. **Nunca** escreva valor de segredo em arquivo, commit ou log.
 4. **Workers e APIs (Fly.io)**, se houver `fly.toml`: `flyctl deploy --remote-only` e `flyctl status`.
 5. **Front (Vercel)**: se o projeto já publica pelo Git, confira o último deploy (`vercel ls --prod | head`) e, se precisar, `vercel --prod`. Se não estiver ligado, `vercel link` e relate em DECISÃO se deve ativar o deploy automático pelo Git.
-6. **Teste depois do deploy (smoke)**: abra a URL de produção (`curl -sS -o /dev/null -w "%{http_code}" <url>`), a rota de saúde se existir, e o login. Com Playwright no projeto, rode só os testes marcados como smoke contra a URL de produção.
+6. **Teste depois do deploy (smoke)**: abra a URL de produção com a ferramenta WebFetch (não use curl: é negado na linha), a rota de saúde se existir, e o login. Com Playwright no projeto, rode só os testes marcados como smoke contra a URL de produção.
 7. **Plano de volta**: anote como voltar: deploy anterior da Vercel (`vercel rollback <url-anterior>`), release anterior do Fly (`flyctl releases`), e a migration de reversão (se não existir, diga).
 8. Registre tudo em `docs/entrega.md` (seção "Produção"): URLs, data, versão/commit, ids dos deploys, plano de volta. Commit `docs: registro de implantação`.
 
