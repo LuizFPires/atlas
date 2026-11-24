@@ -7,12 +7,13 @@ import './status-voz.css'
 /** Só o fim do rascunho (cabe numa linha e acompanha a fala). */
 const ultimasPalavras = (t: string) => { const p = t.trim().split(/\s+/); return p.length > 14 ? `…${p.slice(-14).join(' ')}` : t.trim() }
 
-export function StatusVoz() {
+/** embutido: dentro de um painel (a gaveta da Ajuda, D1), sem flutuar sobre o app. */
+export function StatusVoz({ embutido = false }: { embutido?: boolean }) {
   const e = useSyncExternalStore(assinarVoz, estadoVoz, estadoVoz)
   if (e.fase === 'livre') return null
   if (e.fase === 'erro') {
     return (
-      <div className="at-svoz at-svoz--erro" role="alert">
+      <div className={`at-svoz at-svoz--erro${embutido ? ' at-svoz--embutido' : ''}`} role="alert">
         <Icone nome="alerta" tamanho={18} />
         <span>{e.recado}</span>
         <button type="button" className="at-svoz__x" aria-label="Fechar o aviso" onClick={() => definirEstadoVoz({ fase: 'livre' })}><Icone nome="x" tamanho={14} /></button>
@@ -21,7 +22,7 @@ export function StatusVoz() {
   }
   const pct = e.progresso ?? 0
   return (
-    <div className={`at-svoz at-svoz--${e.fase}`} role="status">
+    <div className={`at-svoz at-svoz--${e.fase}${embutido ? ' at-svoz--embutido' : ''}`} role="status">
       {e.fase === 'ouvindo' && !e.rascunho && <><span className="at-svoz__ponto" aria-hidden="true" /><span><b>Ouvindo…</b> Fale à vontade: o texto vai aparecendo a cada pausa. Quando terminar, aperte o microfone de novo.</span></>}
       {/* Rascunho ao vivo (Luiz, 23/11/2026: "sem delay na fala"): as últimas palavras faladas, já escritas; o campo recebe a versão revisada. */}
       {e.fase === 'ouvindo' && e.rascunho && <><span className="at-svoz__ponto" aria-hidden="true" /><span className="at-svoz__rascunho"><b>Ouvindo…</b> <span>{ultimasPalavras(e.rascunho)}</span></span></>}

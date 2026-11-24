@@ -15,3 +15,6 @@
 @keyframes at-svoz-gira { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .at-svoz, .at-svoz__ponto, .at-svoz__giro { animation: none; } }
 .at-svoz__rascunho span { color: var(--mute); font-style: italic; }
+/* D1: dentro da gaveta da Ajuda, logo acima do campo: não flutua, ocupa a largura do painel. */
+.at-svoz.at-svoz--embutido { position: static; transform: none; left: auto; bottom: auto; max-width: none; width: 100%; box-sizing: border-box; animation: none; }
+.at-svoz--embutido.at-svoz--ouvindo { background: rgba(240, 90, 79, 0.08); }

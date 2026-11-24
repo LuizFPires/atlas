@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Icone, Microfone, useVoz } from '../ui'
+import { Icone, Microfone, StatusVoz, useVoz } from '../ui'
 import { textoDaObra } from './ponte-cota'
 import { montarCaso, type MotivoCaso, type PonteCasosAdmin } from './ponte-ajuda-casos'
 import { AINDA_NAO_DEU, ehPaginaId, normalizarResposta, saudacaoAjuda, type ContextoAjuda, type PonteAjuda, type PrintAjuda, type RespostaAjuda, type Turno } from './ponte-ajuda'
@@ -143,6 +143,8 @@ export function Ajuda({ toqueVoz = 0, ajuda, casos, contexto, nome, onFechar }: 
         <div><b>{textoDaObra(contexto.erro?.titulo, 100) || 'Algo deu errado.'}</b><span>A Ajuda do Atlas já abriu ao lado, com o print da tela.</span></div>
       </div>
     )}
+    {/* D1: a Ajuda em foco. O resto do Atlas embaça e escurece; tocar nele fecha a Ajuda. */}
+    <div className="at-ajuda-p__fundo" aria-hidden="true" onClick={fechar} />
     <aside className="at-ajuda-p" aria-label="Ajuda do Atlas">
       <header className="at-ajuda-p__topo">
         <span className="at-ajuda-p__logo"><Icone nome="ajuda" tamanho={22} /></span>
@@ -194,6 +196,7 @@ export function Ajuda({ toqueVoz = 0, ajuda, casos, contexto, nome, onFechar }: 
         <div ref={fim} />
       </div>
       <footer className="at-ajuda-p__rodape">
+        <StatusVoz embutido />
         <div className="at-ajuda-p__chips">
           <button type="button" className="at-ajuda-p__chip" onClick={() => void tirar()}><Icone nome="imagem" tamanho={15} /> Tirar print da tela</button>
           <button type="button" className="at-ajuda-p__chip" onClick={() => void anexar()}><Icone nome="clipe" tamanho={15} /> Anexar imagem</button>
