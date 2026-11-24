@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => {
     ...(app ? [motorDaVoz()] : []),
     ...(app ? [] : [VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
+      includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'],
       // A página (index.html) NUNCA é guardada nem entregue pelo service worker: toda navegação busca a versão
       // publicada. Guardada, ela fazia quem já tinha visitado o site abrir /instalar e ver a página de vendas antiga.
       // sw-versao-antiga.js recarrega uma vez quem ainda está com a página antiga guardada.
