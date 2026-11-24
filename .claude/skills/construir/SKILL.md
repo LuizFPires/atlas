@@ -12,7 +12,7 @@ Em palavras simples: a obra é feita em etapas pequenas (milestones), sempre do 
 | 1 — Planejar | Você | branch `feat/mN-…`, lista de itens, decisões registradas |
 | 2 — Implementar | Subagente `implementador` | um commit por item, verificação completa |
 | | Você | push, PR **sem merge**, CI |
-| 3 — Revisar e testar | Subagentes `qa` (revisão, testes reais, protótipo), `seguranca` (ataques e vazamento) e `desempenho` (velocidade e desperdício), em paralelo | achados por gravidade |
+| 3 — Revisar e testar | Subagente `qa` (revisão, testes reais, protótipo) sempre; `seguranca` (ataques e vazamento) e `desempenho` (velocidade e desperdício) quando o milestone mexe no que eles revisam, em paralelo | achados por gravidade |
 | | Novo `implementador` | `fix(mN): review fixes — …` |
 | 4 — Merge | Você | medição no PLAN, CI verde, merge, branch apagada |
 
@@ -25,7 +25,17 @@ Em palavras simples: a obra é feita em etapas pequenas (milestones), sempre do 
   No automático, em todo ponto em que perguntaria, escolha a opção "(Recomendado)", escreva `⏩ Auto: <opção>` e siga. Decisões de negócio adotadas assim levam `(auto — recomendado)` na documentação e vão para `decisoes_auto` no `roteiro.json`.
 - **Antes de cada etapa**, releia `~/.claude/recomendado.json`. Com `"ativo": false`, pare no próximo ponto de decisão e passe a perguntar.
 
+### Na obra do Atlas (`ATLAS_APP=1`) — economia de tokens
+O Atlas roda você sem ninguém no terminal e acompanha tudo pelo painel. Cada turno parado e religado custa caro (você relê tudo do zero), então:
+- **Nunca use `AskUserQuestion`** e não releia `~/.claude/recomendado.json`: o modo vem no retrato da entrada.
+- **Automático**: siga as 4 etapas e os milestones seguintes sem parar. **Sem checkpoint** (o painel mostra o avanço e o cliente pausa quando quiser).
+- **Passo a passo**: siga as 4 etapas do milestone sem parar. Depois do merge (etapa 4), encerre o turno com uma linha curta; o Atlas pede o OK do cliente e religa você.
+- Só pare antes disso pelos motivos de "Quando parar e perguntar" (com as `OPÇÃO N:`).
+- **Sem retratos e resumos longos** entre etapas: uma linha por etapa basta. O que importa fica no PLAN, no git, no PR e no `roteiro.json`.
+
 ## 1. Descubra onde estamos
+
+**Se a entrada trouxer "Estado da obra (lido pelo Atlas…)"**, ele já responde aos passos 1 a 4 e 7: não os repita (nem leia o PLAN, o `roteiro.json` ou o `recomendado.json`). Do passo 5, rode só `git status --short` e, se houver PR, `gh pr checks <n>`; então deduza a etapa (passo 6) e siga.
 
 1. `node .claude/hooks/etapa.cjs construcao`
 2. `node .claude/hooks/progresso.cjs --curto` → avanço, próximo milestone e etapa salva. **Não leia o PLAN inteiro.** Para ver um milestone: `node .claude/hooks/progresso.cjs --milestone N`.
@@ -74,20 +84,20 @@ Em palavras simples: a obra é feita em etapas pequenas (milestones), sempre do 
 4. Se o STATUS for parcial ou bloqueado, registre a pendência e decida (ou pergunte) antes de seguir. Se o bloqueio for **externo** (billing, cota, serviço fora do ar), não pare: siga a seção "Bloqueios externos".
 
 ### Etapa 3 — Revisar e testar (subagente independente)
-1. Chame **em paralelo** (na mesma mensagem) os três revisores, cada um com a mesma entrada:
+1. Descubra quem revisa: `node .claude/hooks/revisores.cjs <base>` (lê só a lista de arquivos do diff). O `qa` vale sempre; `seguranca` e `desempenho` só quando a lista disser. Chame **em paralelo** (na mesma mensagem) os revisores da lista, cada um com a mesma entrada:
    `Revise o Milestone N. Base <base>, branch feat/mN-…, PR #n. Itens: <lista>. Tela: <tela: do milestone, se houver>.`
    - `qa`: revisão somente leitura do diff `<base>...HEAD`, roda o projeto, testa o comportamento real e compara com o protótipo quando o milestone mexe em telas. Se o milestone mexer em várias telas, chame um `qa` por tela, cada um só com a sua.
    - `seguranca`: ataques, vazamento de dados, permissões e isolamento entre clientes, segredos e dependências, no que o milestone mudou.
    - `desempenho`: consultas, índices, paginação, chamadas repetidas, render, bundle e imagens, no que o milestone mudou.
-   Os três valem em **toda** etapa, inclusive no automático; nenhum substitui o outro. O `vistoriador` continua sendo a vistoria final do /entregar.
-2. Achados **altos e médios** (de qualquer um dos três) se corrigem sempre; **baixos**, quando baratos. Junte os achados num só pedido e chame um **novo** `implementador`:
+   Quem a lista indicar vale em toda etapa, inclusive no automático; nenhum substitui o outro. Na dúvida (comando falhou), chame os três. O `vistoriador` continua sendo a vistoria final do /entregar.
+2. Achados **altos e médios** (de qualquer revisor chamado) se corrigem sempre; **baixos**, quando baratos. Junte os achados num só pedido e chame um **novo** `implementador`:
    `Corrija os achados do Milestone N: <lista com arquivo:linha>. Commit: fix(mN): review fixes — <resumo>.`
    Se uma migration já foi commitada, a correção vem numa migration nova. Achados aceitos sem correção vão para `Notas:` com o motivo.
 3. Push e espere o CI. Depois da correção, chame de novo **só** o revisor que reprovou (ou os que reprovaram), com a lista do que foi corrigido. Não crie commit vazio nem repita verificações sem mudança que justifique.
 4. Duas reprovações seguidas do mesmo milestone → pare e pergunte, mesmo no automático.
 
 ### Etapa 4 — Merge (você)
-1. **Medição**: no PLAN, troque `- [ ]` por `- [x]` **somente** nas tarefas aprovadas pelo `qa`, `seguranca` e `desempenho` (os três com VEREDITO aprovado, sem achado alto ou médio em aberto) (Edit pontual). Commit `docs(mN): medição`, push, espere o CI. É isso que faz o prédio subir no canteiro.
+1. **Medição**: no PLAN, troque `- [ ]` por `- [x]` **somente** nas tarefas aprovadas pelos revisores chamados na etapa 3 (todos com VEREDITO aprovado, sem achado alto ou médio em aberto) (Edit pontual). Commit `docs(mN): medição`, push, espere o CI. É isso que faz o prédio subir no canteiro.
 2. `git status`: nada do milestone sem commit, nada alheio ao trabalho. Avise sobre o que ficou de fora.
 3. Confira o CI da versão atual da branch. **Só faça merge com os checks exigidos verdes e sem bloqueio de revisão.** CI rodando não é sucesso. Sem CI configurado, diga isso e siga os critérios do projeto, sem alegar CI verde.
    **CI travado por minutos/cobrança do GitHub** (o job nem começa: "recent account payments have failed", "spending limit", "billing"): não é CI vermelho. Registre a trava `github-minutos` (abaixo), rode **aqui** a mesma conferência do workflow (`npm ci` ou `npm install`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, os que existirem) e, se tudo passar, faça o merge com `--subject "Merge pull request #<n>: MN — <título> (conferido no computador: GitHub sem minutos)"`. Nunca deixe o repositório público por conta própria: isso é decisão do usuário, na ficha do Atlas.
@@ -150,6 +160,7 @@ Use a data e os valores reais. Etapa parcial mantém a última concluída e regi
 Depois de gravar: no manual, ofereça o próximo passo com a recomendação primeiro. No automático, mostre o retrato curto e comece a próxima etapa; ao fim da etapa 4, comece o próximo milestone.
 
 ## Checkpoints humanos
+Na obra do Atlas (`ATLAS_APP=1`) **não há checkpoint**: o modo da obra decide quando parar (veja a seção 0). Fora do Atlas:
 A cada `checkpoint` milestones (padrão 3), mesmo no automático, pare: "Checkpoint: M<a>–M<b> concluídos, avanço X%, prazo restante <linha "Prazo restante" do progresso.cjs --curto>. Ocorrências abertas: <lista curta ou 'nenhuma'>. Teste o app e responda 'segue' ou diga o que corrigir."
 Quando **todos** os milestones estiverem concluídos, diga: "Obra concluída: 100%. Próximo passo: /entregar (vistoria final, produção e lojas)."
 Se `ate` tiver um milestone, ao concluir a etapa 4 dele grave `"ativo": false`, diga que o automático foi desligado e pare.
@@ -168,7 +179,7 @@ A escolha volta para você junto com o `/construir` ("O cliente escolheu: …"):
 
 ## Cuidados
 - Nunca faça merge com CI vermelho, force push ou pule hooks (`--no-verify`).
-- Nunca marque tarefa como feita sem aprovação do `qa`, do `seguranca` e do `desempenho`.
+- Nunca marque tarefa como feita sem aprovação dos revisores chamados na etapa 3 (o `qa` sempre).
 - Nunca leia o código você mesmo para "conferir rápido"; para isso existe o `qa`.
 - **Produção só pela skill `entregar`.** Antes de qualquer deploy de produção (`vercel --prod`, migrations no banco de produção, domínio próprio) ou envio às lojas (`eas submit`, TestFlight, Google Play), feito por você, pelo `implementador` ou pelo `plantonista`, leia `.claude/skills/entregar/SKILL.md`. Se ela abrir com "Entregar — ainda travado", a licença ainda não libera a entrega: não publique; a tarefa do PLAN vira bloqueio externo no livro de ocorrências, com o motivo "entrega em produção travada" e a data que a skill informa, e a obra segue com o resto. Prévia e testes estão sempre liberados.
 - Antes de cada ação difícil de desfazer (push, merge, apagar branch), escreva `⏩ Auto: <ação>` no automático.

@@ -10,7 +10,7 @@ const path = require('node:path')
 
 /** Lista fechada. Para atualizar quando sair modelo novo: trocar aqui (e o RECOMENDADO). */
 const MODELOS = [
-  { id: 'claude-opus-5-5', nome: 'Opus 5.5', explica: 'O melhor resultado, no protótipo e na obra. Gasta mais da cota do seu plano.' },
+  { id: 'claude-opus-5-5', nome: 'Opus 5.5', explica: 'O melhor resultado. Gasta mais da cota do seu plano: na construção da obra, só no plano Max (no Pro, a obra usa o Sonnet para a cota render).' },
   { id: 'claude-sonnet-5-5', nome: 'Sonnet 5.5', explica: 'Mais rápido e econômico. Bom resultado, gasta menos cota.' },
   { id: 'claude-haiku-5-5', nome: 'Haiku 5.5', explica: 'O mais rápido. Só para obras bem simples.' },
 ]
@@ -35,6 +35,8 @@ function criarModelo({ pasta }) {
     },
     /** Argumentos para o Claude Code: sempre um id da lista. */
     args: () => ['--model', ler()],
+    /** A linha de produção (economia de tokens, decisão do Luiz em 24/11/2026): Opus só no plano Max; no Pro, Sonnet. */
+    argsDaLinha: (plano) => { const id = ler(); return ['--model', id === 'claude-opus-5-5' && plano !== 'max' ? 'claude-sonnet-5-5' : id] },
     lista: () => MODELOS.map((m) => ({ ...m, recomendado: m.id === RECOMENDADO })),
   }
 }
