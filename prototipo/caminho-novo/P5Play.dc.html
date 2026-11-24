@@ -21,7 +21,7 @@
   <sc-for list="{{pontos}}" as="p" hint-placeholder-count="6"><button onClick="{{p.ir}}" title="{{p.nome}}" style="min-width:36px;height:36px;border-radius:10px;border:none;background:{{p.bg}};color:{{p.cor}};font:700 14px 'Geist Mono',monospace;cursor:pointer">{{p.n}}</button></sc-for>
  </div>
  <sc-if value="{{marcando}}" hint-placeholder-val="{{ false }}">
-  <div style="position:absolute;left:50%;top:26px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;border-radius:999px;background:#C6F135;color:#141619;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(198,241,53,.25);animation:entra .2s ease"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg> Toque no lugar da tela que você quer criar ou mudar<button onClick="{{sairMarcar}}" style="height:30px;padding:0 12px;border-radius:999px;border:1px solid rgba(20,22,25,.3);background:transparent;color:#141619;font:600 13px 'Geist',sans-serif;cursor:pointer">Cancelar</button></div>
+  <div style="position:absolute;z-index:20;left:50%;top:26px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;border-radius:999px;background:#C6F135;color:#141619;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(198,241,53,.25);animation:entra .2s ease"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg> Toque no lugar da tela que você quer criar ou mudar<button onClick="{{sairMarcar}}" style="height:30px;padding:0 12px;border-radius:999px;border:1px solid rgba(20,22,25,.3);background:transparent;color:#141619;font:600 13px 'Geist',sans-serif;cursor:pointer">Cancelar</button></div>
  </sc-if>
  <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);width:390px;height:844px;border-radius:44px;box-shadow:0 0 0 12px #000,0 0 0 {{anel}}px #C6F135,0 40px 120px rgba(0,0,0,.7);overflow:hidden;animation:entra .25s ease">
   <dc-import name="AppColore" tela="{{tela}}" hint-size="390px,844px"></dc-import>
@@ -61,6 +61,15 @@
    <div role="dialog" aria-label="Marcação" style="display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:18px;background:rgba(20,22,25,.97);border:1px solid #C6F135;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:entra .2s ease">
     <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:14px;background:#C6F135;color:#141619;display:flex;align-items:center;justify-content:center;font:700 13px 'Geist Mono',monospace">{{edN}}</span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">MARCAÇÃO {{edN}} · TELA {{edTela}}</span></div>
     <div style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:{{edFundo}};border:1px solid {{edBorda}}"><b style="font-size:13px;color:{{edCor}}">{{edTipo}}</b><span style="font-size:13px;line-height:1.45;color:#B4BBB2">{{edSobre}}</span></div>
+    <sc-if value="{{naSugestao}}" hint-placeholder-val="{{ true }}">
+     <div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:#141619;border:1px solid #2C3036">
+      <span style="display:flex;align-items:center;gap:8px;font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>O ATLAS SUGERE · {{sugN}} DE {{sugTotal}}</span>
+      <span style="font-size:15px;line-height:1.5;color:#EDEFEA">{{sugTexto}}</span>
+     </div>
+     <div style="display:flex;gap:8px;flex-wrap:wrap"><button onClick="{{aceitar}}" style="height:40px;padding:0 16px;border-radius:12px;border:none;background:#C6F135;color:#141619;font:700 14px 'Geist',sans-serif;cursor:pointer">Aceitar</button><button onClick="{{outra}}" style="height:40px;padding:0 14px;border-radius:12px;border:1px solid #2C3036;background:transparent;color:#EDEFEA;font:600 14px 'Geist',sans-serif;cursor:pointer">Sugerir outra</button><button onClick="{{editarSug}}" style="height:40px;padding:0 14px;border-radius:12px;border:1px solid #2C3036;background:transparent;color:#EDEFEA;font:600 14px 'Geist',sans-serif;cursor:pointer">Editar</button></div>
+     <button onClick="{{apagar}}" style="align-self:flex-start;height:30px;padding:0;border:none;background:transparent;color:#8E968C;font:500 13px 'Geist',sans-serif;text-decoration:underline;cursor:pointer">Tirar a marcação</button>
+    </sc-if>
+    <sc-if value="{{naEscrita}}" hint-placeholder-val="{{ false }}">
     <label for="at-nota" style="font-size:14px;font-weight:600">{{edPergunta}}</label>
     <div style="position:relative">
      <textarea id="at-nota" class="at-nota" value="{{edTexto}}" onChange="{{escrever}}" placeholder="{{edDica}}" rows="4" style="width:100%;box-sizing:border-box;padding:12px 54px 12px 12px;border-radius:12px;border:1px solid #2C3036;background:#141619;color:#EDEFEA;font:400 14px/1.5 'Geist',sans-serif;resize:none;outline:none"></textarea>
@@ -68,6 +77,7 @@
     </div>
     <sc-if value="{{ouvindo}}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:#C6F135">Ouvindo… pode falar. O que você disser vira texto aqui, e você pode corrigir.</span></sc-if>
     <div style="display:flex;gap:8px"><button onClick="{{guardar}}" disabled="{{semTexto}}" style="height:40px;padding:0 16px;border-radius:12px;border:none;background:#C6F135;color:#141619;font:700 14px 'Geist',sans-serif;cursor:pointer;opacity:{{opGuardar}}">Guardar marcação</button><button onClick="{{apagar}}" style="height:40px;padding:0 14px;border-radius:12px;border:1px solid #2C3036;background:transparent;color:#EDEFEA;font:600 14px 'Geist',sans-serif;cursor:pointer">Apagar</button></div>
+    </sc-if>
    </div>
   </sc-if>
   <sc-if value="{{mostraLista}}" hint-placeholder-val="{{ false }}">
@@ -123,13 +133,23 @@ const TEXTO_FALTA = {
   'Pedido ao fornecedor': 'Tocar no aviso ainda não abre nada. O Atlas pode desenhar o pedido ao fornecedor com as cores que estão acabando.',
   'Cobrança pelo Pix': 'O Atlas pode desenhar a tela do Pix com o QR Code e o valor.'
 };
+const SUGESTOES = {
+  'Detalhe do pedido': ['Abrir o detalhe do pedido: itens, cliente, endereço de entrega e um botão verde "Cobrar pelo Pix".', 'Abrir o pedido com uma linha do tempo (pedido feito, separando, saiu para entrega, entregue) e um botão para avisar o cliente no WhatsApp.', 'Abrir um resumo curto do pedido com dois botões: "Repetir pedido" e "Cobrar pelo Pix".'],
+  'Novo orçamento': ['Antes de abrir o orçamento, perguntar se é para um cliente novo ou um cliente que já existe.', 'Abrir o orçamento já com o último cliente atendido preenchido, para ganhar tempo.', 'Trocar o texto do botão para "Fazer orçamento" e deixar ele um pouco maior.'],
+  'Ligar para o cliente': ['Abrir a ligação no celular direto para o número do cliente.', 'Mostrar dois botões: "Ligar" e "Chamar no WhatsApp".'],
+  'Orçamento enviado': ['Mostrar "Orçamento enviado para Maria" com um botão para acompanhar se ela respondeu.', 'Voltar para o Início com um aviso verde "Orçamento enviado".'],
+  'Pedido ao fornecedor': ['Abrir um pedido ao fornecedor já com as cores que estão acabando e a quantidade sugerida.', 'Mostrar a lista das cores acabando com um botão "Avisar o fornecedor no WhatsApp".'],
+  'Cobrança pelo Pix': ['Mostrar o QR Code do Pix com o valor e um botão para mandar o código ao cliente pelo WhatsApp.', 'Gerar um link de pagamento Pix e mandar direto para o WhatsApp do cliente.'],
+  '': ['Colocar aqui um botão "Repetir pedido" que copia o último pedido do cliente.', 'Colocar aqui um aviso com as vendas de hoje comparadas com ontem.', 'Colocar aqui um campo de busca para achar um cliente ou um pedido pelo nome.']
+};
+function sugestoesDe(m) { if (m.tipo === 'criar') return SUGESTOES['']; const r = m.alvo.replace(/^Menu: .*/, ''); return SUGESTOES[m.alvo] || (r ? SUGESTOES[''] : ['Deixar este item do menu com um número mostrando quantos pedidos estão em aberto.', 'Trocar o ícone e o nome deste item do menu para ficar mais claro.']); }
 const FALA = {
   'Detalhe do pedido': 'Quando tocar no pedido, abrir o detalhe com os itens, o cliente, a entrega e um botão verde para cobrar pelo Pix.',
   'Novo orçamento': 'Antes de abrir o orçamento, perguntar se é para cliente novo ou cliente que já existe.'
 };
 function dentro(h, x, y) { return x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h; }
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { i: 0, realce: true, falta: null, extra: false, marcando: false, marcas: [], ed: null, texto: '', ouvindo: false, trabalhando: false, feitos: [], aviso: '' }; }
+  constructor(p) { super(p); this.state = { i: 0, realce: true, falta: null, extra: false, marcando: false, marcas: [], ed: null, texto: '', ouvindo: false, trabalhando: false, feitos: [], aviso: '', sug: 0, escrita: false }; }
   telas() { return this.state.extra ? [...BASE, ['detalhe', 'Detalhe do pedido']] : BASE; }
   // O que existe no ponto tocado: algo que já funciona (ajustar), algo sem desenho (desenhar) ou nada (criar).
   oQueTem(tela, x, y) {
@@ -143,7 +163,7 @@ class Component extends DCLogic {
     const { marcas } = this.state; const TELAS = this.telas(); const tela = TELAS[this.state.i][0];
     const q = alvoFalta ? { tipo: 'desenhar', alvo: alvoFalta } : this.oQueTem(tela, x, y);
     const m = { id: Date.now(), n: marcas.length + 1, i: this.state.i, tela, x: Math.round(x), y: Math.round(y), ...q, texto: '' };
-    this.setState({ marcas: [...marcas, m], ed: m.id, texto: '', marcando: false, falta: null, aviso: '' });
+    this.setState({ marcas: [...marcas, m], ed: m.id, texto: '', sug: 0, escrita: false, marcando: false, falta: null, aviso: '' });
   }
   renderVals() {
     const s = this.state; const { i, realce, falta, extra, marcando, marcas, ed, texto, ouvindo, trabalhando, feitos } = s;
@@ -169,7 +189,7 @@ class Component extends DCLogic {
       txtRealce: realce ? 'Esconder as bolinhas' : 'Mostrar as bolinhas', alternarRealce: () => this.setState({ realce: !realce }),
       marcando, entrarMarcar: () => this.setState({ marcando: true, falta: null, ed: null, aviso: '' }), sairMarcar: () => this.setState({ marcando: false }),
       fincar: (e) => { const r = e.currentTarget.getBoundingClientRect(); this.novaMarca((e.clientX - r.left) * 390 / r.width, (e.clientY - r.top) * 844 / r.height); },
-      pinos: marcas.filter((m) => m.i === i).map((m) => ({ ...m, rotulo: String(m.n), fundo: m.id === ed ? '#FFFFFF' : '#C6F135', cor: '#141619', abrir: () => this.setState({ ed: m.id, texto: m.texto, marcando: false, falta: null }) })),
+      pinos: marcas.filter((m) => m.i === i).map((m) => ({ ...m, rotulo: String(m.n), fundo: m.id === ed ? '#FFFFFF' : '#C6F135', cor: '#141619', abrir: () => this.setState({ ed: m.id, texto: m.texto, escrita: !!m.texto, marcando: false, falta: null }) })),
       temFalta: !!falta && !editando, faltaNome: falta || '', faltaTexto: (falta && TEXTO_FALTA[falta]) || '', fecharFalta: () => this.setState({ falta: null }),
       marcarFalta: () => { const h = alvosDa(tela).find((a) => a.falta === falta); this.novaMarca(h.x + h.w / 2, h.y + h.h / 2, falta); },
       editando, edN: atual ? String(atual.n) : '', edTela: atual ? String(atual.i + 1) : '', edTipo: atual ? TIPO[atual.tipo][0] : '', edCor: atual ? TIPO[atual.tipo][1] : '', edFundo: atual ? TIPO[atual.tipo][2] : '', edBorda: atual ? TIPO[atual.tipo][3] : '',
@@ -177,11 +197,16 @@ class Component extends DCLogic {
       escrever: (e) => this.setState({ texto: e.target.value }),
       ouvindo, micFundo: ouvindo ? '#FFFFFF' : '#C6F135',
       falar: () => { if (ouvindo) return this.setState({ ouvindo: false }); this.setState({ ouvindo: true }); setTimeout(() => this.setState({ ouvindo: false, texto: FALA[atual && atual.alvo] || (atual && atual.tipo === 'criar' ? 'Colocar aqui um botão "Repetir pedido" que copia o último pedido do cliente.' : 'Deixar este botão maior e com o texto "Fazer orçamento".') }), 1600); },
+      naSugestao: editando && !s.escrita, naEscrita: editando && s.escrita,
+      sugN: String((s.sug % (atual ? sugestoesDe(atual).length : 1)) + 1), sugTotal: String(atual ? sugestoesDe(atual).length : 1), sugTexto: atual ? sugestoesDe(atual)[s.sug % sugestoesDe(atual).length] : '',
+      aceitar: () => { const t = sugestoesDe(atual)[s.sug % sugestoesDe(atual).length]; this.setState({ marcas: marcas.map((m) => (m.id === ed ? { ...m, texto: t } : m)), ed: null, texto: '', escrita: false }); },
+      outra: () => this.setState({ sug: s.sug + 1 }),
+      editarSug: () => this.setState({ escrita: true, texto: sugestoesDe(atual)[s.sug % sugestoesDe(atual).length] }),
       semTexto: !texto.trim(), opGuardar: texto.trim() ? 1 : 0.4,
       guardar: () => this.setState({ marcas: marcas.map((m) => (m.id === ed ? { ...m, texto: texto.trim() } : m)), ed: null, texto: '', ouvindo: false }),
       apagar: () => this.setState({ marcas: marcas.filter((m) => m.id !== ed).map((m, k) => ({ ...m, n: k + 1 })), ed: null, texto: '', ouvindo: false }),
       mostraLista: salvas.length > 0 && !editando && !falta, qtd: String(salvas.length), palavra: salvas.length === 1 ? 'ajuste' : 'ajustes',
-      lista: salvas.map((m) => ({ n: String(m.n), tela: String(m.i + 1), tipo: m.tipo === 'ajustar' ? 'AJUSTAR' : m.tipo === 'desenhar' ? 'DESENHAR' : 'CRIAR', texto: curto(m.texto), abrir: () => this.setState({ i: m.i, ed: m.id, texto: m.texto }) })),
+      lista: salvas.map((m) => ({ n: String(m.n), tela: String(m.i + 1), tipo: m.tipo === 'ajustar' ? 'AJUSTAR' : m.tipo === 'desenhar' ? 'DESENHAR' : 'CRIAR', texto: curto(m.texto), abrir: () => this.setState({ i: m.i, ed: m.id, texto: m.texto, escrita: true }) })),
       podeMandar: !trabalhando, trabalhando, mandar: () => this.setState({ trabalhando: true, marcas: marcas.filter((m) => m.texto) }),
       pronto: () => {
         const novoDetalhe = salvas.some((m) => m.alvo === 'Detalhe do pedido');
