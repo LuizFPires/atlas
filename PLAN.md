@@ -440,3 +440,16 @@ tela: prototipo/caminho-novo/X1Planilha.dc.html
 - [x] Antes de começar: o notebook é o canteiro (tomada, tampa, "desligou, continua"); ajustar a tampa na tomada e desfazer quando não houver obra em construção
 - [ ] Testar com planilhas reais de clientes (financeiro, compras, estoque) num Windows de verdade
 Notas: DECISÃO do Luiz (24/11/2026, "essa transformação de Excel em sistema vai ser muito comum ... tem que ser um ponto forte para a elaboração do protótipo"; "se quiser acrescentar algo ou fazer alguma modificação, o usuário pode falar"; telas X1–X4 e TP1 aprovadas: "Sim"). DIVERGÊNCIA: o caminho continua ideia → visual → nome → protótipo (o X4 mostrava o protótipo logo depois); a etiqueta "veio da aba" aparece no passo do protótipo. O código das macros não é lido: o Atlas pergunta o que ela faz. DECISÃO do Luiz (24/11/2026, prints): menu lateral com ícones e recolhível, recolhido por padrão (diverge do Shell do protótipo, que é sempre aberto); botões Voltar/Fiz isso das contas fixos no rodapé; vídeo da conta só em "Não consegui"; atalho da área de trabalho só "Atlas".
+
+## Milestone 40 — Protótipo como quadro negro, usar o sistema e marcações (pós-protótipo)
+peso: 5
+spec: S9
+tela: prototipo/caminho-novo/P5Play.dc.html
+- [ ] Ajuda em foco: a gaveta da Ajuda fica na frente, o resto do Atlas embaça, e o "ouvindo / transcrevendo" aparece dentro da gaveta (D1)
+- [ ] Quadro negro: todas as telas do protótipo lado a lado, numeradas, com zoom; tocar no número põe "TELA N" na barra de voz (P4)
+- [ ] Usar o sistema: botão Play abre o protótipo em tela cheia, com setas, números das telas e o menu do Atlas flutuando (P5)
+- [ ] Bolinha verde piscando só onde já dá para tocar; tocar no que ainda não foi desenhado abre "Essa parte ainda não foi desenhada"
+- [ ] Marcações: "Marcar um ponto", pino numerado no lugar tocado; o Atlas diz se é ajustar o que existe, desenhar o que falta ou criar algo novo
+- [ ] O Atlas sugere a ação da marcação (Aceitar, Sugerir outra, Editar por texto ou voz); várias marcações vão juntas em "Mandar para o Atlas fazer" e viram uma versão nova
+- [ ] Depois de pronto, os pinos somem e o que foi feito ganha a bolinha verde
+Notas: DECISÃO do Luiz (24/11/2026, "a navegabilidade aqui entre as telas ainda não está bom ... dashboard gigante, como se fosse um grande quadro negro ... o protótipo é a alma do Atlas"; "bolinha é só onde o usuário pode clicar atualmente"; "colocar uma marcação e poder nessa marcação explicar ao Atlas o que ele espera"; "se já tiver um desenho de fluxo pronto ... o Atlas precisa editar ou ajustar"; "o Atlas pode sugerir ou recomendar uma ação ... aceitar, ou refazer ou apenas editar"; aprovado: "ótimo! pode seguir assim"). Telas D1Ajuda, P4Quadro e P5Play em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. DIVERGÊNCIA: substitui o palco de telas atual do passo do protótipo (F07/M35) pelo quadro + tela cheia.
