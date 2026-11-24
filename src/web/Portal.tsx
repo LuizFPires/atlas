@@ -83,14 +83,14 @@ export function Entrada({ api, aviso, onEntrou }: { api: PortalApi; aviso: strin
         <h1>Entrar na minha conta</h1>
         {etapa === 'email' ? (
           <>
-            <p className="c-lead">Use o e-mail que você usou na compra. A gente manda um código de 6 números para ele. Não precisa de senha.</p>
+            <p className="c-lead">Use o e-mail que você usou na compra. A gente manda um código para ele. Não precisa de senha.</p>
             <CampoFalado rotulo="Qual o seu e-mail?" type="email" autoComplete="email" valor={email} onChange={setEmail} placeholder="voce@suaempresa.com.br" juntar={juntarFalaEmail} />
           </>
         ) : (
           <>
             <p className="c-lead">Mandamos um código para o seu e-mail. Digite os números aqui. Ele vale por alguns minutos.</p>
             <p className="aviso-email">{AVISO_EMAIL}</p>
-            <CampoFalado rotulo="Código que chegou no e-mail" valor={codigo} onChange={(v) => setCodigo(v.replace(/[^\d\s]/g, ''))} placeholder="000000" autoComplete="one-time-code" />
+            <CampoFalado rotulo="Código que chegou no e-mail" valor={codigo} onChange={(v) => setCodigo(v.replace(/[^\d\s]/g, ''))} placeholder="Os números do e-mail" autoComplete="one-time-code" />
           </>
         )}
         {erro && <p role="alert" className="v-erro">{erro}</p>}
@@ -335,9 +335,9 @@ function Computador({ api, conta, recarregar }: { api: PortalApi; conta: ContaPo
       {bloqueada && <span className="c-mute p-p" role="status">Você já trocou há pouco. Só dá para trocar 1 vez a cada 7 dias: próxima troca possível a partir de {dia(conta.troca.proxima_troca_em)}.</span>}
       {etapa === 'codigo' && (
         <form className="p-troca" onSubmit={desativar} noValidate>
-          <p className="p-p">Mandamos um código de 6 números para <b>{email}</b>. Digite aqui para confirmar que é você.</p>
+          <p className="p-p">Mandamos um código para <b>{email}</b>. Digite aqui para confirmar que é você.</p>
           <p className="aviso-email">{AVISO_EMAIL}</p>
-          <CampoFalado rotulo="Código que chegou no e-mail" valor={codigo} onChange={(v) => setCodigo(v.replace(/[^\d\s]/g, ''))} placeholder="000000" autoComplete="one-time-code" />
+          <CampoFalado rotulo="Código que chegou no e-mail" valor={codigo} onChange={(v) => setCodigo(v.replace(/[^\d\s]/g, ''))} placeholder="Os números do e-mail" autoComplete="one-time-code" />
           <div className="p-linha">
             <button type="submit" className="v-acao v-acao--pequeno" disabled={ocupado}>{ocupado ? 'Um instante…' : 'Desativar e liberar a licença'}</button>
             <button type="button" className="p-link" onClick={() => { setEtapa('inicio'); setCodigo(''); setErro('') }}>Agora não</button>

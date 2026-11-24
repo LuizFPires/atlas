@@ -6,12 +6,25 @@ import { criarApiCelularFixture } from './api'
 
 const relato = 'Tenho uma barbearia com 3 cadeiras e a agenda vive dando horário duplicado.'
 
-test('entrar com o e-mail da compra e o código de 6 números', async () => {
+test('entrar com o e-mail da compra e o código que chegou no e-mail', async () => {
   const api = criarApiCelularFixture({ logado: false })
   render(<AppCelular api={api} intervalo={20} />)
   await userEvent.type(screen.getByLabelText('E-mail da sua compra'), 'ze@barbearia.com')
   await userEvent.click(screen.getByRole('button', { name: 'Receber o código' }))
-  await userEvent.type(await screen.findByLabelText('Código de 6 números'), '482071')
+  await userEvent.type(await screen.findByLabelText('Código que chegou no e-mail'), '482071')
+  await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+  expect(await screen.findByRole('heading', { name: 'Minhas obras' })).toBeInTheDocument()
+})
+
+// Guilherme, 24/11/2026: o e-mail chegou com um código de 8 números e o botão Entrar não aceitava ("pede um código de 6").
+// O tamanho do código é o que o e-mail trouxer (6 a 8 números); a tela não promete um número de dígitos.
+test('código de 8 números (o que chegou no e-mail) também entra', async () => {
+  const api = criarApiCelularFixture({ logado: false })
+  render(<AppCelular api={api} intervalo={20} />)
+  await userEvent.type(screen.getByLabelText('E-mail da sua compra'), 'guilherme@amplaconstrutora.com.br')
+  await userEvent.click(screen.getByRole('button', { name: 'Receber o código' }))
+  expect(screen.queryByText(/6 números/)).toBeNull()
+  await userEvent.type(await screen.findByLabelText('Código que chegou no e-mail'), '67056795')
   await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
   expect(await screen.findByRole('heading', { name: 'Minhas obras' })).toBeInTheDocument()
 })
