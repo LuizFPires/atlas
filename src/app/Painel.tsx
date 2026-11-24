@@ -144,6 +144,7 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
         </div>
         {sit && <span className={`at-pn__selo at-pn__selo--${sit}`}>● {SELO[sit]}</span>}
         <div className="at-pn__acoes">
+          {onLigarContas && !concluida && <Botao variante="secundario" className="at-pn__btn" onClick={onLigarContas}>Contas ligadas</Botao>}
           {(sit === 'andando' || sit === 'espera-ok') && <Botao variante="secundario" className="at-pn__btn" onClick={() => agir(() => painel.pausar(obra.pasta))}>Pausar obra</Botao>}
           {sit === 'pausada' && <Botao variante="secundario" className="at-pn__btn" onClick={() => agir(() => painel.continuar(obra.pasta))}>Continuar obra</Botao>}
           {concluida && <Botao variante="secundario" className="at-pn__btn" onClick={() => agir(() => painel.abrirTeste(obra.pasta))}>Ver como ficou</Botao>}
@@ -194,8 +195,10 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
             <span className="at-pn__vigia-bola" aria-hidden="true"><Icone nome="alerta" tamanho={22} /></span>
             <div className="at-pn__pronta-txt">
               <b>A obra está parada e precisa de você.</b>
-              <span>{estado.vigia.motivo} O Atlas tentou {estado.vigia.tentativa} {estado.vigia.tentativa === 1 ? 'vez' : 'vezes'} sozinho e não conseguiu.</span>
+              <span>{estado.vigia.motivo}{estado.vigia.tentativa > 0 ? ` O Atlas tentou ${estado.vigia.tentativa} ${estado.vigia.tentativa === 1 ? 'vez' : 'vezes'} sozinho e não conseguiu.` : ''}</span>
+              {estado.vigia.fala && <span className="at-pn__vigia-fala">“{estado.vigia.fala}”</span>}
             </div>
+            {estado.vigia.conta && onLigarContas && <Botao className="at-pn__btn" onClick={onLigarContas}>Ligar o {estado.vigia.conta}</Botao>}
             {onPedirAjuda && <Botao variante="secundario" className="at-pn__btn" onClick={onPedirAjuda}>Falar com o Atlas</Botao>}
             <Botao className="at-pn__btn" onClick={() => agir(() => painel.continuar(obra.pasta))}>Tentar agora</Botao>
           </div>

@@ -198,6 +198,8 @@ function resumirLinha(linha) {
  */
 /** Uma linha que "conclui" antes disso com a obra por terminar não trabalhou de verdade. */
 const MIN_TRABALHO_MS = 3 * 60_000
+/** A linha terminou pedindo algo que só a pessoa faz (o despachante e a /construir escrevem "USUÁRIO: …"). */
+const RE_PEDE_PESSOA = /USU[AÁ]RIO\s*:|precis[ao] (?:que voc[eê]|de voc[eê])|\b(?:ligue|ligar|conecte|conectar) (?:o|a) (?:GitHub|Vercel|Supabase)|reinstale o Atlas|aguardando (?:voc[eê]|sua)|s[oó] (?:voc[eê]|o usu[aá]rio) pode/i
 
 function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
@@ -241,6 +243,8 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     const r = iniciarFluxo(args, {
       cwd, env, entrada: '/construir',
       onLinha: (l) => {
+        // A última fala da linha (o resultado do turno): quando ela para pedindo algo à pessoa, é isto que o painel mostra.
+        try { const j = JSON.parse(l); if (j && j.type === 'result' && typeof j.result === 'string') reg.fala = comoDado(j.result, 4000).join('\n').slice(0, 1200) } catch { /* não é JSON */ }
         const s = resumirLinha(l)
         if (!s) return
         if (s.cota) cota = true
@@ -264,8 +268,14 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
         try { const t = lerTexto(path.join(cwd, 'PLAN.md')); if (t !== null) pctAgora = lerPlanoDoTexto(t).pct } catch { pctAgora = 0 }
         if (pctAgora < 100) motivo = 'sem-avanco'
       }
+      // Parou rápido pedindo algo que só a pessoa faz (ex.: "USUÁRIO: Ligue o GitHub…"): não é falha para tentar de novo, é pedido.
+      if ((motivo === 'sem-avanco' || motivo === 'concluiu') && reg.fala && RE_PEDE_PESSOA.test(reg.fala)) {
+        let pctAgora = 0
+        try { const t = lerTexto(path.join(cwd, 'PLAN.md')); if (t !== null) pctAgora = lerPlanoDoTexto(t).pct } catch { pctAgora = 0 }
+        if (pctAgora < 100) motivo = 'precisa-voce'
+      }
       const ultimas = reg.recentes.slice(-6).map((x) => String(x).slice(0, 200))
-      gravarLinha(pasta, { estado: 'parou', motivo, codigo, desde: reg.desde, fimEm: agora().toISOString(), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}), ...(motivo === 'sem-avanco' || motivo === 'erro' ? { ultimas } : {}) })
+      gravarLinha(pasta, { estado: 'parou', motivo, codigo, desde: reg.desde, fimEm: agora().toISOString(), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}), ...(motivo === 'sem-avanco' || motivo === 'erro' || motivo === 'precisa-voce' ? { ultimas, ...(reg.fala ? { fala: reg.fala } : {}) } : {}) })
       // Registro do APP (fora da obra) que permite a retomada automática: só em fim por cota de uma linha que o app iniciou, com a obra
       // ainda por terminar e sem pausa do cliente (se uma linha mais nova já roda, ela cuida do próprio registro).
       try {

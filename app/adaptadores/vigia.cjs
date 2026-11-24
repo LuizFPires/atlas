@@ -12,7 +12,7 @@ const { pastaDaObra, gravarAtomico, lerJson, lerTexto } = require('./obra-fs.cjs
 const BACKOFF_MIN = [2, 5, 15]
 const MAX_TENTATIVAS = BACKOFF_MIN.length
 const TRABALHOU_MS = 5 * 60_000
-const VIGIADOS = new Set(['sem-avanco', 'erro'])
+const VIGIADOS = new Set(['sem-avanco', 'erro', 'precisa-voce'])
 const MOTIVO = {
   'sem-avanco': 'A linha de produção ligou, mas não conseguiu trabalhar e parou em seguida.',
   erro: 'A linha de produção parou com um erro.',
@@ -22,6 +22,10 @@ const MOTIVO = {
   'claude-nao-instalado': 'O Claude não está instalado neste computador.',
 }
 const textoDe = (cod) => MOTIVO[cod] || MOTIVO.erro
+/** A conta que a fala da linha pede para ligar (o painel mostra o botão "Ligar as contas"). */
+const contaDaFala = (f) => { const m = /\b(GitHub|Vercel|Supabase)\b/i.exec(String(f || '')); return m ? { github: 'GitHub', vercel: 'Vercel', supabase: 'Supabase' }[m[1].toLowerCase()] : null }
+/** A fala da linha, sem o rótulo técnico "USUÁRIO:" e curta. */
+const limparFala = (f) => String(f || '').replace(/^[\s\S]*?USU[AÁ]RIO\s*:\s*/i, '').trim().slice(0, 300)
 
 function pctDoPlan(dir) {
   const t = lerTexto(path.join(dir, 'PLAN.md'), 400_000)
@@ -54,6 +58,13 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
     if (l.estado !== 'parou' || !VIGIADOS.has(l.motivo) || pctDoPlan(dir) >= 100) { if (v && l.motivo !== l.motivoVisto) zerar(pasta); return }
     const fim = String(l.fimEm || '')
     if (v && v.situacao === 'precisa-voce') return
+    // Esperando a pessoa: pede na hora, com o que a linha disse (tentar de novo sozinho não resolve).
+    if (l.motivo === 'precisa-voce') {
+      const fala = limparFala(l.fala)
+      const conta = contaDaFala(fala)
+      gravar(pasta, { situacao: 'precisa-voce', tentativa: 0, de: MAX_TENTATIVAS, motivo: fala ? 'A obra está esperando uma coisa que só você pode fazer.' : 'A obra está esperando você.', ...(fala ? { fala } : {}), ...(conta ? { conta } : {}), fimVisto: fim })
+      return
+    }
     let estado = v && v.fimVisto === fim ? v : null
     if (!estado) {
       const tentativa = v ? v.tentativa : 0
@@ -89,7 +100,7 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
     estado(pasta) {
       const v = ler(pasta)
       if (!v) return null
-      return { situacao: v.situacao === 'precisa-voce' ? 'precisa-voce' : 'tentando', tentativa: Number(v.tentativa) || 0, de: MAX_TENTATIVAS, motivo: String(v.motivo || ''), ...(v.proximaEm ? { proximaEm: v.proximaEm } : {}) }
+      return { situacao: v.situacao === 'precisa-voce' ? 'precisa-voce' : 'tentando', tentativa: Number(v.tentativa) || 0, de: MAX_TENTATIVAS, motivo: String(v.motivo || ''), ...(v.proximaEm ? { proximaEm: v.proximaEm } : {}), ...(typeof v.fala === 'string' && v.fala ? { fala: v.fala } : {}), ...(v.conta ? { conta: v.conta } : {}) }
     },
     /** "Tentar agora" do cliente: começa do zero. */
     zerar,

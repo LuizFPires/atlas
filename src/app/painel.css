@@ -81,3 +81,4 @@
 .at-pn__vigia-bola { flex: none; width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: var(--erro, #E5534B); background: rgba(229, 83, 75, 0.14); }
 @keyframes at-pn-vigia-gira { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .at-pn__vigia-giro { animation: none; } }
+.at-pn__vigia-fala { display: block; margin-top: 6px; padding: 8px 12px; border-left: 3px solid var(--erro, #E5534B); border-radius: 0 8px 8px 0; background: rgba(229, 83, 75, 0.06); font-style: normal; color: var(--text); }

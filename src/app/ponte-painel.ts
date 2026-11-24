@@ -83,7 +83,8 @@ export interface EstadoObra {
   vigia?: VigiaObra | null
 }
 
-export interface VigiaObra { situacao: 'tentando' | 'precisa-voce'; tentativa: number; de: number; motivo: string; proximaEm?: string }
+/** fala: o que a linha disse ao parar (quando pede algo à pessoa); conta: a conta que ela pede para ligar. */
+export interface VigiaObra { situacao: 'tentando' | 'precisa-voce'; tentativa: number; de: number; motivo: string; proximaEm?: string; fala?: string; conta?: 'GitHub' | 'Vercel' | 'Supabase' }
 
 export type Situacao = 'andando' | 'pausada' | 'espera-ok' | 'cota' | 'precisa-de-voce' | 'billing' | 'concluida'
 

@@ -9,13 +9,13 @@ const obra = { nome: 'Agenda da Barbearia do Zé', pasta: 'agenda' }
 const agora = () => new Date(2026, 10, 18, 14, 40)
 const PCT = /^54,\d\d%$/
 
-const montar = (modo: ModoObra | null = 'automatico', opcoes: { painel?: PontePainel; modos?: PonteModoObra; endereco?: string | null; sondagemMs?: number; onPedirAjuda?: () => void } = {}) => {
+const montar = (modo: ModoObra | null = 'automatico', opcoes: { painel?: PontePainel; modos?: PonteModoObra; endereco?: string | null; sondagemMs?: number; onPedirAjuda?: () => void; onLigarContas?: () => void } = {}) => {
   const fx = criarPainelFixture({ agora, endereco: opcoes.endereco })
   const painel = opcoes.painel ?? fx
   const modos = opcoes.modos ?? criarModoObraFixture(modo ? { [obra.pasta]: modo } : {})
   const onPublicar = vi.fn()
   const user = userEvent.setup()
-  render(<TemaProvider><Painel obra={obra} painel={painel} modos={modos} onPublicar={onPublicar} onPedirAjuda={opcoes.onPedirAjuda} sondagemMs={opcoes.sondagemMs ?? 0} /></TemaProvider>)
+  render(<TemaProvider><Painel obra={obra} painel={painel} modos={modos} onPublicar={onPublicar} onPedirAjuda={opcoes.onPedirAjuda} onLigarContas={opcoes.onLigarContas} sondagemMs={opcoes.sondagemMs ?? 0} /></TemaProvider>)
   return { fx, user, onPublicar, modos }
 }
 
@@ -207,4 +207,23 @@ describe('vigia (bug de 24/11): a obra nunca fica parada em silêncio', () => {
     expect(await screen.findByText('Ninguém trabalhando agora.')).toBeInTheDocument()
     expect(screen.queryByText(/a obra está pronta/)).toBeNull()
   })
+})
+
+test('vigia: a linha esperando a pessoa mostra o que ela disse e o botão da conta certa (obra do Guilherme, 24/11)', async () => {
+  const ligar = vi.fn()
+  const { fx, user } = montar('automatico', { onLigarContas: ligar, sondagemMs: 30 })
+  fx.simular.vigia({ situacao: 'precisa-voce', tentativa: 0, de: 3, motivo: 'A obra está esperando uma coisa que só você pode fazer.', fala: 'Ligue o GitHub na tela As contas do Atlas (botão Ligar).', conta: 'GitHub' })
+  const alerta = await screen.findByRole('alert', { name: 'A obra parou' })
+  expect(alerta).toHaveTextContent('A obra está esperando uma coisa que só você pode fazer.')
+  expect(alerta).toHaveTextContent('“Ligue o GitHub na tela As contas do Atlas (botão Ligar).”')
+  expect(alerta).not.toHaveTextContent(/tentou/)
+  await user.click(within(alerta).getByRole('button', { name: 'Ligar o GitHub' }))
+  expect(ligar).toHaveBeenCalled()
+})
+
+test('as contas da obra têm entrada fixa no painel (Guilherme, 24/11: "Onde fica essa tela? Não encontrei")', async () => {
+  const ligar = vi.fn()
+  const { user } = montar('automatico', { onLigarContas: ligar })
+  await user.click(await screen.findByRole('button', { name: 'Contas ligadas' }))
+  expect(ligar).toHaveBeenCalled()
 })
