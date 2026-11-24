@@ -6,7 +6,8 @@ import { ErroRegra, type Deps } from './tipos.ts'
 import { verificar } from './verificar.ts'
 
 export const VALIDADE_LINK_PROTOTIPO_MS = 7 * 24 * 60 * 60_000
-const MAX_DOCUMENTO = 1_500_000
+// 24/11/2026: o protótipo cresce além de 40 telas (Luiz: "não pode travar"); 10 MB cabem algumas centenas de telas.
+export const MAX_DOCUMENTO = 10_000_000
 const TOKEN_RE = /^[A-Za-z0-9_-]{40,64}$/
 
 export interface PrototipoGuardado { nome: string; documento: string; criado_em: string; expira_em: string }

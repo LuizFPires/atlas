@@ -7,7 +7,7 @@
 //    um pedido que já está na fila ou rodando não roda de novo.
 //  - Toda falha vira resposta 'erro' com frase de leigo; a fila nunca trava.
 //  - Nada de caminho, código ou segredo sai daqui: o status leva só nome, etapa, % e uma frase.
-import { montarNavegavel, type PontePrototipo, type TelaDesenhada } from './ponte-prototipo'
+import { MAX_DOC_CELULAR, montarNavegavel, type PontePrototipo, type TelaDesenhada } from './ponte-prototipo'
 import type { EntradaEstilo, EstiloProposto, PonteEstilo } from './ponte-estilo'
 import type { NomeProposto, PonteBatismo } from './ponte-batismo'
 import type { ModoObra, PonteConstrucao, PonteModoObra } from './ponte-construcao'
@@ -101,7 +101,7 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
     const versao = est.versoes.find((v) => v.numero === est.atual) ?? est.versoes[est.versoes.length - 1]
     const telas = telasDoEstado(versao)
     const doc = versao && versao.telas.length ? montarNavegavel(versao.telas, versao.telas[0].id) : null
-    await canal.projeto(obraId, vazio(o.nome, fase, { progresso: { feitas: telas.length, total: telas.length, atual: '', telas }, ...extra }), doc ?? undefined)
+    await canal.projeto(obraId, vazio(o.nome, fase, { progresso: { feitas: telas.length, total: telas.length, atual: '', telas }, ...extra }), doc && doc.length <= MAX_DOC_CELULAR ? doc : undefined)
   }
 
   /** Enquanto o Claude desenha, publica o mapa com as telas que já ficaram prontas (só quando muda). */

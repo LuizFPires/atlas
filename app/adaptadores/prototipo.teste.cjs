@@ -493,3 +493,43 @@ describe('marcações (Milestone 40, Luiz 24/11/2026: "o Atlas pode sugerir ou r
     await assert.rejects(p.sugerirMarcacao('obra', 'nao-existe', 10, 10), /tela-inexistente/)
   })
 })
+
+// Luiz, 24/11/2026: "No primeiro momento, o Claude desenha 40 telas ... À medida que o usuário for navegando, ele vai sentir
+// necessidade e vai solicitando isso ao Atlas. E ele tem que gerar, ele não pode travar, em hipótese alguma."
+test('depois do 1º desenho (até 40), o protótipo cresce sem teto: pedir mais telas nunca trava', async () => {
+  const { p, emFila } = montar()
+  const ids = Array.from({ length: 40 }, (_, i) => `t${i + 1}`)
+  emFila({ telas: ids.map((id) => ({ id, nome: `Tela ${id}` })) }, ...Array.from({ length: 8 }, (_, k) => ({ telas: ids.slice(k * 5, k * 5 + 5).map(tela) })))
+  await p.desenhar('obra', 'Colore', ESTILO, 'x')
+  let total = 40
+  for (const n of [3, 10, 25]) {
+    const novas = Array.from({ length: n }, (_, i) => tela(`n${total + i}`))
+    emFila({ telas: novas, resumo: `mais ${n}` })
+    const r = await p.ajustar('obra', `crie mais ${n} telas`)
+    total += n
+    assert.equal(r.estado.versoes.at(-1).telas.length, total)
+  }
+  assert.equal(total, 78)
+})
+
+test('o pedido do 1º desenho fala em até 40 telas cobrindo o sistema todo; o de ajuste não fala em teto', () => {
+  const { pedidoAjustar } = require('./prototipo.cjs')
+  assert.doesNotMatch(pedidoAjustar('crie a tela de estoque', ['a (A, celular)'], 3), /no máximo|m[aá]ximo de/i)
+})
+
+// Pedido grande ("crie mais 12 telas") não cabe numa resposta só do Claude (a resposta seria cortada e o ajuste falharia).
+// O Claude devolve só o plano, e o Atlas desenha em partes de 5, como no 1º desenho. Nunca trava por tamanho do pedido.
+test('ajuste grande: o Claude devolve o plano e o Atlas desenha as telas em partes de 5', async () => {
+  const { p, emFila, chamadas } = montar()
+  emFila({ telas: [{ id: 'a', nome: 'A' }] }, { telas: [tela('a')] })
+  await p.desenhar('obra', 'Colore', ESTILO, 'x')
+  const plano = Array.from({ length: 12 }, (_, i) => ({ id: `n${i}`, nome: `Nova ${i}`, descricao: 'faz algo', aparelho: 'celular' }))
+  const antes = chamadas.length
+  emFila({ plano, resumo: 'mais 12 telas', resposta: 'Vou criar 12 telas.' }, { telas: plano.slice(0, 5).map((t) => tela(t.id)) }, { telas: plano.slice(5, 10).map((t) => tela(t.id)) }, { telas: plano.slice(10).map((t) => tela(t.id)) })
+  const r = await p.ajustar('obra', 'crie mais 12 telas de relatórios')
+  assert.equal(chamadas.length - antes, 4)
+  const ultima = r.estado.versoes.at(-1)
+  assert.equal(ultima.telas.length, 13)
+  assert.equal(ultima.telas.find((t) => t.id === 'n11').nome, 'Nova 11')
+  assert.match(chamadas[antes].args.join(' ') + JSON.stringify(chamadas[antes].o || {}), /plano/)
+})

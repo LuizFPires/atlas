@@ -453,3 +453,13 @@ tela: prototipo/caminho-novo/P5Play.dc.html
 - [x] O Atlas sugere a ação da marcação (Aceitar, Sugerir outra, Editar por texto ou voz); várias marcações vão juntas em "Mandar para o Atlas fazer" e viram uma versão nova
 - [x] Depois de pronto, os pinos somem e o que foi feito ganha a bolinha verde
 Notas: DECISÃO do Luiz (24/11/2026, "a navegabilidade aqui entre as telas ainda não está bom ... dashboard gigante, como se fosse um grande quadro negro ... o protótipo é a alma do Atlas"; "bolinha é só onde o usuário pode clicar atualmente"; "colocar uma marcação e poder nessa marcação explicar ao Atlas o que ele espera"; "se já tiver um desenho de fluxo pronto ... o Atlas precisa editar ou ajustar"; "o Atlas pode sugerir ou recomendar uma ação ... aceitar, ou refazer ou apenas editar"; aprovado: "ótimo! pode seguir assim"). Telas D1Ajuda, P4Quadro e P5Play em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. DIVERGÊNCIA: substitui o palco de telas atual do passo do protótipo (F07/M35) pelo quadro + tela cheia.
+
+## Milestone 42 — O protótipo cresce sem travar (40 telas no começo, mais quando o cliente pedir)
+peso: 2
+spec: S14
+tela: prototipo/caminho-novo/P4Quadro.dc.html
+- [x] 1º desenho com até 40 telas, tentando cobrir 100% do sistema; depois o protótipo cresce sem teto prático conforme o cliente pede
+- [x] Pedido grande ("crie mais 12 telas"): o Claude devolve o plano e o Atlas desenha em partes de 5, como no 1º desenho (a resposta nunca estoura)
+- [x] Navegável sem o teto escondido de ~1 MB (passava de 35-40 telas e a navegação sumia); celular aceita até 10 MB e, acima disso, avisa com calma
+- [x] Quadro leve: só as telas perto da área visível viram iframe (centenas de telas sem travar o computador)
+Notas: DECISÃO do Luiz (24/11/2026, "No primeiro momento, o Claude desenha 40 telas para tentar contemplar 100% do sistema ... À medida que o usuário for navegando, ele vai sentir necessidade e vai solicitando isso ao Atlas. E ele tem que gerar, ele não pode travar, em hipótese alguma"). Trava técnica de sanidade: 2.000 telas no total (bem acima de qualquer sistema real), só para um erro do Claude não encher o disco. DIVERGÊNCIA: antes o teto era 40 telas em qualquer momento.

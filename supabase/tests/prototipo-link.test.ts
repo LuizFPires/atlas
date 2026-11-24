@@ -27,9 +27,14 @@ describe('link do protótipo para o celular', () => {
     await expect(publicarPrototipo(m.deps, a, ORIGEM, { email, computador_hash: H2, token_dispositivo: TOKEN, nome: 'x', documento: DOC })).rejects.toMatchObject({ codigo: 'negado' })
     expect(a.guardados.size).toBe(0)
   })
+  it('protótipo grande (5 MB, centenas de telas) é aceito', async () => {
+    const m = montar(); await m.ativar()
+    const r = await publicarPrototipo(m.deps, armazem(), ORIGEM, { email, computador_hash: H1, token_dispositivo: TOKEN, nome: 'x', documento: `${DOC}${'x'.repeat(5_000_000)}` })
+    expect(r.url).toMatch(/\/p\//)
+  })
   it('documento que não é o protótipo do Atlas (sem a proteção) ou grande demais é recusado', async () => {
     const m = montar(); await m.ativar()
-    for (const documento of ['<script>alert(1)</script>', `${DOC}${'x'.repeat(2_000_000)}`]) {
+    for (const documento of ['<script>alert(1)</script>', `${DOC}${'x'.repeat(10_000_001)}`]) {
       await expect(publicarPrototipo(m.deps, armazem(), ORIGEM, { email, computador_hash: H1, token_dispositivo: TOKEN, nome: 'x', documento })).rejects.toMatchObject({ codigo: 'prototipo_invalido' })
     }
   })
