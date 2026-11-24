@@ -44,7 +44,7 @@ test('o canteiro é 3D: sem canteiro vivo mostra a imagem 3D; com canteiro vivo,
 test('com canteiro vivo a cena real entra num iframe com sandbox', async () => {
   montar('automatico', { endereco: 'http://127.0.0.1:4747/?obra=agenda' })
   const frame = await screen.findByTitle(/Canteiro em 3D/)
-  expect(frame.getAttribute('src')).toBe('http://127.0.0.1:4747/?obra=agenda&modo=3d')
+  expect(frame.getAttribute('src')).toBe('http://127.0.0.1:4747/?obra=agenda&modo=3d&baloes=0')
   expect(frame.getAttribute('sandbox')).toBe('allow-scripts allow-same-origin')
   expect(screen.queryByRole('img', { name: /Canteiro em 3D/ })).toBeNull()
 })

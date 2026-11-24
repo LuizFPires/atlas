@@ -12,7 +12,7 @@ import { enderecoCanteiroSeguro } from './ponte-painel'
  */
 export function Canteiro3D({ endereco, pct, balao }: { endereco: string | null; pct: number; balao?: { quem: string; texto: string; nivel: string } | null }) {
   const seguro = enderecoCanteiroSeguro(endereco)
-  const src = seguro ? `${seguro}${seguro.includes('?') ? '&' : '?'}modo=3d` : null
+  const src = seguro ? `${seguro}${seguro.includes('?') ? '&' : '?'}modo=3d&baloes=0` : null // baloes=0: sem os balões técnicos do kit (M43)
   return (
     <div className="at-pn__canteiro" data-fonte={src ? 'cena-real' : 'imagem'}>
       {src ? (

@@ -355,6 +355,8 @@ export function iniciar(palco, obterEstado) {
 
   // ---------- dia e noite ----------
   const horaFixa = Number(new URLSearchParams(location.search).get('hora'));
+  // Atlas (M43, Luiz 24/11/2026): no app, os balões técnicos ("rodando gh run list…") somem; o Atlas mostra um balão só, em português simples.
+  const semBaloes = new URLSearchParams(location.search).get('baloes') === '0';
   const corDia = new THREE.Color(0x8fb8de), corNoite = new THREE.Color(0x0b1222), corPor = new THREE.Color(0xe59a6a);
   function ambiente() {
     const d = new Date(), h = Number.isFinite(horaFixa) && horaFixa > 0 ? horaFixa : d.getHours() + d.getMinutes() / 60;
@@ -519,6 +521,7 @@ export function iniciar(palco, obterEstado) {
         if (t > p.proxPensa && pensando < 2) { const l = PENSA[k] || ['esperando a vez']; p.pensaTxt = l[Math.floor(Math.random() * l.length)]; p.pensaAte = t + 5500; p.proxPensa = t + 14000 + Math.random() * 16000; }
         if (t < p.pensaAte) { txt = p.pensaTxt; tipo = 'pensa'; pensando++; }
       }
+      if (semBaloes) txt = '';
       if (txt !== p.alvoTxt) { p.alvoTxt = txt; p.letras = 0; }
       if (txt) {
         v3.copy(pos); v3.y += 5.2; v3.project(camera);
