@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Instalar 5 · Preparando o Mac</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none} @keyframes gira{to{transform:rotate(360deg)}} @keyframes pulso{0%{box-shadow:0 0 0 0 rgba(10,132,255,.7)}70%{box-shadow:0 0 0 12px rgba(10,132,255,0)}100%{box-shadow:0 0 0 0 rgba(10,132,255,0)}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:#2B2F35;font-family:'Geist',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;position:relative">
+ <div style="width:980px;height:720px;background:#141619;color:#EDEFEA;border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.45);display:flex;flex-direction:column;overflow:hidden">
+  <div style="height:38px;flex:none;background:#101214;display:flex;align-items:center;padding:0 14px;gap:8px;position:relative">
+   <div style="display:flex;gap:8px" aria-hidden="true"><span style="width:12px;height:12px;border-radius:6px;background:#FF5F57"></span><span style="width:12px;height:12px;border-radius:6px;background:#FEBC2E"></span><span style="width:12px;height:12px;border-radius:6px;background:#28C840"></span></div>
+   <span style="position:absolute;left:0;right:0;text-align:center;font-size:13px;color:#8E968C">Atlas</span>
+  </div>
+  <div style="flex:1;display:flex;min-height:0">
+   <div style="width:250px;background:#101214;padding:28px 26px;box-sizing:border-box;display:flex;flex-direction:column;gap:24px">
+    <div style="display:flex;align-items:center;gap:8px"><img src="/_blob/3ffac3c67d7d512dd74d51dc13a52fb7" alt="" style="width:40px;height:22px;object-fit:contain"><img src="/_blob/a8a1f7c17882253fc0bb950b7874b2c2" alt="Atlas" style="width:96px;height:14px;object-fit:contain"></div>
+    <sc-for list="{{passos}}" as="p" hint-placeholder-count="5">
+     <div style="display:flex;align-items:center;gap:12px;font-size:15px;color:{{p.cor}};font-weight:{{p.peso}}"><span style="width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font:600 13px 'Geist Mono',monospace;background:{{p.bolaBg}};color:{{p.bolaCor}}">{{p.n}}</span>{{p.nome}}</div>
+    </sc-for>
+   </div>
+   <div style="flex:1;padding:36px 44px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;align-items:center;gap:14px;background:#1E2125;border:1px solid #2C3036;border-radius:12px;padding:12px 16px">
+     <span style="font-size:14px;font-weight:600;white-space:nowrap">Preparando o seu Mac</span>
+     <div style="flex:1;height:8px;border-radius:4px;background:#2C3036"><div style="width:55%;height:8px;border-radius:4px;background:#C6F135"></div></div>
+     <span style="font:500 13px 'Geist Mono',monospace;color:#B4BBB2;white-space:nowrap">faltam ~4 min</span>
+    </div>
+    <h1 style="margin:0;font-size:26px;letter-spacing:-0.01em">O Atlas instala o resto sozinho, Zé. Você só acompanha.</h1>
+    <div style="display:flex;flex-direction:column;gap:8px">
+     <sc-for list="{{itens}}" as="i" hint-placeholder-count="5">
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:12px;border:{{i.borda}};background:{{i.bg}}">
+       <span style="width:28px;height:28px;flex:none;border-radius:14px;background:{{i.bola}};color:#141619;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">{{i.ic}}</span>
+       <div style="flex:1;display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">{{i.nome}}</b><span style="font-size:13px;line-height:1.45;color:#B4BBB2">{{i.txt}}</span></div>
+       <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.08em;color:{{i.stCor}}">{{i.st}}</span>
+      </div>
+     </sc-for>
+    </div>
+    <div style="margin-top:auto;display:flex;gap:12px;align-items:flex-start;border:1px solid #2C3036;border-radius:14px;padding:14px 16px">
+     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C6F135" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M6 10v4M10 10v4"/></svg>
+     <span style="font-size:14px;line-height:1.5;color:#B4BBB2"><b style="color:#EDEFEA">O Mac é o seu canteiro.</b> Enquanto a obra constrói, deixe a tampa aberta e o carregador ligado. Com a tampa fechada, o Mac dorme e a obra pausa (ela volta sozinha quando você abrir).</span>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ <div role="dialog" aria-label="Pedido da Apple" style="position:absolute;right:46px;top:120px;width:330px;border-radius:14px;background:#ECECEC;box-shadow:0 30px 80px rgba(0,0,0,.55);padding:18px;display:flex;flex-direction:column;gap:10px;color:#1D1D1F">
+  <b style="font-size:13px;line-height:1.35">O comando “git” requer as ferramentas de desenvolvedor de linha de comando. Deseja instalar as ferramentas agora?</b>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+   <span style="height:28px;padding:0 12px;border-radius:7px;background:#FFFFFF;border:1px solid #D2D2D7;font-size:12px;display:flex;align-items:center">Obter o Xcode</span>
+   <span style="height:28px;padding:0 12px;border-radius:7px;background:#FFFFFF;border:1px solid #D2D2D7;font-size:12px;display:flex;align-items:center">Agora Não</span>
+   <span style="height:28px;padding:0 14px;border-radius:7px;background:#0A84FF;color:#FFFFFF;font-size:12px;font-weight:600;display:flex;align-items:center;animation:pulso 1.6s infinite">Instalar</span>
+  </div>
+ </div>
+ <div style="position:absolute;right:46px;top:262px;width:330px;display:flex;gap:10px;align-items:flex-start;color:#EDEFEA">
+  <span style="width:28px;height:28px;flex:none;border-radius:14px;background:#C6F135;color:#141619;display:flex;align-items:center;justify-content:center;font-weight:700">↑</span>
+  <span style="font-size:14px;line-height:1.5">A Apple vai pedir isto uma vez. Clique em <b>Instalar</b> e depois em <b>Concordar</b>. São as ferramentas oficiais da Apple; leva uns 5 minutos.</span>
+ </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const nomes = ['Confirmar e-mail', 'Preparar o Mac', 'Conectar o Claude', 'Abrir as contas', 'Acompanhar pelo celular'];
+    const passos = nomes.map((nome, i) => {
+      const feito = i === 0, agora = i === 1;
+      return { n: feito ? '✓' : String(i + 1), nome, cor: agora ? '#EDEFEA' : '#9BA39A', peso: agora ? 600 : 400, bolaBg: feito || agora ? '#C6F135' : '#2A2E33', bolaCor: feito || agora ? '#141619' : '#9BA39A' };
+    });
+    const ok = { ic: '✓', bola: '#C6F135', st: 'PRONTO', stCor: '#C6F135', borda: '1px solid #2C3036', bg: 'transparent' };
+    const agora = { ic: '…', bola: '#F2B84B', st: 'AGORA', stCor: '#F2B84B', borda: '2px solid #F2B84B', bg: 'rgba(242,184,75,.08)' };
+    const fila = { ic: '·', bola: '#3A3F46', st: 'NA FILA', stCor: '#8E968C', borda: '1px solid #2C3036', bg: 'transparent' };
+    const itens = [
+      { nome: 'Motor do Atlas (Node)', txt: 'Fica dentro da pasta do Atlas. Não mexe no resto do Mac.', ...ok },
+      { nome: 'Ferramentas da Apple (Git)', txt: 'A Apple está pedindo permissão ao lado: clique em Instalar.', ...agora },
+      { nome: 'GitHub', txt: 'Guarda o código do seu sistema na sua conta.', ...fila },
+      { nome: 'Claude Code (oficial)', txt: 'O construtor. O login é o seu, do seu plano do Claude.', ...fila },
+      { nome: 'Pasta das obras', txt: 'Atlas › Obras, na sua pasta pessoal (fora do iCloud, para nada sumir).', ...fila },
+    ];
+    return { passos, itens };
+  }
+}
+</script>
+</body>
+</html>

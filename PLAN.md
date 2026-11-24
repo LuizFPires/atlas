@@ -514,3 +514,43 @@ tela: prototipo/caminho-novo/ObraEstado.dc.html
 - [x] Automático: depois do merge de cada milestone a linha recomeça de contexto limpo, com o estado pronto
 - [x] Medição: todo pedido ao Claude com obra (protótipo, Ajuda, estilo…) registra passos, tokens e custo em .atlas/consumo.jsonl, com o tipo e sem o texto
 Notas: DECISÃO do Luiz (24/11/2026, depois do teste às cegas X/Y: "Não, eu não queria mudar o jeito que está hoje não ... o modo atual ... é bem mais apurado, mais premium"; "Não é para perder qualidade, mas a gente precisa ser eficiente ... Fazer mais com menos"). O protótipo continua todo no modelo escolhido (Opus recomendado), sem acabamento separado. O esforço (--effort) da linha não muda, porque vale também para os subagentes.
+
+## Milestone 46 — O Atlas roda no Mac (o app)
+peso: 4
+spec: S11b
+tela: prototipo/caminho-novo/M5Preparando.dc.html
+- [ ] Achar claude, gh, git e node no Mac mesmo com o Atlas aberto pelo Finder (caminhos padrão e os do próprio Atlas), e passar esses caminhos para a linha de produção
+- [ ] Menu mínimo do Mac (Atlas, Editar, Janela): Cmd+C, Cmd+V, Cmd+Q e Cmd+W funcionam
+- [ ] Licença: identificar o Mac pelo número de hardware (IOPlatformUUID), nunca pelo nome do computador
+- [ ] Pausar e fechar encerram a linha inteira (Claude e todos os subagentes), sem processo escondido gastando cota
+- [ ] Abrir pelo link atlas:// (open-url do Mac) com o código do link de instalação
+- [ ] Pasta das obras em ~/Atlas/Obras; textos do Mac ("Finder" no lugar de "Explorador"); sem ajuste de tampa, com o aviso da tampa aberta e carregador ligado
+Notas: DECISÃO do Luiz (24/11/2026, "o que a gente tem que fazer para o Atlas poder rodar também no Mac ... da mesma forma que funciona no Windows"; protótipo M1–M5 aprovado: "OK"). DIVERGÊNCIA: CLAUDE.md passa a citar a pasta das obras no Mac (~/Atlas/Obras).
+
+## Milestone 47 — Instalar no Mac: a página reconhece o computador
+peso: 3
+spec: S11b
+tela: prototipo/caminho-novo/M1Pagina.dc.html
+- [ ] A página do link do e-mail reconhece Mac ou Windows pelo navegador e mostra só o botão certo, com "Não é um Mac?" de reserva (celular segue o fluxo atual)
+- [ ] Mac: depois de baixar, a página ensina a arrastar para Aplicativos e o botão "Já arrastei: abrir o Atlas" abre o Atlas pelo atlas:// com o código do link
+- [ ] Primeiro uso no Mac: Node portátil, GitHub CLI e Claude Code instalados pelo Atlas na pasta dele, sem senha de administrador; Git pelas ferramentas da Apple (um clique), com a explicação na tela
+- [ ] O servidor guarda e entrega o arquivo do Mac e o do Windows (cada um com o seu endereço temporário e a sua impressão digital)
+Notas: DECISÃO do Luiz (24/11/2026, "no momento que o usuário clica no link lá do e-mail, já é possível identificar automático se é Mac ou Windows, e aí o usuário não tem que escolher nada? Seria melhor assim"). Telas M1Pagina, M1bWindows, M2Arrastar, M4Codigo e M5Preparando.
+
+## Milestone 48 — Mac assinado e verificado pela Apple, com atualização automática
+peso: 3
+spec: S11b
+tela: prototipo/caminho-novo/M3Abrir.dc.html
+- [ ] Build do Mac na nuvem (GitHub, máquina Mac): .dmg universal (chip da Apple e Intel) e .zip para a atualização
+- [ ] Assinatura com Developer ID e notarização da Apple (certificado e chave criados pelo Luiz, guardados como segredos do GitHub; nunca no chat nem em arquivo)
+- [ ] Atualização automática no Mac: baixa em silêncio, confere a impressão digital e instala quando o Atlas fecha (igual ao Windows)
+- [ ] Teste de instalação no Mac da nuvem a cada PR que mexe no app ou no instalador
+Notas: DECISÃO do Luiz (24/11/2026, protótipo aprovado: "OK"). Sem a notarização, o Mac bloqueia o app ("desenvolvedor não identificado") e um leigo não passa dessa tela.
+
+## Milestone 49 — Teste de ponta a ponta num Mac de verdade
+peso: 1
+spec: S11b
+tela: prototipo/caminho-novo/M4Codigo.dc.html
+- [ ] Do link do e-mail até a primeira obra construída num Mac real: instalar, ativar, contas, protótipo e construção
+- [ ] Pausar, fechar e abrir de novo; cota acabando e voltando sozinha; aviso no celular
+Notas: precisa de um Mac físico (o do Luiz ou de alguém do time).
