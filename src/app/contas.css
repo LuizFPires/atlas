@@ -23,3 +23,15 @@
 /* Rodapé fixo das contas (Luiz, 24/11/2026): Voltar e Fiz isso presos embaixo da coluna, no mesmo lugar em todos os passos. */
 .at-contas .at-claude__col { height: 100%; }
 .at-claude__acoes.at-contas__fixo { margin-top: auto; padding-top: 12px; }
+
+/* Tela larga (Luiz, 24/11/2026): sem a moldura cinza, sem o logo repetido e sem os passos da instalação; o site ao lado ganha espaço. */
+.at-contas-tela { width: 100%; min-height: calc(100vh - 64px); display: flex; }
+.at-contas-tela .at-contas { width: 100%; min-height: 0; display: flex; color: var(--text); }
+.at-contas-tela .at-contas__corpo { padding: 8px 0 0; }
+.at-contas-tela .at-contas__grade--nav { grid-template-columns: minmax(340px, 420px) minmax(0, 1fr); gap: 24px; }
+.at-contas-tela .at-ligar__area { min-height: 560px; }
+/* As contas em linha: bolinha, nome e um conector até a próxima. */
+.at-contas__trilha { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; flex-wrap: wrap; row-gap: 8px; }
+.at-contas__trilha li { display: flex; align-items: center; }
+.at-contas__conector { width: 40px; height: 2px; margin: 0 6px; background: var(--card-b); border-radius: 1px; }
+.at-contas__conector--feito { background: var(--lime); }

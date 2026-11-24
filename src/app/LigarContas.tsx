@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { Botao, Icone } from '../ui'
-import { LateralPassos } from './Ativacao'
 import type { PonteNavegador, Retangulo } from './ponte-navegador'
 import type { ContaLigavel, EstadoLigacao, PonteLigarContas } from './ponte-ligar-contas'
 import './app.css'
@@ -123,9 +122,8 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
   const foco = LINHAS.find((l) => linhas[l.id].estado === 'esperando') ?? null
 
   return (
-    <div className="at-ativ-fundo">
-      <div className="at-ativ at-contas">
-        <LateralPassos agora={4} />
+    <div className="at-contas-tela">
+      <div className="at-contas">
         <section className="at-contas__corpo">
           <div className="at-claude__cab">
             <span className="at-claude__rotulo">AS CONTAS · LIGAR A ESTE COMPUTADOR · {feitas} DE 3</span>
