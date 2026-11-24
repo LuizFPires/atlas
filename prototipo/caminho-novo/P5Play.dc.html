@@ -24,7 +24,7 @@
   <dc-import name="AppColore" tela="{{tela}}" hint-size="390px,844px"></dc-import>
   <sc-for list="{{alvos}}" as="h" hint-placeholder-count="6">
    <button onClick="{{h.tocar}}" aria-label="{{h.rotulo}}" style="position:absolute;left:{{h.x}}px;top:{{h.y}}px;width:{{h.w}}px;height:{{h.h}}px;background:transparent;border:none;padding:0;cursor:pointer">
-    <span style="display:{{dispPonto}};position:absolute;left:50%;top:50%;width:26px;height:26px;border-radius:13px;background:rgba(198,241,53,.35);border:2px solid #C6F135;box-shadow:0 0 12px rgba(198,241,53,.6);animation:toque 1.4s ease-in-out infinite;pointer-events:none"></span>
+    <span style="display:{{h.ponto}};position:absolute;left:50%;top:50%;width:26px;height:26px;border-radius:13px;background:rgba(198,241,53,.35);border:2px solid #C6F135;box-shadow:0 0 12px rgba(198,241,53,.6);animation:toque 1.4s ease-in-out infinite;pointer-events:none"></span>
    </button>
   </sc-for>
  </div>
@@ -32,7 +32,7 @@
  <button onClick="{{depois}}" aria-label="Próxima tela" style="position:absolute;left:calc(50% + 248px);top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:26px;border:1px solid #2C3036;background:rgba(20,22,25,.86);color:#EDEFEA;font-size:22px;cursor:pointer">›</button>
  <div style="position:absolute;left:24px;bottom:24px;width:280px;display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:16px;background:rgba(20,22,25,.86);border:1px solid #2C3036;font-size:13px;line-height:1.5;color:#B4BBB2">
   <b style="color:#EDEFEA;font-size:14px">Use como se fosse de verdade</b>
-  As bolinhas verdes mostram onde dá para tocar. As setas e os números passam de tela em tela.
+  As bolinhas verdes mostram o que já funciona. Tocou em algo sem bolinha? O Atlas pergunta se você quer que ele desenhe essa parte.
   <button onClick="{{alternarRealce}}" style="align-self:flex-start;height:34px;padding:0 12px;border-radius:10px;border:1px solid #C6F135;background:transparent;color:#C6F135;font:600 13px 'Geist',sans-serif;cursor:pointer">{{txtRealce}}</button>
  </div>
  <sc-if value="{{temFalta}}" hint-placeholder-val="{{ false }}">
@@ -89,7 +89,7 @@ class Component extends DCLogic {
     const tela = TELAS[Math.min(i, TELAS.length - 1)][0];
     const alvos = alvosDa(tela).map((h) => {
       const vira = h.falta === 'Detalhe do pedido' && extra ? 'detalhe' : h.ir;
-      return { ...h, tocar: () => (vira ? this.setState({ i: idx(vira), falta: null }) : this.setState({ falta: h.falta, desenhando: false })) };
+      return { ...h, ponto: realce && vira ? 'block' : 'none', tocar: () => (vira ? this.setState({ i: idx(vira), falta: null }) : this.setState({ falta: h.falta, desenhando: false })) };
     });
     const total = TELAS.length;
     return { tela, n: String(i + 1), total: String(total), nome: TELAS[i][1], alvos,
