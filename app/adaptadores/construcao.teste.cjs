@@ -80,7 +80,28 @@ test('pasta fora da raiz é recusada; etapas do Claude são saneadas', async () 
 test('resumirLinha: cota e fim', () => {
   assert.equal(resumirLinha(JSON.stringify({ type: 'result', is_error: true, result: 'Claude usage limit reached' })).cota, true)
   assert.equal(resumirLinha('lixo'), null)
-  assert.match(resumirLinha(JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit' }] } })).texto, /Edit/)
+  assert.equal(resumirLinha(JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit' }] } })).texto, 'Ajustando o código')
+})
+
+test('o que aparece em "Agora na obra" é frase simples, nunca nome de ferramenta (Luiz, 24/11: "Usando Write" não)', () => {
+  const ferramenta = (name, input) => resumirLinha(JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name, input }] } })).texto
+  assert.equal(ferramenta('Write'), 'Escrevendo o código')
+  assert.equal(ferramenta('Read'), 'Lendo os arquivos da obra')
+  assert.equal(ferramenta('Grep'), 'Procurando nos arquivos')
+  assert.equal(ferramenta('Glob'), 'Procurando nos arquivos')
+  assert.equal(ferramenta('TodoWrite'), 'Organizando as tarefas')
+  assert.equal(ferramenta('Task', { subagent_type: 'qa' }), 'Chamando o inspetor de qualidade')
+  assert.equal(ferramenta('Task', { subagent_type: 'implementador' }), 'Chamando a equipe de execução')
+  assert.equal(ferramenta('Bash', { command: 'git commit -m "x"' }), 'Guardando o que foi feito')
+  assert.equal(ferramenta('Bash', { command: 'git push -u origin main' }), 'Enviando para o GitHub')
+  assert.equal(ferramenta('Bash', { command: 'npm install' }), 'Instalando as peças do sistema')
+  assert.equal(ferramenta('Bash', { command: 'npm test' }), 'Testando o que foi feito')
+  assert.equal(ferramenta('Bash', { command: 'npm run build' }), 'Montando o sistema')
+  assert.equal(ferramenta('Bash', { command: 'gh pr create --title x' }), 'Pedindo a revisão do que foi feito')
+  assert.equal(ferramenta('Bash', { command: 'node "C:/kit/hooks/progresso.cjs" --curto' }), 'Conferindo o avanço da obra')
+  assert.equal(ferramenta('Bash', { command: 'vercel deploy' }), 'Publicando o sistema')
+  assert.equal(ferramenta('Bash', { command: 'algo-estranho' }), 'Trabalhando na obra')
+  assert.equal(ferramenta('FerramentaNova'), 'Trabalhando na obra')
 })
 
 test('Claude da obra: subcomandos exatos, ignora config de projeto, env mínimo', async () => {
