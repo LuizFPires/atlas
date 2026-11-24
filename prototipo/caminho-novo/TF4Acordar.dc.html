@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Trava · Acordar o caderno</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none} .bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:12px;font:700 15px 'Geist',sans-serif;cursor:pointer;white-space:nowrap;box-sizing:border-box;border:none} @keyframes pulso{0%{box-shadow:0 0 0 0 rgba(198,241,53,.7)}70%{box-shadow:0 0 0 12px rgba(198,241,53,0)}100%{box-shadow:0 0 0 0 rgba(198,241,53,0)}} @keyframes gira{to{transform:rotate(360deg)}} @keyframes pisca{0%,100%{opacity:1}50%{opacity:.35}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden;position:relative">
+ <dc-import name="Shell" ativo="canteiro" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px;display:grid;grid-template-columns:400px minmax(0,1fr);gap:24px">
+  <div style="display:flex;flex-direction:column;gap:16px">
+   <a href="TF3Obra.dc.html" style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">← LOJA DA ANA</a>
+   <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.limeTxt}}">ACORDAR O CADERNO · PASSO {{n}} DE 2</span>
+   <div style="height:6px;border-radius:3px;background:{{t.line}};overflow:hidden"><div style="height:100%;width:{{pct}}%;background:{{t.lime}}"></div></div>
+   <sc-if value="{{p1}}" hint-placeholder-val="{{ true }}">
+    <b style="font-size:22px;line-height:1.35">O site do Supabase já está aberto ao lado, no seu projeto. Clique no botão verde <u>Restore project</u>.</b>
+    <span style="align-self:flex-start;font-size:14px;background:{{t.soft}};border-radius:10px;padding:8px 12px"><b>Restore project</b> quer dizer <b>"acordar o projeto"</b></span>
+    <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">Se o site pedir para entrar, use "Continue with GitHub", como você fez quando criou a conta.</span>
+    <button class="bt" onClick="{{cliquei}}" style="align-self:flex-start;background:transparent;border:1px solid {{t.lime}};color:{{t.text}}">(simular: cliquei em Restore)</button>
+   </sc-if>
+   <sc-if value="{{p2}}" hint-placeholder-val="{{ false }}">
+    <b style="font-size:22px;line-height:1.35">Pronto. Agora é só esperar: o caderno leva de 1 a 2 minutos para acordar.</b>
+    <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:{{t.mute}}"><span style="width:16px;height:16px;border-radius:8px;border:2px solid {{t.lime}};border-top-color:transparent;animation:gira 1s linear infinite"></span>O Atlas está olhando. Quando acordar, ele continua a obra sozinho.</div>
+    <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">Pode fechar esta tela ou fazer outra coisa. Você não precisa esperar aqui.</span>
+    <a class="bt" href="TF5Resolvido.dc.html" style="align-self:flex-start;background:transparent;border:1px solid {{t.lime}};color:{{t.text}}">(simular: acordou)</a>
+   </sc-if>
+   <button style="margin-top:auto;align-self:flex-start;padding:0;border:none;background:transparent;color:{{t.limeTxt}};font:600 15px 'Geist',sans-serif;text-decoration:underline;cursor:pointer">Não estou achando o botão</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+   <span style="font-size:13px;color:{{t.mute2}}">O site de verdade, aberto dentro do Atlas:</span>
+   <div style="flex:1;border-radius:14px;overflow:hidden;border:1px solid {{t.cardB}};background:#FFFFFF;color:#1B1E22;display:flex;flex-direction:column">
+    <div style="height:40px;background:#E9EBE6;display:flex;align-items:center;gap:8px;padding:0 12px"><span style="width:10px;height:10px;border-radius:5px;background:#E46A5E"></span><span style="width:10px;height:10px;border-radius:5px;background:#E8C14A"></span><span style="width:10px;height:10px;border-radius:5px;background:#6CC070"></span><span style="flex:1;margin-left:8px;height:24px;border-radius:6px;background:#FFF;font:500 12px 'Geist Mono',monospace;display:flex;align-items:center;padding:0 10px;color:#5F665C">supabase.com/dashboard/project/loja-da-ana</span></div>
+    <div style="flex:1;padding:40px;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;text-align:center">
+     <span style="font:600 12px 'Geist Mono',monospace;color:#8E968C">LOJA-DA-ANA</span>
+     <b style="font-size:24px">{{siteTitulo}}</b>
+     <span style="font-size:15px;color:#5F665C;max-width:440px">{{siteTexto}}</span>
+     <div style="display:{{dispBotao}};height:48px;padding:0 24px;border-radius:8px;background:#3ECF8E;color:#0B2A1C;font-weight:700;align-items:center;border:3px solid #C6F135;animation:pulso 1.6s infinite">Restore project</div>
+    </div>
+   </div>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', ambar: '#F2B84B', ambarSoft: 'rgba(242,184,75,.14)', terra: '#2A2620', terraLinha: '#4A4134', cena: '#1A1D21', selo: 'rgba(16,18,20,.82)', seloTxt: '#EDEFEA' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', ambar: '#A86A00', ambarSoft: 'rgba(214,150,30,.14)', terra: '#E9E2D4', terraLinha: '#CDBFA5', cena: '#EEF0EA', selo: 'rgba(255,255,255,.92)', seloTxt: '#1B1E22' }
+};
+
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { clicou: false }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    return { t, tema, ...(this.extra ? this.extra(t) : {}) };
+  }
+}
+Component.prototype.extra = function () {
+  const p1 = !this.state.clicou;
+  return { p1, p2: !p1, n: p1 ? 1 : 2, pct: p1 ? 50 : 100, cliquei: () => this.setState({ clicou: true }),
+    siteTitulo: p1 ? 'This project is paused' : 'Restoring project…', siteTexto: p1 ? 'Projects on the Free plan are paused after 7 days of inactivity.' : 'This may take a few minutes.', dispBotao: p1 ? 'flex' : 'none' };
+};
+</script>
+</body>
+</html>

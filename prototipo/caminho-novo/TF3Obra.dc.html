@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Trava · Obra com a trava</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none} .bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:12px;font:700 15px 'Geist',sans-serif;cursor:pointer;white-space:nowrap;box-sizing:border-box;border:none} @keyframes pulso{0%{box-shadow:0 0 0 0 rgba(198,241,53,.7)}70%{box-shadow:0 0 0 12px rgba(198,241,53,0)}100%{box-shadow:0 0 0 0 rgba(198,241,53,0)}} @keyframes gira{to{transform:rotate(360deg)}} @keyframes pisca{0%,100%{opacity:1}50%{opacity:.35}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden;position:relative">
+ <dc-import name="Shell" ativo="canteiro" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px;display:flex;flex-direction:column;gap:16px">
+  <div style="display:flex;flex-direction:column;gap:6px"><a href="TF2Canteiro.dc.html" style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">← CANTEIRO DE OBRAS</a><h1 style="margin:0;font-size:28px">Loja da Ana</h1></div>
+  <div style="display:flex;gap:8px"><span style="height:36px;padding:0 14px;border-radius:999px;background:{{t.soft}};border:1px solid {{t.lime}};display:flex;align-items:center;font:600 14px 'Geist',sans-serif">Construção</span><span style="height:36px;padding:0 14px;border-radius:999px;border:1px solid {{t.cardB}};display:flex;align-items:center;font:600 14px 'Geist',sans-serif;color:{{t.mute}}">Protótipo</span><span style="height:36px;padding:0 14px;border-radius:999px;border:1px solid {{t.cardB}};display:flex;align-items:center;font:600 14px 'Geist',sans-serif;color:{{t.mute}}">Pedir mudança</span></div>
+  <section aria-label="A conta travou" style="border:2px solid {{t.ambar}};border-radius:18px;padding:18px 20px;background:{{t.card}};display:flex;flex-direction:column;gap:14px">
+   <div style="display:flex;align-items:center;gap:12px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;padding:6px 10px;border-radius:999px;background:{{t.ambar}};color:#141619">SUPABASE · PRECISA DE VOCÊ</span><b style="font-size:21px">O caderno do seu sistema dormiu. Um clique e ele acorda.</b></div>
+   <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px"><div style="background:{{t.card2}};border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">O QUE ACONTECEU</span><span style="font-size:14px;line-height:1.45">No plano grátis, o Supabase põe para dormir o projeto que fica 7 dias sem uso. Nada foi apagado.</span></div><div style="background:{{t.card2}};border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">PASSA SOZINHO?</span><span style="font-size:14px;line-height:1.45">Não. Só o dono da conta pode acordar. É um botão, e o Atlas mostra qual.</span></div><div style="background:{{t.card2}};border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">O QUE O ATLAS FAZ</span><span style="font-size:14px;line-height:1.45">Segue com as partes que não usam o caderno. Quando ele acordar, continua o resto sozinho.</span></div></div>
+   <div style="display:flex;align-items:center;gap:12px"><a class="bt" href="TF4Acordar.dc.html" style="background:{{t.lime}};color:{{t.onLime}};animation:pulso 1.6s infinite">Acordar o caderno agora (1 min) →</a><a class="bt" href="TF2Canteiro.dc.html" style="background:transparent;border:1px solid {{t.cardB}};color:{{t.text}}">Fazer depois (lembro amanhã)</a><span style="font-size:13px;color:{{t.mute2}}">Seus dados estão guardados. Dormir não apaga nada.</span></div>
+  </section>
+  <section style="flex:1;min-height:0;border-radius:18px;overflow:hidden;position:relative;background:#1A1D21;border:1px solid {{t.cardB}}">
+   <img src="/_blob/43c73c51d3fb529d426014fb2be78397" alt="O canteiro da obra em 3D, trabalhando" style="width:100%;height:100%;object-fit:cover">
+   <div style="position:absolute;left:0;right:0;bottom:0;padding:16px 20px;background:linear-gradient(transparent,rgba(10,11,12,.9));display:flex;flex-direction:column;gap:8px;color:#EDEFEA">
+    <div style="display:flex;align-items:center;gap:10px"><span style="width:8px;height:8px;border-radius:4px;background:#C6F135;animation:pisca 1.2s infinite"></span><b style="font-size:16px">Fazendo agora o que não depende do caderno: a tela de vitrine dos produtos</b><span style="margin-left:auto;font:600 14px 'Geist Mono',monospace;color:#C6F135">5 DE 9 PARTES</span></div>
+    <span style="height:8px;border-radius:4px;background:#2A2E33;overflow:hidden"><span style="display:block;height:100%;width:55%;background:#C6F135"></span></span>
+   </div>
+  </section>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', ambar: '#F2B84B', ambarSoft: 'rgba(242,184,75,.14)', terra: '#2A2620', terraLinha: '#4A4134', cena: '#1A1D21', selo: 'rgba(16,18,20,.82)', seloTxt: '#EDEFEA' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', ambar: '#A86A00', ambarSoft: 'rgba(214,150,30,.14)', terra: '#E9E2D4', terraLinha: '#CDBFA5', cena: '#EEF0EA', selo: 'rgba(255,255,255,.92)', seloTxt: '#1B1E22' }
+};
+
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = {}; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    return { t, tema, ...(this.extra ? this.extra(t) : {}) };
+  }
+}
+</script>
+</body>
+</html>
