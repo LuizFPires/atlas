@@ -12,7 +12,7 @@ beforeEach(() => sessionStorage.clear())
 describe('login do portal', () => {
   test('e-mail e código: pede o código ao Auth do Atlas e abre a conta com o token', async () => {
     const f = vi.fn(async (url: string) => {
-      if (url.endsWith('/otp')) return resp({})
+      if (url.endsWith('/portal/entrar/codigo')) return resp({})
       if (url.endsWith('/verify')) return resp({ access_token: 'jwt-ana' })
       if (url.endsWith('/portal/conta')) return resp(CONTA)
       return resp({ nome: 'Zé', empresa: 'Barbearia do Zé', email: 'ze@barbearia.com' })
@@ -33,10 +33,15 @@ describe('login do portal', () => {
     expect(chamada[1].headers).toMatchObject({ Authorization: 'Bearer jwt-ana' })
     expect(chamada[1].body).toBe('{}')
     expect(sessionStorage.getItem(CHAVE_SESSAO)).toBe('jwt-ana')
+    // o código sai pelo servidor do Atlas (e-mail do Atlas), nunca pelo envio padrão do Supabase Auth (/otp)
+    const pedido = (f.mock.calls as unknown as Array<[string, RequestInit]>).find(([u]) => u.endsWith('/portal/entrar/codigo'))!
+    expect(pedido[0]).toBe('https://api.test/portal/entrar/codigo')
+    expect(pedido[1].body).toBe(JSON.stringify({ email: 'ze@barbearia.com' }))
+    expect((f.mock.calls as unknown as Array<[string]>).some(([u]) => u.endsWith('/otp'))).toBe(false)
   })
 
   test('código errado mostra mensagem amiga e não abre a conta', async () => {
-    const f = vi.fn(async (url: string) => (url.endsWith('/otp') ? resp({}) : resp({ msg: 'x' }, 403)))
+    const f = vi.fn(async (url: string) => (url.endsWith('/portal/entrar/codigo') ? resp({}) : resp({ msg: 'x' }, 403)))
     render(<TemaProvider><Portal api={criarPortalApi(cfg, f as unknown as typeof fetch)} /></TemaProvider>)
     await userEvent.type(screen.getByLabelText(/Qual o seu e-mail/), 'ze@barbearia.com')
     await userEvent.click(screen.getByRole('button', { name: /Receber o código/ }))
@@ -48,7 +53,7 @@ describe('login do portal', () => {
 
   test('e-mail de quem não comprou: o servidor recusa e a sessão é descartada', async () => {
     const f = vi.fn(async (url: string) => {
-      if (url.endsWith('/otp')) return resp({})
+      if (url.endsWith('/portal/entrar/codigo')) return resp({})
       if (url.endsWith('/verify')) return resp({ access_token: 'jwt-x' })
       return resp({ erro: 'sem_compra', mensagem: 'Não achamos uma compra do Atlas para esse e-mail.' }, 403)
     })

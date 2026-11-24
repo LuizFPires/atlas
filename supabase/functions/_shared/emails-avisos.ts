@@ -2,18 +2,20 @@
 import { AJUDA, botao, caixa, destaque, esc, linkSeguro, moldura, MONO, COR, neutro, p, quando, rodape, type EmailMontado } from './emails.ts'
 
 /** Código de 6 dígitos (ativação do M2). Só aceita dígitos: nada mais entra no e-mail. */
-export function montarCodigoAtivacao(d: { nome?: string; codigo: string; validade_min?: number; finalidade?: 'ativacao' | 'troca' }): EmailMontado {
+export function montarCodigoAtivacao(d: { nome?: string; codigo: string; validade_min?: number; finalidade?: 'ativacao' | 'troca' | 'entrada' }): EmailMontado {
   const codigo = d.codigo.replace(/\D/g, '').slice(0, 8)
   if (!codigo) throw new Error('codigo_vazio: o código de ativação precisa ter dígitos.')
   const min = d.validade_min ?? 10
   const troca = d.finalidade === 'troca'
+  const entrada = d.finalidade === 'entrada'
+  const onde = entrada ? 'à tela de entrada do Atlas (no celular ou na sua conta)' : 'ao instalador'
   const nome = neutro(d.nome ?? '', 60).split(' ')[0]
-  const titulo = troca ? 'Seu código para trocar de computador' : 'Seu código para instalar o Atlas'
+  const titulo = entrada ? 'Seu código para entrar no Atlas' : troca ? 'Seu código para trocar de computador' : 'Seu código para instalar o Atlas'
   const quem = nome ? `${nome}, ` : ''
   const corpo = [
-    p(`${esc(quem)}volte ao instalador e digite este código${troca ? ' para passar o Atlas para o computador novo' : ''}:`),
+    p(`${esc(quem)}volte ${esc(onde)} e digite este código${troca ? ' para passar o Atlas para o computador novo' : ''}:`),
     `<div style="margin:0 0 22px;background:${COR.caixa};border-radius:12px;padding:20px;text-align:center;font-family:${MONO};font-size:36px;letter-spacing:.3em;font-weight:500;color:${COR.tinta}">${esc(codigo)}</div>`,
-    destaque('relogio', `Ele vale por <b style="color:${COR.tinta}">${min} minutos</b> e só uma vez. Passou? É só pedir outro no instalador.`),
+    destaque('relogio', `Ele vale por <b style="color:${COR.tinta}">${min} minutos</b> e só uma vez. Passou? É só pedir outro ${entrada ? 'na mesma tela' : 'no instalador'}.`),
     destaque('microfone', `<b style="color:${COR.tinta}">Dá para falar o código.</b> No Atlas, tudo pode ser falado: aperte o microfone e leia os números em voz alta.`),
     rodape('Você não pediu este código? Ignore este e-mail: sem ele ninguém consegue entrar. Nunca passe o código para ninguém.'),
     `<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:${COR.claro}">${esc(AJUDA)}</p>`,
@@ -23,7 +25,7 @@ export function montarCodigoAtivacao(d: { nome?: string; codigo: string; validad
     texto: [
       `${quem}o seu código do Atlas é: ${codigo}`,
       '',
-      `Volte ao instalador e digite esse código. Ele vale por ${min} minutos e só uma vez.`,
+      `Volte ${onde} e digite esse código. Ele vale por ${min} minutos e só uma vez.`,
       'Você não pediu? Ignore este e-mail. Nunca passe o código para ninguém.',
       '',
       AJUDA,

@@ -62,3 +62,12 @@ describe('bordas de texto vazio (revisão M5)', () => {
     }
   })
 })
+
+test('código de ENTRADA (celular e conta): fala de entrar, não de instalador', () => {
+  const m = montarCodigoAtivacao({ codigo: '482913', finalidade: 'entrada', nome: 'Guilherme Souza' })
+  expect(m.assunto).toBe('482913 é o seu código do Atlas')
+  expect(m.html).toContain('Seu código para entrar no Atlas')
+  expect(m.texto).toContain('Guilherme, o seu código do Atlas é: 482913')
+  expect(m.texto).toMatch(/Volte à tela de entrada do Atlas/)
+  expect(m.texto).not.toMatch(/instalador/)
+})

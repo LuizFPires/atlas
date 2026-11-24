@@ -109,7 +109,9 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
       if (!EMAIL_RE.test(e)) return { ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' }
       if (!cfg) return { ok: false, mensagem: MSG_OFF }
       try {
-        const { r } = await auth('/otp', { email: e, create_user: true })
+        // O código sai pelo servidor do Atlas (e-mail do Atlas, só para quem tem licença), não pelo envio padrão do Supabase
+        // Auth, que é limitado e não chegava para quem tinha cortesia (Luiz, 24/11/2026). A verificação continua no Auth.
+        const r = await f(`${cfg.api}/portal/entrar/codigo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: e }) })
         if (r.status === 429) return { ok: false, mensagem: 'Você pediu códigos demais. Espere uns minutos e tente de novo.' }
         // Resposta neutra: não revelamos se esse e-mail é de um cliente.
         return r.ok ? { ok: true } : { ok: false, mensagem: 'Não deu para mandar o código agora. Tente de novo em instantes.' }

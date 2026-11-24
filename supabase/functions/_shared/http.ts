@@ -10,6 +10,7 @@ import { baixarReferencia, type CanalCelular, enviarReferencia, estadoDoCelular,
 import { entregarKit, type CarregarKit } from './kit.ts'
 import { gerarLink } from './links.ts'
 import { type Deps, ErroRegra } from './tipos.ts'
+import { type DepsEntrada, pedirCodigoEntrada } from './entrada.ts'
 import { trocarComputador } from './troca.ts'
 import { verificar } from './verificar.ts'
 import { criarCheckout } from './pagamento/checkout.ts'
@@ -147,6 +148,12 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
       if (!ctx.portal) return json({ erro: 'portal_indisponivel' }, 503)
       const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
       switch (rota) {
+        // Antes de entrar (sem JWT): pede o código de entrada. Resposta igual para qualquer e-mail.
+        case '/portal/entrar/codigo': {
+          const p = ctx.portal as Partial<DepsEntrada>
+          if (!p.gerarCodigoEntrada || !p.enviarCodigoEntrada) return json({ erro: 'portal_indisponivel' }, 503)
+          return json(await pedirCodigoEntrada(ctx.portal as unknown as DepsEntrada, s('email'), ipDe(req)))
+        }
         case '/portal/eu':
           return json(await eu(ctx.portal, jwt))
         case '/portal/conta':
