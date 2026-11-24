@@ -118,7 +118,7 @@ test('linha esperando a pessoa: pede NA HORA (sem gastar 3 tentativas), com a fa
 
 // Obra do Guilherme (24/11, 11:35): a linha trabalhou, abriu o pedido de revisão da M1 e encerrou o turno ("concluiu"). Ninguém
 // religava: "Ninguém trabalhando agora" em 5,00%. No automático a obra segue sozinha até o fim.
-function montarSeguir({ modo = 'automatico', plan = '## Milestone 1 — Base\npeso: 1\n- [ ] a\n- [ ] b\n\n## Milestone 2 — Ponto\npeso: 1\n- [ ] c\n', estado = {} } = {}) {
+function montarSeguir({ modo = 'automatico', plan = '## Milestone 1 — Base\npeso: 1\n- [ ] a\n- [ ] b\n\n## Milestone 2 — Ponto\npeso: 1\n- [ ] c\n', estado = {}, preCondicoes } = {}) {
   const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-vigia-'))
   fs.mkdirSync(path.join(raiz, 'obra', '.atlas'), { recursive: true })
   fs.writeFileSync(path.join(raiz, 'obra', 'PLAN.md'), plan)
@@ -127,9 +127,67 @@ function montarSeguir({ modo = 'automatico', plan = '## Milestone 1 — Base\npe
   let t = Date.UTC(2026, 10, 24, 14, 0)
   const religadas = []
   fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ estado: 'parou', motivo: 'concluiu', desde: new Date(t - 40 * 60_000).toISOString(), fimEm: new Date(t).toISOString() }))
-  const vigia = criarVigia({ raiz, construcao: { linha: { rodando: () => false, religar: (p) => religadas.push(p) } }, garantirKit: async () => {}, listar: async () => ['obra'], agora: () => new Date(t) })
-  return { vigia, religadas, passar: (ms) => { t += ms } }
+  const vigia = criarVigia({ raiz, construcao: { linha: { rodando: () => false, religar: (p) => religadas.push(p) } }, garantirKit: async () => {}, listar: async () => ['obra'], agora: () => new Date(t), ...(preCondicoes ? { preCondicoes } : {}) })
+  const concluiu = () => fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ estado: 'parou', motivo: 'concluiu', desde: new Date(t - 40 * 60_000).toISOString(), fimEm: new Date(t).toISOString() }))
+  const avancar = () => fs.writeFileSync(path.join(raiz, 'obra', 'PLAN.md'), fs.readFileSync(path.join(raiz, 'obra', 'PLAN.md'), 'utf8').replace('- [ ]', '- [x]'))
+  return { vigia, religadas, passar: (ms) => { t += ms }, concluiu, avancar }
 }
+
+test('economia: turno que terminou sem avançar nada não é religado na hora; no segundo seguido, pede você', async () => {
+  const m = montarSeguir()
+  m.passar(60_000); await m.vigia.rodada()
+  assert.equal(m.religadas.length, 1)
+  // a linha religada terminou o turno sem tarefa, commit nem etapa nova
+  m.passar(10 * 60_000); m.concluiu()
+  m.passar(60_000); await m.vigia.rodada()
+  assert.equal(m.religadas.length, 1) // não religa de imediato
+  m.passar(5 * 60_000); await m.vigia.rodada()
+  assert.equal(m.religadas.length, 2) // uma segunda chance depois de esperar
+  m.passar(10 * 60_000); m.concluiu()
+  m.passar(30 * 60_000); await m.vigia.rodada()
+  assert.equal(m.religadas.length, 2)
+  assert.equal(m.vigia.estado('obra').situacao, 'precisa-voce')
+  assert.match(m.vigia.estado('obra').motivo, /sem avançar/)
+})
+
+test('economia: turno que avançou segue normalmente (sem esperar)', async () => {
+  const m = montarSeguir()
+  m.passar(60_000); await m.vigia.rodada()
+  m.passar(10 * 60_000); m.avancar(); m.concluiu()
+  m.passar(60_000); await m.vigia.rodada()
+  assert.equal(m.religadas.length, 2)
+  assert.equal(m.vigia.estado('obra'), null)
+})
+
+test('economia: sem internet ou sem Claude, o vigia não religa (nem gasta tentativa) até voltar', async () => {
+  let ok = { ok: false, motivo: 'Sem internet agora.' }
+  const m = montarSeguir({ preCondicoes: async () => ok })
+  m.passar(60_000); await m.vigia.rodada()
+  assert.equal(m.religadas.length, 0)
+  m.passar(10 * 60_000); await m.vigia.rodada()
+  assert.equal(m.religadas.length, 0)
+  ok = { ok: true }
+  m.passar(60_000); await m.vigia.rodada()
+  assert.equal(m.religadas.length, 1)
+})
+
+test('economia: nas tentativas depois de erro, também espera a internet e o Claude antes de gastar uma', async () => {
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-vigia-'))
+  fs.mkdirSync(path.join(raiz, 'obra', '.atlas'), { recursive: true })
+  fs.writeFileSync(path.join(raiz, 'obra', 'PLAN.md'), '## Milestone 1 — Base\npeso: 1\n- [ ] a\n')
+  let t = Date.UTC(2026, 10, 24, 9, 0)
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ estado: 'parou', motivo: 'erro', fimEm: new Date(t).toISOString() }))
+  const religadas = []
+  let ok = { ok: false, motivo: 'O Claude deste computador saiu da conta.' }
+  const vigia = criarVigia({ raiz, construcao: { linha: { rodando: () => false, religar: (p) => religadas.push(p) } }, garantirKit: async () => {}, listar: async () => ['obra'], agora: () => new Date(t), preCondicoes: async () => ok })
+  await vigia.rodada(); t += 30 * MIN; await vigia.rodada()
+  assert.equal(religadas.length, 0)
+  assert.equal(vigia.estado('obra').tentativa, 0)
+  assert.match(vigia.estado('obra').motivo, /saiu da conta/)
+  ok = { ok: true }
+  t += MIN; await vigia.rodada()
+  assert.equal(religadas.length, 1)
+})
 
 test('automático: a linha encerrou o turno com a obra por terminar → segue sozinha em 1 minuto, sem alerta', async () => {
   const m = montarSeguir()

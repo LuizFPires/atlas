@@ -8,6 +8,7 @@
 'use strict'
 const path = require('node:path')
 const { pastaDaObra, gravarAtomico, lerJson, lerTexto } = require('./obra-fs.cjs')
+const { marcaDeAvanco } = require('./retrato-obra.cjs')
 
 const BACKOFF_MIN = [2, 5, 15]
 const MAX_TENTATIVAS = BACKOFF_MIN.length
@@ -60,8 +61,20 @@ function etapasDoPlan(dir) {
   return ms
 }
 const SEGUIR_EM_MS = 60_000
+// Economia de tokens (24/11/2026, obra do Guilherme: 65 religadas). Religar só com avanço ou motivo novo:
+//  - turno religado sozinho que terminou sem tarefa, commit, etapa ou PR novo: espera 5 min e tenta UMA vez mais; no segundo
+//    seguido, para e pede você (religar de novo só gastaria a cota).
+//  - sem internet, sem Claude ou sem espaço (preCondicoes): não religa nem gasta tentativa; espera voltar.
+const ESPERA_SEM_AVANCO_MS = 5 * 60_000
+const MAX_SEM_AVANCO = 2
+const MOTIVO_SEM_AVANCO = 'A obra terminou dois turnos seguidos sem avançar. Para não gastar sua cota à toa, o Atlas parou de religar sozinho.'
 
-function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new Date(), aoPrecisar = () => {}, diario = null, diagnosticar = null }) {
+function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new Date(), aoPrecisar = () => {}, diario = null, diagnosticar = null, preCondicoes = null }) {
+  /** O que falta para valer a pena religar (internet, Claude, disco). null = pode. Nunca lança. */
+  const falta = async (pasta) => {
+    if (!preCondicoes) return null
+    try { const r = await preCondicoes(pasta); return r && r.ok === false ? String(r.motivo || 'Esperando o computador ficar pronto.') : null } catch { return null }
+  }
   // M41: o que o vigia faz sozinho vai para o diário da obra.
   const anotar = (pasta, tipo, texto) => { if (!diario) return; try { diario.registrar(pastaDaObra(raiz, pasta), { tipo, texto }) } catch { /* diário é extra */ } }
   const arq = (pasta) => path.join(pastaDaObra(raiz, pasta), '.atlas', 'vigia.json')
@@ -110,11 +123,22 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
       const arqSeguir = path.join(dir, '.atlas', 'seguir.json')
       const s = lerJson(arqSeguir) || {}
       if (s.fimVisto === fimC || t < (Date.parse(fimC) || 0) + SEGUIR_EM_MS) return
+      if (v && v.situacao === 'precisa-voce') return
+      const marca = marcaDeAvanco(dir)
+      const semAvanco = s.marca && s.marca === marca ? (Number(s.semAvanco) || 0) + 1 : 0
+      if (semAvanco >= MAX_SEM_AVANCO) {
+        gravarAtomico(arqSeguir, JSON.stringify({ fimVisto: fimC, marca, semAvanco, em: new Date(t).toISOString() }) + '\n')
+        gravar(pasta, { situacao: 'precisa-voce', tentativa: 0, de: MAX_TENTATIVAS, motivo: MOTIVO_SEM_AVANCO, fimVisto: fimC })
+        anotar(pasta, 'parada', MOTIVO_SEM_AVANCO)
+        return
+      }
+      if (semAvanco > 0 && t < (Date.parse(fimC) || 0) + ESPERA_SEM_AVANCO_MS) return
+      if (await falta(pasta)) return
       try {
         await garantirKit(pasta)
         construcao.linha.religar(pasta)
-        anotar(pasta, 'retomada', 'Seguiu sozinho para a próxima parte da obra')
-        gravarAtomico(arqSeguir, JSON.stringify({ fimVisto: fimC, em: new Date(t).toISOString() }) + '\n')
+        anotar(pasta, 'retomada', semAvanco ? 'O último turno não avançou; o Atlas esperou um pouco e tentou mais uma vez' : 'Seguiu sozinho para a próxima parte da obra')
+        gravarAtomico(arqSeguir, JSON.stringify({ fimVisto: fimC, marca, semAvanco, em: new Date(t).toISOString() }) + '\n')
       } catch (e) {
         if (e && e.message === 'ja-rodando') return
         const falhas = (s.falhas || 0) + 1
@@ -143,6 +167,11 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
       gravar(pasta, estado)
     }
     if (t < Date.parse(estado.proximaEm)) return
+    const motivoFalta = await falta(pasta)
+    if (motivoFalta) { // sem condição de trabalhar: espera sem gastar tentativa (religar agora só queimaria cota)
+      gravar(pasta, { ...estado, motivo: motivoFalta, proximaEm: new Date(t + 60_000).toISOString() })
+      return
+    }
     const tentativa = estado.tentativa + 1
     try {
       await garantirKit(pasta)
@@ -172,8 +201,8 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
       if (!v) return null
       return { situacao: v.situacao === 'precisa-voce' ? 'precisa-voce' : 'tentando', tentativa: Number(v.tentativa) || 0, de: MAX_TENTATIVAS, motivo: String(v.motivo || ''), ...(v.proximaEm ? { proximaEm: v.proximaEm } : {}), ...(typeof v.fala === 'string' && v.fala ? { fala: v.fala } : {}), ...(v.conta ? { conta: v.conta } : {}), ...(Array.isArray(v.opcoes) && v.opcoes.length ? { opcoes: v.opcoes.map((o) => ({ rotulo: String(o.rotulo), explica: String(o.explica || ''), recomendada: !!o.recomendada })) } : {}), ...(Array.isArray(v.checagens) ? { checagens: v.checagens.filter((c) => c && typeof c.nome === 'string').map((c) => ({ nome: String(c.nome), ok: !!c.ok, ...(c.dica ? { dica: String(c.dica) } : {}) })) } : {}) }
     },
-    /** "Tentar agora" do cliente: começa do zero. */
-    zerar,
+    /** "Tentar agora" do cliente: começa do zero (inclusive a conta de turnos sem avanço). */
+    zerar(pasta) { zerar(pasta); try { require('node:fs').unlinkSync(path.join(pastaDaObra(raiz, pasta), '.atlas', 'seguir.json')) } catch { /* não havia */ } },
   }
 }
 
