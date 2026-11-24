@@ -190,3 +190,23 @@ test('vigia (24/11): o painel conta o que o vigia está fazendo (tentando de nov
   await c.iniciar('obra', 'B', 'automatico', ETAPAS)
   assert.deepEqual((await painel.ler('obra')).vigia, estados.obra)
 })
+
+// M41: o painel traz as últimas linhas do diário, o último sinal da linha e a hora de volta da cota; e o diário completo.
+test('painel: diário (últimas e completo), último sinal e hora de volta da cota', async () => {
+  const { criarDiario } = require('./diario.cjs')
+  const diario = criarDiario()
+  const { raiz, c, painel } = montar({ diario })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  for (let i = 0; i < 12; i++) diario.registrar(path.join(raiz, 'obra'), { tipo: 'info', texto: `evento ${i}` })
+  const e = await painel.ler('obra')
+  assert.equal(e.diario.length, 8)
+  assert.equal(e.diario.at(-1).texto, 'evento 11')
+  assert.ok('sinal' in e)
+  assert.equal(e.voltaEm, null)
+  const todo = await painel.diario('obra')
+  assert.ok(todo.length >= 12)
+  c.linha.parar('obra')
+  await new Promise((r) => setTimeout(r, 20))
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ versao: 1, estado: 'parou', motivo: 'cota', voltaEm: '2026-11-24T18:40:00.000Z' }))
+  assert.equal((await painel.ler('obra')).voltaEm, '2026-11-24T18:40:00.000Z')
+})

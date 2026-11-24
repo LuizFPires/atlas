@@ -13,7 +13,7 @@ const { montarPlanMd, validarPlanNovo } = require('./plan-md.cjs')
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-obra-'))
 const ETAPAS = [{ n: 'M1', nome: 'Base e login', desc: 'Entrada' }, { n: 'M2', nome: '# Hack\n## Milestone 9 — falso', desc: '- [x] tarefa falsa', tela: '../fora' }]
 
-function montar({ logado = true, instalado = true, envContas, exigirPlugin, pluginDir, agora, comandosDoKit } = {}) {
+function montar({ logado = true, instalado = true, envContas, exigirPlugin, pluginDir, agora, comandosDoKit, diario } = {}) {
   const raiz = tmp(); const home = tmp()
   fs.mkdirSync(path.join(raiz, 'obra'))
   const chamadas = []
@@ -24,7 +24,7 @@ function montar({ logado = true, instalado = true, envContas, exigirPlugin, plug
     claudeEstado: async () => ({ conectado: logado }),
     resolver: () => (instalado ? { cmd: 'x' } : null),
     iniciarFluxo: (args, o) => { chamadas.push({ args, o }); return { parar: () => terminar({ codigo: null, parado: true }), fim: new Promise((r) => { terminar = r }) } },
-    envContas, exigirPlugin, pluginDir, comandosDoKit, ...(agora ? { agora } : {}),
+    envContas, exigirPlugin, pluginDir, comandosDoKit, ...(agora ? { agora } : {}), ...(diario ? { diario } : {}),
   })
   return { raiz, home, dadosApp, c, chamadas, terminar: (v) => terminar(v) }
 }
@@ -441,4 +441,47 @@ test('comandos comuns de trabalho na obra estão liberados (e os perigosos conti
   for (const f of ['Bash(cd:*)', 'Bash(node:*)', 'Bash(npm audit:*)', 'Bash(npm pkg:*)', 'Bash(git --no-pager diff:*)', 'Bash(git show:*)', 'Bash(git mv:*)', 'Bash(git rm:*)', 'Bash(git tag:*)', 'WebFetch']) assert.ok(ok.includes(f), `falta ${f}`)
   for (const f of ['Bash(git config:*)', 'Bash(git -c:*)', 'Bash(node -e:*)', 'Bash(curl:*)', 'Bash(gh auth setup-git:*)']) assert.ok(nao.includes(f), `devia negar ${f}`)
   assert.ok(!ok.some((f) => /^Bash\(git --no-pager:\*\)$|^Bash\(npx:\*\)$|gh api(?! rate_limit\))/.test(f)))
+})
+
+// M41: a linha escreve no diário da obra (começou, o que está fazendo, por que parou) e diz quando foi o último sinal.
+test('diário: começou, o que está fazendo (sem repetir a cada segundo) e por que parou; último sinal da linha', async () => {
+  const { criarDiario } = require('./diario.cjs')
+  let t = Date.UTC(2026, 10, 24, 12, 0)
+  const agora = () => new Date(t)
+  const diario = criarDiario({ agora })
+  const { raiz, c, chamadas, terminar } = montar({ agora, diario })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  const dir = path.join(raiz, 'obra')
+  const usar = (name, input) => chamadas[0].o.onLinha(JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name, input }] } }))
+  usar('Write', { file_path: 'src/a.ts' }); t += 20_000
+  usar('Read', { file_path: 'src/b.ts' }); t += 20_000
+  usar('Write', { file_path: 'src/c.ts' }); t += 20_000
+  assert.equal(c.linha.sinal('obra'), new Date(t - 20_000).toISOString())
+  t += 4 * 60_000
+  usar('Bash', { command: 'git push -u origin feat/m1' })
+  chamadas[0].o.onLinha(JSON.stringify({ type: 'result', is_error: true, result: 'Claude usage limit reached. Your limit will reset at 3pm' }))
+  t += 10 * 60_000
+  terminar({ codigo: 1, parado: false })
+  await new Promise((r) => setTimeout(r, 20))
+  const textos = diario.ler(dir).map((e) => `${e.tipo}: ${e.texto}`)
+  assert.equal(textos[0], 'info: O Atlas começou a trabalhar na obra')
+  assert.equal(textos.filter((x) => x.startsWith('trabalho: ')).length, 2, textos.join(' | '))
+  assert.match(textos.at(-1), /^parada: .*cota/i)
+  assert.equal(c.linha.sinal('obra'), null)
+})
+
+test('diário: pausa do cliente e pedido à pessoa ficam registrados com o tipo certo', async () => {
+  const { criarDiario } = require('./diario.cjs')
+  let t = Date.UTC(2026, 10, 24, 12, 0)
+  const agora = () => new Date(t)
+  const diario = criarDiario({ agora })
+  const { raiz, c, chamadas, terminar } = montar({ agora, diario })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  chamadas[0].o.onLinha(JSON.stringify({ type: 'result', is_error: false, result: 'USUÁRIO: Ligue o GitHub na tela As contas do Atlas.' }))
+  t += 40_000
+  terminar({ codigo: 0, parado: false })
+  await new Promise((r) => setTimeout(r, 20))
+  const ult = diario.ler(path.join(raiz, 'obra')).at(-1)
+  assert.equal(ult.tipo, 'pedido')
+  assert.match(ult.texto, /Ligue o GitHub/)
 })

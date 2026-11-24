@@ -150,7 +150,7 @@ function kitDirDoApp({ empacotado, recursos }) {
  * `porta` (teste): fixa a porta; padrão = porta livre aleatória a cada subida. `subir` (teste): substitui o spawn do canteiro
  * (sem nonce: o servidor falso do teste não o conhece). Padrão de kitDir (hooks/ e canteiro/): a pasta .claude do app (ATLAS_KIT_DIR).
  */
-function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir, contarCommits, vigia = null }) {
+function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir, contarCommits, vigia = null, diario = null }) {
   const hooks = path.join(kitDir, 'hooks')
   const canteiroDir = path.join(kitDir, 'canteiro')
   const linha = construcao.linha
@@ -270,7 +270,17 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
         temTeste: p.feitas > 0,
         // Vigia (24/11/2026): linha que parou sem avançar. O Atlas tenta de novo sozinho e, se não der, pede o cliente com o motivo.
         vigia: acabou || !vigia ? null : (() => { try { return vigia.estado(pasta) } catch { return null } })(),
+        // M41: nunca no escuro. Último sinal da linha (medido pelo Atlas), hora de volta da cota e as últimas linhas do diário.
+        sinal: rodando && linha.sinal ? linha.sinal(pasta) : null,
+        voltaEm: !rodando && fim && fim.estado === 'parou' && fim.motivo === 'cota' && typeof fim.voltaEm === 'string' ? fim.voltaEm : null,
+        diario: diario ? diario.ler(cwd, 8) : [],
       }
+    },
+
+    /** M41: o diário completo da obra (gaveta "Ver o diário completo"). */
+    async diario(pasta) {
+      const cwd = pastaDaObra(raiz, pasta)
+      return diario ? diario.ler(cwd, 500) : []
     },
 
     async pausar(pasta) {
