@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Obra: layout B, prédio grande e coluna ao lado</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes lp{0%,100%{opacity:1}50%{opacity:.35}} .lp{animation:lp 1.2s infinite}
+@media (prefers-reduced-motion: reduce){.lp{animation:none}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="canteiro" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:20px 28px;display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;align-items:center;gap:14px">
+   <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">← CANTEIRO DE OBRAS</span><h1 style="margin:0;font-size:26px">Ponto</h1></div>
+   <nav style="margin-left:24px;display:flex;gap:4px;padding:4px;border-radius:12px;background:{{t.card}};border:1px solid {{t.cardB}}"><span style="height:34px;padding:0 14px;display:flex;align-items:center;border-radius:9px;background:{{t.lime}};color:{{t.onLime}};font:700 13px 'Geist',sans-serif">Construção</span><span style="height:34px;padding:0 14px;display:flex;align-items:center;color:{{t.mute}};font:600 13px 'Geist',sans-serif">Cronograma</span><span style="height:34px;padding:0 14px;display:flex;align-items:center;color:{{t.mute}};font:600 13px 'Geist',sans-serif">Protótipo</span><span style="height:34px;padding:0 14px;display:flex;align-items:center;color:{{t.mute}};font:600 13px 'Geist',sans-serif">Pedir mudança</span></nav>
+   <div style="margin-left:auto;display:flex;gap:8px"><span style="height:38px;padding:0 14px;display:flex;align-items:center;border-radius:10px;border:1px solid {{t.cardB}};font:600 13px 'Geist',sans-serif">Contas ligadas</span><span style="height:38px;padding:0 14px;display:flex;align-items:center;border-radius:10px;border:1px solid {{t.cardB}};font:600 13px 'Geist',sans-serif">Pausar</span><span style="height:38px;padding:0 14px;display:flex;align-items:center;border-radius:10px;background:{{t.lime}};color:{{t.onLime}};font:700 13px 'Geist',sans-serif">Ver versão de teste</span></div>
+  </div>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px">
+   <section style="position:relative;border-radius:22px;overflow:hidden;border:1px solid {{t.cardB}};background:#1A1D21;display:flex;flex-direction:column">
+    <div style="position:relative;flex:1;min-height:0"><img src="/_blob/43c73c51d3fb529d426014fb2be78397" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+     <div style="position:absolute;left:50%;top:38%;transform:translateX(-50%);padding:10px 14px;border-radius:14px;background:rgba(16,18,20,.92);border:1px solid #C6F135;color:#EDEFEA;font-size:14px;text-align:center"><b style="display:block;color:#C6F135">Mestre de obras</b>Conferindo os testes no GitHub</div>
+     <span style="position:absolute;left:16px;top:16px;font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#EDEFEA;padding:6px 10px;border-radius:999px;background:rgba(16,18,20,.82)">CANTEIRO 3D · ARRASTE PARA GIRAR</span>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:20px;padding:16px 22px;background:{{t.card}}">
+     <span style="font:700 64px 'Geist',sans-serif;line-height:.9;letter-spacing:-.03em;color:{{t.limeTxt}}">8,33%</span>
+     <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding-bottom:6px"><span style="font-size:14px;color:{{t.mute}}">3 de 36 tarefas · Etapa M2 de 8 · Entrar no app e perfis</span><span style="height:8px;border-radius:4px;background:{{t.line}};overflow:hidden"><span style="display:block;width:8.33%;height:100%;background:{{t.lime}}"></span></span></div>
+    </div>
+   </section>
+   <aside style="display:flex;flex-direction:column;gap:12px;min-height:0">
+    <div style="padding:16px 18px;border-radius:18px;background:{{t.card}};border:1px solid {{t.lime}};display:flex;flex-direction:column;gap:6px">
+     <span style="display:flex;align-items:center;gap:7px;font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.limeTxt}}"><span class="lp" style="width:7px;height:7px;border-radius:4px;background:{{t.lime}}"></span>TRABALHANDO · HÁ 2 S</span>
+     <b style="font-size:17px">Conferindo os testes no GitHub</b><span style="font-size:13px;line-height:1.45;color:{{t.mute}}">Tudo certo. O Atlas confere a cada minuto se a equipe continua andando.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+     <div style="padding:14px 16px;border-radius:16px;background:{{t.card}};border:1px solid {{t.cardB}}"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">FALTA</span><b style="display:block;margin-top:4px;font-size:20px">≈ 25 h</b></div>
+     <div style="padding:14px 16px;border-radius:16px;background:{{t.card}};border:1px solid {{t.cardB}}"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">TERMINA</span><b style="display:block;margin-top:4px;font-size:20px">Amanhã, ~18h</b></div>
+    </div>
+    <div style="flex:1;min-height:0;padding:16px 18px;border-radius:18px;background:{{t.card}};border:1px solid {{t.cardB}};display:flex;flex-direction:column;gap:8px">
+     <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">DIÁRIO DA OBRA</span>
+     <sc-for list="{{diario}}" as="d" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:44px 1fr;gap:8px;font-size:13px"><span style="font:500 12px 'Geist Mono',monospace;color:{{t.mute2}}">{{d.h}}</span><span>{{d.x}}</span></div></sc-for>
+     <span style="margin-top:auto;font:600 13px 'Geist',sans-serif;color:{{t.limeTxt}}">Ver o diário completo →</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:14px;background:{{t.card2}};border:1px solid {{t.cardB}};font-size:13px;color:{{t.mute}}">Modo da obra <b style="margin-left:auto;padding:4px 10px;border-radius:8px;background:{{t.soft}};color:{{t.limeTxt}}">Automático</b></div>
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = { escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', line: '#2A2E33' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', line: '#E6E8E1' } };
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const nomes = ['Base do app e marca', 'Entrar no app e perfis', 'Registrar o ponto', 'Ajustes do ponto', 'Relatórios do mês', 'Folgas e férias', 'Exportar ao contador', 'Publicar e entregar'];
+    const andares = nomes.map((nome, i) => { const n = i + 1; const st = n === 1 ? 'feito' : n === 2 ? 'agora' : 'falta';
+      return { n: `M${n}`, nome, st, bg: st === 'feito' ? t.lime : st === 'agora' ? t.soft : 'transparent', borda: st === 'falta' ? t.cardB : t.lime, cor: st === 'feito' ? t.onLime : st === 'agora' ? t.limeTxt : t.mute2, sub: st === 'feito' ? 'Entregue' : st === 'agora' ? 'Construindo · 45%' : 'Falta', pisca: st === 'agora' ? 'lp' : '' } }).reverse();
+    const diario = [['16:54', 'Conferindo os testes no GitHub'], ['16:51', 'Enviou a etapa M1 para o GitHub'], ['16:48', 'Preparando o GitHub da obra'], ['16:48', 'O Atlas começou a trabalhar na obra']].map(([h, x]) => ({ h, x }));
+    return { tema, t, andares, diario };
+  }
+}
+</script>
+</body>
+</html>

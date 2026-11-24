@@ -296,6 +296,46 @@
       "h": 900,
       "title": "Obra · Cronograma: previsto x realizado por etapa e o término esperado (dia e hora)",
       "is_interactive": true
+    },
+    "L1Palco.dc.html": {
+      "x": 0,
+      "y": 14860,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · Layout A: o prédio é o palco (dados flutuando por cima)",
+      "is_interactive": true
+    },
+    "L2Coluna.dc.html": {
+      "x": 1520,
+      "y": 14860,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · Layout B: prédio grande e uma coluna com o resto",
+      "is_interactive": true
+    },
+    "L3Andares.dc.html": {
+      "x": 3040,
+      "y": 14860,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · Layout C: cada etapa é um andar (régua ao lado do prédio)",
+      "is_interactive": true
+    },
+    "L4PalcoAndares.dc.html": {
+      "x": 0,
+      "y": 16180,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · A + Andares: o prédio é o palco e o chip \"Andares\" abre a régua",
+      "is_interactive": true
+    },
+    "L5PalcoAndaresAberto.dc.html": {
+      "x": 1520,
+      "y": 16180,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · A + Andares: a gaveta dos andares aberta (a ideia da C)",
+      "is_interactive": true
     }
   },
   "order": [
@@ -334,7 +374,12 @@
     "O3PrecisaVoce.dc.html",
     "O4Defeito.dc.html",
     "O5Diario.dc.html",
-    "O6Cronograma.dc.html"
+    "O6Cronograma.dc.html",
+    "L1Palco.dc.html",
+    "L2Coluna.dc.html",
+    "L3Andares.dc.html",
+    "L4PalcoAndares.dc.html",
+    "L5PalcoAndaresAberto.dc.html"
   ],
   "notes": {
     "titulo": {
@@ -400,6 +445,14 @@
       "kind": "title1",
       "maxW": 4480,
       "w": 240
+    },
+    "layout-obra": {
+      "x": 0,
+      "y": 14560,
+      "text": "Tela da obra: 3 opções com o prédio subindo em destaque",
+      "kind": "title1",
+      "maxW": 4480,
+      "w": 240
     }
   },
   "designSystems": [],
@@ -412,6 +465,7 @@
     "travas",
     "planilha",
     "quadro",
-    "transparencia"
+    "transparencia",
+    "layout-obra"
   ]
 }

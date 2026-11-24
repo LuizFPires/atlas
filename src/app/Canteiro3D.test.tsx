@@ -11,7 +11,7 @@ test('sem canteiro vivo mostra a imagem 3D, nunca 2D', () => {
 test('com canteiro vivo embute a cena real em 3D num iframe com sandbox', () => {
   render(<Canteiro3D endereco="http://127.0.0.1:4747/?obra=abc" pct={40} />)
   const f = screen.getByTitle(/Canteiro em 3D/)
-  expect(f.getAttribute('src')).toBe('http://127.0.0.1:4747/?obra=abc&modo=3d')
+  expect(f.getAttribute('src')).toBe('http://127.0.0.1:4747/?obra=abc&modo=3d&baloes=0')
   expect(f.getAttribute('sandbox')).not.toMatch(/top-navigation|forms|popups/)
 })
 

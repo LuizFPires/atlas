@@ -37,6 +37,8 @@ interface Props {
   navegador?: PonteNavegador
   /** Conta desligada: abre a tela das contas. */
   onLigarContas?: () => void
+  /** M43: "Ver no cronograma" na gaveta dos andares leva à aba Cronograma. */
+  onVerCronograma?: () => void
 }
 
 /** "10:05" no horário de Brasília. */
@@ -52,16 +54,16 @@ export const recadoDoErroPainel = (e: unknown) => {
 
 
 /** F09: painel da obra. O prédio, o %, o prazo e o "agora na obra"; detalhes técnicos só em "ver detalhes". */
-export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onVerMax, onPedirAjuda, sondagemMs = 5000, travas, navegador, onLigarContas }: Props) {
+export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onVerMax, onPedirAjuda, sondagemMs = 5000, travas, navegador, onLigarContas, onVerCronograma }: Props) {
   const [estado, setEstado] = useState<EstadoObra | null>(null)
   const [modo, setModo] = useState<ModoObra | null>(null)
   const [modoLido, setModoLido] = useState(false)
   const [explicando, setExplicando] = useState(false) // gaveta (i) com a diferença dos modos
-  const [detalhes, setDetalhes] = useState(false)
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
   const [dispensada, setDispensada] = useState<Situacao | null>(null)
   const [diarioAberto, setDiarioAberto] = useState(false)
+  const [andares, setAndares] = useState(false)
   const liberada = useRef<number | null>(null)
 
   const atualizar = useCallback(async () => {
@@ -165,7 +167,31 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
         </div>
       )}
 
-      {momento && momento.nivel !== 'pronta' && <FaixaDoMomento m={momento} fazer={fazer} pode={{ planos: !!onVerMax, ajuda: !!onPedirAjuda, contas: !!onLigarContas }} />}
+      {/* M43 (PalcoObra aprovado em 24/11/2026): o prédio é o palco; os números e a frase do momento flutuam por cima dele. */}
+      <section className="at-pn__palco" aria-label="Palco da obra">
+        <Canteiro3D endereco={painel.enderecoCanteiro(obra.pasta)} pct={pct} balao={momento && momento.nivel !== 'pronta' ? { quem: BALAO_QUEM[momento.nivel], texto: momento.nivel === 'trabalhando' ? momento.titulo : momento.titulo.split('. ')[0] + '.', nivel: momento.nivel } : null} />
+        <section className="at-pn__hud at-pn__hud--esq" aria-label="Avanço da obra">
+          {momento && <span className={`at-pn__hud-rot at-pn__hud-rot--${momento.nivel}`}>{momento.nivel === 'trabalhando' && <span className="at-pn__faixa-pulso" aria-hidden="true" />}{momento.selo.toLocaleUpperCase('pt-BR')}{momento.sinal ? ` · ${momento.sinal.toLocaleUpperCase('pt-BR')}` : ''}</span>}
+          <span className="at-pn__hud-pct">{pctTxt}%</span>
+          <span className="at-pn__hud-sub">{estado ? `${concluida ? estado.tarefas : estado.feitas} de ${estado.tarefas} tarefas` : ''}{estado?.etapa ? ` · Etapa M${estado.etapa.n} de ${estado.etapas.length} · ${estado.etapa.nome}` : concluida ? ' · Todas as etapas prontas' : ''}</span>
+          <div className="at-pn__barra at-pn__hud-barra" role="progressbar" aria-label="Avanço da obra" aria-valuemin={0} aria-valuemax={100} aria-valuenow={concluida ? 100 : pct}><div style={{ width: `${concluida ? 100 : pct}%` }} /></div>
+          {estado && estado.etapas.length > 0 && (
+            <button type="button" className="at-pn__chip-andares" aria-haspopup="dialog" onClick={() => setAndares(true)}>
+              <Icone nome="obra" tamanho={16} />Andares · {estado.etapas.filter((e) => e.total > 0 && e.feitas === e.total).length} de {estado.etapas.length} prontos
+            </button>
+          )}
+        </section>
+        <section className="at-pn__hud at-pn__hud--dir" aria-label="Prazo da obra">
+          <span className="at-pn__mini">TÉRMINO ESPERADO</span>
+          <b>{estado?.previsao ?? (concluida ? 'Pronta' : 'Calculando…')}</b>
+          <span className="at-pn__hud-sub">{estado?.restante ? `faltam ${estado.restante} de trabalho` : concluida ? 'Nada falta' : 'aparece depois do 1º avanço medido'}</span>
+        </section>
+        {momento && momento.nivel !== 'pronta' && (
+          <div className="at-pn__palco-base">
+            <FaixaDoMomento m={momento} fazer={fazer} pode={{ planos: !!onVerMax, ajuda: !!onPedirAjuda, contas: !!onLigarContas }} recentes={(estado?.diario ?? []).slice(-2).reverse()} />
+          </div>
+        )}
+      </section>
 
       <section className="at-pn__modo" aria-label="Modo da obra">
         <span className="at-pn__rotulo">MODO DA OBRA</span>
@@ -208,44 +234,7 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
         </div>
       )}
 
-      <div className="at-pn__grade">
-        <div className="at-pn__col">
-          <section className="at-pn__card" aria-label="Avanço da obra">
-            <span className="at-pn__rotulo">AVANÇO DA OBRA</span>
-            <div className="at-pn__pct"><span className="at-pn__pct-n">{pctTxt}%</span><span className="at-pn__texto">{estado ? `${concluida ? estado.tarefas : estado.feitas} de ${estado.tarefas} tarefas` : ''}</span></div>
-            <div className="at-pn__barra" role="progressbar" aria-label="Avanço da obra" aria-valuemin={0} aria-valuemax={100} aria-valuenow={concluida ? 100 : pct}><div style={{ width: `${concluida ? 100 : pct}%` }} /></div>
-            <div className="at-pn__tres">
-              <div><span className="at-pn__mini">ETAPA</span><b>{estado?.etapa ? `M${estado.etapa.n} · ${estado.etapa.nome}` : concluida ? 'Todas prontas' : '—'}</b></div>
-              <div><span className="at-pn__mini">FALTA</span><b>{estado?.restante ?? (concluida ? 'Nada' : '—')}</b></div>
-              <div><span className="at-pn__mini">PREVISÃO</span><b>{estado?.previsao ?? (concluida ? 'Pronta' : '—')}</b></div>
-            </div>
-          </section>
-          <section className="at-pn__card at-pn__agora" aria-label="Agora na obra">
-            <span className="at-pn__rotulo">AGORA NA OBRA</span>
-            {(estado?.agora ?? []).map((a) => (
-              <div key={a.sigla} className="at-pn__quem">
-                <span className={`at-pn__sigla at-pn__sigla--${a.tom}`}>{a.sigla}</span>
-                <div><b>{a.quem}</b><span className="at-pn__texto">{a.oque}</span></div>
-              </div>
-            ))}
-            {estado && estado.agora.length === 0 && <span className="at-pn__texto">{concluida ? 'Ninguém trabalhando: a obra está pronta.' : sit === 'pausada' ? 'Ninguém trabalhando: você pausou a obra.' : 'Ninguém trabalhando agora.'}</span>}
-            <div className="at-pn__detalhes">
-              <button type="button" className="at-pn__link" aria-expanded={detalhes} onClick={() => setDetalhes(!detalhes)}>{detalhes ? 'Esconder detalhes' : 'Ver detalhes'}</button>
-              {detalhes && estado && (
-                <ul className="at-pn__etapas" aria-label="Detalhes das etapas">
-                  {estado.etapas.map((e) => (
-                    <li key={e.n}><span>M{e.n}</span><b>{e.nome}</b><span className="at-pn__texto">{e.feitas} de {e.total} tarefas · {e.pct}%</span></li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </section>
-        </div>
-        <div className="at-pn__col">
-          <Canteiro3D endereco={painel.enderecoCanteiro(obra.pasta)} pct={pct} balao={momento && momento.nivel !== 'pronta' ? { quem: BALAO_QUEM[momento.nivel], texto: momento.nivel === 'trabalhando' ? momento.titulo : momento.titulo.split('. ')[0] + '.', nivel: momento.nivel } : null} />
-          <DiarioCurto linhas={estado?.diario ?? []} onVerTudo={() => setDiarioAberto(true)} />
-        </div>
-      </div>
+      {andares && estado && <GavetaAndares etapas={estado.etapas} onFechar={() => setAndares(false)} onVerCronograma={onVerCronograma ? () => { setAndares(false); onVerCronograma() } : undefined} />}
       {diarioAberto && <DiarioCompleto pasta={obra.pasta} painel={painel} recentes={estado?.diario ?? []} onFechar={() => setDiarioAberto(false)} />}
 
       <div className="at-pn__rodape"><span className="at-pn__ponto" />Salvo a cada passo · pode desligar o computador quando quiser · {pendencia}</div>
@@ -257,9 +246,9 @@ const BALAO_QUEM: Record<string, string> = { trabalhando: 'Mestre de obras', esp
 const NOME_ACAO: Record<AcaoObra, string> = { tentar: 'Tentar agora', continuar: 'Continuar obra', planos: 'Ver planos do Claude', esperar: 'Esperar, volta sozinha', ajuda: 'Falar com o Atlas', contas: 'Ligar a conta', diario: 'Ver o diário completo', ok: 'Pode seguir', teste: 'Ver versão de teste' }
 
 /** M41: a faixa do momento. Sempre uma frase do que está acontecendo e pelo menos uma ação (a obra nunca fica no escuro). */
-function FaixaDoMomento({ m, fazer, pode }: { m: MomentoObra; fazer: (a: AcaoObra) => void; pode: { planos: boolean; ajuda: boolean; contas: boolean } }) {
+function FaixaDoMomento({ m, fazer, pode, recentes = [] }: { m: MomentoObra; fazer: (a: AcaoObra) => void; pode: { planos: boolean; ajuda: boolean; contas: boolean }; recentes?: LinhaDiario[] }) {
   const alerta = m.nivel === 'precisa' || m.nivel === 'defeito'
-  const acoes = m.acoes.filter((a) => (a === 'planos' ? pode.planos : a === 'ajuda' ? pode.ajuda : a === 'contas' ? pode.contas : true))
+  const acoes = [...m.acoes, ...(m.acoes.includes('diario') ? [] : ['diario' as AcaoObra])].filter((a) => (a === 'planos' ? pode.planos : a === 'ajuda' ? pode.ajuda : a === 'contas' ? pode.contas : true))
   const nome = (a: AcaoObra) => (a === 'contas' && m.conta ? `Ligar o ${m.conta}` : a === 'ajuda' && m.nivel === 'defeito' ? 'Corrigir com a Ajuda do Atlas' : NOME_ACAO[a])
   return (
     <section className={`at-pn__faixa at-pn__faixa--${m.nivel}`} role={alerta ? 'alert' : 'status'} aria-label="O que está acontecendo agora">
@@ -268,6 +257,7 @@ function FaixaDoMomento({ m, fazer, pode }: { m: MomentoObra; fazer: (a: AcaoObr
         <span className="at-pn__faixa-rot">{m.rotulo}</span>
         <b>{m.titulo}</b>
         <span>{m.texto}</span>
+        {recentes.length > 0 && <span className="at-pn__faixa-recentes">{recentes.map((l) => `${horaDe(l.em)} ${l.texto}`).join(' · ')}</span>}
         {m.fala && <span className="at-pn__vigia-fala">“{m.fala}”</span>}
         {m.checagens && (
           <ul className="at-pn__checagens" aria-label="O que o Atlas conferiu">
@@ -291,19 +281,6 @@ function FaixaDoMomento({ m, fazer, pode }: { m: MomentoObra; fazer: (a: AcaoObr
 
 const horaDe = (iso: string) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 const diaEHora = (iso: string) => { const d = new Date(iso); const hoje = new Date().toDateString() === d.toDateString(); return hoje ? `hoje ${horaDe(iso)}` : `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${horaDe(iso)}` }
-
-/** M41: as últimas linhas do diário, sempre à vista na obra. */
-function DiarioCurto({ linhas, onVerTudo }: { linhas: LinhaDiario[]; onVerTudo: () => void }) {
-  return (
-    <section className="at-pn__card at-pn__diario" aria-label="Diário da obra">
-      <span className="at-pn__rotulo">DIÁRIO DA OBRA</span>
-      {linhas.length === 0
-        ? <span className="at-pn__texto">Assim que a obra começar, cada passo aparece aqui, com a hora.</span>
-        : <ol className="at-pn__diario-lista">{linhas.slice(-6).map((l, i) => <li key={`${l.em}-${i}`} className={`at-pn__diario-item at-pn__diario-item--${l.tipo}`}><span className="at-pn__diario-hora">{horaDe(l.em)}</span><span className="at-pn__diario-bola" aria-hidden="true" /><span>{l.texto}</span></li>)}</ol>}
-      <button type="button" className="at-pn__link" onClick={onVerTudo}>Ver o diário completo</button>
-    </section>
-  )
-}
 
 const FILTROS: { id: string; nome: string; tipos: LinhaDiario['tipo'][] | null }[] = [
   { id: 'tudo', nome: 'Tudo', tipos: null },
@@ -337,6 +314,40 @@ function DiarioCompleto({ pasta, painel, recentes, onFechar }: { pasta: string; 
         {vistas.length === 0
           ? <span className="at-pn__texto">Nada por aqui ainda.</span>
           : <ol className="at-pn__diario-lista at-pn__diario-lista--longa">{vistas.map((l, i) => <li key={`${l.em}-${i}`} className={`at-pn__diario-item at-pn__diario-item--${l.tipo}`}><span className="at-pn__diario-hora">{diaEHora(l.em)}</span><span className="at-pn__diario-bola" aria-hidden="true" /><span>{l.texto}{l.detalhe && <em className="at-pn__diario-detalhe">{l.detalhe}</em>}</span></li>)}</ol>}
+      </aside>
+    </div>
+  )
+}
+
+/** M43: a gaveta dos andares. Cada etapa é um andar, de baixo (térreo) para cima: pronto verde, atual piscando, os que faltam apagados. */
+function GavetaAndares({ etapas, onFechar, onVerCronograma }: { etapas: EstadoObra['etapas']; onFechar: () => void; onVerCronograma?: () => void }) {
+  const atual = etapas.find((e) => !(e.total > 0 && e.feitas === e.total))
+  const andares = etapas.map((e) => {
+    const pronta = e.total > 0 && e.feitas === e.total
+    const st = pronta ? 'feito' : atual && e.n === atual.n ? 'agora' : 'falta'
+    return { ...e, st, sub: st === 'feito' ? 'Entregue e revisada' : st === 'agora' ? `Em obra agora · ${e.pct}%` : 'Ainda não começou' }
+  }).reverse()
+  return (
+    <div className="at-pn__gaveta-fundo" onClick={onFechar}>
+      <aside className="at-pn__gaveta at-pn__gaveta--andares" role="dialog" aria-modal="true" aria-label="Os andares da obra" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Escape') onFechar() }}>
+        <div className="at-pn__gaveta-cab">
+          <div><span className="at-pn__rotulo">OS ANDARES DA OBRA</span><b className="at-pn__gaveta-tit">Cada etapa é um andar</b></div>
+          <button type="button" className="at-pn__gaveta-x" aria-label="Fechar os andares" autoFocus onClick={onFechar}><Icone nome="x" tamanho={18} /></button>
+        </div>
+        <span className="at-pn__texto">O prédio sobe de baixo para cima: cada andar fica verde quando a etapa é entregue e revisada. O que pisca é o andar em obra agora.</span>
+        <ol className="at-pn__andares">
+          {andares.map((a) => (
+            <li key={a.n} className={`at-pn__andar at-pn__andar--${a.st}`}>
+              <b className="at-pn__andar-n">M{a.n}</b>
+              <span className="at-pn__andar-txt"><span>{a.nome}</span><em>{a.sub}</em></span>
+              <span className="at-pn__andar-tarefas">{a.feitas}/{a.total}</span>
+            </li>
+          ))}
+        </ol>
+        <div className="at-pn__andares-pe">
+          <span className="at-pn__mini">▲ TÉRREO EMBAIXO, COBERTURA NO TOPO</span>
+          {onVerCronograma && <button type="button" className="at-pn__link" onClick={onVerCronograma}>Ver no cronograma</button>}
+        </div>
       </aside>
     </div>
   )

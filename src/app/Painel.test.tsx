@@ -9,26 +9,27 @@ const obra = { nome: 'Agenda da Barbearia do Zé', pasta: 'agenda' }
 const agora = () => new Date(2026, 10, 18, 14, 40)
 const PCT = /^54,\d\d%$/
 
-const montar = (modo: ModoObra | null = 'automatico', opcoes: { painel?: PontePainel; modos?: PonteModoObra; endereco?: string | null; sondagemMs?: number; onPedirAjuda?: () => void; onLigarContas?: () => void; onVerMax?: () => void } = {}) => {
+const montar = (modo: ModoObra | null = 'automatico', opcoes: { painel?: PontePainel; modos?: PonteModoObra; endereco?: string | null; sondagemMs?: number; onPedirAjuda?: () => void; onLigarContas?: () => void; onVerMax?: () => void; onVerCronograma?: () => void } = {}) => {
   const fx = criarPainelFixture({ agora, endereco: opcoes.endereco })
   const painel = opcoes.painel ?? fx
   const modos = opcoes.modos ?? criarModoObraFixture(modo ? { [obra.pasta]: modo } : {})
   const onPublicar = vi.fn()
   const user = userEvent.setup()
-  render(<TemaProvider><Painel obra={obra} painel={painel} modos={modos} onPublicar={onPublicar} onPedirAjuda={opcoes.onPedirAjuda} onLigarContas={opcoes.onLigarContas} onVerMax={opcoes.onVerMax} sondagemMs={opcoes.sondagemMs ?? 0} /></TemaProvider>)
+  render(<TemaProvider><Painel obra={obra} painel={painel} modos={modos} onPublicar={onPublicar} onPedirAjuda={opcoes.onPedirAjuda} onLigarContas={opcoes.onLigarContas} onVerMax={opcoes.onVerMax} onVerCronograma={opcoes.onVerCronograma} sondagemMs={opcoes.sondagemMs ?? 0} /></TemaProvider>)
   return { fx, user, onPublicar, modos }
 }
 
-test('mostra o % ponderado do PLAN, o prazo e o agora na obra', async () => {
+// M43 (PalcoObra aprovado pelo Luiz em 24/11/2026): o prédio é o palco; os números flutuam por cima dele.
+test('o palco: o % ponderado, as tarefas, a etapa, quanto falta e quando termina, por cima do canteiro', async () => {
   montar()
-  expect(await screen.findByText(PCT)).toBeInTheDocument()
-  expect(screen.getByText('13 de 24 tarefas')).toBeInTheDocument()
-  expect(screen.getByText('M5 · Confirmação por WhatsApp')).toBeInTheDocument()
-  expect(screen.getByText('≈ 2 h 12')).toBeInTheDocument()
-  expect(screen.getByText('Hoje, ~17h')).toBeInTheDocument()
-  expect(screen.getByText('Equipe de execução')).toBeInTheDocument()
-  expect(screen.getByText('Inspetor de qualidade')).toBeInTheDocument()
-  expect(screen.getByText('Fiscal')).toBeInTheDocument()
+  const palco = await screen.findByRole('region', { name: 'Palco da obra' })
+  expect(await within(palco).findByText(PCT)).toBeInTheDocument()
+  expect(within(palco).getByText(/13 de 24 tarefas/)).toBeInTheDocument()
+  expect(within(palco).getByText(/M5 de 8 · Confirmação por WhatsApp/)).toBeInTheDocument()
+  expect(within(palco).getByText(/≈ 2 h 12/)).toBeInTheDocument()
+  expect(within(palco).getByText('Hoje, ~17h')).toBeInTheDocument()
+  expect(within(palco).getByRole('img', { name: /Canteiro em 3D/ })).toBeInTheDocument()
+  expect(within(palco).getByRole('status', { name: 'O que está acontecendo agora' })).toHaveTextContent('Construindo a etapa Confirmação por WhatsApp')
   expect(screen.getByRole('heading', { name: 'Agenda da Barbearia do Zé' })).toBeInTheDocument()
   expect(screen.getByText(/^● Trabalhando/)).toBeInTheDocument()
 })
@@ -44,7 +45,7 @@ test('o canteiro é 3D: sem canteiro vivo mostra a imagem 3D; com canteiro vivo,
 test('com canteiro vivo a cena real entra num iframe com sandbox', async () => {
   montar('automatico', { endereco: 'http://127.0.0.1:4747/?obra=agenda' })
   const frame = await screen.findByTitle(/Canteiro em 3D/)
-  expect(frame.getAttribute('src')).toBe('http://127.0.0.1:4747/?obra=agenda&modo=3d')
+  expect(frame.getAttribute('src')).toBe('http://127.0.0.1:4747/?obra=agenda&modo=3d&baloes=0')
   expect(frame.getAttribute('sandbox')).toBe('allow-scripts allow-same-origin')
   expect(screen.queryByRole('img', { name: /Canteiro em 3D/ })).toBeNull()
 })
@@ -55,16 +56,22 @@ test('endereço de canteiro que não é o servidor local nunca vira iframe', asy
   expect(document.querySelector('iframe')).toBeNull()
 })
 
-test('detalhes técnicos ficam atrás de "ver detalhes"', async () => {
-  const { user } = montar()
+test('chip "Andares": a gaveta mostra cada etapa como um andar, de baixo para cima, e leva ao cronograma', async () => {
+  const verCrono = vi.fn()
+  const { user } = montar('automatico', { onVerCronograma: verCrono })
   await screen.findByText(PCT)
-  expect(screen.queryByRole('list', { name: 'Detalhes das etapas' })).toBeNull()
-  await user.click(screen.getByRole('button', { name: 'Ver detalhes' }))
-  const lista = screen.getByRole('list', { name: 'Detalhes das etapas' })
-  expect(within(lista).getAllByRole('listitem')).toHaveLength(8)
-  expect(within(lista).getByText('Base e login')).toBeInTheDocument()
-  await user.click(screen.getByRole('button', { name: 'Esconder detalhes' }))
-  expect(screen.queryByRole('list', { name: 'Detalhes das etapas' })).toBeNull()
+  expect(screen.queryByRole('dialog', { name: 'Os andares da obra' })).toBeNull()
+  await user.click(screen.getByRole('button', { name: /Andares · 4 de 8 prontos/ }))
+  const gaveta = screen.getByRole('dialog', { name: 'Os andares da obra' })
+  const andares = within(gaveta).getAllByRole('listitem')
+  expect(andares).toHaveLength(8)
+  expect(andares[7]).toHaveTextContent('M1') // térreo embaixo
+  expect(andares[7]).toHaveTextContent('Entregue')
+  expect(andares[3]).toHaveTextContent('M5')
+  expect(andares[3]).toHaveTextContent('Em obra agora')
+  expect(andares[0]).toHaveTextContent('Ainda não começou')
+  await user.click(within(gaveta).getByRole('button', { name: 'Ver no cronograma' }))
+  expect(verCrono).toHaveBeenCalled()
 })
 
 test('AUTOMÁTICO: ao fim da etapa o painel libera sozinho e nunca pede aprovação', async () => {
@@ -233,9 +240,9 @@ test('as contas da obra têm entrada fixa no painel (Guilherme, 24/11: "Onde fic
 // M41 (O1–O5 aprovados em 24/11/2026): o diário sempre à vista, a gaveta completa com filtros e a cota com "Ver planos do Claude".
 test('diário: últimas linhas na obra e o completo na gaveta, com filtro de paradas', async () => {
   const { user } = montar('automatico')
-  const cartao = await screen.findByRole('region', { name: 'Diário da obra' })
-  expect(within(cartao).getByText('Escrevendo o código')).toBeInTheDocument()
-  await user.click(within(cartao).getByRole('button', { name: 'Ver o diário completo' }))
+  const faixa = await screen.findByRole('status', { name: 'O que está acontecendo agora' })
+  expect(within(faixa).getByText(/Escrevendo o código/)).toBeInTheDocument() // as últimas linhas do diário, na barra do palco
+  await user.click(within(faixa).getByRole('button', { name: 'Ver o diário completo' }))
   const gaveta = await screen.findByRole('dialog', { name: 'Diário completo da obra' })
   expect(within(gaveta).getByText('Terminou a etapa Agenda do dia')).toBeInTheDocument()
   await user.click(within(gaveta).getByRole('button', { name: 'Paradas' }))

@@ -131,3 +131,48 @@
 .at-pn__checagem--ruim { grid-column: 1 / -1; color: #FF8478; }
 .at-pn__checagem--ruim em { display: block; font-style: normal; color: var(--mute); }
 .at-pn__checagem > span { display: flex; flex-direction: column; }
+
+/* ── M43: o prédio é o palco (PalcoObra, aprovado em 24/11/2026) ─────────────────────────────────────────────── */
+.at-pn__palco { position: relative; height: clamp(520px, calc(100vh - 230px), 860px); border-radius: 22px; overflow: hidden; border: 1px solid var(--lime); background: #1A1D21; }
+.at-pn__palco .at-pn__canteiro { position: absolute; inset: 0; border: 0; border-radius: 0; min-height: 0; }
+.at-pn__palco .at-pn__cena { width: 100%; height: 100%; object-fit: cover; }
+.at-pn__palco .at-pn__canteiro-legenda { display: none; }
+.at-pn__palco .at-pn__canteiro-rotulo { left: auto; right: 20px; top: auto; bottom: 20px; opacity: 0.8; }
+.at-pn__palco:has(.at-pn__palco-base) .at-pn__canteiro-rotulo { display: none; }
+.at-pn__hud { position: absolute; z-index: 3; top: 20px; display: flex; flex-direction: column; gap: 6px; padding: 16px 20px; border-radius: 18px; background: rgba(16, 18, 20, 0.78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #EDEFEA; max-width: 46%; }
+.at-pn__hud--esq { left: 20px; }
+.at-pn__hud--dir { right: 20px; align-items: flex-end; text-align: right; }
+.at-pn__hud--dir b { font-size: 22px; }
+.at-pn__hud .at-pn__mini { color: #8E968C; }
+.at-pn__hud-rot { display: flex; align-items: center; gap: 7px; font: 600 11px var(--font-mono); letter-spacing: 0.1em; color: #C6F135; }
+.at-pn__hud-rot .at-pn__faixa-pulso { --cor: #C6F135; width: 7px; height: 7px; }
+.at-pn__hud-rot--esperando, .at-pn__hud-rot--pausada { color: #F2B33D; }
+.at-pn__hud-rot--precisa { color: #FF9B4A; }
+.at-pn__hud-rot--defeito { color: #FF8478; }
+.at-pn__hud-pct { font: 700 68px var(--font-text); line-height: 1; letter-spacing: -0.03em; color: #C6F135; }
+.at-pn__hud-sub { font-size: 14px; line-height: 1.4; color: #B4BBB2; }
+.at-pn__hud-barra { width: 100%; min-width: 260px; height: 6px; }
+.at-pn__chip-andares { align-self: flex-start; margin-top: 4px; display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 999px; background: rgba(198, 241, 53, 0.14); border: 1px solid #C6F135; color: #C6F135; font: 600 13px var(--font-text); cursor: pointer; }
+.at-pn__chip-andares:hover { background: rgba(198, 241, 53, 0.22); }
+.at-pn__chip-andares:focus-visible { outline: 2px solid #C6F135; outline-offset: 3px; }
+.at-pn__palco-base { position: absolute; z-index: 3; left: 20px; right: 20px; bottom: 20px; max-height: 58%; overflow: auto; border-radius: 18px; }
+.at-pn__palco-base .at-pn__faixa { background: rgba(16, 18, 20, 0.86); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #EDEFEA; }
+.at-pn__palco-base .at-pn__faixa-txt > span { color: #B4BBB2; }
+.at-pn__faixa-recentes { font: 500 12px var(--font-mono); color: #8E968C !important; }
+.at-pn__palco .at-pn__balao { top: 40%; }
+:root[data-theme='claro'] .at-pn__palco-base .at-pn__faixa .at-botao--secundario { color: #EDEFEA; border-color: #3A3F45; }
+.at-pn__gaveta-tit { display: block; margin-top: 2px; font-size: 20px; }
+.at-pn__gaveta--andares { width: min(420px, 100vw); display: flex; flex-direction: column; gap: 10px; }
+.at-pn__andares { list-style: none; margin: 0; padding: 0; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; overflow: auto; }
+.at-pn__andar { flex: 1; min-height: 46px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--card-b); color: var(--mute2, var(--mute)); }
+.at-pn__andar--feito { background: var(--lime); border-color: var(--lime); color: var(--on-lime); }
+.at-pn__andar--agora { background: var(--soft); border-color: var(--lime); color: var(--lime-txt, var(--lime)); }
+.at-pn__andar--agora .at-pn__andar-n { animation: at-pn-pulso 1.2s ease-in-out infinite; }
+.at-pn__andar-n { width: 30px; font: 700 13px var(--font-mono); }
+.at-pn__andar-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.at-pn__andar-txt span { font: 600 14px var(--font-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.at-pn__andar-txt em { font-style: normal; font-size: 12px; opacity: 0.85; }
+.at-pn__andar-tarefas { font: 500 12px var(--font-mono); opacity: 0.85; }
+.at-pn__andares-pe { display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--card-b); }
+.at-pn__andares-pe .at-pn__link { margin-left: auto; }
+@media (prefers-reduced-motion: reduce) { .at-pn__andar--agora .at-pn__andar-n { animation: none; } }
