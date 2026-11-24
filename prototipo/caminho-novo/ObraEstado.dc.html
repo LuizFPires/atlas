@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Obra: sempre dizendo o que está acontecendo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes opisca{0%,100%{opacity:1}50%{opacity:.35}}
+.o-pisca{animation:opisca 1.2s infinite}
+@media (prefers-reduced-motion: reduce){.o-pisca{animation:none}}</style>
+</helmet>
+<div style="position:relative;width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="canteiro" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:22px 36px 26px;display:flex;flex-direction:column;gap:16px">
+
+  <!-- Cabeçalho com o selo de estado -->
+  <div style="display:flex;align-items:center;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+    <a href="K1Canteiro.dc.html" style="display:flex;align-items:center;gap:6px;font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>CANTEIRO DE OBRAS</a>
+    <div style="display:flex;align-items:center;gap:12px"><h1 style="margin:0;font-size:28px;letter-spacing:-.01em">Meu Ponto</h1>
+     <span role="status" style="display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:{{e.soft}};border:1px solid {{e.cor}};color:{{e.corTxt}};font:600 11px 'Geist Mono',monospace;letter-spacing:.08em"><span class="{{e.piscaCls}}" style="width:7px;height:7px;border-radius:4px;background:{{e.cor}}"></span>{{e.selo}} · 64,37%</span>
+    </div>
+   </div>
+   <nav aria-label="Ver outros estados (só no protótipo)" style="margin-left:auto;display:flex;gap:6px;padding:4px;border-radius:12px;background:{{t.card2}};border:1px dashed {{t.cardB}}">
+    <sc-for list="{{abas}}" as="a" hint-placeholder-count="4"><a href="{{a.href}}" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:9px;background:{{a.bg}};color:{{a.cor}};font:600 12px 'Geist',sans-serif"><span style="width:7px;height:7px;border-radius:4px;background:{{a.bola}}"></span>{{a.nome}}</a></sc-for>
+   </nav>
+  </div>
+
+  <!-- A faixa que nunca deixa a pessoa no escuro -->
+  <section aria-label="O que está acontecendo agora" style="display:flex;gap:16px;align-items:flex-start;padding:18px 20px;border-radius:18px;background:{{e.faixaBg}};border:1px solid {{e.cor}}">
+   <span style="flex:none;width:44px;height:44px;border-radius:22px;background:{{e.soft}};color:{{e.corTxt}};display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{e.icone}}"/></svg></span>
+   <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+    <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:{{e.corTxt}}">{{e.rotulo}}</span>
+    <b style="font-size:19px;line-height:1.3">{{e.titulo}}</b>
+    <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">{{e.texto}}</span>
+    <sc-if value="{{e.fala}}" hint-placeholder-val="{{ false }}">
+     <span style="margin-top:2px;padding:10px 12px;border-radius:10px;background:{{t.card2}};border-left:3px solid {{e.cor}};font-size:14px;line-height:1.45;color:{{t.text}}">"{{e.fala}}"</span>
+    </sc-if>
+    <sc-if value="{{e.checagens}}" hint-placeholder-val="{{ false }}">
+     <ul aria-label="O que o Atlas conferiu" style="list-style:none;margin:4px 0 0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px 12px">
+      <sc-for list="{{e.checagens}}" as="c" hint-placeholder-count="10"><li style="display:flex;align-items:center;gap:6px;font-size:13px;color:{{c.cor}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{c.icone}}"/></svg>{{c.nome}}</li></sc-for>
+     </ul>
+    </sc-if>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px">
+     <sc-for list="{{e.acoes}}" as="b" hint-placeholder-count="3"><a href="{{b.href}}" style="display:flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:11px;background:{{b.bg}};border:1px solid {{b.borda}};color:{{b.cor}};font:700 14px 'Geist',sans-serif">{{b.nome}}</a></sc-for>
+    </div>
+    <sc-if value="{{e.nota}}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;line-height:1.45;color:{{t.mute2}}">{{e.nota}}</span></sc-if>
+   </div>
+   <span style="flex:none;font:500 12px 'Geist Mono',monospace;color:{{t.mute2}}">{{e.sinal}}</span>
+  </section>
+
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px">
+   <!-- Canteiro 3D com o balão da causa -->
+   <section aria-label="Construção" style="display:flex;flex-direction:column;border-radius:20px;overflow:hidden;background:{{t.card}};border:1px solid {{t.cardB}}">
+    <div style="position:relative;flex:1;min-height:0;background:#1A1D21">
+     <img src="/_blob/43c73c51d3fb529d426014fb2be78397" alt="O canteiro da obra Meu Ponto em 3D" style="width:100%;height:100%;object-fit:cover;display:block;filter:{{e.filtro}}">
+     <span style="position:absolute;left:16px;top:16px;display:flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;background:rgba(16,18,20,.82);color:#EDEFEA;font:600 11px 'Geist Mono',monospace;letter-spacing:.1em"><span class="{{e.piscaCls}}" style="width:7px;height:7px;border-radius:4px;background:{{e.cor}}"></span>{{e.aoVivo}}</span>
+     <div style="position:absolute;left:50%;top:38%;transform:translateX(-50%);max-width:340px;padding:12px 14px;border-radius:14px;background:rgba(16,18,20,.92);border:1px solid {{e.cor}};color:#EDEFEA;font-size:14px;line-height:1.4;text-align:center">
+      <b style="display:block;margin-bottom:2px;color:{{e.corBalao}}">{{e.balaoQuem}}</b>{{e.balao}}
+      <span style="position:absolute;left:50%;bottom:-7px;width:12px;height:12px;transform:translateX(-50%) rotate(45deg);background:rgba(16,18,20,.92);border-right:1px solid {{e.cor}};border-bottom:1px solid {{e.cor}}"></span>
+     </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;padding:16px 22px 18px">
+     <div style="display:flex;align-items:baseline;gap:10px"><b style="font-size:16px">{{e.agora}}</b><span style="margin-left:auto;font:600 15px 'Geist Mono',monospace;color:{{t.limeTxt}}">7 DE 11 PARTES</span></div>
+     <span style="height:8px;border-radius:4px;background:{{t.line}};overflow:hidden"><span style="display:block;height:100%;width:64%;border-radius:4px;background:{{e.barra}}"></span></span>
+    </div>
+   </section>
+
+   <!-- O diário: sempre à vista -->
+   <aside aria-label="Diário da obra" style="display:flex;flex-direction:column;min-height:0;padding:18px 20px;border-radius:20px;background:{{t.card}};border:1px solid {{t.cardB}}">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><h2 style="margin:0;font-size:18px">Diário da obra</h2><span style="margin-left:auto;font:500 12px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">HOJE</span></div>
+    <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;overflow:hidden;flex:1;min-height:0">
+     <sc-for list="{{e.diario}}" as="d" hint-placeholder-count="7">
+      <li style="display:grid;grid-template-columns:44px 14px minmax(0,1fr);gap:8px;padding:7px 0">
+       <span style="font:500 12px 'Geist Mono',monospace;color:{{t.mute2}};padding-top:2px">{{d.hora}}</span>
+       <span style="width:9px;height:9px;margin-top:5px;border-radius:5px;background:{{d.bola}}"></span>
+       <span style="font-size:14px;line-height:1.4;color:{{d.cor}}">{{d.texto}}</span>
+      </li>
+     </sc-for>
+    </ol>
+    <a href="O5Diario.dc.html" style="margin-top:10px;display:flex;align-items:center;justify-content:center;height:40px;border-radius:10px;border:1px solid {{t.cardB}};color:{{t.text}};font:600 14px 'Geist',sans-serif">Ver o diário completo</a>
+   </aside>
+  </div>
+ </main>
+
+ <!-- Diário completo (gaveta) -->
+ <sc-if value="{{diarioAberto}}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;background:rgba(10,11,13,.55);backdrop-filter:blur(3px)"></div>
+  <section role="dialog" aria-label="Diário completo da obra" style="position:absolute;top:0;right:0;bottom:0;width:560px;box-sizing:border-box;padding:26px 28px;background:{{t.card}};border-left:1px solid {{t.cardB}};display:flex;flex-direction:column;gap:14px">
+   <div style="display:flex;align-items:center;gap:10px"><h2 style="margin:0;font-size:22px">Diário da obra · Meu Ponto</h2><a href="O1Trabalhando.dc.html" aria-label="Fechar" style="margin-left:auto;width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:{{t.text}};border:1px solid {{t.cardB}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></a></div>
+   <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">Tudo o que aconteceu na obra, na ordem, em português simples. O detalhe técnico fica guardado em "Para o suporte do Atlas", caso a Ajuda precise.</span>
+   <div style="display:flex;gap:6px"><sc-for list="{{filtros}}" as="f" hint-placeholder-count="4"><span style="height:30px;padding:0 12px;border-radius:999px;display:flex;align-items:center;background:{{f.bg}};border:1px solid {{f.borda}};color:{{f.cor}};font:600 12px 'Geist',sans-serif">{{f.nome}}</span></sc-for></div>
+   <ol style="list-style:none;margin:0;padding:0;flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column">
+    <sc-for list="{{diarioCompleto}}" as="d" hint-placeholder-count="12">
+     <li style="display:grid;grid-template-columns:96px 14px minmax(0,1fr);gap:10px;padding:9px 0;border-bottom:1px solid {{t.line}}">
+      <span style="font:500 12px 'Geist Mono',monospace;color:{{t.mute2}};padding-top:2px">{{d.hora}}</span>
+      <span style="width:9px;height:9px;margin-top:5px;border-radius:5px;background:{{d.bola}}"></span>
+      <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;line-height:1.4;color:{{d.cor}}">{{d.texto}}</span><sc-if value="{{d.detalhe}}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:{{t.mute2}}">{{d.detalhe}}</span></sc-if></span>
+     </li>
+    </sc-for>
+   </ol>
+   <span style="font:500 12px 'Geist Mono',monospace;color:{{t.mute2}}">Senhas e chaves nunca aparecem no diário.</span>
+  </section>
+ </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["trabalhando","esperando","precisa","defeito"],"default":"trabalhando"},"diario":{"editor":"boolean","default":false},"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', line: '#2A2E33',
+    amb: '#F2B33D', ambTxt: '#F2B33D', ambSoft: 'rgba(242,179,61,.12)', lar: '#FF9B4A', larTxt: '#FF9B4A', larSoft: 'rgba(255,155,74,.12)', ver: '#FF6B5E', verTxt: '#FF8478', verSoft: 'rgba(255,107,94,.12)' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', line: '#E6E8E1',
+    amb: '#D99A1E', ambTxt: '#8A5A00', ambSoft: 'rgba(217,154,30,.14)', lar: '#E07A24', larTxt: '#9A4A06', larSoft: 'rgba(224,122,36,.14)', ver: '#D9483B', verTxt: '#A8281D', verSoft: 'rgba(217,72,59,.12)' }
+};
+const IC = {
+  martelo: 'M14 4l6 6-3 3-6-6zM11 7L3 15l3 3 8-8M13 13l7 7',
+  relogio: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2',
+  mao: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v5M12 16.5v.5',
+  defeito: 'M12 3L2 20h20zM12 10v4M12 17v.5',
+  ok: 'M5 12l5 5 9-10',
+  x: 'M6 6l12 12M18 6L6 18'
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const est = this.props.estado ?? 'trabalhando';
+    const prim = (nome, href) => ({ nome, href, bg: t.lime, borda: t.lime, cor: t.onLime });
+    const sec = (nome, href) => ({ nome, href, bg: 'transparent', borda: t.cardB, cor: t.text });
+    const ok = (texto, hora) => ({ hora, texto, bola: t.lime, cor: t.text });
+    const neutro = (texto, hora) => ({ hora, texto, bola: t.mute2, cor: t.mute });
+    const base = [
+      neutro('Atlas abriu a obra', '09:02'),
+      ok('Terminou a tela de cadastro da equipe', '09:41'),
+      ok('Revisou e guardou o que foi feito', '10:15'),
+      ok('Enviou a etapa 6 para o GitHub', '10:18'),
+      ok('Começou a tela de relatórios do mês', '10:20')
+    ];
+    const E = {
+      trabalhando: {
+        cor: t.lime, corTxt: t.limeTxt, soft: t.soft, faixaBg: t.card, piscaCls: 'o-pisca', selo: 'TRABALHANDO', icone: IC.martelo,
+        rotulo: 'AGORA NA OBRA', titulo: 'Escrevendo a tela de relatórios do mês',
+        texto: 'Tudo certo. A equipe está trabalhando e o Atlas confere sozinho, a cada minuto, se ela continua andando.',
+        acoes: [sec('Ver o diário completo', 'O5Diario.dc.html')],
+        sinal: 'ÚLTIMO SINAL HÁ 12 S', aoVivo: 'AO VIVO', filtro: 'none', barra: t.lime,
+        balaoQuem: 'Mestre de obras', balao: 'Montando a tabela de horas do mês.', corBalao: t.lime,
+        agora: 'Fazendo agora: a tela de relatórios do mês',
+        diario: [...base, ok('Escrevendo a tabela de horas', '11:52')]
+      },
+      esperando: {
+        cor: t.amb, corTxt: t.ambTxt, soft: t.ambSoft, faixaBg: t.card, piscaCls: '', selo: 'ESPERANDO', icone: IC.relogio,
+        rotulo: 'PAROU · NÃO É ERRO', titulo: 'A cota do seu plano do Claude acabou. A obra volta sozinha às 15:40.',
+        texto: 'Faltam 3 h 12 min. Você não precisa fazer nada. Se quiser acelerar, um plano maior do Claude dá mais cota e a obra anda mais rápido.',
+        acoes: [prim('Ver planos do Claude', 'O2Esperando.dc.html'), sec('Esperar, volta sozinha', 'O2Esperando.dc.html'), sec('Avisar no celular quando voltar', 'O2Esperando.dc.html')],
+        nota: 'Seu plano hoje: Claude Pro. A troca de plano é feita no site do Claude, na sua conta. O Atlas não escolhe nem troca o plano por você.',
+        sinal: 'PAROU ÀS 12:28', aoVivo: 'ESPERANDO A COTA', filtro: 'grayscale(.6) brightness(.8)', barra: t.amb,
+        balaoQuem: 'Equipe em pausa', balao: 'Esperando a cota do Claude. Voltamos às 15:40.', corBalao: t.amb,
+        agora: 'Parou em: a tela de relatórios do mês (continua de onde parou)',
+        diario: [...base, ok('Escreveu a tabela de horas', '12:10'), { hora: '12:28', texto: 'Parou: a cota do Claude acabou. Volta às 15:40.', bola: t.amb, cor: t.ambTxt }]
+      },
+      precisa: {
+        cor: t.lar, corTxt: t.larTxt, soft: t.larSoft, faixaBg: t.card, piscaCls: 'o-pisca', selo: 'PRECISA DE VOCÊ', icone: IC.mao,
+        rotulo: 'PRECISA DE VOCÊ · 1 MINUTO', titulo: 'Para continuar, a obra precisa que você ligue o Supabase.',
+        texto: 'É onde ficam guardados os dados do Meu Ponto. Leva um minuto, com vídeo passo a passo. Assim que ligar, a obra continua sozinha.',
+        fala: 'Preciso que o Supabase esteja ligado para criar a tabela de horas.',
+        acoes: [prim('Ligar o Supabase', 'C1Contas.dc.html'), sec('Falar com o Atlas', 'D1Ajuda.dc.html')],
+        nota: 'Também avisamos no seu celular. Enquanto isso, o Atlas segue com as partes que não dependem disso.',
+        sinal: 'PEDIU ÀS 12:31', aoVivo: 'ESPERANDO VOCÊ', filtro: 'brightness(.85)', barra: t.lar,
+        balaoQuem: 'Mestre de obras', balao: 'Preciso do Supabase ligado para criar a tabela de horas.', corBalao: t.lar,
+        agora: 'Parou em: a tabela de horas (o resto continua)',
+        diario: [...base, ok('Escreveu a tabela de horas', '12:10'), { hora: '12:31', texto: 'Pediu a você: ligar o Supabase', bola: t.lar, cor: t.larTxt }]
+      },
+      defeito: {
+        cor: t.ver, corTxt: t.verTxt, soft: t.verSoft, faixaBg: t.card, piscaCls: '', selo: 'COM DEFEITO', icone: IC.defeito,
+        rotulo: 'O ATLAS TENTOU 3 VEZES', titulo: 'A obra não conseguiu continuar: o teste da tela de relatórios falha sempre no mesmo ponto.',
+        texto: 'O Atlas tentou às 12:30, 12:35 e 12:50, e conferiu tudo abaixo. O defeito está no código desta etapa. A Ajuda do Atlas já sabe o que aconteceu e pode corrigir com você.',
+        checagens: [
+          { nome: 'Internet', icone: IC.ok, cor: t.limeTxt }, { nome: 'Claude ligado', icone: IC.ok, cor: t.limeTxt }, { nome: 'Cota do Claude', icone: IC.ok, cor: t.limeTxt }, { nome: 'GitHub', icone: IC.ok, cor: t.limeTxt }, { nome: 'Supabase', icone: IC.ok, cor: t.limeTxt },
+          { nome: 'Vercel', icone: IC.ok, cor: t.limeTxt }, { nome: 'Pasta da obra', icone: IC.ok, cor: t.limeTxt }, { nome: 'Kit da obra', icone: IC.ok, cor: t.limeTxt }, { nome: 'Espaço no disco', icone: IC.ok, cor: t.limeTxt }, { nome: 'Testes da etapa', icone: IC.x, cor: t.verTxt }
+        ],
+        acoes: [prim('Corrigir com a Ajuda do Atlas', 'D1Ajuda.dc.html'), sec('Tentar de novo', 'O1Trabalhando.dc.html'), sec('Ver o diário completo', 'O5Diario.dc.html')],
+        sinal: 'PAROU ÀS 12:50', aoVivo: 'PARADA', filtro: 'grayscale(.8) brightness(.7)', barra: t.ver,
+        balaoQuem: 'Mestre de obras', balao: 'O teste dos relatórios falhou 3 vezes. Chamei a Ajuda.', corBalao: t.verTxt,
+        agora: 'Parou em: a tela de relatórios do mês',
+        diario: [...base, { hora: '12:30', texto: 'Teste dos relatórios falhou. Tentando de novo.', bola: t.amb, cor: t.ambTxt }, { hora: '12:35', texto: 'Falhou de novo. Nova tentativa às 12:50.', bola: t.amb, cor: t.ambTxt }, { hora: '12:50', texto: 'Falhou 3 vezes. Avisamos você.', bola: t.ver, cor: t.verTxt }]
+      }
+    };
+    const e = { fala: false, checagens: false, nota: false, ...(E[est] || E.trabalhando) };
+    const abasDef = [['trabalhando', 'Trabalhando', 'O1Trabalhando.dc.html', t.lime], ['esperando', 'Esperando', 'O2Esperando.dc.html', t.amb], ['precisa', 'Precisa de você', 'O3PrecisaVoce.dc.html', t.lar], ['defeito', 'Com defeito', 'O4Defeito.dc.html', t.ver]];
+    const abas = abasDef.map(([k, nome, href, bola]) => ({ nome, href, bola, bg: k === est ? t.card : 'transparent', cor: k === est ? t.text : t.mute2 }));
+    const diarioAberto = !!this.props.diario;
+    const filtros = ['Tudo', 'Paradas', 'Pedidos a você', 'Entregas'].map((nome, i) => ({ nome, bg: i === 0 ? t.soft : 'transparent', borda: i === 0 ? t.lime : t.cardB, cor: i === 0 ? t.limeTxt : t.mute }));
+    const diarioCompleto = [
+      { hora: 'ontem 18:40', texto: 'Parou: a cota do Claude acabou', detalhe: 'Voltou sozinha às 23:10', bola: t.amb, cor: t.ambTxt },
+      { hora: 'ontem 23:10', texto: 'Voltou sozinha e continuou a etapa 6', bola: t.lime, cor: t.text },
+      { hora: 'hoje 09:02', texto: 'Atlas abriu a obra', bola: t.mute2, cor: t.mute },
+      { hora: 'hoje 09:41', texto: 'Terminou a tela de cadastro da equipe', bola: t.lime, cor: t.text },
+      { hora: 'hoje 10:15', texto: 'Revisou e guardou o que foi feito', detalhe: 'Revisão independente: aprovada', bola: t.lime, cor: t.text },
+      { hora: 'hoje 10:18', texto: 'Enviou a etapa 6 para o GitHub', bola: t.lime, cor: t.text },
+      { hora: 'hoje 10:20', texto: 'Começou a tela de relatórios do mês', bola: t.lime, cor: t.text },
+      { hora: 'hoje 11:05', texto: 'Parou sozinha sem motivo claro', detalhe: 'O Atlas religou em 2 minutos', bola: t.amb, cor: t.ambTxt },
+      { hora: 'hoje 11:07', texto: 'Voltou a trabalhar', bola: t.lime, cor: t.text },
+      { hora: 'hoje 11:52', texto: 'Escrevendo a tabela de horas', bola: t.lime, cor: t.text }
+    ];
+    return { tema, t, e, abas, diarioAberto, filtros, diarioCompleto };
+  }
+}
+</script>
+</body>
+</html>

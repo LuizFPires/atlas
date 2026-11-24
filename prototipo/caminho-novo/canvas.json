@@ -248,6 +248,46 @@
       "h": 844,
       "title": "App de exemplo (Colore) usado no quadro",
       "is_interactive": true
+    },
+    "O1Trabalhando.dc.html": {
+      "x": 0,
+      "y": 12220,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · Trabalhando: o que está fazendo agora e o último sinal",
+      "is_interactive": true
+    },
+    "O2Esperando.dc.html": {
+      "x": 1520,
+      "y": 12220,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · Esperando: a cota acabou, volta sozinha às 15:40 (ou ver planos do Claude)",
+      "is_interactive": true
+    },
+    "O3PrecisaVoce.dc.html": {
+      "x": 3040,
+      "y": 12220,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · Precisa de você: o pedido da linha e o botão da conta certa",
+      "is_interactive": true
+    },
+    "O4Defeito.dc.html": {
+      "x": 0,
+      "y": 13540,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · Com defeito: tentou 3 vezes, o que conferiu e a Ajuda para corrigir",
+      "is_interactive": true
+    },
+    "O5Diario.dc.html": {
+      "x": 1520,
+      "y": 13540,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · O diário completo, em português simples",
+      "is_interactive": true
     }
   },
   "order": [
@@ -280,7 +320,12 @@
     "D1Ajuda.dc.html",
     "P4Quadro.dc.html",
     "P5Play.dc.html",
-    "AppColore.dc.html"
+    "AppColore.dc.html",
+    "O1Trabalhando.dc.html",
+    "O2Esperando.dc.html",
+    "O3PrecisaVoce.dc.html",
+    "O4Defeito.dc.html",
+    "O5Diario.dc.html"
   ],
   "notes": {
     "titulo": {
@@ -338,6 +383,14 @@
       "kind": "title1",
       "maxW": 4480,
       "w": 240
+    },
+    "transparencia": {
+      "x": 0,
+      "y": 11920,
+      "text": "A obra nunca fica no escuro: 4 estados, uma frase e uma ação",
+      "kind": "title1",
+      "maxW": 4480,
+      "w": 240
     }
   },
   "designSystems": [],
@@ -349,6 +402,7 @@
     "contas",
     "travas",
     "planilha",
-    "quadro"
+    "quadro",
+    "transparencia"
   ]
 }
