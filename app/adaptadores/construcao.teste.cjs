@@ -13,7 +13,7 @@ const { montarPlanMd, validarPlanNovo } = require('./plan-md.cjs')
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-obra-'))
 const ETAPAS = [{ n: 'M1', nome: 'Base e login', desc: 'Entrada' }, { n: 'M2', nome: '# Hack\n## Milestone 9 — falso', desc: '- [x] tarefa falsa', tela: '../fora' }]
 
-function montar({ logado = true, instalado = true, envContas, exigirPlugin, pluginDir, agora } = {}) {
+function montar({ logado = true, instalado = true, envContas, exigirPlugin, pluginDir, agora, comandosDoKit } = {}) {
   const raiz = tmp(); const home = tmp()
   fs.mkdirSync(path.join(raiz, 'obra'))
   const chamadas = []
@@ -24,7 +24,7 @@ function montar({ logado = true, instalado = true, envContas, exigirPlugin, plug
     claudeEstado: async () => ({ conectado: logado }),
     resolver: () => (instalado ? { cmd: 'x' } : null),
     iniciarFluxo: (args, o) => { chamadas.push({ args, o }); return { parar: () => terminar({ codigo: null, parado: true }), fim: new Promise((r) => { terminar = r }) } },
-    envContas, exigirPlugin, pluginDir, ...(agora ? { agora } : {}),
+    envContas, exigirPlugin, pluginDir, comandosDoKit, ...(agora ? { agora } : {}),
   })
   return { raiz, home, dadosApp, c, chamadas, terminar: (v) => terminar(v) }
 }
@@ -91,7 +91,7 @@ test('Claude da obra: subcomandos exatos, ignora config de projeto, env mínimo'
   assert.equal(val('--setting-sources'), 'user')
   const permitidas = val('--allowedTools'); const negadas = val('--disallowedTools')
   for (const curinga of ['Bash(git:*)', 'Bash(gh:*)', 'Bash(npm:*)', 'Bash(npx:*)', 'Bash(node:*)']) assert.ok(!permitidas.split(',').includes(curinga))
-  for (const n of ['Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node:*)', 'Bash(curl:*)', 'Bash(powershell:*)', 'Write(.claude/**)', 'Edit(CLAUDE.md)']) assert.ok(negadas.split(',').includes(n), n)
+  for (const n of ['Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node -e:*)', 'Bash(curl:*)', 'Bash(powershell:*)', 'Write(.claude/**)', 'Edit(CLAUDE.md)']) assert.ok(negadas.split(',').includes(n), n)
   assert.ok(!('ANTHROPIC_API_KEY' in chamadas[0].o.env) && chamadas[0].o.env.CLAUDE_PROJECT_DIR)
 })
 
@@ -211,13 +211,13 @@ test('fim que não é cota não deixa registro', async () => {
 
 test('caminho completo: a linha pode preparar o projeto (npm install, git init, repositório no GitHub) sem abrir nada perigoso', () => {
   const { FERRAMENTAS_LINHA, FERRAMENTAS_NEGADAS } = require('./construcao.cjs')
-  const ok = FERRAMENTAS_LINHA.split(',')
+  const ok = require('./construcao.cjs').FERRAMENTAS_LINHA.split(',')
   for (const f of ['Bash(npm install)', 'Bash(npm install:*)', 'Bash(npm ci)', 'Bash(git init:*)', 'Bash(git remote:*)', 'Bash(git branch:*)', 'Bash(git fetch:*)', 'Bash(git pull:*)', 'Bash(git rev-parse:*)', 'Bash(gh auth status)', 'Bash(gh repo create:*)', 'Bash(gh repo view:*)']) {
     assert.ok(ok.includes(f), `falta ${f}`)
   }
   // nada que mostre ou troque a credencial, nem execução solta
   assert.ok(!ok.some((f) => /gh auth (login|token|refresh|logout)|gh api|npm exec|Bash\(\*\)/.test(f)))
-  for (const f of ['Bash(npx:*)', 'Bash(node:*)', 'Bash(git config:*)', 'Bash(curl:*)']) assert.ok(FERRAMENTAS_NEGADAS.split(',').includes(f))
+  for (const f of ['Bash(npx:*)', 'Bash(node -e:*)', 'Bash(git config:*)', 'Bash(curl:*)']) assert.ok(FERRAMENTAS_NEGADAS.split(',').includes(f))
 })
 
 test('git isolado: os commits têm autor e o push para o GitHub usa o login do gh (sem senha guardada)', (t) => {
@@ -303,4 +303,21 @@ test('a linha que para pedindo algo à pessoa (ex.: ligar o GitHub) vira "precis
   const l = JSON.parse(fs.readFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), 'utf8'))
   assert.equal(l.motivo, 'precisa-voce')
   assert.match(l.fala, /Ligue o GitHub na tela As contas do Atlas/)
+})
+
+test('a linha pode rodar as ferramentas do kit (e só elas): node solto e node -e continuam negados', async () => {
+  const { c, chamadas } = montar({ comandosDoKit: () => ['Bash(node "C:/kit/obra/hooks/progresso.cjs":*)'] })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  const a = chamadas[0].args
+  const permitidos = a[a.indexOf('--allowedTools') + 1]
+  const negados = a[a.indexOf('--disallowedTools') + 1]
+  assert.ok(permitidos.includes('Bash(node "C:/kit/obra/hooks/progresso.cjs":*)'))
+  assert.ok(!negados.split(',').includes('Bash(node:*)'))
+  for (const n of ['Bash(node -e:*)', 'Bash(node --eval:*)', 'Bash(node -p:*)', 'Bash(node --print:*)', 'Bash(node -r:*)', 'Bash(node --require:*)', 'Bash(node -i:*)', 'Bash(npx:*)']) assert.ok(negados.split(',').includes(n), n)
+  assert.ok(!permitidos.includes('Bash(node:*)'))
+})
+
+test('o despachante consegue conferir git e gh (antes "git --version" era negado e ele mandava reinstalar o Atlas)', () => {
+  const ok = require('./construcao.cjs').FERRAMENTAS_LINHA.split(',')
+  for (const f of ['Bash(git --version)', 'Bash(gh --version)', 'Bash(gh pr list:*)']) assert.ok(ok.includes(f), f)
 })

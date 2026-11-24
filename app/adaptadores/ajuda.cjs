@@ -168,7 +168,7 @@ function estadoDaObra(dir, agora = Date.now()) {
     for (const l of plan.split(/\r?\n/)) { if (/^##\s+(?:Milestone\s+|M)\d+/i.test(l)) etapas++; const t = l.match(/^\s*[-*]\s+\[( |x|X)\]/); if (t) { total++; if (t[1] !== ' ') feitas++ } }
     linhas.push(`${feitas} de ${total} tarefas aprovadas, em ${etapas} etapas. Uma tarefa só conta depois que passa pela revisão de qualidade, segurança e desempenho, no fim de cada etapa: até lá o número fica parado mesmo com a obra andando.`)
   }
-  const rot = lerJson(path.join(dir, '.codex', 'roteiro.json')) || lerJson(path.join(dir, '.claude', 'roteiro.json'))
+  const rot = lerJson(path.join(dir, '.atlas', 'roteiro.json')) || lerJson(path.join(dir, '.codex', 'roteiro.json')) || lerJson(path.join(dir, '.claude', 'roteiro.json'))
   if (rot && typeof rot === 'object' && typeof rot.milestone === 'string') {
     const e = Math.max(0, Math.min(3, Number(rot.etapa_concluida) || 0))
     linhas.push(`Etapa em andamento: ${str(rot.milestone, 10)} · ${str(rot.titulo, 80) || 'sem título'} · parte ${e + 1} de 4 (${PARTES[e]})${Number.isInteger(rot.pr) ? ` · pedido de revisão #${rot.pr}` : ''}`)

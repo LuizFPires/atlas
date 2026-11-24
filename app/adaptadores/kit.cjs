@@ -30,6 +30,17 @@ const LEI = 'Lei 9.609/98'
 const CHAVE_COFRE = 'atlas/dispositivo' // igual a CHAVE_COFRE de src/app/ativacao-api.ts
 const OBRA_ID = /^[\w.-]{1,80}$/
 const RAIZES = ['agents', 'skills', 'hooks', 'commands']
+/** Os scripts do kit que a /construir e os agentes rodam (etapa, livro de ocorrências, avanço). */
+const FERRAMENTAS_DO_KIT = ['etapa', 'ocorrencias', 'progresso']
+
+/** As instruções do kit foram escritas para um projeto com .claude; na obra do Atlas não há .claude (a linha nem liga com ele):
+ *  os scripts e as skills ficam no plugin, e o estado da construção vai para .atlas/roteiro.json. A pasta do usuário (~/.claude) fica. */
+function paraOPlugin(texto, raizKit) {
+  return texto
+    .replace(/node \.claude\/hooks\/([a-z][a-z0-9-]*\.cjs)/g, (_m, arq) => `node "${raizKit}/hooks/${arq}"`)
+    .replace(/(^|[^~\w/])\.claude\/skills\//g, (_m, antes) => `${antes}${raizKit}/skills/`)
+    .replace(/(^|[^~\w/])\.claude\/roteiro\.json/g, (_m, antes) => `${antes}.atlas/roteiro.json`)
+}
 const LIM = { arquivos: 400, arquivo: 1_000_000, total: 8_000_000, resposta: 12_000_000, profundidade: 6 }
 const RESERVADO = /^(con|prn|aux|nul|com\d|lpt\d)(\.|$)/i
 const NOME_OK = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/
@@ -155,7 +166,10 @@ function criarKit({ dadosApp, cofre, hashComputador, api = process.env.ATLAS_API
         fs.writeFileSync(path.join(atual, partes[partes.length - 1]), conteudo, { flag: 'wx' })
       }
       gravar(['.claude-plugin', 'plugin.json'], JSON.stringify({ name: 'atlas-kit', version: '1.0.0', description: `Kit do Atlas entregue por obra. Software proprietário (${LEI}).` }, null, 2) + '\n')
-      for (const a of arquivos) gravar(a.partes, a.conteudo)
+      // As instruções mandam rodar "node .claude/hooks/X.cjs", mas o kit fica aqui (fora da obra): aponta para a pasta do plugin,
+      // com aspas (o caminho pode ter espaço) e barras normais (o Claude no Windows usa o Git Bash). Bug da obra do Guilherme, 24/11.
+      const raizKit = dir.split(path.sep).join('/')
+      for (const a of arquivos) gravar(a.partes, /\.md$/i.test(a.partes[a.partes.length - 1]) ? paraOPlugin(a.conteudo, raizKit) : a.conteudo)
       // Hooks do canteiro: um plugin só liga hooks por hooks/hooks.json. Sem ele, o progresso e o 3D da obra ficam parados.
       const temEvento = arquivos.some((a) => a.partes.join('/') === 'hooks/evento.cjs')
       const temHooksJson = arquivos.some((a) => a.partes.join('/') === 'hooks/hooks.json')
@@ -200,6 +214,14 @@ function criarKit({ dadosApp, cofre, hashComputador, api = process.env.ATLAS_API
         dirs.set(obraId, dir)
       } catch { return { ok: false, mensagem: MSG.incompleto } }
       return { ok: true, obraId, marca: v.marca }
+    },
+
+    /** As ferramentas do canteiro que a linha pode rodar (permissão exata, uma por script do kit). Sem kit: nenhuma. */
+    comandos(obraId) {
+      const d = self.diretorio(obraId)
+      if (!d) return []
+      const raizKit = d.split(path.sep).join('/')
+      return FERRAMENTAS_DO_KIT.filter((s) => fs.existsSync(path.join(d, 'hooks', `${s}.cjs`))).map((s) => `Bash(node "${raizKit}/hooks/${s}.cjs":*)`)
     },
 
     diretorio(obraId) {

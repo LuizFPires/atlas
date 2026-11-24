@@ -62,13 +62,15 @@ const FERRAMENTAS_LINHA = [
   'Bash(npm install)', 'Bash(npm install:*)', 'Bash(npm ci)',
   'Bash(git init:*)', 'Bash(git remote:*)', 'Bash(git branch:*)', 'Bash(git fetch:*)', 'Bash(git pull:*)', 'Bash(git rev-parse:*)',
   'Bash(gh auth status)', 'Bash(gh repo create:*)', 'Bash(gh repo view:*)',
+  // o despachante confere se git e gh existem (sem isto, ele concluía "falta o Git" e mandava reinstalar o Atlas: obra do Guilherme)
+  'Bash(git --version)', 'Bash(gh --version)', 'Bash(gh pr list:*)',
   // publicar: as CLIs da Vercel e do Supabase instaladas pelo Atlas (contas-cli.cjs), logadas pela tela das contas
   'Bash(vercel:*)', 'Bash(supabase:*)',
   'Bash(gh pr create:*)', 'Bash(gh pr view:*)', 'Bash(gh pr checks:*)', 'Bash(gh pr merge:*)', 'Bash(gh run:*)',
 ].join(',')
 /** Negados explícitos (valem mesmo que uma regra de permissão mais larga apareça). Config do projeto/kit não se edita. */
 const FERRAMENTAS_NEGADAS = [
-  'Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node:*)', 'Bash(npx:*)', 'Bash(curl:*)', 'Bash(wget:*)', 'Bash(powershell:*)', 'Bash(cmd:*)',
+  'Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node -e:*)', 'Bash(node --eval:*)', 'Bash(node -p:*)', 'Bash(node --print:*)', 'Bash(node -r:*)', 'Bash(node --require:*)', 'Bash(node -i:*)', 'Bash(npx:*)', 'Bash(curl:*)', 'Bash(wget:*)', 'Bash(powershell:*)', 'Bash(cmd:*)',
   'Bash(vercel logout:*)', 'Bash(vercel login:*)', 'Bash(vercel remove:*)', 'Bash(vercel rm:*)', 'Bash(vercel tokens:*)', 'Bash(vercel teams:*)',
   'Bash(supabase logout:*)', 'Bash(supabase login:*)', 'Bash(supabase projects delete:*)', 'Bash(supabase orgs:*)',
   'Write(.claude/**)', 'Edit(.claude/**)', 'Write(CLAUDE.md)', 'Edit(CLAUDE.md)', 'Write(.git/**)', 'Edit(.git/**)',
@@ -201,7 +203,7 @@ const MIN_TRABALHO_MS = 3 * 60_000
 /** A linha terminou pedindo algo que só a pessoa faz (o despachante e a /construir escrevem "USUÁRIO: …"). */
 const RE_PEDE_PESSOA = /USU[AÁ]RIO\s*:|precis[ao] (?:que voc[eê]|de voc[eê])|\b(?:ligue|ligar|conecte|conectar) (?:o|a) (?:GitHub|Vercel|Supabase)|reinstale o Atlas|aguardando (?:voc[eê]|sua)|s[oó] (?:voc[eê]|o usu[aá]rio) pode/i
 
-function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false }) {
+function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [] }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
   const linhas = new Map()
   // `dadosApp` = userData do app (o MESMO que a cota recebe). Arquivos do git isolado ficam em <dadosApp>\git-isolado.
@@ -230,7 +232,10 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     const plugin = typeof pluginDir === 'function' ? pluginDir(pasta) : pluginDir // função: kit por obra (kit.cjs), sem gravar na obra
     // Sem o kit o Claude não conhece /construir: terminava em segundos e o painel lia "concluiu" (bug de 24/11/2026). Nunca roda assim.
     if (exigirPlugin && !plugin) throw new Error('kit-faltando')
-    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', FERRAMENTAS_LINHA, '--disallowedTools', FERRAMENTAS_NEGADAS]
+    // node solto continua fora: só os scripts do kit desta obra, pelo caminho exato (kit.cjs comandos).
+    let doKit = []
+    try { doKit = (comandosDoKit(pasta) || []).filter((c) => typeof c === 'string' && /^Bash\(node "[^"]+\/hooks\/[a-z][a-z0-9-]*\.cjs":\*\)$/.test(c)) } catch { doKit = [] }
+    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', [FERRAMENTAS_LINHA, ...doKit].join(','), '--disallowedTools', FERRAMENTAS_NEGADAS]
     if (plugin) args.push('--plugin-dir', plugin)
     const reg = { parar: () => {}, recentes: [], desde: agora().toISOString() }
     let cota = false

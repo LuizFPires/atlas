@@ -89,7 +89,7 @@ function blocoMilestone(raiz, n) {
 
 // Estado do roteiro (.codex/roteiro.json tem prioridade, como no roteiro-milestone original).
 function lerRoteiro(raiz) {
-  for (const p of ['.codex/roteiro.json', '.claude/roteiro.json']) {
+  for (const p of ['.atlas/roteiro.json', '.codex/roteiro.json', '.claude/roteiro.json']) {
     try { return JSON.parse(fs.readFileSync(path.join(raiz, p), 'utf8')); } catch {}
   }
   return null;
