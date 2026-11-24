@@ -1,6 +1,6 @@
 // Processo principal do app Atlas (Electron). Reaproveita o front (dist-app/, gerado por `npm run build:app`).
 'use strict'
-const { app, BrowserWindow, dialog, ipcMain, Menu, Notification, powerSaveBlocker, session, shell, WebContentsView } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain, Menu, net, Notification, powerSaveBlocker, session, shell, WebContentsView } = require('electron')
 // Voz mais rápida (23/11/2026): libera o SharedArrayBuffer para o Whisper usar vários núcleos do processador.
 // Precisa vir antes do app ficar pronto. O app carrega só arquivos locais e nunca páginas de fora.
 app.commandLine.appendSwitch('enable-features', 'SharedArrayBuffer')
@@ -75,9 +75,13 @@ const { criarDiario } = require('./adaptadores/diario.cjs')
 const diario = criarDiario() // M41: diário da obra (.atlas/diario.jsonl), escrito pela linha e pelo vigia
 const construcao = criarConstrucao({ diario, envContas: () => contasCli.envDaLinha(process.env.PATH || process.env.Path || ''), modelo: () => modelo.args(), raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, comandosDoKit: (pasta) => kit.comandos(pasta), exigirPlugin: true, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
 // Vigia (24/11/2026): linha que parou sem avançar é religada sozinha (2, 5 e 15 min, com o kit garantido) e, se não der, o painel avisa.
-const vigia = criarVigia({ diario, raiz: obras.raiz(), construcao, garantirKit: (pasta) => kit.garantir(String(pasta)), listar: () => obras.listar(),
+const { criarDiagnostico } = require('./adaptadores/diagnostico.cjs')
+// M41 (O4): as 10 conferências quando o vigia desiste (internet, Claude, cota, contas, pasta, instruções, disco, trabalho da etapa).
+const diagnostico = criarDiagnostico({ raiz: obras.raiz(), internet: async () => net.isOnline(), claudeEstado: () => claude.estado(), contas: contasCli, kitDiretorio: (pasta) => kit.diretorio(pasta),
+  espacoLivre: (dir) => { const s = require('node:fs').statfsSync(dir); return s.bavail * s.bsize } })
+const vigia = criarVigia({ diario, diagnosticar: (pasta) => diagnostico.diagnosticar(pasta), raiz: obras.raiz(), construcao, garantirKit: (pasta) => kit.garantir(String(pasta)), listar: () => obras.listar(),
   // Desistiu de religar sozinho: avisa NA HORA, mesmo com o Atlas minimizado (o painel também mostra o alerta com o motivo).
-  aoPrecisar: (_pasta, motivo) => { try { if (Notification.isSupported()) new Notification({ title: 'A obra parou e precisa de você', body: `${motivo} Abra o Atlas para resolver.` }).show() } catch { /* aviso extra */ } } })
+  aoPrecisar: (_pasta, motivo) => { try { if (Notification.isSupported()) new Notification({ title: 'A obra parou', body: `${motivo} Abra o Atlas: ele mostra o que aconteceu e o que fazer.` }).show() } catch { /* aviso extra */ } } })
 const { criarCronograma } = require('./adaptadores/cronograma.cjs')
 const painel = criarPainel({ vigia, diario, cronograma: criarCronograma(), raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.

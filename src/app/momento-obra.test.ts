@@ -76,3 +76,9 @@ test('pausada por você e obra pronta', () => {
   expect(momentoDaObra({ ...base, agora: [], pausadaPorVoce: true }, 'pausada', AGORA)).toMatchObject({ nivel: 'pausada', selo: 'Pausada por você', acoes: ['continuar'] })
   expect(momentoDaObra({ ...base, pct: 100, agora: [] }, 'concluida', AGORA)).toMatchObject({ nivel: 'pronta', selo: 'Obra concluída' })
 })
+
+test('com defeito: as 10 conferências do diagnóstico vão para a faixa', () => {
+  const checagens = [{ nome: 'Internet', ok: true }, { nome: 'Trabalho da etapa', ok: false, dica: 'O teste falhou.' }]
+  const m = momentoDaObra({ ...base, agora: [], vigia: { situacao: 'precisa-voce', tentativa: 3, de: 3, motivo: 'Erro.', checagens } }, 'andando', AGORA)
+  expect(m.checagens).toEqual(checagens)
+})

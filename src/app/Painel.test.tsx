@@ -262,3 +262,13 @@ test('o balão do canteiro diz a mesma coisa que a faixa', async () => {
   const balao = await screen.findByRole('note', { name: 'O que está acontecendo no canteiro' })
   expect(balao).toHaveTextContent(/Mestre de obras/)
 })
+
+test('com defeito: a faixa mostra o que o Atlas conferiu (✓ e ✗ com a dica)', async () => {
+  const { fx } = montar('automatico', { sondagemMs: 30 })
+  fx.simular.vigia({ situacao: 'precisa-voce', tentativa: 3, de: 3, motivo: 'A linha de produção parou com um erro.', checagens: [{ nome: 'Internet', ok: true }, { nome: 'Trabalho da etapa', ok: false, dica: 'O teste da tela de relatórios falhou.' }] })
+  const lista = await screen.findByRole('list', { name: 'O que o Atlas conferiu' })
+  expect(within(lista).getByText('Internet').closest('li')).toHaveAttribute('data-ok', 'sim')
+  const ruim = within(lista).getByText('Trabalho da etapa').closest('li')!
+  expect(ruim).toHaveAttribute('data-ok', 'nao')
+  expect(ruim).toHaveTextContent('O teste da tela de relatórios falhou.')
+})

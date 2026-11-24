@@ -125,3 +125,9 @@
 .at-pn__filtro { height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--card-b); background: transparent; color: var(--mute); font: 600 13px var(--font-text); cursor: pointer; }
 .at-pn__filtro--on { border-color: var(--lime); background: var(--soft); color: var(--lime-txt, var(--lime)); }
 @media (prefers-reduced-motion: reduce) { .at-pn__faixa-pulso { animation: none; } }
+.at-pn__checagens { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 14px; }
+.at-pn__checagem { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; color: var(--lime-txt, var(--lime)); }
+.at-pn__checagem b { font-weight: 600; color: var(--text); }
+.at-pn__checagem--ruim { grid-column: 1 / -1; color: #FF8478; }
+.at-pn__checagem--ruim em { display: block; font-style: normal; color: var(--mute); }
+.at-pn__checagem > span { display: flex; flex-direction: column; }

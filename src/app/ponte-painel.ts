@@ -102,7 +102,9 @@ export interface EtapaCronograma {
 export interface Cronograma { inicio: string; previstoFim: string; esperadoFim: string; diferencaMs: number; pausaMs: number; entregues: number; total: number; etapas: EtapaCronograma[]; pausas: { inicio: string; fim: string | null }[] }
 
 /** fala: o que a linha disse ao parar (quando pede algo à pessoa); conta: a conta que ela pede para ligar. */
-export interface VigiaObra { situacao: 'tentando' | 'precisa-voce'; tentativa: number; de: number; motivo: string; proximaEm?: string; fala?: string; conta?: 'GitHub' | 'Vercel' | 'Supabase' }
+export interface VigiaObra { situacao: 'tentando' | 'precisa-voce'; tentativa: number; de: number; motivo: string; proximaEm?: string; fala?: string; conta?: 'GitHub' | 'Vercel' | 'Supabase'; checagens?: Checagem[] }
+/** M41 (O4): uma das conferências que o Atlas fez ao desistir de religar sozinho. */
+export interface Checagem { nome: string; ok: boolean; dica?: string }
 
 export type Situacao = 'andando' | 'pausada' | 'espera-ok' | 'cota' | 'precisa-de-voce' | 'billing' | 'concluida'
 
