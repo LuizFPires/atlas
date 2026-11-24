@@ -9,13 +9,13 @@ const obra = { nome: 'Agenda da Barbearia do Zé', pasta: 'agenda' }
 const agora = () => new Date(2026, 10, 18, 14, 40)
 const PCT = /^54,\d\d%$/
 
-const montar = (modo: ModoObra | null = 'automatico', opcoes: { painel?: PontePainel; modos?: PonteModoObra; endereco?: string | null; sondagemMs?: number; onPedirAjuda?: () => void; onLigarContas?: () => void } = {}) => {
+const montar = (modo: ModoObra | null = 'automatico', opcoes: { painel?: PontePainel; modos?: PonteModoObra; endereco?: string | null; sondagemMs?: number; onPedirAjuda?: () => void; onLigarContas?: () => void; onVerMax?: () => void } = {}) => {
   const fx = criarPainelFixture({ agora, endereco: opcoes.endereco })
   const painel = opcoes.painel ?? fx
   const modos = opcoes.modos ?? criarModoObraFixture(modo ? { [obra.pasta]: modo } : {})
   const onPublicar = vi.fn()
   const user = userEvent.setup()
-  render(<TemaProvider><Painel obra={obra} painel={painel} modos={modos} onPublicar={onPublicar} onPedirAjuda={opcoes.onPedirAjuda} onLigarContas={opcoes.onLigarContas} sondagemMs={opcoes.sondagemMs ?? 0} /></TemaProvider>)
+  render(<TemaProvider><Painel obra={obra} painel={painel} modos={modos} onPublicar={onPublicar} onPedirAjuda={opcoes.onPedirAjuda} onLigarContas={opcoes.onLigarContas} onVerMax={opcoes.onVerMax} sondagemMs={opcoes.sondagemMs ?? 0} /></TemaProvider>)
   return { fx, user, onPublicar, modos }
 }
 
@@ -30,7 +30,7 @@ test('mostra o % ponderado do PLAN, o prazo e o agora na obra', async () => {
   expect(screen.getByText('Inspetor de qualidade')).toBeInTheDocument()
   expect(screen.getByText('Fiscal')).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Agenda da Barbearia do Zé' })).toBeInTheDocument()
-  expect(screen.getByText('● Obra em andamento')).toBeInTheDocument()
+  expect(screen.getByText(/^● Trabalhando/)).toBeInTheDocument()
 })
 
 test('o canteiro é 3D: sem canteiro vivo mostra a imagem 3D; com canteiro vivo, a cena real em iframe com sandbox', async () => {
@@ -73,21 +73,21 @@ test('AUTOMÁTICO: ao fim da etapa o painel libera sozinho e nunca pede aprovaç
   fx.simular.concluirEtapa()
   await waitFor(() => expect(fx.chamadas).toContain('aprovarEtapa'))
   expect(screen.queryByRole('button', { name: 'Pode seguir' })).toBeNull()
-  expect(screen.getByText('● Obra em andamento')).toBeInTheDocument()
+  expect(screen.getByText(/^● Trabalhando/)).toBeInTheDocument()
 })
 
 test('PASSO A PASSO: ao fim da etapa o painel para e pede o OK; só segue quando o cliente diz', async () => {
   const { fx, user } = montar('passo-a-passo', { sondagemMs: 20 })
   await screen.findByText(PCT)
   fx.simular.concluirEtapa()
-  expect(await screen.findByText('● Esperando o seu OK')).toBeInTheDocument()
-  expect(screen.getByText(/Ficou pronta a etapa M5/)).toBeInTheDocument()
+  expect(await screen.findByText(/^● Precisa de você/)).toBeInTheDocument()
+  expect(screen.getAllByText(/Ficou pronta a etapa M5/)[0]).toBeInTheDocument()
   await new Promise((r) => setTimeout(r, 80))
   expect(fx.chamadas).not.toContain('aprovarEtapa')
   await user.click(screen.getByRole('button', { name: 'Pode seguir' }))
   expect(fx.chamadas).toContain('aprovarEtapa')
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Pode seguir' })).toBeNull())
-  expect(screen.getByText('● Obra em andamento')).toBeInTheDocument()
+  expect(screen.getByText(/^● Trabalhando/)).toBeInTheDocument()
 })
 
 test.each(['automatico', 'passo-a-passo'] as const)('parada real (cota) vale no modo %s, com tom calmo', async (modo) => {
@@ -96,8 +96,8 @@ test.each(['automatico', 'passo-a-passo'] as const)('parada real (cota) vale no 
     await screen.findByText(PCT)
     fx.simular.pararPor('cota')
     await user.click(screen.getByRole('button', { name: 'Pausar obra' }))
-    expect(await screen.findByText('● Pausada: a cota do plano acabou')).toBeInTheDocument()
-    expect(screen.getByText(/Isto não é erro/)).toBeInTheDocument()
+    expect(await screen.findByText(/^● Esperando/)).toBeInTheDocument()
+    expect(screen.getByText(/NÃO É ERRO/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Pausar obra' })).toBeNull()
   }
 })
@@ -154,9 +154,9 @@ test('sem modo guardado o painel não adivinha: espera o OK e pede a escolha', a
 test('pausar e continuar a obra', async () => {
   const { fx, user } = montar()
   await user.click(await screen.findByRole('button', { name: 'Pausar obra' }))
-  expect(await screen.findByText('● Pausada por você')).toBeInTheDocument()
+  expect(await screen.findByText(/^● Pausada por você/)).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Continuar obra' }))
-  expect(await screen.findByText('● Obra em andamento')).toBeInTheDocument()
+  expect(await screen.findByText(/^● Trabalhando/)).toBeInTheDocument()
   expect(fx.chamadas).toEqual(['pausar', 'continuar'])
 })
 
@@ -182,8 +182,8 @@ describe('vigia (bug de 24/11): a obra nunca fica parada em silêncio', () => {
   test('tentando de novo: o painel avisa na hora, com a tentativa, e "Tentar agora" religa', async () => {
     const { fx, user } = montar('automatico', { sondagemMs: 30 })
     fx.simular.vigia({ situacao: 'tentando', tentativa: 0, de: 3, motivo: 'A linha de produção ligou, mas não conseguiu trabalhar e parou em seguida.', proximaEm: '2026-11-24T10:05:00.000Z' })
-    const aviso = await screen.findByRole('status', { name: 'A obra parou' })
-    expect(aviso).toHaveTextContent(/O Atlas já está cuidando disso/)
+    const aviso = (await screen.findByText(/O Atlas já está cuidando disso/)).closest('section')!
+    expect(aviso).toHaveAttribute('aria-label', 'O que está acontecendo agora')
     expect(aviso).toHaveTextContent(/tentativa 1 de 3/)
     expect(screen.queryByText(/a obra está pronta/)).toBeNull()
     await user.click(within(aviso).getByRole('button', { name: 'Tentar agora' }))
@@ -194,18 +194,19 @@ describe('vigia (bug de 24/11): a obra nunca fica parada em silêncio', () => {
     const ajuda = vi.fn()
     const { fx, user } = montar('automatico', { onPedirAjuda: ajuda, sondagemMs: 30 })
     fx.simular.vigia({ situacao: 'precisa-voce', tentativa: 3, de: 3, motivo: 'O Claude deste computador saiu da conta: é preciso entrar de novo.' })
-    const alerta = await screen.findByRole('alert', { name: 'A obra parou' })
+    const alerta = await screen.findByRole('alert', { name: 'O que está acontecendo agora' })
     expect(alerta).toHaveTextContent(/O Atlas não conseguiu continuar sozinho/)
     expect(alerta).not.toHaveTextContent(/precisa de você/)
     expect(alerta).toHaveTextContent(/saiu da conta/)
-    await user.click(within(alerta).getByRole('button', { name: 'Falar com o Atlas' }))
+    expect(screen.getByText(/^● Com defeito/)).toBeInTheDocument()
+    await user.click(within(alerta).getByRole('button', { name: 'Corrigir com a Ajuda do Atlas' }))
     expect(ajuda).toHaveBeenCalled()
   })
 
   test('"a obra está pronta" só com a obra pronta de verdade', async () => {
     const { fx } = montar('automatico', { sondagemMs: 30 })
     fx.simular.semNinguem()
-    expect(await screen.findByText('Ninguém trabalhando agora.')).toBeInTheDocument()
+    expect(await screen.findByText('Ninguém trabalhando agora.', { selector: '.at-pn__faixa b' })).toBeInTheDocument()
     expect(screen.queryByText(/a obra está pronta/)).toBeNull()
   })
 })
@@ -214,7 +215,7 @@ test('vigia: a linha esperando a pessoa mostra o que ela disse e o botão da con
   const ligar = vi.fn()
   const { fx, user } = montar('automatico', { onLigarContas: ligar, sondagemMs: 30 })
   fx.simular.vigia({ situacao: 'precisa-voce', tentativa: 0, de: 3, motivo: 'A obra está esperando uma coisa que só você pode fazer.', fala: 'Ligue o GitHub na tela As contas do Atlas (botão Ligar).', conta: 'GitHub' })
-  const alerta = await screen.findByRole('alert', { name: 'A obra parou' })
+  const alerta = await screen.findByRole('alert', { name: 'O que está acontecendo agora' })
   expect(alerta).toHaveTextContent('A obra está esperando uma coisa que só você pode fazer.')
   expect(alerta).toHaveTextContent('“Ligue o GitHub na tela As contas do Atlas (botão Ligar).”')
   expect(alerta).not.toHaveTextContent(/tentou/)
@@ -227,4 +228,37 @@ test('as contas da obra têm entrada fixa no painel (Guilherme, 24/11: "Onde fic
   const { user } = montar('automatico', { onLigarContas: ligar })
   await user.click(await screen.findByRole('button', { name: 'Contas ligadas' }))
   expect(ligar).toHaveBeenCalled()
+})
+
+// M41 (O1–O5 aprovados em 24/11/2026): o diário sempre à vista, a gaveta completa com filtros e a cota com "Ver planos do Claude".
+test('diário: últimas linhas na obra e o completo na gaveta, com filtro de paradas', async () => {
+  const { user } = montar('automatico')
+  const cartao = await screen.findByRole('region', { name: 'Diário da obra' })
+  expect(within(cartao).getByText('Escrevendo o código')).toBeInTheDocument()
+  await user.click(within(cartao).getByRole('button', { name: 'Ver o diário completo' }))
+  const gaveta = await screen.findByRole('dialog', { name: 'Diário completo da obra' })
+  expect(within(gaveta).getByText('Terminou a etapa Agenda do dia')).toBeInTheDocument()
+  await user.click(within(gaveta).getByRole('button', { name: 'Paradas' }))
+  expect(within(gaveta).queryByText('Terminou a etapa Agenda do dia')).toBeNull()
+  expect(within(gaveta).getByText(/Parou sem conseguir avançar/)).toBeInTheDocument()
+  await user.click(within(gaveta).getByRole('button', { name: 'Fechar o diário' }))
+  expect(screen.queryByRole('dialog', { name: 'Diário completo da obra' })).toBeNull()
+})
+
+test('cota: a faixa diz que não é erro e oferece "Ver planos do Claude" (o Atlas não troca o plano)', async () => {
+  const verMax = vi.fn()
+  const { fx, user } = montar('automatico', { onVerMax: verMax, sondagemMs: 30 })
+  await screen.findByText(PCT)
+  fx.simular.pararPor('cota')
+  const faixa = (await screen.findByText(/A cota do seu plano do Claude acabou/, { selector: '.at-pn__faixa b' })).closest('section')!
+  expect(faixa).toHaveTextContent(/NÃO É ERRO/)
+  expect(faixa).toHaveTextContent(/A troca é feita no site do Claude, na sua conta/)
+  await user.click(within(faixa).getByRole('button', { name: 'Ver planos do Claude' }))
+  expect(verMax).toHaveBeenCalled()
+})
+
+test('o balão do canteiro diz a mesma coisa que a faixa', async () => {
+  montar('automatico')
+  const balao = await screen.findByRole('note', { name: 'O que está acontecendo no canteiro' })
+  expect(balao).toHaveTextContent(/Mestre de obras/)
 })

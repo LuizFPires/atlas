@@ -8,7 +8,7 @@ const path = require('node:path')
 const { criarVigia, BACKOFF_MIN, MAX_TENTATIVAS } = require('./vigia.cjs')
 
 const MIN = 60_000
-function montar({ kitFalha = null } = {}) {
+function montar({ kitFalha = null, diario = null } = {}) {
   const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-vigia-'))
   fs.mkdirSync(path.join(raiz, 'obra', '.atlas'), { recursive: true })
   fs.writeFileSync(path.join(raiz, 'obra', 'PLAN.md'), '## Milestone 1 — Base\npeso: 1\n- [ ] a\n')
@@ -18,7 +18,7 @@ function montar({ kitFalha = null } = {}) {
   const linha = (o) => fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ versao: 1, ...o }))
   const construcao = { linha: { rodando: () => rodando, religar: (p) => { religadas.push(p); rodando = true; linha({ estado: 'rodando', desde: new Date(t).toISOString() }) } } }
   const garantirKit = async () => { if (kitFalha) throw new Error(kitFalha) }
-  const vigia = criarVigia({ raiz, construcao, garantirKit, listar: async () => ['obra'], agora: () => new Date(t) })
+  const vigia = criarVigia({ raiz, construcao, garantirKit, listar: async () => ['obra'], agora: () => new Date(t), ...(diario ? { diario } : {}) })
   const parou = (motivo = 'sem-avanco') => { rodando = false; linha({ estado: 'parou', motivo, codigo: 0, fimEm: new Date(t).toISOString() }) }
   return { raiz, vigia, religadas, parou, passar: (ms) => { t += ms }, ler: () => vigia.estado('obra') }
 }
@@ -168,4 +168,16 @@ test('a fala mostrada ao cliente vem limpa: sem marcação, sem código e cortad
   assert.ok(!/gh auth setup-git/.test(f), f)
   assert.ok(f.length <= 300)
   assert.match(f, /[.!?]$/)
+})
+
+// M41: o vigia conta no diário cada religada e a desistência (a pessoa vê o que o Atlas fez sozinho).
+test('diário: cada religada sozinha e a desistência depois de 3 tentativas', async () => {
+  const { criarDiario } = require('./diario.cjs')
+  const diario = criarDiario()
+  const m = montar({ diario })
+  for (const espera of BACKOFF_MIN) { m.parou(); await m.vigia.rodada(); m.passar(espera * MIN); await m.vigia.rodada(); m.passar(20_000) }
+  m.parou(); await m.vigia.rodada()
+  const tx = diario.ler(path.join(m.raiz, 'obra')).map((e) => `${e.tipo}: ${e.texto}`)
+  assert.deepEqual(tx.filter((x) => x.startsWith('retomada: ')), ['retomada: O Atlas religou a obra sozinho (tentativa 1 de 3)', 'retomada: O Atlas religou a obra sozinho (tentativa 2 de 3)', 'retomada: O Atlas religou a obra sozinho (tentativa 3 de 3)'])
+  assert.match(tx.at(-1), /^defeito: O Atlas tentou 3 vezes e não conseguiu continuar sozinho/)
 })

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Obra: cronograma</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes cpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.c-pisca{animation:cpisca 1.2s infinite}
+@media (prefers-reduced-motion: reduce){.c-pisca{animation:none}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="canteiro" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:22px 36px 26px;display:flex;flex-direction:column;gap:16px">
+
+  <div style="display:flex;align-items:center;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:6px">
+    <a href="K1Canteiro.dc.html" style="display:flex;align-items:center;gap:6px;font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>CANTEIRO DE OBRAS</a>
+    <div style="display:flex;align-items:center;gap:12px"><h1 style="margin:0;font-size:28px">Meu Ponto</h1><span style="display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:{{t.soft}};border:1px solid {{t.lime}};color:{{t.limeTxt}};font:600 11px 'Geist Mono',monospace;letter-spacing:.08em"><span class="c-pisca" style="width:7px;height:7px;border-radius:4px;background:{{t.lime}}"></span>TRABALHANDO · 64,37%</span></div>
+   </div>
+   <nav aria-label="Partes da obra" style="margin-left:auto;display:flex;gap:4px;padding:5px;border-radius:14px;background:{{t.card}};border:1px solid {{t.cardB}}">
+    <a href="O1Trabalhando.dc.html" style="height:40px;padding:0 16px;display:flex;align-items:center;border-radius:10px;color:{{t.mute}};font:600 14px 'Geist',sans-serif">Construção</a>
+    <span aria-current="page" style="height:40px;padding:0 16px;display:flex;align-items:center;border-radius:10px;background:{{t.lime}};color:{{t.onLime}};font:700 14px 'Geist',sans-serif">Cronograma</span>
+    <a href="P4Quadro.dc.html" style="height:40px;padding:0 16px;display:flex;align-items:center;border-radius:10px;color:{{t.mute}};font:600 14px 'Geist',sans-serif">Protótipo</a>
+    <a href="D1Ajuda.dc.html" style="height:40px;padding:0 16px;display:flex;align-items:center;border-radius:10px;color:{{t.mute}};font:600 14px 'Geist',sans-serif">Pedir mudança</a>
+   </nav>
+  </div>
+
+  <!-- Números grandes -->
+  <section aria-label="Resumo do prazo" style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:12px">
+   <div style="padding:16px 20px;border-radius:18px;background:{{t.soft}};border:1px solid {{t.lime}}">
+    <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">TÉRMINO ESPERADO</span>
+    <div style="margin-top:6px;font:700 30px 'Geist',sans-serif;letter-spacing:-.01em">Sáb, 28/11 · 16:40</div>
+    <span style="font-size:13px;color:{{t.mute}}">Daqui a 4 dias e 2 h, no ritmo das últimas 24 h</span>
+   </div>
+   <sc-for list="{{cartoes}}" as="c" hint-placeholder-count="3">
+    <div style="padding:16px 20px;border-radius:18px;background:{{t.card}};border:1px solid {{t.cardB}}">
+     <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">{{c.rotulo}}</span>
+     <div style="margin-top:6px;font:700 24px 'Geist Mono',monospace;color:{{c.cor}}">{{c.valor}}</div>
+     <span style="font-size:13px;color:{{t.mute}}">{{c.nota}}</span>
+    </div>
+   </sc-for>
+  </section>
+
+  <!-- Gantt -->
+  <section aria-label="Cronograma por etapa" style="flex:1;min-height:0;display:flex;flex-direction:column;padding:16px 20px;border-radius:20px;background:{{t.card}};border:1px solid {{t.cardB}}">
+   <div style="display:flex;align-items:center;gap:18px;margin-bottom:10px">
+    <h2 style="margin:0;font-size:18px">Etapas: previsto e realizado</h2>
+    <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:{{t.mute}}"><span style="width:22px;height:8px;border-radius:4px;border:1.5px dashed {{t.mute2}}"></span>Previsto</span>
+    <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:{{t.mute}}"><span style="width:22px;height:8px;border-radius:4px;background:{{t.lime}}"></span>Realizado</span>
+    <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:{{t.mute}}"><span style="width:22px;height:8px;border-radius:4px;background:{{t.amb}}"></span>Pausa (cota)</span>
+    <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:{{t.mute}}"><span style="width:22px;height:8px;border-radius:4px;background:{{t.proj}}"></span>Expectativa</span>
+   </div>
+   <!-- cabeçalho de dias -->
+   <div style="display:grid;grid-template-columns:300px minmax(0,1fr) 150px;gap:12px;align-items:end;padding-bottom:6px;border-bottom:1px solid {{t.line}}">
+    <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">ETAPA</span>
+    <div style="position:relative;height:18px">
+     <sc-for list="{{dias}}" as="d" hint-placeholder-count="6"><span style="position:absolute;left:{{d.x}};font:600 11px 'Geist Mono',monospace;color:{{d.cor}}">{{d.nome}}</span></sc-for>
+    </div>
+    <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}};text-align:right">PREVISTO → REAL</span>
+   </div>
+   <ol style="list-style:none;margin:0;padding:0;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-around;position:relative">
+    <sc-for list="{{linhas}}" as="l" hint-placeholder-count="8">
+     <li style="display:grid;grid-template-columns:300px minmax(0,1fr) 150px;gap:12px;align-items:center">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+       <span style="flex:none;width:24px;height:24px;border-radius:12px;background:{{l.bola}};color:{{l.bolaTxt}};display:flex;align-items:center;justify-content:center;font:700 11px 'Geist Mono',monospace">{{l.n}}</span>
+       <span style="display:flex;flex-direction:column;min-width:0"><b style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{l.nome}}</b><span style="font-size:12px;color:{{l.statusCor}}">{{l.status}}</span></span>
+      </div>
+      <div style="position:relative;height:26px">
+       <span style="position:absolute;top:2px;left:{{l.pX}};width:{{l.pW}};height:22px;box-sizing:border-box;border-radius:6px;border:1.5px dashed {{t.mute2}}"></span>
+       <sc-for list="{{l.barras}}" as="b" hint-placeholder-count="1"><span style="position:absolute;top:7px;left:{{b.x}};width:{{b.w}};height:12px;border-radius:4px;background:{{b.cor}}"></span></sc-for>
+      </div>
+      <span style="text-align:right;white-space:pre-line;font:500 12px 'Geist Mono',monospace;color:{{l.datasCor}};line-height:1.35">{{l.datas}}</span>
+     </li>
+    </sc-for>
+    <!-- linha do agora -->
+    <span aria-hidden="true" style="position:absolute;top:-6px;bottom:0;left:calc(312px + (100% - 474px) * 0.215);width:2px;background:{{t.lime}}"></span>
+    <span style="position:absolute;top:-26px;left:calc(312px + (100% - 474px) * 0.215 - 22px);padding:2px 6px;border-radius:6px;background:{{t.lime}};color:{{t.onLime}};font:700 10px 'Geist Mono',monospace">AGORA</span>
+   </ol>
+   <p style="margin:10px 0 0;font-size:13px;line-height:1.5;color:{{t.mute}}">O previsto foi calculado quando a construção começou, pelo tamanho de cada etapa. O término esperado é refeito a cada etapa entregue, pelo ritmo real da obra. Pausas da cota do Claude não contam como atraso da equipe, mas empurram a data.</p>
+  </section>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', line: '#2A2E33', amb: '#F2B33D', ambTxt: '#F2B33D', proj: 'rgba(198,241,53,.32)', ver: '#FF8478' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', line: '#E6E8E1', amb: '#D99A1E', ambTxt: '#8A5A00', proj: 'rgba(182,226,46,.45)', ver: '#A8281D' }
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const pct = (v) => `${v}%`;
+    const cartoes = [
+      { rotulo: 'PREVISTO NO INÍCIO', valor: 'Sex, 27/11 · 18:00', nota: 'Calculado em 24/11 às 09:02', cor: t.text },
+      { rotulo: 'DIFERENÇA', valor: '+22 h', nota: '14 h foram pausa da cota do Claude', cor: t.ambTxt },
+      { rotulo: 'ETAPAS', valor: '3 de 8', nota: 'Entregues · 1 em andamento', cor: t.limeTxt }
+    ];
+    const dias = ['Ter 24', 'Qua 25', 'Qui 26', 'Sex 27', 'Sáb 28', 'Dom 29'].map((nome, i) => ({ nome, x: pct(i * 16.6), cor: i === 0 ? t.limeTxt : t.mute2 }));
+    const feita = (n, nome, pX, pW, rX, rW, datas, extra = []) => ({ n, nome, status: 'Entregue', statusCor: t.limeTxt, bola: t.lime, bolaTxt: t.onLime, pX: pct(pX), pW: pct(pW), barras: [{ x: pct(rX), w: pct(rW), cor: t.lime }, ...extra], datas, datasCor: t.mute });
+    const futura = (n, nome, pX, pW, eX, eW, datas) => ({ n, nome, status: 'Ainda não começou', statusCor: t.mute2, bola: t.cardB, bolaTxt: t.mute, pX: pct(pX), pW: pct(pW), barras: [{ x: pct(eX), w: pct(eW), cor: t.proj }], datas, datasCor: t.mute2 });
+    const linhas = [
+      feita('1', 'Base do app, marca e visual', 0, 4, 0, 5.5, '24/11 11:00\n→ 24/11 13:10'),
+      feita('2', 'Entrada e cadastro da equipe', 4, 6, 5.5, 3, '24/11 15:00\n→ 24/11 14:20', [{ x: pct(8.5), w: pct(4), cor: t.amb }]),
+      feita('3', 'Registro do ponto pelo celular', 10, 7, 12.5, 6, '25/11 08:00\n→ 25/11 10:30'),
+      { n: '4', nome: 'Relatórios do mês', status: 'Em andamento · 45%', statusCor: t.limeTxt, bola: t.soft, bolaTxt: t.limeTxt, pX: pct(17), pW: pct(7), barras: [{ x: pct(18.5), w: pct(3), cor: t.lime }, { x: pct(21.5), w: pct(5), cor: t.proj }], datas: '25/11 14:00\n→ ~26/11 08:30', datasCor: t.limeTxt },
+      futura('5', 'Painel do dono e alertas', 24, 9, 26.5, 10, '26/11 06:00\n→ ~26/11 20:00'),
+      futura('6', 'Folgas, férias e banco de horas', 33, 11, 36.5, 12, '26/11 18:00\n→ ~27/11 15:00'),
+      futura('7', 'Exportar para o contador', 44, 7, 48.5, 8, '27/11 08:00\n→ ~28/11 06:00'),
+      futura('8', 'Publicar e entregar', 51, 6, 56.5, 9, '27/11 18:00\n→ ~28/11 16:40')
+    ];
+    return { tema, t, cartoes, dias, linhas };
+  }
+}
+</script>
+</body>
+</html>

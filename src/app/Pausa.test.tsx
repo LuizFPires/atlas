@@ -100,7 +100,7 @@ test.each(['automatico', 'passo-a-passo'] as const)('no painel, nos DOIS modos (
   cota.simular.renovar()
   await waitFor(() => expect(cota.chamadas).toContain('retomar'))
   expect(cota.avisos.length).toBe(1)
-  await waitFor(() => expect(screen.getByText('● Obra em andamento')).toBeInTheDocument(), { timeout: 3000 })
+  await waitFor(() => expect(screen.getByText(/^● Trabalhando/)).toBeInTheDocument(), { timeout: 3000 })
 })
 
 test('"Voltar ao painel" mostra o painel com o selo calmo, e a retomada segue sozinha', async () => {
@@ -111,6 +111,6 @@ test('"Voltar ao painel" mostra o painel com o selo calmo, e a retomada segue so
   await screen.findByText(/^54,\d\d%$/)
   cota.simular.esgotar(hoje(14))
   await userEvent.click(await screen.findByRole('button', { name: 'Voltar ao painel' }))
-  expect(await screen.findByText('● Pausada: a cota do plano acabou')).toBeInTheDocument()
-  expect(screen.getByText(/Isto não é erro/)).toBeInTheDocument()
+  expect(await screen.findByText(/^● Esperando/)).toBeInTheDocument()
+  expect(screen.getByText(/NÃO É ERRO/)).toBeInTheDocument()
 })

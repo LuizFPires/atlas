@@ -12,7 +12,7 @@
 //  - a imagem do canteiro só aparece sem canteiro vivo; com ele, a cena real (cena3d.js) entra num iframe com sandbox;
 //  - "Ver detalhes" (nota u09) é o botão que mostra as etapas e suas tarefas; o protótipo não desenha esse botão.
 import proto from '../../prototipo/F09Painel.dc.html?raw'
-import { SELO } from './Painel'
+import { momentoDaObra } from './momento-obra'
 import { TEXTO_MODO } from './ponte-construcao'
 
 const protoLF = proto.replace(/\r\n/g, '\n')
@@ -43,13 +43,14 @@ test('textos fixos da tela batem com o protótipo', () => {
   ]) expect(protoLF).toContain(t)
 })
 
-test('os selos de estado do protótipo estão no painel', () => {
-  expect(protoLF).toContain('Obra em andamento')
+// M41 (O1–O4 aprovados em 24/11/2026) substitui o selo "Obra em andamento" da F09 pelos 4 estados (PLAN.md, Notas da M41).
+test('os selos de estado: os 4 estados da M41, mais pausada e concluída da F09', () => {
   expect(protoLF).toContain('Pausada por você')
   expect(protoLF).toContain('Obra concluída')
-  expect(SELO.andando).toBe('Obra em andamento')
-  expect(SELO.pausada).toBe('Pausada por você')
-  expect(SELO.concluida).toBe('Obra concluída')
+  const sit = { pct: 10, tarefas: 1, feitas: 0, etapa: null, etapas: [], restante: null, previsao: null, agora: [], pausadaPorVoce: false, parada: null, etapaPronta: null, temTeste: false }
+  expect(momentoDaObra({ ...sit, pausadaPorVoce: true }, 'pausada').selo).toBe('Pausada por você')
+  expect(momentoDaObra({ ...sit, pct: 100 }, 'concluida').selo).toBe('Obra concluída')
+  expect(momentoDaObra({ ...sit, agora: [{ sigla: 'IM', quem: 'x', oque: 'y', tom: 'ativo' }] }, 'andando').selo).toBe('Trabalhando')
 })
 
 test('o modo da obra (extensão ao protótipo) tem texto de leigo, sem tokens nem jargão', () => {

@@ -33,11 +33,24 @@ const { caminhoSeguro, envMinimo } = require('../seguro.cjs')
 const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson, lerTexto } = require('./obra-fs.cjs')
 const { comoDado } = require('./plan-md.cjs')
 const { ehModoObra, gravarRecomendadoGlobal } = require('./modo.cjs')
+const { criarCronograma } = require('./cronograma.cjs')
 
 const RE_MS = /^##\s+(?:Milestone\s+|M)(\d+)\s*[—–:-]\s*(.+?)\s*$/i
 const RE_ENDERECO = /^http:\/\/127\.0\.0\.1:\d{2,5}(\/[A-Za-z0-9._~\-/?=&%]*)?$/ // igual a enderecoCanteiroSeguro (ponte-painel.ts)
 
 /** Porta fiel de lerPlano (plano.cjs) a partir do texto: usada só se o kit não estiver disponível. */
+/** Pausas de cota a partir do diário: "Parou: a cota…" até a próxima vez que a obra voltou a trabalhar. */
+function pausasDoDiario(linhas) {
+  const pausas = []
+  let aberta = null
+  for (const e of linhas) {
+    if (e.tipo === 'parada' && /cota/i.test(e.texto)) { if (!aberta) aberta = { inicio: e.em, fim: null }; continue }
+    if (aberta && (e.tipo === 'retomada' || e.tipo === 'trabalho' || (e.tipo === 'info' && /começou a trabalhar/i.test(e.texto)))) { aberta.fim = e.em; pausas.push(aberta); aberta = null }
+  }
+  if (aberta) pausas.push(aberta)
+  return pausas
+}
+
 function lerPlanoDoTexto(texto) {
   const ms = []
   let atual = null
@@ -150,7 +163,7 @@ function kitDirDoApp({ empacotado, recursos }) {
  * `porta` (teste): fixa a porta; padrão = porta livre aleatória a cada subida. `subir` (teste): substitui o spawn do canteiro
  * (sem nonce: o servidor falso do teste não o conhece). Padrão de kitDir (hooks/ e canteiro/): a pasta .claude do app (ATLAS_KIT_DIR).
  */
-function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir, contarCommits, vigia = null }) {
+function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir, contarCommits, vigia = null, diario = null, cronograma = null }) {
   const hooks = path.join(kitDir, 'hooks')
   const canteiroDir = path.join(kitDir, 'canteiro')
   const linha = construcao.linha
@@ -270,7 +283,31 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
         temTeste: p.feitas > 0,
         // Vigia (24/11/2026): linha que parou sem avançar. O Atlas tenta de novo sozinho e, se não der, pede o cliente com o motivo.
         vigia: acabou || !vigia ? null : (() => { try { return vigia.estado(pasta) } catch { return null } })(),
+        // M41: nunca no escuro. Último sinal da linha (medido pelo Atlas), hora de volta da cota e as últimas linhas do diário.
+        sinal: rodando && linha.sinal ? linha.sinal(pasta) : null,
+        voltaEm: !rodando && fim && fim.estado === 'parou' && fim.motivo === 'cota' && typeof fim.voltaEm === 'string' ? fim.voltaEm : null,
+        diario: diario ? diario.ler(cwd, 8) : [],
       }
+    },
+
+    /** M41: aba Cronograma. Previsto (guardado no início), real por etapa, término esperado pelo ritmo real e pausas de cota. */
+    async cronograma(pasta) {
+      const cwd = pastaDaObra(raiz, pasta)
+      const p = planoDa(cwd)
+      if (!p) throw new Error('sem-plano')
+      const crono = cronograma || criarCronograma({ agora })
+      let terminoMs = null
+      const kit = carregarDoKit(hooks, 'prazo.cjs')
+      if (kit && p.pct < 100) { try { const r = kit.calcularPrazo(cwd); if (r && r.status === 'estimado' && Number.isFinite(r.data)) terminoMs = r.data } catch { /* sem ritmo ainda */ } }
+      const qtd = p.milestones.length
+      const previstoMs = Math.max(1, Math.ceil(qtd / 4)) * 24 * 3600_000 // previsaoPorEtapas (plano Pro): o que o Atlas prometeu no começo
+      return crono.atualizar(cwd, p.milestones.map((m) => ({ n: m.n, titulo: nomeCurto(m.titulo), peso: m.peso, status: m.status, pct: m.pct })), { previstoMs, terminoMs, pausas: pausasDoDiario(diario ? diario.ler(cwd, 500) : []) })
+    },
+
+    /** M41: o diário completo da obra (gaveta "Ver o diário completo"). */
+    async diario(pasta) {
+      const cwd = pastaDaObra(raiz, pasta)
+      return diario ? diario.ler(cwd, 500) : []
     },
 
     async pausar(pasta) {

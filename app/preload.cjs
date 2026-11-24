@@ -76,6 +76,8 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     // síncrona na porta: o processo principal só devolve http://127.0.0.1:<porta>/... (ou null).
     enderecoCanteiro: (pasta) => ipcRenderer.sendSync('atlas:painel:endereco', String(pasta)),
     abrirTeste: (pasta) => chamar('atlas:painel:teste', String(pasta)),
+    diario: (pasta) => chamar('atlas:painel:diario', String(pasta)),
+    cronograma: (pasta) => chamar('atlas:painel:cronograma', String(pasta)),
   },
   estilo: {
     // referencias/sentimentos viram texto; o processo principal revalida tudo. pasta é opcional (a obra, para o Claude olhar os prints).

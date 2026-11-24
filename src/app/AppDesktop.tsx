@@ -19,6 +19,7 @@ import { criarTravasFixture, type PonteTravas } from './ponte-travas'
 import { Obras as ListaObras, type ObraParaContinuar } from './Obras'
 import { Canteiro } from './Canteiro'
 import { AbasDaObra } from './AbasDaObra'
+import { CronogramaDaObra } from './CronogramaDaObra'
 import { Ideia } from './Ideia'
 import { EtapasObra, type EtapaDoCaminho } from './EtapasObra'
 import { criarIdeiaFixture, ideiaIndisponivel, type PonteIdeia } from './ponte-ideia'
@@ -357,6 +358,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'obras' && fluxo === 'estilo' && obraAtual) conteudo = <Estilo obra={obraAtual} arquivos={ponteArquivos} estilo={ponteEstilo} onAvancar={ORDEM_ETAPAS.indexOf(alcancada) > 1 ? () => setFluxo('batismo') : undefined} onVoltar={() => setFluxo(relatoDaObra !== null ? 'ideia' : 'lista')} onConcluir={(r) => { setEstiloEscolhido(r.estilo); void pontePrototipo.pintar?.(obraAtual.pasta, obraAtual.nome, r.estilo).catch(() => {}); setFluxo('batismo') }} />
   else if (ativo === 'obras' && fluxo === 'telas' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setFluxo('batismo')} onConcluir={() => setFluxo('contas')} />
   else if (ativo === 'obras' && fluxo === 'batismo' && obraAtual) conteudo = <Batismo obra={obraAtual} batismo={ponteBatismo} nomes={ponteNomes} arquivos={ponteArquivos} onVoltar={() => setFluxo('estilo')} onConcluir={() => setFluxo('telas')} />
+  else if (ativo === 'cronograma') conteudo = obraAtual ? <CronogramaDaObra obra={obraAtual} painel={pontePainel} /> : <p>Escolha uma obra para ver o cronograma dela.</p>
   else if (ativo === 'posobra') conteudo = obraAtual ? <PosObra obra={obraAtual} posobra={pontePosObra} arquivos={ponteArquivos} licenca={ponteLicenca} onAcompanhar={() => setAtivo('obra')} /> : <p>Escolha uma obra em Minhas obras para pedir uma mudança nela.</p>
   else if (ativo === 'obra' && obraAtual && fluxo === 'publicar') conteudo = <Publicar slug={slugDaObra(obraAtual.nome)} onPublicar={(sel) => { setSelecaoPub(sel); setFluxo('publicando') }} onVoltar={() => setFluxo('lista')} />
   else if (ativo === 'obra' && obraAtual && fluxo === 'publicando') conteudo = <Publicando obra={obraAtual} selecao={selecaoPub} publicar={pontePublicar} onVoltar={() => setFluxo('publicar')} onConcluir={(noAr) => { setEnderecoNoAr(noAr); setResumoEntrega(null); void pontePainel.ler(obraAtual.pasta).then((e) => setResumoEntrega({ etapas: e.etapas.length, tarefas: e.feitas }), () => {}); setFluxo('entrega') }} onPedirAjuda={pedirAjudaPasso} onErro={(p, e) => abrirAjuda({ ...contextoDoPasso(p), origem: 'erro', onde: 'a publicação', erro: e })} />
@@ -393,7 +395,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'canteiro' || ativo === 'concluidas') conteudo = <Canteiro modo={ativo} obras={ponteObras} painel={pontePainel} retomar={ponteRetomar} onAbrir={continuarObra} onNova={() => { setAtivo('obras'); setRelatoDaObra(null); setAlcancada('ideia'); setObraAtual(null); setFluxo('ideia') }} />
   else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} painel={pontePainel} nome={dono || undefined} onComecar={() => { setRelatoDaObra(null); setAlcancada('ideia'); setObraAtual(null); setFluxo('ideia') }} onTrazer={() => setFluxo('trazer')} onVerCanteiro={() => setAtivo('canteiro')} />
   // Dentro da obra (Milestone 37): nome no topo, volta ao Canteiro e as partes (Construção, Protótipo, Pedir mudança).
-  if (obraAtual && (ativo === 'obra' || ativo === 'prototipo' || ativo === 'posobra')) {
+  if (obraAtual && (ativo === 'obra' || ativo === 'cronograma' || ativo === 'prototipo' || ativo === 'posobra')) {
     conteudo = <><AbasDaObra nome={obraAtual.nome} atual={ativo} onIr={(p) => setAtivo(p)} onCanteiro={() => setAtivo('canteiro')} />{conteudo}</>
   }
   // Caminho novo: faixa das 6 etapas no topo; fora das telas, o aviso do protótipo em segundo plano leva até elas.

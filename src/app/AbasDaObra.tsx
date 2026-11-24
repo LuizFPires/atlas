@@ -3,9 +3,10 @@ import './abas-da-obra.css'
 
 // Tudo de uma obra mora dentro dela (Milestone 37, Luiz em 23/11/2026): volta ao Canteiro e as partes da obra. O nome da obra
 // já é o título de cada parte (painel, protótipo), então aqui não se repete.
-export type ParteDaObra = 'obra' | 'prototipo' | 'posobra'
+export type ParteDaObra = 'obra' | 'cronograma' | 'prototipo' | 'posobra'
 const PARTES: { id: ParteDaObra; nome: string }[] = [
   { id: 'obra', nome: 'Construção' },
+  { id: 'cronograma', nome: 'Cronograma' }, // M41 (O6 aprovado em 24/11/2026)
   { id: 'prototipo', nome: 'Protótipo' },
   { id: 'posobra', nome: 'Pedir mudança' },
 ]

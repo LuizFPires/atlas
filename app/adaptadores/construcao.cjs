@@ -47,6 +47,7 @@ const { lerPlanoDoTexto } = require('./painel.cjs')
 const { montarPlanMd, validarPlanNovo, comoDado } = require('./plan-md.cjs')
 const { ehModoObra, gravarRecomendadoGlobal } = require('./modo.cjs')
 const { detectarCota } = require('./cota.cjs')
+const { limparFala } = require('./vigia.cjs')
 
 /**
  * Ferramentas permitidas à linha: SUBCOMANDOS EXATOS, sem curinga em git/gh/npm inteiros. Isto é lista de permissão do Claude,
@@ -273,9 +274,28 @@ const MIN_TRABALHO_MS = 3 * 60_000
 const RE_TRAVA_DO_ATLAS = /\/permissions|update-config|permiss[aãoõ]|num terminal|no terminal|rode no (?:prompt|powershell|cmd)|aprove o comando|libere o comando/i
 const RE_PEDE_PESSOA = /USU[AÁ]RIO\s*:|precis[ao] (?:que voc[eê]|de voc[eê])|\b(?:ligue|ligar|conecte|conectar) (?:o|a) (?:GitHub|Vercel|Supabase)|reinstale o Atlas|aguardando (?:voc[eê]|sua)|s[oó] (?:voc[eê]|o usu[aá]rio) pode/i
 
-function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [] }) {
+function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [], diario = null }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
   const linhas = new Map()
+  // M41: diário da obra (o Atlas escreve; nunca o Claude). Sem diário injetado, nada muda.
+  const dirDe = (pasta) => { try { return pastaDaObra(raiz, pasta) } catch { return null } }
+  const anotar = (pasta, tipo, texto) => { if (!diario) return; const d = dirDe(pasta); if (d) diario.registrar(d, { tipo, texto }) }
+  const TRABALHO_A_CADA_MS = 3 * 60_000
+  const hora = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? null : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }
+  function anotarFim(pasta, motivo, { voltaEm, fala }) {
+    const h = voltaEm ? hora(voltaEm) : null
+    const T = {
+      cota: ['parada', `Parou: a cota do seu plano do Claude acabou.${h ? ` Volta sozinha às ${h}.` : ' Volta sozinha quando a cota renovar.'}`],
+      pausada: ['info', 'Você pausou a obra'],
+      concluiu: ['info', 'Terminou um turno de trabalho'],
+      'sem-avanco': ['parada', 'Parou sem conseguir avançar. O Atlas vai tentar de novo sozinho.'],
+      erro: ['defeito', 'Parou com um erro. O Atlas vai tentar de novo sozinho.'],
+      fechou: ['parada', 'A linha de produção fechou (o Atlas foi fechado ou o computador desligou)'],
+    }
+    if (motivo === 'precisa-voce') { anotar(pasta, 'pedido', `Pediu a você: ${limparFala(fala) || 'uma ação sua'}`); return }
+    const [tipo, texto] = T[motivo] || T.erro
+    anotar(pasta, tipo, texto)
+  }
   // `dadosApp` = userData do app (o MESMO que a cota recebe). Arquivos do git isolado ficam em <dadosApp>\git-isolado.
   const dirGit = path.join(dadosApp, 'git-isolado')
   /** Paradas por cota vistas pelo APP, fora da obra (cota-store.cjs): a retomada automática só confia nisto. */
@@ -308,7 +328,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     try { doKit = (comandosDoKit(pasta) || []).filter((c) => typeof c === 'string' && /^Bash\(node "[^"]+\/hooks\/[a-z][a-z0-9-]*\.cjs":\*\)$/.test(c)) } catch { doKit = [] }
     const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', [FERRAMENTAS_LINHA, ...doKit].join(','), '--disallowedTools', FERRAMENTAS_NEGADAS]
     if (plugin) args.push('--plugin-dir', plugin)
-    const reg = { parar: () => {}, recentes: [], desde: agora().toISOString() }
+    const reg = { parar: () => {}, recentes: [], desde: agora().toISOString(), sinal: null, trabalhoEm: 0, trabalhoTxt: null }
     let cota = false
     let cotaFraca = false
     let voltaEm = null
@@ -321,8 +341,15 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
       onLinha: (l) => {
         // A última fala da linha (o resultado do turno): quando ela para pedindo algo à pessoa, é isto que o painel mostra.
         try { const j = JSON.parse(l); if (j && j.type === 'result' && typeof j.result === 'string') reg.fala = comoDado(j.result, 4000).join('\n').slice(0, 1200) } catch { /* não é JSON */ }
+        reg.sinal = agora().toISOString()
         const s = resumirLinha(l)
         if (!s) return
+        // Diário: o que está fazendo, no máximo uma linha a cada 3 minutos (e só quando muda), para não virar barulho.
+        const tAgora = agora().getTime()
+        if (s.texto && !s.cota && s.texto !== reg.trabalhoTxt && tAgora - reg.trabalhoEm >= TRABALHO_A_CADA_MS) {
+          reg.trabalhoEm = tAgora; reg.trabalhoTxt = s.texto
+          anotar(pasta, 'trabalho', s.texto)
+        }
         if (s.cota) cota = true
         if (s.cotaFraca) cotaFraca = true
         if (s.voltaEm) voltaEm = s.voltaEm
@@ -333,6 +360,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     reg.parar = r.parar
     linhas.set(pasta, reg)
     gravarLinha(pasta, { estado: 'rodando', desde: reg.desde })
+    anotar(pasta, 'info', 'O Atlas começou a trabalhar na obra')
     paradas.apagar(pasta) // religou: o registro de parada por cota acabou (um novo fim por cota grava de novo)
     r.fim.then(({ codigo, parado }) => {
       if (linhas.get(pasta) === reg) linhas.delete(pasta) // não apaga uma linha mais nova (pausar + continuar rápido)
@@ -351,6 +379,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
         if (pctAgora < 100) motivo = 'precisa-voce'
       }
       const ultimas = reg.recentes.slice(-6).map((x) => String(x).slice(0, 200))
+      anotarFim(pasta, motivo, { voltaEm, fala: reg.fala })
       gravarLinha(pasta, { estado: 'parou', motivo, codigo, desde: reg.desde, fimEm: agora().toISOString(), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}), ...(motivo === 'sem-avanco' || motivo === 'erro' || motivo === 'precisa-voce' ? { ultimas, ...(reg.fala ? { fala: reg.fala } : {}) } : {}) })
       // Registro do APP (fora da obra) que permite a retomada automática: só em fim por cota de uma linha que o app iniciou, com a obra
       // ainda por terminar e sem pausa do cliente (se uma linha mais nova já roda, ela cuida do próprio registro).
@@ -422,6 +451,8 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
       /** Pausa do cliente (painel.pausar): derruba a linha e apaga o registro de parada por cota. */
       parar(pasta) { const l = linhas.get(pasta); if (l) { linhas.delete(pasta); l.parar() } paradas.apagar(pasta) },
       rodando: (pasta) => linhas.has(pasta),
+      /** Último sinal da linha (qualquer saída do Claude), ISO; null sem linha rodando. O painel mostra "último sinal há N s". */
+      sinal: (pasta) => linhas.get(pasta)?.sinal ?? null,
       recentes: (pasta) => (linhas.get(pasta)?.recentes ?? []).slice(),
       ultimoFim: (pasta) => lerJson(caminhoSeguro(raiz, pasta, '.atlas', 'linha.json')),
     },

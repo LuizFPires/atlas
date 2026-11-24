@@ -61,12 +61,15 @@ function etapasDoPlan(dir) {
 }
 const SEGUIR_EM_MS = 60_000
 
-function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new Date(), aoPrecisar = () => {} }) {
+function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new Date(), aoPrecisar = () => {}, diario = null }) {
+  // M41: o que o vigia faz sozinho vai para o diário da obra.
+  const anotar = (pasta, tipo, texto) => { if (!diario) return; try { diario.registrar(pastaDaObra(raiz, pasta), { tipo, texto }) } catch { /* diário é extra */ } }
   const arq = (pasta) => path.join(pastaDaObra(raiz, pasta), '.atlas', 'vigia.json')
   const ler = (pasta) => { try { const v = lerJson(arq(pasta)); return v && typeof v === 'object' ? v : null } catch { return null } }
   const gravar = (pasta, v) => {
     try { gravarAtomico(arq(pasta), JSON.stringify(v) + '\n') } catch { /* sem registro: tenta na próxima */ }
     if (v.situacao === 'precisa-voce') { try { aoPrecisar(pasta, v.motivo) } catch { /* aviso é extra */ } }
+    if (v.situacao === 'precisa-voce' && Number(v.tentativa) > 0) anotar(pasta, 'defeito', `O Atlas tentou ${v.tentativa} vezes e não conseguiu continuar sozinho. ${v.motivo || ''}`)
   }
   const zerar = (pasta) => { try { const a = arq(pasta); if (require('node:fs').existsSync(a)) require('node:fs').unlinkSync(a) } catch { /* nada a apagar */ } }
   let ocupado = false
@@ -99,6 +102,7 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
       try {
         await garantirKit(pasta)
         construcao.linha.religar(pasta)
+        anotar(pasta, 'retomada', 'Seguiu sozinho para a próxima parte da obra')
         gravarAtomico(arqSeguir, JSON.stringify({ fimVisto: fimC, em: new Date(t).toISOString() }) + '\n')
       } catch (e) {
         if (e && e.message === 'ja-rodando') return
@@ -131,6 +135,7 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
     try {
       await garantirKit(pasta)
       construcao.linha.religar(pasta)
+      anotar(pasta, 'retomada', `O Atlas religou a obra sozinho (tentativa ${tentativa} de ${MAX_TENTATIVAS})`)
       gravar(pasta, { situacao: 'tentando', tentativa, de: MAX_TENTATIVAS, motivo: estado.motivo, codigo: estado.codigo, fimVisto: 'religou', religouEm: new Date(t).toISOString() })
     } catch (e) {
       const cod = e && e.message === 'ja-rodando' ? null : (e && e.message) || 'erro'

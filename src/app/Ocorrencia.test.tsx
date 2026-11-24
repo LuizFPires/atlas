@@ -118,7 +118,7 @@ test.each(['automatico', 'passo-a-passo'] as const)('no painel, no modo %s a oco
 
   await user.type(await screen.findByLabelText('Chave do WhatsApp Business'), 'EAA123')
   await user.click(screen.getByRole('button', { name: 'Já colei a chave: continuar' }))
-  expect(await screen.findByText('● Obra em andamento')).toBeInTheDocument()
+  expect(await screen.findByText(/^● Trabalhando/)).toBeInTheDocument()
 })
 
 test('"fazer depois" volta ao painel com o selo, e a obra segue', async () => {

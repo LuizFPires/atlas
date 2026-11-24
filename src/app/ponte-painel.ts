@@ -81,7 +81,25 @@ export interface EstadoObra {
   temTeste: boolean
   /** Vigia (24/11/2026): a linha parou sem avançar. 'tentando' = o Atlas religa sozinho; 'precisa-voce' = desistiu e pede o cliente. */
   vigia?: VigiaObra | null
+  /** M41: último sinal da linha (qualquer saída do Claude, medido pelo Atlas), ISO; null sem linha rodando. */
+  sinal?: string | null
+  /** M41: parada por cota com a hora de volta que o Claude informou, ISO. */
+  voltaEm?: string | null
+  /** M41: as últimas linhas do diário da obra (a mais nova por último). */
+  diario?: LinhaDiario[]
 }
+
+/** M41: uma linha do diário da obra, em português simples (nunca senha nem chave). */
+export interface LinhaDiario { em: string; tipo: 'info' | 'trabalho' | 'parada' | 'pedido' | 'retomada' | 'entrega' | 'defeito'; texto: string; detalhe?: string }
+
+/** M41: cronograma da obra (aba Cronograma). Datas em ISO. */
+export interface EtapaCronograma {
+  n: number; nome: string; status: 'entregue' | 'andamento' | 'falta'; pct: number
+  previsto: { inicio: string; fim: string } | null
+  real: { inicio: string; fim?: string } | null
+  esperado: { inicio: string; fim: string } | null
+}
+export interface Cronograma { inicio: string; previstoFim: string; esperadoFim: string; diferencaMs: number; pausaMs: number; entregues: number; total: number; etapas: EtapaCronograma[]; pausas: { inicio: string; fim: string | null }[] }
 
 /** fala: o que a linha disse ao parar (quando pede algo à pessoa); conta: a conta que ela pede para ligar. */
 export interface VigiaObra { situacao: 'tentando' | 'precisa-voce'; tentativa: number; de: number; motivo: string; proximaEm?: string; fala?: string; conta?: 'GitHub' | 'Vercel' | 'Supabase' }
@@ -123,6 +141,10 @@ export interface PontePainel {
   enderecoCanteiro(pasta: string): string | null
   /** Abre a versão de teste da obra. */
   abrirTeste(pasta: string): Promise<void>
+  /** M41: o diário completo da obra. */
+  diario?(pasta: string): Promise<LinhaDiario[]>
+  /** M41: o cronograma da obra. */
+  cronograma?(pasta: string): Promise<Cronograma>
 }
 
 /** Só aceita o servidor local do canteiro: http://127.0.0.1:<porta>/... (nada de endereço vindo de dado). */
@@ -177,6 +199,8 @@ export interface PainelFixture extends PontePainel {
   readonly chamadas: string[]
   /** Último modo aplicado na linha de produção. */
   modoAplicado: ModoObra | null
+  /** M41: o diário de exemplo (a mais nova por último). */
+  diarioDeExemplo: LinhaDiario[]
   /** Simulações do protótipo ("Simular no protótipo"). */
   readonly simular: {
     concluirEtapa(): void
@@ -222,6 +246,13 @@ export function criarPainelFixture(opcoes: { plan?: string; agora?: () => Date; 
     plan: opcoes.plan ?? planoDeExemplo(),
     chamadas,
     modoAplicado: null,
+    diarioDeExemplo: [
+      { em: '2026-11-24T12:02:00.000Z', tipo: 'info', texto: 'O Atlas começou a trabalhar na obra' },
+      { em: '2026-11-24T12:41:00.000Z', tipo: 'entrega', texto: 'Terminou a etapa Agenda do dia' },
+      { em: '2026-11-24T13:05:00.000Z', tipo: 'parada', texto: 'Parou sem conseguir avançar. O Atlas vai tentar de novo sozinho.' },
+      { em: '2026-11-24T13:07:00.000Z', tipo: 'retomada', texto: 'O Atlas religou a obra sozinho (tentativa 1 de 3)' },
+      { em: '2026-11-24T13:20:00.000Z', tipo: 'trabalho', texto: 'Escrevendo o código' },
+    ],
     simular: {
       concluirEtapa() {
         const e = estadoDoPlano(f.plan).etapa
@@ -253,6 +284,24 @@ export function criarPainelFixture(opcoes: { plan?: string; agora?: () => Date; 
         etapaPronta,
         temTeste: !acabou || base.feitas > 0,
         vigia: acabou ? null : vigia,
+        diario: f.diarioDeExemplo.slice(-8),
+      }
+    },
+    async diario() { return f.diarioDeExemplo.slice() },
+    async cronograma() {
+      const H = 3600_000
+      const t0 = Date.parse('2026-11-24T12:00:00.000Z')
+      const i = (h: number) => new Date(t0 + h * H).toISOString()
+      return {
+        inicio: i(0), previstoFim: i(76), esperadoFim: i(98), diferencaMs: 22 * H, pausaMs: 14 * H, entregues: 3, total: 5,
+        etapas: [
+          { n: 1, nome: 'Base e login', status: 'entregue', pct: 100, previsto: { inicio: i(0), fim: i(8) }, real: { inicio: i(0), fim: i(10) }, esperado: null },
+          { n: 2, nome: 'Agenda do dia', status: 'entregue', pct: 100, previsto: { inicio: i(8), fim: i(20) }, real: { inicio: i(10), fim: i(19) }, esperado: null },
+          { n: 3, nome: 'Marcar horário', status: 'entregue', pct: 100, previsto: { inicio: i(20), fim: i(34) }, real: { inicio: i(19), fim: i(40) }, esperado: null },
+          { n: 4, nome: 'Confirmação por WhatsApp', status: 'andamento', pct: 45, previsto: { inicio: i(34), fim: i(50) }, real: { inicio: i(40) }, esperado: { inicio: i(44), fim: i(60) } },
+          { n: 5, nome: 'Relatórios', status: 'falta', pct: 0, previsto: { inicio: i(50), fim: i(76) }, real: null, esperado: { inicio: i(60), fim: i(98) } },
+        ],
+        pausas: [{ inicio: i(22), fim: i(36) }],
       }
     },
     async pausar() { chamadas.push('pausar'); pausada = true },
