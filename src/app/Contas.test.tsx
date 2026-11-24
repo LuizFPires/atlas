@@ -159,3 +159,17 @@ describe('com o navegador dentro do Atlas', () => {
     expect(await screen.findByText(/O Atlas viu sozinho: a sua conta do GitHub está pronta/)).toBeInTheDocument()
   })
 })
+
+// Luiz, 24/11/2026: "deixar esses botões de voltar e próximo fixo na parte inferior ... a cada passo o botão muda de lugar".
+test('Voltar e Fiz isso ficam fixos no rodapé, depois de "Não consegui" e da ajuda (não mudam de lugar a cada passo)', async () => {
+  montar()
+  const fiz = screen.getByRole('button', { name: /Abrir o site →|Fiz isso →/ })
+  const rodape = fiz.closest('div')!
+  expect(rodape).toHaveClass('at-contas__fixo')
+  expect(rodape.lastElementChild).toBe(fiz)
+  const naoConsegui = screen.getByRole('button', { name: 'Não consegui fazer este passo' })
+  expect(naoConsegui.compareDocumentPosition(rodape) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  await userEvent.click(naoConsegui)
+  const video = screen.getByRole('button', { name: /Ver este passo em vídeo/ })
+  expect(video.compareDocumentPosition(rodape) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+})
