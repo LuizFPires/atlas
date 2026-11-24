@@ -503,3 +503,14 @@ tela: prototipo/caminho-novo/ObraEstado.dc.html
 - [x] CI esperado em silêncio (hooks/esperar-ci.cjs, uma linha) no lugar de gh pr checks --watch
 - [x] Teste de cota não chama o Claude antes da hora de volta conhecida
 Notas: DECISÃO do Luiz (24/11/2026, "Os tokens do Guilherme já estouraram!! ... Precisamos otimizar!!"; "Pode fazer do 1 ao 4 e nas duas decisões eu concordo com as sugestões"; "Nós precisamos ter um sistema eficiente em tokens. Essa é a principal proposta de valor do Atlas"). Origem: a obra do Guilherme ligou a linha 65 vezes e o coordenador releu PLAN (28x), roteiro.json (38x), recomendado.json (25x), gh auth status (17x) e git remote (16x). DIVERGÊNCIA: o roteiro da /construir chamava os três revisores em toda etapa e tinha checkpoint a cada 3 milestones; no Atlas, isso muda como acima. O vistoriador (vistoria final) continua no Opus.
+
+## Milestone 45 — Varredura de tokens: mesma qualidade, menos gasto
+peso: 2
+spec: S19
+tela: prototipo/caminho-novo/ObraEstado.dc.html
+- [x] Cada pedido ao Claude leva só as ferramentas que usa (protótipo, estilo, nomes, Ajuda e plano: só ler; teste de cota e pedido sem obra: nenhuma); o Atlas confere no --help o que o Claude instalado aceita
+- [x] A parte que muda (pasta, git) sai do começo do pedido: o resto fica guardado no cache entre um pedido e outro e entre religadas da linha
+- [x] Protótipo: os arquivos da obra (design system, relato, planilha) vão inteiros no pedido do mapa e de cada lote; o modelo e o capricho continuam os mesmos
+- [x] Automático: depois do merge de cada milestone a linha recomeça de contexto limpo, com o estado pronto
+- [x] Medição: todo pedido ao Claude com obra (protótipo, Ajuda, estilo…) registra passos, tokens e custo em .atlas/consumo.jsonl, com o tipo e sem o texto
+Notas: DECISÃO do Luiz (24/11/2026, depois do teste às cegas X/Y: "Não, eu não queria mudar o jeito que está hoje não ... o modo atual ... é bem mais apurado, mais premium"; "Não é para perder qualidade, mas a gente precisa ser eficiente ... Fazer mais com menos"). O protótipo continua todo no modelo escolhido (Opus recomendado), sem acabamento separado. O esforço (--effort) da linha não muda, porque vale também para os subagentes.

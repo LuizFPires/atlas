@@ -19,6 +19,7 @@ const { caminhoSeguro, criarArquivoExclusivo, envMinimo, executarClaude, resolve
 const { pastaDaObra, garantirSemConfigDeProjeto } = require('./obra-fs.cjs')
 const { comoDado } = require('./plan-md.cjs')
 const { argsEnxutos } = require('./recursos-claude.cjs')
+const { consumoDoResultado, registrarConsumo } = require('./retrato-obra.cjs')
 const { envGitIsolado, ARGS_SEM_CONFIG_DE_PROJETO, FERRAMENTAS_NEGADAS, RE_COTA } = require('./construcao.cjs')
 
 const REGRA_CONTEUDO_CLIENTE =
@@ -99,7 +100,7 @@ function criarDisparo({ raiz, dadosApp, claudeEstado, executar = executarClaude,
   }
   return {
     claudePronto,
-    async perguntar(pasta, pedido, { timeoutMs = 300_000, maxSaida = 4_000_000, permitirGit = false, addDirs = [] } = {}) {
+    async perguntar(pasta, pedido, { timeoutMs = 300_000, maxSaida = 4_000_000, permitirGit = false, addDirs = [], tipo = 'pedido' } = {}) {
       let cwd
       if (pasta === null) { cwd = path.join(dadosApp, 'claude-vazio'); fs.mkdirSync(cwd, { recursive: true }) } else cwd = pastaDaObra(raiz, pasta)
       garantirSemConfigDeProjeto(cwd, { permitirGit })
@@ -109,10 +110,13 @@ function criarDisparo({ raiz, dadosApp, claudeEstado, executar = executarClaude,
       const negadas = [...(pasta === null ? ['Read', 'Glob', 'Grep'] : []), 'Edit', 'Write', 'Bash', 'Task', 'NotebookEdit', 'WebFetch', 'WebSearch', FERRAMENTAS_NEGADAS]
       // Economia: só as ferramentas que o pedido usa vão ao Claude (recursos-claude.cjs; Claude antigo: nada muda).
       const args = ['-p', '--output-format', 'json', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, ...argsEnxutos(recursos, pasta === null ? '' : 'Read,Glob,Grep'), ...(pasta === null ? [] : ['--allowedTools', 'Read,Glob,Grep']), ...(pasta === null ? [] : addDirs.flatMap((d) => ['--add-dir', d])), '--disallowedTools', negadas.join(',')]
+      const inicio = new Date().toISOString()
       const r = await executar(args, { cwd, entrada: pedido, timeoutMs, maxSaida, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dadosApp) }) })
       let texto = r.saida
       let j = null
       try { j = JSON.parse(r.saida) } catch { /* saída já era o texto */ }
+      // Medição (24/11/2026): os números de cada pedido ficam na obra (.atlas/consumo.jsonl), sem o texto, para estudar onde gasta.
+      if (pasta !== null && j && typeof j === 'object') { const c = consumoDoResultado({ ...j, type: 'result' }); if (c) registrarConsumo(cwd, { inicio, fim: new Date().toISOString(), tipo: String(tipo).slice(0, 40), ...c }) }
       if (j && typeof j === 'object') {
         if (j.is_error === true) throw new Error(RE_COTA.test(String(j.result ?? '')) ? 'claude-cota' : 'claude-falhou')
         if (typeof j.result === 'string') texto = j.result

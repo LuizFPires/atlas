@@ -28,7 +28,7 @@ Em palavras simples: a obra é feita em etapas pequenas (milestones), sempre do 
 ### Na obra do Atlas (`ATLAS_APP=1`) — economia de tokens
 O Atlas roda você sem ninguém no terminal e acompanha tudo pelo painel. Cada turno parado e religado custa caro (você relê tudo do zero), então:
 - **Nunca use `AskUserQuestion`** e não releia `~/.claude/recomendado.json`: o modo vem no retrato da entrada.
-- **Automático**: siga as 4 etapas e os milestones seguintes sem parar. **Sem checkpoint** (o painel mostra o avanço e o cliente pausa quando quiser).
+- **Automático**: siga as 4 etapas sem parar. **Sem checkpoint** (o painel mostra o avanço e o cliente pausa quando quiser). Depois do merge de cada milestone, encerre o turno com uma linha curta: o Atlas religa você em 1 minuto, de **contexto limpo** e com o estado pronto. Levar a conversa inteira para o milestone seguinte custa mais (cada passo relê tudo) e piora a atenção.
 - **Passo a passo**: siga as 4 etapas do milestone sem parar. Depois do merge (etapa 4), encerre o turno com uma linha curta; o Atlas pede o OK do cliente e religa você.
 - Só pare antes disso pelos motivos de "Quando parar e perguntar" (com as `OPÇÃO N:`).
 - **Sem retratos e resumos longos** entre etapas: uma linha por etapa basta. O que importa fica no PLAN, no git, no PR e no `roteiro.json`.

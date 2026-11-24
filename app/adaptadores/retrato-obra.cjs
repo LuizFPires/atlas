@@ -76,7 +76,7 @@ function retratoDaObra(cwd, { modo = null, ultimoFim = null } = {}) {
     const pend = Array.isArray(r.pendencias) ? r.pendencias.slice(0, 4).map((x) => dado(x, 100)).filter(Boolean) : []
     linhas.push(`- Roteiro salvo: ${dado(r.milestone, 10) || '?'} · etapa concluída ${Number.isInteger(r.etapa_concluida) ? r.etapa_concluida : 0}${Number.isInteger(r.pr) ? ` · PR #${r.pr}` : ''}${pend.length ? ` · pendências: ${pend.join('; ')}` : ''}.`)
   }
-  if (modo === 'automatico') linhas.push('- Modo: automático (não pare entre etapas nem para checkpoint; o Atlas acompanha pelo painel).')
+  if (modo === 'automatico') linhas.push('- Modo: automático (não pare entre etapas nem para checkpoint; depois do merge do milestone, encerre o turno: o Atlas religa você de contexto limpo).')
   else if (modo === 'passo-a-passo') linhas.push('- Modo: passo a passo (siga sem parar dentro do milestone; pare só depois do merge dele).')
   if (ultimoFim && MOTIVO_FIM[ultimoFim.motivo]) linhas.push(`- Última vez: ${MOTIVO_FIM[ultimoFim.motivo]}.`)
   linhas.push('- O GitHub, a Vercel e o Supabase deste computador já foram conferidos pelo Atlas.')

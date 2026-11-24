@@ -236,7 +236,7 @@ function criarAjuda({ raiz, dadosApp, disparo, shell, dialog = null, janela = ()
       conversando = true
       try {
         let texto
-        try { texto = await disparo.perguntar(pasta, pedido, { timeoutMs: 120_000, maxSaida: 400_000, permitirGit: true, addDirs }) } catch (err) {
+        try { texto = await disparo.perguntar(pasta, pedido, { timeoutMs: 120_000, maxSaida: 400_000, permitirGit: true, addDirs, tipo: 'ajuda' }) } catch (err) {
           // Obra com config suspeita/sumida não derruba a Ajuda: pergunta sem pasta (nenhuma ferramenta).
           if (pasta && err && (err.message === 'obra-com-config-suspeita' || err.message === 'obra-inexistente' || err.message === 'obra-invalida')) {
             texto = await disparo.perguntar(null, pedido.replace(/\n\n## Imagem do print\n[^\n]*/, ''), { timeoutMs: 120_000, maxSaida: 400_000 })

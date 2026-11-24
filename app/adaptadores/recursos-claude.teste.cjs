@@ -87,3 +87,17 @@ test('linha da obra: a parte que muda sai do começo (cache entre religadas); o 
   await cota.ler('obra')
   assert.equal(testes[0][testes[0].indexOf('--tools') + 1], '')
 })
+
+test('medição: todo pedido com obra (protótipo, Ajuda, estilo…) deixa os números de consumo na obra, com o tipo, sem o texto', async () => {
+  const fs = require('node:fs'), os = require('node:os'), path = require('node:path')
+  const { criarDisparo } = require('./projeto-comum.cjs')
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-rec-')); fs.mkdirSync(path.join(raiz, 'obra'))
+  const d = criarDisparo({ raiz, dadosApp: fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-rec-')), claudeEstado: async () => ({ conectado: true }), resolver: () => ({ cmd: 'x' }),
+    executar: async () => ({ codigo: 0, saida: JSON.stringify({ type: 'result', is_error: false, result: 'texto secreto', num_turns: 3, total_cost_usd: 0.12, usage: { output_tokens: 900 } }) }) })
+  await d.perguntar('obra', 'oi', { tipo: 'protótipo · lote' })
+  const l = fs.readFileSync(path.join(raiz, 'obra', '.atlas', 'consumo.jsonl'), 'utf8')
+  const j = JSON.parse(l.trim())
+  assert.equal(j.tipo, 'protótipo · lote')
+  assert.equal(j.saida, 900)
+  assert.doesNotMatch(l, /secreto/)
+})

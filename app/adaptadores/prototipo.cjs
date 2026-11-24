@@ -329,7 +329,7 @@ function criarPrototipo({ raiz, disparo }) {
       garantirSubpasta(raiz, pasta, 'prototipo')
       gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'obra.json'), JSON.stringify({ nome }))
       if (textoRelato.trim()) gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'relato.md'), `# Relato do cliente\n\n${textoRelato.trim()}\n`)
-      const mapa = mapaDoJson(extrairJson(await disparo.perguntar(pasta, pedidoMapa(nome, est, textoRelato, anexosDaObra(raiz, pasta)), { timeoutMs: 600_000, maxSaida: 2_000_000 }), 'objeto'))
+      const mapa = mapaDoJson(extrairJson(await disparo.perguntar(pasta, pedidoMapa(nome, est, textoRelato, anexosDaObra(raiz, pasta)), { timeoutMs: 600_000, maxSaida: 2_000_000, tipo: 'protótipo · mapa' }), 'objeto'))
       gravarAtomico(arqMapa(pasta), JSON.stringify({ versao: 1, telas: mapa }))
       return mapa
     } finally { andamento.delete(pasta) }
@@ -348,7 +348,7 @@ function criarPrototipo({ raiz, disparo }) {
       let falhou = false // um lote falhou: os que rodam juntos não publicam mais nada nem pegam lote novo
       const publicar = () => falhou || andamento.set(pasta, { fase: 'pintando', mapa: resumoMapa, telas: atuais() })
       const desenharLote = async (lote, referencia) => {
-        const r = telasDoJson({ ...extrairJson(await disparo.perguntar(pasta, pedidoLote(nome, est, mapa, lote, referencia, anexosDaObra(raiz, pasta)), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto') })
+        const r = telasDoJson({ ...extrairJson(await disparo.perguntar(pasta, pedidoLote(nome, est, mapa, lote, referencia, anexosDaObra(raiz, pasta)), { timeoutMs: 900_000, maxSaida: 8_000_000, tipo: 'protótipo · telas' }), 'objeto') })
         const pedidos = new Set(lote.map((t) => t.id))
         if (!r.telas.every((t) => pedidos.has(t.id))) throw new Error('telas-invalidas') // nada fora do lote
         for (const t of r.telas) {
@@ -482,7 +482,7 @@ function criarPrototipo({ raiz, disparo }) {
         const e = ler(pasta)
         const atual = e.versoes.find((v) => v.numero === e.atual)
         if (!atual) throw new Error('sem-prototipo')
-        const bruto = extrairJson(await disparo.perguntar(pasta, pedidoAjustar(String(pedido), atual.telas.map((t) => `${t.id} (${t.nome}, ${t.aparelho ?? "celular"})`), atual.numero), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto')
+        const bruto = extrairJson(await disparo.perguntar(pasta, pedidoAjustar(String(pedido), atual.telas.map((t) => `${t.id} (${t.nome}, ${t.aparelho ?? "celular"})`), atual.numero), { timeoutMs: 900_000, maxSaida: 8_000_000, tipo: 'protótipo · ajuste' }), 'objeto')
         // Pedido grande: veio só o plano. O Atlas desenha em partes de LOTE, até LOTES_JUNTOS ao mesmo tempo (como no 1º desenho).
         const plano = planoDoJson(bruto)
         if (plano) {
@@ -493,7 +493,7 @@ function criarPrototipo({ raiz, disparo }) {
           const feitas = new Map()
           const trabalhador = async () => {
             for (let l = lotes.shift(); l; l = lotes.shift()) {
-              const parte = telasDoJson({ ...extrairJson(await disparo.perguntar(pasta, pedidoLoteAjuste(String(pedido), mapa, l, referencia, anexosDaObra(raiz, pasta)), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto') })
+              const parte = telasDoJson({ ...extrairJson(await disparo.perguntar(pasta, pedidoLoteAjuste(String(pedido), mapa, l, referencia, anexosDaObra(raiz, pasta)), { timeoutMs: 900_000, maxSaida: 8_000_000, tipo: 'protótipo · ajuste' }), 'objeto') })
               const pedidos = new Map(l.map((t) => [t.id, t]))
               for (const t of parte.telas) if (pedidos.has(t.id)) feitas.set(t.id, { ...t, nome: pedidos.get(t.id).nome, aparelho: pedidos.get(t.id).aparelho }) // nome e aparelho: os do plano
             }
@@ -532,7 +532,7 @@ function criarPrototipo({ raiz, disparo }) {
         const atual = e.versoes.find((v) => v.numero === e.atual)
         const tela = atual?.telas.find((t) => t.id === String(telaId))
         if (!tela) throw new Error('tela-inexistente')
-        const bruto = extrairJson(await disparo.perguntar(pasta, pedidoVersoes(tela, nomeVersao(atual.numero)), { timeoutMs: 900_000, maxSaida: 8_000_000 }), 'objeto')
+        const bruto = extrairJson(await disparo.perguntar(pasta, pedidoVersoes(tela, nomeVersao(atual.numero)), { timeoutMs: 900_000, maxSaida: 8_000_000, tipo: 'protótipo · 3 versões' }), 'objeto')
         const v = versoesDoJson(bruto)
         // Guardadas na obra para o "misturar" ("a foto da 3 com os passos da 2"): o Claude lê daqui no ajuste.
         fs.mkdirSync(caminhoSeguro(raiz, pasta, 'prototipo', 'comparar'), { recursive: true })
@@ -551,7 +551,7 @@ function criarPrototipo({ raiz, disparo }) {
         const atual = e.versoes.find((v) => v.numero === e.atual)
         const tela = atual?.telas.find((t) => t.id === String(telaId))
         if (!tela) throw new Error('tela-inexistente')
-        const bruto = extrairJson(await disparo.perguntar(pasta, pedidoMarcacao(tela, nomeVersao(atual.numero), px, py), { timeoutMs: 180_000, maxSaida: 200_000 }), 'objeto')
+        const bruto = extrairJson(await disparo.perguntar(pasta, pedidoMarcacao(tela, nomeVersao(atual.numero), px, py), { timeoutMs: 180_000, maxSaida: 200_000, tipo: 'protótipo · marcação' }), 'objeto')
         return marcacaoDoJson(bruto)
       })
     },
