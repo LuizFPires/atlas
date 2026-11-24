@@ -123,9 +123,15 @@ const REALCE = '<style>a[href^="#tela-"]:not([href="#tela-falta"]){position:rela
  * tela não vaza para a outra) e só uma aparece por vez. Os links <a href="#tela-ID"> trocam a tela (CSS :target).
  * Abre na tela `inicial`. Mesmo documento para o celular ao lado e para o link do celular. Devolve null se for grande demais.
  */
+/** Teto do protótipo navegável (todas as telas num documento): ~1.300 telas premium. Antes era ~1 MB e passava de 35-40 telas
+ *  a navegação sumia (Luiz, 24/11/2026: o protótipo cresce além de 40 telas e "não pode travar, em hipótese alguma"). */
+export const MAX_NAVEGAVEL = 40_000_000
+/** Teto do que sobe para o celular (servidor: prototipo-link.ts MAX_DOCUMENTO). Maior que isso, o celular mostra só a lista. */
+export const MAX_DOC_CELULAR = 10_000_000
+
 export function montarNavegavel(telas: TelaDesenhada[], inicial: string, o: { realce?: boolean } = {}): string | null {
   const total = telas.reduce((n, t) => n + t.html.length, 0)
-  if (total > MAX_HTML * 2 || telas.length === 0) return null
+  if (total > MAX_NAVEGAVEL || telas.length === 0) return null
   const ids = telas.map((t) => t.id).filter((id) => /^[a-z0-9][a-z0-9-]*$/.test(id))
   const abre = ids.includes(inicial) ? inicial : ids[0]
   const estilo = `<style>html,body{margin:0;padding:0}section{display:none;min-height:100vh}section:target{display:block}body:not(:has(section:target)) #tela-${abre}{display:block}</style>`

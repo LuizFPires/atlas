@@ -18,6 +18,7 @@ const recado = (e: unknown) => {
     case 'link-negado': return 'Não consegui conferir a sua licença para gerar o link. Confira a internet e tente de novo.'
     case 'muitos-links': return 'Você gerou muitos links agora há pouco. Espere alguns minutos e tente de novo.'
     case 'sem-conexao': return 'Sem internet agora. Assim que voltar, tente de novo.'
+    case 'grande-para-celular': return 'O protótipo ficou grande demais para abrir de uma vez no celular. No computador ele continua inteiro, com todas as telas.'
     default: return 'Não consegui gerar o link agora. Tente de novo em instantes.'
   }
 }

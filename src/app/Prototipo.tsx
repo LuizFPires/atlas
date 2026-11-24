@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Botao, Icone, Microfone, Trabalhando, useVoz } from '../ui'
 import { andamentoDoDesenho } from './andamento-telas'
 import { Pintor } from './Pintor'
@@ -12,7 +12,7 @@ import { dicasDaTela } from './dicas-do-atlas'
 import { conferirTelas, pedidoDaConferencia } from './conferencia-telas'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EstiloProposto } from './ponte-estilo'
-import { aparelhoDaTela, montarNavegavel, montarSrcDoc, SANDBOX_PREVIEW, type Aparelho, type EstadoProto, type PontePrototipo, type ProgressoProto, type TelaDesenhada, type VersaoDaTela } from './ponte-prototipo'
+import { aparelhoDaTela, MAX_DOC_CELULAR, montarNavegavel, montarSrcDoc, SANDBOX_PREVIEW, type Aparelho, type EstadoProto, type PontePrototipo, type ProgressoProto, type TelaDesenhada, type VersaoDaTela } from './ponte-prototipo'
 import type { ObraDoEstilo } from './Estilo'
 import './prototipo.css'
 
@@ -53,7 +53,8 @@ export function escalaDoCelular(largura: number, altura: number): number {
  *  sem rolagem de lado nem texto quebrando diferente (antes ele tinha a largura da moldura, ~220 px num notebook). */
 export function CelularPreview({ html, titulo, telas, inicial, realce = false }: { html: string; titulo: string; telas?: TelaDesenhada[]; inicial?: string; realce?: boolean }) {
   // Com todas as telas: protótipo NAVEGÁVEL (tocar num botão leva à outra tela). Sem elas: só esta tela.
-  const doc = telas && inicial ? montarNavegavel(telas, inicial, { realce }) : montarSrcDoc(html)
+  // Memo: com muitas telas o documento é grande; não remonta a cada render, só quando as telas ou a tela inicial mudam.
+  const doc = useMemo(() => (telas && inicial ? montarNavegavel(telas, inicial, { realce }) : montarSrcDoc(html)), [telas, inicial, realce, html])
   const vidro = useRef<HTMLDivElement>(null)
   const [escala, setEscala] = useState(1)
   useEffect(() => {
@@ -80,7 +81,7 @@ export function CelularPreview({ html, titulo, telas, inicial, realce = false }:
 
 /** Prévia no computador: janela de navegador com a tela em 1280 × 800, reduzida para caber inteira (nunca rola de lado). */
 export function ComputadorPreview({ telas, inicial, titulo, realce = false }: { telas: TelaDesenhada[]; inicial: string; titulo: string; realce?: boolean }) {
-  const doc = montarNavegavel(telas, inicial, { realce })
+  const doc = useMemo(() => montarNavegavel(telas, inicial, { realce }), [telas, inicial, realce])
   const vidro = useRef<HTMLDivElement>(null)
   const [escala, setEscala] = useState(1)
   useEffect(() => {
@@ -355,6 +356,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
             // Vai o protótipo NAVEGÁVEL (o mesmo do celular ao lado), começando na primeira tela.
             const doc = montarNavegavel(versao.telas, versao.telas[0].id)
             if (!doc) throw new Error('prototipo-invalido')
+            if (doc.length > MAX_DOC_CELULAR) throw new Error('grande-para-celular')
             return prototipo.linkCelular!(obra.nome, doc)
           }}
           whatsapp={prototipo.whatsapp ? (u) => prototipo.whatsapp!(u) : undefined}
