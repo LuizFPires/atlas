@@ -186,3 +186,20 @@ test('a logo do cliente é só do tipo logo: SVG fora, PDF e WebP dentro', async
   const f = criarArquivosFixture()
   await expect(f.guardar('obra', 'marca', f.registrar('logo', { nome: 'x.svg', tamanho: 1 }))).rejects.toThrow('tipo-nao-aceito')
 })
+
+// Luiz, 24/11/2026: "cliquei em sugerir outros e não aparece nada na tela. Fica congelado."
+test('"Sugerir outros": mostra que o Atlas está pensando (botão e aviso) até os nomes novos chegarem', async () => {
+  const base = criarBatismoFixture()
+  let liberar: () => void = () => {}
+  let vez = 0
+  const lento: PonteBatismo = { ...base, sugerir: async (...a: Parameters<PonteBatismo['sugerir']>) => { vez++; if (vez > 1) await new Promise<void>((r) => { liberar = r }); return base.sugerir(...a) } }
+  const { user } = montar(lento)
+  await screen.findAllByRole('radio')
+  await user.click(screen.getByRole('button', { name: /Sugerir outros/ }))
+  expect(screen.getByRole('button', { name: /Pensando em outros nomes/ })).toBeDisabled()
+  expect(screen.getByText('O Claude está pensando em outros nomes')).toBeInTheDocument()
+  expect(screen.getByRole('radiogroup', { name: 'Nomes sugeridos' })).toHaveAttribute('aria-busy', 'true')
+  liberar()
+  expect(await screen.findByRole('button', { name: /Sugerir outros/ })).toBeEnabled()
+  expect(screen.queryByText('O Claude está pensando em outros nomes')).toBeNull()
+})

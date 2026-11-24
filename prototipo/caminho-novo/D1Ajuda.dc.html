@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Ajuda do Atlas em destaque</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} @keyframes pulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.55)}70%{box-shadow:0 0 0 14px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}} @keyframes onda{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}} @keyframes gira{to{transform:rotate(360deg)}} .onda span{display:block;width:4px;border-radius:2px;background:#F05A4F;animation:onda 1s infinite ease-in-out}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden;position:relative">
+ <div style="display:flex;flex:1;filter:blur(5px) saturate(.7);opacity:.45;pointer-events:none">
+  <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+  <main style="flex:1;padding:32px 40px;display:flex;flex-direction:column;gap:20px">
+   <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA</span>
+   <h1 style="margin:0;font-size:40px">Tudo pronto, Zé. Agora vamos construir.</h1>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px"><div style="height:400px;border-radius:20px;border:1px solid {{t.lime}};background:{{t.card}}"></div><div style="height:400px;border-radius:20px;background:{{t.card}}"></div></div>
+   <div style="height:280px;border-radius:20px;background:{{t.card}}"></div>
+  </main>
+ </div>
+ <div style="position:absolute;inset:0 520px 0 0;background:rgba(10,11,12,.35)" title="Clicar aqui fecha a Ajuda"></div>
+ <aside aria-label="Ajuda do Atlas" style="position:absolute;top:0;right:0;bottom:0;width:520px;background:{{t.card}};border-left:1px solid {{t.lime}};box-shadow:-30px 0 80px rgba(0,0,0,.55);display:flex;flex-direction:column">
+  <header style="display:flex;align-items:center;gap:14px;padding:22px 24px;border-bottom:1px solid {{t.cardB}}">
+   <span style="width:44px;height:44px;border-radius:12px;background:{{t.card2}};display:flex;align-items:center;justify-content:center;color:{{t.lime}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg></span>
+   <div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:19px">Ajuda do Atlas</b><span style="font-size:14px;color:{{t.limeTxt}}">● responde na hora, a qualquer hora</span></div>
+   <span style="margin-left:auto;font-size:22px;color:{{t.mute}}">✕</span>
+  </header>
+  <div style="flex:1;padding:22px 24px;display:flex;flex-direction:column;gap:12px">
+   <div style="align-self:flex-start;max-width:86%;background:{{t.card2}};border-radius:16px;padding:14px 16px;font-size:16px;line-height:1.5">Oi, Zé. Estou aqui, a qualquer hora. Me conta o que está acontecendo? Pode falar, escrever ou mandar um print.</div>
+  </div>
+  <footer style="padding:16px 24px 22px;border-top:1px solid {{t.cardB}};display:flex;flex-direction:column;gap:12px">
+   <sc-if value="{{ouvindo}}" hint-placeholder-val="{{ true }}">
+    <div role="status" style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:14px;border:1px solid #F05A4F;background:rgba(240,90,79,.08)">
+     <div style="display:flex;align-items:center;gap:10px"><span class="onda" style="display:flex;align-items:center;gap:3px;height:18px"><span style="height:18px"></span><span style="height:18px;animation-delay:.15s"></span><span style="height:18px;animation-delay:.3s"></span><span style="height:18px;animation-delay:.45s"></span></span><b style="font-size:15px">Ouvindo…</b><span style="font-size:14px;color:{{t.mute}}">Fale à vontade. Quando terminar, aperte o microfone.</span></div>
+     <span style="font-size:15px;line-height:1.45;color:{{t.text}};opacity:.8">"o meu site não está abrindo no celular, aparece uma tela branca…"</span>
+    </div>
+   </sc-if>
+   <sc-if value="{{escrevendo}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid {{t.lime}};background:{{t.soft}}"><span style="width:16px;height:16px;border-radius:8px;border:2px solid {{t.lime}};border-top-color:transparent;animation:gira 1s linear infinite"></span><b style="font-size:15px">Escrevendo o que você falou…</b><span style="font-size:14px;color:{{t.mute}}">Leva só uns segundos.</span></div>
+   </sc-if>
+   <div style="display:flex;gap:8px"><span style="height:36px;padding:0 12px;border-radius:999px;border:1px solid {{t.cardB}};display:flex;align-items:center;font:600 14px 'Geist',sans-serif">Tirar print da tela</span><span style="height:36px;padding:0 12px;border-radius:999px;border:1px solid {{t.cardB}};display:flex;align-items:center;font:600 14px 'Geist',sans-serif">Anexar imagem</span></div>
+   <div style="display:flex;align-items:center;gap:10px">
+    <button onClick="{{alternar}}" aria-label="Microfone" style="width:52px;height:52px;border-radius:26px;border:none;background:{{micBg}};color:{{micCor}};display:flex;align-items:center;justify-content:center;cursor:pointer;animation:{{micAnim}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+    <div style="flex:1;height:52px;border-radius:12px;border:1px solid {{t.cardB}};background:{{t.input}};display:flex;align-items:center;padding:0 14px;color:{{t.mute2}};font-size:15px">{{campo}}</div>
+    <span style="width:52px;height:52px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;font-weight:700">→</span>
+   </div>
+   <span style="font-size:12px;color:{{t.mute2}}">Clique no microfone para alternar: ouvindo → escrevendo → texto no campo.</span>
+  </footer>
+ </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', ambar: '#F2B84B', ambarSoft: 'rgba(242,184,75,.14)', terra: '#2A2620', terraLinha: '#4A4134', cena: '#1A1D21', selo: 'rgba(16,18,20,.82)', seloTxt: '#EDEFEA' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', ambar: '#A86A00', ambarSoft: 'rgba(214,150,30,.14)', terra: '#E9E2D4', terraLinha: '#CDBFA5', cena: '#EEF0EA', selo: 'rgba(255,255,255,.92)', seloTxt: '#1B1E22' }
+};
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { fase: 0 }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const f = this.state.fase;
+    return { t, tema, ouvindo: f === 0, escrevendo: f === 1, campo: f === 2 ? 'o meu site não está abrindo no celular, aparece uma tela branca' : 'Fale ou escreva o que aconteceu…',
+      micBg: f === 0 ? '#F05A4F' : t.card2, micCor: f === 0 ? '#fff' : t.text, micAnim: f === 0 ? 'pulso 1.4s infinite' : 'none', alternar: () => this.setState({ fase: (f + 1) % 3 }) };
+  }
+}
+</script>
+</body>
+</html>

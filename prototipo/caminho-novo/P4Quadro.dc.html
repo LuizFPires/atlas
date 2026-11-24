@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · O protótipo · Quadro de telas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} @keyframes pulso{0%{box-shadow:0 0 0 0 rgba(198,241,53,.6)}70%{box-shadow:0 0 0 14px rgba(198,241,53,0)}100%{box-shadow:0 0 0 0 rgba(198,241,53,0)}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <div style="width:76px;background:#101214;border-right:1px solid #22262B;display:flex;flex-direction:column;align-items:center;padding:22px 0;gap:14px;flex:none">
+  <span style="width:40px;height:40px;border-radius:20px;background:#141619;border:1px solid #2C3036;color:#C6F135;display:flex;align-items:center;justify-content:center;font-weight:800">A</span>
+  <span style="width:48px;height:48px;border-radius:12px;background:#1E2125;display:flex;align-items:center;justify-content:center;color:#EDEFEA">+</span>
+  <span style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#8E968C">⌂</span>
+  <span style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#8E968C">✓</span>
+ </div>
+ <main style="flex:1;min-width:0;display:flex;flex-direction:column">
+  <header style="display:flex;align-items:center;gap:16px;padding:16px 24px;border-bottom:1px solid {{t.cardB}}">
+   <div style="display:flex;flex-direction:column;gap:2px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">4 · O PROTÓTIPO · VERSÃO 2</span><b style="font-size:20px">Colore</b></div>
+   <div style="display:flex;align-items:center;gap:6px;margin-left:24px;padding:4px;border-radius:12px;background:{{t.card}};border:1px solid {{t.cardB}}"><button onClick="{{menos}}" style="width:34px;height:34px;border-radius:9px;border:none;background:transparent;color:{{t.text}};font-size:18px;cursor:pointer">−</button><span style="font:600 13px 'Geist Mono',monospace;width:52px;text-align:center">{{zoomTxt}}</span><button onClick="{{mais}}" style="width:34px;height:34px;border-radius:9px;border:none;background:transparent;color:{{t.text}};font-size:18px;cursor:pointer">+</button><button onClick="{{ajustar}}" style="height:34px;padding:0 10px;border-radius:9px;border:none;background:transparent;color:{{t.mute}};font:600 13px 'Geist',sans-serif;cursor:pointer">Ver todas</button></div>
+   <span style="font-size:13px;color:{{t.mute}}">5 telas · conferidas ✓</span>
+   <a href="P5Play.dc.html" style="margin-left:auto;display:flex;align-items:center;gap:10px;height:46px;padding:0 20px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font:700 15px 'Geist',sans-serif;text-decoration:none;animation:pulso 1.8s infinite"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l14 8-14 8z"/></svg>Usar o sistema</a>
+   <span style="height:46px;padding:0 18px;border-radius:12px;border:1px solid {{t.cardB}};display:flex;align-items:center;font:600 15px 'Geist',sans-serif">Aprovar: abrir as contas →</span>
+  </header>
+  <section style="flex:1;min-height:0;position:relative;overflow:hidden;background-color:#0F1113;background-image:radial-gradient(#2A2E33 1px,transparent 1px);background-size:22px 22px">
+   <div style="position:absolute;left:40px;top:34px;display:flex;gap:{{gap}}px;transform:scale({{zoom}});transform-origin:0 0">
+    <sc-for list="{{telas}}" as="x" hint-placeholder-count="5">
+     <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+      <button onClick="{{x.sel}}" style="display:flex;align-items:center;gap:10px;background:transparent;border:none;color:{{t.text}};cursor:pointer;padding:0"><span style="min-width:34px;height:34px;padding:0 8px;border-radius:17px;background:{{x.bolaBg}};color:{{x.bolaCor}};display:flex;align-items:center;justify-content:center;font:700 16px 'Geist Mono',monospace;box-sizing:border-box">{{x.n}}</span><b style="font-size:20px">{{x.nome}}</b></button>
+      <div style="width:390px;height:844px;border-radius:36px;overflow:hidden;outline:{{x.borda}};outline-offset:6px;box-shadow:0 20px 60px rgba(0,0,0,.5);position:relative">
+       <dc-import name="AppColore" tela="{{x.id}}" hint-size="390px,844px"></dc-import>
+       <a href="P5Play.dc.html" style="position:absolute;inset:0" aria-label="Usar o sistema a partir desta tela"></a>
+      </div>
+      <span style="font-size:16px;color:{{t.mute}};max-width:390px;line-height:1.4">{{x.leva}}</span>
+     </div>
+    </sc-for>
+   </div>
+   <div style="position:absolute;left:50%;bottom:22px;transform:translateX(-50%);width:820px;display:flex;align-items:center;gap:12px;padding:12px;border-radius:20px;background:rgba(30,33,37,.94);border:1px solid {{t.cardB}};box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <span style="width:52px;height:52px;border-radius:26px;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;flex:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+    <span style="display:{{dispChip}};flex:none;padding:6px 10px;border-radius:999px;background:{{t.soft}};color:{{t.limeTxt}};font:600 13px 'Geist Mono',monospace">TELA {{selN}}</span>
+    <span style="flex:1;font-size:16px;color:{{t.mute2}}">{{dica}}</span>
+    <span style="height:46px;padding:0 18px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;font-weight:700">Enviar</span>
+   </div>
+  </section>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', ambar: '#F2B84B', ambarSoft: 'rgba(242,184,75,.14)', terra: '#2A2620', terraLinha: '#4A4134', cena: '#1A1D21', selo: 'rgba(16,18,20,.82)', seloTxt: '#EDEFEA' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', ambar: '#A86A00', ambarSoft: 'rgba(214,150,30,.14)', terra: '#E9E2D4', terraLinha: '#CDBFA5', cena: '#EEF0EA', selo: 'rgba(255,255,255,.92)', seloTxt: '#1B1E22' }
+};
+const TELAS = [
+  { id: 'inicio', nome: 'Início', leva: 'Leva para Pedidos, Novo orçamento e Clientes.' },
+  { id: 'pedidos', nome: 'Pedidos', leva: 'Toque num pedido para ver o detalhe.' },
+  { id: 'novo', nome: 'Novo orçamento', leva: 'Escolhe cliente, cor e lata; manda pelo WhatsApp.' },
+  { id: 'clientes', nome: 'Clientes', leva: 'Histórico de cores de cada cliente.' },
+  { id: 'estoque', nome: 'Estoque', leva: 'Avisa as cores que estão acabando.' }
+];
+const ZOOMS = [0.3, 0.4, 0.55, 0.75, 1];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { z: 1, sel: null }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const { z, sel } = this.state; const zoom = ZOOMS[z];
+    const telas = TELAS.map((x, i) => ({ ...x, n: String(i + 1), bolaBg: sel === i ? t.lime : t.card, bolaCor: sel === i ? t.onLime : t.text, borda: sel === i ? `4px solid ${t.lime}` : '1px solid #2C3036', sel: () => this.setState({ sel: sel === i ? null : i }) }));
+    return { t, tema, telas, zoom, gap: 90, zoomTxt: Math.round(zoom * 100) + '%', menos: () => this.setState({ z: Math.max(0, z - 1) }), mais: () => this.setState({ z: Math.min(ZOOMS.length - 1, z + 1) }), ajustar: () => this.setState({ z: 1 }),
+      dispChip: sel === null ? 'none' : 'inline-flex', selN: sel === null ? '' : String(sel + 1),
+      dica: sel === null ? 'Toque no número de uma tela, ou fale: "tela 4, aumente o botão de ligar"' : `Fale o que mudar na tela ${sel + 1} · ${TELAS[sel].nome}` };
+  }
+}
+</script>
+</body>
+</html>

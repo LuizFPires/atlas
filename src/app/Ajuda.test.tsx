@@ -108,3 +108,18 @@ test('aberta por um erro, a Ajuda não liga o microfone sozinha', () => {
     expect(inicios).toHaveLength(0)
   } finally { delete w.SpeechRecognition }
 })
+
+// Luiz, 24/11/2026: com a Ajuda aberta ouvindo, apertar de novo o "Falar com o Atlas" do menu recriava o painel e recomeçava a
+// gravação: a fala nunca era escrita. Agora o mesmo botão liga e desliga o microfone da Ajuda que está aberta.
+test('"Falar com o Atlas" com a Ajuda aberta: o mesmo botão para de ouvir e manda escrever (não recomeça)', async () => {
+  const { usarMotorDeVoz, estadoVoz } = await import('../ui/voz-motor')
+  const chamadas: string[] = []
+  usarMotorDeVoz({ preparar: async () => {}, transcrever: async () => 'meu site não abre' }, async () => { chamadas.push('gravar'); return { parar: async () => new Float32Array([0.2, 0.3]), cancelar: () => chamadas.push('cancelar') } }, { forcar: true })
+  const { rerender } = render(<TemaProvider><Ajuda ajuda={criarAjudaFixture()} contexto={{ origem: 'menu', ouvir: true }} onFechar={() => {}} toqueVoz={0} /></TemaProvider>)
+  await screen.findByRole('button', { name: 'Parar de gravar' })
+  rerender(<TemaProvider><Ajuda ajuda={criarAjudaFixture()} contexto={{ origem: 'menu', ouvir: true }} onFechar={() => {}} toqueVoz={1} /></TemaProvider>)
+  expect(await screen.findByDisplayValue('meu site não abre')).toBeInTheDocument()
+  expect(chamadas).toEqual(['gravar'])
+  expect(estadoVoz().fase).toBe('livre')
+  usarMotorDeVoz(null, undefined, { forcar: false })
+})

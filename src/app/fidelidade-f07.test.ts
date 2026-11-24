@@ -2,7 +2,7 @@
 // Diferenças conscientes: o 📎 é ícone SVG (clipe) e só aparece se há PonteArquivos; o botão do microfone usa o rótulo comum "Falar"
 // (componente Microfone do Atlas) e o enviar/Enviar é o mesmo; o preview é um iframe sandbox sem scripts (o protótipo desenha o celular
 // inline); o rótulo do cabeçalho em caixa alta vem do CSS; "Versões guardadas" (chips v1, v2...) é novo, para voltar a qualquer versão
-// (o protótipo só mostra "Voltar à versão N-1"); o botão final "dar o nome" volta às obras até a F07b existir (M17);
+// (o protótipo só mostra "Voltar à versão N-1"); o botão final agora leva às contas (caminho novo: ideia, visual, nome, protótipo, contas; Luiz, 24/11/2026);
 // as 4 abas abrem 4 telas reais (o protótipo só desenha 2); a agenda de exemplo e os horários ocupados são os mesmos.
 import proto from '../../prototipo/F07Prototipo.dc.html?raw'
 import { ESTILOS_EXEMPLO } from './ponte-estilo'
@@ -14,7 +14,6 @@ test('textos fixos da tela batem com o protótipo', () => {
   for (const t of [
     'PROJETO 2 DE 3 · TELAS',
     'Voltar à versão',
-    'Telas do meu jeito: dar o nome →',
     'Fale ou escreva:',
     'troque a cor',
     'tire o campo de e-mail',

@@ -151,3 +151,18 @@ describe('config do electron-builder e scripts', () => {
     expect(s).toMatch(/electron-builder@\d+\.\d+\.\d+/)
   })
 })
+
+// Luiz, 24/11/2026: o ícone do Atlas é uma bola preta (círculo), não um quadrado.
+describe('ícone redondo', () => {
+  it('o ícone tem os 7 tamanhos e o de 256 px tem transparência (RGBA), que deixa os cantos do círculo vazados', async () => {
+    const fs = await import('node:fs')
+    const buf = fs.readFileSync('instalador/recursos/icon.ico')
+    const n = buf.readUInt16LE(4)
+    expect(n).toBeGreaterThanOrEqual(7)
+    // ícone de 256 px guardado como PNG: confere a transparência pelo cabeçalho PNG (cor com alfa) e o tamanho
+    const entradas = Array.from({ length: n }, (_, i) => ({ w: buf[6 + i * 16] || 256, off: buf.readUInt32LE(6 + i * 16 + 12) }))
+    const grande = entradas.find((e) => e.w === 256)!
+    expect(buf.subarray(grande.off + 1, grande.off + 4).toString()).toBe('PNG')
+    expect(buf[grande.off + 25]).toBe(6) // RGBA
+  })
+})

@@ -22,7 +22,7 @@ interface Props {
   /** Para mandar um print ou foto junto do pedido (opcional). */
   arquivos?: PonteArquivos
   onVoltar: () => void
-  /** Segue para dar o nome (F07b, Batismo). */
+  /** Segue para a próxima etapa do caminho: as contas (5). */
   onConcluir?: () => void
 }
 
@@ -331,7 +331,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
           {versao && prototipo.linkCelular && <Botao variante="secundario" onClick={() => setCelular(true)}>Ver no celular</Botao>}
           {anterior && <Botao variante="secundario" disabled={ocupado} onClick={() => void irPara(anterior.numero)}>↶ Voltar à versão {anterior.numero}</Botao>}
           <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
-          <Botao disabled={!versao} onClick={() => onConcluir ? onConcluir() : onVoltar()}>Telas do meu jeito: dar o nome →</Botao>
+          <Botao disabled={!versao} onClick={() => onConcluir ? onConcluir() : onVoltar()}>Telas aprovadas: abrir as contas →</Botao>
         </div>
       </header>
 
