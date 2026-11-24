@@ -159,3 +159,13 @@ test('pausada pelo cliente: não segue', async () => {
   m.passar(5 * 60_000); await m.vigia.rodada()
   assert.equal(m.religadas.length, 0)
 })
+
+// Obra do Guilherme (24/11): a fala chegava ao painel com "**", blocos de código e cortada no meio da palavra ("Quali…").
+test('a fala mostrada ao cliente vem limpa: sem marcação, sem código e cortada no fim de uma frase', () => {
+  const { limparFala } = require('./vigia.cjs')
+  const f = limparFala("Parei no M1 porque duas coisas precisam de você.\nOnde estamos:** Milestone 1, na branch 'feat/m1'.\n'''\ngh auth setup-git\n'''\n" + 'Mais um texto longo. '.repeat(30))
+  assert.ok(!/\*\*|'''|```/.test(f), f)
+  assert.ok(!/gh auth setup-git/.test(f), f)
+  assert.ok(f.length <= 300)
+  assert.match(f, /[.!?]$/)
+})

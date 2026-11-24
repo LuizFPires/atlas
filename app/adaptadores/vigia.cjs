@@ -25,7 +25,17 @@ const textoDe = (cod) => MOTIVO[cod] || MOTIVO.erro
 /** A conta que a fala da linha pede para ligar (o painel mostra o botão "Ligar as contas"). */
 const contaDaFala = (f) => { const m = /\b(GitHub|Vercel|Supabase)\b/i.exec(String(f || '')); return m ? { github: 'GitHub', vercel: 'Vercel', supabase: 'Supabase' }[m[1].toLowerCase()] : null }
 /** A fala da linha, sem o rótulo técnico "USUÁRIO:" e curta. */
-const limparFala = (f) => String(f || '').replace(/^[\s\S]*?USU[AÁ]RIO\s*:\s*/i, '').trim().slice(0, 300)
+/** A fala vai para o painel de um leigo: sem marcação, sem blocos de código e cortada no fim de uma frase (nunca no meio da palavra). */
+const limparFala = (f) => {
+  const t = String(f || '').replace(/^[\s\S]*?USU[AÁ]RIO\s*:\s*/i, '')
+    .replace(/(```|''')[\s\S]*?(?:\1|$)/g, ' ')
+    .replace(/[*_#`]+/g, '')
+    .replace(/\s+/g, ' ').trim()
+  if (t.length <= 300) return t
+  const corte = t.slice(0, 300)
+  const fim = Math.max(corte.lastIndexOf('. '), corte.lastIndexOf('! '), corte.lastIndexOf('? '))
+  return fim > 40 ? corte.slice(0, fim + 1) : corte.slice(0, corte.lastIndexOf(' ')) + '…'
+}
 
 function pctDoPlan(dir) {
   const t = lerTexto(path.join(dir, 'PLAN.md'), 400_000)
@@ -150,4 +160,4 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
   }
 }
 
-module.exports = { criarVigia, BACKOFF_MIN, MAX_TENTATIVAS }
+module.exports = { criarVigia, limparFala, BACKOFF_MIN, MAX_TENTATIVAS }

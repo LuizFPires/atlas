@@ -367,3 +367,22 @@ test('antes de ligar, a obra ganha telas.md e regras.md gerados do protótipo ap
   c.linha.parar('obra'); c.linha.religar('obra')
   assert.equal(fs.readFileSync(path.join(obra, 'regras.md'), 'utf8'), 'MINHAS REGRAS')
 })
+
+// Obra do Guilherme (24/11): o gh fica em "C:/Program Files/...". No arquivo de config do git, aspas soltas são removidas na leitura,
+// então o git rodava "C:/Program" e o push falhava sempre. As aspas precisam ir escapadas (\") para chegar ao shell.
+test('git isolado: o caminho do gh com espaço chega ao git com as aspas (push funciona no Windows)', (t) => {
+  const { spawnSync } = require('node:child_process')
+  if (spawnSync('git', ['--version']).status !== 0) return t.skip('git indisponível')
+  const { envGitIsolado } = require('./construcao.cjs')
+  const dados = tmp()
+  const env = envGitIsolado(dados, '"C:/Program Files/GitHub CLI/gh.exe"')
+  const v = spawnSync('git', ['config', '-f', env.GIT_CONFIG_GLOBAL, '--get-all', 'credential.https://github.com.helper'], { encoding: 'utf8' }).stdout.trim().split('\n').pop()
+  assert.equal(v, '!"C:/Program Files/GitHub CLI/gh.exe" auth git-credential')
+})
+
+// Obra do Guilherme (24/11): a revisão pediu ícones menores, o implementador criou "npm run icones" e a linha não podia rodá-lo.
+// npm run executa só os scripts do package.json da obra, o mesmo nível de confiança do "npm test" que já é permitido.
+test('a linha pode rodar os scripts da própria obra (npm run …)', () => {
+  const ok = require('./construcao.cjs').FERRAMENTAS_LINHA.split(',')
+  assert.ok(ok.includes('Bash(npm run:*)'))
+})

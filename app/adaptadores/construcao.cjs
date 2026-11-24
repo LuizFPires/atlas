@@ -55,7 +55,8 @@ const { detectarCota } = require('./cota.cjs')
  */
 const FERRAMENTAS_LINHA = [
   'Read', 'Write', 'Edit', 'Glob', 'Grep', 'Task', 'TodoWrite',
-  'Bash(npm test)', 'Bash(npm run build)', 'Bash(npm run lint)', 'Bash(npm run typecheck)',
+  // npm run: só os scripts do package.json da obra (mesma confiança do npm test). Ex.: "npm run icones" pedido pela revisão.
+  'Bash(npm test)', 'Bash(npm run:*)', 'Bash(npm run build)', 'Bash(npm run lint)', 'Bash(npm run typecheck)',
   'Bash(git status)', 'Bash(git log:*)', 'Bash(git diff:*)', 'Bash(git add:*)', 'Bash(git commit:*)',
   'Bash(git checkout:*)', 'Bash(git switch:*)', 'Bash(git merge:*)', 'Bash(git push:*)',
   // preparar o projeto (antes só funcionava em máquina que já tinha tudo pronto): peças do software, repositório e remoto
@@ -81,18 +82,19 @@ const FERRAMENTAS_NEGADAS = [
  * core.hooksPath e init.templateDir apontam para uma pasta vazia, fsmonitor desligado. Config de sistema/global do usuário não vale.
  * Isto neutraliza hooks e config do `.git` da obra no nível do ambiente (config local do repo ainda vale, mas hooks não rodam).
  */
-function prepararGitIsolado(dadosApp) {
+function prepararGitIsolado(dadosApp, gh = caminhoGh()) {
   const vazio = path.join(dadosApp, 'git-vazio')
   fs.mkdirSync(vazio, { recursive: true })
   const url = (p) => p.split('\\').join('/')
   const conf = path.join(dadosApp, 'gitconfig-atlas')
   // Autor fixo (a config global do cliente não vale aqui) e push para o GitHub pelo login do gh: nenhuma senha em arquivo.
-  const gh = caminhoGh()
+  // No arquivo de config, aspas soltas somem na leitura: escapadas (\") elas chegam ao shell e o caminho com espaço funciona.
+  const ghConf = gh.split('"').join('\\"')
   const texto = [
     '# Gerado pelo Atlas a cada disparo. Nao editar. Sem segredo.', '[core]', `\thooksPath = "${url(vazio)}"`, '\tfsmonitor = false',
     '[init]', `\ttemplateDir = "${url(vazio)}"`, '\tdefaultBranch = main',
     '[user]', '\tname = Atlas', '\temail = obra@atlas-ia.app.br',
-    '[credential "https://github.com"]', '\thelper =', `\thelper = !${gh} auth git-credential`, '',
+    '[credential "https://github.com"]', '\thelper =', `\thelper = !${ghConf} auth git-credential`, '',
   ].join('\n')
   gravarAtomico(conf, texto)
   return { conf, vazio }
@@ -123,8 +125,8 @@ function caminhoGitBash(env = process.env, existe = fs.existsSync, plataforma = 
 }
 
 /** Variáveis de ambiente do git isolado (ver prepararGitIsolado). */
-function envGitIsolado(dadosApp) {
-  const { conf, vazio } = prepararGitIsolado(dadosApp)
+function envGitIsolado(dadosApp, gh) {
+  const { conf, vazio } = prepararGitIsolado(dadosApp, gh)
   const url = (p) => p.split('\\').join('/')
   const forcado = [
     ['core.hooksPath', url(vazio)], ['core.fsmonitor', 'false'], ['core.sshCommand', ''], ['core.pager', 'cat'], ['core.editor', 'true'], ['diff.external', ''],
