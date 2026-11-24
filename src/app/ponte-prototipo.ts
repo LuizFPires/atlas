@@ -90,10 +90,13 @@ export const SANDBOX_PREVIEW = ''
 export const MAX_HTML = 500_000
 const CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"
 
+/** Sem barra de rolagem visível (ela virava uma faixa branca na lateral do celular); a tela continua rolando com o dedo ou a roda. */
+const SEM_BARRA = '<style>html{scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}</style>'
+
 /** Envolve o HTML não confiável para o `srcdoc` do iframe: a CSP vai antes de tudo. Devolve null se a tela for grande demais. */
 export function montarSrcDoc(html: string): string | null {
   if (html.length > MAX_HTML) return null
-  return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8">${html}`
+  return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8">${SEM_BARRA}${html}`
 }
 
 /** Qualquer href que não seja âncora interna (#...) vira "#": o protótipo nunca navega para fora de si. Depois, todo link que não
@@ -130,7 +133,7 @@ export function montarNavegavel(telas: TelaDesenhada[], inicial: string, o: { re
     .filter((t) => ids.includes(t.id))
     .map((t) => `<section id="tela-${t.id}"><template shadowrootmode="open">${o.realce ? REALCE : ''}${soLinksInternos(t.html, new Set(ids))}</template></section>`)
     .join('') + TELA_FALTA(abre)
-  return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${estilo}${secoes}`
+  return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${SEM_BARRA}${estilo}${secoes}`
 }
 
 // ---- Versões na pasta da obra ---------------------------------------------------------------------------------------------

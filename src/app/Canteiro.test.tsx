@@ -24,6 +24,12 @@ test('Canteiro: só as obras vivas (inacabadas primeiro), com o que falta e o pr
   expect(within(cartoes[0]).getByText(/FALTA TERMINAR · ETAPA 3 DE 6/)).toBeInTheDocument()
   expect(within(cartoes[0]).getByText(/Próximo: escolher o nome/)).toBeInTheDocument()
   expect(within(cartoes[1]).getByText(/Próximo: escolher o visual/)).toBeInTheDocument()
+  // Luiz, 24/11: a capa da obra que falta terminar é a placa de obra "EM BREVE", com o nome e onde paramos.
+  const placa = cartoes[0].querySelector('.at-ct__placa')!
+  expect(placa.textContent).toContain('EM BREVE')
+  expect(placa.textContent).toContain('Academia do ze')
+  expect(placa.textContent).toContain('(paramos no nome)')
+  expect(cartoes[1].querySelector('.at-ct__placa')!.textContent).toContain('(paramos no visual)')
   expect(within(cartoes[2]).getByText('64,00%')).toBeInTheDocument()
   expect(screen.queryByText(/Barbearia do ze/)).toBeNull()
 })
