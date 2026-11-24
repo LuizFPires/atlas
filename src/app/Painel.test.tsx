@@ -9,13 +9,13 @@ const obra = { nome: 'Agenda da Barbearia do Zé', pasta: 'agenda' }
 const agora = () => new Date(2026, 10, 18, 14, 40)
 const PCT = /^54,\d\d%$/
 
-const montar = (modo: ModoObra | null = 'automatico', opcoes: { painel?: PontePainel; modos?: PonteModoObra; endereco?: string | null; sondagemMs?: number } = {}) => {
+const montar = (modo: ModoObra | null = 'automatico', opcoes: { painel?: PontePainel; modos?: PonteModoObra; endereco?: string | null; sondagemMs?: number; onPedirAjuda?: () => void } = {}) => {
   const fx = criarPainelFixture({ agora, endereco: opcoes.endereco })
   const painel = opcoes.painel ?? fx
   const modos = opcoes.modos ?? criarModoObraFixture(modo ? { [obra.pasta]: modo } : {})
   const onPublicar = vi.fn()
   const user = userEvent.setup()
-  render(<TemaProvider><Painel obra={obra} painel={painel} modos={modos} onPublicar={onPublicar} sondagemMs={opcoes.sondagemMs ?? 0} /></TemaProvider>)
+  render(<TemaProvider><Painel obra={obra} painel={painel} modos={modos} onPublicar={onPublicar} onPedirAjuda={opcoes.onPedirAjuda} sondagemMs={opcoes.sondagemMs ?? 0} /></TemaProvider>)
   return { fx, user, onPublicar, modos }
 }
 
@@ -176,4 +176,35 @@ test('ao concluir (100%) aparece "Publicar o sistema"; antes disso não aparece'
 test('sem adaptador real não finge andamento: recado calmo', async () => {
   montar('automatico', { painel: painelIndisponivel })
   expect(await screen.findByRole('alert')).toHaveTextContent('Quem acompanha a obra ainda não está ligado')
+})
+
+describe('vigia (bug de 24/11): a obra nunca fica parada em silêncio', () => {
+  test('tentando de novo: o painel avisa na hora, com a tentativa, e "Tentar agora" religa', async () => {
+    const { fx, user } = montar('automatico', { sondagemMs: 30 })
+    fx.simular.vigia({ situacao: 'tentando', tentativa: 0, de: 3, motivo: 'A linha de produção ligou, mas não conseguiu trabalhar e parou em seguida.', proximaEm: '2026-11-24T10:05:00.000Z' })
+    const aviso = await screen.findByRole('status', { name: 'A obra parou' })
+    expect(aviso).toHaveTextContent(/O Atlas já está cuidando disso/)
+    expect(aviso).toHaveTextContent(/tentativa 1 de 3/)
+    expect(screen.queryByText(/a obra está pronta/)).toBeNull()
+    await user.click(within(aviso).getByRole('button', { name: 'Tentar agora' }))
+    expect(fx.chamadas).toContain('continuar')
+  })
+
+  test('depois de 3 tentativas: alerta que pede você, com o motivo e a Ajuda', async () => {
+    const ajuda = vi.fn()
+    const { fx, user } = montar('automatico', { onPedirAjuda: ajuda, sondagemMs: 30 })
+    fx.simular.vigia({ situacao: 'precisa-voce', tentativa: 3, de: 3, motivo: 'O Claude deste computador saiu da conta: é preciso entrar de novo.' })
+    const alerta = await screen.findByRole('alert', { name: 'A obra parou' })
+    expect(alerta).toHaveTextContent(/precisa de você/)
+    expect(alerta).toHaveTextContent(/saiu da conta/)
+    await user.click(within(alerta).getByRole('button', { name: 'Falar com o Atlas' }))
+    expect(ajuda).toHaveBeenCalled()
+  })
+
+  test('"a obra está pronta" só com a obra pronta de verdade', async () => {
+    const { fx } = montar('automatico', { sondagemMs: 30 })
+    fx.simular.semNinguem()
+    expect(await screen.findByText('Ninguém trabalhando agora.')).toBeInTheDocument()
+    expect(screen.queryByText(/a obra está pronta/)).toBeNull()
+  })
 })

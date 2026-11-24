@@ -150,7 +150,7 @@ function kitDirDoApp({ empacotado, recursos }) {
  * `porta` (teste): fixa a porta; padrão = porta livre aleatória a cada subida. `subir` (teste): substitui o spawn do canteiro
  * (sem nonce: o servidor falso do teste não o conhece). Padrão de kitDir (hooks/ e canteiro/): a pasta .claude do app (ATLAS_KIT_DIR).
  */
-function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir, contarCommits }) {
+function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir, contarCommits, vigia = null }) {
   const hooks = path.join(kitDir, 'hooks')
   const canteiroDir = path.join(kitDir, 'canteiro')
   const linha = construcao.linha
@@ -268,6 +268,8 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
         trava,
         etapaPronta,
         temTeste: p.feitas > 0,
+        // Vigia (24/11/2026): linha que parou sem avançar. O Atlas tenta de novo sozinho e, se não der, pede o cliente com o motivo.
+        vigia: acabou || !vigia ? null : (() => { try { return vigia.estado(pasta) } catch { return null } })(),
       }
     },
 

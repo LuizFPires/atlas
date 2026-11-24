@@ -38,6 +38,9 @@ interface Props {
   onLigarContas?: () => void
 }
 
+/** "10:05" no horário de Brasília. */
+const horaCurta = (iso: string) => { const d = new Date(iso); return Number.isFinite(d.getTime()) ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '' }
+
 export const recadoDoErroPainel = (e: unknown) => {
   switch (e instanceof Error ? e.message : '') {
     case 'indisponivel': return 'Quem acompanha a obra ainda não está ligado neste computador. Quando estiver, esta tela passa a mostrar a obra de verdade; você não precisa refazer nada.'
@@ -174,6 +177,30 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
 
       {sit && AVISO_PARADA[sit] && <p className="at-pn__parada" role="status">{AVISO_PARADA[sit]}</p>}
 
+      {/* Vigia (24/11/2026): a obra nunca fica parada em silêncio. Tentando = o Atlas já religa sozinho; precisa-voce = alerta. */}
+      {!concluida && sit !== 'pausada' && estado?.vigia && (estado.vigia.situacao === 'tentando'
+        ? (
+          <div className="at-pn__vigia" role="status" aria-label="A obra parou">
+            <span className="at-pn__vigia-giro" aria-hidden="true" />
+            <div className="at-pn__pronta-txt">
+              <b>A obra parou sozinha. O Atlas já está cuidando disso.</b>
+              <span>{estado.vigia.motivo} Vou religar sozinho{estado.vigia.proximaEm ? ` às ${horaCurta(estado.vigia.proximaEm)}` : ''} (tentativa {Math.min(estado.vigia.tentativa + 1, estado.vigia.de)} de {estado.vigia.de}).</span>
+            </div>
+            <Botao className="at-pn__btn" onClick={() => agir(() => painel.continuar(obra.pasta))}>Tentar agora</Botao>
+          </div>
+        )
+        : (
+          <div className="at-pn__vigia at-pn__vigia--alerta" role="alert" aria-label="A obra parou">
+            <span className="at-pn__vigia-bola" aria-hidden="true"><Icone nome="alerta" tamanho={22} /></span>
+            <div className="at-pn__pronta-txt">
+              <b>A obra está parada e precisa de você.</b>
+              <span>{estado.vigia.motivo} O Atlas tentou {estado.vigia.tentativa} {estado.vigia.tentativa === 1 ? 'vez' : 'vezes'} sozinho e não conseguiu.</span>
+            </div>
+            {onPedirAjuda && <Botao variante="secundario" className="at-pn__btn" onClick={onPedirAjuda}>Falar com o Atlas</Botao>}
+            <Botao className="at-pn__btn" onClick={() => agir(() => painel.continuar(obra.pasta))}>Tentar agora</Botao>
+          </div>
+        ))}
+
       <section className="at-pn__modo" aria-label="Modo da obra">
         <span className="at-pn__rotulo">MODO DA OBRA</span>
         <div role="radiogroup" aria-label="Modo da obra" className="at-pn__modo-seg">
@@ -235,7 +262,7 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
                 <div><b>{a.quem}</b><span className="at-pn__texto">{a.oque}</span></div>
               </div>
             ))}
-            {estado && estado.agora.length === 0 && <span className="at-pn__texto">Ninguém trabalhando: a obra está pronta.</span>}
+            {estado && estado.agora.length === 0 && <span className="at-pn__texto">{concluida ? 'Ninguém trabalhando: a obra está pronta.' : sit === 'pausada' ? 'Ninguém trabalhando: você pausou a obra.' : 'Ninguém trabalhando agora.'}</span>}
             <div className="at-pn__detalhes">
               <button type="button" className="at-pn__link" aria-expanded={detalhes} onClick={() => setDetalhes(!detalhes)}>{detalhes ? 'Esconder detalhes' : 'Ver detalhes'}</button>
               {detalhes && estado && (

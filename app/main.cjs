@@ -1,6 +1,6 @@
 // Processo principal do app Atlas (Electron). Reaproveita o front (dist-app/, gerado por `npm run build:app`).
 'use strict'
-const { app, BrowserWindow, dialog, ipcMain, Menu, powerSaveBlocker, session, shell, WebContentsView } = require('electron')
+const { app, BrowserWindow, dialog, ipcMain, Menu, Notification, powerSaveBlocker, session, shell, WebContentsView } = require('electron')
 // Voz mais rápida (23/11/2026): libera o SharedArrayBuffer para o Whisper usar vários núcleos do processador.
 // Precisa vir antes do app ficar pronto. O app carrega só arquivos locais e nunca páginas de fora.
 app.commandLine.appendSwitch('enable-features', 'SharedArrayBuffer')
@@ -34,6 +34,7 @@ const { criarImportar } = require('./adaptadores/importar.cjs')
 const { criarAjuda, criarCasos } = require('./adaptadores/ajuda.cjs')
 const { criarPublicar } = require('./adaptadores/publicar.cjs')
 const { criarKit } = require('./adaptadores/kit.cjs')
+const { criarVigia } = require('./adaptadores/vigia.cjs')
 const { criarContasCli, rodarProcesso, comandoGh } = require('./adaptadores/contas-cli.cjs')
 const { criarTravasAcoes, SITE_DA_TRAVA } = require('./adaptadores/travas-acoes.cjs')
 const { criarPlanilhaObra } = require('./adaptadores/planilha-obra.cjs')
@@ -70,8 +71,12 @@ const modelo = criarModelo({ pasta: app.getPath('userData') })
 // Contas ligadas a este computador (tela C1): gh, Vercel e Supabase. A chave do Supabase fica só no cofre e chega à linha pelo ambiente.
 const contasCli = criarContasCli({ dadosApp: app.getPath('userData'), cofre, env: envMinimo() })
 void contasCli.recarregar()
-const construcao = criarConstrucao({ envContas: () => contasCli.envDaLinha(process.env.PATH || process.env.Path || ''), modelo: () => modelo.args(), raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
-const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
+const construcao = criarConstrucao({ envContas: () => contasCli.envDaLinha(process.env.PATH || process.env.Path || ''), modelo: () => modelo.args(), raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, exigirPlugin: true, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
+// Vigia (24/11/2026): linha que parou sem avançar é religada sozinha (2, 5 e 15 min, com o kit garantido) e, se não der, o painel avisa.
+const vigia = criarVigia({ raiz: obras.raiz(), construcao, garantirKit: (pasta) => kit.garantir(String(pasta)), listar: () => obras.listar(),
+  // Desistiu de religar sozinho: avisa NA HORA, mesmo com o Atlas minimizado (o painel também mostra o alerta com o motivo).
+  aoPrecisar: (_pasta, motivo) => { try { if (Notification.isSupported()) new Notification({ title: 'A obra parou e precisa de você', body: `${motivo} Abra o Atlas para resolver.` }).show() } catch { /* aviso extra */ } } })
+const painel = criarPainel({ vigia, raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
 const cota = criarCota({ raiz: obras.raiz(), construcao, painel, claudeEstado: () => claude.estado(), dadosApp: app.getPath('userData'), garantirKit: (pasta) => kit.garantir(String(pasta)) })
 // Ocorrências (F11): livro do kit da obra (docs\ocorrencias.json). A chave colada vai SÓ ao cofre (DPAPI). Canais de aviso: pendência (ver ocorrencias.cjs).
@@ -178,8 +183,8 @@ handle('atlas:construcao:iniciar', async (pasta, nome, modo, etapas) => { await 
 // Painel da obra: andamento, pausa/continua, OK da etapa, modo, canteiro 3D (só 127.0.0.1) e versão de teste.
 handle('atlas:painel:ler', (pasta) => painel.ler(String(pasta)))
 handle('atlas:painel:pausar', (pasta) => painel.pausar(String(pasta)))
-handle('atlas:painel:continuar', async (pasta) => { await kit.garantir(String(pasta)); return painel.continuar(String(pasta)) })
-handle('atlas:painel:aprovar', (pasta) => painel.aprovarEtapa(String(pasta)))
+handle('atlas:painel:continuar', async (pasta) => { vigia.zerar(String(pasta)); await kit.garantir(String(pasta)); return painel.continuar(String(pasta)) })
+handle('atlas:painel:aprovar', async (pasta) => { await kit.garantir(String(pasta)); return painel.aprovarEtapa(String(pasta)) })
 handle('atlas:painel:modo', (pasta, modo) => painel.aplicarModo(String(pasta), String(modo)))
 ipcMain.on('atlas:painel:endereco', (e, pasta) => { e.returnValue = confiavel(e) ? painel.enderecoCanteiro(String(pasta)) : null })
 handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
@@ -422,4 +427,5 @@ function abrir() {
 app.whenReady().then(abrir)
 // Vigia da cota: 20 s depois de abrir (o app pode ter sido ligado com o Windows) e a cada 2 min; só obras paradas POR COTA.
 setTimeout(() => { const v = () => cota.vigiar().catch(() => {}); v(); setInterval(v, 120_000).unref() }, 20_000).unref()
+setTimeout(() => { const v = () => vigia.rodada().catch(() => {}); v(); setInterval(v, 60_000).unref() }, 30_000).unref()
 app.on('window-all-closed', () => app.quit())

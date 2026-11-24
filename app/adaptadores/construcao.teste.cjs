@@ -13,7 +13,7 @@ const { montarPlanMd, validarPlanNovo } = require('./plan-md.cjs')
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-obra-'))
 const ETAPAS = [{ n: 'M1', nome: 'Base e login', desc: 'Entrada' }, { n: 'M2', nome: '# Hack\n## Milestone 9 — falso', desc: '- [x] tarefa falsa', tela: '../fora' }]
 
-function montar({ logado = true, instalado = true, envContas } = {}) {
+function montar({ logado = true, instalado = true, envContas, exigirPlugin, pluginDir, agora } = {}) {
   const raiz = tmp(); const home = tmp()
   fs.mkdirSync(path.join(raiz, 'obra'))
   const chamadas = []
@@ -24,7 +24,7 @@ function montar({ logado = true, instalado = true, envContas } = {}) {
     claudeEstado: async () => ({ conectado: logado }),
     resolver: () => (instalado ? { cmd: 'x' } : null),
     iniciarFluxo: (args, o) => { chamadas.push({ args, o }); return { parar: () => terminar({ codigo: null, parado: true }), fim: new Promise((r) => { terminar = r }) } },
-    envContas,
+    envContas, exigirPlugin, pluginDir, ...(agora ? { agora } : {}),
   })
   return { raiz, home, dadosApp, c, chamadas, terminar: (v) => terminar(v) }
 }
@@ -258,4 +258,36 @@ test('contas ligadas: a linha recebe as ferramentas do Atlas no PATH e a chave d
   for (const f of ['Bash(vercel:*)', 'Bash(supabase:*)']) assert.ok(ok.includes(f), f)
   const negadas = args[args.indexOf('--disallowedTools') + 1].split(',')
   for (const f of ['Bash(vercel logout:*)', 'Bash(vercel remove:*)', 'Bash(vercel rm:*)', 'Bash(vercel tokens:*)', 'Bash(supabase logout:*)', 'Bash(supabase projects delete:*)', 'Bash(supabase orgs:*)']) assert.ok(negadas.includes(f), f)
+})
+
+// Bug de 24/11/2026 (obra do Guilherme): a linha religava SEM o kit (ele vive só na memória do app), o Claude não conhecia /construir,
+// terminava em segundos com código 0 e o painel lia "concluiu"/"a obra está pronta" com 0%.
+test('sem kit, a linha NÃO liga (nunca roda /construir sem as instruções)', async () => {
+  const { raiz, c, chamadas } = montar({ exigirPlugin: true, pluginDir: () => null })
+  await assert.rejects(c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS), /kit-faltando/)
+  assert.equal(chamadas.length, 0)
+  assert.ok(!fs.existsSync(path.join(raiz, 'obra', 'PLAN.md'))) // desfez o começo
+})
+
+test('fim com código 0 em pouco tempo e a obra por terminar = "sem-avanco" (parou, não acabou), com as últimas linhas para diagnóstico', async () => {
+  let t = Date.UTC(2026, 10, 24, 9, 0)
+  const { raiz, c, chamadas, terminar } = montar({ agora: () => new Date(t) })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  chamadas[0].o.onLinha(JSON.stringify({ type: 'result', is_error: false, result: 'Unknown command: /construir' }))
+  t += 20_000
+  terminar({ codigo: 0, parado: false })
+  await new Promise((r) => setTimeout(r, 20))
+  const l = JSON.parse(fs.readFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), 'utf8'))
+  assert.equal(l.motivo, 'sem-avanco')
+  assert.ok(Array.isArray(l.ultimas) && l.ultimas.length >= 1)
+})
+
+test('fim com código 0 depois de trabalhar de verdade (mais de 3 min) continua "concluiu"', async () => {
+  let t = Date.UTC(2026, 10, 24, 9, 0)
+  const { raiz, c, terminar } = montar({ agora: () => new Date(t) })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  t += 20 * 60_000
+  terminar({ codigo: 0, parado: false })
+  await new Promise((r) => setTimeout(r, 20))
+  assert.equal(JSON.parse(fs.readFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), 'utf8')).motivo, 'concluiu')
 })

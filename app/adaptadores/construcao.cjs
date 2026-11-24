@@ -196,7 +196,10 @@ function resumirLinha(linha) {
  * `deps`: { raiz, modos (PonteModoObra real), claudeEstado (async () => {conectado}), pluginDir? (string ou (pasta) => string|null), home?, agora?,
  *           iniciarFluxo?, executar?, resolver? }  — os três últimos existem para teste (padrão: seguro.cjs).
  */
-function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}) }) {
+/** Uma linha que "conclui" antes disso com a obra por terminar não trabalhou de verdade. */
+const MIN_TRABALHO_MS = 3 * 60_000
+
+function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
   const linhas = new Map()
   // `dadosApp` = userData do app (o MESMO que a cota recebe). Arquivos do git isolado ficam em <dadosApp>\git-isolado.
@@ -222,8 +225,10 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     if (linhas.has(pasta)) return // já rodando: idempotente
     if (linhas.size > 0) throw new Error('ja-rodando')
     garantirSemConfigDeProjeto(cwd, { permitirGit: !nova }) // config de projeto suspeita: não roda (obra nova: .git de fora também não)
-    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', FERRAMENTAS_LINHA, '--disallowedTools', FERRAMENTAS_NEGADAS]
     const plugin = typeof pluginDir === 'function' ? pluginDir(pasta) : pluginDir // função: kit por obra (kit.cjs), sem gravar na obra
+    // Sem o kit o Claude não conhece /construir: terminava em segundos e o painel lia "concluiu" (bug de 24/11/2026). Nunca roda assim.
+    if (exigirPlugin && !plugin) throw new Error('kit-faltando')
+    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', FERRAMENTAS_LINHA, '--disallowedTools', FERRAMENTAS_NEGADAS]
     if (plugin) args.push('--plugin-dir', plugin)
     const reg = { parar: () => {}, recentes: [], desde: agora().toISOString() }
     let cota = false
@@ -252,8 +257,15 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     r.fim.then(({ codigo, parado }) => {
       if (linhas.get(pasta) === reg) linhas.delete(pasta) // não apaga uma linha mais nova (pausar + continuar rápido)
       // Sinal fraco de limite (erro rate_limit no meio) só conta se a linha acabou com falha; com sucesso foi só um tropeço que passou.
-      const motivo = parado ? 'pausada' : cota || (cotaFraca && codigo !== 0) ? 'cota' : codigo === 0 ? 'concluiu' : codigo === null ? 'fechou' : 'erro'
-      gravarLinha(pasta, { estado: 'parou', motivo, codigo, fimEm: agora().toISOString(), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}) })
+      let motivo = parado ? 'pausada' : cota || (cotaFraca && codigo !== 0) ? 'cota' : codigo === 0 ? 'concluiu' : codigo === null ? 'fechou' : 'erro'
+      // "Concluiu" em poucos minutos com a obra por terminar não é fim: é a linha que não conseguiu trabalhar (o vigia insiste e avisa).
+      if (motivo === 'concluiu' && agora().getTime() - Date.parse(reg.desde) < MIN_TRABALHO_MS) {
+        let pctAgora = 0
+        try { const t = lerTexto(path.join(cwd, 'PLAN.md')); if (t !== null) pctAgora = lerPlanoDoTexto(t).pct } catch { pctAgora = 0 }
+        if (pctAgora < 100) motivo = 'sem-avanco'
+      }
+      const ultimas = reg.recentes.slice(-6).map((x) => String(x).slice(0, 200))
+      gravarLinha(pasta, { estado: 'parou', motivo, codigo, desde: reg.desde, fimEm: agora().toISOString(), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}), ...(motivo === 'sem-avanco' || motivo === 'erro' ? { ultimas } : {}) })
       // Registro do APP (fora da obra) que permite a retomada automática: só em fim por cota de uma linha que o app iniciou, com a obra
       // ainda por terminar e sem pausa do cliente (se uma linha mais nova já roda, ela cuida do próprio registro).
       try {
