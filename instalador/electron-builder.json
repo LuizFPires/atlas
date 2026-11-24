@@ -58,6 +58,14 @@
   ],
   "extraResources": [
     {
+      "from": ".claude/canteiro",
+      "to": "kit/canteiro"
+    },
+    {
+      "from": ".claude/hooks",
+      "to": "kit/hooks"
+    },
+    {
       "from": "instalador/instalar.ps1",
       "to": "instalador/instalar.ps1"
     },

@@ -100,6 +100,12 @@ function paradaDeOcorrencias(obj) {
   return achada
 }
 
+/** Onde ficam canteiro/ e hooks/: no app instalado, em resources/kit (fora do asar, o servidor roda como processo à parte);
+ *  em desenvolvimento, no .claude do repositório. */
+function kitDirDoApp({ empacotado, recursos }) {
+  return empacotado ? path.join(recursos, 'kit') : path.join(__dirname, '..', '..', '.claude')
+}
+
 /**
  * `deps`: { raiz, modos, construcao (com .linha), shell, kitDir?, porta?, home?, agora?, subir? }
  * `porta` (teste): fixa a porta; padrão = porta livre aleatória a cada subida. `subir` (teste): substitui o spawn do canteiro
@@ -311,4 +317,4 @@ function responde(porta, nonce = null) {
   })
 }
 
-module.exports = { criarPainel, portaLivre, responde, lerPlanoDoTexto, paradaDeOcorrencias, textoRestante, textoPrevisao, RE_ENDERECO }
+module.exports = { kitDirDoApp, criarPainel, portaLivre, responde, lerPlanoDoTexto, paradaDeOcorrencias, textoRestante, textoPrevisao, RE_ENDERECO }

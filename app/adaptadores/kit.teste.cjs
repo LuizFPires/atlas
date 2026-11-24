@@ -190,3 +190,17 @@ test('lerComTeto: para de ler no teto (stream) e recusa pelo content-length', as
   await assert.rejects(lerComTeto({ headers: new Headers({ 'content-length': '99' }), text: async () => 'x' }, 10), /kit-grande/)
   assert.equal(await lerComTeto({ body: new Response('ola').body }, 10), 'ola')
 })
+
+test('o plugin liga os hooks do canteiro (o progresso e o 3D dependem deles) quando o kit não traz hooks.json', async () => {
+  const kitSemHooksJson = () => { const k = KIT(); k.arquivos = k.arquivos.filter((a) => !a.caminho.endsWith('hooks.json')); k.arquivos.push({ caminho: '.claude/hooks/evento.cjs', conteudo: `// ${AVISO}\n` }); return k }
+  const { kit } = montar({ resposta: kitSemHooksJson })
+  await kit.entregar('obra-hooks')
+  const h = JSON.parse(fs.readFileSync(path.join(kit.diretorio('obra-hooks'), 'hooks', 'hooks.json'), 'utf8'))
+  for (const ev of ['PreToolUse', 'PostToolUse', 'SubagentStart', 'SubagentStop', 'Stop', 'UserPromptSubmit']) {
+    assert.equal(h.hooks[ev][0].hooks[0].command, 'node "${CLAUDE_PLUGIN_ROOT}/hooks/evento.cjs"')
+  }
+  // o kit que já traz o seu hooks.json manda
+  const { kit: k2 } = montar()
+  await k2.entregar('obra-2')
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(k2.diretorio('obra-2'), 'hooks', 'hooks.json'), 'utf8')).hooks, {})
+})

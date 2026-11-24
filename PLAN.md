@@ -410,3 +410,16 @@ tela: prototipo/caminho-novo/K1Canteiro.dc.html
 - [ ] Obra aberta: as 6 etapas com "Ver ou mudar", construção ao vivo, "Quer mudar alguma coisa?" e pós-obra
 - [ ] Obra parada: aviso no cartão e dentro da obra; ao ligar o computador continua abrindo o aviso (F12) com um botão que religa todas
 Notas: DECISÃO do Luiz (23/11/2026, "o protótipo devia estar dentro de uma obra"; "canteiro de obras ... vários cards ... com o cenáriozinho 3D"; "obras concluídas para tirar essas obras do canteiro"; Como retomar "também deveria ir para dentro de obra"), aprovada em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. Diverge de F05 (Minhas obras) e do menu de 5 itens.
+
+## Milestone 38 — Caminho completo do primeiro uso: da instalação ao software no ar
+peso: 5
+spec: S9
+tela: prototipo/caminho-novo/C1Contas.dc.html
+- [x] Instalador instala e confere o Git (o Claude Code no Windows precisa do Git Bash) e o GitHub CLI
+- [x] A linha pode preparar o projeto: npm install, git init, remoto e repositório no GitHub (gh repo create), gh auth status; nada que mostre ou troque credencial
+- [x] Git da obra com autor (Atlas) e push pelo login do gh, sem senha em arquivo; Git Bash achado mesmo com o PATH antigo
+- [x] Canteiro 3D e hooks vão no instalador (resources/kit) e o plugin da obra liga os hooks do andamento (hooks.json)
+- [ ] Contas conectadas de verdade neste computador (GitHub, Vercel, Supabase) pelo próprio Atlas: código na tela, a pessoa confirma no navegador
+- [ ] Publicar no ar sem npx solto: o Atlas roda o deploy com as ferramentas certas e mostra o endereço
+- [ ] Teste de ponta a ponta automático num Windows limpo: instalar, obra pequena até o primeiro milestone, publicação de teste
+Notas: DECISÃO do Luiz (24/11/2026, "Faz uma revisão geral para encontrar pontos falhos ... se o usuário que acessa o Atlas pela primeira vez vai conseguir percorrer todo o fluxo até ter seu software na mão"; "Pode seguir" para os itens 1, 3 e 5 e o desenho da tela das contas). Antes o caminho só funcionava em computador que já tinha Git, gh logado e o kit do canteiro.

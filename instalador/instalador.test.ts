@@ -29,8 +29,22 @@ describe('caminhos', () => {
 
 
 describe('plano de instalação', () => {
-  it('ordem: node, claude, obras, app', () => {
-    expect(planoDeInstalacao('Maria').map((p) => p.id)).toEqual(['node', 'claude-code', 'obras', 'app'])
+  it('ordem: node, git, gh, claude, obras, app', () => {
+    expect(planoDeInstalacao('Maria').map((p) => p.id)).toEqual(['node', 'git', 'gh', 'claude-code', 'obras', 'app'])
+  })
+  it('instala o Git (o Claude Code no Windows precisa do Git Bash) e o GitHub CLI, e confere depois de instalar', () => {
+    const plano = planoDeInstalacao('Maria')
+    const git = plano.find((p) => p.id === 'git')!
+    const gh = plano.find((p) => p.id === 'gh')!
+    expect(git.comando).toContain('--id Git.Git')
+    expect(gh.comando).toContain('--id GitHub.cli')
+    for (const p of [git, gh]) {
+      expect(p.confirmar).toBe(true)
+      expect(p.comando).toContain('--silent')
+    }
+    // o PATH do processo não muda logo depois do winget: a conferência também olha a pasta padrão
+    expect(git.verificar).toContain('Git\\cmd\\git.exe')
+    expect(gh.verificar).toContain('GitHub CLI\\gh.exe')
   })
   it('não instala plugin: o kit vem do servidor a cada obra e nunca fica no disco do cliente', () => {
     const tudo = planoDeInstalacao('Maria').map((p) => `${p.verificar ?? ''} ${p.comando ?? ''}`).join(' ')
@@ -47,12 +61,13 @@ describe('plano de instalação', () => {
       roda: async (c) => {
         vistos.push(c)
         if (c === 'node --version') return { codigo: 0 }
+        if (c.includes('git') || c.includes('gh')) return { codigo: 0 }
         if (c === 'claude --version') return { codigo: 1 }
         if (c.startsWith('npm install')) return { codigo: 1 }
         return { codigo: 0 }
       },
     })
-    expect(r.pulados).toEqual(['node'])
+    expect(r.pulados).toEqual(['node', 'git', 'gh'])
     expect(r.falhou).toBe('claude-code')
     expect(vistos.some((c) => c.includes('plugin'))).toBe(false)
   })
@@ -97,6 +112,9 @@ describe('config do electron-builder e scripts', () => {
   })
   it('o pacote leva o app e a tela dele (dist-app), abre por app/main.cjs e fixa a versão do Electron', () => {
     expect(config.files).toContain('app/**/*')
+    // canteiro 3D e hooks do painel vão junto, FORA do asar (o servidor roda como processo à parte)
+    const kit = config.extraResources.filter((r) => r.to.startsWith('kit/')).map((r) => `${r.from}>${r.to}`)
+    expect(kit).toEqual(['.claude/canteiro>kit/canteiro', '.claude/hooks>kit/hooks'])
     expect(config.files).toContain('dist-app/**/*')
     expect(config.files).not.toContain('dist/**/*')
     // A raiz do projeto é a pasta do app: sem isto o electron-builder empacota só app/ e deixa a tela (dist-app) de fora.
