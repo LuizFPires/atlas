@@ -90,3 +90,12 @@ export async function entregarKit(
     cabecalhos: { 'Cache-Control': 'no-store', 'X-Atlas-Persistir': 'nunca' },
   }
 }
+
+/** Junta o kit embutido (base) com o que veio do Storage (acrescenta ou substitui pelo mesmo caminho). */
+export function juntarKit(embutido: { caminho: string; conteudo: string }[], doStorage: { caminho: string; conteudo: string }[]) {
+  const mapa = new Map<string, string>()
+  for (const a of embutido) mapa.set(a.caminho, a.conteudo)
+  for (const a of doStorage) mapa.set(a.caminho, a.conteudo)
+  return [...mapa].map(([caminho, conteudo]) => ({ caminho, conteudo }))
+}
+
