@@ -90,6 +90,7 @@ Em palavras simples: a obra é feita em etapas pequenas (milestones), sempre do 
 1. **Medição**: no PLAN, troque `- [ ]` por `- [x]` **somente** nas tarefas aprovadas pelo `qa`, `seguranca` e `desempenho` (os três com VEREDITO aprovado, sem achado alto ou médio em aberto) (Edit pontual). Commit `docs(mN): medição`, push, espere o CI. É isso que faz o prédio subir no canteiro.
 2. `git status`: nada do milestone sem commit, nada alheio ao trabalho. Avise sobre o que ficou de fora.
 3. Confira o CI da versão atual da branch. **Só faça merge com os checks exigidos verdes e sem bloqueio de revisão.** CI rodando não é sucesso. Sem CI configurado, diga isso e siga os critérios do projeto, sem alegar CI verde.
+   **CI travado por minutos/cobrança do GitHub** (o job nem começa: "recent account payments have failed", "spending limit", "billing"): não é CI vermelho. Registre a trava `github-minutos` (abaixo), rode **aqui** a mesma conferência do workflow (`npm ci` ou `npm install`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, os que existirem) e, se tudo passar, faça o merge com `--subject "Merge pull request #<n>: MN — <título> (conferido no computador: GitHub sem minutos)"`. Nunca deixe o repositório público por conta própria: isso é decisão do usuário, na ficha do Atlas.
 4. `⏩ Auto: merge PR #n` (no automático) e, respeitando o método do projeto:
    `gh pr merge <n> --merge --delete-branch --subject "Merge pull request #<n>: MN — <título>"`
 5. Confirme o merge e a remoção da branch. Volte para a base atualizada. Não apague branch usada por outro worktree.
@@ -105,11 +106,22 @@ Na obra, quando chove, a concretagem fica para amanhã e a equipe segue com o qu
 1. **Registre** no livro:
    `node .claude/hooks/ocorrencias.cjs abrir --servico <nome> --motivo "<erro em uma linha>" --acao "<o que fazer quando liberar>" --teste "<comando barato que prova que liberou>" --liberar-em <AAAA-MM-DDTHH:MM> --bloqueia "MN:<tarefa>,..."`
    - `--liberar-em`: use o horário que a mensagem do serviço informar. Se não informar, use daqui a 1 hora; o plantonista reagenda.
-   - `--acao` precisa ser executável por si só (ex.: "deploy de produção da main com `npx vercel --prod`"), porque quem vai executar é outro agente, sem esta conversa.
+   - `--acao` precisa ser executável por si só (ex.: "deploy de produção da main com `vercel --prod`"), porque quem vai executar é outro agente, sem esta conversa.
 2. No `Notas:` do milestone afetado, escreva `⏸ aguardando ocorrência #<id> (<serviço>)`. A tarefa fica `- [ ]`.
 3. Commit `chore: ocorrência #<id> — <serviço>` (só `docs/ocorrencias.json` e o PLAN).
 4. **Siga a obra**: o resto do milestone continua normalmente (implementar, revisar, medir só o que o qa aprovou, merge). Depois, o próximo milestone que não dependa da ocorrência. No automático, escreva `⏩ Auto: ocorrência #<id> registrada, seguindo com <o que vem>`.
 5. **Quando o plantonista der baixa**: as tarefas que dependiam só da ação pendente (ex.: "publicar em produção") podem ser marcadas `- [x]` com a prova que ele trouxe (URL, id do deploy), anotada em `Notas:`. Tarefas que envolvem código voltam ao roteiro normal num próximo ciclo, com implementador e qa.
+
+**Travas conhecidas** (o Atlas mostra uma ficha explicada para o usuário; use estas palavras no `--servico` e no `--motivo`):
+| Trava | `--servico` | `--motivo` | `--liberar-em` | O que fazer |
+| --- | --- | --- | --- | --- |
+| Minutos do GitHub Actions acabaram | `GitHub` | `minutos do GitHub Actions acabaram (billing)` | dia 1º do mês seguinte, 00:00 | conferir aqui e seguir (item 3 da etapa 4) |
+| Vercel no limite de deploys do dia | `Vercel` | `limite diário de deploys do plano grátis` | a hora que a Vercel informar (senão +24 h) | seguir construindo; o plantonista publica |
+| Projeto do Supabase pausado | `Supabase` | `projeto pausado por inatividade` | sem data | seguir com o que não usa o banco; o usuário acorda pela ficha |
+| Login caiu neste computador | `GitHub`, `Vercel` ou `Supabase` | `conta desligada deste computador` | sem data | seguir com o resto; o usuário liga de novo pela tela das contas |
+Na obra do Atlas (`ATLAS_APP=1`), **nunca** peça comando ao usuário para nenhuma delas: a ficha do Atlas explica e resolve.
+
+**Prevenção (Vercel)**: publique só quando um milestone termina (merge na `main`), não a cada PR. Ao ligar o projeto na Vercel, crie `vercel.json` com `"ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]"` para pular as prévias das outras branches.
 
 **Se tudo o que resta depender de ocorrências abertas**: pare, mostre `node .claude/hooks/ocorrencias.cjs listar` e ofereça **"Agendar a retomada para <horário de liberação> (Recomendado)"**. Use a ferramenta de agendamento que a sessão oferecer (tarefa agendada), com o prompt: `Rode /construir no projeto <caminho>. Comece pelo plantonista: confira as ocorrências vencidas.` Se não houver ferramenta de agendamento, diga ao usuário o horário exato para digitar `/construir`. No automático, agende sem perguntar e registre `⏩ Auto: retomada agendada para <horário>`.
 

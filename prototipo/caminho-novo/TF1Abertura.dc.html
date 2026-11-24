@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Trava · Ao abrir o Atlas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none} .bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:12px;font:700 15px 'Geist',sans-serif;cursor:pointer;white-space:nowrap;box-sizing:border-box;border:none} @keyframes pulso{0%{box-shadow:0 0 0 0 rgba(198,241,53,.7)}70%{box-shadow:0 0 0 12px rgba(198,241,53,0)}100%{box-shadow:0 0 0 0 rgba(198,241,53,0)}} @keyframes gira{to{transform:rotate(360deg)}} @keyframes pisca{0%,100%{opacity:1}50%{opacity:.35}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden;position:relative">
+ <dc-import name="Shell" ativo="canteiro" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+
+ <main style="flex:1;min-width:0;position:relative">
+  <div style="position:absolute;inset:0;padding:28px 36px;opacity:.25;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-content:start">
+   <div style="height:230px;border-radius:16px;background:{{t.card}}"></div><div style="height:230px;border-radius:16px;background:{{t.card}}"></div><div style="height:230px;border-radius:16px;background:{{t.card}}"></div><div style="height:230px;border-radius:16px;background:{{t.card}}"></div>
+  </div>
+  <div style="position:absolute;inset:0;background:rgba(10,11,12,.55);display:flex;align-items:center;justify-content:center">
+   <div role="dialog" aria-label="Enquanto você estava fora" style="width:620px;background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:16px;box-shadow:0 30px 80px rgba(0,0,0,.5)">
+    <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">AO ABRIR O ATLAS</span>
+    <h1 style="margin:0;font-size:26px;line-height:1.25">Bom dia! Enquanto você estava fora, 3 obras esbarraram numa conta.</h1>
+    <span style="font-size:15px;line-height:1.5;color:{{t.mute}}">Duas o Atlas resolve sozinho. Uma precisa de você, e leva 1 minuto.</span>
+    <div style="display:flex;flex-direction:column;gap:10px">
+     <div style="display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;border:2px solid {{t.ambar}};background:{{t.ambarSoft}}"><span style="width:26px;height:26px;border-radius:13px;background:{{t.ambar}};color:#141619;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none">!</span><div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:16px">Loja da Ana · precisa de você</b><span style="font-size:14px;line-height:1.45;color:{{t.mute}}">O caderno (Supabase) dormiu porque ficou uma semana sem uso. Um clique acorda. Nada foi apagado.</span></div></div>
+     <div style="display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;border:1px solid {{t.cardB}}"><span style="width:26px;height:26px;border-radius:13px;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;font-weight:700;flex:none">✓</span><div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:16px">Agenda da Clínica · publica amanhã às 9h, sozinho</b><span style="font-size:14px;line-height:1.45;color:{{t.mute}}">A Vercel já publicou o máximo de hoje. A obra continua construindo.</span></div></div>
+     <div style="display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;border:1px solid {{t.cardB}}"><span style="width:26px;height:26px;border-radius:13px;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;font-weight:700;flex:none">✓</span><div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:16px">Barbearia do Zé · seguindo sem o GitHub</b><span style="font-size:14px;line-height:1.45;color:{{t.mute}}">Os minutos grátis do GitHub acabaram. O Atlas confere aqui no computador até dia 1º.</span></div></div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:4px"><a class="bt" href="TF3Obra.dc.html" style="background:{{t.lime}};color:{{t.onLime}};animation:pulso 1.6s infinite">Resolver a Loja da Ana (1 min) →</a><a class="bt" href="TF2Canteiro.dc.html" style="background:transparent;border:1px solid {{t.cardB}};color:{{t.text}}">Ver o canteiro</a></div>
+   </div>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', ambar: '#F2B84B', ambarSoft: 'rgba(242,184,75,.14)', terra: '#2A2620', terraLinha: '#4A4134', cena: '#1A1D21', selo: 'rgba(16,18,20,.82)', seloTxt: '#EDEFEA' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', ambar: '#A86A00', ambarSoft: 'rgba(214,150,30,.14)', terra: '#E9E2D4', terraLinha: '#CDBFA5', cena: '#EEF0EA', selo: 'rgba(255,255,255,.92)', seloTxt: '#1B1E22' }
+};
+
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = {}; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    return { t, tema, ...(this.extra ? this.extra(t) : {}) };
+  }
+}
+</script>
+</body>
+</html>

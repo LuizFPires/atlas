@@ -62,11 +62,15 @@ const FERRAMENTAS_LINHA = [
   'Bash(npm install)', 'Bash(npm install:*)', 'Bash(npm ci)',
   'Bash(git init:*)', 'Bash(git remote:*)', 'Bash(git branch:*)', 'Bash(git fetch:*)', 'Bash(git pull:*)', 'Bash(git rev-parse:*)',
   'Bash(gh auth status)', 'Bash(gh repo create:*)', 'Bash(gh repo view:*)',
+  // publicar: as CLIs da Vercel e do Supabase instaladas pelo Atlas (contas-cli.cjs), logadas pela tela das contas
+  'Bash(vercel:*)', 'Bash(supabase:*)',
   'Bash(gh pr create:*)', 'Bash(gh pr view:*)', 'Bash(gh pr checks:*)', 'Bash(gh pr merge:*)', 'Bash(gh run:*)',
 ].join(',')
 /** Negados explícitos (valem mesmo que uma regra de permissão mais larga apareça). Config do projeto/kit não se edita. */
 const FERRAMENTAS_NEGADAS = [
   'Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node:*)', 'Bash(npx:*)', 'Bash(curl:*)', 'Bash(wget:*)', 'Bash(powershell:*)', 'Bash(cmd:*)',
+  'Bash(vercel logout:*)', 'Bash(vercel login:*)', 'Bash(vercel remove:*)', 'Bash(vercel rm:*)', 'Bash(vercel tokens:*)', 'Bash(vercel teams:*)',
+  'Bash(supabase logout:*)', 'Bash(supabase login:*)', 'Bash(supabase projects delete:*)', 'Bash(supabase orgs:*)',
   'Write(.claude/**)', 'Edit(.claude/**)', 'Write(CLAUDE.md)', 'Edit(CLAUDE.md)', 'Write(.git/**)', 'Edit(.git/**)',
 ].join(',')
 /**
@@ -192,7 +196,7 @@ function resumirLinha(linha) {
  * `deps`: { raiz, modos (PonteModoObra real), claudeEstado (async () => {conectado}), pluginDir? (string ou (pasta) => string|null), home?, agora?,
  *           iniciarFluxo?, executar?, resolver? }  — os três últimos existem para teste (padrão: seguro.cjs).
  */
-function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [] }) {
+function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}) }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
   const linhas = new Map()
   // `dadosApp` = userData do app (o MESMO que a cota recebe). Arquivos do git isolado ficam em <dadosApp>\git-isolado.
@@ -226,7 +230,9 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     let cotaFraca = false
     let voltaEm = null
     pastaAtlas(raiz, pasta)
-    const env = envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dirGit) })
+    let contas = {}
+    try { contas = envContas() || {} } catch { /* sem contas ligadas: a linha roda e registra a pendência */ }
+    const env = envMinimo({ CLAUDE_PROJECT_DIR: cwd, ATLAS_APP: '1', ...envGitIsolado(dirGit), ...contas })
     const r = iniciarFluxo(args, {
       cwd, env, entrada: '/construir',
       onLinha: (l) => {

@@ -1,0 +1,29 @@
+/* Ficha da trava no topo da obra (prototipo/caminho-novo/T1Travas, TF3, TF4). Âmbar = precisa de você. */
+.at-trava { border: 1px solid var(--lime); border-radius: 18px; padding: 18px 20px; background: var(--card); display: flex; flex-direction: column; gap: 14px; }
+.at-trava--voce { border: 2px solid var(--aviso); }
+.at-trava__cab { display: flex; flex-direction: column; gap: 8px; }
+.at-trava__cab h2 { margin: 0; font-size: 21px; line-height: 1.3; }
+.at-trava__selo { align-self: flex-start; font: 600 11px var(--font-mono); letter-spacing: 0.1em; padding: 6px 10px; border-radius: 999px; background: var(--lime); color: var(--on-lime); }
+.at-trava--voce .at-trava__selo { background: var(--aviso); color: #141619; }
+.at-trava__blocos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.at-trava__bloco { background: var(--bg); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.at-trava__bloco span, .at-trava__rotulo { font: 600 11px var(--font-mono); letter-spacing: 0.1em; color: var(--mute); }
+.at-trava__bloco p { margin: 0; font-size: 14px; line-height: 1.45; }
+.at-trava__opcoes { display: flex; flex-direction: column; gap: 10px; }
+.at-trava__opcao { display: flex; align-items: center; gap: 16px; border: 1px solid var(--card-b); border-radius: 14px; padding: 12px 16px; }
+.at-trava__opcao--rec { border-color: var(--lime); }
+.at-trava__opcao-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.at-trava__opcao-txt span { font-size: 14px; line-height: 1.45; color: var(--mute); }
+.at-trava__tag { margin-left: 10px; font: 600 10px var(--font-mono); font-style: normal; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 999px; background: var(--lime); color: var(--on-lime); vertical-align: middle; }
+.at-trava__tag--atencao { background: var(--card2); color: var(--aviso-txt); }
+.at-trava__confirmar { border: 2px solid var(--aviso); background: var(--card2); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.5; }
+.at-trava__acoes { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.at-trava__ok { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; color: var(--lime-txt); }
+.at-trava__resolver { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 20px; }
+.at-trava__guia { display: flex; flex-direction: column; gap: 12px; font-size: 16px; line-height: 1.45; }
+.at-trava__trad { align-self: flex-start; font-size: 14px; background: var(--soft); border-radius: 10px; padding: 8px 12px; }
+.at-trava__site { min-height: 460px; border-radius: 14px; border: 1px solid var(--card-b); }
+.at-trava__gira { display: inline-block; width: 14px; height: 14px; margin-right: 10px; vertical-align: -2px; border-radius: 7px; border: 2px solid var(--lime); border-top-color: transparent; animation: at-trava-gira 1s linear infinite; }
+@keyframes at-trava-gira { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .at-trava__gira { animation: none; } }
+.at-trava--linha { flex-direction: row; align-items: center; gap: 14px; padding: 12px 16px; font-size: 14px; }

@@ -24,6 +24,7 @@ const crypto = require('node:crypto')
 const { caminhoSeguro } = require('../seguro.cjs')
 const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson } = require('./obra-fs.cjs')
 const { comoDado } = require('./plan-md.cjs')
+const { tipoDaTrava } = require('./travas.cjs')
 
 // Palavra inteira para cota (não casa "cotação", "escota").
 const RE_COTA = /(?<!\p{L})(?:cota|quota|limite de uso|usage limit|rate.?limit)(?!\p{L})/iu
@@ -54,8 +55,8 @@ function ocorrenciaDoKit(o) {
   }
 }
 
-/** Esta entrada aberta é um caso do cliente (nem cota, que é F10, nem cobrança)? */
-const exigeCliente = (o) => o && o.status === 'aberta' && Number.isInteger(o.id) && !RE_COTA.test(`${str(o.servico)} ${str(o.motivo)}`) && !RE_COBRANCA.test(`${str(o.servico)} ${str(o.motivo)}`)
+/** Esta entrada aberta é um caso do cliente (nem cota, que é F10, nem cobrança, nem trava conhecida, que tem ficha própria)? */
+const exigeCliente = (o) => o && o.status === 'aberta' && !tipoDaTrava(o) && Number.isInteger(o.id) && !RE_COTA.test(`${str(o.servico)} ${str(o.motivo)}`) && !RE_COBRANCA.test(`${str(o.servico)} ${str(o.motivo)}`)
 
 /**
  * `deps`: { raiz, cofre ({guardar}), canais?: { celular?, email? }, agora? }

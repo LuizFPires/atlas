@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Travas de uma conta</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none} .bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 18px;border-radius:12px;font:700 15px 'Geist',sans-serif;cursor:pointer;white-space:nowrap;box-sizing:border-box}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="canteiro" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:28px 36px;display:grid;grid-template-columns:340px minmax(0,1fr);gap:28px">
+  <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+   <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NO CANTEIRO · O CARTÃO DIZ O QUE TRAVOU</span>
+   <sc-for list="{{cartoes}}" as="c" hint-placeholder-count="3">
+    <button onClick="{{c.ir}}" style="text-align:left;cursor:pointer;background:{{t.card}};border:1px solid {{c.borda}};border-radius:16px;padding:0;overflow:hidden;color:{{t.text}};font-family:'Geist',sans-serif">
+     <div style="height:86px;background:{{t.cena}};position:relative;display:flex;align-items:flex-end;padding:10px 12px;box-sizing:border-box">
+      <span style="position:absolute;top:10px;left:10px;font:600 11px 'Geist Mono',monospace;letter-spacing:.08em;padding:5px 9px;border-radius:999px;background:{{c.seloBg}};color:{{c.seloCor}}">{{c.selo}}</span>
+      <svg width="120" height="44" viewBox="0 0 120 44" aria-hidden="true" style="margin-left:auto;opacity:.7"><rect x="10" y="24" width="30" height="20" fill="{{t.terraLinha}}"/><rect x="46" y="10" width="30" height="34" fill="{{t.terraLinha}}"/><rect x="82" y="30" width="28" height="14" fill="{{t.terraLinha}}"/></svg>
+     </div>
+     <div style="padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+      <b style="font-size:16px">{{c.obra}}</b>
+      <span style="font-size:14px;line-height:1.45;color:{{t.mute}}">{{c.linha}}</span>
+      <span style="font:600 12px 'Geist Mono',monospace;color:{{c.seloCor2}};margin-top:4px">{{c.volta}}</span>
+     </div>
+    </button>
+   </sc-for>
+   <span style="font-size:13px;line-height:1.5;color:{{t.mute2}};margin-top:auto">Clique num cartão para ver a ficha da trava, como ela aparece dentro da obra.</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+   <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">DENTRO DA OBRA · {{f.servicoUp}}</span>
+   <h1 style="margin:0;font-size:28px;line-height:1.2;letter-spacing:-.01em">{{f.titulo}}</h1>
+   <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+    <sc-for list="{{f.blocos}}" as="b" hint-placeholder-count="3">
+     <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px">
+      <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">{{b.rotulo}}</span>
+      <span style="font-size:15px;line-height:1.5">{{b.texto}}</span>
+     </div>
+    </sc-for>
+   </div>
+   <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}};margin-top:4px">O QUE VOCÊ PODE FAZER AGORA</span>
+   <sc-for list="{{f.opcoes}}" as="o" hint-placeholder-count="3">
+    <div style="background:{{t.card}};border:1px solid {{o.borda}};border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:16px">
+     <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+      <div style="display:flex;align-items:center;gap:10px"><b style="font-size:16px">{{o.nome}}</b><span style="display:{{o.dispRec}};font:600 11px 'Geist Mono',monospace;letter-spacing:.08em;padding:4px 8px;border-radius:999px;background:{{t.lime}};color:{{t.onLime}}">RECOMENDADO</span><span style="display:{{o.dispAviso}};font:600 11px 'Geist Mono',monospace;letter-spacing:.08em;padding:4px 8px;border-radius:999px;background:{{t.ambarSoft}};color:{{t.ambar}}">ATENÇÃO</span></div>
+      <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">{{o.desc}}</span>
+     </div>
+     <button class="bt" onClick="{{o.clicar}}" style="border:{{o.btBorda}};background:{{o.btBg}};color:{{o.btCor}}">{{o.bt}}</button>
+    </div>
+   </sc-for>
+   <sc-if value="{{confirmar}}" hint-placeholder-val="{{ false }}">
+    <div role="dialog" style="border:2px solid {{t.ambar}};background:{{t.ambarSoft}};border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px">
+     <b style="font-size:16px">Antes de deixar o projeto público por um tempo</b>
+     <span style="font-size:14px;line-height:1.5">Enquanto estiver público, qualquer pessoa na internet pode ver o código do seu sistema (não os dados dos seus clientes, nem as senhas, que ficam no Supabase). O Atlas volta para privado sozinho quando o GitHub liberar, no dia 1º.</span>
+     <div style="display:flex;gap:10px"><button class="bt" onClick="{{fecharConfirmar}}" style="border:none;background:{{t.ambar}};color:#141619">Entendi, deixar público até dia 1º</button><button class="bt" onClick="{{fecharConfirmar}}" style="border:1px solid {{t.cardB}};background:transparent;color:{{t.text}}">Não, prefiro o recomendado</button></div>
+    </div>
+   </sc-if>
+   <span style="font-size:13px;line-height:1.5;color:{{t.mute2}};margin-top:auto">{{f.rodape}}</span>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', ambar: '#F2B84B', ambarSoft: 'rgba(242,184,75,.14)', terra: '#2A2620', terraLinha: '#4A4134', cena: '#1A1D21', selo: 'rgba(16,18,20,.82)', seloTxt: '#EDEFEA' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', ambar: '#A86A00', ambarSoft: 'rgba(214,150,30,.14)', terra: '#E9E2D4', terraLinha: '#CDBFA5', cena: '#EEF0EA', selo: 'rgba(255,255,255,.92)', seloTxt: '#1B1E22' }
+};
+const TRAVAS = [
+  { id: 'gh', obra: 'Barbearia do Zé', servico: 'GitHub', selo: 'SEGUINDO SEM O GITHUB', linha: 'O GitHub parou de conferir o código (plano grátis do mês acabou). O Atlas confere aqui e segue.', volta: 'GITHUB VOLTA DIA 1º · SOZINHO', tom: 'lime',
+    titulo: 'O GitHub parou de conferir o seu código. A obra continua.',
+    blocos: [
+      { rotulo: 'O QUE ACONTECEU', texto: 'O GitHub confere cada parte nova do sistema. No plano grátis, ele dá um tanto de minutos por mês, e os deste mês acabaram.' },
+      { rotulo: 'PASSA SOZINHO?', texto: 'Sim. No dia 1º os minutos voltam e o Atlas percebe sozinho. Você não precisa fazer nada.' },
+      { rotulo: 'O QUE O ATLAS FAZ', texto: 'Faz a mesma conferência aqui no seu computador (testes, revisão, montagem) e continua construindo. Nada fica sem conferir.' }
+    ],
+    opcoes: [
+      { nome: 'Deixar o Atlas conferir aqui', desc: 'Não custa nada e não expõe o seu código. O computador trabalha um pouco mais.', rec: true, bt: 'Já está assim ✓', tipo: 'feito' },
+      { nome: 'Deixar o projeto público até dia 1º', desc: 'Projeto público não gasta minutos. Mas o código fica visível para qualquer um.', aviso: true, bt: 'Ver o que muda', tipo: 'confirmar' },
+      { nome: 'Aumentar o limite no GitHub', desc: 'Você coloca um valor máximo de gasto na sua conta. Custa por minuto usado. O Atlas mostra onde clicar.', bt: 'Mostrar onde', tipo: 'site' }
+    ], rodape: 'Esta decisão é sua: o Atlas nunca muda o seu plano, nem deixa nada público, sem você pedir.' },
+  { id: 'vc', obra: 'Agenda da Clínica', servico: 'Vercel', selo: 'PUBLICA AMANHÃ', linha: 'A vitrine (Vercel) já publicou o máximo de vezes de hoje. A obra segue construindo.', volta: 'PUBLICA AMANHÃ ÀS 9H · SOZINHO', tom: 'cinza',
+    titulo: 'A Vercel já publicou o máximo de hoje. Amanhã publica sozinha.',
+    blocos: [
+      { rotulo: 'O QUE ACONTECEU', texto: 'No plano grátis, a Vercel deixa colocar o sistema no ar até 100 vezes por dia. Hoje esse número acabou.' },
+      { rotulo: 'PASSA SOZINHO?', texto: 'Sim. Amanhã às 9h o Atlas publica a versão mais nova. Você não precisa fazer nada.' },
+      { rotulo: 'O QUE O ATLAS FAZ', texto: 'Continua construindo e testando. E daqui para frente publica só quando uma etapa inteira termina, para não chegar no limite de novo.' }
+    ],
+    opcoes: [
+      { nome: 'Esperar até amanhã', desc: 'Nada muda para você. O que já está no ar continua no ar.', rec: true, bt: 'Combinado ✓', tipo: 'feito' },
+      { nome: 'Mudar a Vercel para o plano pago', desc: 'Libera na hora, mas tem mensalidade (em dólar). Só vale se você precisa mostrar hoje.', bt: 'Mostrar onde', tipo: 'site' }
+    ], rodape: 'O que já está no ar não sai do ar. Só a versão mais nova espera até amanhã.' },
+  { id: 'sb', obra: 'Loja da Ana', servico: 'Supabase', selo: 'PRECISA DE VOCÊ · 1 CLIQUE', linha: 'O caderno (Supabase) dormiu porque ficou uma semana sem uso. É um clique para acordar.', volta: 'LEVA 1 MINUTO', tom: 'ambar',
+    titulo: 'O caderno do seu sistema dormiu. Um clique e ele acorda.',
+    blocos: [
+      { rotulo: 'O QUE ACONTECEU', texto: 'No plano grátis, o Supabase põe para dormir o projeto que fica 7 dias sem ninguém usar. Nada foi apagado.' },
+      { rotulo: 'PASSA SOZINHO?', texto: 'Não. Só o dono da conta pode acordar. É um botão, e o Atlas mostra qual.' },
+      { rotulo: 'O QUE O ATLAS FAZ', texto: 'Segue com as partes que não usam o caderno. Assim que ele acordar, o Atlas percebe e continua o resto.' }
+    ],
+    opcoes: [
+      { nome: 'Acordar o caderno agora', desc: 'O Atlas abre o site no lugar certo. Clique em Restore project (quer dizer "acordar o projeto") e espere 1 a 2 minutos.', rec: true, bt: 'Abrir e mostrar onde →', tipo: 'site' },
+      { nome: 'Fazer depois', desc: 'A obra continua no que der. O Atlas te lembra amanhã.', bt: 'Lembrar amanhã', tipo: 'feito' }
+    ], rodape: 'Seus dados estão guardados. Dormir não apaga nada.' }
+];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sel: 0, confirmar: false }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro';
+    const t = T[tema] || T.escuro;
+    const { sel, confirmar } = this.state;
+    const cor = (tom) => tom === 'lime' ? { bg: t.lime, txt: t.onLime, c2: t.limeTxt } : tom === 'ambar' ? { bg: t.ambar, txt: '#141619', c2: t.ambar } : { bg: t.selo, txt: t.seloTxt, c2: t.mute };
+    const cartoes = TRAVAS.map((x, i) => { const k = cor(x.tom); return { ...x, borda: i === sel ? t.lime : t.cardB, seloBg: k.bg, seloCor: k.txt, seloCor2: k.c2, ir: () => this.setState({ sel: i, confirmar: false }) }; });
+    const x = TRAVAS[sel];
+    const opcoes = x.opcoes.map((o) => ({ ...o, dispRec: o.rec ? 'inline-block' : 'none', dispAviso: o.aviso ? 'inline-block' : 'none',
+      borda: o.rec ? t.lime : t.cardB,
+      btBg: o.rec ? t.lime : 'transparent', btCor: o.rec ? t.onLime : t.text, btBorda: o.rec ? 'none' : `1px solid ${t.cardB}`,
+      clicar: () => o.tipo === 'confirmar' ? this.setState({ confirmar: true }) : null }));
+    return { t, tema, cartoes, f: { ...x, servicoUp: x.servico.toUpperCase(), opcoes }, confirmar, fecharConfirmar: () => this.setState({ confirmar: false }) };
+  }
+}
+</script>
+</body>
+</html>

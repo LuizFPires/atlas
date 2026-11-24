@@ -34,6 +34,9 @@ const { criarImportar } = require('./adaptadores/importar.cjs')
 const { criarAjuda, criarCasos } = require('./adaptadores/ajuda.cjs')
 const { criarPublicar } = require('./adaptadores/publicar.cjs')
 const { criarKit } = require('./adaptadores/kit.cjs')
+const { criarContasCli, rodarProcesso, comandoGh } = require('./adaptadores/contas-cli.cjs')
+const { criarTravasAcoes, SITE_DA_TRAVA } = require('./adaptadores/travas-acoes.cjs')
+const { envMinimo } = require('./seguro.cjs')
 const { criarServidor } = require('./adaptadores/servidor.cjs')
 const { tokenDoLink, comToken } = require('./link-instalacao.cjs')
 const { abrirExterno } = require('./seguro.cjs')
@@ -62,7 +65,10 @@ const modos = criarModo({ raiz: obras.raiz() })
 const kit = criarKit({ dadosApp: app.getPath('userData'), cofre, hashComputador: async () => hash() })
 // Modelo do Claude escolhido pelo cliente (um só para todo o Atlas; recomendado Opus 5.5).
 const modelo = criarModelo({ pasta: app.getPath('userData') })
-const construcao = criarConstrucao({ modelo: () => modelo.args(), raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
+// Contas ligadas a este computador (tela C1): gh, Vercel e Supabase. A chave do Supabase fica só no cofre e chega à linha pelo ambiente.
+const contasCli = criarContasCli({ dadosApp: app.getPath('userData'), cofre, env: envMinimo() })
+void contasCli.recarregar()
+const construcao = criarConstrucao({ envContas: () => contasCli.envDaLinha(process.env.PATH || process.env.Path || ''), modelo: () => modelo.args(), raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
 const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
 const cota = criarCota({ raiz: obras.raiz(), construcao, painel, claudeEstado: () => claude.estado(), dadosApp: app.getPath('userData'), garantirKit: (pasta) => kit.garantir(String(pasta)) })
@@ -304,6 +310,36 @@ handle('atlas:navegador:fora', (conta) => navegador.abrirNoComputador(String(con
 handle('atlas:navegador:pronta', (conta) => navegador.pronta(String(conta)))
 handle('atlas:navegador:fechar', () => navegador.fechar())
 
+// Ligar as contas a este computador (C1Contas). A tela recebe só o código e o estado; o endereço vem da CLI e é conferido aqui.
+const garantirFerramentas = async () => { if (!contasCli.ferramentasProntas() && !(await contasCli.instalarFerramentas())) throw new Error('ferramentas-indisponiveis') }
+handle('atlas:contas:situacao', () => contasCli.situacao())
+handle('atlas:contas:estado', (conta) => contasCli.estado(String(conta)))
+handle('atlas:contas:ligar', async (conta, b) => {
+  const c = String(conta)
+  if (c === 'hosp') await garantirFerramentas()
+  const r = await contasCli.ligar(c)
+  try { await navegador.abrirEndereco(r.url, b) } catch { /* sem painel ao lado: a tela oferece abrir no navegador do computador */ }
+  return { codigo: r.codigo }
+})
+handle('atlas:contas:siteFora', (conta) => {
+  const u = { github: 'https://github.com/login/device', hosp: 'https://vercel.com/device', supabase: 'https://supabase.com/dashboard/account/tokens' }[String(conta)]
+  if (u) void shell.openExternal(u)
+})
+handle('atlas:contas:abrirChaves', (b) => navegador.abrirEndereco('https://supabase.com/dashboard/account/tokens', b))
+handle('atlas:contas:chaveSupabase', async (chave) => { await garantirFerramentas(); return contasCli.guardarChaveSupabase(String(chave ?? '')) })
+handle('atlas:contas:cancelar', (conta) => contasCli.cancelar(String(conta)))
+
+// Fichas de trava (T1Travas): site fixo de cada trava e "deixar público até o GitHub voltar" (só depois da confirmação na tela).
+// De hora em hora (e ao abrir), obra que ficou pública volta para privado sozinha quando a trava do GitHub fecha.
+const travasAcoes = criarTravasAcoes({ raiz: obras.raiz(), rodarGh: (args, cwd) => rodarProcesso(comandoGh(envMinimo()), args, { env: envMinimo(), cwd, timeoutMs: 30_000 }) })
+handle('atlas:travas:site', (tipo, b) => { const u = SITE_DA_TRAVA[String(tipo)]; if (!u) throw new Error('trava-invalida'); return navegador.abrirEndereco(u, b) })
+handle('atlas:travas:siteFora', (tipo) => { const u = SITE_DA_TRAVA[String(tipo)]; if (u) void shell.openExternal(u) })
+handle('atlas:travas:publico', (pasta) => travasAcoes.deixarPublico(String(pasta)))
+handle('atlas:travas:ehPublico', (pasta) => travasAcoes.publico(String(pasta)))
+const revisarTravas = () => { void obras.listar().then((l) => travasAcoes.revisar(l)).catch(() => {}) }
+setTimeout(revisarTravas, 15_000)
+setInterval(revisarTravas, 60 * 60 * 1000).unref()
+
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois). O kit é apagado.
 // Atualização automática (atualizador.cjs): só no Atlas instalado no Windows. Confere 10 s depois de abrir e a cada 2 min;
 // baixa em silêncio e instala quando o Atlas fecha (decisão do Luiz, 22/11/2026).
@@ -326,7 +362,7 @@ handle('atlas:atualizacao:andamento', () => (atualizaAqui ? atualizador.andament
 handle('atlas:atualizacao:procurar', async () => { if (!atualizaAqui) return { estado: 'atual', versaoAtual: app.getVersion() }; const r = await atualizador.verificarEBaixar(); return atualizador.ultima() ?? { ...r, versaoAtual: app.getVersion() } })
 handle('atlas:atualizacao:instalar', () => atualizaAqui && atualizador.instalarAgora(() => setTimeout(() => app.quit(), 300)))
 
-app.on('before-quit', () => { construcao.encerrar(); painel.encerrar(); kit.descartarTudo(); if (app.isPackaged && process.platform === 'win32') atualizador.instalarAoSair() })
+app.on('before-quit', () => { contasCli.encerrar(); construcao.encerrar(); painel.encerrar(); kit.descartarTudo(); if (app.isPackaged && process.platform === 'win32') atualizador.instalarAoSair() })
 kit.descartarTudo() // sobra de uma queda anterior
 
 // O computador é o canteiro: durante a obra ele não pode dormir.

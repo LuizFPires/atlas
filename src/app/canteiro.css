@@ -72,3 +72,13 @@
 .at-ct__cancelar { min-height: 44px; padding: 0 18px; border-radius: 12px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 15px var(--font-text); cursor: pointer; }
 .at-ct__excluir { min-height: 44px; padding: 0 18px; border-radius: 12px; border: 0; background: #E5484D; color: #fff; font: 700 15px var(--font-text); cursor: pointer; }
 .at-ct__cancelar:focus-visible, .at-ct__excluir:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+/* Travas de conta (T1Travas, TF1, TF2): faixa "precisa de você", rodapé "quando volta" e o aviso ao abrir. */
+.at-ct__faixa-voce { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--aviso); font-size: 14px; }
+.at-ct__faixa-voce b { color: var(--aviso-txt); font-size: 15px; }
+.at-ct__volta { font: 600 12px var(--font-mono); letter-spacing: 0.06em; color: var(--mute); }
+.at-ct__cartao--ambar .at-ct__volta { color: var(--aviso-txt); }
+.at-ct__fora { width: 620px; text-align: left; align-items: stretch; }
+.at-ct__fora-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.at-ct__fora-lista li { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--card-b); font-size: 14px; }
+.at-ct__fora-lista li span { color: var(--mute); line-height: 1.45; }
+.at-ct__fora-lista .at-ct__fora-voce { border: 2px solid var(--aviso); }

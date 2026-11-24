@@ -6,6 +6,7 @@ import { faseDaObra, nomeDaPasta, type EtapaObra, type FaseObra } from './fase-o
 import type { ObraParaContinuar } from './Obras'
 import type { ParadaReal, QuemTrabalha } from './ponte-painel'
 import { quandoParou, type PonteRetomar } from './ponte-retomar'
+import { fichaDaTrava, type TravaObra } from './travas'
 import './canteiro.css'
 
 // Canteiro de obras e Obras concluídas (Milestone 37; protótipo prototipo/caminho-novo/K1Canteiro e K2Concluidas, aprovado pelo
@@ -21,9 +22,9 @@ const PASSO: Record<Exclude<EtapaObra, 'obra'>, { n: number; proximo: string }> 
 }
 
 /** O que o painel da obra diz (só o que o cartão usa). */
-type LeituraPainel = { pct: number; parada?: ParadaReal | null; pausadaPorVoce?: boolean; agora?: QuemTrabalha[] }
+type LeituraPainel = { pct: number; parada?: ParadaReal | null; pausadaPorVoce?: boolean; agora?: QuemTrabalha[]; trava?: TravaObra | null }
 /** Situação de uma obra em construção, para o selo e a linha do cartão. */
-type Vivo = { selo: string; linha: string; acao: string; tom: 'lime' | 'cinza' | 'ambar'; religar?: boolean }
+type Vivo = { selo: string; linha: string; acao: string; tom: 'lime' | 'cinza' | 'ambar'; religar?: boolean; volta?: string; travaVoce?: boolean; travaResumo?: string; travaLinha?: string }
 type Lida = { pasta: string; nome: string; fase: FaseObra; vivo?: Vivo }
 
 function vivoDa(l: LeituraPainel | null, parouEm: string | null | undefined): Vivo | undefined {
@@ -31,6 +32,11 @@ function vivoDa(l: LeituraPainel | null, parouEm: string | null | undefined): Vi
   if (l.parada === 'cota') return { selo: 'ESPERANDO O CLAUDE', linha: 'O limite do Claude acabou. A obra volta sozinha assim que ele renovar.', acao: 'Abrir a obra', tom: 'cinza' }
   if (l.parada === 'voce') return { selo: 'PRECISA DE VOCÊ', linha: 'O Atlas precisa de uma resposta sua para seguir.', acao: 'Responder', tom: 'ambar' }
   if (l.parada === 'billing') return { selo: 'PAGAMENTO PENDENTE', linha: 'Confira o pagamento do serviço para a obra seguir.', acao: 'Ver o que fazer', tom: 'ambar' }
+  // Trava de uma conta (T1Travas): o selo diz qual conta e quando volta; âmbar só quando precisa de você.
+  if (l.trava) {
+    const f = fichaDaTrava(l.trava)
+    return { selo: f.selo, linha: f.linha, volta: f.volta, acao: f.precisaDeVoce ? 'Resolver agora' : 'Abrir a obra', tom: f.precisaDeVoce ? 'ambar' : l.trava.tipo === 'github-minutos' ? 'lime' : 'cinza', travaVoce: f.precisaDeVoce, travaResumo: f.precisaDeVoce ? 'precisa de você' : f.volta.toLocaleLowerCase('pt-BR').replace(' · ', ', '), travaLinha: f.linha }
+  }
   if (l.pausadaPorVoce) return { selo: 'PAUSADA POR VOCÊ', linha: 'A obra está esperando você mandar seguir.', acao: 'Continuar obra', tom: 'cinza' }
   if (parouEm !== undefined) return { selo: 'PARADA', linha: `Parou ${quandoParou(parouEm, new Date()) ?? 'há pouco'}, quando o computador desligou.`, acao: 'Continuar obra', tom: 'cinza', religar: true }
   const ativo = l.agora?.find((q) => q.tom === 'ativo')
@@ -38,6 +44,9 @@ function vivoDa(l: LeituraPainel | null, parouEm: string | null | undefined): Vi
   return undefined
 }
 type Filtro = 'todas' | 'falta' | 'construcao'
+
+/** O aviso "enquanto você estava fora" (TF1) aparece uma vez por abertura do Atlas, e só se alguma trava precisa da pessoa. */
+let avisoDeTravasMostrado = false
 
 interface Props {
   modo: 'canteiro' | 'concluidas'
@@ -57,6 +66,7 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova }: Prop
   const [excluindo, setExcluindo] = useState<Lida | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const [erroExcluir, setErroExcluir] = useState('')
+  const [avisoTravas, setAvisoTravas] = useState(false)
   const excluir = async (o: Lida) => {
     if (!obras.excluir) return
     setOcupado(true)
@@ -84,10 +94,12 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova }: Prop
         const vivo = fase.etapa === 'obra' && !fase.concluida ? vivoDa(leitura, parada?.pasta === pasta ? parada.paradaEm : undefined) : undefined
         out.push({ pasta, nome: nomeDaPasta(pasta), fase, vivo })
       }
-      if (vivo) setLidas(out)
+      if (!vivo) return
+      setLidas(out)
+      if (modo === 'canteiro' && !avisoDeTravasMostrado && out.some((o) => o.vivo?.travaVoce)) { avisoDeTravasMostrado = true; setAvisoTravas(true) }
     })()
     return () => { vivo = false }
-  }, [obras, painel, retomar])
+  }, [obras, painel, retomar, modo])
 
   const daqui = useMemo(() => {
     const todas = (lidas ?? []).filter((o) => (modo === 'concluidas' ? o.fase.concluida : !o.fase.concluida))
@@ -144,9 +156,43 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova }: Prop
       )}
       {lidas !== null && daqui.length > 0 && mostradas.length === 0 && <p className="at-ct__vazio">Nenhuma obra com esse nome.</p>}
 
+      {modo === 'canteiro' && daqui.some((o) => o.vivo?.travaVoce) && (
+        <div className="at-ct__faixa-voce" role="status">
+          <b>{daqui.filter((o) => o.vivo?.travaVoce).length === 1 ? '1 obra precisa de você.' : `${daqui.filter((o) => o.vivo?.travaVoce).length} obras precisam de você.`}</b>
+          <span>As outras travas o Atlas resolve sozinho.</span>
+        </div>
+      )}
+
       <div className="at-ct__cartoes">
         {mostradas.map((o) => <Cartao key={o.pasta} o={o} onAbrir={() => { void abrir(o) }} onExcluir={modo === 'canteiro' && obras.excluir && !o.fase.concluida ? () => { setErroExcluir(''); setExcluindo(o) } : undefined} />)}
       </div>
+
+      {avisoTravas && (() => {
+        const travadas = (lidas ?? []).filter((o) => o.vivo?.travaResumo)
+        const voce = travadas.filter((o) => o.vivo?.travaVoce)
+        const primeira = voce[0]
+        return (
+          <div className="at-ct__fundo">
+            <div className="at-ct__confirma at-ct__fora" role="dialog" aria-modal="true" aria-labelledby="ct-fora-tit">
+              <span className="at-ct__rotulo">AO ABRIR O ATLAS</span>
+              <h2 id="ct-fora-tit">Enquanto você estava fora, {travadas.length === 1 ? '1 obra esbarrou' : `${travadas.length} obras esbarraram`} numa conta.</h2>
+              <p>{travadas.length - voce.length > 0 ? `${travadas.length - voce.length === 1 ? 'Uma o Atlas resolve' : `${travadas.length - voce.length} o Atlas resolve`} sozinho. ` : ''}{voce.length === 1 ? 'Uma precisa de você, e leva 1 minuto.' : `${voce.length} precisam de você.`}</p>
+              <ul className="at-ct__fora-lista">
+                {[...voce, ...travadas.filter((o) => !o.vivo?.travaVoce)].map((o) => (
+                  <li key={o.pasta} className={o.vivo?.travaVoce ? 'at-ct__fora-voce' : ''}>
+                    <b>{o.nome} · {o.vivo?.travaResumo}</b>
+                    <span>{o.vivo?.travaLinha}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="at-ct__confirma-acoes">
+                {primeira && <button type="button" className="at-ct__nova" autoFocus onClick={() => { setAvisoTravas(false); void abrir(primeira) }}>Resolver {primeira.nome} (1 min) →</button>}
+                <button type="button" className="at-ct__cancelar" onClick={() => setAvisoTravas(false)}>Ver o canteiro</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {excluindo && (
         <div className="at-ct__fundo">
@@ -187,6 +233,7 @@ function Cartao({ o, onAbrir, onExcluir }: { o: Lida; onAbrir: () => void; onExc
           <span className="at-ct__nome-linha"><b className="at-ct__nome" title={o.pasta}>{o.nome}</b>{!inacabada && !fase.concluida && fase.pct !== undefined && <span className="at-ct__pct">{fase.pct}%</span>}</span>
           {!fase.concluida && <span className="at-ct__barra" aria-hidden="true"><i style={{ width: `${inacabada ? ((passo!.n - 1) / 6) * 100 : (fase.pct ?? 0)}%` }} /></span>}
           <span className="at-ct__linha">{linha}</span>
+          {vivo?.volta && !passo && !fase.concluida && <span className="at-ct__volta">{vivo.volta}</span>}
           <span className="at-ct__acao">{acao}<Icone nome="seta" tamanho={16} /></span>
         </span>
       </button>

@@ -131,3 +131,12 @@ test('caminho seguro: pasta fora da raiz, inválida ou com link é recusada', as
   try { fs.symlinkSync(alvo, livroPath) } catch { return } // sem permissão de symlink no Windows comum: o resto já foi coberto
   await assert.rejects(o.ler('obra'), /caminho-com-link/) // livro que é link não é lido
 })
+
+test('trava conhecida (ex.: Supabase dormindo) não abre a tela genérica F11: ela tem ficha própria na obra', async () => {
+  const { criarOcorrencias } = require('./ocorrencias.cjs')
+  const raiz = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'atlas-oc-'))
+  fs.mkdirSync(path.join(raiz, 'obra', 'docs'), { recursive: true })
+  fs.writeFileSync(path.join(raiz, 'obra', 'docs', 'ocorrencias.json'), JSON.stringify({ proximo_id: 2, ocorrencias: [{ id: 1, status: 'aberta', servico: 'Supabase', motivo: 'projeto pausado por inatividade', acao: 'x', bloqueia: [], tentativas: [] }] }))
+  const oc = criarOcorrencias({ raiz, cofre: { guardar: async () => {} } })
+  assert.equal(await oc.ler('obra'), null)
+})

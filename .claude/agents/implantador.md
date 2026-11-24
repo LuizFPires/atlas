@@ -14,17 +14,17 @@ O coordenador manda: a stack detectada, o ambiente (`homologacao` ou `producao`)
 Na maioria dos projetos, a Vercel publica sozinha a cada merge na `main`. Se o código novo chegar antes da migration, a produção quebra. Por isso:
 
 1. **Conferir o terreno**
-   - CLIs: `npx supabase --version`, `npx vercel --version`, `flyctl version` (só as que a stack usa).
-   - Login: `npx supabase projects list`, `npx vercel whoami`, `flyctl auth whoami`. Falhou → relate em USUÁRIO o comando exato (ex.: `! npx vercel login`). Não tente logar pelo usuário.
+   - CLIs: `supabase --version`, `vercel --version`, `flyctl version` (só as que a stack usa). Na obra do Atlas (`ATLAS_APP=1`) a Vercel e o Supabase já vêm instalados e o `npx` é proibido; fora do Atlas, sem a CLI instalada, use `npx vercel` / `npx supabase` no lugar.
+   - Login: `supabase projects list`, `vercel whoami`, `flyctl auth whoami`. Falhou → obra do Atlas: registre ocorrência (`--servico <Vercel|Supabase> --motivo "conta desligada deste computador"`) e relate em USUÁRIO "Ligue a <Vercel|o Supabase> na tela As contas do Atlas (botão Ligar)"; **nunca** peça comando. Fora do Atlas: relate o comando exato (ex.: `! vercel login`). Não tente logar pelo usuário.
 2. **Banco (Supabase)**
-   - `npx supabase link --project-ref <ref de produção>` (o ref vem do coordenador; nunca adivinhe).
-   - Mostre o que vai rodar: `npx supabase db push --dry-run`. Se houver `DROP`, `ALTER ... DROP COLUMN`, `TRUNCATE` ou `DELETE` em tabela com dados, **pare** e relate em DECISÃO. Nunca aplique destrutivo sem o usuário.
-   - Aplique: `npx supabase db push`. Funções: `npx supabase functions deploy <nome>` para cada pasta em `supabase/functions`.
-3. **Variáveis de ambiente**: confira que cada variável do laudo existe no provedor (`npx vercel env ls production`, `flyctl secrets list`). Faltando → relate em USUÁRIO o nome e onde cadastrar. **Nunca** escreva valor de segredo em arquivo, commit ou log.
+   - `supabase link --project-ref <ref de produção>` (o ref vem do coordenador; nunca adivinhe).
+   - Mostre o que vai rodar: `supabase db push --dry-run`. Se houver `DROP`, `ALTER ... DROP COLUMN`, `TRUNCATE` ou `DELETE` em tabela com dados, **pare** e relate em DECISÃO. Nunca aplique destrutivo sem o usuário.
+   - Aplique: `supabase db push`. Funções: `supabase functions deploy <nome>` para cada pasta em `supabase/functions`.
+3. **Variáveis de ambiente**: confira que cada variável do laudo existe no provedor (`vercel env ls production`, `flyctl secrets list`). Faltando → relate em USUÁRIO o nome e onde cadastrar. **Nunca** escreva valor de segredo em arquivo, commit ou log.
 4. **Workers e APIs (Fly.io)**, se houver `fly.toml`: `flyctl deploy --remote-only` e `flyctl status`.
-5. **Front (Vercel)**: se o projeto já publica pelo Git, confira o último deploy (`npx vercel ls --prod | head`) e, se precisar, `npx vercel --prod`. Se não estiver ligado, `npx vercel link` e relate em DECISÃO se deve ativar o deploy automático pelo Git.
+5. **Front (Vercel)**: se o projeto já publica pelo Git, confira o último deploy (`vercel ls --prod | head`) e, se precisar, `vercel --prod`. Se não estiver ligado, `vercel link` e relate em DECISÃO se deve ativar o deploy automático pelo Git.
 6. **Teste depois do deploy (smoke)**: abra a URL de produção (`curl -sS -o /dev/null -w "%{http_code}" <url>`), a rota de saúde se existir, e o login. Com Playwright no projeto, rode só os testes marcados como smoke contra a URL de produção.
-7. **Plano de volta**: anote como voltar: deploy anterior da Vercel (`npx vercel rollback <url-anterior>`), release anterior do Fly (`flyctl releases`), e a migration de reversão (se não existir, diga).
+7. **Plano de volta**: anote como voltar: deploy anterior da Vercel (`vercel rollback <url-anterior>`), release anterior do Fly (`flyctl releases`), e a migration de reversão (se não existir, diga).
 8. Registre tudo em `docs/entrega.md` (seção "Produção"): URLs, data, versão/commit, ids dos deploys, plano de volta. Commit `docs: registro de implantação`.
 
 ## Bloqueio externo

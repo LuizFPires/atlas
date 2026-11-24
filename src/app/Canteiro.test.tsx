@@ -124,3 +124,23 @@ describe('excluir obra (Luiz, 23/11/2026)', () => {
     expect(within(c).queryByRole('button', { name: /Excluir/ })).toBeNull()
   })
 })
+
+test('Canteiro com trava: o cartão diz qual conta e quando volta; a que precisa de você abre um aviso uma vez, com "Resolver"', async () => {
+  const user = userEvent.setup()
+  const sit = { 'loja-da-ana': S({ estilo: true, prototipo: true, marca: true, plano: true }), 'agenda-da-clinica': S({ estilo: true, prototipo: true, marca: true, plano: true }) }
+  const obras = { ...ponte, listar: async () => Object.keys(sit), situacao: async (p: string) => sit[p as keyof typeof sit] } as unknown as PonteObras
+  const travas = {
+    'loja-da-ana': { id: 2, tipo: 'supabase-dormindo' as const, servico: 'Supabase' as const, liberaEm: null },
+    'agenda-da-clinica': { id: 1, tipo: 'vercel-limite' as const, servico: 'Vercel' as const, liberaEm: null },
+  }
+  const onAbrir = vi.fn()
+  render(<Canteiro modo="canteiro" obras={obras} painel={{ ler: async (p: string) => ({ pct: 40, trava: travas[p as keyof typeof travas] }) }} onAbrir={onAbrir} onNova={() => {}} />)
+  const aviso = await screen.findByRole('dialog', { name: /enquanto você estava fora/i })
+  expect(within(aviso).getByText(/Loja da ana · precisa de você/)).toBeInTheDocument()
+  expect(within(aviso).getByText(/Agenda da clinica · publica amanhã, sozinho/)).toBeInTheDocument()
+  await user.click(within(aviso).getByRole('button', { name: /Resolver Loja da ana/ }))
+  expect(onAbrir).toHaveBeenCalledWith(expect.objectContaining({ pasta: 'loja-da-ana', etapa: 'obra' }))
+  const cartoes = screen.getAllByRole('article')
+  expect(within(cartoes.find((c) => /Loja/.test(c.getAttribute('aria-label') ?? ''))!).getByText('PRECISA DE VOCÊ · 1 CLIQUE')).toBeInTheDocument()
+  expect(screen.getByText('PUBLICA AMANHÃ · SOZINHO')).toBeInTheDocument()
+})
