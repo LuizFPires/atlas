@@ -105,7 +105,7 @@ Na obra, quando chove, a concretagem fica para amanhã e a equipe segue com o qu
 1. **Registre** no livro:
    `node .claude/hooks/ocorrencias.cjs abrir --servico <nome> --motivo "<erro em uma linha>" --acao "<o que fazer quando liberar>" --teste "<comando barato que prova que liberou>" --liberar-em <AAAA-MM-DDTHH:MM> --bloqueia "MN:<tarefa>,..."`
    - `--liberar-em`: use o horário que a mensagem do serviço informar. Se não informar, use daqui a 1 hora; o plantonista reagenda.
-   - `--acao` precisa ser executável por si só (ex.: "deploy de produção da main com `npx vercel --prod`"), porque quem vai executar é outro agente, sem esta conversa.
+   - `--acao` precisa ser executável por si só (ex.: "deploy de produção da main com `vercel --prod`"), porque quem vai executar é outro agente, sem esta conversa.
 2. No `Notas:` do milestone afetado, escreva `⏸ aguardando ocorrência #<id> (<serviço>)`. A tarefa fica `- [ ]`.
 3. Commit `chore: ocorrência #<id> — <serviço>` (só `docs/ocorrencias.json` e o PLAN).
 4. **Siga a obra**: o resto do milestone continua normalmente (implementar, revisar, medir só o que o qa aprovou, merge). Depois, o próximo milestone que não dependa da ocorrência. No automático, escreva `⏩ Auto: ocorrência #<id> registrada, seguindo com <o que vem>`.

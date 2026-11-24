@@ -419,7 +419,7 @@ tela: prototipo/caminho-novo/C1Contas.dc.html
 - [x] A linha pode preparar o projeto: npm install, git init, remoto e repositório no GitHub (gh repo create), gh auth status; nada que mostre ou troque credencial
 - [x] Git da obra com autor (Atlas) e push pelo login do gh, sem senha em arquivo; Git Bash achado mesmo com o PATH antigo
 - [x] Canteiro 3D e hooks vão no instalador (resources/kit) e o plugin da obra liga os hooks do andamento (hooks.json)
-- [ ] Contas conectadas de verdade neste computador (GitHub, Vercel, Supabase) pelo próprio Atlas: código na tela, a pessoa confirma no navegador
-- [ ] Publicar no ar sem npx solto: o Atlas roda o deploy com as ferramentas certas e mostra o endereço
+- [x] Contas conectadas de verdade neste computador (GitHub, Vercel, Supabase) pelo próprio Atlas: código na tela, a pessoa confirma no navegador
+- [x] Publicar no ar sem npx solto: o Atlas roda o deploy com as ferramentas certas e mostra o endereço
 - [ ] Teste de ponta a ponta automático num Windows limpo: instalar, obra pequena até o primeiro milestone, publicação de teste
-Notas: DECISÃO do Luiz (24/11/2026, "Faz uma revisão geral para encontrar pontos falhos ... se o usuário que acessa o Atlas pela primeira vez vai conseguir percorrer todo o fluxo até ter seu software na mão"; "Pode seguir" para os itens 1, 3 e 5 e o desenho da tela das contas). Antes o caminho só funcionava em computador que já tinha Git, gh logado e o kit do canteiro.
+Notas: DECISÃO do Luiz (24/11/2026, "Faz uma revisão geral para encontrar pontos falhos ... se o usuário que acessa o Atlas pela primeira vez vai conseguir percorrer todo o fluxo até ter seu software na mão"; "Pode seguir" para os itens 1, 3 e 5 e o desenho da tela das contas). Antes o caminho só funcionava em computador que já tinha Git, gh logado e o kit do canteiro. Tela C1 aprovada ("Pode mesclar e a tela está aprovada"). DIVERGÊNCIA registrada: o Supabase liga por chave colada (a CLI dele não faz login sem terminal), guardada só no cofre; GitHub e Vercel por código, como no desenho. Pendência: testar num Windows de verdade; apps de loja (EAS) ainda pedem comando ao usuário.

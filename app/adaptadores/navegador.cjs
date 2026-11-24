@@ -84,6 +84,16 @@ function criarNavegador({ criarView, avisar, abrirFora, logadoNoGithub }) {
       v.setVisible(true)
       v.loadURL(SITES[conta])
     },
+    /** Ligar as contas (contas-cli.cjs): abre o endereço que o PROCESSO PRINCIPAL recebeu da CLI (nunca da tela), só de site das contas. */
+    async abrirEndereco(url, bounds) {
+      if (!urlPermitida(url)) throw new Error('endereco-invalido')
+      if (!posicaoValida(bounds)) throw new Error('posicao-invalida')
+      const v = garantir()
+      contaAtual = null // aqui não há "conta pronta" a detectar: quem diz se ligou é a própria CLI
+      v.setBounds({ x: Math.round(bounds.x), y: Math.round(bounds.y), width: Math.round(bounds.width), height: Math.round(bounds.height) })
+      v.setVisible(true)
+      v.loadURL(String(url))
+    },
     posicionar(bounds) {
       if (!view || !posicaoValida(bounds)) return
       view.setBounds({ x: Math.round(bounds.x), y: Math.round(bounds.y), width: Math.round(bounds.width), height: Math.round(bounds.height) })

@@ -1,7 +1,7 @@
 // Preload do app Atlas: a ÚNICA ponte entre a tela (renderer) e o processo principal.
 //
 // O QUE FAZ: expõe window.atlasDesktop (contextIsolation ligado, sandbox ligado, SEM nodeIntegration). Só os namespaces
-// que o front usa (src/app/ponte.ts): cofre, servidor, pagamento, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar, kit, atualizacao, ideia, navegador, contas. Todo argumento vira String/boolean aqui e é
+// que o front usa (src/app/ponte.ts): cofre, servidor, pagamento, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar, kit, atualizacao, ideia, navegador, contas, ligarContas. Todo argumento vira String/boolean aqui e é
 // revalidado de novo no processo principal (main.cjs); o renderer nunca recebe caminho de origem, módulo Node nem Electron.
 //
 // COMO TESTAR (Windows): `npx electron app/main.cjs`, abrir as ferramentas do desenvolvedor e digitar `window.atlasDesktop`:
@@ -103,6 +103,16 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
   },
   // Contas do cliente: "abrir o site" (no navegador do computador) e se a conta já está pronta (visto pelo navegador do Atlas).
   contas: { abrirSite: (conta) => chamar('atlas:navegador:fora', String(conta)), pronta: (conta) => chamar('atlas:navegador:pronta', String(conta)) },
+  // Ligar as contas a este computador (C1Contas): a tela recebe o código para mostrar e o estado; nunca endereço nem chave de volta.
+  ligarContas: {
+    situacao: () => chamar('atlas:contas:situacao'),
+    estado: (conta) => chamar('atlas:contas:estado', String(conta)),
+    ligar: (conta, b) => chamar('atlas:contas:ligar', String(conta), { x: Number(b?.x), y: Number(b?.y), width: Number(b?.width), height: Number(b?.height) }),
+    siteFora: (conta) => chamar('atlas:contas:siteFora', String(conta)),
+    abrirChaves: (b) => chamar('atlas:contas:abrirChaves', { x: Number(b?.x), y: Number(b?.y), width: Number(b?.width), height: Number(b?.height) }),
+    chaveSupabase: (chave) => chamar('atlas:contas:chaveSupabase', String(chave ?? '')),
+    cancelar: (conta) => chamar('atlas:contas:cancelar', String(conta)),
+  },
   // Roteiro da ideia: quais tópicos o relato já respondeu e, no fim, o que faltou.
   ideia: { conferir: (relato, fim) => chamar('atlas:ideia:conferir', String(relato ?? ''), fim === true) },
   prototipo: {

@@ -11,6 +11,8 @@ import { ajudaIndisponivel, contextoDoPasso, criarAjudaFixture, type ContextoAju
 import { casosIndisponivel, criarCasosFixture, type PonteCasosAdmin } from './ponte-ajuda-casos'
 import { Celular } from './Celular'
 import { Contas } from './Contas'
+import { LigarContas } from './LigarContas'
+import { criarLigarContasFixture, type PonteLigarContas } from './ponte-ligar-contas'
 import { Obras as ListaObras, type ObraParaContinuar } from './Obras'
 import { Canteiro } from './Canteiro'
 import { AbasDaObra } from './AbasDaObra'
@@ -134,6 +136,9 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const abrirAjuda = (contexto: ContextoAjuda) => setPainelAjuda((a) => ({ contexto: { obra: obraAtual?.nome, pasta: obraAtual?.pasta, ...contexto }, n: (a?.n ?? 0) + 1 }))
   const pedirAjudaPasso = (p: PedidoAjudaPasso) => abrirAjuda(contextoDoPasso(p))
 
+  const ponteLigar = useMemo<PonteLigarContas | null>(() => (modoFixture() ? criarLigarContasFixture() : (ponte.ligarContas ?? null)), [ponte])
+  // Depois de criar as contas nos sites, a mesma etapa 'contas' liga cada uma a este computador (C1Contas, 24/11/2026).
+  const [ligandoContas, setLigandoContas] = useState(false)
   const ponteContas = useMemo<PonteContas>(() => contas ?? (modoFixture() ? criarContasFixture() : (ponte.contas ?? contasIndisponivel)), [contas, ponte])
 
   // Idem para o celular (Remote Control): sem adaptador real, não finge que o celular está ligado.
@@ -358,7 +363,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     void pontePrototipo.mapear?.(criada.pasta, nome, relato).catch(() => {})
     setFluxo('estilo')
   }} />
-  else if (ativo === 'obras' && fluxo === 'contas') conteudo = <Contas contas={ponteContas} navegador={modoFixture() ? undefined : ponte.navegador} onContinuar={() => setFluxo('aprovar')} onPedirAjuda={pedirAjudaPasso} />
+  else if (ativo === 'obras' && fluxo === 'contas' && ligandoContas && ponteLigar) conteudo = <LigarContas ponte={ponteLigar} navegador={modoFixture() ? undefined : ponte.navegador} onVoltar={() => setLigandoContas(false)} onContinuar={() => { setLigandoContas(false); setFluxo('aprovar') }} />
+  else if (ativo === 'obras' && fluxo === 'contas') conteudo = <Contas contas={ponteContas} navegador={modoFixture() ? undefined : ponte.navegador} onContinuar={() => { if (ponteLigar) setLigandoContas(true); else setFluxo('aprovar') }} onPedirAjuda={pedirAjudaPasso} />
   else if (ativo === 'retomar') conteudo = paradaF12
     ? <Retomar obra={paradaF12} nome={dono || undefined} retomar={ponteRetomar} onContinuou={(o) => { setObraAtual({ nome: o.nome, pasta: o.pasta }); setFluxo('lista'); setAtivo('obra') }} onAgoraNao={() => setAtivo('obras')} />
     : <SemObra rotulo="COMO RETOMAR" titulo="Nenhuma obra parada agora." texto="Se o computador desligar ou a cota do Claude acabar, a obra para no ponto em que estava. Quando você ligar o computador, o Atlas abre sozinho aqui, com um botão só: Continuar obra." onIrObras={() => setAtivo('obras')} />

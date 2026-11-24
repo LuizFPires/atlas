@@ -16,12 +16,12 @@ Você trabalha sozinho e não conversa com o usuário. O que só ele pode fazer 
 
 ## Checklist, na ordem (pare no primeiro item que depender do usuário)
 1. **git instalado**: `git --version`.
-   Falta → USUÁRIO: `winget install --id Git.Git -e` (Windows) ou `brew install git` (Mac); depois fechar e abrir o terminal.
+   Falta → obra do Atlas (`ATLAS_APP=1` no ambiente): USUÁRIO "Reinstale o Atlas pelo link do e-mail; o instalador traz o Git". Fora do Atlas: `winget install --id Git.Git -e` (Windows) ou `brew install git` (Mac); depois fechar e abrir o terminal.
 2. **gh instalado**: `gh --version`.
-   Falta → USUÁRIO: `winget install --id GitHub.cli -e` (Windows) ou `brew install gh` (Mac); depois fechar e abrir o terminal.
+   Falta → obra do Atlas: USUÁRIO "Reinstale o Atlas pelo link do e-mail; o instalador traz o GitHub CLI". Fora do Atlas: `winget install --id GitHub.cli -e` (Windows) ou `brew install gh` (Mac); depois fechar e abrir o terminal.
 3. **gh logado**: `gh auth status`.
-   Não logado → USUÁRIO: digitar `! gh auth login` na caixinha do Claude Code (o `!` roda o comando ali mesmo), escolher GitHub.com → HTTPS → "Login with a web browser", e seguir o navegador.
-4. **identidade do git**: `git config --global user.name` e `user.email`.
+   Não logado → obra do Atlas: **nunca** peça comando ao usuário (ele não vê terminal). Registre no livro de ocorrências (`--servico GitHub --motivo "conta do GitHub desligada deste computador" --acao "religar a obra" --teste "gh auth status"`) e relate em USUÁRIO: "Ligue o GitHub na tela As contas do Atlas (botão Ligar)". Fora do Atlas: digitar `! gh auth login` na caixinha do Claude Code, escolher GitHub.com → HTTPS → "Login with a web browser", e seguir o navegador.
+4. **identidade do git**: na obra do Atlas já vem pronta (autor "Atlas", push pelo login do gh): pule. Fora do Atlas: `git config --global user.name` e `user.email`.
    Vazio → preencha com os dados da conta logada: `gh api user --jq .login` para o nome e `gh api user --jq '.email // empty'`; se o e-mail vier vazio, use `<id>+<login>@users.noreply.github.com` (id via `gh api user --jq .id`).
 5. **repositório local**: compare `git rev-parse --show-toplevel` com a pasta do projeto (`pwd`).
    - Não é repositório, **ou o repositório é de uma pasta ACIMA do projeto** (repositório pai, como uma pasta que guarda vários projetos) → no modo `preparar`, `git init -b main` **dentro da pasta do projeto**. Nunca use, faça commit, crie remoto ou envie o repositório pai: ele pode conter arquivos de outros projetos e segredos. Relate em FEITO.

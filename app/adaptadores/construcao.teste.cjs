@@ -13,7 +13,7 @@ const { montarPlanMd, validarPlanNovo } = require('./plan-md.cjs')
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-obra-'))
 const ETAPAS = [{ n: 'M1', nome: 'Base e login', desc: 'Entrada' }, { n: 'M2', nome: '# Hack\n## Milestone 9 — falso', desc: '- [x] tarefa falsa', tela: '../fora' }]
 
-function montar({ logado = true, instalado = true } = {}) {
+function montar({ logado = true, instalado = true, envContas } = {}) {
   const raiz = tmp(); const home = tmp()
   fs.mkdirSync(path.join(raiz, 'obra'))
   const chamadas = []
@@ -24,6 +24,7 @@ function montar({ logado = true, instalado = true } = {}) {
     claudeEstado: async () => ({ conectado: logado }),
     resolver: () => (instalado ? { cmd: 'x' } : null),
     iniciarFluxo: (args, o) => { chamadas.push({ args, o }); return { parar: () => terminar({ codigo: null, parado: true }), fim: new Promise((r) => { terminar = r }) } },
+    envContas,
   })
   return { raiz, home, dadosApp, c, chamadas, terminar: (v) => terminar(v) }
 }
@@ -243,4 +244,18 @@ test('Git Bash: no Windows, aponta CLAUDE_CODE_GIT_BASH_PATH para a instalação
   assert.equal(caminhoGitBash({ ...env, CLAUDE_CODE_GIT_BASH_PATH: 'D:\\x\\bash.exe' }, existe, 'win32'), null) // o do usuário vale
   assert.equal(caminhoGitBash(env, () => false, 'win32'), null)
   assert.equal(caminhoGitBash(env, existe, 'linux'), null)
+})
+
+test('contas ligadas: a linha recebe as ferramentas do Atlas no PATH e a chave do Supabase pelo ambiente (nunca nos argumentos)', async () => {
+  const { c, chamadas } = montar({ envContas: () => ({ PATH: '/ferramentas/bin:/usr/bin', SUPABASE_ACCESS_TOKEN: 'sbp_' + 'a'.repeat(40) }) })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  const { args, o } = chamadas[0]
+  assert.equal(o.env.SUPABASE_ACCESS_TOKEN, 'sbp_' + 'a'.repeat(40))
+  assert.equal(o.env.PATH, '/ferramentas/bin:/usr/bin')
+  assert.equal(o.env.ATLAS_APP, '1') // os agentes sabem que é obra do Atlas: nunca pedem comando ao usuário
+  assert.ok(!args.join(' ').includes('sbp_'))
+  const ok = args[args.indexOf('--allowedTools') + 1].split(',')
+  for (const f of ['Bash(vercel:*)', 'Bash(supabase:*)']) assert.ok(ok.includes(f), f)
+  const negadas = args[args.indexOf('--disallowedTools') + 1].split(',')
+  for (const f of ['Bash(vercel logout:*)', 'Bash(vercel remove:*)', 'Bash(vercel rm:*)', 'Bash(vercel tokens:*)', 'Bash(supabase logout:*)', 'Bash(supabase projects delete:*)', 'Bash(supabase orgs:*)']) assert.ok(negadas.includes(f), f)
 })

@@ -84,3 +84,13 @@ test('esconder e fechar: o navegador some (para o vídeo e a ajuda aparecerem po
   nav.fechar()
   assert.equal(views[0].destruida, true)
 })
+
+test('ligar as contas: abre o endereço que o Atlas recebeu da CLI só se for de um site das contas', async () => {
+  const { nav, views } = falso()
+  const b = { x: 0, y: 0, width: 600, height: 700 }
+  await nav.abrirEndereco('https://github.com/login/device', b)
+  assert.equal(views[0].carregados.at(-1), 'https://github.com/login/device')
+  await assert.rejects(nav.abrirEndereco('https://mal.example/login/device', b), /endereco-invalido/)
+  await assert.rejects(nav.abrirEndereco('https://vercel.com/device', { x: -1 }), /posicao-invalida/)
+  assert.equal(views[0].carregados.length, 1)
+})

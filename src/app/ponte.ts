@@ -24,6 +24,7 @@ import type { PonteAtualizacao } from './NovaVersao'
 import type { PonteIdeia } from './ponte-ideia'
 import type { PonteNavegador } from './ponte-navegador'
 import type { PonteContas } from './ponte-contas'
+import type { PonteLigarContas } from './ponte-ligar-contas'
 
 /** Cofre do sistema (Windows Credential Manager / DPAPI). NUNCA grava segredo em arquivo. */
 export interface Cofre {
@@ -79,6 +80,8 @@ export interface PonteDesktop {
   /** Navegador de verdade dentro do Atlas (tela das contas) e as contas vistas por ele. */
   navegador?: PonteNavegador
   contas?: PonteContas
+  /** Ligar as contas a este computador (C1Contas): gh, Vercel e chave do Supabase. */
+  ligarContas?: PonteLigarContas
 }
 
 declare global {
