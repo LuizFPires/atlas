@@ -77,7 +77,9 @@ export interface RespostaAjuda {
 }
 
 /** Frase que NUNCA pode sair da Ajuda: todo o suporte é o próprio Atlas. */
-const PROMETE_HUMANO = /human|pessoa|alguem|especialista|colega|atendente|atendimento|tecnic|equipe|\btime\b|suporte|transfer|encaminh|conosco|contato|whatsapp|telefone|\bliga|\bligue|\bligar|chamar|chamo|e-?mail de|\bagente\b|operador|consultor|\bnossos?\b.*\b(time|equipe)\b/
+// Promessa de GENTE (o Atlas nunca promete atendimento humano). Antes era qualquer "equipe", "agente", "time" ou "WhatsApp", e a
+// resposta certa sobre a obra ("a equipe de execução está na etapa M1") virava a frase-padrão (bug do Guilherme, 24/11/2026).
+const PROMETE_HUMANO = /\bhuman[oa]s?\b|\batendente|\batendimento\b|\bespecialista|\bsuporte\b|\bconosco\b|\boperador|\bconsultor|\bte\s+transfer|\btransfer\w*\s+(voce|para\s+(um|uma|outr))|\bencaminh\w*\s+(seu|o\s+seu|voce|para)|\bentr\w*\s+em\s+contato|\bcontat(e|ar)\s+(a\s+gente|nos|o\s+atlas)|\b(nosso|nossa|nossos|nossas)\s+(time|equipe|tecnic\w*|whatsapp|telefone|e-?mail|central)|\b(alguem|uma\s+pessoa|um\s+tecnico|uma\s+tecnica|um\s+colega)\s+(da|do|vai|ira|pode|entra|te)\b|\b(chamo|chamar|chama|ligue|ligar|liga)\s+(um|uma|alguem|pra\s+gente|para\s+a\s+gente|para\s+nos)\b|\b(whatsapp|telefone|equipe|time|suporte)\s+do\s+atlas|\bfale\s+com\s+(a\s+gente|nosso|nossa|um|uma|alguem)\b/
 /** Tira acento e caixa; "sua equipe"/"seu time" falam do time do cliente e não prometem gente do Atlas. */
 const semAcento = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\b(sua|seu|suas|seus|da sua|do seu) (equipe|time)s?\b/g, '')
 const prometeHumano = (t: string) => PROMETE_HUMANO.test(semAcento(t))
