@@ -35,6 +35,22 @@ function pctDoPlan(dir) {
   return total ? (feitas / total) * 100 : 0
 }
 
+/** Milestones do PLAN (só contagem), para saber se uma etapa inteira acabou e espera o OK no passo a passo. */
+function etapasDoPlan(dir) {
+  const t = lerTexto(path.join(dir, 'PLAN.md'), 400_000)
+  const ms = []
+  let atual = null
+  for (const l of (t || '').split(/\r?\n/)) {
+    const m = l.match(/^##\s+(?:Milestone\s+|M)(\d+)/i)
+    if (m) { atual = { n: Number(m[1]), total: 0, feitas: 0 }; ms.push(atual); continue }
+    if (/^##\s/.test(l)) { atual = null; continue }
+    const x = atual && l.match(/^\s*[-*]\s+\[( |x|X)\]/)
+    if (x) { atual.total++; if (x[1] !== ' ') atual.feitas++ }
+  }
+  return ms
+}
+const SEGUIR_EM_MS = 60_000
+
 function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new Date(), aoPrecisar = () => {} }) {
   const arq = (pasta) => path.join(pastaDaObra(raiz, pasta), '.atlas', 'vigia.json')
   const ler = (pasta) => { try { const v = lerJson(arq(pasta)); return v && typeof v === 'object' ? v : null } catch { return null } }
@@ -53,6 +69,33 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
     if (!l || typeof l !== 'object') return
     if (l.estado === 'rodando' || construcao.linha.rodando(pasta)) {
       if (v && Date.parse(l.desde) && t - Date.parse(l.desde) >= TRABALHOU_MS) zerar(pasta) // trabalhou de verdade
+      return
+    }
+    // A linha encerrou o turno ("concluiu") com a obra por terminar: no automático a obra segue sozinha (e no passo a passo também,
+    // se a etapa ainda não acabou). Sem isto, a obra do Guilherme ficou "Ninguém trabalhando" depois de abrir a revisão da M1.
+    if (l.estado === 'parou' && l.motivo === 'concluiu' && pctDoPlan(dir) < 100) {
+      const local = lerJson(path.join(dir, '.atlas', 'estado.json')) || {}
+      if (local.pausada === true) return
+      const modo = (lerJson(path.join(dir, '.atlas', 'modo.json')) || {}).modo
+      if (modo !== 'automatico' && modo !== 'passo-a-passo') return // sem modo escolhido: não adivinha
+      const aprovadaAte = Number.isInteger(local.aprovadaAte) ? local.aprovadaAte : 0
+      const completas = etapasDoPlan(dir).filter((m) => m.total && m.feitas === m.total).map((m) => m.n)
+      const esperaOk = modo !== 'automatico' && completas.some((n) => n > aprovadaAte)
+      if (esperaOk) return
+      const fimC = String(l.fimEm || '')
+      const arqSeguir = path.join(dir, '.atlas', 'seguir.json')
+      const s = lerJson(arqSeguir) || {}
+      if (s.fimVisto === fimC || t < (Date.parse(fimC) || 0) + SEGUIR_EM_MS) return
+      try {
+        await garantirKit(pasta)
+        construcao.linha.religar(pasta)
+        gravarAtomico(arqSeguir, JSON.stringify({ fimVisto: fimC, em: new Date(t).toISOString() }) + '\n')
+      } catch (e) {
+        if (e && e.message === 'ja-rodando') return
+        const falhas = (s.falhas || 0) + 1
+        gravarAtomico(arqSeguir, JSON.stringify({ falhas, em: new Date(t).toISOString() }) + '\n')
+        if (falhas >= MAX_TENTATIVAS) gravar(pasta, { situacao: 'precisa-voce', tentativa: falhas, de: MAX_TENTATIVAS, motivo: textoDe((e && e.message) || 'erro'), fimVisto: fimC })
+      }
       return
     }
     if (l.estado !== 'parou' || !VIGIADOS.has(l.motivo) || pctDoPlan(dir) >= 100) { if (v && l.motivo !== l.motivoVisto) zerar(pasta); return }

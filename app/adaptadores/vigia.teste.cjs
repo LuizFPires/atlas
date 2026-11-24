@@ -115,3 +115,47 @@ test('linha esperando a pessoa: pede NA HORA (sem gastar 3 tentativas), com a fa
   assert.equal(religadas.length, 0)
   assert.equal(avisos.length, 1)
 })
+
+// Obra do Guilherme (24/11, 11:35): a linha trabalhou, abriu o pedido de revisão da M1 e encerrou o turno ("concluiu"). Ninguém
+// religava: "Ninguém trabalhando agora" em 5,00%. No automático a obra segue sozinha até o fim.
+function montarSeguir({ modo = 'automatico', plan = '## Milestone 1 — Base\npeso: 1\n- [ ] a\n- [ ] b\n\n## Milestone 2 — Ponto\npeso: 1\n- [ ] c\n', estado = {} } = {}) {
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-vigia-'))
+  fs.mkdirSync(path.join(raiz, 'obra', '.atlas'), { recursive: true })
+  fs.writeFileSync(path.join(raiz, 'obra', 'PLAN.md'), plan)
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'modo.json'), JSON.stringify({ versao: 1, modo }))
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'estado.json'), JSON.stringify({ versao: 1, ...estado }))
+  let t = Date.UTC(2026, 10, 24, 14, 0)
+  const religadas = []
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ estado: 'parou', motivo: 'concluiu', desde: new Date(t - 40 * 60_000).toISOString(), fimEm: new Date(t).toISOString() }))
+  const vigia = criarVigia({ raiz, construcao: { linha: { rodando: () => false, religar: (p) => religadas.push(p) } }, garantirKit: async () => {}, listar: async () => ['obra'], agora: () => new Date(t) })
+  return { vigia, religadas, passar: (ms) => { t += ms } }
+}
+
+test('automático: a linha encerrou o turno com a obra por terminar → segue sozinha em 1 minuto, sem alerta', async () => {
+  const m = montarSeguir()
+  await m.vigia.rodada()
+  assert.equal(m.religadas.length, 0)
+  m.passar(60_000); await m.vigia.rodada()
+  assert.equal(m.religadas.length, 1)
+  assert.equal(m.vigia.estado('obra'), null)
+  m.passar(60_000); await m.vigia.rodada()
+  assert.equal(m.religadas.length, 1) // uma vez por fim
+})
+
+test('passo a passo: segue no meio da etapa, mas espera o OK quando a etapa acabou', async () => {
+  const meio = montarSeguir({ modo: 'passo-a-passo' })
+  meio.passar(60_000); await meio.vigia.rodada()
+  assert.equal(meio.religadas.length, 1)
+  const fimDaEtapa = montarSeguir({ modo: 'passo-a-passo', plan: '## Milestone 1 — Base\npeso: 1\n- [x] a\n- [x] b\n\n## Milestone 2 — Ponto\npeso: 1\n- [ ] c\n', estado: { aprovadaAte: 0 } })
+  fimDaEtapa.passar(60_000); await fimDaEtapa.vigia.rodada()
+  assert.equal(fimDaEtapa.religadas.length, 0)
+  const aprovada = montarSeguir({ modo: 'passo-a-passo', plan: '## Milestone 1 — Base\npeso: 1\n- [x] a\n- [x] b\n\n## Milestone 2 — Ponto\npeso: 1\n- [ ] c\n', estado: { aprovadaAte: 1 } })
+  aprovada.passar(60_000); await aprovada.vigia.rodada()
+  assert.equal(aprovada.religadas.length, 1)
+})
+
+test('pausada pelo cliente: não segue', async () => {
+  const m = montarSeguir({ estado: { pausada: true } })
+  m.passar(5 * 60_000); await m.vigia.rodada()
+  assert.equal(m.religadas.length, 0)
+})
