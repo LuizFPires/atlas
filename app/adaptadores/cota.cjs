@@ -39,6 +39,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { caminhoSeguro, envMinimo, executarClaude, resolverClaude } = require('../seguro.cjs')
+const { argsEnxutos } = require('./recursos-claude.cjs')
 const { NOME_PASTA, pastaDaObra, gravarAtomico, lerJson, lerTexto } = require('./obra-fs.cjs')
 const { comoDado } = require('./plan-md.cjs')
 const { lerPlanoDoTexto, paradaDeOcorrencias } = require('./painel.cjs')
@@ -125,7 +126,7 @@ const isoValido = (s) => (typeof s === 'string' && !Number.isNaN(new Date(s).get
  * `garantirKit(pasta)` (kit.garantir): chamado ANTES de religar a linha (retomada sozinha incluída); se falhar, nada é religado.
  * `executar`/`resolver` existem para teste (padrão: seguro.cjs).
  */
-function criarCota({ raiz, construcao, painel, claudeEstado, dadosApp = path.join(path.dirname(raiz), '.atlas-app'), avisar = async () => {}, garantirKit = null, agora = () => new Date(), executar = executarClaude, resolver = resolverClaude }) {
+function criarCota({ raiz, construcao, painel, claudeEstado, dadosApp = path.join(path.dirname(raiz), '.atlas-app'), avisar = async () => {}, garantirKit = null, agora = () => new Date(), executar = executarClaude, resolver = resolverClaude, recursos = null }) {
   /** pasta -> { quando: ms, estado, voltaEm } (último teste barato) */
   const testes = new Map()
   const paradas = criarLojaDeParadas({ raiz, dadosApp }) // registro do APP (fora da obra): só ele autoriza religar sozinho
@@ -144,7 +145,7 @@ function criarCota({ raiz, construcao, painel, claudeEstado, dadosApp = path.joi
       fs.mkdirSync(dadosApp, { recursive: true })
       const neutra = path.join(dadosApp, 'cota', 'cota-teste')
       fs.mkdirSync(neutra, { recursive: true })
-      const r = await executar(ARGS_TESTE, { cwd: neutra, entrada: PEDIDO_TESTE, timeoutMs: 90_000, maxSaida: 200_000, env: envMinimo() })
+      const r = await executar([...ARGS_TESTE, ...argsEnxutos(recursos, '')], { cwd: neutra, entrada: PEDIDO_TESTE, timeoutMs: 90_000, maxSaida: 200_000, env: envMinimo() })
       return lerResultadoDoTeste(r.saida, agora())
     } catch { return { estado: 'incerto', voltaEm: null } }
   }
