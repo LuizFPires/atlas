@@ -183,3 +183,10 @@ test('avanço fino: roteiro de outro milestone (já medido) ou quebrado não con
   fs.writeFileSync(path.join(raiz, 'obra', '.claude', 'roteiro.json'), '{quebrado')
   assert.equal((await painel.ler('obra')).pct, base)
 })
+
+test('vigia (24/11): o painel conta o que o vigia está fazendo (tentando de novo ou precisando de você)', async () => {
+  const estados = { obra: { situacao: 'tentando', tentativa: 1, de: 3, motivo: 'A linha parou.', proximaEm: '2026-11-24T10:05:00.000Z' } }
+  const { c, painel } = montar({ vigia: { estado: (p) => estados[p] ?? null } })
+  await c.iniciar('obra', 'B', 'automatico', ETAPAS)
+  assert.deepEqual((await painel.ler('obra')).vigia, estados.obra)
+})

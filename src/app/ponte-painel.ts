@@ -79,7 +79,11 @@ export interface EstadoObra {
   etapaPronta: { n: number; nome: string } | null
   /** Há uma versão de teste para abrir. */
   temTeste: boolean
+  /** Vigia (24/11/2026): a linha parou sem avançar. 'tentando' = o Atlas religa sozinho; 'precisa-voce' = desistiu e pede o cliente. */
+  vigia?: VigiaObra | null
 }
+
+export interface VigiaObra { situacao: 'tentando' | 'precisa-voce'; tentativa: number; de: number; motivo: string; proximaEm?: string }
 
 export type Situacao = 'andando' | 'pausada' | 'espera-ok' | 'cota' | 'precisa-de-voce' | 'billing' | 'concluida'
 
@@ -177,6 +181,10 @@ export interface PainelFixture extends PontePainel {
     concluirEtapa(): void
     concluirObra(): void
     pararPor(p: ParadaReal | null): void
+    /** Vigia: a linha parou sem avançar (null = tudo normal). */
+    vigia(v: VigiaObra | null): void
+    /** A linha parou e ninguém está trabalhando agora (sem a obra estar pronta). */
+    semNinguem(): void
   }
 }
 
@@ -199,6 +207,8 @@ export function criarPainelFixture(opcoes: { plan?: string; agora?: () => Date; 
   let pausada = false
   let parada: ParadaReal | null = null
   let etapaPronta: EstadoObra['etapaPronta'] = null
+  let vigia: VigiaObra | null = null
+  let ninguem = false
   const marcarMs = (n: number) => {
     let dentro = false
     f.plan = f.plan.split('\n').map((l) => {
@@ -220,6 +230,8 @@ export function criarPainelFixture(opcoes: { plan?: string; agora?: () => Date; 
       },
       concluirObra() { f.plan = f.plan.replace(/\[ \]/g, '[x]'); etapaPronta = null; parada = null; pausada = false },
       pararPor(p) { parada = p },
+      vigia(v) { vigia = v; ninguem = v !== null },
+      semNinguem() { ninguem = true },
     },
     async ler() {
       const base = estadoDoPlano(f.plan)
@@ -230,7 +242,7 @@ export function criarPainelFixture(opcoes: { plan?: string; agora?: () => Date; 
         ...base,
         restante: acabou ? null : textoRestante(min),
         previsao: acabou ? null : textoPrevisao(agoraRel(), min),
-        agora: acabou ? [] : [
+        agora: acabou || ninguem ? [] : [
           { sigla: 'IM', quem: 'Equipe de execução', oque: base.etapa ? `Construindo a etapa ${base.etapa.nome}` : 'Construindo', tom: 'ativo' },
           { sigla: 'QA', quem: 'Inspetor de qualidade', oque: 'Testes prontos, esperando a vez', tom: 'espera' },
           { sigla: 'FI', quem: 'Fiscal', oque: etapaPronta ? `Aprovou a etapa ${etapaPronta.nome}` : 'Conferindo cada tarefa pronta', tom: 'espera' },
@@ -239,10 +251,11 @@ export function criarPainelFixture(opcoes: { plan?: string; agora?: () => Date; 
         parada,
         etapaPronta,
         temTeste: !acabou || base.feitas > 0,
+        vigia: acabou ? null : vigia,
       }
     },
     async pausar() { chamadas.push('pausar'); pausada = true },
-    async continuar() { chamadas.push('continuar'); pausada = false },
+    async continuar() { chamadas.push('continuar'); pausada = false; vigia = null; ninguem = false },
     async aprovarEtapa() { chamadas.push('aprovarEtapa'); etapaPronta = null },
     async aplicarModo(_pasta, modo) {
       if (!ehModoObra(modo)) throw new Error('modo-invalido')
