@@ -401,10 +401,13 @@ describe('ajudas no protótipo (Luiz, 23/11/2026)', () => {
   test('"Onde dá para tocar?" acende o que é clicável na tela', async () => {
     const { user } = await montar()
     const frame = await screen.findByTitle(/Tela Marcar horário no celular/)
-    expect(frame.getAttribute('srcdoc')).not.toContain('outline: 3px solid')
+    expect(frame.getAttribute('srcdoc')).not.toContain('at-toque')
     await user.click(screen.getByRole('button', { name: 'Onde dá para tocar?' }))
     expect(screen.getByRole('button', { name: 'Onde dá para tocar?' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTitle(/Tela Marcar horário no celular/).getAttribute('srcdoc')).toContain('outline: 3px solid')
+    const doc = screen.getByTitle(/Tela Marcar horário no celular/).getAttribute('srcdoc')!
+    // Luiz, 24/11/2026: bolinha verde piscando SÓ no que já funciona (link para tela que existe); o que ainda não foi desenhado fica sem.
+    expect(doc).toContain('a[href^="#tela-"]:not([href="#tela-falta"])::after')
+    expect(doc).toContain('@keyframes at-toque')
   })
 
   test('Dica do Atlas: uma por vez, "Outra dica" troca, o botão deixa o pedido escrito e o X dispensa', async () => {

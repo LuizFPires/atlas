@@ -71,3 +71,17 @@ test('na tela cheia, "Pedir mudança nesta tela" volta com a tela marcada no ped
   expect(screen.getByText('TELA 2')).toBeInTheDocument()
   await waitFor(() => expect(screen.getByLabelText('Pedir ajuste')).toHaveFocus())
 })
+
+test('marcações no "Usar o sistema": aceitar a sugestão e mandar vira uma versão nova do protótipo', async () => {
+  const { user, prototipo } = await abrir()
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0, width: 390, height: 844, right: 390, bottom: 844, x: 0, y: 0, toJSON: () => ({}) } as DOMRect)
+  await user.click(screen.getByRole('button', { name: /^Usar o sistema$/ }))
+  await user.click(screen.getByRole('button', { name: 'Marcar um ponto' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Escolher o lugar da marcação' }), { clientX: 100, clientY: 300 })
+  await user.click(await screen.findByRole('button', { name: 'Aceitar' }))
+  await user.click(screen.getByRole('button', { name: 'Mandar para o Atlas fazer' }))
+  expect(await screen.findByText(/As bolinhas novas já estão na tela/)).toBeInTheDocument()
+  expect((prototipo as unknown as { pedidos: string[] }).pedidos.at(-1)).toContain('Marcações do cliente no protótipo')
+  expect((await prototipo.estado(obra.pasta)).versoes).toHaveLength(2)
+  vi.restoreAllMocks()
+})

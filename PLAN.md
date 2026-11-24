@@ -448,8 +448,8 @@ tela: prototipo/caminho-novo/P5Play.dc.html
 - [x] Ajuda em foco: a gaveta da Ajuda fica na frente, o resto do Atlas embaça, e o "ouvindo / transcrevendo" aparece dentro da gaveta (D1)
 - [x] Quadro negro: todas as telas do protótipo lado a lado, numeradas, com zoom; tocar no número põe "TELA N" na barra de voz (P4)
 - [x] Usar o sistema: botão Play abre o protótipo em tela cheia, com setas, números das telas e o menu do Atlas flutuando (P5)
-- [ ] Bolinha verde piscando só onde já dá para tocar; tocar no que ainda não foi desenhado abre "Essa parte ainda não foi desenhada"
-- [ ] Marcações: "Marcar um ponto", pino numerado no lugar tocado; o Atlas diz se é ajustar o que existe, desenhar o que falta ou criar algo novo
-- [ ] O Atlas sugere a ação da marcação (Aceitar, Sugerir outra, Editar por texto ou voz); várias marcações vão juntas em "Mandar para o Atlas fazer" e viram uma versão nova
-- [ ] Depois de pronto, os pinos somem e o que foi feito ganha a bolinha verde
+- [x] Bolinha verde piscando só onde já dá para tocar; tocar no que ainda não foi desenhado abre "Essa parte ainda não foi desenhada"
+- [x] Marcações: "Marcar um ponto", pino numerado no lugar tocado; o Atlas diz se é ajustar o que existe, desenhar o que falta ou criar algo novo
+- [x] O Atlas sugere a ação da marcação (Aceitar, Sugerir outra, Editar por texto ou voz); várias marcações vão juntas em "Mandar para o Atlas fazer" e viram uma versão nova
+- [x] Depois de pronto, os pinos somem e o que foi feito ganha a bolinha verde
 Notas: DECISÃO do Luiz (24/11/2026, "a navegabilidade aqui entre as telas ainda não está bom ... dashboard gigante, como se fosse um grande quadro negro ... o protótipo é a alma do Atlas"; "bolinha é só onde o usuário pode clicar atualmente"; "colocar uma marcação e poder nessa marcação explicar ao Atlas o que ele espera"; "se já tiver um desenho de fluxo pronto ... o Atlas precisa editar ou ajustar"; "o Atlas pode sugerir ou recomendar uma ação ... aceitar, ou refazer ou apenas editar"; aprovado: "ótimo! pode seguir assim"). Telas D1Ajuda, P4Quadro e P5Play em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. DIVERGÊNCIA: substitui o palco de telas atual do passo do protótipo (F07/M35) pelo quadro + tela cheia.

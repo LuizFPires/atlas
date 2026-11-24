@@ -27,6 +27,8 @@ export interface TelaDesenhada {
 }
 
 export type Aparelho = 'celular' | 'computador'
+/** ajustar = já funciona e muda; desenhar = existe mas não leva a lugar nenhum; criar = não há nada ali. */
+export interface SugestaoMarcacao { tipo: 'ajustar' | 'desenhar' | 'criar'; alvo: string; sugestoes: string[] }
 /** Uma das 3 versões de uma tela: o jeito, para quem é boa, o cuidado e o HTML (NÃO CONFIÁVEL: só em iframe sandbox). */
 export interface VersaoDaTela { titulo: string; desc: string; bom: string; cuidado: string; html: string }
 export const aparelhoDaTela = (t: { aparelho?: Aparelho }): Aparelho => (t.aparelho === 'computador' ? 'computador' : 'celular')
@@ -60,6 +62,8 @@ export interface PontePrototipo {
   relato?(pasta: string): Promise<string>
   /** 3 jeitos de uma tela, para comparar (Milestone 36). Não grava nada. */
   versoesDaTela?(pasta: string, telaId: string): Promise<VersaoDaTela[]>
+  /** Marcação (Milestone 40): o que há no ponto (x, y em pixels da tela) e até 3 ações sugeridas. Não grava nada. */
+  sugerirMarcacao?(pasta: string, telaId: string, x: number, y: number): Promise<SugestaoMarcacao>
   /** "Quero esta": troca só aquela tela numa versão NOVA. */
   escolherVersao?(pasta: string, telaId: string, html: string, titulo: string): Promise<EstadoProto>
   /** Link provisório (7 dias) para abrir o protótipo navegável no celular. `documento` = montarNavegavel(...). */
@@ -107,7 +111,9 @@ function soLinksInternos(html: string, ids: Set<string>): string {
 const TELA_FALTA = (volta: string) => `<section id="tela-falta"><template shadowrootmode="open"><style>:host{display:block}div{min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px;text-align:center;font:16px/1.5 system-ui,sans-serif;background:#F4F5F0;color:#1B1E22}b{font-size:20px}a{display:inline-block;padding:12px 18px;border-radius:12px;background:#1B1E22;color:#fff;text-decoration:none;font-weight:600}</style><div><b>Esta parte ainda não foi desenhada.</b><span>Peça ao Atlas, na conversa ao lado: "desenhe a tela de …".</span><a href="#tela-${volta}">Voltar</a></div></template></section>`
 
 /** "Onde dá para tocar?": contorno em tudo que leva a outra tela (vai dentro de cada tela: o CSS de fora não entra no shadow root). */
-const REALCE = '<style>a[href^="#tela-"]{outline: 3px solid #C6F135 !important;outline-offset:2px;border-radius:6px}</style>'
+// Luiz, 24/11/2026: uma bolinha verde, média, de fundo transparente, piscando, SÓ no que já leva a outra tela. O que ainda não foi
+// desenhado (link para "tela-falta") fica sem bolinha: dá para tocar e o Atlas explica, ou marcar e pedir.
+const REALCE = '<style>a[href^="#tela-"]:not([href="#tela-falta"]){position:relative}a[href^="#tela-"]:not([href="#tela-falta"])::after{content:"";position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;box-sizing:border-box;background:rgba(198,241,53,.35);border:2px solid #C6F135;box-shadow:0 0 12px rgba(198,241,53,.6);pointer-events:none;animation:at-toque 1.4s ease-in-out infinite;z-index:2}@keyframes at-toque{0%,100%{transform:scale(.85);opacity:.95}70%{transform:scale(1.25);opacity:.35}}@media (prefers-reduced-motion:reduce){a[href^="#tela-"]::after{animation:none}}</style>'
 
 /**
  * Protótipo NAVEGÁVEL sem script: todas as telas num documento só, cada uma isolada no próprio shadow root (o CSS de uma
@@ -266,6 +272,16 @@ export function criarPrototipoFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): Pr
       return { url: `https://atlas-ia.app.br/p/${'Ex'.repeat(22)}`, expira_em: new Date(Date.now() + 7 * 86_400_000).toISOString() }
     },
     async whatsapp() {},
+    async sugerirMarcacao(pasta, telaId, x, y) {
+      const o = obras.get(pasta)
+      const tela = o?.estado.versoes.find((v) => v.numero === o.estado.atual)?.telas.find((t) => t.id === telaId)
+      if (!o || !tela) throw new Error('tela-inexistente')
+      if (!(x >= 0 && y >= 0)) throw new Error('ponto-invalido')
+      // Simulação: em cima é o cabeçalho (ajustar), no meio uma lista sem destino (desenhar), embaixo nada (criar).
+      if (y < 120) return { tipo: 'ajustar', alvo: 'Título da tela', sugestoes: ['Trocar o título por um mais curto.', 'Colocar o nome da empresa no topo.'] }
+      if (y < 500) return { tipo: 'desenhar', alvo: 'Item da lista', sugestoes: ['Ao tocar no item, abrir o detalhe com tudo dele.', 'Ao tocar no item, abrir um resumo curto com dois botões.', 'Ao tocar no item, mostrar a linha do tempo dele.'] }
+      return { tipo: 'criar', alvo: '', sugestoes: ['Colocar aqui um botão "Repetir o último".', 'Colocar aqui uma busca por nome.', 'Colocar aqui um aviso com o resumo do dia.'] }
+    },
     async versoesDaTela(pasta, telaId) {
       const o = obras.get(pasta)
       const tela = o?.estado.versoes.find((v) => v.numero === o.estado.atual)?.telas.find((t) => t.id === telaId)

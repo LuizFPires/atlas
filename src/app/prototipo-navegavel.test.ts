@@ -15,9 +15,10 @@ test('botão para uma tela que ainda não foi desenhada leva a um aviso (em vez 
   expect(doc).toContain('href="#tela-agenda">Agenda')
 })
 
-test('"Onde dá para tocar?": acende tudo que leva a outra tela, dentro de cada tela', () => {
+test('"Onde dá para tocar?": bolinha piscando só no que leva a uma tela que existe, dentro de cada tela', () => {
   const sem = montarNavegavel(telas, 'inicio')!
   const com = montarNavegavel(telas, 'inicio', { realce: true })!
-  expect(sem).not.toContain('outline: 3px solid')
-  expect(com.match(/outline: 3px solid #C6F135/g)?.length).toBe(2) // um <style> em cada tela (o CSS não atravessa o shadow root)
+  expect(sem).not.toContain('@keyframes at-toque')
+  expect(com.match(/@keyframes at-toque/g)?.length).toBe(2) // um <style> em cada tela (o CSS não atravessa o shadow root)
+  expect(com).toContain(':not([href="#tela-falta"])::after') // o que ainda não foi desenhado fica sem bolinha
 })

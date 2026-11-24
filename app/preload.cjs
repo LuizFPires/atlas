@@ -138,6 +138,7 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     voltar: (pasta, numero) => chamar('atlas:prototipo:voltar', String(pasta), Number(numero)),
     relato: (pasta) => chamar('atlas:prototipo:relato', String(pasta)),
     versoesDaTela: (pasta, telaId) => chamar('atlas:prototipo:versoes', String(pasta), String(telaId)),
+    sugerirMarcacao: (pasta, telaId, x, y) => chamar('atlas:prototipo:marcacao', String(pasta), String(telaId), Number(x), Number(y)),
     escolherVersao: (pasta, telaId, html, titulo) => chamar('atlas:prototipo:escolher', String(pasta), String(telaId), String(html), String(titulo)),
     linkCelular: (nome, documento) => chamar('atlas:prototipo:link', String(nome), String(documento)),
     whatsapp: (url) => chamar('atlas:prototipo:whatsapp', String(url)),
