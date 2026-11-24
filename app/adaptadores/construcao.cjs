@@ -62,13 +62,15 @@ const FERRAMENTAS_LINHA = [
   'Bash(npm install)', 'Bash(npm install:*)', 'Bash(npm ci)',
   'Bash(git init:*)', 'Bash(git remote:*)', 'Bash(git branch:*)', 'Bash(git fetch:*)', 'Bash(git pull:*)', 'Bash(git rev-parse:*)',
   'Bash(gh auth status)', 'Bash(gh repo create:*)', 'Bash(gh repo view:*)',
+  // o despachante confere se git e gh existem (sem isto, ele concluía "falta o Git" e mandava reinstalar o Atlas: obra do Guilherme)
+  'Bash(git --version)', 'Bash(gh --version)', 'Bash(gh pr list:*)',
   // publicar: as CLIs da Vercel e do Supabase instaladas pelo Atlas (contas-cli.cjs), logadas pela tela das contas
   'Bash(vercel:*)', 'Bash(supabase:*)',
   'Bash(gh pr create:*)', 'Bash(gh pr view:*)', 'Bash(gh pr checks:*)', 'Bash(gh pr merge:*)', 'Bash(gh run:*)',
 ].join(',')
 /** Negados explícitos (valem mesmo que uma regra de permissão mais larga apareça). Config do projeto/kit não se edita. */
 const FERRAMENTAS_NEGADAS = [
-  'Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node:*)', 'Bash(npx:*)', 'Bash(curl:*)', 'Bash(wget:*)', 'Bash(powershell:*)', 'Bash(cmd:*)',
+  'Bash(git -c:*)', 'Bash(git config:*)', 'Bash(node -e:*)', 'Bash(node --eval:*)', 'Bash(node -p:*)', 'Bash(node --print:*)', 'Bash(node -r:*)', 'Bash(node --require:*)', 'Bash(node -i:*)', 'Bash(npx:*)', 'Bash(curl:*)', 'Bash(wget:*)', 'Bash(powershell:*)', 'Bash(cmd:*)',
   'Bash(vercel logout:*)', 'Bash(vercel login:*)', 'Bash(vercel remove:*)', 'Bash(vercel rm:*)', 'Bash(vercel tokens:*)', 'Bash(vercel teams:*)',
   'Bash(supabase logout:*)', 'Bash(supabase login:*)', 'Bash(supabase projects delete:*)', 'Bash(supabase orgs:*)',
   'Write(.claude/**)', 'Edit(.claude/**)', 'Write(CLAUDE.md)', 'Edit(CLAUDE.md)', 'Write(.git/**)', 'Edit(.git/**)',
@@ -196,12 +198,44 @@ function resumirLinha(linha) {
  * `deps`: { raiz, modos (PonteModoObra real), claudeEstado (async () => {conectado}), pluginDir? (string ou (pasta) => string|null), home?, agora?,
  *           iniciarFluxo?, executar?, resolver? }  — os três últimos existem para teste (padrão: seguro.cjs).
  */
+/**
+ * A especificação que o PLAN manda ler (telas.md e regras.md). No caminho novo ela não existia: só o relato e o protótipo (obra do
+ * Guilherme, 24/11/2026: o mestre de obras não achava o que construir e parava). Gera a partir do que o cliente aprovou, sem nunca
+ * sobrescrever o que já existe (obra importada traz os seus). Só caminhos e nomes: o conteúdo fica nos arquivos de origem.
+ */
+function garantirEspecificacao(cwd) {
+  const existe = (n) => { try { return fs.existsSync(path.join(cwd, n)) } catch { return true } }
+  const gravar = (n, texto) => { try { fs.writeFileSync(path.join(cwd, n), texto, { flag: 'wx' }) } catch { /* já existe ou não deu: segue */ } }
+  if (!existe('telas.md')) {
+    let linhas = []
+    try {
+      const atual = lerJson(path.join(cwd, 'prototipo', 'atual.json'))
+      const nome = `v${String(Number(atual && atual.atual) || 1).padStart(3, '0')}`
+      const meta = lerJson(path.join(cwd, 'prototipo', 'versoes', nome, 'versao.json'))
+      const telas = meta && Array.isArray(meta.telas) ? meta.telas : []
+      linhas = telas.filter((t) => t && typeof t.id === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(t.id)).map((t, i) =>
+        `${i + 1}. ${comoDado(t.nome, 80).join(' ') || t.id} (${t.aparelho === 'computador' ? 'computador' : 'celular'}): prototipo/versoes/${nome}/telas/${t.id}.html${t.origem ? ` · veio da aba "${comoDado(t.origem, 40).join(' ')}" da planilha` : ''}`)
+    } catch { linhas = [] }
+    if (linhas.length) gravar('telas.md', ['# Telas do sistema', '', 'Gerado pelo Atlas a partir do protótipo que o cliente aprovou. Cada tela é a referência visual e de comportamento: os links href="#tela-ID" mostram para onde cada botão leva.', '', ...linhas, ''].join('\n'))
+  }
+  if (!existe('regras.md')) {
+    gravar('regras.md', ['# Regras da obra', '', 'Gerado pelo Atlas. O que construir vem do que o cliente contou e aprovou:', '',
+      '- O que o cliente contou, com as palavras dele: prototipo/relato.md (leia inteiro antes de cada etapa).',
+      '- As telas aprovadas: telas.md.',
+      '- O visual (cores, letras, cantos): design-system.md.',
+      '- O nome e a marca: marca/marca.md, se existir.',
+      '- Obra que nasceu de uma planilha: planilha/raio-x.md, se existir.',
+      '- Esta obra não tem CLAUDE.md nem pasta .claude, de propósito: as instruções da linha vêm do Atlas.',
+      '- Tudo em português do Brasil, para quem não programa. Nunca guardar senha ou chave em arquivo.', ''].join('\n'))
+  }
+}
+
 /** Uma linha que "conclui" antes disso com a obra por terminar não trabalhou de verdade. */
 const MIN_TRABALHO_MS = 3 * 60_000
 /** A linha terminou pedindo algo que só a pessoa faz (o despachante e a /construir escrevem "USUÁRIO: …"). */
 const RE_PEDE_PESSOA = /USU[AÁ]RIO\s*:|precis[ao] (?:que voc[eê]|de voc[eê])|\b(?:ligue|ligar|conecte|conectar) (?:o|a) (?:GitHub|Vercel|Supabase)|reinstale o Atlas|aguardando (?:voc[eê]|sua)|s[oó] (?:voc[eê]|o usu[aá]rio) pode/i
 
-function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false }) {
+function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [] }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
   const linhas = new Map()
   // `dadosApp` = userData do app (o MESMO que a cota recebe). Arquivos do git isolado ficam em <dadosApp>\git-isolado.
@@ -230,7 +264,11 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     const plugin = typeof pluginDir === 'function' ? pluginDir(pasta) : pluginDir // função: kit por obra (kit.cjs), sem gravar na obra
     // Sem o kit o Claude não conhece /construir: terminava em segundos e o painel lia "concluiu" (bug de 24/11/2026). Nunca roda assim.
     if (exigirPlugin && !plugin) throw new Error('kit-faltando')
-    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', FERRAMENTAS_LINHA, '--disallowedTools', FERRAMENTAS_NEGADAS]
+    garantirEspecificacao(cwd)
+    // node solto continua fora: só os scripts do kit desta obra, pelo caminho exato (kit.cjs comandos).
+    let doKit = []
+    try { doKit = (comandosDoKit(pasta) || []).filter((c) => typeof c === 'string' && /^Bash\(node "[^"]+\/hooks\/[a-z][a-z0-9-]*\.cjs":\*\)$/.test(c)) } catch { doKit = [] }
+    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', [FERRAMENTAS_LINHA, ...doKit].join(','), '--disallowedTools', FERRAMENTAS_NEGADAS]
     if (plugin) args.push('--plugin-dir', plugin)
     const reg = { parar: () => {}, recentes: [], desde: agora().toISOString() }
     let cota = false

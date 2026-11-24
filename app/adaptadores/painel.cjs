@@ -177,7 +177,7 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
 
   /** roteiro.json da /construir (.codex primeiro, como o kit). Quebrado ou ausente: null. */
   function lerRoteiroDa(cwd) {
-    for (const r of ['.codex/roteiro.json', '.claude/roteiro.json']) { const j = lerJson(path.join(cwd, r)); if (j && typeof j === 'object') return j }
+    for (const r of ['.atlas/roteiro.json', '.codex/roteiro.json', '.claude/roteiro.json']) { const j = lerJson(path.join(cwd, r)); if (j && typeof j === 'object') return j }
     return null
   }
 

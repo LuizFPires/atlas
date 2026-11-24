@@ -23,7 +23,7 @@ function montarPlanMd(obraNome, etapas) {
     `# PLAN — ${nome}`,
     'Fonte da verdade: prototipo/ (aprovado pelo cliente)',
     '',
-    'Cada milestone é uma etapa da obra. Detalhe do que construir está em telas.md e regras.md, na pasta da obra.',
+    'Cada milestone é uma etapa da obra. Detalhe do que construir está em telas.md e regras.md, na pasta da obra (o Atlas gera os dois a partir do protótipo aprovado e de prototipo/relato.md).',
   ]
   etapas.forEach((e, i) => {
     const n = i + 1

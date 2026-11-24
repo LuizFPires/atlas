@@ -204,3 +204,22 @@ test('o plugin liga os hooks do canteiro (o progresso e o 3D dependem deles) qua
   await k2.entregar('obra-2')
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(k2.diretorio('obra-2'), 'hooks', 'hooks.json'), 'utf8')).hooks, {})
 })
+
+// Obra do Guilherme (24/11/2026): a /construir manda rodar "node .claude/hooks/progresso.cjs", mas o kit não fica na obra (fica no
+// plugin, fora dela) e a linha negava "node". O mestre de obras não conseguia nem ler o avanço e parava esperando a pessoa.
+test('o kit aponta os comandos das ferramentas do canteiro para a pasta do plugin, com aspas (caminho com espaço)', async () => {
+  const comComandos = () => { const k = KIT(); k.arquivos[1].conteudo = `---\n# ${AVISO}\nname: construir\n---\n1. \`node .claude/hooks/etapa.cjs construcao\`\n2. \`node .claude/hooks/progresso.cjs --curto\`\n3. senão crie \`.claude/roteiro.json\`. Antes leia \`.claude/skills/entregar/SKILL.md\`. Releia \`~/.claude/recomendado.json\`.\n` ; return k }
+  const { kit } = montar({ resposta: comComandos })
+  await kit.entregar('obra-cmd')
+  const dir = kit.diretorio('obra-cmd').split(path.sep).join('/')
+  const skill = fs.readFileSync(path.join(kit.diretorio('obra-cmd'), 'skills', 'construir', 'SKILL.md'), 'utf8')
+  assert.ok(skill.includes(`node "${dir}/hooks/etapa.cjs" construcao`), skill)
+  assert.ok(skill.includes(`node "${dir}/hooks/progresso.cjs" --curto`))
+  assert.ok(!skill.includes('node .claude/hooks/'))
+  // e o estado e a leitura da skill de entrega também saem de .claude (a obra não pode ter .claude: a linha nem liga)
+  assert.ok(skill.includes('crie `.atlas/roteiro.json`'))
+  assert.ok(skill.includes('leia `' + dir + '/skills/entregar/SKILL.md`'))
+  assert.ok(skill.includes('`~/.claude/recomendado.json`')) // o do usuário (na pasta dele) fica como está
+  assert.deepEqual(kit.comandos('obra-cmd'), [`Bash(node "${dir}/hooks/progresso.cjs":*)`]) // só os scripts que vieram no kit
+  assert.deepEqual(kit.comandos('nao-existe'), [])
+})
