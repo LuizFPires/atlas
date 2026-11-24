@@ -122,3 +122,51 @@
 .at-proto__conf b { color: var(--text); }
 .at-proto__conf-btn { min-height: 36px; padding: 0 12px; border-radius: 10px; border: 0; background: var(--lime); color: var(--on-lime); font: 700 13px var(--font-text); cursor: pointer; }
 .at-proto__origem { font: 600 10px var(--font-mono); font-style: normal; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 999px; background: var(--soft); color: var(--lime-txt); align-self: flex-start; }
+
+/* ---- P4: quadro negro (Luiz, 24/11/2026) ---------------------------------------------------------------------------------- */
+.at-quadro { position: relative; flex: 1; min-height: 420px; border-radius: 20px; border: 1px solid var(--card-b); overflow: auto; background-color: #0F1113; background-image: radial-gradient(#2A2E33 1px, transparent 1px); background-size: 22px 22px; }
+.at-quadro__zoom { position: sticky; top: 14px; left: 14px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; margin: 14px 0 0 14px; padding: 4px; border-radius: 12px; background: rgba(20, 22, 25, 0.9); border: 1px solid var(--card-b); }
+.at-quadro__zoom button { width: 34px; height: 34px; border-radius: 9px; border: none; background: transparent; color: var(--text); display: grid; place-items: center; cursor: pointer; }
+.at-quadro__zoom button:disabled { opacity: 0.35; cursor: default; }
+.at-quadro__zoom span { min-width: 46px; text-align: center; font: 600 13px var(--font-mono, 'Geist Mono', monospace); color: var(--mute); }
+.at-quadro__palco { list-style: none; margin: 0; padding: 18px 32px 40px; display: flex; gap: 40px; align-items: flex-start; width: max-content; }
+.at-quadro__item { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.at-quadro__num { display: inline-flex; align-items: center; gap: 10px; padding: 0; border: none; background: transparent; color: var(--text); font: 600 15px var(--font-text); cursor: pointer; }
+.at-quadro__num b { min-width: 30px; height: 30px; padding: 0 8px; box-sizing: border-box; border-radius: 15px; display: grid; place-items: center; background: var(--card); border: 1px solid var(--card-b); font: 700 14px var(--font-mono, 'Geist Mono', monospace); }
+.at-quadro__num--on b { background: var(--lime); color: var(--on-lime); border-color: var(--lime); }
+.at-quadro__moldura { position: relative; border-radius: 22px; overflow: hidden; background: #fff; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); outline: 1px solid #2C3036; outline-offset: 0; transition: outline-color 0.15s ease; }
+.at-quadro__moldura--pc { border-radius: 10px; }
+.at-quadro__moldura--on { outline: 2px solid var(--lime); outline-offset: 6px; }
+.at-quadro__moldura iframe { border: 0; transform-origin: top left; pointer-events: none; display: block; }
+.at-quadro__abrir { position: absolute; inset: 0; border: none; background: transparent; cursor: zoom-in; }
+.at-quadro__abrir:focus-visible { outline: 3px solid var(--lime); outline-offset: -3px; }
+.at-proto__chip-tela { flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 5px 6px 5px 10px; border-radius: 999px; background: var(--soft); color: var(--lime-txt, var(--lime)); font: 600 12px var(--font-mono, 'Geist Mono', monospace); align-self: center; }
+.at-proto__chip-tela button { width: 20px; height: 20px; border-radius: 10px; border: none; background: transparent; color: inherit; display: grid; place-items: center; cursor: pointer; }
+
+/* ---- P5: usar o sistema em tela cheia ------------------------------------------------------------------------------------- */
+.at-play { position: fixed; inset: 0; z-index: 45; background: radial-gradient(circle at 50% 40%, #1E2125, #0B0C0D 70%); color: #EDEFEA; display: grid; grid-template-rows: auto 1fr auto; font-family: var(--font-text); animation: at-play-entra 0.2s ease; }
+@keyframes at-play-entra { from { opacity: 0; } to { opacity: 1; } }
+.at-play__topo { padding: 20px 24px 0; display: flex; }
+.at-play__topo, .at-play__numeros { pointer-events: auto; }
+.at-play__topo > * { flex: none; }
+.at-play__topo { gap: 12px; align-items: center; }
+.at-play__fechar { width: 42px; height: 42px; border-radius: 12px; border: 1px solid #2C3036; background: #1E2125; color: #EDEFEA; display: grid; place-items: center; cursor: pointer; }
+.at-play__tit { display: flex; flex-direction: column; gap: 2px; }
+.at-play__tit span { font: 500 11px var(--font-mono, 'Geist Mono', monospace); letter-spacing: 0.12em; color: #8E968C; }
+.at-play__tit b { font-size: 15px; }
+.at-play__numeros { position: absolute; top: 20px; right: 24px; display: flex; gap: 6px; padding: 6px; border-radius: 14px; background: rgba(20, 22, 25, 0.86); border: 1px solid #2C3036; }
+.at-play__numeros button { min-width: 36px; height: 36px; border-radius: 10px; border: none; background: transparent; color: #EDEFEA; font: 700 14px var(--font-mono, 'Geist Mono', monospace); cursor: pointer; }
+.at-play__numeros .at-play__n--on { background: #C6F135; color: #141619; }
+.at-play__palco { min-height: 0; display: flex; align-items: center; justify-content: center; gap: 28px; padding: 12px 24px; }
+.at-play__aparelho { height: 100%; min-width: 0; display: flex; align-items: center; justify-content: center; flex: 0 1 auto; }
+.at-play__aparelho .at-proto__celular { height: min(78vh, 868px); width: calc(min(78vh, 868px) * 414 / 868); flex: none; }
+.at-play__aparelho .at-proto__computador { width: min(70vw, 1280px); }
+.at-play__seta { flex: none; width: 52px; height: 52px; border-radius: 26px; border: 1px solid #2C3036; background: rgba(20, 22, 25, 0.86); color: #EDEFEA; font-size: 24px; cursor: pointer; }
+.at-play__rodape { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 0 24px 22px; }
+.at-play__dica { width: 300px; display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 16px; background: rgba(20, 22, 25, 0.86); border: 1px solid #2C3036; font-size: 13px; line-height: 1.5; color: #B4BBB2; }
+.at-play__dica b { color: #EDEFEA; font-size: 14px; }
+.at-play__realce { align-self: flex-start; height: 32px; padding: 0 12px; border-radius: 10px; border: 1px solid #C6F135; background: transparent; color: #C6F135; font: 600 12px var(--font-text); cursor: pointer; }
+.at-play__pedir { display: flex; align-items: center; gap: 10px; padding: 10px 18px 10px 10px; border-radius: 18px; border: 1px solid #2C3036; background: rgba(20, 22, 25, 0.92); color: #EDEFEA; font: 600 15px var(--font-text); cursor: pointer; }
+.at-play__mic { width: 48px; height: 48px; border-radius: 24px; background: #C6F135; color: #141619; display: grid; place-items: center; }
+.at-play__chip { padding: 5px 9px; border-radius: 999px; background: rgba(198, 241, 53, 0.1); color: #C6F135; font: 600 12px var(--font-mono, 'Geist Mono', monospace); }
+@media (prefers-reduced-motion: reduce) { .at-play { animation: none; } }
