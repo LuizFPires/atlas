@@ -135,7 +135,7 @@ export function criarApiCelularFixture(opcoes: { logado?: boolean; ligado?: bool
     desligar() { ligado = false },
     logado: () => logado,
     async pedirCodigo() {},
-    async entrar(_e, codigo) { if (codigo.replace(/\D/g, '').length !== 6) throw new Error('Esse código não confere. Confira os 6 números.'); logado = true },
+    async entrar(_e, codigo) { if (!/^\d{6,8}$/.test(codigo.replace(/\D/g, ''))) throw new Error('Esse código não confere. Confira os números do e-mail.'); logado = true },
     sair() { logado = false },
     async nome() { return 'Zé' },
     async estado() {

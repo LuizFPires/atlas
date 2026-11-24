@@ -49,6 +49,9 @@ function MicFalar({ aoFalar, titulo, sub, pequeno }: { aoFalar: (t: string) => v
 }
 
 // ── M00 Entrar ──
+// O tamanho do código é o do e-mail (o Supabase manda de 6 a 8 números): a tela não promete um número de dígitos.
+const CODIGO_OK = /^\d{6,8}$/
+
 function Entrar({ api, onEntrou }: { api: ApiCelular; onEntrou: () => void }) {
   const [email, setEmail] = useState('')
   const [codigo, setCodigo] = useState('')
@@ -68,7 +71,7 @@ function Entrar({ api, onEntrou }: { api: ApiCelular; onEntrou: () => void }) {
           <div className="cel-campo"><label htmlFor={idE} className="cel-rotulo">E-mail da sua compra</label><input id={idE} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
         ) : (
           <div className="cel-campo">
-            <label htmlFor={idC} className="cel-rotulo">Código de 6 números</label>
+            <label htmlFor={idC} className="cel-rotulo">Código que chegou no e-mail</label>
             <input id={idC} inputMode="numeric" autoComplete="one-time-code" value={codigo} onChange={(e) => setCodigo(e.target.value)} style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '.3em', fontSize: 22 }} />
             <span className="cel-sub">Mandamos para {email}</span>
           </div>
@@ -78,7 +81,7 @@ function Entrar({ api, onEntrou }: { api: ApiCelular; onEntrou: () => void }) {
       <footer className="cel-rodape">
         {fase === 'email'
           ? <button type="button" className="cel-botao" disabled={indo || !email.includes('@')} onClick={() => agir(async () => { await api.pedirCodigo(email.trim()); setFase('codigo') })}>Receber o código</button>
-          : <button type="button" className="cel-botao" disabled={indo || codigo.replace(/\D/g, '').length !== 6} onClick={() => agir(async () => { await api.entrar(email.trim(), codigo); onEntrou() })}>Entrar</button>}
+          : <button type="button" className="cel-botao" disabled={indo || !CODIGO_OK.test(codigo.replace(/\D/g, ''))} onClick={() => agir(async () => { await api.entrar(email.trim(), codigo); onEntrou() })}>Entrar</button>}
       </footer>
     </main>
   )
