@@ -170,6 +170,28 @@ function etapasDoTexto(texto) {
 }
 
 /** Resume uma linha do stream-json do Claude numa frase curta e segura; null = nada que valha mostrar. Também sinaliza cota. */
+// O que aparece em "Agora na obra": frase simples para quem não programa, nunca o nome da ferramenta (Luiz, 24/11/2026).
+const FRASE_FERRAMENTA = { Write: 'Escrevendo o código', Edit: 'Ajustando o código', MultiEdit: 'Ajustando o código', NotebookEdit: 'Ajustando o código', Read: 'Lendo os arquivos da obra', Glob: 'Procurando nos arquivos', Grep: 'Procurando nos arquivos', TodoWrite: 'Organizando as tarefas' }
+const FRASE_AGENTE = { implementador: 'Chamando a equipe de execução', qa: 'Chamando o inspetor de qualidade', seguranca: 'Chamando o técnico de segurança', desempenho: 'Chamando o engenheiro de desempenho', despachante: 'Preparando o GitHub da obra', plantonista: 'Conferindo o que estava pendente', implantador: 'Preparando a publicação', vistoriador: 'Fazendo a vistoria final', corretor: 'Preparando o app para as lojas' }
+const FRASE_COMANDO = [
+  [/^git commit\b/, 'Guardando o que foi feito'], [/^git push\b/, 'Enviando para o GitHub'], [/^git (?:pull|fetch)\b/, 'Buscando o que está no GitHub'],
+  [/^git (?:checkout|switch|branch)\b/, 'Separando a etapa num ramo próprio'], [/^git (?:merge)\b/, 'Juntando a etapa ao projeto'], [/^git (?:init|remote)\b/, 'Preparando o GitHub da obra'],
+  [/^git\b/, 'Conferindo o histórico da obra'], [/^gh pr (?:create)\b/, 'Pedindo a revisão do que foi feito'], [/^gh pr (?:merge)\b/, 'Juntando a etapa ao projeto'],
+  [/^gh (?:pr checks|run)\b/, 'Conferindo os testes no GitHub'], [/^gh\b/, 'Conferindo o GitHub'], [/^npm (?:install|ci)\b/, 'Instalando as peças do sistema'],
+  [/^npm (?:test|run test)\b/, 'Testando o que foi feito'], [/^npm run build\b/, 'Montando o sistema'], [/^npm run (?:lint|typecheck)\b/, 'Conferindo o código'],
+  [/^node\b.*progresso\.cjs/, 'Conferindo o avanço da obra'], [/^node\b.*ocorrencias\.cjs/, 'Conferindo o que estava pendente'], [/^node\b.*etapa\.cjs/, 'Anotando a etapa da obra'],
+  [/^vercel\b/, 'Publicando o sistema'], [/^supabase\b/, 'Preparando o banco de dados'],
+]
+function oQueEstaFazendo(nome, input) {
+  if (FRASE_FERRAMENTA[nome]) return FRASE_FERRAMENTA[nome]
+  if (nome === 'Task') return FRASE_AGENTE[input && input.subagent_type] || 'Chamando um ajudante'
+  if (nome === 'Bash') {
+    const cmd = String((input && input.command) || '').split(/&&|;|\|\|/).map((x) => x.trim()).filter((x) => x && !/^cd\b/.test(x)).pop() || ''
+    for (const [re, frase] of FRASE_COMANDO) if (re.test(cmd)) return frase
+  }
+  return 'Trabalhando na obra'
+}
+
 function resumirLinha(linha) {
   let j
   try { j = JSON.parse(linha) } catch { return null }
@@ -184,7 +206,7 @@ function resumirLinha(linha) {
   if (sinal) return { texto: 'Aguardando a cota do plano', cota: sinal.forca === 'forte', cotaFraca: sinal.forca === 'fraca', voltaEm: sinal.voltaEm }
   if (j.type === 'assistant' && j.message && Array.isArray(j.message.content)) {
     for (const c of j.message.content) {
-      if (c && c.type === 'tool_use' && typeof c.name === 'string') return { texto: `Usando ${comoDado(c.name, 40).join(' ')}` }
+      if (c && c.type === 'tool_use' && typeof c.name === 'string') return { texto: oQueEstaFazendo(c.name, c.input) }
       if (c && c.type === 'text' && typeof c.text === 'string') {
         const t = comoDado(c.text, 400).join(' ').slice(0, 120)
         if (t) return { texto: t }
