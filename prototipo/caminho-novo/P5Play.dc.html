@@ -9,7 +9,7 @@
 <x-dc>
 <helmet>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
-<style>body{margin:0} @keyframes entra{from{opacity:0}to{opacity:1}} @keyframes toque{0%{transform:translate(-50%,-50%) scale(.85);opacity:.95}70%{transform:translate(-50%,-50%) scale(1.25);opacity:.35}100%{transform:translate(-50%,-50%) scale(.85);opacity:.95}} @keyframes gira{to{transform:rotate(360deg)}}</style>
+<style>body{margin:0} @keyframes entra{from{opacity:0}to{opacity:1}} @keyframes toque{0%{transform:translate(-50%,-50%) scale(.85);opacity:.95}70%{transform:translate(-50%,-50%) scale(1.25);opacity:.35}100%{transform:translate(-50%,-50%) scale(.85);opacity:.95}} @keyframes gira{to{transform:rotate(360deg)}} @keyframes cai{from{transform:translate(-50%,-130%);opacity:0}to{transform:translate(-50%,-100%);opacity:1}} .at-nota::placeholder{color:#6E766C}</style>
 </helmet>
 <div style="width:1440px;height:900px;background:radial-gradient(circle at 50% 40%,#1E2125,#0B0C0D 70%);color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;position:relative;overflow:hidden">
  <div style="position:absolute;left:24px;top:22px;display:flex;align-items:center;gap:12px;padding:8px 10px 8px 8px;border-radius:16px;background:rgba(20,22,25,.86);border:1px solid #2C3036;backdrop-filter:blur(8px)">
@@ -20,38 +20,81 @@
  <div style="position:absolute;right:24px;top:22px;display:flex;gap:6px;padding:6px;border-radius:14px;background:rgba(20,22,25,.86);border:1px solid #2C3036">
   <sc-for list="{{pontos}}" as="p" hint-placeholder-count="6"><button onClick="{{p.ir}}" title="{{p.nome}}" style="min-width:36px;height:36px;border-radius:10px;border:none;background:{{p.bg}};color:{{p.cor}};font:700 14px 'Geist Mono',monospace;cursor:pointer">{{p.n}}</button></sc-for>
  </div>
- <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);width:390px;height:844px;border-radius:44px;padding:0;box-shadow:0 0 0 12px #000,0 40px 120px rgba(0,0,0,.7);overflow:hidden;animation:entra .25s ease">
+ <sc-if value="{{marcando}}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:50%;top:26px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;border-radius:999px;background:#C6F135;color:#141619;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(198,241,53,.25);animation:entra .2s ease"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg> Toque no lugar da tela que você quer criar ou mudar<button onClick="{{sairMarcar}}" style="height:30px;padding:0 12px;border-radius:999px;border:1px solid rgba(20,22,25,.3);background:transparent;color:#141619;font:600 13px 'Geist',sans-serif;cursor:pointer">Cancelar</button></div>
+ </sc-if>
+ <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);width:390px;height:844px;border-radius:44px;box-shadow:0 0 0 12px #000,0 0 0 {{anel}}px #C6F135,0 40px 120px rgba(0,0,0,.7);overflow:hidden;animation:entra .25s ease">
   <dc-import name="AppColore" tela="{{tela}}" hint-size="390px,844px"></dc-import>
   <sc-for list="{{alvos}}" as="h" hint-placeholder-count="6">
    <button onClick="{{h.tocar}}" aria-label="{{h.rotulo}}" style="position:absolute;left:{{h.x}}px;top:{{h.y}}px;width:{{h.w}}px;height:{{h.h}}px;background:transparent;border:none;padding:0;cursor:pointer">
     <span style="display:{{h.ponto}};position:absolute;left:50%;top:50%;width:26px;height:26px;border-radius:13px;background:rgba(198,241,53,.35);border:2px solid #C6F135;box-shadow:0 0 12px rgba(198,241,53,.6);animation:toque 1.4s ease-in-out infinite;pointer-events:none"></span>
    </button>
   </sc-for>
+  <sc-if value="{{marcando}}" hint-placeholder-val="{{ false }}">
+   <button onClick="{{fincar}}" aria-label="Escolher o lugar da marcação" style="position:absolute;inset:0;width:390px;height:844px;padding:0;border:none;background:rgba(198,241,53,.06);cursor:crosshair"></button>
+  </sc-if>
+  <sc-for list="{{pinos}}" as="m" hint-placeholder-count="0">
+   <button onClick="{{m.abrir}}" aria-label="Marcação {{m.n}}" style="position:absolute;left:{{m.x}}px;top:{{m.y}}px;transform:translate(-50%,-100%);width:34px;height:40px;padding:0;border:none;background:transparent;cursor:pointer;animation:cai .25s ease">
+    <span style="position:absolute;left:0;top:0;width:34px;height:34px;border-radius:17px 17px 17px 3px;transform:rotate(-45deg);background:{{m.fundo}};border:2px solid #141619;box-shadow:0 6px 16px rgba(0,0,0,.35)"></span>
+    <span style="position:absolute;left:0;top:0;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:{{m.cor}};font:700 14px 'Geist Mono',monospace">{{m.rotulo}}</span>
+   </button>
+  </sc-for>
  </div>
  <button onClick="{{antes}}" aria-label="Tela anterior" style="position:absolute;left:calc(50% - 300px);top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:26px;border:1px solid #2C3036;background:rgba(20,22,25,.86);color:#EDEFEA;font-size:22px;cursor:pointer">‹</button>
  <button onClick="{{depois}}" aria-label="Próxima tela" style="position:absolute;left:calc(50% + 248px);top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:26px;border:1px solid #2C3036;background:rgba(20,22,25,.86);color:#EDEFEA;font-size:22px;cursor:pointer">›</button>
- <div style="position:absolute;left:24px;bottom:24px;width:280px;display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:16px;background:rgba(20,22,25,.86);border:1px solid #2C3036;font-size:13px;line-height:1.5;color:#B4BBB2">
+ <div style="position:absolute;left:24px;bottom:24px;width:300px;display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;background:rgba(20,22,25,.86);border:1px solid #2C3036;font-size:13px;line-height:1.5;color:#B4BBB2">
   <b style="color:#EDEFEA;font-size:14px">Use como se fosse de verdade</b>
-  As bolinhas verdes mostram o que já funciona. Tocou em algo sem bolinha? O Atlas pergunta se você quer que ele desenhe essa parte.
-  <button onClick="{{alternarRealce}}" style="align-self:flex-start;height:34px;padding:0 12px;border-radius:10px;border:1px solid #C6F135;background:transparent;color:#C6F135;font:600 13px 'Geist',sans-serif;cursor:pointer">{{txtRealce}}</button>
+  <span>As bolinhas verdes mostram o que já funciona. Quer criar ou mudar alguma coisa? Faça uma marcação no lugar e explique o que espera.</span>
+  <button onClick="{{entrarMarcar}}" style="height:40px;padding:0 16px;border-radius:12px;border:none;background:#C6F135;color:#141619;font:700 14px 'Geist',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg> Marcar um ponto</button>
+  <button onClick="{{alternarRealce}}" style="align-self:flex-start;height:32px;padding:0 10px;border-radius:10px;border:1px solid #2C3036;background:transparent;color:#B4BBB2;font:600 12px 'Geist',sans-serif;cursor:pointer">{{txtRealce}}</button>
  </div>
- <sc-if value="{{temFalta}}" hint-placeholder-val="{{ false }}">
-  <div role="dialog" style="position:absolute;right:24px;top:50%;transform:translateY(-50%);width:340px;display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:18px;background:rgba(20,22,25,.96);border:1px solid #C6F135;box-shadow:0 20px 60px rgba(0,0,0,.6);color:#EDEFEA;animation:entra .2s ease">
-   <span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">ESSA PARTE AINDA NÃO FOI DESENHADA</span>
-   <b style="font-size:18px;line-height:1.3">{{faltaNome}}</b>
-   <span style="font-size:14px;line-height:1.5;color:#B4BBB2">{{faltaTexto}}</span>
-   <sc-if value="{{faltaPerguntando}}" hint-placeholder-val="{{ true }}">
-    <div style="display:flex;gap:8px"><button onClick="{{desenhar}}" style="height:42px;padding:0 16px;border-radius:12px;border:none;background:#C6F135;color:#141619;font:700 14px 'Geist',sans-serif;cursor:pointer">Desenhar agora</button><button onClick="{{fecharFalta}}" style="height:42px;padding:0 14px;border-radius:12px;border:1px solid #2C3036;background:transparent;color:#EDEFEA;font:600 14px 'Geist',sans-serif;cursor:pointer">Agora não</button></div>
-    <span style="font-size:12px;color:#8E968C">Ou fale do seu jeito: "quando tocar no pedido, abra o detalhe com o Pix".</span>
-   </sc-if>
-   <sc-if value="{{faltaDesenhando}}" hint-placeholder-val="{{ false }}">
-    <div style="display:flex;align-items:center;gap:10px;font-size:14px"><span style="width:16px;height:16px;border-radius:8px;border:2px solid #C6F135;border-top-color:transparent;animation:gira 1s linear infinite"></span>O Atlas está desenhando a tela {{novaN}}…</div>
-    <button onClick="{{pronto}}" style="align-self:flex-start;height:36px;padding:0 12px;border-radius:10px;border:1px solid #C6F135;background:transparent;color:#C6F135;font:600 13px 'Geist',sans-serif;cursor:pointer">(simular: ficou pronta)</button>
-   </sc-if>
-  </div>
- </sc-if>
+ <div style="position:absolute;right:24px;top:96px;bottom:108px;width:360px;display:flex;flex-direction:column;justify-content:center;gap:12px">
+  <sc-if value="{{temFalta}}" hint-placeholder-val="{{ false }}">
+   <div role="dialog" style="display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:18px;background:rgba(20,22,25,.96);border:1px solid #C6F135;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:entra .2s ease">
+    <span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">ESSA PARTE AINDA NÃO FOI DESENHADA</span>
+    <b style="font-size:18px;line-height:1.3">{{faltaNome}}</b>
+    <span style="font-size:14px;line-height:1.5;color:#B4BBB2">{{faltaTexto}}</span>
+    <div style="display:flex;gap:8px"><button onClick="{{marcarFalta}}" style="height:40px;padding:0 16px;border-radius:12px;border:none;background:#C6F135;color:#141619;font:700 14px 'Geist',sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg> Marcar e explicar</button><button onClick="{{fecharFalta}}" style="height:40px;padding:0 14px;border-radius:12px;border:1px solid #2C3036;background:transparent;color:#EDEFEA;font:600 14px 'Geist',sans-serif;cursor:pointer">Agora não</button></div>
+   </div>
+  </sc-if>
+  <sc-if value="{{editando}}" hint-placeholder-val="{{ false }}">
+   <div role="dialog" aria-label="Marcação" style="display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:18px;background:rgba(20,22,25,.97);border:1px solid #C6F135;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:entra .2s ease">
+    <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:14px;background:#C6F135;color:#141619;display:flex;align-items:center;justify-content:center;font:700 13px 'Geist Mono',monospace">{{edN}}</span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">MARCAÇÃO {{edN}} · TELA {{edTela}}</span></div>
+    <div style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:{{edFundo}};border:1px solid {{edBorda}}"><b style="font-size:13px;color:{{edCor}}">{{edTipo}}</b><span style="font-size:13px;line-height:1.45;color:#B4BBB2">{{edSobre}}</span></div>
+    <label for="at-nota" style="font-size:14px;font-weight:600">{{edPergunta}}</label>
+    <div style="position:relative">
+     <textarea id="at-nota" class="at-nota" value="{{edTexto}}" onChange="{{escrever}}" placeholder="{{edDica}}" rows="4" style="width:100%;box-sizing:border-box;padding:12px 54px 12px 12px;border-radius:12px;border:1px solid #2C3036;background:#141619;color:#EDEFEA;font:400 14px/1.5 'Geist',sans-serif;resize:none;outline:none"></textarea>
+     <button onClick="{{falar}}" aria-label="Falar em vez de escrever" style="position:absolute;right:8px;top:8px;width:38px;height:38px;border-radius:19px;border:none;background:{{micFundo}};color:#141619;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+    </div>
+    <sc-if value="{{ouvindo}}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:#C6F135">Ouvindo… pode falar. O que você disser vira texto aqui, e você pode corrigir.</span></sc-if>
+    <div style="display:flex;gap:8px"><button onClick="{{guardar}}" disabled="{{semTexto}}" style="height:40px;padding:0 16px;border-radius:12px;border:none;background:#C6F135;color:#141619;font:700 14px 'Geist',sans-serif;cursor:pointer;opacity:{{opGuardar}}">Guardar marcação</button><button onClick="{{apagar}}" style="height:40px;padding:0 14px;border-radius:12px;border:1px solid #2C3036;background:transparent;color:#EDEFEA;font:600 14px 'Geist',sans-serif;cursor:pointer">Apagar</button></div>
+   </div>
+  </sc-if>
+  <sc-if value="{{mostraLista}}" hint-placeholder-val="{{ false }}">
+   <div style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:18px;background:rgba(20,22,25,.94);border:1px solid #2C3036;animation:entra .2s ease">
+    <span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">SUAS MARCAÇÕES · {{qtd}}</span>
+    <sc-for list="{{lista}}" as="l" hint-placeholder-count="2">
+     <button onClick="{{l.abrir}}" style="display:flex;gap:10px;align-items:flex-start;text-align:left;padding:10px;border-radius:12px;border:1px solid #2C3036;background:#141619;color:#EDEFEA;cursor:pointer;font-family:'Geist',sans-serif">
+      <span style="width:24px;height:24px;flex:none;border-radius:12px;background:#C6F135;color:#141619;display:flex;align-items:center;justify-content:center;font:700 12px 'Geist Mono',monospace">{{l.n}}</span>
+      <span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font:500 11px 'Geist Mono',monospace;color:#8E968C">TELA {{l.tela}} · {{l.tipo}}</span><span style="font-size:13px;line-height:1.4">{{l.texto}}</span></span>
+     </button>
+    </sc-for>
+    <sc-if value="{{podeMandar}}" hint-placeholder-val="{{ true }}">
+     <button onClick="{{mandar}}" style="height:40px;padding:0 16px;border-radius:12px;border:none;background:#C6F135;color:#141619;font:700 14px 'Geist',sans-serif;cursor:pointer">Mandar para o Atlas fazer</button>
+     <span style="font-size:12px;color:#8E968C">O Atlas cria o que falta e ajusta o que já existe, do jeito que você explicou.</span>
+    </sc-if>
+    <sc-if value="{{trabalhando}}" hint-placeholder-val="{{ false }}">
+     <div style="display:flex;align-items:center;gap:10px;font-size:14px"><span style="width:16px;height:16px;border-radius:8px;border:2px solid #C6F135;border-top-color:transparent;animation:gira 1s linear infinite"></span>O Atlas está fazendo {{qtd}} {{palavra}}…</div>
+     <button onClick="{{pronto}}" style="align-self:flex-start;height:34px;padding:0 12px;border-radius:10px;border:1px solid #C6F135;background:transparent;color:#C6F135;font:600 13px 'Geist',sans-serif;cursor:pointer">(simular: ficou pronto)</button>
+    </sc-if>
+   </div>
+  </sc-if>
+  <sc-if value="{{temAviso}}" hint-placeholder-val="{{ false }}">
+   <div role="status" style="display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border-radius:16px;background:rgba(198,241,53,.1);border:1px solid #C6F135;font-size:14px;line-height:1.5;animation:entra .2s ease"><b style="color:#C6F135">Pronto.</b><span>{{aviso}}</span></div>
+  </sc-if>
+ </div>
  <div style="position:absolute;right:24px;bottom:24px;width:420px;display:flex;align-items:center;gap:10px;padding:10px;border-radius:18px;background:rgba(20,22,25,.92);border:1px solid #2C3036">
-  <span style="width:48px;height:48px;border-radius:24px;background:#C6F135;color:#141619;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+  <span style="width:48px;height:48px;border-radius:24px;background:#C6F135;color:#141619;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
   <span style="font:600 12px 'Geist Mono',monospace;padding:5px 9px;border-radius:999px;background:rgba(198,241,53,.1);color:#C6F135;flex:none">TELA {{n}}</span>
   <span style="font-size:14px;color:#8E968C">Fale o que mudar ou acrescentar nesta tela…</span>
  </div>
@@ -80,25 +123,74 @@ const TEXTO_FALTA = {
   'Pedido ao fornecedor': 'Tocar no aviso ainda não abre nada. O Atlas pode desenhar o pedido ao fornecedor com as cores que estão acabando.',
   'Cobrança pelo Pix': 'O Atlas pode desenhar a tela do Pix com o QR Code e o valor.'
 };
+const FALA = {
+  'Detalhe do pedido': 'Quando tocar no pedido, abrir o detalhe com os itens, o cliente, a entrega e um botão verde para cobrar pelo Pix.',
+  'Novo orçamento': 'Antes de abrir o orçamento, perguntar se é para cliente novo ou cliente que já existe.'
+};
+function dentro(h, x, y) { return x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h; }
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { i: 0, realce: true, falta: null, desenhando: false, extra: false }; }
+  constructor(p) { super(p); this.state = { i: 0, realce: true, falta: null, extra: false, marcando: false, marcas: [], ed: null, texto: '', ouvindo: false, trabalhando: false, feitos: [], aviso: '' }; }
+  telas() { return this.state.extra ? [...BASE, ['detalhe', 'Detalhe do pedido']] : BASE; }
+  // O que existe no ponto tocado: algo que já funciona (ajustar), algo sem desenho (desenhar) ou nada (criar).
+  oQueTem(tela, x, y) {
+    const h = alvosDa(tela).find((a) => dentro(a, x, y));
+    const feito = h && h.falta && (this.state.feitos.includes(h.falta) || (h.falta === 'Detalhe do pedido' && this.state.extra));
+    if (h && (h.ir || feito)) return { tipo: 'ajustar', alvo: h.rotulo };
+    if (h && h.falta) return { tipo: 'desenhar', alvo: h.falta };
+    return { tipo: 'criar', alvo: '' };
+  }
+  novaMarca(x, y, alvoFalta) {
+    const { marcas } = this.state; const TELAS = this.telas(); const tela = TELAS[this.state.i][0];
+    const q = alvoFalta ? { tipo: 'desenhar', alvo: alvoFalta } : this.oQueTem(tela, x, y);
+    const m = { id: Date.now(), n: marcas.length + 1, i: this.state.i, tela, x: Math.round(x), y: Math.round(y), ...q, texto: '' };
+    this.setState({ marcas: [...marcas, m], ed: m.id, texto: '', marcando: false, falta: null, aviso: '' });
+  }
   renderVals() {
-    const { i, realce, falta, desenhando, extra } = this.state;
-    const TELAS = extra ? [...BASE, ['detalhe', 'Detalhe do pedido']] : BASE;
-    const idx = (k) => TELAS.findIndex((x) => x[0] === k);
+    const s = this.state; const { i, realce, falta, extra, marcando, marcas, ed, texto, ouvindo, trabalhando, feitos } = s;
+    const TELAS = this.telas(); const idx = (k) => TELAS.findIndex((x) => x[0] === k);
     const tela = TELAS[Math.min(i, TELAS.length - 1)][0];
     const alvos = alvosDa(tela).map((h) => {
       const vira = h.falta === 'Detalhe do pedido' && extra ? 'detalhe' : h.ir;
-      return { ...h, ponto: realce && vira ? 'block' : 'none', tocar: () => (vira ? this.setState({ i: idx(vira), falta: null }) : this.setState({ falta: h.falta, desenhando: false })) };
+      const feito = h.falta && feitos.includes(h.falta);
+      return { ...h, ponto: realce && (vira || feito) ? 'block' : 'none', tocar: () => (vira ? this.setState({ i: idx(vira), falta: null, aviso: '' }) : feito ? this.setState({ aviso: h.rotulo + ': o Atlas já desenhou esta parte (simulação).' }) : this.setState({ falta: h.falta, ed: null, aviso: '' })) };
     });
     const total = TELAS.length;
-    return { tela, n: String(i + 1), total: String(total), nome: TELAS[i][1], alvos,
-      pontos: TELAS.map((x, j) => ({ n: String(j + 1), nome: x[1], bg: j === i ? '#C6F135' : 'transparent', cor: j === i ? '#141619' : '#EDEFEA', ir: () => this.setState({ i: j, falta: null }) })),
-      antes: () => this.setState({ i: (i + total - 1) % total, falta: null }), depois: () => this.setState({ i: (i + 1) % total, falta: null }),
-      dispPonto: realce ? 'block' : 'none', txtRealce: realce ? 'Esconder as bolinhas' : 'Onde dá para tocar?', alternarRealce: () => this.setState({ realce: !realce }),
-      temFalta: !!falta, faltaNome: falta || '', faltaTexto: (falta && TEXTO_FALTA[falta]) || '', faltaPerguntando: !!falta && !desenhando, faltaDesenhando: !!falta && desenhando, novaN: String(total + 1),
-      desenhar: () => this.setState({ desenhando: true }), fecharFalta: () => this.setState({ falta: null }),
-      pronto: () => { const novo = falta === 'Detalhe do pedido'; this.setState({ extra: extra || novo, falta: null, desenhando: false, i: novo ? BASE.length : i }); } };
+    const atual = marcas.find((m) => m.id === ed);
+    const TIPO = { ajustar: ['AJUSTAR O QUE JÁ EXISTE', '#C6F135', 'rgba(198,241,53,.08)', 'rgba(198,241,53,.35)'], desenhar: ['DESENHAR O QUE FALTA', '#7CC4FF', 'rgba(124,196,255,.08)', 'rgba(124,196,255,.35)'], criar: ['CRIAR ALGO NOVO AQUI', '#FFB86B', 'rgba(255,184,107,.08)', 'rgba(255,184,107,.35)'] };
+    const sobre = (m) => m.tipo === 'ajustar' ? '"' + m.alvo + '" já funciona. Diga o que mudar e o Atlas ajusta o fluxo que existe.' : m.tipo === 'desenhar' ? '"' + m.alvo + '" ainda não abre nada. Diga o que deve acontecer e o Atlas desenha.' : 'Aqui não tem nada ainda. Diga o que você quer neste lugar (um botão, um campo, um aviso) e o que ele faz.';
+    const pergunta = (m) => m.tipo === 'ajustar' ? 'O que você quer mudar aqui?' : m.tipo === 'desenhar' ? 'O que deve acontecer quando tocar aqui?' : 'O que você quer neste lugar?';
+    const dica = (m) => m.tipo === 'ajustar' ? 'Ex.: em vez de abrir direto, perguntar se o cliente é novo.' : m.tipo === 'desenhar' ? 'Ex.: abrir o detalhe do pedido com o botão de cobrar pelo Pix.' : 'Ex.: um botão "Repetir pedido" que copia o último pedido do cliente.';
+    const editando = !!atual;
+    const salvas = marcas.filter((m) => m.texto);
+    const curto = (t) => (t.length > 70 ? t.slice(0, 68) + '…' : t);
+    return { tela, n: String(i + 1), total: String(total), nome: TELAS[i][1], alvos, anel: marcando ? 3 : 0,
+      pontos: TELAS.map((x, j) => ({ n: String(j + 1), nome: x[1], bg: j === i ? '#C6F135' : 'transparent', cor: j === i ? '#141619' : '#EDEFEA', ir: () => this.setState({ i: j, falta: null, ed: null }) })),
+      antes: () => this.setState({ i: (i + total - 1) % total, falta: null, ed: null }), depois: () => this.setState({ i: (i + 1) % total, falta: null, ed: null }),
+      txtRealce: realce ? 'Esconder as bolinhas' : 'Mostrar as bolinhas', alternarRealce: () => this.setState({ realce: !realce }),
+      marcando, entrarMarcar: () => this.setState({ marcando: true, falta: null, ed: null, aviso: '' }), sairMarcar: () => this.setState({ marcando: false }),
+      fincar: (e) => { const r = e.currentTarget.getBoundingClientRect(); this.novaMarca((e.clientX - r.left) * 390 / r.width, (e.clientY - r.top) * 844 / r.height); },
+      pinos: marcas.filter((m) => m.i === i).map((m) => ({ ...m, rotulo: String(m.n), fundo: m.id === ed ? '#FFFFFF' : '#C6F135', cor: '#141619', abrir: () => this.setState({ ed: m.id, texto: m.texto, marcando: false, falta: null }) })),
+      temFalta: !!falta && !editando, faltaNome: falta || '', faltaTexto: (falta && TEXTO_FALTA[falta]) || '', fecharFalta: () => this.setState({ falta: null }),
+      marcarFalta: () => { const h = alvosDa(tela).find((a) => a.falta === falta); this.novaMarca(h.x + h.w / 2, h.y + h.h / 2, falta); },
+      editando, edN: atual ? String(atual.n) : '', edTela: atual ? String(atual.i + 1) : '', edTipo: atual ? TIPO[atual.tipo][0] : '', edCor: atual ? TIPO[atual.tipo][1] : '', edFundo: atual ? TIPO[atual.tipo][2] : '', edBorda: atual ? TIPO[atual.tipo][3] : '',
+      edSobre: atual ? sobre(atual) : '', edPergunta: atual ? pergunta(atual) : '', edDica: atual ? dica(atual) : '', edTexto: texto,
+      escrever: (e) => this.setState({ texto: e.target.value }),
+      ouvindo, micFundo: ouvindo ? '#FFFFFF' : '#C6F135',
+      falar: () => { if (ouvindo) return this.setState({ ouvindo: false }); this.setState({ ouvindo: true }); setTimeout(() => this.setState({ ouvindo: false, texto: FALA[atual && atual.alvo] || (atual && atual.tipo === 'criar' ? 'Colocar aqui um botão "Repetir pedido" que copia o último pedido do cliente.' : 'Deixar este botão maior e com o texto "Fazer orçamento".') }), 1600); },
+      semTexto: !texto.trim(), opGuardar: texto.trim() ? 1 : 0.4,
+      guardar: () => this.setState({ marcas: marcas.map((m) => (m.id === ed ? { ...m, texto: texto.trim() } : m)), ed: null, texto: '', ouvindo: false }),
+      apagar: () => this.setState({ marcas: marcas.filter((m) => m.id !== ed).map((m, k) => ({ ...m, n: k + 1 })), ed: null, texto: '', ouvindo: false }),
+      mostraLista: salvas.length > 0 && !editando && !falta, qtd: String(salvas.length), palavra: salvas.length === 1 ? 'ajuste' : 'ajustes',
+      lista: salvas.map((m) => ({ n: String(m.n), tela: String(m.i + 1), tipo: m.tipo === 'ajustar' ? 'AJUSTAR' : m.tipo === 'desenhar' ? 'DESENHAR' : 'CRIAR', texto: curto(m.texto), abrir: () => this.setState({ i: m.i, ed: m.id, texto: m.texto }) })),
+      podeMandar: !trabalhando, trabalhando, mandar: () => this.setState({ trabalhando: true, marcas: marcas.filter((m) => m.texto) }),
+      pronto: () => {
+        const novoDetalhe = salvas.some((m) => m.alvo === 'Detalhe do pedido');
+        const outros = salvas.filter((m) => m.tipo === 'desenhar' && m.alvo !== 'Detalhe do pedido').map((m) => m.alvo);
+        const n = salvas.length;
+        this.setState({ trabalhando: false, marcas: [], ed: null, extra: extra || novoDetalhe, feitos: [...feitos, ...outros], i: novoDetalhe ? BASE.length : i,
+          aviso: (n === 1 ? 'O ajuste foi feito' : 'Os ' + n + ' ajustes foram feitos') + (novoDetalhe ? ' e a tela ' + (BASE.length + 1) + ' (Detalhe do pedido) entrou no sistema' : '') + '. As bolinhas novas já estão na tela.' });
+      },
+      temAviso: !!s.aviso && !editando && !falta && !salvas.length, aviso: s.aviso };
   }
 }
 </script>
