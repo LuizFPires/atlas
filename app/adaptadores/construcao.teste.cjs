@@ -207,3 +207,40 @@ test('fim que não é cota não deixa registro', async () => {
   await new Promise((r) => setTimeout(r, 20))
   assert.equal(criarLojaDeParadas({ raiz, dadosApp }).obter('obra'), null)
 })
+
+test('caminho completo: a linha pode preparar o projeto (npm install, git init, repositório no GitHub) sem abrir nada perigoso', () => {
+  const { FERRAMENTAS_LINHA, FERRAMENTAS_NEGADAS } = require('./construcao.cjs')
+  const ok = FERRAMENTAS_LINHA.split(',')
+  for (const f of ['Bash(npm install)', 'Bash(npm install:*)', 'Bash(npm ci)', 'Bash(git init:*)', 'Bash(git remote:*)', 'Bash(git branch:*)', 'Bash(git fetch:*)', 'Bash(git pull:*)', 'Bash(git rev-parse:*)', 'Bash(gh auth status)', 'Bash(gh repo create:*)', 'Bash(gh repo view:*)']) {
+    assert.ok(ok.includes(f), `falta ${f}`)
+  }
+  // nada que mostre ou troque a credencial, nem execução solta
+  assert.ok(!ok.some((f) => /gh auth (login|token|refresh|logout)|gh api|npm exec|Bash\(\*\)/.test(f)))
+  for (const f of ['Bash(npx:*)', 'Bash(node:*)', 'Bash(git config:*)', 'Bash(curl:*)']) assert.ok(FERRAMENTAS_NEGADAS.split(',').includes(f))
+})
+
+test('git isolado: os commits têm autor e o push para o GitHub usa o login do gh (sem senha guardada)', (t) => {
+  const { spawnSync } = require('node:child_process')
+  if (spawnSync('git', ['--version']).status !== 0) return t.skip('git indisponível')
+  const { envGitIsolado } = require('./construcao.cjs')
+  const repo = tmp(); const dados = tmp()
+  const env = { ...process.env, ...envGitIsolado(dados) }
+  spawnSync('git', ['init', '-q'], { cwd: repo, env })
+  const ler = (k) => spawnSync('git', ['config', '--get-all', k], { cwd: repo, env, encoding: 'utf8' }).stdout.trim()
+  assert.equal(ler('user.name'), 'Atlas')
+  assert.match(ler('user.email'), /@/)
+  assert.match(ler('credential.https://github.com.helper'), /gh(\.exe)?"? auth git-credential$/)
+  assert.equal(ler('init.defaultBranch'), 'main')
+  const conf = fs.readFileSync(path.join(dados, 'gitconfig-atlas'), 'utf8')
+  assert.ok(!/token|password|senha/i.test(conf))
+})
+
+test('Git Bash: no Windows, aponta CLAUDE_CODE_GIT_BASH_PATH para a instalação padrão do Git quando existe', () => {
+  const { caminhoGitBash } = require('./construcao.cjs')
+  const env = { ProgramFiles: 'C:\\Program Files', LOCALAPPDATA: 'C:\\Users\\M\\AppData\\Local' }
+  const existe = (p) => p === path.win32.join('C:\\Program Files', 'Git', 'bin', 'bash.exe')
+  assert.equal(caminhoGitBash(env, existe, 'win32'), 'C:\\Program Files\\Git\\bin\\bash.exe')
+  assert.equal(caminhoGitBash({ ...env, CLAUDE_CODE_GIT_BASH_PATH: 'D:\\x\\bash.exe' }, existe, 'win32'), null) // o do usuário vale
+  assert.equal(caminhoGitBash(env, () => false, 'win32'), null)
+  assert.equal(caminhoGitBash(env, existe, 'linux'), null)
+})

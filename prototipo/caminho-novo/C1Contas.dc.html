@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · 5b Ligar as contas a este computador</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} .acao{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:50px;min-height:50px;padding:0 22px;box-sizing:border-box;border-radius:12px;font-family:'Geist',sans-serif;font-size:16px;font-weight:700;line-height:1;white-space:nowrap;flex:none;text-decoration:none;cursor:pointer;border:none} @keyframes pulso{0%{box-shadow:0 0 0 0 rgba(198,241,53,.7)}70%{box-shadow:0 0 0 12px rgba(198,241,53,0)}100%{box-shadow:0 0 0 0 rgba(198,241,53,0)}} @keyframes gira{to{transform:rotate(360deg)}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:#2B2F35;font-family:'Geist',system-ui,sans-serif;display:flex;align-items:center;justify-content:center">
+ <div style="width:1220px;height:780px;background:{{t.bg}};color:{{t.text}};border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.45);display:flex;overflow:hidden">
+  <div style="width:230px;background:{{t.panel}};padding:32px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:26px;flex:none">
+   <div style="display:flex;align-items:center;gap:8px"><img src="{{t.mono}}" alt="" style="width:40px;height:22px;object-fit:contain"><img src="/_blob/c6750a5c1d7f64643b22288c9d2a18d2" alt="Atlas" style="width:96px;height:14px;object-fit:contain"></div>
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="6">
+    <div style="display:flex;align-items:center;gap:12px;font-size:15px;color:{{p.cor}};font-weight:{{p.peso}}"><span style="width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font:600 13px 'Geist Mono',monospace;background:{{p.bolaBg}};color:{{p.bolaCor}}">{{p.n}}</span>{{p.nome}}</div>
+   </sc-for>
+   <div style="margin-top:auto;font-size:13px;line-height:1.5;color:#9BA39A">Você nunca digita comando nem senha aqui. O Atlas só recebe a permissão que você der no site.</div>
+  </div>
+  <div style="flex:1;padding:30px 36px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px;min-width:0">
+   <div style="display:flex;flex-direction:column;gap:6px">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">AS CONTAS · LIGAR A ESTE COMPUTADOR · {{feitas}} DE 3</span>
+    <h1 style="margin:0;font-size:28px;line-height:1.2;letter-spacing:-0.01em">Agora o Atlas liga as suas contas a este computador.</h1>
+    <span style="font-size:15px;line-height:1.5;color:{{t.mute}}">Criar a conta no site não basta: o Atlas precisa da sua permissão para guardar, anotar e publicar o seu sistema daqui. É um clique em cada site.</span>
+   </div>
+   <div style="display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:28px;flex:1;min-height:0">
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+     <sc-for list="{{linhas}}" as="l" hint-placeholder-count="3">
+      <div style="background:{{t.card}};border:1px solid {{l.borda}};border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:12px">
+       <div style="display:flex;align-items:center;gap:14px">
+        <span style="width:36px;height:36px;border-radius:18px;background:{{l.bolaBg}};color:{{l.bolaCor}};display:flex;align-items:center;justify-content:center;font:600 14px 'Geist Mono',monospace;flex:none">{{l.icone}}</span>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0"><b style="font-size:17px">{{l.nome}} <span style="font-weight:400;color:{{t.mute}}">· {{l.papel}}</span></b><span style="font-size:14px;color:{{l.subCor}}">{{l.sub}}</span></div>
+        <button class="acao" onClick="{{l.ligar}}" style="display:{{l.dispLigar}};height:42px;min-height:42px;padding:0 18px;font-size:15px;background:{{t.lime}};color:{{t.onLime}}">Ligar →</button>
+       </div>
+       <sc-if value="{{l.codigoAtlas}}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:{{t.soft}}">
+         <span style="font-size:15px;line-height:1.45">O site vai pedir este código. Já copiamos para você: é só colar lá e clicar em <b>Continue</b>.</span>
+         <div style="display:flex;align-items:center;gap:12px"><span style="font:600 30px 'Geist Mono',monospace;letter-spacing:.14em">{{l.codigo}}</span><span style="font:500 12px 'Geist Mono',monospace;color:{{t.limeTxt}}">✓ COPIADO</span></div>
+         <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:{{t.mute}}"><span style="width:14px;height:14px;border-radius:7px;border:2px solid {{t.lime}};border-top-color:transparent;animation:gira 1s linear infinite"></span>Esperando você confirmar no site… o Atlas percebe sozinho.</div>
+         <div style="display:flex;gap:10px"><button onClick="{{l.confirmou}}" style="height:38px;padding:0 14px;border-radius:10px;border:1px solid {{t.lime}};background:transparent;color:{{t.text}};font:600 14px 'Geist',sans-serif;cursor:pointer">(simular: confirmei no site)</button><button onClick="{{l.abrirDeNovo}}" style="height:38px;padding:0 14px;border-radius:10px;border:none;background:transparent;color:{{t.limeTxt}};font:600 14px 'Geist',sans-serif;cursor:pointer;text-decoration:underline">Abrir o site de novo</button></div>
+        </div>
+       </sc-if>
+       <sc-if value="{{l.codigoSite}}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:{{t.soft}}">
+         <span style="font-size:15px;line-height:1.45">Aqui é ao contrário: clique em <b>Authorize</b> no site e ele mostra um código. Digite esse código aqui.</span>
+         <div style="display:flex;gap:10px"><input placeholder="código do site (8 letras)" style="flex:1;height:46px;border-radius:10px;border:2px solid {{t.lime}};background:{{t.card}};color:{{t.text}};padding:0 12px;font:600 18px 'Geist Mono',monospace;letter-spacing:.12em;box-sizing:border-box;animation:pulso 1.6s infinite"><button class="acao" onClick="{{l.confirmou}}" style="height:46px;min-height:46px;background:{{t.lime}};color:{{t.onLime}}">Pronto</button></div>
+        </div>
+       </sc-if>
+      </div>
+     </sc-for>
+     <div style="display:flex;align-items:center;gap:12px;margin-top:auto">
+      <a class="acao" href="CN6Contas.dc.html" style="padding:0 18px;border:1px solid {{t.cardB}};background:transparent;color:{{t.text}};font-weight:600;font-size:15px">← Voltar</a>
+      <a class="acao" href="CN7Comecar.dc.html" style="display:{{dispSeguir}};background:{{t.lime}};color:{{t.onLime}}">Tudo ligado · Último passo →</a>
+      <span style="display:{{dispFalta}};font-size:14px;color:{{t.mute}}">Faltam {{faltam}}. Sem elas o Atlas constrói, mas não consegue guardar nem publicar.</span>
+     </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+     <span style="font-size:13px;color:{{t.mute2}}">É assim que vai aparecer no site:</span>
+     <div style="flex:1;border-radius:14px;overflow:hidden;border:1px solid {{t.cardB}};background:#FFFFFF;display:flex;flex-direction:column;color:#1B1E22">
+      <div style="height:40px;background:#E9EBE6;display:flex;align-items:center;gap:8px;padding:0 12px;flex:none"><span style="width:10px;height:10px;border-radius:5px;background:#E46A5E"></span><span style="width:10px;height:10px;border-radius:5px;background:#E8C14A"></span><span style="width:10px;height:10px;border-radius:5px;background:#6CC070"></span><span style="flex:1;margin-left:8px;height:24px;border-radius:6px;background:#FFFFFF;font:500 12px 'Geist Mono',monospace;display:flex;align-items:center;padding:0 10px;color:#5F665C">{{m.url}}</span></div>
+      <div style="flex:1;padding:28px 24px;display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center">
+       <b style="font-size:21px">{{m.titulo}}</b>
+       <span style="font-size:14px;line-height:1.5;color:#5F665C">{{m.texto}}</span>
+       <div style="display:{{m.dispCampo}};width:100%;height:48px;border-radius:8px;border:3px solid #C6F135;align-items:center;justify-content:center;font:600 20px 'Geist Mono',monospace;letter-spacing:.12em;animation:pulso 1.6s infinite;box-sizing:border-box">{{m.campo}}</div>
+       <div style="display:{{m.dispBotao}};width:100%;height:46px;border-radius:8px;background:#1B1E22;color:#FFFFFF;border:3px solid #C6F135;align-items:center;justify-content:center;font-weight:600;box-sizing:border-box">{{m.botao}}</div>
+       <span style="display:{{m.dispTrad}};font-size:13px;background:#EEF7D3;border-radius:10px;padding:8px 12px"><b>{{m.en}}</b> quer dizer <b>"{{m.pt}}"</b></span>
+      </div>
+     </div>
+     <span style="font-size:13px;line-height:1.5;color:{{t.mute2}}">Dá para desligar quando quiser, no próprio site. O Atlas nunca vê a sua senha.</span>
+    </div>
+   </div>
+  </div>
+ </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', panel: '#101214', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', onLime: '#141619', limeTxt: '#C6F135', soft: '#2A3A12', trilho: '#2C3036', off: '#3A3F46', mono: '/_blob/12f422513e54daca2767634612b51c95' },
+  claro: { bg: '#F2F3EE', panel: '#1F2226', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', onLime: '#1B1E22', limeTxt: '#3F5600', soft: '#DDF59A', trilho: '#E6E8E1', off: '#C4C8BD', mono: '/_blob/cf1beaa186df4dada45f5f7027b51b02' }
+};
+const CONTAS = [
+  { id: 'github', nome: 'GitHub', papel: 'o cofre', tipo: 'atlas', codigo: '4F2A-9C1B', usuario: 'zé-barbearia',
+    site: { url: 'github.com/login/device', titulo: 'Device Activation', texto: 'Enter the code displayed on your device', botao: 'Continue', en: 'Device Activation', pt: 'Ligar um aparelho' } },
+  { id: 'supabase', nome: 'Supabase', papel: 'o caderno', tipo: 'site', usuario: 'zé-barbearia',
+    site: { url: 'supabase.com/dashboard/cli/login', titulo: 'Authorize Supabase CLI', texto: 'Your verification code is', codigoSite: 'a1b2c3d4', botao: 'Authorize', en: 'Verification code', pt: 'Código de confirmação' } },
+  { id: 'vercel', nome: 'Vercel', papel: 'a vitrine', tipo: 'atlas', codigo: 'WXKD-TPLM', usuario: 'zé-barbearia',
+    site: { url: 'vercel.com/device', titulo: 'Connect a device', texto: 'Enter the code shown in your terminal', botao: 'Continue', en: 'Connect a device', pt: 'Ligar um aparelho' } }
+];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { estado: { github: 'ligado' }, foco: 'supabase' }; }
+  renderVals() {
+    const t = T[this.props.tema ?? 'escuro'] || T.escuro;
+    const nomes = ['A ideia', 'O visual', 'O nome', 'O protótipo', 'As contas', 'Começar'];
+    const passos = nomes.map((nome, i) => {
+      const n = i + 1, feito = n < 5, agora = n === 5;
+      return { n: feito ? '✓' : String(n), nome, cor: agora ? '#EDEFEA' : '#9BA39A', peso: agora ? 600 : 400, bolaBg: feito || agora ? t.lime : '#2A2E33', bolaCor: feito || agora ? '#141619' : '#9BA39A' };
+    });
+    const { estado, foco } = this.state;
+    const set = (id, v) => this.setState({ estado: { ...estado, [id]: v }, foco: id });
+    const linhas = CONTAS.map((c) => {
+      const e = estado[c.id] || 'pendente';
+      const lig = e === 'ligado', esp = e === 'esperando';
+      return {
+        nome: c.nome, papel: c.papel,
+        icone: lig ? '✓' : (esp ? '…' : '○'),
+        bolaBg: lig ? t.lime : (esp ? t.soft : t.off), bolaCor: lig ? t.onLime : t.text,
+        borda: esp ? t.lime : t.cardB,
+        sub: lig ? `Ligado como ${c.usuario}` : (esp ? 'O Atlas abriu o site no seu navegador' : 'Ainda não ligado'),
+        subCor: lig ? t.limeTxt : t.mute,
+        dispLigar: e === 'pendente' ? 'inline-flex' : 'none',
+        codigoAtlas: esp && c.tipo === 'atlas', codigoSite: esp && c.tipo === 'site', codigo: c.codigo,
+        ligar: () => set(c.id, 'esperando'), confirmou: () => set(c.id, 'ligado'), abrirDeNovo: () => this.setState({ foco: c.id })
+      };
+    });
+    const feitas = CONTAS.filter((c) => estado[c.id] === 'ligado').length;
+    const focoC = CONTAS.find((c) => c.id === foco) || CONTAS[0];
+    const s = focoC.site;
+    const ligadoFoco = estado[focoC.id] === 'ligado';
+    const m = ligadoFoco
+      ? { url: s.url, titulo: 'Congratulations, you\'re all set!', texto: 'Pode fechar esta aba e voltar ao Atlas.', dispCampo: 'none', dispBotao: 'none', dispTrad: 'inline', en: 'You\'re all set', pt: 'Está tudo certo', campo: '', botao: '' }
+      : { url: s.url, titulo: s.titulo, texto: s.texto, campo: focoC.tipo === 'atlas' ? focoC.codigo : s.codigoSite, dispCampo: 'flex', dispBotao: 'flex', botao: s.botao, dispTrad: 'inline', en: s.en, pt: s.pt };
+    const faltamN = 3 - feitas;
+    return { t, passos, linhas, m, feitas, faltam: faltamN === 1 ? '1 conta' : `${faltamN} contas`,
+      dispSeguir: feitas === 3 ? 'inline-flex' : 'none', dispFalta: feitas === 3 ? 'none' : 'inline' };
+  }
+}
+</script>
+</body>
+</html>

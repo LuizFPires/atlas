@@ -14,7 +14,7 @@ const { criarArquivos } = require('./adaptadores/arquivos.cjs')
 const { criarClaude } = require('./adaptadores/claude.cjs')
 const { criarModo } = require('./adaptadores/modo.cjs')
 const { criarConstrucao } = require('./adaptadores/construcao.cjs')
-const { criarPainel } = require('./adaptadores/painel.cjs')
+const { criarPainel, kitDirDoApp } = require('./adaptadores/painel.cjs')
 const { criarRetomar } = require('./adaptadores/retomar.cjs')
 const { criarDisparo } = require('./adaptadores/projeto-comum.cjs')
 const { criarEstilo } = require('./adaptadores/estilo.cjs')
@@ -63,7 +63,7 @@ const kit = criarKit({ dadosApp: app.getPath('userData'), cofre, hashComputador:
 // Modelo do Claude escolhido pelo cliente (um só para todo o Atlas; recomendado Opus 5.5).
 const modelo = criarModelo({ pasta: app.getPath('userData') })
 const construcao = criarConstrucao({ modelo: () => modelo.args(), raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
-const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell })
+const painel = criarPainel({ raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
 const cota = criarCota({ raiz: obras.raiz(), construcao, painel, claudeEstado: () => claude.estado(), dadosApp: app.getPath('userData'), garantirKit: (pasta) => kit.garantir(String(pasta)) })
 // Ocorrências (F11): livro do kit da obra (docs\ocorrencias.json). A chave colada vai SÓ ao cofre (DPAPI). Canais de aviso: pendência (ver ocorrencias.cjs).

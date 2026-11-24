@@ -1,7 +1,7 @@
 import { pastaObras, pastaObrasSegura } from './caminhos.ts'
 
 export type Passo = {
-  id: 'node' | 'claude-code' | 'obras' | 'app'
+  id: 'node' | 'git' | 'gh' | 'claude-code' | 'obras' | 'app'
   titulo: string
   /** Se já estiver pronto, o passo é pulado (a instalação pode ser refeita sem estragar nada). */
   verificar?: string
@@ -20,7 +20,7 @@ export const TELA_ATIVACAO = 'F02'
 export const TELA_OBRAS = 'F05'
 export const TELA_RETOMAR = 'F12'
 
-/** Plano de instalação (o Node já vem do bootstrap): Claude Code, pasta das obras e app.
+/** Plano de instalação (o Node já vem do bootstrap): Git, GitHub CLI, Claude Code, pasta das obras e app.
  *  O kit (agentes e skills) NÃO é instalado aqui: o app o recebe do servidor a cada obra (app/adaptadores/kit.cjs),
  *  porque as instruções dos agentes nunca ficam salvas no disco do cliente. */
 export function planoDeInstalacao(usuario: string): Passo[] {
@@ -32,6 +32,23 @@ export function planoDeInstalacao(usuario: string): Passo[] {
       titulo: 'Conferindo o Node',
       verificar: 'node --version',
       comando: 'winget install --id OpenJS.NodeJS.LTS -e --silent --accept-package-agreements --accept-source-agreements',
+    },
+    {
+      // O Claude Code no Windows precisa do Git Bash; e a obra vira um repositório (git) no GitHub do cliente.
+      // Logo depois do winget o PATH deste processo ainda é o antigo: a conferência também olha a pasta padrão.
+      id: 'git',
+      titulo: 'Instalando o Git',
+      verificar: 'where git >nul 2>&1 || if exist "%ProgramFiles%\\Git\\cmd\\git.exe" (exit /b 0) else (exit /b 1)',
+      comando: 'winget install --id Git.Git -e --silent --accept-package-agreements --accept-source-agreements',
+      confirmar: true,
+    },
+    {
+      // O GitHub CLI (gh) cria o repositório e abre os PRs da obra; o login dele é feito pelo app, na etapa das contas.
+      id: 'gh',
+      titulo: 'Instalando o GitHub CLI',
+      verificar: 'where gh >nul 2>&1 || if exist "%ProgramFiles%\\GitHub CLI\\gh.exe" (exit /b 0) else (exit /b 1)',
+      comando: 'winget install --id GitHub.cli -e --silent --accept-package-agreements --accept-source-agreements',
+      confirmar: true,
     },
     {
       id: 'claude-code',

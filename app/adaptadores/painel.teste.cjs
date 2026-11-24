@@ -129,3 +129,9 @@ test('canteiro real: porta aleatória + nonce; impostor na porta não passa', as
   assert.equal(await responde(imp.address().port, nonce), false)
   imp.close()
 })
+
+test('kit do painel: instalado, vem de resources/kit (fora do asar); em desenvolvimento, do .claude do repositório', () => {
+  const { kitDirDoApp } = require('./painel.cjs')
+  assert.equal(kitDirDoApp({ empacotado: true, recursos: 'C:\\Atlas\\resources' }), path.join('C:\\Atlas\\resources', 'kit'))
+  assert.equal(kitDirDoApp({ empacotado: false, recursos: 'x' }), path.join(__dirname, '..', '..', '.claude'))
+})

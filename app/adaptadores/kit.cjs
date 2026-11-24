@@ -34,6 +34,14 @@ const LIM = { arquivos: 400, arquivo: 1_000_000, total: 8_000_000, resposta: 12_
 const RESERVADO = /^(con|prn|aux|nul|com\d|lpt\d)(\.|$)/i
 const NOME_OK = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/
 
+/** hooks.json do plugin: cada evento do Claude vira uma linha em <obra>/.canteiro/eventos.jsonl (evento.cjs; nunca bloqueia). */
+function hooksDoCanteiro() {
+  const cmd = { type: 'command', command: 'node "${CLAUDE_PLUGIN_ROOT}/hooks/evento.cjs"', timeout: 5 }
+  const hooks = {}
+  for (const ev of ['PreToolUse', 'PostToolUse', 'SubagentStart', 'SubagentStop', 'Stop', 'UserPromptSubmit']) hooks[ev] = [{ hooks: [cmd] }]
+  return { description: 'Atlas: andamento da obra no canteiro', hooks }
+}
+
 /** Espelho de avisoNoTopo (src/kit/entrega-kit.ts). */
 function avisoNoTopo(caminho, conteudo, marca) {
   if (caminho.toLowerCase().endsWith('.json')) {
@@ -148,6 +156,10 @@ function criarKit({ dadosApp, cofre, hashComputador, api = process.env.ATLAS_API
       }
       gravar(['.claude-plugin', 'plugin.json'], JSON.stringify({ name: 'atlas-kit', version: '1.0.0', description: `Kit do Atlas entregue por obra. Software proprietário (${LEI}).` }, null, 2) + '\n')
       for (const a of arquivos) gravar(a.partes, a.conteudo)
+      // Hooks do canteiro: um plugin só liga hooks por hooks/hooks.json. Sem ele, o progresso e o 3D da obra ficam parados.
+      const temEvento = arquivos.some((a) => a.partes.join('/') === 'hooks/evento.cjs')
+      const temHooksJson = arquivos.some((a) => a.partes.join('/') === 'hooks/hooks.json')
+      if (temEvento && !temHooksJson) gravar(['hooks', 'hooks.json'], JSON.stringify(hooksDoCanteiro(), null, 2) + '\n')
     } catch (e) { limpar(dir); throw e }
     return dir
   }

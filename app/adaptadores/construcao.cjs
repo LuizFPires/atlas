@@ -58,6 +58,10 @@ const FERRAMENTAS_LINHA = [
   'Bash(npm test)', 'Bash(npm run build)', 'Bash(npm run lint)', 'Bash(npm run typecheck)',
   'Bash(git status)', 'Bash(git log:*)', 'Bash(git diff:*)', 'Bash(git add:*)', 'Bash(git commit:*)',
   'Bash(git checkout:*)', 'Bash(git switch:*)', 'Bash(git merge:*)', 'Bash(git push:*)',
+  // preparar o projeto (antes só funcionava em máquina que já tinha tudo pronto): peças do software, repositório e remoto
+  'Bash(npm install)', 'Bash(npm install:*)', 'Bash(npm ci)',
+  'Bash(git init:*)', 'Bash(git remote:*)', 'Bash(git branch:*)', 'Bash(git fetch:*)', 'Bash(git pull:*)', 'Bash(git rev-parse:*)',
+  'Bash(gh auth status)', 'Bash(gh repo create:*)', 'Bash(gh repo view:*)',
   'Bash(gh pr create:*)', 'Bash(gh pr view:*)', 'Bash(gh pr checks:*)', 'Bash(gh pr merge:*)', 'Bash(gh run:*)',
 ].join(',')
 /** Negados explícitos (valem mesmo que uma regra de permissão mais larga apareça). Config do projeto/kit não se edita. */
@@ -76,9 +80,40 @@ function prepararGitIsolado(dadosApp) {
   fs.mkdirSync(vazio, { recursive: true })
   const url = (p) => p.split('\\').join('/')
   const conf = path.join(dadosApp, 'gitconfig-atlas')
-  const texto = ['# Gerado pelo Atlas a cada disparo. Nao editar. Sem segredo.', '[core]', `\thooksPath = "${url(vazio)}"`, '\tfsmonitor = false', '[init]', `\ttemplateDir = "${url(vazio)}"`, ''].join('\n')
+  // Autor fixo (a config global do cliente não vale aqui) e push para o GitHub pelo login do gh: nenhuma senha em arquivo.
+  const gh = caminhoGh()
+  const texto = [
+    '# Gerado pelo Atlas a cada disparo. Nao editar. Sem segredo.', '[core]', `\thooksPath = "${url(vazio)}"`, '\tfsmonitor = false',
+    '[init]', `\ttemplateDir = "${url(vazio)}"`, '\tdefaultBranch = main',
+    '[user]', '\tname = Atlas', '\temail = obra@atlas-ia.app.br',
+    '[credential "https://github.com"]', '\thelper =', `\thelper = !${gh} auth git-credential`, '',
+  ].join('\n')
   gravarAtomico(conf, texto)
   return { conf, vazio }
+}
+
+/** gh para o ajudante de credencial do git: a instalação padrão (com aspas, tem espaço) ou o do PATH. */
+function caminhoGh(env = process.env, existe = fs.existsSync, plataforma = process.platform) {
+  if (plataforma === 'win32') {
+    const pf = env.ProgramFiles || env.PROGRAMFILES || 'C:\\Program Files'
+    const exe = path.win32.join(pf, 'GitHub CLI', 'gh.exe')
+    if (existe(exe)) return `"${exe.split('\\').join('/')}"`
+  }
+  return 'gh'
+}
+
+/**
+ * O Claude Code no Windows precisa do Git Bash. Quando o PATH do app ainda é o de antes da instalação do Git, ele não o acha:
+ * apontamos CLAUDE_CODE_GIT_BASH_PATH para a instalação padrão. Se o cliente já definiu o dele, vale o dele (null = não mexe).
+ */
+function caminhoGitBash(env = process.env, existe = fs.existsSync, plataforma = process.platform) {
+  if (plataforma !== 'win32' || env.CLAUDE_CODE_GIT_BASH_PATH) return null
+  const bases = [env.ProgramFiles || env.PROGRAMFILES, env.ProgramW6432 || env.PROGRAMW6432, env.LOCALAPPDATA && path.win32.join(env.LOCALAPPDATA, 'Programs')].filter(Boolean)
+  for (const b of bases) {
+    const bash = path.win32.join(b, 'Git', 'bin', 'bash.exe')
+    if (existe(bash)) return bash
+  }
+  return null
 }
 
 /** Variáveis de ambiente do git isolado (ver prepararGitIsolado). */
@@ -88,7 +123,8 @@ function envGitIsolado(dadosApp) {
   const forcado = [
     ['core.hooksPath', url(vazio)], ['core.fsmonitor', 'false'], ['core.sshCommand', ''], ['core.pager', 'cat'], ['core.editor', 'true'], ['diff.external', ''],
   ]
-  const env = { GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: conf, GIT_CONFIG_SYSTEM: process.platform === 'win32' ? 'NUL' : '/dev/null', GIT_TERMINAL_PROMPT: '0', GIT_CONFIG_COUNT: String(forcado.length) }
+  const bash = caminhoGitBash()
+  const env = { ...(bash ? { CLAUDE_CODE_GIT_BASH_PATH: bash } : {}), GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: conf, GIT_CONFIG_SYSTEM: process.platform === 'win32' ? 'NUL' : '/dev/null', GIT_TERMINAL_PROMPT: '0', GIT_CONFIG_COUNT: String(forcado.length) }
   forcado.forEach(([k, v], i) => { env[`GIT_CONFIG_KEY_${i}`] = k; env[`GIT_CONFIG_VALUE_${i}`] = v })
   return env
 }
@@ -288,4 +324,4 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
   }
 }
 
-module.exports = { criarConstrucao, envGitIsolado, ARGS_SEM_CONFIG_DE_PROJETO, FERRAMENTAS_NEGADAS, RE_COTA, etapasDoTexto, resumirLinha, previsaoPorEtapas, FERRAMENTAS_LINHA }
+module.exports = { criarConstrucao, envGitIsolado, caminhoGitBash, ARGS_SEM_CONFIG_DE_PROJETO, FERRAMENTAS_NEGADAS, RE_COTA, etapasDoTexto, resumirLinha, previsaoPorEtapas, FERRAMENTAS_LINHA }
