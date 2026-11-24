@@ -61,7 +61,7 @@ function etapasDoPlan(dir) {
 }
 const SEGUIR_EM_MS = 60_000
 
-function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new Date(), aoPrecisar = () => {}, diario = null }) {
+function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new Date(), aoPrecisar = () => {}, diario = null, diagnosticar = null }) {
   // M41: o que o vigia faz sozinho vai para o diário da obra.
   const anotar = (pasta, tipo, texto) => { if (!diario) return; try { diario.registrar(pastaDaObra(raiz, pasta), { tipo, texto }) } catch { /* diário é extra */ } }
   const arq = (pasta) => path.join(pastaDaObra(raiz, pasta), '.atlas', 'vigia.json')
@@ -69,7 +69,18 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
   const gravar = (pasta, v) => {
     try { gravarAtomico(arq(pasta), JSON.stringify(v) + '\n') } catch { /* sem registro: tenta na próxima */ }
     if (v.situacao === 'precisa-voce') { try { aoPrecisar(pasta, v.motivo) } catch { /* aviso é extra */ } }
-    if (v.situacao === 'precisa-voce' && Number(v.tentativa) > 0) anotar(pasta, 'defeito', `O Atlas tentou ${v.tentativa} vezes e não conseguiu continuar sozinho. ${v.motivo || ''}`)
+    if (v.situacao === 'precisa-voce' && Number(v.tentativa) > 0) {
+      anotar(pasta, 'defeito', `O Atlas tentou ${v.tentativa} vezes e não conseguiu continuar sozinho. ${v.motivo || ''}`)
+      // M41 (O4): as 10 conferências, uma vez, guardadas junto (sem avisar de novo).
+      if (diagnosticar) {
+        Promise.resolve().then(() => diagnosticar(pasta)).then((checagens) => {
+          const atual = ler(pasta)
+          if (Array.isArray(checagens) && atual && atual.situacao === 'precisa-voce' && atual.fimVisto === v.fimVisto) {
+            try { gravarAtomico(arq(pasta), JSON.stringify({ ...atual, checagens: checagens.slice(0, 12) }) + '\n') } catch { /* sem lista: o alerta já está lá */ }
+          }
+        }, () => {})
+      }
+    }
   }
   const zerar = (pasta) => { try { const a = arq(pasta); if (require('node:fs').existsSync(a)) require('node:fs').unlinkSync(a) } catch { /* nada a apagar */ } }
   let ocupado = false
@@ -158,7 +169,7 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
     estado(pasta) {
       const v = ler(pasta)
       if (!v) return null
-      return { situacao: v.situacao === 'precisa-voce' ? 'precisa-voce' : 'tentando', tentativa: Number(v.tentativa) || 0, de: MAX_TENTATIVAS, motivo: String(v.motivo || ''), ...(v.proximaEm ? { proximaEm: v.proximaEm } : {}), ...(typeof v.fala === 'string' && v.fala ? { fala: v.fala } : {}), ...(v.conta ? { conta: v.conta } : {}) }
+      return { situacao: v.situacao === 'precisa-voce' ? 'precisa-voce' : 'tentando', tentativa: Number(v.tentativa) || 0, de: MAX_TENTATIVAS, motivo: String(v.motivo || ''), ...(v.proximaEm ? { proximaEm: v.proximaEm } : {}), ...(typeof v.fala === 'string' && v.fala ? { fala: v.fala } : {}), ...(v.conta ? { conta: v.conta } : {}), ...(Array.isArray(v.checagens) ? { checagens: v.checagens.filter((c) => c && typeof c.nome === 'string').map((c) => ({ nome: String(c.nome), ok: !!c.ok, ...(c.dica ? { dica: String(c.dica) } : {}) })) } : {}) }
     },
     /** "Tentar agora" do cliente: começa do zero. */
     zerar,

@@ -269,6 +269,15 @@ function FaixaDoMomento({ m, fazer, pode }: { m: MomentoObra; fazer: (a: AcaoObr
         <b>{m.titulo}</b>
         <span>{m.texto}</span>
         {m.fala && <span className="at-pn__vigia-fala">“{m.fala}”</span>}
+        {m.checagens && (
+          <ul className="at-pn__checagens" aria-label="O que o Atlas conferiu">
+            {m.checagens.map((c) => (
+              <li key={c.nome} data-ok={c.ok ? 'sim' : 'nao'} className={`at-pn__checagem${c.ok ? '' : ' at-pn__checagem--ruim'}`}>
+                <Icone nome={c.ok ? 'check' : 'x'} tamanho={14} /><span><b>{c.nome}</b>{!c.ok && c.dica && <em>{c.dica}</em>}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         {acoes.length > 0 && (
           <div className="at-pn__faixa-acoes">
             {acoes.map((a, i) => <Botao key={a} variante={i === 0 && a !== 'diario' && a !== 'esperar' ? undefined : 'secundario'} className="at-pn__btn" onClick={() => fazer(a)}>{nome(a)}</Botao>)}

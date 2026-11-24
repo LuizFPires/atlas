@@ -461,8 +461,9 @@ tela: prototipo/caminho-novo/ObraEstado.dc.html
 - [x] Diário da obra: cada acontecimento vira uma linha com hora, em português simples (sem senha nem chave); o detalhe técnico fica guardado para a Ajuda
 - [x] Selo com 4 estados no topo da obra (Trabalhando, Esperando, Precisa de você, Com defeito), no lugar de "Obra em andamento"
 - [x] Faixa "o que está acontecendo": sempre uma frase e pelo menos uma ação; "último sinal há N s" medido pelo Atlas (processo vivo e última saída), não pelo mestre de obras
-- [ ] Esperando a cota: hora de volta e quanto falta, o plano de hoje, "Ver planos do Claude" (abre o site do Claude; o Atlas não escolhe plano), "Esperar" e "Avisar no celular quando voltar"
-- [ ] Com defeito: depois das tentativas do vigia, o diagnóstico das 10 conferências (✓/✗) e "Corrigir com a Ajuda do Atlas"; trava do próprio Atlas nunca vira "precisa de você"
+- [x] Esperando a cota: hora de volta e quanto falta, "Ver planos do Claude" (abre o site do Claude; o Atlas não escolhe plano) e "Esperar"
+- [ ] Avisar no celular quando a cota voltar (notificação no celular do PWA; depende da chave de notificação criada pelo Luiz)
+- [x] Com defeito: depois das tentativas do vigia, o diagnóstico das 10 conferências (✓/✗) e "Corrigir com a Ajuda do Atlas"; trava do próprio Atlas nunca vira "precisa de você"
 - [x] Diário à direita da obra (últimas linhas) e "Ver o diário completo" com filtros (Tudo, Paradas, Pedidos a você, Entregas)
 - [x] Balão no canteiro 3D com a mesma frase do momento; barra e "ao vivo" na cor do estado
 - [x] Cronograma (aba da obra): previsto (guardado no início da construção) x realizado por etapa, pausas de cota, linha do AGORA e término esperado com dia e hora, refeito a cada etapa entregue
