@@ -27,7 +27,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const crypto = require('node:crypto')
 const { caminhoSeguro, abrirExterno } = require('../seguro.cjs')
-const { pastaDaObra } = require('./obra-fs.cjs')
+const { pastaDaObra, lerTexto, lerJson } = require('./obra-fs.cjs')
 const { REGRA_CONTEUDO_CLIENTE, blocoDoCliente, comoDado, extrairJson } = require('./projeto-comum.cjs')
 
 // ---- espelho de PAGINAS_OFICIAIS -------------------------------------------------------------------------------------------
@@ -46,7 +46,9 @@ const ehPaginaId = (v) => typeof v === 'string' && Object.hasOwn(PAGINAS_OFICIAI
 
 // ---- espelho de textoDaObra / normalizarResposta ---------------------------------------------------------------------------
 const textoDaObra = (t, max = 120) => comoDado(t ?? '', max).join(' ').slice(0, max).trim()
-const PROMETE_HUMANO = /human|pessoa|alguem|especialista|colega|atendente|atendimento|tecnic|equipe|\btime\b|suporte|transfer|encaminh|conosco|contato|whatsapp|telefone|\bliga|\bligue|\bligar|chamar|chamo|e-?mail de|\bagente\b|operador|consultor|\bnossos?\b.*\b(time|equipe)\b/
+// Promessa de GENTE (o Atlas nunca promete atendimento humano). Antes era qualquer "equipe", "agente", "time" ou "WhatsApp", e a
+// resposta certa sobre a obra ("a equipe de execução está na etapa M1") virava a frase-padrão (bug do Guilherme, 24/11/2026).
+const PROMETE_HUMANO = /\bhuman[oa]s?\b|\batendente|\batendimento\b|\bespecialista|\bsuporte\b|\bconosco\b|\boperador|\bconsultor|\bte\s+transfer|\btransfer\w*\s+(voce|para\s+(um|uma|outr))|\bencaminh\w*\s+(seu|o\s+seu|voce|para)|\bentr\w*\s+em\s+contato|\bcontat(e|ar)\s+(a\s+gente|nos|o\s+atlas)|\b(nosso|nossa|nossos|nossas)\s+(time|equipe|tecnic\w*|whatsapp|telefone|e-?mail|central)|\b(alguem|uma\s+pessoa|um\s+tecnico|uma\s+tecnica|um\s+colega)\s+(da|do|vai|ira|pode|entra|te)\b|\b(chamo|chamar|chama|ligue|ligar|liga)\s+(um|uma|alguem|pra\s+gente|para\s+a\s+gente|para\s+nos)\b|\b(whatsapp|telefone|equipe|time|suporte)\s+do\s+atlas|\bfale\s+com\s+(a\s+gente|nosso|nossa|um|uma|alguem)\b/
 const semAcento = (t) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\b(sua|seu|suas|seus|da sua|do seu) (equipe|time)s?\b/g, '')
 const prometeHumano = (t) => PROMETE_HUMANO.test(semAcento(t))
 const RECADO_SEM_HUMANO = 'Eu resolvo isto por aqui com você. Me conta com as suas palavras o que aparece na tela, ou manda outro print.'
@@ -151,6 +153,43 @@ const CHAVE_COFRE = 'atlas/dispositivo'
  * `deps`: { raiz, dadosApp, disparo (criarDisparo de projeto-comum.cjs), shell, dialog, janela, capturar (async () => Buffer PNG da janela do Atlas) }.
  * Só `raiz`, `dadosApp`, `disparo` e `shell` são obrigatórios; sem `capturar`/`dialog` o print e o anexo devolvem null (a tela já trata).
  */
+// ---- estado da obra (bug do Guilherme, 24/11/2026) --------------------------------------------------------------------------
+// "Estamos em 0% ainda, está acontecendo ou está parado?" precisa de resposta de verdade. Com a obra aberta, a Ajuda recebe um
+// retrato curto do que os arquivos da obra dizem (PLAN, roteiro da /construir, últimos movimentos do canteiro). É DADO: vai dentro
+// do bloco delimitado, nunca como instrução. Sem nada disso na pasta, não manda nada (não inventa).
+const PARTES = ['planejando', 'fazendo', 'revisando (qualidade, segurança e desempenho)', 'juntando ao projeto e medindo']
+const QUEM = { implementador: 'Equipe de execução', qa: 'Inspetor de qualidade', seguranca: 'Técnico de segurança', desempenho: 'Engenheiro de desempenho', coordenador: 'Mestre de obras', plantonista: 'Plantonista', despachante: 'Despachante do GitHub' }
+const hora = (ts) => new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+function estadoDaObra(dir, agora = Date.now()) {
+  const linhas = []
+  const plan = lerTexto(path.join(dir, 'PLAN.md'), 400_000)
+  if (plan !== null) {
+    let total = 0, feitas = 0, etapas = 0
+    for (const l of plan.split(/\r?\n/)) { if (/^##\s+(?:Milestone\s+|M)\d+/i.test(l)) etapas++; const t = l.match(/^\s*[-*]\s+\[( |x|X)\]/); if (t) { total++; if (t[1] !== ' ') feitas++ } }
+    linhas.push(`${feitas} de ${total} tarefas aprovadas, em ${etapas} etapas. Uma tarefa só conta depois que passa pela revisão de qualidade, segurança e desempenho, no fim de cada etapa: até lá o número fica parado mesmo com a obra andando.`)
+  }
+  const rot = lerJson(path.join(dir, '.codex', 'roteiro.json')) || lerJson(path.join(dir, '.claude', 'roteiro.json'))
+  if (rot && typeof rot === 'object' && typeof rot.milestone === 'string') {
+    const e = Math.max(0, Math.min(3, Number(rot.etapa_concluida) || 0))
+    linhas.push(`Etapa em andamento: ${str(rot.milestone, 10)} · ${str(rot.titulo, 80) || 'sem título'} · parte ${e + 1} de 4 (${PARTES[e]})${Number.isInteger(rot.pr) ? ` · pedido de revisão #${rot.pr}` : ''}`)
+  }
+  const evs = lerTexto(path.join(dir, '.canteiro', 'eventos.jsonl'), 2_000_000)
+  if (evs) {
+    const ult = evs.trim().split(/\r?\n/).slice(-10).map((l) => { try { return JSON.parse(l) } catch { return null } }).filter((x) => x && Number.isFinite(x.ts))
+    if (ult.length) {
+      const fim = ult[ult.length - 1]
+      const min = Math.max(0, Math.round((agora - fim.ts) / 60000))
+      linhas.push(`Último movimento: ${hora(fim.ts)} (há ${min} min).`)
+      linhas.push('Últimos movimentos:', ...ult.map((x) => `${hora(x.ts)} ${QUEM[x.agente] || str(x.agente, 30) || 'linha'}: ${str(x.ev, 30)} ${str(x.alvo, 80)}`.trim()))
+    }
+  }
+  const oc = lerJson(path.join(dir, 'docs', 'ocorrencias.json'))
+  const abertas = oc && Array.isArray(oc.ocorrencias) ? oc.ocorrencias.filter((o) => o && o.status !== 'resolvida' && o.status !== 'baixada').length : 0
+  if (abertas) linhas.push(`Bloqueios externos abertos: ${abertas}.`)
+  return linhas.length ? linhas.join('\n') : null
+}
+const INSTRUCAO_OBRA = 'Se a pergunta for sobre a obra (andamento, 0%, demora, se está parada), responda com o Estado da obra acima e, se precisar, leia PLAN.md, .claude/roteiro.json e .canteiro/eventos.jsonl. Diga em que etapa está, quem está trabalhando agora e no quê, por que o número ainda não mexeu e quando ele deve mexer. Se o último movimento for antigo, diga que parece parada e o que fazer. Seja específico; nunca responda com frase genérica.'
+
 function criarAjuda({ raiz, dadosApp, disparo, shell, dialog = null, janela = () => null, capturar = null }) {
   /** nome do arquivo -> { dir, pasta } (só o que ESTE adaptador gravou nesta sessão). */
   const emitidos = new Map()
@@ -180,6 +219,11 @@ function criarAjuda({ raiz, dadosApp, disparo, shell, dialog = null, janela = ()
       const bruta = contexto && typeof contexto === 'object' ? contexto.pasta : null
       if (typeof bruta === 'string' && bruta) { try { pastaDaObra(raiz, bruta); pasta = bruta } catch { pasta = null } }
       let pedido = montarPedidoAjuda(ctx, hist, msg)
+      if (pasta) {
+        let estado = null
+        try { estado = estadoDaObra(pastaDaObra(raiz, pasta)) } catch { estado = null }
+        if (estado) pedido += `\n\n## Estado da obra agora (dado)\n${blocoDoCliente(estado, '(nada)').join('\n')}\n\n${INSTRUCAO_OBRA}`
+      }
       // Imagem do print: só se FOI este adaptador que a gravou nesta sessão, dentro desta obra (nome conferido por padrão fixo).
       const m = ctx.print && typeof ctx.print.detalhe === 'string' ? RE_IMAGEM_DO_PRINT.exec(ctx.print.detalhe) : null
       const e = m ? emitidos.get(m[1]) : null

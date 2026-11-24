@@ -81,7 +81,7 @@ describe('fix m25 — humano e segredo', () => {
     expect(tirarSegredos('veja pagina#frag654 agora')).not.toContain('frag654')
   })
   it('promessa de humano escondida por invisível ou quebra de linha vira o recado', () => {
-    for (const f of ['espe\u200bcialista', 'fale\nconosco', 'espe\u00adcia\u2060lista', 'wha\u200btsapp'])
+    for (const f of ['espe\u200bcialista', 'fale\nconosco', 'espe\u00adcia\u2060lista', 'no nosso wha\u200btsapp'])
       for (const r of [{ texto: f }, { texto: 'Ok.', passos: [f] }, { texto: 'Ok.', depois: f }, { texto: 'Ok.', traducoes: [{ en: 'a', pt: f }] }])
         expect(normalizarResposta(r)).toEqual({ texto: RECADO_SEM_HUMANO })
   })
@@ -140,4 +140,20 @@ test('D1: o aviso da voz (ouvindo, escrevendo) aparece dentro da gaveta', () => 
   const gaveta = screen.getByRole('complementary', { name: 'Ajuda do Atlas' })
   expect(gaveta.querySelector('.at-svoz--embutido')).toHaveTextContent(/Escrevendo o que você falou/)
   act(() => definirEstadoVoz({ fase: 'livre' }))
+})
+
+describe('bug 24/11 (Guilherme): resposta sobre a obra não pode virar a frase-padrão', () => {
+  it('falar da equipe de execução, dos agentes, do time ou do WhatsApp do app do cliente é resposta normal', () => {
+    for (const f of [
+      'A obra está andando: a equipe de execução está fazendo a etapa M1 (base do app). O 0% muda quando a primeira etapa passar pela revisão.',
+      'O agente de qualidade está conferindo o que foi feito; depois o técnico de segurança olha também.',
+      'Seu time pode entrar pelo celular depois que o app estiver no ar.',
+      'O botão "Mandar pelo WhatsApp" do seu app vai abrir a conversa com o telefone do cliente.',
+      'Ninguém precisa ligar o computador de novo: ele segue sozinho.',
+    ]) expect(normalizarResposta({ texto: f }).texto).toBe(f)
+  })
+  it('promessa de gente continua barrada', () => {
+    for (const f of ['Um especialista vai te ajudar', 'Vou te transferir para um colega', 'Nosso suporte responde em 1 dia', 'Alguém da equipe vai olhar', 'Chamo um humano', 'Nossos técnicos entram em contato', 'Fale conosco pelo WhatsApp', 'Vou chamar um atendente para você.', 'Entre em contato com a nossa equipe', 'Um técnico vai te ligar', 'Me chama no WhatsApp do Atlas', 'Vou encaminhar seu caso para a equipe do Atlas'])
+      expect(normalizarResposta({ texto: f }).texto, f).toBe(RECADO_SEM_HUMANO)
+  })
 })
