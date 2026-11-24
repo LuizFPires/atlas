@@ -464,6 +464,16 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
 
       {versao && playEm && (
         <UsarSistema obraNome={obra.nome} telas={versao.telas} inicial={playEm} onFechar={() => setPlayEm(null)}
+          sugerir={prototipo.sugerirMarcacao ? (id, x, y) => prototipo.sugerirMarcacao!(obra.pasta, id, x, y) : undefined}
+          onMandar={async (texto) => {
+            setErro('')
+            setMsgs((m) => [...m, { quem: 'VOCÊ', txt: 'Mandei as marcações do protótipo.' }])
+            try {
+              const r = await prototipo.ajustar(obra.pasta, texto)
+              setEstado(r.estado)
+              setMsgs((m) => [...m, { quem: 'CLAUDE', txt: r.resposta }])
+            } catch (x) { setErro(recadoDoErroProto(x)); throw x }
+          }}
           onPedirMudanca={(id) => { setPlayEm(null); setMarcada(id); requestAnimationFrame(() => document.getElementById('pedido')?.focus()) }} />
       )}
 

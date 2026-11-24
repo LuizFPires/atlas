@@ -469,3 +469,27 @@ test('obra que nasceu de planilha: a aba de origem de cada tela vem do mapa e fi
   const t = telasDoJson({ telas: [{ id: 'pedidos', nome: 'Pedidos', html: '<div>x</div>', origem: '<b>Pedidos</b>' }] }).telas
   assert.equal(t[0].origem.includes('<'), false)
 })
+
+describe('marcações (Milestone 40, Luiz 24/11/2026: "o Atlas pode sugerir ou recomendar uma ação")', () => {
+  test('sugerirMarcacao: o Claude lê a tela, diz o que há no ponto e sugere até 3 ações; não grava nada', async () => {
+    const { p, responder, chamadas } = montar()
+    await p.desenhar('obra', 'B', ESTILO)
+    responder({ tipo: 'desenhar', alvo: 'Pedido de Maria', sugestoes: ['Abrir o detalhe do pedido com o Pix.', 'Abrir um resumo curto.', 'Abrir a linha do tempo.', 'quarta a mais'] })
+    const s = await p.sugerirMarcacao('obra', 'agenda', 120, 300)
+    assert.deepEqual(s, { tipo: 'desenhar', alvo: 'Pedido de Maria', sugestoes: ['Abrir o detalhe do pedido com o Pix.', 'Abrir um resumo curto.', 'Abrir a linha do tempo.'] })
+    const pedido = chamadas.at(-1).o.entrada
+    assert.match(pedido, /prototipo\/versoes\/v001\/telas\/agenda\.html/)
+    assert.match(pedido, /x=120, y=300/)
+    assert.equal((await p.estado('obra')).versoes.length, 1)
+  })
+  test('sugerirMarcacao: resposta estranha é recusada; tipo fora da lista vira "criar"; ponto fora da tela é recusado', async () => {
+    const { p, responder } = montar()
+    await p.desenhar('obra', 'B', ESTILO)
+    responder({ tipo: 'apagar-tudo', alvo: 'x', sugestoes: ['Colocar um botão aqui.'] })
+    assert.equal((await p.sugerirMarcacao('obra', 'agenda', 10, 10)).tipo, 'criar')
+    responder({ tipo: 'ajustar', sugestoes: [] })
+    await assert.rejects(p.sugerirMarcacao('obra', 'agenda', 10, 10), /sugestao-invalida/)
+    await assert.rejects(p.sugerirMarcacao('obra', 'agenda', -5, 10), /ponto-invalido/)
+    await assert.rejects(p.sugerirMarcacao('obra', 'nao-existe', 10, 10), /tela-inexistente/)
+  })
+})

@@ -138,6 +138,25 @@ function versoesDoJson(obj) {
   })
 }
 
+/** Marcação (Milestone 40): o que há no ponto tocado e até 3 ações. O ponto é dado em pixels da tela (390×844 ou 1280×800). */
+function pedidoMarcacao(tela, pastaVersao, x, y) {
+  return [
+    REGRA_CONTEUDO_CLIENTE,
+    `O cliente marcou um ponto na tela "${tela.nome}" (id ${tela.id}, aparelho ${tela.aparelho ?? 'celular'}) do protótipo, para pedir uma mudança. A tela está em prototipo/versoes/${pastaVersao}/telas/${tela.id}.html (você pode ler). O ponto marcado fica perto de x=${x}, y=${y} (em pixels, a tela tem ${tela.aparelho === 'computador' ? '1280×800' : '390×844'}; 0,0 é o canto de cima à esquerda).`,
+    '- Descubra o que está nesse ponto. Se for algo que já leva a outra tela (link href="#tela-ID" que existe), o tipo é "ajustar". Se for um botão ou item que ainda não leva a lugar nenhum, o tipo é "desenhar". Se não houver nada clicável ali, o tipo é "criar".',
+    '- Sugira até 3 ações diferentes, cada uma numa frase curta e simples, do jeito que um dono de pequeno negócio diria. Pense no que faz sentido para o sistema como um todo.',
+    'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"tipo":"ajustar|desenhar|criar","alvo":"o nome do que está no ponto (curto)","sugestoes":["frase 1","frase 2","frase 3"]}.',
+  ].join('\n')
+}
+
+/** Valida a sugestão (dado de fora). Lança 'sugestao-invalida'. */
+function marcacaoDoJson(obj) {
+  const tipos = ['ajustar', 'desenhar', 'criar']
+  const sugestoes = (obj && Array.isArray(obj.sugestoes) ? obj.sugestoes : []).slice(0, 3).map((t) => umaLinha(t, 220)).filter(Boolean)
+  if (!sugestoes.length) throw new Error('sugestao-invalida')
+  return { tipo: tipos.includes(obj.tipo) ? obj.tipo : 'criar', alvo: umaLinha(obj.alvo, 60), sugestoes }
+}
+
 function pedidoAjustar(pedido, telas, versao) {
   return [
     REGRA_CONTEUDO_CLIENTE,
@@ -441,6 +460,21 @@ function criarPrototipo({ raiz, disparo }) {
         fs.mkdirSync(caminhoSeguro(raiz, pasta, 'prototipo', 'comparar'), { recursive: true })
         v.forEach((x, i) => gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'comparar', `${tela.id}-${i + 1}.html`), x.html))
         return v
+      })
+    },
+
+    /** Marcação: o Atlas diz o que há no ponto e sugere até 3 ações. Não grava nada (o pedido vai depois, junto, pelo ajustar). */
+    sugerirMarcacao(pasta, telaId, x, y) {
+      pasta = String(pasta)
+      const px = Math.round(Number(x)), py = Math.round(Number(y))
+      if (!Number.isFinite(px) || !Number.isFinite(py) || px < 0 || py < 0 || px > 1280 || py > 4000) return Promise.reject(new Error('ponto-invalido'))
+      return exclusivo(pasta, async () => {
+        const e = ler(pasta)
+        const atual = e.versoes.find((v) => v.numero === e.atual)
+        const tela = atual?.telas.find((t) => t.id === String(telaId))
+        if (!tela) throw new Error('tela-inexistente')
+        const bruto = extrairJson(await disparo.perguntar(pasta, pedidoMarcacao(tela, nomeVersao(atual.numero), px, py), { timeoutMs: 180_000, maxSaida: 200_000 }), 'objeto')
+        return marcacaoDoJson(bruto)
       })
     },
 
