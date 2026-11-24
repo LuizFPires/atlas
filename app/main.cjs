@@ -202,6 +202,7 @@ ipcMain.on('atlas:painel:endereco', (e, pasta) => { e.returnValue = confiavel(e)
 handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
 handle('atlas:painel:diario', (pasta) => painel.diario(String(pasta)))
 handle('atlas:painel:cronograma', (pasta) => painel.cronograma(String(pasta)))
+handle('atlas:painel:decidir', async (pasta, rotulo) => { await kit.garantir(String(pasta)); return painel.decidir(String(pasta), String(rotulo ?? '').slice(0, 80)) })
 
 // Retomar (F12): obra em andamento ao abrir o app e "Continuar obra".
 handle('atlas:retomar:andamento', () => retomar.obraEmAndamento())

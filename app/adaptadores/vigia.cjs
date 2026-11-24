@@ -130,7 +130,8 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
     if (l.motivo === 'precisa-voce') {
       const fala = limparFala(l.fala)
       const conta = contaDaFala(fala)
-      gravar(pasta, { situacao: 'precisa-voce', tentativa: 0, de: MAX_TENTATIVAS, motivo: fala ? 'A obra está esperando uma coisa que só você pode fazer.' : 'A obra está esperando você.', ...(fala ? { fala } : {}), ...(conta ? { conta } : {}), fimVisto: fim })
+      const opcoes = Array.isArray(l.opcoes) ? l.opcoes.filter((o) => o && typeof o.rotulo === 'string' && o.rotulo).slice(0, 4).map((o) => ({ rotulo: String(o.rotulo).slice(0, 80), explica: String(o.explica || '').slice(0, 200), recomendada: !!o.recomendada })) : []
+      gravar(pasta, { situacao: 'precisa-voce', tentativa: 0, de: MAX_TENTATIVAS, motivo: opcoes.length ? 'A obra precisa que você escolha como seguir.' : fala ? 'A obra está esperando uma coisa que só você pode fazer.' : 'A obra está esperando você.', ...(fala ? { fala } : {}), ...(conta ? { conta } : {}), ...(opcoes.length ? { opcoes } : {}), fimVisto: fim })
       return
     }
     let estado = v && v.fimVisto === fim ? v : null
@@ -169,7 +170,7 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
     estado(pasta) {
       const v = ler(pasta)
       if (!v) return null
-      return { situacao: v.situacao === 'precisa-voce' ? 'precisa-voce' : 'tentando', tentativa: Number(v.tentativa) || 0, de: MAX_TENTATIVAS, motivo: String(v.motivo || ''), ...(v.proximaEm ? { proximaEm: v.proximaEm } : {}), ...(typeof v.fala === 'string' && v.fala ? { fala: v.fala } : {}), ...(v.conta ? { conta: v.conta } : {}), ...(Array.isArray(v.checagens) ? { checagens: v.checagens.filter((c) => c && typeof c.nome === 'string').map((c) => ({ nome: String(c.nome), ok: !!c.ok, ...(c.dica ? { dica: String(c.dica) } : {}) })) } : {}) }
+      return { situacao: v.situacao === 'precisa-voce' ? 'precisa-voce' : 'tentando', tentativa: Number(v.tentativa) || 0, de: MAX_TENTATIVAS, motivo: String(v.motivo || ''), ...(v.proximaEm ? { proximaEm: v.proximaEm } : {}), ...(typeof v.fala === 'string' && v.fala ? { fala: v.fala } : {}), ...(v.conta ? { conta: v.conta } : {}), ...(Array.isArray(v.opcoes) && v.opcoes.length ? { opcoes: v.opcoes.map((o) => ({ rotulo: String(o.rotulo), explica: String(o.explica || ''), recomendada: !!o.recomendada })) } : {}), ...(Array.isArray(v.checagens) ? { checagens: v.checagens.filter((c) => c && typeof c.nome === 'string').map((c) => ({ nome: String(c.nome), ok: !!c.ok, ...(c.dica ? { dica: String(c.dica) } : {}) })) } : {}) }
     },
     /** "Tentar agora" do cliente: começa do zero. */
     zerar,

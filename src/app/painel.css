@@ -176,3 +176,28 @@
 .at-pn__andares-pe { display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--card-b); }
 .at-pn__andares-pe .at-pn__link { margin-left: auto; }
 @media (prefers-reduced-motion: reduce) { .at-pn__andar--agora .at-pn__andar-n { animation: none; } }
+/* M43: o selo do topo vira só para leitor de tela; quem diz a situação, à vista, é o cartão de cima do palco (como no protótipo). */
+.at-pn__topo .at-pn__selo { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* M43: no palco a barra de baixo fica compacta, como no protótipo: a frase, as últimas linhas do diário e os botões. */
+.at-pn__palco-base .at-pn__faixa { padding: 12px 16px; gap: 12px; align-items: center; }
+.at-pn__palco-base .at-pn__faixa-bola { width: 30px; height: 30px; border-radius: 15px; }
+.at-pn__palco-base .at-pn__faixa-rot { display: none; }
+.at-pn__palco-base .at-pn__faixa-txt { gap: 4px; }
+.at-pn__palco-base .at-pn__faixa-txt > b { font-size: 16px; }
+.at-pn__palco-base .at-pn__faixa-txt > span:not(.at-pn__faixa-recentes):not(.at-pn__vigia-fala) { display: none; }
+.at-pn__palco-base .at-pn__vigia-fala { font-size: 13px; max-height: 3.2em; overflow: hidden; }
+.at-pn__palco-base .at-pn__faixa-acoes { margin-top: 2px; }
+.at-pn__palco-base .at-pn__faixa-sinal { display: none; }
+/* Guilherme (24/11/2026): "tem que ficar claro qual opção ele tem para clicar e avançar". Cada opção é um botão grande. */
+.at-pn__opcoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 6px; }
+.at-pn__opcao { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px 16px; border-radius: 14px; border: 1px solid #3A3F45; background: rgba(255, 255, 255, 0.04); color: #EDEFEA; text-align: left; font: inherit; cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease; }
+.at-pn__opcao:hover { border-color: #C6F135; background: rgba(198, 241, 53, 0.08); transform: translateY(-1px); }
+.at-pn__opcao:focus-visible { outline: 2px solid #C6F135; outline-offset: 2px; }
+.at-pn__opcao--rec { border: 2px solid #C6F135; background: rgba(198, 241, 53, 0.12); }
+.at-pn__opcao-topo { display: flex; align-items: center; gap: 8px; width: 100%; }
+.at-pn__opcao-topo b { font-size: 16px; }
+.at-pn__opcao-selo { margin-left: auto; padding: 3px 8px; border-radius: 999px; background: #C6F135; color: #141619; font: 700 10px var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.at-pn__opcao-exp { font-size: 13px; line-height: 1.45; color: #B4BBB2; }
+.at-pn__opcao-ir { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; font: 700 13px var(--font-text); color: #C6F135; }
+:root[data-theme='claro'] .at-pn__faixa:not(.at-pn__palco-base .at-pn__faixa) .at-pn__opcao { color: var(--text); border-color: var(--card-b); background: var(--card2); }
+:root[data-theme='claro'] .at-pn__faixa:not(.at-pn__palco-base .at-pn__faixa) .at-pn__opcao-exp { color: var(--mute); }

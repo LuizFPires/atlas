@@ -227,3 +227,22 @@ test('painel: cronograma da obra com previsto, real, esperado e as pausas de cot
   assert.equal(v.pausas.length, 1)
   assert.ok(v.pausas[0].fim)
 })
+
+// Guilherme (24/11): escolher como seguir. Só vale uma das opções que a linha deu; a escolha vai para a linha e para o diário.
+test('decidir: religa a linha com a opção escolhida (só uma das opções oferecidas)', async () => {
+  const { criarDiario } = require('./diario.cjs')
+  const diario = criarDiario()
+  const religadas = []
+  const zeradas = []
+  const vigia = { estado: () => ({ situacao: 'precisa-voce', tentativa: 0, de: 3, motivo: 'x', opcoes: [{ rotulo: 'Corrigir e revisar de novo', explica: '', recomendada: true }] }), zerar: (p) => zeradas.push(p) }
+  const { raiz, c, painel } = montar({ diario, vigia })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  c.linha.parar('obra'); await new Promise((r) => setTimeout(r, 20))
+  const religar = c.linha.religar
+  c.linha.religar = (p, o) => { religadas.push([p, o]); return religar(p, o) }
+  await assert.rejects(painel.decidir('obra', 'rm -rf'), /opcao-invalida/)
+  await painel.decidir('obra', 'Corrigir e revisar de novo')
+  assert.deepEqual(religadas, [['obra', { decisao: 'Corrigir e revisar de novo' }]])
+  assert.deepEqual(zeradas, ['obra'])
+  assert.ok(diario.ler(path.join(raiz, 'obra')).some((e) => /Você escolheu: Corrigir e revisar de novo/.test(e.texto)))
+})

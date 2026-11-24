@@ -192,3 +192,12 @@ test('ao desistir, as conferências do diagnóstico vão junto para o painel', a
   assert.equal(m.ler().situacao, 'precisa-voce')
   assert.deepEqual(m.ler().checagens, lista)
 })
+
+// Guilherme (24/11): a linha parou perguntando e o painel não mostrava as opções. O vigia leva as opções para o painel.
+test('pedido com opções: o painel recebe as opções para o cliente escolher', async () => {
+  const m = montar()
+  fs.writeFileSync(path.join(m.raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ versao: 1, estado: 'parou', motivo: 'precisa-voce', codigo: 0, fimEm: new Date().toISOString(), fala: 'Escolha como seguir.', opcoes: [{ rotulo: 'Corrigir e revisar de novo', explica: 'x', recomendada: true }, { rotulo: 'Seguir', explica: 'y', recomendada: false }] }))
+  await m.vigia.rodada()
+  assert.deepEqual(m.ler().opcoes.map((o) => o.rotulo), ['Corrigir e revisar de novo', 'Seguir'])
+  assert.equal(m.ler().opcoes[0].recomendada, true)
+})

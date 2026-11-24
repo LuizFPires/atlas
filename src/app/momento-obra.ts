@@ -1,7 +1,7 @@
 // M41 — a obra nunca fica no escuro (protótipo O1–O4 aprovado pelo Luiz em 24/11/2026: "não pode ficar no escuro ... o usuário
 // tem que ter a oportunidade de tomar uma ação"). Em qualquer situação: um selo (4 estados), uma frase do que está acontecendo e
 // pelo menos uma ação. Trava do próprio Atlas nunca vira "precisa de você": depois das tentativas do vigia é "com defeito".
-import type { Checagem, EstadoObra, Situacao } from './ponte-painel'
+import type { Checagem, EstadoObra, OpcaoDecisao, Situacao } from './ponte-painel'
 
 export type NivelObra = 'trabalhando' | 'esperando' | 'precisa' | 'defeito' | 'pausada' | 'pronta'
 /** tentar: religar já · continuar: tirar a pausa · planos: site de planos do Claude · esperar: fica como está · ajuda: Ajuda do
@@ -19,6 +19,8 @@ export interface MomentoObra {
   sinal?: string
   /** Com defeito: as conferências que o Atlas fez (✓ / ✗ com a dica). */
   checagens?: Checagem[]
+  /** A linha perguntou como seguir: as opções para o cliente escolher. */
+  opcoes?: OpcaoDecisao[]
   acoes: AcaoObra[]
 }
 
@@ -58,6 +60,9 @@ export function momentoDaObra(e: EstadoObra, sit: Situacao, agora: Date = new Da
   }
   if (v && v.situacao === 'precisa-voce' && v.tentativa > 0) {
     return { nivel: 'defeito', selo: 'Com defeito', rotulo: `O ATLAS TENTOU ${v.tentativa} ${v.tentativa === 1 ? 'VEZ' : 'VEZES'}`, titulo: 'A obra parou. O Atlas não conseguiu continuar sozinho.', texto: `${v.motivo} A Ajuda do Atlas já sabe o que aconteceu e resolve com você.`, ...(v.checagens?.length ? { checagens: v.checagens } : {}), acoes: ['ajuda', 'tentar', 'diario'] }
+  }
+  if (v && v.situacao === 'precisa-voce' && v.opcoes?.length) {
+    return { nivel: 'precisa', selo: 'Precisa de você', rotulo: 'ESCOLHA COMO SEGUIR', titulo: 'A obra precisa que você escolha como seguir.', texto: 'Toque numa das opções abaixo. A obra continua sozinha com a sua escolha.', ...(v.fala ? { fala: v.fala } : {}), opcoes: v.opcoes, acoes: ['ajuda', 'diario'] }
   }
   if (v && v.situacao === 'precisa-voce') {
     return { nivel: 'precisa', selo: 'Precisa de você', rotulo: 'PRECISA DE VOCÊ', titulo: v.motivo || 'A obra está esperando você.', texto: 'Assim que resolver, a obra continua sozinha.', ...(v.fala ? { fala: v.fala } : {}), ...(v.conta ? { conta: v.conta } : {}), acoes: v.conta ? ['contas', 'ajuda'] : ['ajuda', 'tentar'] }

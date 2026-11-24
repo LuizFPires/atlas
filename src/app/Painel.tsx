@@ -188,7 +188,7 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
         </section>
         {momento && momento.nivel !== 'pronta' && (
           <div className="at-pn__palco-base">
-            <FaixaDoMomento m={momento} fazer={fazer} pode={{ planos: !!onVerMax, ajuda: !!onPedirAjuda, contas: !!onLigarContas }} recentes={(estado?.diario ?? []).slice(-2).reverse()} />
+            <FaixaDoMomento m={momento} fazer={fazer} pode={{ planos: !!onVerMax, ajuda: !!onPedirAjuda, contas: !!onLigarContas }} recentes={(estado?.diario ?? []).slice(-2).reverse()} escolher={painel.decidir ? (r) => { void agir(() => painel.decidir!(obra.pasta, r)) } : undefined} />
           </div>
         )}
       </section>
@@ -246,7 +246,7 @@ const BALAO_QUEM: Record<string, string> = { trabalhando: 'Mestre de obras', esp
 const NOME_ACAO: Record<AcaoObra, string> = { tentar: 'Tentar agora', continuar: 'Continuar obra', planos: 'Ver planos do Claude', esperar: 'Esperar, volta sozinha', ajuda: 'Falar com o Atlas', contas: 'Ligar a conta', diario: 'Ver o diário completo', ok: 'Pode seguir', teste: 'Ver versão de teste' }
 
 /** M41: a faixa do momento. Sempre uma frase do que está acontecendo e pelo menos uma ação (a obra nunca fica no escuro). */
-function FaixaDoMomento({ m, fazer, pode, recentes = [] }: { m: MomentoObra; fazer: (a: AcaoObra) => void; pode: { planos: boolean; ajuda: boolean; contas: boolean }; recentes?: LinhaDiario[] }) {
+function FaixaDoMomento({ m, fazer, pode, recentes = [], escolher }: { m: MomentoObra; fazer: (a: AcaoObra) => void; pode: { planos: boolean; ajuda: boolean; contas: boolean }; recentes?: LinhaDiario[]; escolher?: (rotulo: string) => void }) {
   const alerta = m.nivel === 'precisa' || m.nivel === 'defeito'
   const acoes = [...m.acoes, ...(m.acoes.includes('diario') ? [] : ['diario' as AcaoObra])].filter((a) => (a === 'planos' ? pode.planos : a === 'ajuda' ? pode.ajuda : a === 'contas' ? pode.contas : true))
   const nome = (a: AcaoObra) => (a === 'contas' && m.conta ? `Ligar o ${m.conta}` : a === 'ajuda' && m.nivel === 'defeito' ? 'Corrigir com a Ajuda do Atlas' : NOME_ACAO[a])
@@ -259,6 +259,17 @@ function FaixaDoMomento({ m, fazer, pode, recentes = [] }: { m: MomentoObra; faz
         <span>{m.texto}</span>
         {recentes.length > 0 && <span className="at-pn__faixa-recentes">{recentes.map((l) => `${horaDe(l.em)} ${l.texto}`).join(' · ')}</span>}
         {m.fala && <span className="at-pn__vigia-fala">“{m.fala}”</span>}
+        {m.opcoes && escolher && (
+          <div className="at-pn__opcoes" role="group" aria-label="Escolha como seguir">
+            {m.opcoes.map((o) => (
+              <button key={o.rotulo} type="button" className={`at-pn__opcao${o.recomendada ? ' at-pn__opcao--rec' : ''}`} onClick={() => escolher(o.rotulo)}>
+                <span className="at-pn__opcao-topo"><b>{o.rotulo}</b>{o.recomendada && <span className="at-pn__opcao-selo">Recomendado</span>}</span>
+                {o.explica && <span className="at-pn__opcao-exp">{o.explica}</span>}
+                <span className="at-pn__opcao-ir">Seguir com esta <Icone nome="seta" tamanho={14} /></span>
+              </button>
+            ))}
+          </div>
+        )}
         {m.checagens && (
           <ul className="at-pn__checagens" aria-label="O que o Atlas conferiu">
             {m.checagens.map((c) => (
