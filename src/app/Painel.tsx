@@ -8,6 +8,9 @@ import { Ocorrencia } from './Ocorrencia'
 import type { PonteOcorrencias } from './ponte-ocorrencia'
 import type { PonteCota } from './ponte-cota'
 import type { ObraDoEstilo } from './Estilo'
+import { FichaTrava } from './FichaTrava'
+import type { PonteTravas } from './ponte-travas'
+import type { PonteNavegador } from './ponte-navegador'
 import './painel.css'
 
 interface Props {
@@ -27,6 +30,11 @@ interface Props {
   onVerMax?: () => void
   /** De quanto em quanto tempo relê o andamento (ms); 0 desliga (testes). */
   sondagemMs?: number
+  /** Fichas de trava (T1Travas): site da trava, "deixar público". */
+  travas?: PonteTravas
+  navegador?: PonteNavegador
+  /** Conta desligada: abre a tela das contas. */
+  onLigarContas?: () => void
 }
 
 export const recadoDoErroPainel = (e: unknown) => {
@@ -54,7 +62,7 @@ const AVISO_PARADA: Partial<Record<Situacao, string>> = {
 }
 
 /** F09: painel da obra. O prédio, o %, o prazo e o "agora na obra"; detalhes técnicos só em "ver detalhes". */
-export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onVerMax, onPedirAjuda, sondagemMs = 5000 }: Props) {
+export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onVerMax, onPedirAjuda, sondagemMs = 5000, travas, navegador, onLigarContas }: Props) {
   const [estado, setEstado] = useState<EstadoObra | null>(null)
   const [modo, setModo] = useState<ModoObra | null>(null)
   const [modoLido, setModoLido] = useState(false)
@@ -141,6 +149,8 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
 
       {erro && <p className="at-pn__erro" role="alert">{erro}</p>}
       {!estado && !erro && <p role="status">O Atlas está olhando a obra…</p>}
+
+      {estado?.trava && travas && !concluida && <FichaTrava key={`${estado.trava.tipo}-${estado.trava.id}`} pasta={obra.pasta} trava={estado.trava} ponte={travas} navegador={navegador} onLigarContas={onLigarContas} />}
 
       {concluida && (
         <div className="at-pn__pronta" role="status">

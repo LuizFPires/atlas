@@ -25,6 +25,8 @@ interface Props {
   navegador?: PonteNavegador
   /** De quanto em quanto tempo o Atlas confere se a pessoa já confirmou no site. */
   sondagemMs?: number
+  /** Texto do botão final (dentro de uma obra: "voltar à obra"). */
+  rotuloContinuar?: string
 }
 
 const ret = (el: HTMLElement | null): Retangulo => {
@@ -37,7 +39,7 @@ const ret = (el: HTMLElement | null): Retangulo => {
  * cada uma aqui: GitHub e Vercel mostram um código que a pessoa cola no site ao lado; o Supabase pede uma chave colada aqui.
  * A pessoa nunca digita comando nem senha. O último passo só aparece com as três ligadas.
  */
-export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemMs = 3000 }: Props) {
+export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemMs = 3000, rotuloContinuar = 'Tudo ligado · Último passo →' }: Props) {
   const [linhas, setLinhas] = useState<Record<ContaLigavel, Linha>>({ github: { estado: 'pendente', usuario: null }, supabase: { estado: 'pendente', usuario: null }, hosp: { estado: 'pendente', usuario: null } })
   const [chave, setChave] = useState('')
   const [avisoChave, setAvisoChave] = useState('')
@@ -185,7 +187,7 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
               <div className="at-ativ__rodape at-claude__acoes">
                 <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
                 {faltam === 0
-                  ? <Botao onClick={onContinuar}>Tudo ligado · Último passo →</Botao>
+                  ? <Botao onClick={onContinuar}>{rotuloContinuar}</Botao>
                   : <span className="at-ativ__txt">{faltam === 1 ? 'Falta 1 conta' : `Faltam ${faltam} contas`}. Sem elas o Atlas constrói, mas não consegue guardar nem publicar.</span>}
               </div>
             </div>

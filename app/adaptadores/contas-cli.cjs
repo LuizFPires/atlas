@@ -25,11 +25,11 @@ const CHAVE_SUPABASE = 'contas/supabase'
 const MAX_SAIDA = 200_000
 
 /** Roda e espera (sem shell, a não ser .cmd do npm com argumentos FIXOS). Saída = stdout+stderr, com teto. */
-function rodarProcesso(cmd, args, { env, timeoutMs = 20_000 } = {}) {
+function rodarProcesso(cmd, args, { env, cwd, timeoutMs = 20_000 } = {}) {
   return new Promise((resolve) => {
     let saida = ''
     let p
-    try { p = spawn(cmd, args, { env, windowsHide: true, shell: /\.cmd$/i.test(cmd), stdio: ['ignore', 'pipe', 'pipe'] }) } catch { resolve({ codigo: 1, saida: '' }); return }
+    try { p = spawn(cmd, args, { env, cwd, windowsHide: true, shell: /\.cmd$/i.test(cmd), stdio: ['ignore', 'pipe', 'pipe'] }) } catch { resolve({ codigo: 1, saida: '' }); return }
     const junta = (b) => { if (saida.length < MAX_SAIDA) saida += String(b) }
     p.stdout.on('data', junta)
     p.stderr.on('data', junta)
@@ -75,6 +75,15 @@ function codigoEEndereco(conta, texto) {
 
 const chaveSupabaseValida = (c) => typeof c === 'string' && /^sbp_[a-z0-9]{40}$/i.test(c)
 
+/** O gh: a instalação padrão no Windows (o PATH do app pode ser o de antes do instalador) ou o do PATH. */
+function comandoGh(env = process.env, existe = fs.existsSync, plataforma = process.platform) {
+  if (plataforma === 'win32') {
+    const exe = path.win32.join(env.ProgramFiles || env.PROGRAMFILES || 'C:\\Program Files', 'GitHub CLI', 'gh.exe')
+    if (existe(exe)) return exe
+  }
+  return 'gh'
+}
+
 /**
  * deps: { dadosApp, cofre, rodar(cmd, args, {env, timeoutMs}) → {codigo, saida}, iniciar(cmd, args, {env, onTexto, onFim}) →
  *         {escrever, parar}, plataforma?, env? (base, já mínimo), existe?, execPath? }
@@ -88,13 +97,7 @@ function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = inic
   let chaveCache = null
   const recarregar = async () => { try { const c = await cofre.ler(CHAVE_SUPABASE); chaveCache = chaveSupabaseValida(c) ? c : null } catch { chaveCache = null } }
 
-  const gh = () => {
-    if (plataforma === 'win32') {
-      const exe = path.win32.join(env.ProgramFiles || env.PROGRAMFILES || 'C:\\Program Files', 'GitHub CLI', 'gh.exe')
-      if (existe(exe)) return { cmd: exe, pre: [], env: {} }
-    }
-    return { cmd: 'gh', pre: [], env: {} }
-  }
+  const gh = () => ({ cmd: comandoGh(env, existe, plataforma), pre: [], env: {} })
   // Vercel e Supabase: o script da CLI rodado pelo próprio Node do Electron (sem shell, sem .cmd).
   const viaNode = (script) => ({ cmd: execPath, pre: [path.join(pastaFerr, 'node_modules', ...script)], env: { ELECTRON_RUN_AS_NODE: '1' } })
   const vercel = () => viaNode(['vercel', 'dist', 'vc.js'])
@@ -210,4 +213,4 @@ function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = inic
   return self
 }
 
-module.exports = { criarContasCli, codigoEEndereco, chaveSupabaseValida, CHAVE_SUPABASE }
+module.exports = { rodarProcesso, comandoGh, criarContasCli, codigoEEndereco, chaveSupabaseValida, CHAVE_SUPABASE }

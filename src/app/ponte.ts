@@ -25,6 +25,7 @@ import type { PonteIdeia } from './ponte-ideia'
 import type { PonteNavegador } from './ponte-navegador'
 import type { PonteContas } from './ponte-contas'
 import type { PonteLigarContas } from './ponte-ligar-contas'
+import type { PonteTravas } from './ponte-travas'
 
 /** Cofre do sistema (Windows Credential Manager / DPAPI). NUNCA grava segredo em arquivo. */
 export interface Cofre {
@@ -82,6 +83,8 @@ export interface PonteDesktop {
   contas?: PonteContas
   /** Ligar as contas a este computador (C1Contas): gh, Vercel e chave do Supabase. */
   ligarContas?: PonteLigarContas
+  /** Fichas de trava na obra (T1Travas): site da trava e "deixar público até o GitHub voltar". */
+  travas?: PonteTravas
 }
 
 declare global {

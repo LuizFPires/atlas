@@ -1,3 +1,4 @@
+import type { TravaObra } from './travas'
 // Portas do painel da obra (F09): ler o andamento (PLAN.md da obra, prazo, "agora na obra"), pausar/continuar, dar o OK da etapa
 // e mostrar o canteiro 3D. O MODO (automático ou passo a passo) vem da PonteModoObra do M18 (`<obra>\.atlas\modo.json`).
 // Aqui só existe o mock do modo fixture. O adaptador real (ler PLAN.md/estado da obra, ligar o canteiro) é pendência de /entregar
@@ -72,6 +73,8 @@ export interface EstadoObra {
   pausadaPorVoce: boolean
   /** Parada real em curso (cota, precisa de você, cobrança). */
   parada: ParadaReal | null
+  /** Trava conhecida de uma conta (travas.ts): a obra NÃO para; a ficha explica no topo. */
+  trava?: TravaObra | null
   /** Uma etapa acabou de terminar e a linha de produção espera o OK (só vale no passo a passo; no automático o painel libera sozinho). */
   etapaPronta: { n: number; nome: string } | null
   /** Há uma versão de teste para abrir. */

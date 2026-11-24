@@ -135,3 +135,15 @@ test('kit do painel: instalado, vem de resources/kit (fora do asar); em desenvol
   assert.equal(kitDirDoApp({ empacotado: true, recursos: 'C:\\Atlas\\resources' }), path.join('C:\\Atlas\\resources', 'kit'))
   assert.equal(kitDirDoApp({ empacotado: false, recursos: 'x' }), path.join(__dirname, '..', '..', '.claude'))
 })
+
+test('trava conhecida de uma conta: o painel devolve a trava (só dados limpos) e a obra NÃO fica parada', async () => {
+  const { raiz, c, painel } = montar()
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  fs.mkdirSync(path.join(raiz, 'obra', 'docs'), { recursive: true })
+  fs.writeFileSync(path.join(raiz, 'obra', 'docs', 'ocorrencias.json'), JSON.stringify({ proximo_id: 2, ocorrencias: [
+    { id: 1, status: 'aberta', servico: 'GitHub', motivo: 'minutos do GitHub Actions acabaram (billing) <script>', acao: 'x', liberar_em: '2026-12-01T03:00:00.000Z', bloqueia: [], tentativas: [] },
+  ] }))
+  const e = await painel.ler('obra')
+  assert.equal(e.parada, null)
+  assert.deepEqual(e.trava, { id: 1, tipo: 'github-minutos', servico: 'GitHub', liberaEm: '2026-12-01T03:00:00.000Z' })
+})

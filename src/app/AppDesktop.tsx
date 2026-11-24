@@ -13,6 +13,7 @@ import { Celular } from './Celular'
 import { Contas } from './Contas'
 import { LigarContas } from './LigarContas'
 import { criarLigarContasFixture, type PonteLigarContas } from './ponte-ligar-contas'
+import { criarTravasFixture, type PonteTravas } from './ponte-travas'
 import { Obras as ListaObras, type ObraParaContinuar } from './Obras'
 import { Canteiro } from './Canteiro'
 import { AbasDaObra } from './AbasDaObra'
@@ -139,6 +140,9 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteLigar = useMemo<PonteLigarContas | null>(() => (modoFixture() ? criarLigarContasFixture() : (ponte.ligarContas ?? null)), [ponte])
   // Depois de criar as contas nos sites, a mesma etapa 'contas' liga cada uma a este computador (C1Contas, 24/11/2026).
   const [ligandoContas, setLigandoContas] = useState(false)
+  // Ficha "conta desligada" dentro da obra: liga de novo e volta para a obra.
+  const [religandoConta, setReligandoConta] = useState(false)
+  const ponteTravas = useMemo<PonteTravas | undefined>(() => (modoFixture() ? criarTravasFixture() : ponte.travas), [ponte])
   const ponteContas = useMemo<PonteContas>(() => contas ?? (modoFixture() ? criarContasFixture() : (ponte.contas ?? contasIndisponivel)), [contas, ponte])
 
   // Idem para o celular (Remote Control): sem adaptador real, não finge que o celular está ligado.
@@ -350,7 +354,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'obra' && obraAtual && fluxo === 'publicar') conteudo = <Publicar slug={slugDaObra(obraAtual.nome)} onPublicar={(sel) => { setSelecaoPub(sel); setFluxo('publicando') }} onVoltar={() => setFluxo('lista')} />
   else if (ativo === 'obra' && obraAtual && fluxo === 'publicando') conteudo = <Publicando obra={obraAtual} selecao={selecaoPub} publicar={pontePublicar} onVoltar={() => setFluxo('publicar')} onConcluir={(noAr) => { setEnderecoNoAr(noAr); setResumoEntrega(null); void pontePainel.ler(obraAtual.pasta).then((e) => setResumoEntrega({ etapas: e.etapas.length, tarefas: e.feitas }), () => {}); setFluxo('entrega') }} onPedirAjuda={pedirAjudaPasso} onErro={(p, e) => abrirAjuda({ ...contextoDoPasso(p), origem: 'erro', onde: 'a publicação', erro: e })} />
   else if (ativo === 'obra' && obraAtual && fluxo === 'entrega') conteudo = <Entrega obra={obraAtual} endereco={enderecoNoAr} resumo={resumoEntrega} onMudar={() => setAtivo('posobra')} />
-  else if (ativo === 'obra' && obraAtual) conteudo = <Painel obra={obraAtual} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => abrirAjuda({ origem: 'menu' })} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => setFluxo('publicar')} />
+  else if (ativo === 'obra' && obraAtual && religandoConta && ponteLigar) conteudo = <LigarContas ponte={ponteLigar} navegador={modoFixture() ? undefined : ponte.navegador} onVoltar={() => setReligandoConta(false)} onContinuar={() => setReligandoConta(false)} rotuloContinuar="Tudo ligado · Voltar à obra →" />
+  else if (ativo === 'obra' && obraAtual) conteudo = <Painel obra={obraAtual} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => abrirAjuda({ origem: 'menu' })} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => setFluxo('publicar')} travas={ponteTravas} navegador={modoFixture() ? undefined : ponte.navegador} onLigarContas={ponteLigar ? () => setReligandoConta(true) : undefined} />
   else if (ativo === 'obras' && fluxo === 'aprovar' && obraAtual) conteudo = <Aprovar obra={obraAtual} construcao={pontesModo.construcao} claude={ponteClaude} modos={pontesModo.modos} onVoltar={() => setFluxo('contas')} onComecou={() => { setFluxo('lista'); setAtivo('obra') }} />
   else if (ativo === 'obras' && fluxo === 'ideia') conteudo = <Ideia ideia={ponteIdeia} relatoInicial={relatoDaObra ?? undefined} onVoltar={() => setFluxo('lista')} onConcluir={async ({ relato, titulo }) => {
     // Já criada nesta sessão (voltou do estilo): segue, sem criar outra pasta. Nova: cria a pasta e começa o mapa em segundo plano.

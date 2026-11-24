@@ -34,7 +34,8 @@ const { criarImportar } = require('./adaptadores/importar.cjs')
 const { criarAjuda, criarCasos } = require('./adaptadores/ajuda.cjs')
 const { criarPublicar } = require('./adaptadores/publicar.cjs')
 const { criarKit } = require('./adaptadores/kit.cjs')
-const { criarContasCli } = require('./adaptadores/contas-cli.cjs')
+const { criarContasCli, rodarProcesso, comandoGh } = require('./adaptadores/contas-cli.cjs')
+const { criarTravasAcoes, SITE_DA_TRAVA } = require('./adaptadores/travas-acoes.cjs')
 const { envMinimo } = require('./seguro.cjs')
 const { criarServidor } = require('./adaptadores/servidor.cjs')
 const { tokenDoLink, comToken } = require('./link-instalacao.cjs')
@@ -327,6 +328,17 @@ handle('atlas:contas:siteFora', (conta) => {
 handle('atlas:contas:abrirChaves', (b) => navegador.abrirEndereco('https://supabase.com/dashboard/account/tokens', b))
 handle('atlas:contas:chaveSupabase', async (chave) => { await garantirFerramentas(); return contasCli.guardarChaveSupabase(String(chave ?? '')) })
 handle('atlas:contas:cancelar', (conta) => contasCli.cancelar(String(conta)))
+
+// Fichas de trava (T1Travas): site fixo de cada trava e "deixar público até o GitHub voltar" (só depois da confirmação na tela).
+// De hora em hora (e ao abrir), obra que ficou pública volta para privado sozinha quando a trava do GitHub fecha.
+const travasAcoes = criarTravasAcoes({ raiz: obras.raiz(), rodarGh: (args, cwd) => rodarProcesso(comandoGh(envMinimo()), args, { env: envMinimo(), cwd, timeoutMs: 30_000 }) })
+handle('atlas:travas:site', (tipo, b) => { const u = SITE_DA_TRAVA[String(tipo)]; if (!u) throw new Error('trava-invalida'); return navegador.abrirEndereco(u, b) })
+handle('atlas:travas:siteFora', (tipo) => { const u = SITE_DA_TRAVA[String(tipo)]; if (u) void shell.openExternal(u) })
+handle('atlas:travas:publico', (pasta) => travasAcoes.deixarPublico(String(pasta)))
+handle('atlas:travas:ehPublico', (pasta) => travasAcoes.publico(String(pasta)))
+const revisarTravas = () => { void obras.listar().then((l) => travasAcoes.revisar(l)).catch(() => {}) }
+setTimeout(revisarTravas, 15_000)
+setInterval(revisarTravas, 60 * 60 * 1000).unref()
 
 // Ao fechar: derruba a linha de produção e o canteiro que o Atlas subiu (o PLAN guarda o ponto; Retomar religa depois). O kit é apagado.
 // Atualização automática (atualizador.cjs): só no Atlas instalado no Windows. Confere 10 s depois de abrir e a cada 2 min;

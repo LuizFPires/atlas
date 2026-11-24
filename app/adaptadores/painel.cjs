@@ -22,6 +22,7 @@
 // "Pausar" some o processo claude no Gerenciador de Tarefas; "Continuar" o traz de volta; o canteiro 3D abre em http://127.0.0.1:<porta aleatória>.
 // Sem Claude/kit: `node --test app/adaptadores/*.teste.cjs`.
 'use strict'
+const { tipoDaTrava, travaDaObra } = require('./travas.cjs')
 const fs = require('node:fs')
 const http = require('node:http')
 const path = require('node:path')
@@ -92,6 +93,7 @@ function paradaDeOcorrencias(obj) {
   const abertas = obj && Array.isArray(obj.ocorrencias) ? obj.ocorrencias.filter((o) => o && o.status === 'aberta') : []
   let achada = null
   for (const o of abertas) {
+    if (tipoDaTrava(o)) continue // trava conhecida (travas.cjs): a obra segue; a ficha explica
     const t = `${o.servico ?? ''} ${o.motivo ?? ''}`
     if (/(?<!\p{L})(?:cota|limite de uso|usage limit|rate.?limit)(?!\p{L})/iu.test(t)) return 'cota'
     if (/billing|cobran|pagamento|fatura|cart[aã]o/i.test(t)) achada = achada ?? 'billing'
@@ -197,8 +199,11 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
       const acabou = p.pct >= 100
       const prox = p.milestones.find((m) => m.n === p.proximo)
       let parada = null
+      let trava = null
       if (!acabou) {
-        parada = paradaDeOcorrencias(lerJson(caminhoSeguro(raiz, pasta, 'docs', 'ocorrencias.json')))
+        const livro = lerJson(caminhoSeguro(raiz, pasta, 'docs', 'ocorrencias.json'))
+        trava = travaDaObra(livro)
+        parada = paradaDeOcorrencias(livro)
         if (!parada && !rodando && fim && fim.estado === 'parou' && fim.motivo === 'cota') parada = 'cota'
       }
       let etapaPronta = null
@@ -217,6 +222,7 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
         agora: rodando && !acabou ? [{ sigla: 'IM', quem: 'Equipe de execução', oque: feito || (prox ? `Construindo a etapa ${nomeCurto(prox.titulo)}` : 'Construindo'), tom: 'ativo' }] : [],
         pausadaPorVoce: local.pausada,
         parada,
+        trava,
         etapaPronta,
         temTeste: p.feitas > 0,
       }
