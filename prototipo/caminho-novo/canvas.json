@@ -320,6 +320,22 @@
       "h": 900,
       "title": "Obra · Layout C: cada etapa é um andar (régua ao lado do prédio)",
       "is_interactive": true
+    },
+    "L4PalcoAndares.dc.html": {
+      "x": 0,
+      "y": 16180,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · A + Andares: o prédio é o palco e o chip \"Andares\" abre a régua",
+      "is_interactive": true
+    },
+    "L5PalcoAndaresAberto.dc.html": {
+      "x": 1520,
+      "y": 16180,
+      "w": 1440,
+      "h": 900,
+      "title": "Obra · A + Andares: a gaveta dos andares aberta (a ideia da C)",
+      "is_interactive": true
     }
   },
   "order": [
@@ -361,7 +377,9 @@
     "O6Cronograma.dc.html",
     "L1Palco.dc.html",
     "L2Coluna.dc.html",
-    "L3Andares.dc.html"
+    "L3Andares.dc.html",
+    "L4PalcoAndares.dc.html",
+    "L5PalcoAndaresAberto.dc.html"
   ],
   "notes": {
     "titulo": {
