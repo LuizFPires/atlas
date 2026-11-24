@@ -9,51 +9,96 @@
 <x-dc>
 <helmet>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
-<style>body{margin:0} @keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}</style>
+<style>body{margin:0} @keyframes entra{from{opacity:0}to{opacity:1}} @keyframes toque{0%{transform:translate(-50%,-50%) scale(.85);opacity:.95}70%{transform:translate(-50%,-50%) scale(1.25);opacity:.35}100%{transform:translate(-50%,-50%) scale(.85);opacity:.95}} @keyframes gira{to{transform:rotate(360deg)}}</style>
 </helmet>
 <div style="width:1440px;height:900px;background:radial-gradient(circle at 50% 40%,#1E2125,#0B0C0D 70%);color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;position:relative;overflow:hidden">
  <div style="position:absolute;left:24px;top:22px;display:flex;align-items:center;gap:12px;padding:8px 10px 8px 8px;border-radius:16px;background:rgba(20,22,25,.86);border:1px solid #2C3036;backdrop-filter:blur(8px)">
   <a href="P4Quadro.dc.html" style="width:40px;height:40px;border-radius:12px;background:#1E2125;color:#EDEFEA;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:18px" aria-label="Sair da tela cheia">✕</a>
   <span style="width:34px;height:34px;border-radius:17px;background:#141619;border:1px solid #2C3036;color:#C6F135;display:flex;align-items:center;justify-content:center;font-weight:800">A</span>
-  <div style="display:flex;flex-direction:column"><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">COLORE · USANDO O SISTEMA</span><b style="font-size:15px">Tela {{n}} de 5 · {{nome}}</b></div>
+  <div style="display:flex;flex-direction:column"><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">COLORE · USANDO O SISTEMA</span><b style="font-size:15px">Tela {{n}} de {{total}} · {{nome}}</b></div>
  </div>
  <div style="position:absolute;right:24px;top:22px;display:flex;gap:6px;padding:6px;border-radius:14px;background:rgba(20,22,25,.86);border:1px solid #2C3036">
-  <sc-for list="{{pontos}}" as="p" hint-placeholder-count="5"><button onClick="{{p.ir}}" title="{{p.nome}}" style="min-width:36px;height:36px;border-radius:10px;border:none;background:{{p.bg}};color:{{p.cor}};font:700 14px 'Geist Mono',monospace;cursor:pointer">{{p.n}}</button></sc-for>
+  <sc-for list="{{pontos}}" as="p" hint-placeholder-count="6"><button onClick="{{p.ir}}" title="{{p.nome}}" style="min-width:36px;height:36px;border-radius:10px;border:none;background:{{p.bg}};color:{{p.cor}};font:700 14px 'Geist Mono',monospace;cursor:pointer">{{p.n}}</button></sc-for>
  </div>
  <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);width:390px;height:844px;border-radius:44px;padding:0;box-shadow:0 0 0 12px #000,0 40px 120px rgba(0,0,0,.7);overflow:hidden;animation:entra .25s ease">
   <dc-import name="AppColore" tela="{{tela}}" hint-size="390px,844px"></dc-import>
-  <div style="position:absolute;left:0;right:0;bottom:0;display:flex"><button onClick="{{ir_inicio}}" aria-label="Início" style="flex:1;height:72px;background:transparent;border:none;cursor:pointer"></button><button onClick="{{ir_pedidos}}" aria-label="Pedidos" style="flex:1;height:72px;background:transparent;border:none;cursor:pointer"></button><button onClick="{{ir_novo}}" aria-label="Orçar" style="flex:1;height:72px;background:transparent;border:none;cursor:pointer"></button><button onClick="{{ir_clientes}}" aria-label="Clientes" style="flex:1;height:72px;background:transparent;border:none;cursor:pointer"></button><button onClick="{{ir_estoque}}" aria-label="Estoque" style="flex:1;height:72px;background:transparent;border:none;cursor:pointer"></button></div>
-  <button onClick="{{ir_novo}}" aria-label="Novo orçamento" style="display:{{dispNovo}};position:absolute;left:18px;right:18px;top:{{topoNovo}}px;height:{{altNovo}}px;background:transparent;border:2px dashed {{realce}};border-radius:14px;cursor:pointer"></button>
+  <sc-for list="{{alvos}}" as="h" hint-placeholder-count="6">
+   <button onClick="{{h.tocar}}" aria-label="{{h.rotulo}}" style="position:absolute;left:{{h.x}}px;top:{{h.y}}px;width:{{h.w}}px;height:{{h.h}}px;background:transparent;border:none;padding:0;cursor:pointer">
+    <span style="display:{{dispPonto}};position:absolute;left:50%;top:50%;width:26px;height:26px;border-radius:13px;background:rgba(198,241,53,.35);border:2px solid #C6F135;box-shadow:0 0 12px rgba(198,241,53,.6);animation:toque 1.4s ease-in-out infinite;pointer-events:none"></span>
+   </button>
+  </sc-for>
  </div>
  <button onClick="{{antes}}" aria-label="Tela anterior" style="position:absolute;left:calc(50% - 300px);top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:26px;border:1px solid #2C3036;background:rgba(20,22,25,.86);color:#EDEFEA;font-size:22px;cursor:pointer">‹</button>
  <button onClick="{{depois}}" aria-label="Próxima tela" style="position:absolute;left:calc(50% + 248px);top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:26px;border:1px solid #2C3036;background:rgba(20,22,25,.86);color:#EDEFEA;font-size:22px;cursor:pointer">›</button>
  <div style="position:absolute;left:24px;bottom:24px;width:280px;display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:16px;background:rgba(20,22,25,.86);border:1px solid #2C3036;font-size:13px;line-height:1.5;color:#B4BBB2">
   <b style="color:#EDEFEA;font-size:14px">Use como se fosse de verdade</b>
-  Toque nos botões e no menu de baixo do celular. As setas e os números passam de tela em tela.
+  As bolinhas verdes mostram onde dá para tocar. As setas e os números passam de tela em tela.
   <button onClick="{{alternarRealce}}" style="align-self:flex-start;height:34px;padding:0 12px;border-radius:10px;border:1px solid #C6F135;background:transparent;color:#C6F135;font:600 13px 'Geist',sans-serif;cursor:pointer">{{txtRealce}}</button>
  </div>
+ <sc-if value="{{temFalta}}" hint-placeholder-val="{{ false }}">
+  <div role="dialog" style="position:absolute;right:24px;top:50%;transform:translateY(-50%);width:340px;display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:18px;background:rgba(20,22,25,.96);border:1px solid #C6F135;box-shadow:0 20px 60px rgba(0,0,0,.6);color:#EDEFEA;animation:entra .2s ease">
+   <span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">ESSA PARTE AINDA NÃO FOI DESENHADA</span>
+   <b style="font-size:18px;line-height:1.3">{{faltaNome}}</b>
+   <span style="font-size:14px;line-height:1.5;color:#B4BBB2">{{faltaTexto}}</span>
+   <sc-if value="{{faltaPerguntando}}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;gap:8px"><button onClick="{{desenhar}}" style="height:42px;padding:0 16px;border-radius:12px;border:none;background:#C6F135;color:#141619;font:700 14px 'Geist',sans-serif;cursor:pointer">Desenhar agora</button><button onClick="{{fecharFalta}}" style="height:42px;padding:0 14px;border-radius:12px;border:1px solid #2C3036;background:transparent;color:#EDEFEA;font:600 14px 'Geist',sans-serif;cursor:pointer">Agora não</button></div>
+    <span style="font-size:12px;color:#8E968C">Ou fale do seu jeito: "quando tocar no pedido, abra o detalhe com o Pix".</span>
+   </sc-if>
+   <sc-if value="{{faltaDesenhando}}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;align-items:center;gap:10px;font-size:14px"><span style="width:16px;height:16px;border-radius:8px;border:2px solid #C6F135;border-top-color:transparent;animation:gira 1s linear infinite"></span>O Atlas está desenhando a tela {{novaN}}…</div>
+    <button onClick="{{pronto}}" style="align-self:flex-start;height:36px;padding:0 12px;border-radius:10px;border:1px solid #C6F135;background:transparent;color:#C6F135;font:600 13px 'Geist',sans-serif;cursor:pointer">(simular: ficou pronta)</button>
+   </sc-if>
+  </div>
+ </sc-if>
  <div style="position:absolute;right:24px;bottom:24px;width:420px;display:flex;align-items:center;gap:10px;padding:10px;border-radius:18px;background:rgba(20,22,25,.92);border:1px solid #2C3036">
   <span style="width:48px;height:48px;border-radius:24px;background:#C6F135;color:#141619;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
   <span style="font:600 12px 'Geist Mono',monospace;padding:5px 9px;border-radius:999px;background:rgba(198,241,53,.1);color:#C6F135;flex:none">TELA {{n}}</span>
-  <span style="font-size:14px;color:#8E968C">Fale o que mudar nesta tela…</span>
+  <span style="font-size:14px;color:#8E968C">Fale o que mudar ou acrescentar nesta tela…</span>
  </div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
-const TELAS = [['inicio','Início'],['pedidos','Pedidos'],['novo','Novo orçamento'],['clientes','Clientes'],['estoque','Estoque']];
+const BASE = [['inicio','Início'],['pedidos','Pedidos'],['novo','Novo orçamento'],['clientes','Clientes'],['estoque','Estoque']];
+const ABAS = ['inicio','pedidos','novo','clientes','estoque'];
+const TOPO = 44 + 18; // barra do celular + margem
+// Onde dá para tocar, em cada tela (coordenadas do celular de 390 × 844). ir = tela que abre; falta = parte ainda não desenhada.
+function alvosDa(tela) {
+  const abas = ABAS.map((k, i) => ({ x: i * 78, y: 772, w: 78, h: 64, ir: k, rotulo: 'Menu: ' + k }));
+  const linhas = (y0, n, falta) => Array.from({ length: n }, (_, i) => ({ x: 18, y: y0 + i * 59, w: 354, h: 59, falta, rotulo: falta }));
+  if (tela === 'inicio') return [{ x: 18, y: TOPO + 40 + 14 + 76 + 14, w: 354, h: 68, ir: 'novo', rotulo: 'Novo orçamento' }, ...linhas(TOPO + 40 + 14 + 76 + 14 + 68 + 14 + 32, 3, 'Detalhe do pedido'), ...abas];
+  if (tela === 'pedidos') return [...linhas(TOPO + 26 + 12 + 26 + 12, 5, 'Detalhe do pedido'), ...abas];
+  if (tela === 'clientes') return [{ x: 34, y: TOPO + 210, w: 156, h: 40, ir: 'novo', rotulo: 'Novo orçamento' }, { x: 200, y: TOPO + 210, w: 156, h: 40, falta: 'Ligar para o cliente', rotulo: 'Ligar' }, ...abas];
+  if (tela === 'novo') return [{ x: 18, y: TOPO + 405, w: 354, h: 52, falta: 'Orçamento enviado', rotulo: 'Mandar pelo WhatsApp' }, ...abas];
+  if (tela === 'estoque') return [{ x: 18, y: TOPO + 38, w: 354, h: 46, falta: 'Pedido ao fornecedor', rotulo: 'Cores acabando' }, ...abas];
+  if (tela === 'detalhe') return [{ x: 18, y: TOPO - 4, w: 90, h: 26, ir: 'pedidos', rotulo: 'Voltar aos pedidos' }, { x: 18, y: TOPO + 300, w: 354, h: 52, falta: 'Cobrança pelo Pix', rotulo: 'Cobrar pelo Pix' }, ...abas];
+  return abas;
+}
+const TEXTO_FALTA = {
+  'Detalhe do pedido': 'Tocar num pedido ainda não abre nada. O Atlas pode desenhar o detalhe (itens, cliente, entrega e cobrança) e ligar este toque a ele.',
+  'Orçamento enviado': 'Depois de mandar pelo WhatsApp, o que a pessoa vê? O Atlas pode desenhar a confirmação.',
+  'Ligar para o cliente': 'Esse botão ainda não faz nada. O Atlas pode fazer ele abrir a ligação no celular.',
+  'Pedido ao fornecedor': 'Tocar no aviso ainda não abre nada. O Atlas pode desenhar o pedido ao fornecedor com as cores que estão acabando.',
+  'Cobrança pelo Pix': 'O Atlas pode desenhar a tela do Pix com o QR Code e o valor.'
+};
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { i: 0, realce: false }; }
+  constructor(p) { super(p); this.state = { i: 0, realce: true, falta: null, desenhando: false, extra: false }; }
   renderVals() {
-    const { i, realce } = this.state;
-    const ir = (k) => () => this.setState({ i: TELAS.findIndex((x) => x[0] === k) });
-    const o = {};
-    for (const [k] of TELAS) o['ir_' + k] = ir(k);
-    const tela = TELAS[i][0];
-    return { ...o, tela, n: String(i + 1), nome: TELAS[i][1],
-      pontos: TELAS.map((x, j) => ({ n: String(j + 1), nome: x[1], bg: j === i ? '#C6F135' : 'transparent', cor: j === i ? '#141619' : '#EDEFEA', ir: () => this.setState({ i: j }) })),
-      antes: () => this.setState({ i: (i + 4) % 5 }), depois: () => this.setState({ i: (i + 1) % 5 }),
-      dispNovo: tela === 'inicio' || tela === 'clientes' ? 'block' : 'none', topoNovo: tela === 'inicio' ? 226 : 318, altNovo: tela === 'inicio' ? 72 : 44,
-      realce: realce ? '#C6F135' : 'transparent', txtRealce: realce ? 'Esconder onde dá para tocar' : 'Onde dá para tocar?', alternarRealce: () => this.setState({ realce: !realce }) };
+    const { i, realce, falta, desenhando, extra } = this.state;
+    const TELAS = extra ? [...BASE, ['detalhe', 'Detalhe do pedido']] : BASE;
+    const idx = (k) => TELAS.findIndex((x) => x[0] === k);
+    const tela = TELAS[Math.min(i, TELAS.length - 1)][0];
+    const alvos = alvosDa(tela).map((h) => {
+      const vira = h.falta === 'Detalhe do pedido' && extra ? 'detalhe' : h.ir;
+      return { ...h, tocar: () => (vira ? this.setState({ i: idx(vira), falta: null }) : this.setState({ falta: h.falta, desenhando: false })) };
+    });
+    const total = TELAS.length;
+    return { tela, n: String(i + 1), total: String(total), nome: TELAS[i][1], alvos,
+      pontos: TELAS.map((x, j) => ({ n: String(j + 1), nome: x[1], bg: j === i ? '#C6F135' : 'transparent', cor: j === i ? '#141619' : '#EDEFEA', ir: () => this.setState({ i: j, falta: null }) })),
+      antes: () => this.setState({ i: (i + total - 1) % total, falta: null }), depois: () => this.setState({ i: (i + 1) % total, falta: null }),
+      dispPonto: realce ? 'block' : 'none', txtRealce: realce ? 'Esconder as bolinhas' : 'Onde dá para tocar?', alternarRealce: () => this.setState({ realce: !realce }),
+      temFalta: !!falta, faltaNome: falta || '', faltaTexto: (falta && TEXTO_FALTA[falta]) || '', faltaPerguntando: !!falta && !desenhando, faltaDesenhando: !!falta && desenhando, novaN: String(total + 1),
+      desenhar: () => this.setState({ desenhando: true }), fecharFalta: () => this.setState({ falta: null }),
+      pronto: () => { const novo = falta === 'Detalhe do pedido'; this.setState({ extra: extra || novo, falta: null, desenhando: false, i: novo ? BASE.length : i }); } };
   }
 }
 </script>
