@@ -44,6 +44,7 @@ const { caminhoSeguro, criarArquivoExclusivo, envMinimo, executarClaude, iniciar
 const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson, lerTexto, garantirSemConfigDeProjeto } = require('./obra-fs.cjs')
 const { criarLojaDeParadas } = require('./cota-store.cjs')
 const { lerPlanoDoTexto } = require('./painel.cjs')
+const { retratoDaObra, consumoDoResultado, registrarConsumo } = require('./retrato-obra.cjs')
 const { montarPlanMd, validarPlanNovo, comoDado } = require('./plan-md.cjs')
 const { ehModoObra, gravarRecomendadoGlobal } = require('./modo.cjs')
 const { detectarCota } = require('./cota.cjs')
@@ -357,11 +358,23 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     let contas = {}
     try { contas = envContas() || {} } catch { /* sem contas ligadas: a linha roda e registra a pendência */ }
     const env = envMinimo({ CLAUDE_PROJECT_DIR: cwd, ATLAS_APP: '1', ...envGitIsolado(dirGit), ...contas })
+    // Economia de tokens (24/11/2026): o estado da obra vai pronto na entrada; a linha não gasta 8 a 10 passos para se achar.
+    let retrato = ''
+    try {
+      const modoObra = (lerJson(caminhoSeguro(raiz, pasta, '.atlas', 'modo.json')) || {}).modo
+      retrato = retratoDaObra(cwd, { modo: modoObra, ultimoFim: lerJson(caminhoSeguro(raiz, pasta, '.atlas', 'linha.json')) })
+    } catch { retrato = '' }
+    const pedido = decisao ? `/construir Você parou e perguntou como seguir. O cliente escolheu: "${String(decisao).replace(/[\r\n"]+/g, ' ').slice(0, 200)}". Siga com essa escolha.` : '/construir'
     const r = iniciarFluxo(args, {
-      cwd, env, entrada: decisao ? `/construir Você parou e perguntou como seguir. O cliente escolheu: "${String(decisao).replace(/[\r\n"]+/g, ' ').slice(0, 200)}". Siga com essa escolha.` : '/construir',
+      cwd, env, entrada: retrato ? `${pedido}\n\n${retrato}` : pedido,
       onLinha: (l) => {
         // A última fala da linha (o resultado do turno): quando ela para pedindo algo à pessoa, é isto que o painel mostra.
-        try { const j = JSON.parse(l); if (j && j.type === 'result' && typeof j.result === 'string') reg.fala = comoDado(j.result, 4000).join('\n').slice(0, 1200) } catch { /* não é JSON */ }
+        try {
+          const j = JSON.parse(l)
+          if (j && j.type === 'result' && typeof j.result === 'string') reg.fala = comoDado(j.result, 4000).join('\n').slice(0, 1200)
+          const consumo = consumoDoResultado(j)
+          if (consumo) reg.consumo = consumo
+        } catch { /* não é JSON */ }
         reg.sinal = agora().toISOString()
         const s = resumirLinha(l)
         if (!s) return
@@ -403,8 +416,9 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
       }
       const ultimas = reg.recentes.slice(-6).map((x) => String(x).slice(0, 200))
       anotarFim(pasta, motivo, { voltaEm, fala: reg.fala })
+      if (reg.consumo) registrarConsumo(cwd, { inicio: reg.desde, fim: agora().toISOString(), motivo, ...reg.consumo })
       if (motivo === 'concluiu') { try { const t = lerTexto(path.join(cwd, 'PLAN.md')); if (t !== null && lerPlanoDoTexto(t).pct >= 100) aoAviso('pronta', pasta) } catch { /* aviso é extra */ } }
-      gravarLinha(pasta, { estado: 'parou', motivo, codigo, desde: reg.desde, fimEm: agora().toISOString(), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}), ...(motivo === 'sem-avanco' || motivo === 'erro' || motivo === 'precisa-voce' ? { ultimas, ...(reg.fala ? { fala: reg.fala } : {}) } : {}), ...(motivo === 'precisa-voce' && opcoesDaFala(reg.fala).length ? { opcoes: opcoesDaFala(reg.fala) } : {}) })
+      gravarLinha(pasta, { estado: 'parou', motivo, codigo, desde: reg.desde, fimEm: agora().toISOString(), ...(reg.consumo ? { consumo: reg.consumo } : {}), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}), ...(motivo === 'sem-avanco' || motivo === 'erro' || motivo === 'precisa-voce' ? { ultimas, ...(reg.fala ? { fala: reg.fala } : {}) } : {}), ...(motivo === 'precisa-voce' && opcoesDaFala(reg.fala).length ? { opcoes: opcoesDaFala(reg.fala) } : {}) })
       // Registro do APP (fora da obra) que permite a retomada automática: só em fim por cota de uma linha que o app iniciou, com a obra
       // ainda por terminar e sem pausa do cliente (se uma linha mais nova já roda, ela cuida do próprio registro).
       try {
