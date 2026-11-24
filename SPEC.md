@@ -75,6 +75,9 @@ Edge Functions (todas exigem licença válida quando aplicável):
 ## S11 — Instalador Windows
 Instalador NSIS (electron-builder) assinado com Azure Trusted Signing: instala Node, Claude Code (app de desktop, aba Code), plugin Atlas e app; cria C:\Users\<nome>\Atlas\Obras e atalho "Atlas · minhas obras"; dispara o fluxo de ativação (F02). Autoexplicativo (funciona sem o Luiz presente). Decidido 18/11/2026.
 
+## S11b — Instalador Mac (aprovado pelo Luiz em 24/11/2026)
+Telas `prototipo/caminho-novo/M1Pagina` a `M5Preparando`. A página do link do e-mail reconhece o sistema pelo navegador e oferece só o arquivo certo (Mac ou Windows), com o link "Não é um Mac?" de reserva; aberto no celular, segue o fluxo atual. Mac: `.dmg` universal (chip da Apple e Intel), assinado com Developer ID e notarizado pela Apple; o cliente arrasta para Aplicativos e volta à página, que abre o Atlas por `atlas://` levando o código do link (no Windows ele vai no nome do instalador). No primeiro uso o Atlas instala sem senha de administrador, dentro da pasta dele: Node portátil, GitHub CLI e Claude Code (instalador oficial); o Git vem das ferramentas da Apple (um clique em "Instalar"). Pasta das obras: `~/Atlas/Obras` (fora da Mesa, dos Documentos e do iCloud). Sem ajuste de tampa: aviso "deixe a tampa aberta e o carregador ligado". Atualização automática com o app assinado.
+
 ## S12 — App Atlas: shell, navegação e voz
 `prototipo/Shell.dc.html`: menu lateral (sempre escuro) com "Falar com o Atlas" e "Ajuda do Atlas" fixos. Abre com o Windows; impede o computador de dormir durante a obra; microfone em toda entrada de texto (botão vermelho pulsando ao gravar, transcrição editável — ver S21). Navegação entre as telas F02–F17.
 
