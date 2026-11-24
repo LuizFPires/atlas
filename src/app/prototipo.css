@@ -127,6 +127,12 @@
 .at-quadro { position: relative; flex: 1; min-height: 420px; border-radius: 20px; border: 1px solid var(--card-b); overflow: auto; background-color: #0F1113; background-image: radial-gradient(#2A2E33 1px, transparent 1px); background-size: 22px 22px; }
 .at-quadro__zoom { position: sticky; top: 14px; left: 14px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; margin: 14px 0 0 14px; padding: 4px; border-radius: 12px; background: rgba(20, 22, 25, 0.9); border: 1px solid var(--card-b); }
 .at-quadro__zoom button { width: 34px; height: 34px; border-radius: 9px; border: none; background: transparent; color: var(--text); display: grid; place-items: center; cursor: pointer; }
+.at-quadro__zoom .at-quadro__todas { width: auto; padding: 0 12px; gap: 6px; display: inline-flex; align-items: center; color: var(--mute); font: 600 13px var(--font-text); border-left: 1px solid var(--card-b); border-radius: 0 9px 9px 0; }
+.at-quadro__zoom .at-quadro__todas:hover { color: var(--text); }
+.at-quadro__conta { padding: 0 10px 0 4px; font: 600 12px var(--font-mono, 'Geist Mono', monospace); font-style: normal; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
+/* Tela cheia: o quadro negro cobre a janela; as telas quebram linha em grade (o Play, z 45, abre por cima e volta para cá). */
+.at-quadro--cheia { position: fixed; inset: 0; z-index: 40; min-height: 0; border-radius: 0; border: none; animation: at-play-entra 0.2s ease; }
+.at-quadro--cheia .at-quadro__palco { width: auto; flex-wrap: wrap; justify-content: center; gap: 36px 28px; padding: 24px 40px 64px; }
 .at-quadro__zoom button:disabled { opacity: 0.35; cursor: default; }
 .at-quadro__zoom span { min-width: 46px; text-align: center; font: 600 13px var(--font-mono, 'Geist Mono', monospace); color: var(--mute); }
 .at-quadro__palco { list-style: none; margin: 0; padding: 18px 32px 40px; display: flex; gap: 40px; align-items: flex-start; width: max-content; }

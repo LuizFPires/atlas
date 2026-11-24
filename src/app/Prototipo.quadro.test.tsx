@@ -37,6 +37,21 @@ test('zoom do quadro: menos e mais, com o tamanho dito em voz alta', async () =>
   expect(zoom.textContent).toBe(antes)
 })
 
+test('"Ver todas" abre o quadro em tela cheia, com as telas em grade, e fecha no X ou no Esc', async () => {
+  const { user, quadro } = await abrir()
+  expect(quadro.className).not.toMatch(/at-quadro--cheia/)
+  await user.click(within(quadro).getByRole('button', { name: 'Ver todas as telas em tela cheia' }))
+  const cheio = screen.getByRole('dialog', { name: 'Todas as telas do protótipo' })
+  expect(cheio.className).toMatch(/at-quadro--cheia/)
+  expect(within(cheio).getAllByTitle(/^Tela \d+:/)).toHaveLength(4)
+  expect(within(cheio).getByRole('status', { name: 'Zoom do quadro' }).textContent).toBe('30%')
+  await user.click(within(cheio).getByRole('button', { name: 'Fechar a tela cheia' }))
+  expect(screen.queryByRole('dialog', { name: 'Todas as telas do protótipo' })).toBeNull()
+  await user.click(within(quadro).getByRole('button', { name: 'Ver todas as telas em tela cheia' }))
+  await user.keyboard('{Escape}')
+  expect(screen.queryByRole('dialog', { name: 'Todas as telas do protótipo' })).toBeNull()
+})
+
 test('tocar no número da tela põe "TELA N" no pedido; o ajuste vai dizendo qual tela', async () => {
   const { user, quadro, prototipo } = await abrir()
   await user.click(within(quadro).getByRole('button', { name: 'Tela 2 · Agenda do dia' }))
