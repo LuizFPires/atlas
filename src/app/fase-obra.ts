@@ -2,6 +2,7 @@
 // (app/adaptadores/obras.cjs, situacao): estilo escolhido = design-system.md; telas = prototipo/versoes; nome = marca/marca.md;
 // (a ordem segue o caminho novo de 23/11/2026: estilo → nome → telas → contas → começar)
 // construção = PLAN.md (o % vem do painel).
+import { textoAvanco } from './avanco'
 
 export type SituacaoObra = { estilo: boolean; prototipo: boolean; marca: boolean; plano: boolean }
 export type EtapaObra = 'estilo' | 'batismo' | 'telas' | 'aprovar' | 'obra'
@@ -10,8 +11,8 @@ export type FaseObra = { etapa: EtapaObra; concluida: boolean; rotulo: string; p
 export function faseDaObra(s: SituacaoObra, pct: number | null): FaseObra {
   if (s.plano) {
     if (pct !== null && Number.isFinite(pct)) {
-      const p = Math.max(0, Math.min(100, Math.round(pct)))
-      return p >= 100 ? { etapa: 'obra', concluida: true, rotulo: 'Obra pronta', pct: 100 } : { etapa: 'obra', concluida: false, rotulo: `Construindo · ${p}% pronto`, pct: p }
+      const p = Math.max(0, Math.min(100, pct))
+      return p >= 100 ? { etapa: 'obra', concluida: true, rotulo: 'Obra pronta', pct: 100 } : { etapa: 'obra', concluida: false, rotulo: `Construindo · ${textoAvanco(p)}% pronto`, pct: p }
     }
     return { etapa: 'obra', concluida: false, rotulo: 'Construindo' }
   }

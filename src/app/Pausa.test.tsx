@@ -86,7 +86,7 @@ test.each(['automatico', 'passo-a-passo'] as const)('no painel, nos DOIS modos (
   const cota = criarCotaFixture((esgotada) => fx.simular.pararPor(esgotada ? 'cota' : null))
   const modos = criarModoObraFixture({ agenda: modo })
   render(<TemaProvider><Painel obra={obra} painel={fx} modos={modos} cota={cota} sondagemMs={20} /></TemaProvider>)
-  expect(await screen.findByText(/^54,\d%$/)).toBeInTheDocument()
+  expect(await screen.findByText(/^54,\d\d%$/)).toBeInTheDocument()
 
   cota.simular.esgotar(hoje(14))
   expect(await screen.findByText('OBRA EM PAUSA · NADA A FAZER')).toBeInTheDocument()
@@ -108,7 +108,7 @@ test('"Voltar ao painel" mostra o painel com o selo calmo, e a retomada segue so
   const cota = criarCotaFixture((e) => fx.simular.pararPor(e ? 'cota' : null))
   const modos = criarModoObraFixture({ agenda: 'automatico' })
   render(<TemaProvider><Painel obra={obra} painel={fx} modos={modos} cota={cota} sondagemMs={20} /></TemaProvider>)
-  await screen.findByText(/^54,\d%$/)
+  await screen.findByText(/^54,\d\d%$/)
   cota.simular.esgotar(hoje(14))
   await userEvent.click(await screen.findByRole('button', { name: 'Voltar ao painel' }))
   expect(await screen.findByText('● Pausada: a cota do plano acabou')).toBeInTheDocument()

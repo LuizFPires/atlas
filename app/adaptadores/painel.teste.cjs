@@ -14,7 +14,7 @@ const { lerPlano } = require('../../.claude/hooks/plano.cjs')
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-painel-'))
 const ETAPAS = [{ n: 'M1', nome: 'Base', desc: 'a' }, { n: 'M2', nome: 'Agenda', desc: 'b' }, { n: 'M3', nome: 'Pagamento', desc: 'c' }]
 
-function montar() {
+function montar(extra = {}) {
   const raiz = tmp(); const home = tmp()
   fs.mkdirSync(path.join(raiz, 'obra'))
   const chamadas = []
@@ -24,7 +24,7 @@ function montar() {
     iniciarFluxo: () => { let t; chamadas.push('religar'); return { parar: () => { chamadas.push('parar'); t({ codigo: null, parado: true }) }, fim: new Promise((r) => { t = r }) } },
   })
   const abertos = []
-  const painel = criarPainel({ raiz, home, modos, construcao: c, shell: { openExternal: async (u) => abertos.push(u), openPath: async (u) => { abertos.push(u); return '' } }, kitDir: path.join(__dirname, '..', '..', '.claude'), subir: async () => {}, porta: 1 })
+  const painel = criarPainel({ raiz, home, modos, construcao: c, shell: { openExternal: async (u) => abertos.push(u), openPath: async (u) => { abertos.push(u); return '' } }, kitDir: path.join(__dirname, '..', '..', '.claude'), subir: async () => {}, porta: 1, ...extra })
   return { raiz, home, c, painel, chamadas, abertos, modos }
 }
 const marcar = (raiz, ate) => {
@@ -40,7 +40,7 @@ test('% ponderado igual ao plano.cjs do kit (e à porta local)', async () => {
   marcar(raiz, 1)
   const e = await painel.ler('obra')
   const k = lerPlano(path.join(raiz, 'obra'))
-  assert.equal(e.pct, k.pct)
+  assert.ok(Math.abs(e.pct - k.pct) < 0.05) // o painel mostra 2 casas; o kit, 1
   assert.equal(lerPlanoDoTexto(fs.readFileSync(path.join(raiz, 'obra', 'PLAN.md'), 'utf8')).pct, k.pct)
   assert.deepEqual(e.etapa, { n: 2, nome: 'Agenda' })
   assert.equal(e.agora.length, 1) // linha rodando
@@ -146,4 +146,40 @@ test('trava conhecida de uma conta: o painel devolve a trava (só dados limpos) 
   const e = await painel.ler('obra')
   assert.equal(e.parada, null)
   assert.deepEqual(e.trava, { id: 1, tipo: 'github-minutos', servico: 'GitHub', liberaEm: '2026-12-01T03:00:00.000Z' })
+})
+
+const roteiro = (raiz, r) => { fs.mkdirSync(path.join(raiz, 'obra', '.claude'), { recursive: true }); fs.writeFileSync(path.join(raiz, 'obra', '.claude', 'roteiro.json'), JSON.stringify(r)) }
+
+test('avanço fino (Luiz, 24/11): o trabalho da etapa em andamento já conta, em 2 casas, sem passar do que a etapa vale', async () => {
+  let commits = 0
+  const { raiz, c, painel } = montar({ contarCommits: () => commits })
+  await c.iniciar('obra', 'B', 'automatico', ETAPAS)
+  assert.equal((await painel.ler('obra')).pct, 0) // nada começou: 0 de verdade
+  roteiro(raiz, { milestone: 'M1', etapa_concluida: 0, branch: 'feat/m1-base' })
+  const comecou = (await painel.ler('obra')).pct
+  assert.ok(comecou > 0, `começou mostra algo: ${comecou}`)
+  roteiro(raiz, { milestone: 'M1', etapa_concluida: 1, branch: 'feat/m1-base' })
+  const planejado = (await painel.ler('obra')).pct
+  commits = 1
+  const umCommit = (await painel.ler('obra')).pct
+  roteiro(raiz, { milestone: 'M1', etapa_concluida: 3, branch: 'feat/m1-base' })
+  const revisado = (await painel.ler('obra')).pct
+  assert.ok(comecou < planejado && planejado < umCommit && umCommit < revisado, [comecou, planejado, umCommit, revisado].join(' < '))
+  const k = lerPlano(path.join(raiz, 'obra'))
+  const fatiaM1 = 100 * k.milestones[0].peso / k.milestones.reduce((a, m) => a + m.peso, 0)
+  assert.ok(revisado < fatiaM1, 'antes da medição, nunca chega ao valor da etapa inteira')
+  for (const v of [comecou, planejado, umCommit, revisado]) assert.equal(Math.round(v * 100) / 100, v) // 2 casas
+  const e = await painel.ler('obra')
+  assert.equal(e.feitas, 0) // "0 de N tarefas" continua honesto
+})
+
+test('avanço fino: roteiro de outro milestone (já medido) ou quebrado não conta nada a mais', async () => {
+  const { raiz, c, painel } = montar({ contarCommits: () => 5 })
+  await c.iniciar('obra', 'B', 'automatico', ETAPAS)
+  marcar(raiz, 1)
+  const base = (await painel.ler('obra')).pct
+  roteiro(raiz, { milestone: 'M1', etapa_concluida: 3 })
+  assert.equal((await painel.ler('obra')).pct, base)
+  fs.writeFileSync(path.join(raiz, 'obra', '.claude', 'roteiro.json'), '{quebrado')
+  assert.equal((await painel.ler('obra')).pct, base)
 })
