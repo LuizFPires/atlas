@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Ajuda } from './Ajuda'
 import { PAGINAS_OFICIAIS, RECADO_SEM_HUMANO, criarAjudaFixture, montarPedidoAjuda, normalizarResposta, type ContextoAjuda } from './ponte-ajuda'
+import { definirEstadoVoz } from '../ui/voz-motor'
 
 const ctx: ContextoAjuda = { origem: 'erro', onde: 'a publicação', erro: { titulo: 'Algo deu errado ao publicar.' }, print: { url: 'vercel.com/new', titulo: 'Error: Repository not found', detalhe: 'The Vercel GitHub app does not have access.' } }
 
@@ -122,4 +123,21 @@ test('"Falar com o Atlas" com a Ajuda aberta: o mesmo botão para de ouvir e man
   expect(chamadas).toEqual(['gravar'])
   expect(estadoVoz().fase).toBe('livre')
   usarMotorDeVoz(null, undefined, { forcar: false })
+})
+
+test('D1: a Ajuda fica em foco: o fundo embaça e tocar nele fecha a Ajuda', async () => {
+  let fechou = 0
+  render(<TemaProvider><Ajuda ajuda={criarAjudaFixture()} contexto={{ origem: 'menu' }} nome="Zé" onFechar={() => { fechou++ }} /></TemaProvider>)
+  const fundo = document.querySelector('.at-ajuda-p__fundo')
+  expect(fundo).not.toBeNull()
+  await userEvent.click(fundo as Element)
+  expect(fechou).toBe(1)
+})
+
+test('D1: o aviso da voz (ouvindo, escrevendo) aparece dentro da gaveta', () => {
+  render(<TemaProvider><Ajuda ajuda={criarAjudaFixture()} contexto={{ origem: 'menu' }} nome="Zé" onFechar={() => {}} /></TemaProvider>)
+  act(() => definirEstadoVoz({ fase: 'escrevendo' }))
+  const gaveta = screen.getByRole('complementary', { name: 'Ajuda do Atlas' })
+  expect(gaveta.querySelector('.at-svoz--embutido')).toHaveTextContent(/Escrevendo o que você falou/)
+  act(() => definirEstadoVoz({ fase: 'livre' }))
 })

@@ -35,3 +35,11 @@ test('ouvindo com rascunho: mostra as palavras que acabaram de ser faladas, sem 
   expect(s).toHaveTextContent('quero bater o ponto pelo celu')
   expect(s).not.toHaveTextContent(/a cada pausa/)
 })
+
+test('embutido (D1): aparece dentro da gaveta, sem flutuar, e mostra o que já foi falado', () => {
+  render(<StatusVoz embutido />)
+  act(() => definirEstadoVoz({ fase: 'ouvindo', rascunho: 'o meu site não abre' }))
+  const s = screen.getByRole('status')
+  expect(s).toHaveClass('at-svoz--embutido')
+  expect(s).toHaveTextContent(/Ouvindo.*o meu site não abre/)
+})

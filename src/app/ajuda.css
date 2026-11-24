@@ -32,7 +32,7 @@
 .at-ajuda-p__enviar:disabled { opacity: 0.5; cursor: default; }
 .at-ajuda-p__so-leitor { position: absolute; left: -9999px; }
 .at-ajuda-p__dica { font-size: 13px; color: var(--mute); }
-.at-ajuda-p__erro { position: fixed; left: 290px; bottom: 32px; z-index: 40; width: 560px; max-width: calc(100vw - 840px); box-sizing: border-box; display: flex; align-items: center; gap: 14px; background: var(--erro-bg); border: 1px solid var(--erro); border-radius: 16px; padding: 14px 16px; color: var(--text); box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35); }
+.at-ajuda-p__erro { position: fixed; left: 290px; bottom: 32px; z-index: 51; width: 560px; max-width: calc(100vw - 840px); box-sizing: border-box; display: flex; align-items: center; gap: 14px; background: var(--erro-bg); border: 1px solid var(--erro); border-radius: 16px; padding: 14px 16px; color: var(--text); box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35); }
 .at-ajuda-p__erro > span { width: 34px; height: 34px; flex: none; border-radius: 17px; background: var(--erro); color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
 .at-ajuda-p__erro > div { display: flex; flex-direction: column; gap: 2px; }
 .at-ajuda-p__erro b { font-size: 15px; }
@@ -46,3 +46,7 @@
 .at-ajuda-p__primario { height: 40px; padding: 0 14px; border-radius: 10px; border: none; background: var(--lime); color: var(--on-lime); font: 700 14px var(--font-text); white-space: nowrap; cursor: pointer; }
 .at-ajuda-p__sec { height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 14px var(--font-text); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .at-ajuda-p__primario:disabled, .at-ajuda-p__sec:disabled { opacity: 0.5; cursor: default; }
+/* D1: a Ajuda em foco. Fundo embaçado e escurecido atrás da gaveta (z 50); o aviso de erro (z 40) fica embaixo dele. */
+.at-ajuda-p__fundo { position: fixed; inset: 0; z-index: 49; background: rgba(10, 11, 12, 0.35); backdrop-filter: blur(6px) saturate(0.7); -webkit-backdrop-filter: blur(6px) saturate(0.7); animation: at-ajuda-fundo 0.2s ease; cursor: pointer; }
+@keyframes at-ajuda-fundo { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .at-ajuda-p__fundo { animation: none; } }

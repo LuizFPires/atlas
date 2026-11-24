@@ -445,7 +445,7 @@ Notas: DECISÃO do Luiz (24/11/2026, "essa transformação de Excel em sistema v
 peso: 5
 spec: S9
 tela: prototipo/caminho-novo/P5Play.dc.html
-- [ ] Ajuda em foco: a gaveta da Ajuda fica na frente, o resto do Atlas embaça, e o "ouvindo / transcrevendo" aparece dentro da gaveta (D1)
+- [x] Ajuda em foco: a gaveta da Ajuda fica na frente, o resto do Atlas embaça, e o "ouvindo / transcrevendo" aparece dentro da gaveta (D1)
 - [ ] Quadro negro: todas as telas do protótipo lado a lado, numeradas, com zoom; tocar no número põe "TELA N" na barra de voz (P4)
 - [ ] Usar o sistema: botão Play abre o protótipo em tela cheia, com setas, números das telas e o menu do Atlas flutuando (P5)
 - [ ] Bolinha verde piscando só onde já dá para tocar; tocar no que ainda não foi desenhado abre "Essa parte ainda não foi desenhada"

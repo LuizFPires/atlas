@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { AppDesktop } from './AppDesktop'
@@ -9,6 +9,7 @@ import { criarCotaFixture } from './ponte-cota'
 import { criarPublicarFixture } from './ponte-publicar'
 import { criarAjudaFixture } from './ponte-ajuda'
 import { OBRA_PARADA_EXEMPLO, criarRetomarFixture } from './ponte-retomar'
+import { definirEstadoVoz } from '../ui/voz-motor'
 
 const ponte = () => criarPonteFixture([], criarCofreMemoria({ [CHAVE_COFRE]: JSON.stringify({ token: 't', email: 'a@b.co', nome: 'Zé' }) }))
 const api = { pedirCodigo: async () => ({ ok: true as const }), confirmar: async () => ({ ok: true as const, nome: 'Zé' }) }
@@ -38,4 +39,14 @@ test('erro ao publicar: a Ajuda abre SOZINHA com o print e o registro do passo',
   await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Algo deu errado ao publicar.'))
   expect(screen.getByText(/Vi que a publicação parou\. Já tirei um print da sua tela/)).toBeInTheDocument()
   expect(screen.getByLabelText('Print da tela')).toBeInTheDocument()
+})
+
+test('D1: com a Ajuda aberta, o aviso da voz aparece só dentro da gaveta (nunca dois)', async () => {
+  render(<TemaProvider><AppDesktop ponte={ponte()} api={api} ajuda={criarAjudaFixture()} /></TemaProvider>)
+  await userEvent.click(await screen.findByRole('button', { name: /Falar com o Atlas/ }))
+  const gaveta = await screen.findByRole('complementary', { name: 'Ajuda do Atlas' })
+  act(() => definirEstadoVoz({ fase: 'escrevendo' }))
+  expect(screen.getAllByText(/Escrevendo o que você falou/)).toHaveLength(1)
+  expect(gaveta).toHaveTextContent(/Escrevendo o que você falou/)
+  act(() => definirEstadoVoz({ fase: 'livre' }))
 })
