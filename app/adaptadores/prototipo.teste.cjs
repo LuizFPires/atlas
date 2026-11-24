@@ -533,3 +533,16 @@ test('ajuste grande: o Claude devolve o plano e o Atlas desenha as telas em part
   assert.equal(ultima.telas.find((t) => t.id === 'n11').nome, 'Nova 11')
   assert.match(chamadas[antes].args.join(' ') + JSON.stringify(chamadas[antes].o || {}), /plano/)
 })
+
+test('economia: os arquivos da obra (design system, relato, planilha) vão junto no pedido de cada lote; o Claude não gasta passos abrindo um por um', async () => {
+  const { raiz, p, chamadas, emFila } = montar()
+  fs.writeFileSync(path.join(raiz, 'obra', 'design-system.md'), '# Design system da obra\n\n## Cores\n- destaque: #B5651D\n')
+  const ids = ['t1', 't2', 't3', 't4', 't5', 't6']
+  emFila({ telas: ids.map((id) => ({ id, nome: `Tela ${id}`, descricao: 'x' })) }, { telas: ids.slice(0, 5).map(tela) }, { telas: ids.slice(5).map(tela) })
+  await p.desenhar('obra', 'Colore', ESTILO, 'quero ver a agenda do dia')
+  const lote = pedidoDe(chamadas[1])
+  assert.match(lote, /## Cores\n- destaque: #B5651D/) // inteiro, com a marcação (não vira texto corrido)
+  assert.match(lote, /quero ver a agenda do dia/)
+  assert.match(lote, /já estão aqui/)
+  assert.match(pedidoDe(chamadas[2]), /## Cores/)
+})

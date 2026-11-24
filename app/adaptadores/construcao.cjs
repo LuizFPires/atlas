@@ -45,6 +45,7 @@ const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson, lerTexto, garantirSemCo
 const { criarLojaDeParadas } = require('./cota-store.cjs')
 const { lerPlanoDoTexto } = require('./painel.cjs')
 const { retratoDaObra, consumoDoResultado, registrarConsumo } = require('./retrato-obra.cjs')
+const { argsEnxutos } = require('./recursos-claude.cjs')
 const { montarPlanMd, validarPlanNovo, comoDado } = require('./plan-md.cjs')
 const { ehModoObra, gravarRecomendadoGlobal } = require('./modo.cjs')
 const { detectarCota } = require('./cota.cjs')
@@ -296,7 +297,7 @@ function opcoesDaFala(fala) {
 
 const RE_PEDE_PESSOA = /USU[AÁ]RIO\s*:|precis[ao] (?:que voc[eê]|de voc[eê])|\b(?:ligue|ligar|conecte|conectar) (?:o|a) (?:GitHub|Vercel|Supabase)|reinstale o Atlas|aguardando (?:voc[eê]|sua)|s[oó] (?:voc[eê]|o usu[aá]rio) pode/i
 
-function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [], diario = null, aoAviso = () => {} }) {
+function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [], diario = null, aoAviso = () => {}, recursos = null }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
   const linhas = new Map()
   // M41: diário da obra (o Atlas escreve; nunca o Claude). Sem diário injetado, nada muda.
@@ -348,7 +349,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     // node solto continua fora: só os scripts do kit desta obra, pelo caminho exato (kit.cjs comandos).
     let doKit = []
     try { doKit = (comandosDoKit(pasta) || []).filter((c) => typeof c === 'string' && /^Bash\(node "[^"]+\/hooks\/[a-z][a-z0-9-]*\.cjs":\*\)$/.test(c)) } catch { doKit = [] }
-    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', [FERRAMENTAS_LINHA, ...doKit].join(','), '--disallowedTools', FERRAMENTAS_NEGADAS]
+    const args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', 'acceptEdits', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, ...argsEnxutos(recursos, null), '--allowedTools', [FERRAMENTAS_LINHA, ...doKit].join(','), '--disallowedTools', FERRAMENTAS_NEGADAS]
     if (plugin) args.push('--plugin-dir', plugin)
     const reg = { parar: () => {}, recentes: [], desde: agora().toISOString(), sinal: null, trabalhoEm: 0, trabalhoTxt: null }
     let cota = false
@@ -439,7 +440,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
       await claudePronto()
       garantirSemConfigDeProjeto(cwd) // de novo: a pasta pode ter mudado durante a espera
       const entrada = `${PEDIDO_PLANEJAR}\n\nNome da obra (dado):\n${comoDado(obraNome, 200).join(' ') || 'Obra'}\n`
-      const r = await executar(['-p', '--output-format', 'json', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, '--allowedTools', 'Read,Glob,Grep', '--disallowedTools', `Edit,Write,Bash,Task,NotebookEdit,${FERRAMENTAS_NEGADAS}`], { cwd, entrada, timeoutMs: 300_000, maxSaida: 1_000_000, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dirGit) }) })
+      const r = await executar(['-p', '--output-format', 'json', ...modelo(), ...ARGS_SEM_CONFIG_DE_PROJETO, ...argsEnxutos(recursos, 'Read,Glob,Grep'), '--allowedTools', 'Read,Glob,Grep', '--disallowedTools', `Edit,Write,Bash,Task,NotebookEdit,${FERRAMENTAS_NEGADAS}`], { cwd, entrada, timeoutMs: 300_000, maxSaida: 1_000_000, env: envMinimo({ CLAUDE_PROJECT_DIR: cwd, ...envGitIsolado(dirGit) }) })
       if (r.codigo !== 0) throw new Error('claude-falhou')
       let texto = r.saida
       try { const j = JSON.parse(r.saida); if (j && typeof j.result === 'string') texto = j.result } catch { /* saída já era o texto */ }
