@@ -38,6 +38,8 @@ export interface ApiCelular {
   foto(dataUrl: string): Promise<string>
   /** O documento navegável (já protegido: sem script) das telas do projeto. */
   telas(token: string): Promise<string>
+  /** M41: avisos neste celular (cota voltou, obra parou, obra pronta). Ausente = não oferece. */
+  avisos?: { chave(): Promise<string>; assinar(assinatura: unknown): Promise<void> }
 }
 
 const falha = (r: { ok: false; mensagem: string }) => new Error(r.mensagem)
@@ -74,6 +76,12 @@ export function criarApiCelularPortal(portal: PortalApi): ApiCelular {
       return { id: r.id, obra_id: r.obra_id }
     },
     async foto(dataUrl) { const r = await portal.fotoCelular!(dataUrl); if (!r.ok) throw falha(r); return r.id },
+    ...(portal.chaveAvisos && portal.assinarAvisos ? {
+      avisos: {
+        async chave() { const r = await portal.chaveAvisos!(); if (!r.ok) throw falha(r); return r.chave },
+        async assinar(a: unknown) { const r = await portal.assinarAvisos!(a); if (!r.ok) throw falha(r) },
+      },
+    } : {}),
     async telas(token) {
       const r = await portal.verTelas!(token)
       if (!r.ok) throw falha(r)

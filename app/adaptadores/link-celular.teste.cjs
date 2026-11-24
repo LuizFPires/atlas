@@ -45,3 +45,9 @@ test('WhatsApp: só abre o link que acabou de ser gerado, sempre pelo wa.me', as
   assert.ok(decodeURIComponent(abertos[0]).includes(URL_OK))
   await assert.rejects(l.abrirWhatsApp('https://phishing.test/p/abc'), /link-desconhecido/)
 })
+
+test('link do celular aceita protótipo grande (5 MB, M42)', async () => {
+  const { l, chamadas } = montar()
+  await l.publicar('Colore', DOC + 'x'.repeat(5_000_000))
+  assert.equal(chamadas.length, 1)
+})

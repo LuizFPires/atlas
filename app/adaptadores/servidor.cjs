@@ -16,13 +16,15 @@
 
 const ROTAS = ['/ativar/solicitar-codigo', '/ativar/solicitar-codigo-link', '/ativar/confirmar', '/verificar', '/licenca/resumo', '/pagamento/checkout',
   // M33: o notebook busca os pedidos do celular e publica o resultado (e o status das obras, do M30).
-  '/celular/sinal', '/celular/resposta', '/celular/projeto', '/celular/referencia', '/status-obras/publicar']
+  '/celular/sinal', '/celular/resposta', '/celular/projeto', '/celular/referencia', '/status-obras/publicar',
+  // M41: avisos no celular do dono (a cota voltou, a obra parou, a obra ficou pronta).
+  '/celular/avisar']
 const MAX_CORPO = 20_000
 const MAX_RESPOSTA = 20_000
 // Limites próprios: as telas do protótipo sobem (até 1,5 MB), a foto de referência desce (até ~2,8 MB em base64) e a lista de
 // pedidos pode trazer relatos longos. Todo o resto continua no limite pequeno.
 const LIMITES = {
-  '/celular/projeto': { corpo: 1_600_000, resposta: MAX_RESPOSTA },
+  '/celular/projeto': { corpo: 10_500_000, resposta: MAX_RESPOSTA }, // M42: até 10 MB de telas (prototipo-link.ts)
   '/celular/referencia': { corpo: MAX_CORPO, resposta: 3_000_000 },
   '/celular/sinal': { corpo: MAX_CORPO, resposta: 300_000 },
   '/status-obras/publicar': { corpo: 80_000, resposta: MAX_RESPOSTA },

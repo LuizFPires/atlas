@@ -34,9 +34,9 @@ export default defineConfig(({ mode }) => {
       // sw-versao-antiga.js recarrega uma vez quem ainda está com a página antiga guardada.
       workbox: {
         globPatterns: ['**/*.{js,css}'],
-        globIgnores: ['sw-versao-antiga.js'],
+        globIgnores: ['sw-versao-antiga.js', 'sw-avisos.js'],
         navigateFallback: null,
-        importScripts: ['sw-versao-antiga.js'],
+        importScripts: ['sw-versao-antiga.js', 'sw-avisos.js'],
       },
       manifest: {
         name: 'Atlas',

@@ -85,6 +85,7 @@
 // marca d'água e aviso de licença são do /entregar-kit (kit.ts), não daqui.
 
 import type { CanalCelular, Pedido } from './celular.ts'
+import type { CanalPush, EnvioPush } from './push.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { montarBoasVindas, montarConfirmacaoDegustacao, montarCortesia, remetentePessoal } from './emails.ts'
 import { montarAvisoAtraso, montarCodigoAtivacao } from './emails-avisos.ts'
@@ -556,6 +557,34 @@ export async function enviarConfirmacaoDegustacao(email: string, d: { token: str
 }
 
 /** M33: canal celular ↔ notebook nas tabelas celular_* (0029). Sempre filtrado pela licença. */
+// ── M41: avisos no celular (Web Push) ──
+export function criarCanalPush(): CanalPush {
+  const t = () => db().from('celular_push')
+  return {
+    async guardar(l, a) { ok(await t().upsert({ licenca_id: l, endpoint: a.endpoint, p256dh: a.p256dh, auth: a.auth, criada_em: iso(a.criada_em) }, { onConflict: 'licenca_id,endpoint' }), 'push guardar') },
+    async listar(l) {
+      const r = ok(await t().select('endpoint,p256dh,auth,criada_em').eq('licenca_id', l), 'push listar') as any[]
+      return (r ?? []).map((x) => ({ endpoint: x.endpoint, p256dh: x.p256dh, auth: x.auth, criada_em: new Date(x.criada_em) }))
+    },
+    async apagar(l, endpoint) { ok(await t().delete().eq('licenca_id', l).eq('endpoint', endpoint), 'push apagar') },
+  }
+}
+
+/** Envia pelo web-push (VAPID). Sem as 3 chaves nos segredos: undefined (as rotas de aviso respondem 503). */
+export function criarEnvioPush(publica?: string, privada?: string, assunto?: string): EnvioPush | undefined {
+  if (!publica || !privada || !assunto) return undefined
+  let lib: any = null
+  return async (a, corpo) => {
+    if (!lib) { lib = (await import('npm:web-push@3.6.7')).default; lib.setVapidDetails(assunto, publica, privada) }
+    try {
+      await lib.sendNotification({ endpoint: a.endpoint, keys: { p256dh: a.p256dh, auth: a.auth } }, corpo, { TTL: 6 * 3600 })
+      return 'ok'
+    } catch (e: any) {
+      return e && (e.statusCode === 404 || e.statusCode === 410) ? 'fim' : 'erro'
+    }
+  }
+}
+
 export function criarCanalCelular(): CanalCelular {
   const t = (n: string) => db().from(n)
   const pedido = (r: any): Pedido => ({ ...r, dados: r.dados ?? {}, criado_em: new Date(r.criado_em), entregue_em: dt(r.entregue_em) })

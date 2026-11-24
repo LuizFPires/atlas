@@ -60,6 +60,9 @@ export interface PortalApi {
   celular?(): Promise<Resp<Record<string, unknown>>>
   pedirCelular?(tipo: string, obra_id: string | null, dados: object): Promise<Resp<{ id: string; obra_id: string }>>
   fotoCelular?(imagem: string): Promise<Resp<{ id: string }>>
+  /** M41: avisos no celular (Web Push): a chave pública e a assinatura deste celular. */
+  chaveAvisos?(): Promise<Resp<{ chave: string }>>
+  assinarAvisos?(assinatura: unknown): Promise<Resp<{ ok: boolean }>>
   verTelas?(token: string): Promise<Resp<{ documento: string }>>
 }
 
@@ -167,6 +170,8 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
     celular: () => servidor<Record<string, unknown>>('/portal/celular'),
     pedirCelular: (tipo, obra_id, dados) => servidor<{ id: string; obra_id: string }>('/portal/celular/pedido', { tipo, ...(obra_id ? { obra_id } : {}), dados }),
     fotoCelular: (imagem) => servidor<{ id: string }>('/portal/celular/referencia', { imagem }),
+    chaveAvisos: () => servidor<{ chave: string }>('/portal/celular/push/chave'),
+    assinarAvisos: (assinatura) => servidor<{ ok: boolean }>('/portal/celular/push/assinar', { assinatura }),
     verTelas: (t) => servidor<{ documento: string }>('/prototipo/ver', { token: t }),
   }
 }

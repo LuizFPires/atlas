@@ -6,6 +6,7 @@ import { confirmarAtivacao, solicitarCodigo, solicitarCodigoPeloLink } from './a
 import { validarInstancia } from './instancia.ts'
 import { limparRadar, radar, resolverSinal } from './radar.ts'
 import { obrasDoPortal, publicarStatusObras } from './status-obras.ts'
+import { assinarPush, avisarCelular, type CanalPush, chavePublica, type EnvioPush } from './push.ts'
 import { baixarReferencia, type CanalCelular, enviarReferencia, estadoDoCelular, pedirPeloCelular, publicarProjeto, responderPedido, sinalDoComputador } from './celular.ts'
 import { entregarKit, type CarregarKit } from './kit.ts'
 import { gerarLink } from './links.ts'
@@ -35,6 +36,11 @@ export interface Contexto {
   prototipos?: ArmazemPrototipos
   /** M33: canal celular ↔ notebook (fila de pedidos, sinal, projetos, fotos). Ausente = rotas do celular respondem 503. */
   celular?: CanalCelular
+  /** M41: avisos no celular (Web Push). Ausentes = rotas de aviso respondem 503 (o resto segue normal). */
+  push?: CanalPush
+  enviarPush?: EnvioPush
+  /** Chave PÚBLICA VAPID (segredo VAPID_PUBLIC_KEY do Supabase). A privada nunca passa por aqui. */
+  chavePublicaPush?: string
   /** Pagamento (Stripe do cliente). Ausente = rotas de pagamento respondem 503. */
   pagamento?: DepsPagamento
   /** Cadastro pós-pagamento (M4) e e-mail de boas-vindas. Ausente = /cadastro responde 503. */
@@ -183,6 +189,10 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await estadoDoCelular(ctx.portal, ctx.celular, jwt))
         case '/portal/celular/pedido':
           return json(await pedirPeloCelular(ctx.portal, ctx.celular, jwt, b as Record<string, unknown>))
+        case '/portal/celular/push/chave':
+          return json(chavePublica(ctx.chavePublicaPush))
+        case '/portal/celular/push/assinar':
+          return json(await assinarPush(ctx.portal, ctx.push, ctx.chavePublicaPush, jwt, (b as Record<string, unknown>).assinatura))
         case '/portal/celular/referencia':
           return json(await enviarReferencia(ctx.portal, ctx.celular, jwt, (b as Record<string, unknown>).imagem))
         default:
@@ -280,6 +290,8 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         const o = b as Record<string, unknown>
         return json(await publicarProjeto(ctx.deps, ctx.celular, ctx.prototipos, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obra_id: o.obra_id, projeto: o.projeto, documento: o.documento }))
       }
+      case '/celular/avisar':
+        return json(await avisarCelular(ctx.deps, ctx.push, ctx.enviarPush, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, titulo: (b as Record<string, unknown>).titulo, texto: (b as Record<string, unknown>).texto }))
       case '/celular/referencia':
         return json(await baixarReferencia(ctx.deps, ctx.celular, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, id: b.id }), 200, { 'Cache-Control': 'no-store' })
       case '/prototipo/link': {

@@ -9,6 +9,7 @@ import { Monograma } from '../marca/Marca'
 import canteiro from '../assets/canteiro-3d.jpg'
 import type { ObraStatus } from '../web/obras-status'
 import type { ApiCelular, EstadoCelular, Projeto, Visual } from './api'
+import { ambienteDoNavegador, ligarAvisos, situacaoDosAvisos, type SituacaoAvisos } from './avisos'
 import './celular.css'
 
 type Tela = 'entrar' | 'obras' | 'ideia' | 'visual' | 'projeto' | 'obra' | 'desligado'
@@ -98,8 +99,49 @@ const ETAPA_FASE: Record<Projeto['fase'], string> = {
   pensando_nomes: 'Projeto · pensando nos nomes', nomes_prontos: 'Projeto · escolha o nome', pronto_para_construir: 'Projeto · pronto para construir', construindo: 'Obra começando', erro: 'Projeto · algo deu errado',
 }
 
-function Obras({ estado, obras, nome, onNova, onAbrirObra, onAbrirProjeto, onNotebook, menu }: {
-  estado: EstadoCelular | null; obras: ObraStatus[]; nome: string; onNova: () => void; onAbrirObra: (id: string) => void; onAbrirProjeto: (id: string) => void; onNotebook: () => void; menu: ReactNode
+/** M41: ligar os avisos da obra neste celular (a cota do Claude voltou, a obra parou, a obra ficou pronta). */
+function CartaoAvisos({ api }: { api: ApiCelular }) {
+  const amb = ambienteDoNavegador()
+  const [sit, setSit] = useState<SituacaoAvisos>(() => situacaoDosAvisos(amb))
+  const [erro, setErro] = useState('')
+  useEffect(() => {
+    if (!amb.suporta || amb.permissao !== 'granted') return
+    navigator.serviceWorker.ready.then((r) => r.pushManager.getSubscription()).then((s) => { if (s) setSit('ligado') }, () => {})
+  }, [amb.suporta, amb.permissao])
+  if (!api.avisos || sit === 'sem-suporte') return null
+  const ligar = async () => {
+    setErro('')
+    try {
+      const r = await ligarAvisos({
+        pedirPermissao: () => Notification.requestPermission(),
+        chave: () => api.avisos!.chave(),
+        assinar: async (o) => (await navigator.serviceWorker.ready).pushManager.subscribe(o),
+        enviar: (a) => api.avisos!.assinar(a),
+      })
+      setSit(r)
+    } catch (e) { setErro((e as Error).message || 'Não consegui ligar os avisos agora. Tente de novo.') }
+  }
+  const textos: Record<Exclude<SituacaoAvisos, 'sem-suporte'>, string> = {
+    'pode-ligar': 'Receba um aviso quando a cota do Claude voltar, quando a obra parar ou quando ficar pronta.',
+    ligado: 'Avisos ligados neste celular. O Atlas avisa quando a cota voltar, quando a obra parar ou ficar pronta.',
+    bloqueado: 'Os avisos estão bloqueados neste celular. Libere nas configurações do navegador para o Atlas poder avisar.',
+    'iphone-tela-inicio': 'No iPhone, os avisos só chegam com o Atlas na Tela de Início: no Safari, toque em Compartilhar e em "Adicionar à Tela de Início".',
+  }
+  return (
+    <div className="cel-cartao cel-linha" style={{ flexDirection: 'row', alignItems: 'center' }} role="region" aria-label="Avisos da obra neste celular">
+      <span className={`cel-bolinha ${sit === 'ligado' ? '' : 'cel-bolinha--aviso'}`}><Icone nome="sino" /></span>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+        <span className="cel-forte">Avisos da obra</span>
+        <span className="cel-sub">{textos[sit as Exclude<SituacaoAvisos, 'sem-suporte'>]}</span>
+        {erro && <span className="cel-sub" role="alert">{erro}</span>}
+        {sit === 'pode-ligar' && <button type="button" className="cel-botao" style={{ height: 44, minHeight: 44 }} onClick={() => { void ligar() }}>Receber avisos neste celular</button>}
+      </span>
+    </div>
+  )
+}
+
+function Obras({ api, estado, obras, nome, onNova, onAbrirObra, onAbrirProjeto, onNotebook, menu }: {
+  api?: ApiCelular; estado: EstadoCelular | null; obras: ObraStatus[]; nome: string; onNova: () => void; onAbrirObra: (id: string) => void; onAbrirProjeto: (id: string) => void; onNotebook: () => void; menu: ReactNode
 }) {
   const [aba, setAba] = useState<Aba>('andamento')
   const idsObras = new Set(obras.map((o) => o.id))
@@ -133,6 +175,7 @@ function Obras({ estado, obras, nome, onNova, onAbrirObra, onAbrirProjeto, onNot
           </span>
           <Icone nome="chevron" style={{ transform: 'rotate(180deg)' }} />
         </button>
+        {api && <CartaoAvisos api={api} />}
         <button type="button" className="cel-novo" onClick={onNova}>
           <span className="cel-bolinha"><Icone nome="microfone" tamanho={24} /></span>
           <span><b>Começar uma obra nova</b><span>Conte a ideia falando. O notebook desenha as telas.</span></span>
@@ -560,7 +603,7 @@ export function AppCelular({ api, intervalo = 4000 }: { api: ApiCelular; interva
     return <AprovarTela projeto={projeto} ligado={ligado} onVoltar={irObras} onConstruir={async (modo) => { await pedir('construir', obraId, { modo }); setTela('obra') }} />
   }
   return (
-    <Obras estado={estado} obras={obras} nome={nome} menu={menu}
+    <Obras api={api} estado={estado} obras={obras} nome={nome} menu={menu}
       onNova={() => { setRelato(''); setVisual({ modo: 'sugere', observacao: '', cores: [], referencias: [], previas: [] }); setTela('ideia') }}
       onAbrirObra={(id) => { setObraId(id); setTela('obra') }}
       onAbrirProjeto={(id) => { setObraId(id); setTela('projeto') }}
