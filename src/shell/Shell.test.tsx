@@ -93,3 +93,27 @@ test('a faixa do topo (ex.: nova versão) vem antes do conteúdo da tela', () =>
   const main = container.querySelector('main.at-conteudo')!
   expect(main.firstElementChild).toHaveTextContent('faixa')
 })
+
+// Luiz, 24/11/2026: "colocar ícones para esses menus e tornar esse menu lateral colapsável ... por default, ele deveria vir colapsado".
+describe('menu recolhível', () => {
+  beforeEach(() => localStorage.removeItem('atlas:menu:aberto'))
+
+  test('vem recolhido: só ícones, com o nome no aviso do mouse; o botão abre e a escolha fica guardada', async () => {
+    const { container, unmount } = render(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} />)
+    const lateral = container.querySelector('.at-lateral')!
+    expect(lateral).toHaveClass('at-lateral--recolhida')
+    expect(container.querySelectorAll('.at-item svg')).toHaveLength(3)
+    expect(screen.getByRole('link', { name: 'Canteiro de obras' })).toHaveAttribute('title', 'Canteiro de obras')
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir o menu' }))
+    expect(lateral).not.toHaveClass('at-lateral--recolhida')
+    expect(screen.getByRole('button', { name: 'Recolher o menu' })).toHaveAttribute('aria-expanded', 'true')
+    unmount()
+    const r = render(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} />)
+    expect(r.container.querySelector('.at-lateral')).not.toHaveClass('at-lateral--recolhida')
+  })
+
+  test('recolhido, o prazo da cortesia continua à vista (só o número de dias)', () => {
+    const { container } = render(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} licenca={{ estado: 'contando', rotulo: 'CORTESIA', titulo: 'Faltam 5 dias', sub: 'Vence em 28/11' }} />)
+    expect(container.querySelector('.at-teste__curto')).toHaveTextContent('5d')
+  })
+})

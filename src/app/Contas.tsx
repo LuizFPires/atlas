@@ -134,12 +134,7 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda, n
                 <>
                   <CartaoPasso passo={p} n={passo + 1} total={c.passos.length} />
                   {navegador && passo === 0 && <p className="at-contas__aqui"><Icone nome="seta" tamanho={16} /> O site do {c.id === 'hosp' ? 'Vercel' : c.nome} já está aberto aqui ao lado: é ali que você clica. Se preferir, use "Abrir no meu navegador".</p>}
-                  {VIDEOS[c.id] && <button type="button" className="at-contas__video" onClick={() => setVideo(true)}><Icone nome="play" tamanho={16} /> Ver o vídeo desta conta, do começo ao fim (40 s)</button>}
                   {detectada === c.id && <p className="at-contas__detectada" role="status"><Icone nome="check" tamanho={16} /> O Atlas viu sozinho: a sua conta do {c.nome} está pronta.</p>}
-                  <div className="at-ativ__rodape at-claude__acoes">
-                    <Botao variante="secundario" onClick={voltar} disabled={conta === 0 && passo === 0}>← Voltar</Botao>
-                    {fim ? <Botao onClick={onContinuar}>Último passo →</Botao> : <Botao onClick={() => void avancar()}>{passo === 0 && !navegador ? 'Abrir o site →' : ultimo ? 'Próxima conta →' : 'Fiz isso →'}</Botao>}
-                  </div>
                   {aviso && <p className="at-ativ__erro" role="alert">{aviso}</p>}
                   <button type="button" className="at-ativ__link at-claude__nao-consegui" onClick={() => setAjuda(!ajuda)} aria-expanded={ajuda}>Não consegui fazer este passo</button>
                   {ajuda && (
@@ -151,6 +146,11 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda, n
                       </div>
                     </div>
                   )}
+                  {/* Rodapé fixo (Luiz, 24/11/2026): Voltar e Fiz isso sempre no mesmo lugar, dá para clicar em sequência sem mexer o mouse. */}
+                  <div className="at-ativ__rodape at-claude__acoes at-contas__fixo">
+                    <Botao variante="secundario" onClick={voltar} disabled={conta === 0 && passo === 0}>← Voltar</Botao>
+                    {fim ? <Botao onClick={onContinuar}>Último passo →</Botao> : <Botao onClick={() => void avancar()}>{passo === 0 && !navegador ? 'Abrir o site →' : ultimo ? 'Próxima conta →' : 'Fiz isso →'}</Botao>}
+                  </div>
                 </>
               )}
 
@@ -160,7 +160,7 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda, n
                     <b>{TEXTO_OPCIONAL.titulo}</b>
                     <span className="at-ativ__txt">{TEXTO_OPCIONAL.texto}</span>
                   </div>
-                  <div className="at-ativ__rodape at-claude__acoes">
+                  <div className="at-ativ__rodape at-claude__acoes at-contas__fixo">
                     <Botao onClick={onContinuar}>Último passo →</Botao>
                     <span className="at-ativ__txt">{TEXTO_OPCIONAL.nota}</span>
                   </div>

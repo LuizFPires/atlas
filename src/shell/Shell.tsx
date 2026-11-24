@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
-import { Icone } from '../ui'
+import { useState, type ReactNode } from 'react'
+import { Icone, type NomeIcone } from '../ui'
 import { useTema } from '../tema/tema'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import './shell.css'
@@ -8,11 +8,17 @@ export type IdTela = 'obras' | 'canteiro' | 'concluidas' | 'prototipo' | 'obra' 
 
 /** Menu (Milestone 37, aprovado pelo Luiz em 23/11/2026): tudo de uma obra mora dentro dela. Protótipo, Obra, Pós-obra e Como
  *  retomar saíram do menu: são telas DENTRO da obra (o menu acende "Canteiro de obras" enquanto elas estão abertas). */
-export const ITENS_MENU: { id: Exclude<IdTela, 'ajuda'>; nome: string }[] = [
-  { id: 'obras', nome: 'Nova obra' },
-  { id: 'canteiro', nome: 'Canteiro de obras' },
-  { id: 'concluidas', nome: 'Obras concluídas' },
+export const ITENS_MENU: { id: Exclude<IdTela, 'ajuda'>; nome: string; icone: NomeIcone }[] = [
+  { id: 'obras', nome: 'Nova obra', icone: 'mais' },
+  { id: 'canteiro', nome: 'Canteiro de obras', icone: 'obra' },
+  { id: 'concluidas', nome: 'Obras concluídas', icone: 'check' },
 ]
+
+/** Menu recolhido por padrão (Luiz, 24/11/2026); a escolha da pessoa fica guardada neste computador. */
+const CHAVE_MENU = 'atlas:menu:aberto'
+const lerAberto = () => { try { return localStorage.getItem(CHAVE_MENU) === '1' } catch { return false } }
+/** "Faltam 5 dias" → "5d" (o prazo continua à vista com o menu recolhido). */
+const diasCurto = (titulo: string) => { const m = /(\d+)\s*dia/.exec(titulo); return m ? `${m[1]}d` : '!' }
 
 /** Qual item do menu acende: as telas de dentro da obra acendem o Canteiro. */
 export const itemDoMenu = (t: IdTela): IdTela => (t === 'prototipo' || t === 'obra' || t === 'posobra' || t === 'retomar' ? 'canteiro' : t)
@@ -44,26 +50,31 @@ type Props = {
 /** Menu lateral sempre escuro, com um botão fixo só: "Falar com o Atlas" (abre a Ajuda já ouvindo; decisão no PLAN, M13). */
 export function Shell({ ativo, onNavegar, onFalar, licenca, plano, modelo, onComprar, onConectarClaude, topo, children }: Props) {
   const { tema } = useTema()
+  const [aberto, setAberto] = useState(lerAberto)
+  const alternar = () => setAberto((a) => { try { localStorage.setItem(CHAVE_MENU, a ? '0' : '1') } catch { /* sem armazenamento */ } return !a })
   return (
-    <div className="at-shell">
-      <aside className="at-lateral">
+    <div className={`at-shell${aberto ? '' : ' at-shell--recolhida'}`}>
+      <aside className={`at-lateral${aberto ? '' : ' at-lateral--recolhida'}`}>
         <div className="at-lateral__marca">
           <Monograma fundo={tema === 'claro' ? 'claro' : 'escuro'} />
-          <NomeAtlas fundo="escuro" />
+          <span className="at-lateral__texto"><NomeAtlas fundo="escuro" /></span>
         </div>
+        <button type="button" className="at-lateral__alternar" onClick={alternar} aria-expanded={aberto} aria-label={aberto ? 'Recolher o menu' : 'Abrir o menu'} title={aberto ? 'Recolher o menu' : 'Abrir o menu'}>
+          <Icone nome="chevron" tamanho={18} />
+        </button>
         <nav className="at-lateral__nav" aria-label="Menu principal">
           {ITENS_MENU.map((i) => (
             <a key={i.id} href={`#/${i.id}`} className={`at-item ${itemDoMenu(ativo) === i.id ? 'at-item--ativo' : ''}`} aria-current={itemDoMenu(ativo) === i.id ? 'page' : undefined}
-              onClick={(e) => { e.preventDefault(); onNavegar(i.id) }}>
-              <span className="at-item__marca" />
-              {i.nome}
+              title={i.nome} onClick={(e) => { e.preventDefault(); onNavegar(i.id) }}>
+              <Icone nome={i.icone} tamanho={20} />
+              <span className="at-lateral__texto">{i.nome}</span>
             </a>
           ))}
         </nav>
         <div className="at-lateral__fixo">
-          <button type="button" className="at-falar" onClick={onFalar}>
+          <button type="button" className="at-falar" onClick={onFalar} title="Falar com o Atlas">
             <Icone nome="microfone" />
-            Falar com o Atlas
+            <span className="at-lateral__texto">Falar com o Atlas</span>
           </button>
           {plano && (
             <div className="at-plano">
@@ -82,7 +93,8 @@ export function Shell({ ativo, onNavegar, onFalar, licenca, plano, modelo, onCom
             </div>
           )}
           {licenca && licenca.estado !== 'ativa' ? (
-            <div className={`at-teste ${licenca.estado === 'vencida' ? 'at-teste--vencido' : ''}`} role="status" aria-label="Seu acesso ao Atlas">
+            <div className={`at-teste ${licenca.estado === 'vencida' ? 'at-teste--vencido' : ''}`} role="status" aria-label="Seu acesso ao Atlas" title={`${licenca.rotulo}: ${licenca.titulo}`}>
+              <span className="at-teste__curto" aria-hidden="true">{diasCurto(licenca.titulo)}</span>
               <span className="rotulo at-teste__rotulo">{licenca.rotulo}</span>
               <span className="at-teste__titulo">{licenca.titulo}</span>
               {licenca.sub && <span className="at-teste__sub">{licenca.sub}</span>}

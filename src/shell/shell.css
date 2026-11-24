@@ -65,3 +65,29 @@
 /* Claude não conectado: atalho direto no cartão do plano. */
 .at-plano__conectar { margin-top: 8px; min-height: 40px; border-radius: 10px; border: 0; background: var(--lime, #C6F135); color: var(--on-lime, #141619); font: 700 14px 'Geist', sans-serif; cursor: pointer; padding: 0 12px; }
 .at-plano__conectar:focus-visible { outline: 2px solid var(--texto, #EDEFEA); outline-offset: 2px; }
+
+/* Menu recolhível (Luiz, 24/11/2026): recolhido por padrão, só ícones; o nome aparece no aviso do mouse. */
+.at-lateral { transition: width 0.18s ease; }
+.at-lateral__alternar { align-self: flex-end; margin: -14px 2px 8px; width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--side-border2); background: transparent; color: var(--side-mute); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.at-lateral__alternar:hover { color: #edefea; }
+.at-lateral__alternar:focus-visible { outline: 2px solid var(--side-lime); outline-offset: 2px; }
+.at-item svg { flex: none; }
+.at-teste__curto { display: none; }
+.at-lateral--recolhida { width: 76px; padding: 24px 12px; align-items: center; }
+.at-lateral--recolhida .at-lateral__texto, .at-lateral--recolhida .at-plano, .at-lateral--recolhida .at-licenca { display: none; }
+.at-lateral--recolhida .at-lateral__marca { padding: 4px 0 18px; justify-content: center; }
+.at-lateral--recolhida .at-lateral__alternar { align-self: center; margin: -8px 0 10px; }
+.at-lateral--recolhida .at-lateral__alternar svg { transform: rotate(180deg); }
+.at-lateral--recolhida .at-lateral__nav { align-items: center; }
+.at-lateral--recolhida .at-item { width: 48px; height: 48px; padding: 0; justify-content: center; }
+.at-lateral--recolhida .at-lateral__fixo { align-items: center; }
+.at-lateral--recolhida .at-falar { width: 48px; padding: 0; justify-content: center; }
+.at-lateral--recolhida .at-teste { padding: 8px 0; width: 52px; align-items: center; }
+.at-lateral--recolhida .at-teste > :not(.at-teste__curto) { display: none; }
+.at-lateral--recolhida .at-teste__curto { display: block; font: 700 14px var(--font-mono); color: var(--side-lime); }
+@media (prefers-reduced-motion: reduce) { .at-lateral { transition: none; } }
+@media (max-width: 768px) {
+  .at-lateral--recolhida { width: auto; padding: 12px; align-items: center; }
+  .at-lateral__alternar { display: none; }
+  .at-lateral--recolhida .at-item { width: auto; height: auto; padding: 9px 12px; }
+}

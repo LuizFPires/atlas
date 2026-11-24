@@ -13,8 +13,9 @@
   StrCmp $0 "0" +2 0
     MessageBox MB_ICONEXCLAMATION "Algo não deu certo na instalação. Abra o Atlas de novo para tentarmos continuar de onde parou." /SD IDOK
 
-  ; 3) Atalho na Área de Trabalho: SEM flag (depois de ativado, o app cai em "minhas obras")
-  CreateShortCut "$DESKTOP\Atlas · minhas obras.lnk" "$INSTDIR\Atlas.exe" "" "$INSTDIR\Atlas.exe" 0
+  ; 3) Atalho na Área de Trabalho, chamado só "Atlas" (pedido do Luiz, 24/11/2026), SEM flag. O nome antigo sai ao instalar e ao atualizar.
+  Delete "$DESKTOP\Atlas · minhas obras.lnk"
+  CreateShortCut "$DESKTOP\Atlas.lnk" "$INSTDIR\Atlas.exe" "" "$INSTDIR\Atlas.exe" 0
 
   ; 4) So nesta primeira instalacao: abre o app direto na ativacao (F02)
   ; $EXEFILE = nome do instalador baixado (Atlas-Instalador-<codigo>.exe): o app tira dele o codigo do link do e-mail.
@@ -22,6 +23,7 @@
 !macroend
 
 !macro customUnInstall
+  Delete "$DESKTOP\Atlas.lnk"
   Delete "$DESKTOP\Atlas · minhas obras.lnk"
   ; A pasta das obras é do cliente: NUNCA é apagada.
 !macroend

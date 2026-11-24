@@ -20,3 +20,6 @@
 .at-contas__aqui { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: var(--lime-txt); }
 .at-contas__grade--nav { grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr); gap: 22px; }
 .at-contas__grade--nav > :last-child { display: flex; flex-direction: column; min-height: 0; }
+/* Rodapé fixo das contas (Luiz, 24/11/2026): Voltar e Fiz isso presos embaixo da coluna, no mesmo lugar em todos os passos. */
+.at-contas .at-claude__col { height: 100%; }
+.at-claude__acoes.at-contas__fixo { margin-top: auto; padding-top: 12px; }

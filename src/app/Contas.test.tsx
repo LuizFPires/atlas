@@ -110,9 +110,12 @@ test('"Não consegui" abre a ajuda do passo e leva o print do passo à Ajuda do 
 
 // Luiz, 23/11/2026: "o passo a passo das contas tem que continuar existindo, bem didático e com os vídeos".
 describe('vídeo de cada conta', () => {
-  test('botão bem visível abre o vídeo da conta da vez; fechar volta para o passo', async () => {
+  // Luiz, 24/11/2026: o vídeo aparecia duas vezes; fica só em "Não consegui fazer este passo".
+  test('o vídeo fica só em "Não consegui fazer este passo": abre o vídeo da conta da vez; fechar volta para o passo', async () => {
     montar()
-    await userEvent.click(screen.getByRole('button', { name: /Ver o vídeo desta conta/ }))
+    expect(screen.queryByRole('button', { name: /Ver o vídeo desta conta/ })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Não consegui fazer este passo' }))
+    await userEvent.click(screen.getByRole('button', { name: /Ver este passo em vídeo/ }))
     const janela = screen.getByRole('dialog', { name: 'Conta do GitHub em vídeo' })
     expect(janela.querySelector('video')).toHaveAttribute('src', expect.stringContaining('video-conta-github'))
     await userEvent.click(screen.getByRole('button', { name: 'Fechar o vídeo' }))
@@ -155,4 +158,18 @@ describe('com o navegador dentro do Atlas', () => {
     act(() => pagina({ conta: 'github', url: 'https://github.com/', pronta: true }))
     expect(await screen.findByText(/O Atlas viu sozinho: a sua conta do GitHub está pronta/)).toBeInTheDocument()
   })
+})
+
+// Luiz, 24/11/2026: "deixar esses botões de voltar e próximo fixo na parte inferior ... a cada passo o botão muda de lugar".
+test('Voltar e Fiz isso ficam fixos no rodapé, depois de "Não consegui" e da ajuda (não mudam de lugar a cada passo)', async () => {
+  montar()
+  const fiz = screen.getByRole('button', { name: /Abrir o site →|Fiz isso →/ })
+  const rodape = fiz.closest('div')!
+  expect(rodape).toHaveClass('at-contas__fixo')
+  expect(rodape.lastElementChild).toBe(fiz)
+  const naoConsegui = screen.getByRole('button', { name: 'Não consegui fazer este passo' })
+  expect(naoConsegui.compareDocumentPosition(rodape) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  await userEvent.click(naoConsegui)
+  const video = screen.getByRole('button', { name: /Ver este passo em vídeo/ })
+  expect(video.compareDocumentPosition(rodape) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 })

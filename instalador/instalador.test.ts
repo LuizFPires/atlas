@@ -23,7 +23,7 @@ describe('caminhos', () => {
     expect(pastaObrasSegura('C:\\Users\\M\\Documents\\Obras')).toBe(false)
   })
   it('atalho na área de trabalho', () => {
-    expect(atalhoAreaDeTrabalho('C:\\Users\\M\\Desktop\\')).toBe('C:\\Users\\M\\Desktop\\Atlas · minhas obras.lnk')
+    expect(atalhoAreaDeTrabalho('C:\\Users\\M\\Desktop\\')).toBe('C:\\Users\\M\\Desktop\\Atlas.lnk')
   })
 })
 
@@ -89,7 +89,10 @@ describe('config do electron-builder e scripts', () => {
   it('include NSIS cria obras fora de Desktop/Documentos; atalho sem flag; F02 só na instalação', () => {
     expect(nsh).toContain('$PROFILE\\Atlas\\Obras')
     expect(nsh).not.toMatch(/\$(DOCUMENTS|DESKTOP)\\Atlas\\/)
-    expect(nsh).toContain('Atlas · minhas obras.lnk')
+    // Luiz, 24/11/2026: o atalho se chama só "Atlas"; o antigo ("Atlas · minhas obras") é apagado ao instalar e ao atualizar.
+    expect(nsh).toContain('CreateShortCut "$DESKTOP\\Atlas.lnk"')
+    expect(nsh).toMatch(/customInstall[\s\S]*Delete "\$DESKTOP\\Atlas · minhas obras\.lnk"[\s\S]*CreateShortCut/)
+    expect(nsh).toMatch(/customUnInstall[\s\S]*Delete "\$DESKTOP\\Atlas\.lnk"/)
     expect(nsh).toMatch(/CreateShortCut [^\n]*Atlas\.exe" "" /)
     // O nome do instalador baixado leva o código do link; o app lê daí (app/link-instalacao.cjs) e o cliente não volta à página.
     expect(nsh).toContain('Exec \'"$INSTDIR\\Atlas.exe" --tela=F02 "--instalador=$EXEFILE"\'')

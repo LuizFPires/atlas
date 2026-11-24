@@ -17,7 +17,7 @@ export function pastaObrasSegura(caminho: string): boolean {
   return !partes.some((p) => PROIBIDAS.includes(p) || p.startsWith('onedrive'))
 }
 
-export const NOME_ATALHO = 'Atlas · minhas obras'
+export const NOME_ATALHO = 'Atlas'
 
 export function atalhoAreaDeTrabalho(areaDeTrabalho: string): string {
   return `${areaDeTrabalho.replace(/[\\/]+$/, '')}\\${NOME_ATALHO}.lnk`
