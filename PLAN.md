@@ -426,3 +426,17 @@ tela: prototipo/caminho-novo/C1Contas.dc.html
 - [x] Supabase dormindo e conta desligada: site ao lado com o botão traduzido, ou "Ligar de novo"
 - [ ] Teste de ponta a ponta automático num Windows limpo: instalar, obra pequena até o primeiro milestone, publicação de teste
 Notas: DECISÃO do Luiz (24/11/2026, "Faz uma revisão geral para encontrar pontos falhos ... se o usuário que acessa o Atlas pela primeira vez vai conseguir percorrer todo o fluxo até ter seu software na mão"; "Pode seguir" para os itens 1, 3 e 5 e o desenho da tela das contas). Antes o caminho só funcionava em computador que já tinha Git, gh logado e o kit do canteiro. Tela C1 aprovada ("Pode mesclar e a tela está aprovada"). DIVERGÊNCIA registrada: o Supabase liga por chave colada (a CLI dele não faz login sem terminal), guardada só no cofre; GitHub e Vercel por código, como no desenho. Pendência: testar num Windows de verdade; apps de loja (EAS) ainda pedem comando ao usuário. Travas: protótipo T1Travas e TF1–TF5 aprovados ("Perfeito! Pode seguir"). DIVERGÊNCIA: o TF5 prometia manter o Supabase acordado; ficou de fora (não há jeito confiável sem a chave do projeto) — se dormir de novo, a mesma ficha resolve com um clique.
+
+## Milestone 39 — Da planilha ao sistema e o notebook como canteiro (pós-protótipo)
+peso: 5
+spec: S9
+tela: prototipo/caminho-novo/X1Planilha.dc.html
+- [x] Começar por uma planilha: escolher .xlsx, .xlsm ou .csv (o .xls antigo pede para salvar como .xlsx); a obra nasce com o nome da planilha
+- [x] Raio-X no computador, sem o Claude: abas, cabeçalho, tipos (moeda, data, percentual), listas suspensas (inclusive de outra aba), fórmulas (inclusive compartilhadas), ligações entre abas, regras de cor, tabelas, tabelas dinâmicas, gráficos e macro
+- [x] Conferência das contas: refaz as fórmulas que sabe calcular com os valores do Excel e mostra quantas batem; o resto fica "sem conferir"
+- [x] "O que entendi" pelo Claude; o mesmo botão de voz responde, acrescenta e muda, e o Atlas mostra o que mudou
+- [x] O relato da obra nasce da planilha; o mapa de telas usa as abas e cada tela mostra de que aba veio
+- [x] Levar os dados para o sistema (escolha guardada; a construção importa sem duplicar; a planilha nunca entra no git)
+- [x] Antes de começar: o notebook é o canteiro (tomada, tampa, "desligou, continua"); ajustar a tampa na tomada e desfazer quando não houver obra em construção
+- [ ] Testar com planilhas reais de clientes (financeiro, compras, estoque) num Windows de verdade
+Notas: DECISÃO do Luiz (24/11/2026, "essa transformação de Excel em sistema vai ser muito comum ... tem que ser um ponto forte para a elaboração do protótipo"; "se quiser acrescentar algo ou fazer alguma modificação, o usuário pode falar"; telas X1–X4 e TP1 aprovadas: "Sim"). DIVERGÊNCIA: o caminho continua ideia → visual → nome → protótipo (o X4 mostrava o protótipo logo depois); a etiqueta "veio da aba" aparece no passo do protótipo. O código das macros não é lido: o Atlas pergunta o que ela faz.

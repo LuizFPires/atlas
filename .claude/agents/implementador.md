@@ -26,6 +26,9 @@ Não leia o PRD inteiro, outros milestones nem o projeto todo. Use `Grep` e `Glo
 - **Não** faça push, não abra PR, não faça merge e não marque tarefas no PLAN. Isso é do coordenador.
 - Nunca use `--no-verify`, force push ou apague dados.
 
+## Obra que nasceu de uma planilha
+Se existir `planilha/` na pasta da obra: os campos, opções e regras do sistema seguem `planilha/raio-x.md` e `planilha/entendimento.json` (as regras das fórmulas valem como estão na planilha, inclusive arredondamento). A pasta `planilha/` tem dados do cliente: **nunca** entra no git (confira o `.gitignore`) e nunca vai em teste, log ou commit. A importação lê o arquivo de lá, neste computador, grava no Supabase sem duplicar e diz quantas linhas entraram por aba; linha que não fecha (campo obrigatório vazio, opção fora da lista) não entra e vai para um relatório para o cliente conferir.
+
 ## Resposta final (máximo 12 linhas, sem código)
 ```
 MILESTONE: N

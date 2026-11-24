@@ -1,7 +1,7 @@
 // Preload do app Atlas: a ÚNICA ponte entre a tela (renderer) e o processo principal.
 //
 // O QUE FAZ: expõe window.atlasDesktop (contextIsolation ligado, sandbox ligado, SEM nodeIntegration). Só os namespaces
-// que o front usa (src/app/ponte.ts): cofre, servidor, pagamento, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar, kit, atualizacao, ideia, navegador, contas, ligarContas, travas. Todo argumento vira String/boolean aqui e é
+// que o front usa (src/app/ponte.ts): cofre, servidor, pagamento, arquivos, obras, claude, modos, construcao, painel, retomar, estilo, prototipo, batismo, nomes, posobra, cota, ocorrencias, celular, importar, ajuda, casos, publicar, kit, atualizacao, ideia, navegador, contas, ligarContas, travas, planilha, tampa. Todo argumento vira String/boolean aqui e é
 // revalidado de novo no processo principal (main.cjs); o renderer nunca recebe caminho de origem, módulo Node nem Electron.
 //
 // COMO TESTAR (Windows): `npx electron app/main.cjs`, abrir as ferramentas do desenvolvedor e digitar `window.atlasDesktop`:
@@ -103,6 +103,15 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
   },
   // Contas do cliente: "abrir o site" (no navegador do computador) e se a conta já está pronta (visto pelo navegador do Atlas).
   contas: { abrirSite: (conta) => chamar('atlas:navegador:fora', String(conta)), pronta: (conta) => chamar('atlas:navegador:pronta', String(conta)) },
+  // Começar por uma planilha (X1–X3): a tela recebe o resumo e o que o Atlas entendeu; nunca os dados da planilha.
+  planilha: {
+    ler: (pasta, nome) => chamar('atlas:planilha:ler', String(pasta), String(nome)),
+    entender: (pasta, fala) => chamar('atlas:planilha:entender', String(pasta), fala === undefined ? undefined : String(fala)),
+    levarDados: (pasta, sim) => chamar('atlas:planilha:levar', String(pasta), sim === true),
+    relato: (pasta) => chamar('atlas:planilha:relato', String(pasta)),
+  },
+  // O notebook é o canteiro (TP1Tampa): ajustar a tampa na tomada.
+  tampa: { ajustada: () => chamar('atlas:tampa:ajustada'), ajustar: () => chamar('atlas:tampa:ajustar') },
   // Fichas de trava (T1Travas): a tela diz só o TIPO da trava; o endereço é fixo no processo principal.
   travas: {
     site: (tipo, b) => chamar('atlas:travas:site', String(tipo), { x: Number(b?.x), y: Number(b?.y), width: Number(b?.width), height: Number(b?.height) }),

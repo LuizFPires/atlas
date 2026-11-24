@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · X1 Começar por uma planilha</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes cnpulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.5)}70%{box-shadow:0 0 0 22px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}
+@keyframes cnonda{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes cngiro{to{transform:rotate(360deg)}}
+@keyframes cnpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.cn-grav{animation:cnpulso 1.4s infinite}
+.cn-onda span{display:block;width:4px;border-radius:2px;background:#F05A4F;animation:cnonda 1s infinite ease-in-out}
+.cn-giro{animation:cngiro 1s linear infinite}
+.cn-pisca{animation:cnpisca 1.2s infinite} .bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:12px;font:700 15px 'Geist',sans-serif;cursor:pointer;white-space:nowrap;box-sizing:border-box;border:none;text-decoration:none} .tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;font:600 10px 'Geist Mono',monospace;letter-spacing:.08em}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden;position:relative">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA · 1 · A IDEIA</span><h1 style="margin:0;font-size:26px;letter-spacing:-.01em">{{titulo}}</h1></div>
+  <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="6"><li style="display:flex;flex-direction:column;gap:7px"><span style="height:4px;border-radius:2px;background:{{p.barra}}"></span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{p.cor}}">{{p.rot}}</span></li></sc-for>
+  </ol>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px">
+   <section style="display:flex;flex-direction:column;gap:16px">
+    <span style="font-size:16px;color:{{t.mute}}">Como você quer começar?</span>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+     <a href="CN1Ideia.dc.html" style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:18px;display:flex;gap:14px;align-items:center;color:{{t.text}}"><span style="width:44px;height:44px;border-radius:22px;background:{{t.card2}};display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:17px">Contar a ideia</b><span style="font-size:14px;color:{{t.mute}}">Falando ou escrevendo</span></div></a>
+     <div style="background:{{t.soft}};border:2px solid {{t.lime}};border-radius:18px;padding:18px;display:flex;gap:14px;align-items:center"><span style="width:44px;height:44px;border-radius:22px;background:{{t.lime}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></svg></span><div style="display:flex;flex-direction:column;gap:2px"><b style="font-size:17px">Tenho uma planilha</b><span style="font-size:14px;color:{{t.mute}}">O Atlas transforma em sistema</span></div></div>
+    </div>
+    <div style="flex:1;border:2px dashed {{t.lime}};border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px">
+     <sc-if value="{{semArquivo}}" hint-placeholder-val="{{ false }}">
+      <b style="font-size:20px">Arraste a sua planilha para cá</b>
+      <span style="font-size:15px;color:{{t.mute}}">ou</span>
+      <button class="bt" onClick="{{escolher}}" style="background:{{t.lime}};color:{{t.onLime}}">Escolher no computador</button>
+      <span style="font-size:13px;color:{{t.mute2}}">Excel (.xlsx, .xlsm, .xls) ou .csv · até 50 MB · do Google Planilhas: Arquivo › Fazer download › Excel</span>
+     </sc-if>
+     <sc-if value="{{comArquivo}}" hint-placeholder-val="{{ true }}">
+      <span style="width:64px;height:64px;border-radius:16px;background:#1D6F42;color:#fff;display:flex;align-items:center;justify-content:center;font:700 22px 'Geist',sans-serif">X</span>
+      <b style="font-size:20px">Compras 2026.xlsx</b>
+      <span style="font-size:15px;color:{{t.mute}}">5 abas · 1.240 linhas · com fórmulas e uma macro</span>
+      <div style="display:flex;gap:10px"><a class="bt" href="X2Lendo.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Ler a planilha →</a><button class="bt" onClick="{{trocar}}" style="background:transparent;border:1px solid {{t.cardB}};color:{{t.text}}">Trocar arquivo</button></div>
+     </sc-if>
+    </div>
+   </section>
+   <aside style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">DA PLANILHA AO SISTEMA</span>
+    <b style="font-size:19px;line-height:1.35">O Atlas lê tudo: abas, colunas, fórmulas, listas, cores e gráficos.</b>
+    <span style="font-size:14px;line-height:1.55;color:{{t.mute}}">Depois conta o que entendeu, confere as contas com o seu Excel e desenha as telas. O sistema já nasce com os seus dados.</span>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+     <span style="display:flex;gap:10px;font-size:14px"><span style="color:{{t.limeTxt}}">1</span>Lê a planilha aqui no seu computador</span>
+     <span style="display:flex;gap:10px;font-size:14px"><span style="color:{{t.limeTxt}}">2</span>Conta o que entendeu, em português</span>
+     <span style="display:flex;gap:10px;font-size:14px"><span style="color:{{t.limeTxt}}">3</span>Confere as contas com o seu Excel</span>
+     <span style="display:flex;gap:10px;font-size:14px"><span style="color:{{t.limeTxt}}">4</span>Desenha o protótipo a partir dela</span>
+    </div>
+    <div style="margin-top:auto;padding:14px;border-radius:12px;background:{{t.card2}};font-size:13px;line-height:1.5;color:{{t.mute}}"><b style="color:{{t.text}}">Seus dados ficam no seu computador.</b> Para o Claude vão só a estrutura e poucas linhas de exemplo. Os dados de verdade entram no sistema só quando você mandar.</div>
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', cinza: '#3A3F46', verm: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', cinza: '#C9CDC4', verm: '#D8483D' }
+};
+const PASSOS = ['1 · A IDEIA', '2 · O VISUAL', '3 · O NOME', '4 · O PROTÓTIPO', '5 · AS CONTAS', '6 · COMEÇAR'];
+const passos = (t, atual) => PASSOS.map((rot, i) => ({ rot, barra: i < atual ? t.lime : i === atual ? t.lime : t.line, cor: i <= atual ? t.text : t.mute2 }));
+const TITULO = 'Nova obra';
+function extra() { const c = this.state.arquivo; return { semArquivo: !c, comArquivo: c, escolher: () => this.setState({ arquivo: true }), trocar: () => this.setState({ arquivo: false }) }; }
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { arquivo: false }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const base = { tema, t, passos: passos(t, 0), titulo: TITULO };
+    return typeof extra === 'function' ? { ...base, ...extra.call(this, t) } : base;
+  }
+}
+</script>
+</body>
+</html>

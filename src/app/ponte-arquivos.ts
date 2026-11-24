@@ -2,10 +2,10 @@
 // O diálogo de escolher arquivo e a cópia para a subpasta da obra (C:\Users\<nome>\Atlas\Obras\<obra>\...) ficam atrás desta porta,
 // SEMPRE dentro da raiz permitida. Nunca guarda segredo. O adaptador real (dialog.showOpenDialog + fs.copyFile no Electron) é pendência de /entregar.
 
-export type TipoArquivo = 'imagem' | 'logo' | 'cores' | 'manual' | 'design-system'
+export type TipoArquivo = 'imagem' | 'logo' | 'cores' | 'manual' | 'design-system' | 'planilha'
 
 /** Onde, dentro da subpasta da obra, o arquivo é guardado. */
-export type Destino = 'estilo/referencias' | 'estilo/identidade' | 'marca' | 'posobra/prints' | 'raiz'
+export type Destino = 'estilo/referencias' | 'estilo/identidade' | 'marca' | 'posobra/prints' | 'raiz' | 'planilha'
 
 export interface ArquivoEscolhido {
   nome: string
@@ -40,6 +40,7 @@ export const EXTENSOES: Record<TipoArquivo, readonly string[]> = {
   cores: ['png', 'jpg', 'jpeg', 'webp', 'txt', 'pdf'],
   manual: ['pdf', 'md', 'txt', 'png', 'jpg', 'jpeg', 'webp'],
   'design-system': ['md'],
+  planilha: ['xlsx', 'xlsm', 'xls', 'csv'],
 }
 
 export const TAMANHO_MAXIMO = 20 * 1024 * 1024
@@ -99,6 +100,7 @@ const EXEMPLO: Record<TipoArquivo, string> = {
   cores: 'cores-da-fachada.jpg',
   manual: 'manual-da-marca.pdf',
   'design-system': 'design-system.md',
+  planilha: 'compras-2026.xlsx',
 }
 
 /** Mock do modo fixture: não toca no disco. */

@@ -36,3 +36,11 @@
 /* "Começar a obra": o recado de erro fica junto do botão, não no topo da página. */
 .at-apr__fim { display: flex; flex-direction: column; gap: 12px; }
 .at-apr__erro--perto { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0; border-left: 4px solid var(--erro, #E5534B); }
+/* TP1Tampa: o notebook é o canteiro. */
+.at-apr__tampa-fundo { position: fixed; inset: 0; background: rgba(10, 11, 12, 0.6); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.at-apr__tampa { width: 640px; max-width: calc(100vw - 48px); background: var(--card); border: 1px solid var(--card-b); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 14px; color: var(--text); }
+.at-apr__tampa h2 { margin: 0; font-size: 22px; line-height: 1.3; }
+.at-apr__tampa ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.45; }
+.at-apr__tampa-acoes { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.at-apr__tampa-ok { color: var(--lime-txt); font-weight: 700; }
+.at-apr__tampa-erro { display: block; margin-top: 6px; color: var(--aviso-txt); font-size: 14px; }

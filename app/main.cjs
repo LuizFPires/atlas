@@ -36,6 +36,8 @@ const { criarPublicar } = require('./adaptadores/publicar.cjs')
 const { criarKit } = require('./adaptadores/kit.cjs')
 const { criarContasCli, rodarProcesso, comandoGh } = require('./adaptadores/contas-cli.cjs')
 const { criarTravasAcoes, SITE_DA_TRAVA } = require('./adaptadores/travas-acoes.cjs')
+const { criarPlanilhaObra } = require('./adaptadores/planilha-obra.cjs')
+const { criarTampa } = require('./adaptadores/tampa.cjs')
 const { envMinimo } = require('./seguro.cjs')
 const { criarServidor } = require('./adaptadores/servidor.cjs')
 const { tokenDoLink, comToken } = require('./link-instalacao.cjs')
@@ -82,6 +84,8 @@ const retomar = criarRetomar({ raiz: obras.raiz(), painel, cota, construcao })
 // Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
 const disparo = criarDisparo({ modelo: () => modelo.args(), raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
 // Roteiro da ideia (caminho novo, 23/11/2026): conferência rápida a cada pausa, sempre com o modelo mais rápido (não o da obra).
+// Começar por uma planilha (X1–X3): raio-X aqui no computador; "o que entendi" pelo Claude lendo planilha/raio-x.md da obra.
+const planilhaObra = criarPlanilhaObra({ raiz: obras.raiz(), disparo })
 const ideia = require('./adaptadores/ideia.cjs').criarIdeia({ disparo: criarDisparo({ modelo: () => ['--model', 'claude-haiku-5-5'], raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() }) })
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
@@ -312,6 +316,10 @@ handle('atlas:navegador:fechar', () => navegador.fechar())
 
 // Ligar as contas a este computador (C1Contas). A tela recebe só o código e o estado; o endereço vem da CLI e é conferido aqui.
 const garantirFerramentas = async () => { if (!contasCli.ferramentasProntas() && !(await contasCli.instalarFerramentas())) throw new Error('ferramentas-indisponiveis') }
+handle('atlas:planilha:ler', (pasta, nome) => planilhaObra.ler(String(pasta), String(nome)))
+handle('atlas:planilha:entender', (pasta, fala) => planilhaObra.entender(String(pasta), fala === undefined || fala === null ? undefined : String(fala)))
+handle('atlas:planilha:levar', (pasta, sim) => planilhaObra.levarDados(String(pasta), sim === true))
+handle('atlas:planilha:relato', (pasta) => planilhaObra.relato(String(pasta)))
 handle('atlas:contas:situacao', () => contasCli.situacao())
 handle('atlas:contas:estado', (conta) => contasCli.estado(String(conta)))
 handle('atlas:contas:ligar', async (conta, b) => {
@@ -336,7 +344,23 @@ handle('atlas:travas:site', (tipo, b) => { const u = SITE_DA_TRAVA[String(tipo)]
 handle('atlas:travas:siteFora', (tipo) => { const u = SITE_DA_TRAVA[String(tipo)]; if (u) void shell.openExternal(u) })
 handle('atlas:travas:publico', (pasta) => travasAcoes.deixarPublico(String(pasta)))
 handle('atlas:travas:ehPublico', (pasta) => travasAcoes.publico(String(pasta)))
-const revisarTravas = () => { void obras.listar().then((l) => travasAcoes.revisar(l)).catch(() => {}) }
+// O notebook é o canteiro (TP1Tampa): a tampa na tomada vira "não fazer nada" com o clique da pessoa e volta ao normal quando
+// nenhuma obra está em construção (todas com o PLAN em 100% ou sem obra).
+const powercfg = require('node:path').join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'powercfg.exe')
+const tampa = criarTampa({ dadosApp: app.getPath('userData'), rodar: (args) => rodarProcesso(powercfg, args, { env: envMinimo(), timeoutMs: 15_000 }) })
+handle('atlas:tampa:ajustada', () => tampa.ajustada())
+handle('atlas:tampa:ajustar', () => tampa.ajustar())
+const { lerPlanoDoTexto } = require('./adaptadores/painel.cjs')
+const algumaObraEmConstrucao = async () => {
+  for (const p of await obras.listar()) {
+    try { const t = require('node:fs').readFileSync(require('node:path').join(obras.raiz(), p, 'PLAN.md'), 'utf8'); if (lerPlanoDoTexto(t).pct < 100) return true } catch { /* sem PLAN: obra ainda não começou */ }
+  }
+  return false
+}
+const revisarTravas = () => {
+  void obras.listar().then((l) => travasAcoes.revisar(l)).catch(() => {})
+  if (tampa.ajustada()) void algumaObraEmConstrucao().then((sim) => { if (!sim) return tampa.restaurar() }).catch(() => {})
+}
 setTimeout(revisarTravas, 15_000)
 setInterval(revisarTravas, 60 * 60 * 1000).unref()
 

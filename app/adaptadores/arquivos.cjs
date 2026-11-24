@@ -20,9 +20,13 @@ const EXTENSOES = {
   cores: ['png', 'jpg', 'jpeg', 'webp', 'txt', 'pdf'],
   manual: ['pdf', 'md', 'txt', 'png', 'jpg', 'jpeg', 'webp'],
   'design-system': ['md'],
+  planilha: ['xlsx', 'xlsm', 'xls', 'csv'],
 }
-const DESTINOS = ['estilo/referencias', 'estilo/identidade', 'marca', 'posobra/prints', 'raiz']
+const DESTINOS = ['estilo/referencias', 'estilo/identidade', 'marca', 'posobra/prints', 'raiz', 'planilha']
 const TAMANHO_MAXIMO = 20 * 1024 * 1024
+// Planilha (começar por uma planilha, X1): até 50 MB; o raio-X tem limites próprios (planilha.cjs).
+const TAMANHO_POR_TIPO = { planilha: 50 * 1024 * 1024 }
+const maximoDe = (tipo) => TAMANHO_POR_TIPO[tipo] ?? TAMANHO_MAXIMO
 const PASTA_OK = /^[a-z0-9][a-z0-9-]*$/
 
 const extensaoDe = (nome) => (nome.includes('.') ? nome.slice(nome.lastIndexOf('.') + 1).toLowerCase() : '')
@@ -64,7 +68,7 @@ function criarArquivos({ raiz, dialog, janela = () => null }) {
       const nome = path.basename(origem)
       if (!extensaoPermitida(tipo, nome)) throw new Error('tipo-nao-aceito')
       const st = infoDaOrigem(origem)
-      if (st.size > TAMANHO_MAXIMO) throw new Error('grande-demais')
+      if (st.size > maximoDe(tipo)) throw new Error('grande-demais')
       const token = crypto.randomBytes(16).toString('hex')
       emAberto.set(token, { tipo, origem, nome, tamanho: st.size })
       return { nome, tamanho: st.size, token }
@@ -78,8 +82,9 @@ function criarArquivos({ raiz, dialog, janela = () => null }) {
       // Revalida: vale o que o processo principal guardou ao escolher e o que está no disco agora.
       if (!extensaoPermitida(a.tipo, a.nome)) throw new Error('tipo-nao-aceito')
       if (destino === 'raiz' && extensaoDe(a.nome) !== 'md') throw new Error('tipo-nao-aceito')
+      if (destino === 'planilha' && a.tipo !== 'planilha') throw new Error('tipo-nao-aceito')
       const st = infoDaOrigem(a.origem)
-      if (st.size > TAMANHO_MAXIMO) throw new Error('grande-demais')
+      if (st.size > maximoDe(a.tipo)) throw new Error('grande-demais')
       // A obra precisa existir (criada por PonteObras); as subpastas internas são criadas uma a uma, sem recursive.
       const pastaObra = caminhoSeguro(raiz, pasta)
       if (!fs.existsSync(pastaObra)) throw new Error('pasta-invalida')

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · X2 Lendo a planilha</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes cnpulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.5)}70%{box-shadow:0 0 0 22px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}
+@keyframes cnonda{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes cngiro{to{transform:rotate(360deg)}}
+@keyframes cnpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.cn-grav{animation:cnpulso 1.4s infinite}
+.cn-onda span{display:block;width:4px;border-radius:2px;background:#F05A4F;animation:cnonda 1s infinite ease-in-out}
+.cn-giro{animation:cngiro 1s linear infinite}
+.cn-pisca{animation:cnpisca 1.2s infinite} .bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:12px;font:700 15px 'Geist',sans-serif;cursor:pointer;white-space:nowrap;box-sizing:border-box;border:none;text-decoration:none} .tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;font:600 10px 'Geist Mono',monospace;letter-spacing:.08em}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden;position:relative">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA · 1 · A IDEIA</span><h1 style="margin:0;font-size:26px;letter-spacing:-.01em">{{titulo}}</h1></div>
+  <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="6"><li style="display:flex;flex-direction:column;gap:7px"><span style="height:4px;border-radius:2px;background:{{p.barra}}"></span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{p.cor}}">{{p.rot}}</span></li></sc-for>
+  </ol>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 520px;gap:24px">
+   <section style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:12px"><span class="cn-giro" style="display:{{dispGira}};width:16px;height:16px;border-radius:8px;border:2px solid {{t.lime}};border-top-color:transparent"></span><b style="font-size:20px">{{status}}</b><span style="margin-left:auto;font:600 14px 'Geist Mono',monospace;color:{{t.limeTxt}}">{{lidas}} DE 5 ABAS</span></div>
+    <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:{{t.card2}};opacity:{{op0}}"><span style="width:28px;height:28px;border-radius:14px;background:{{bola0}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;font-weight:700">{{ic0}}</span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><b style="font-size:16px">Aba Pedidos <span style="font-weight:400;color:{{t.mute}};font-size:14px">· 412 linhas · 9 colunas</span></b><span style="font-size:14px;color:{{t.mute}}">3 fórmulas · lista de Status · cor vermelha acima de R$ 5.000</span></div></div>
+    <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:{{t.card2}};opacity:{{op1}}"><span style="width:28px;height:28px;border-radius:14px;background:{{bola1}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;font-weight:700">{{ic1}}</span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><b style="font-size:16px">Aba Itens <span style="font-weight:400;color:{{t.mute}};font-size:14px">· 790 linhas · 6 colunas</span></b><span style="font-size:14px;color:{{t.mute}}">Total = Qtd × Preço unitário · ligado a Pedidos pelo nº</span></div></div>
+    <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:{{t.card2}};opacity:{{op2}}"><span style="width:28px;height:28px;border-radius:14px;background:{{bola2}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;font-weight:700">{{ic2}}</span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><b style="font-size:16px">Aba Fornecedores <span style="font-weight:400;color:{{t.mute}};font-size:14px">· 38 linhas · 7 colunas</span></b><span style="font-size:14px;color:{{t.mute}}">ligado a Pedidos por PROCV (CNPJ)</span></div></div>
+    <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:{{t.card2}};opacity:{{op3}}"><span style="width:28px;height:28px;border-radius:14px;background:{{bola3}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;font-weight:700">{{ic3}}</span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><b style="font-size:16px">Aba Resumo do mês <span style="font-weight:400;color:{{t.mute}};font-size:14px">· tabela dinâmica + 2 gráficos</span></b><span style="font-size:14px;color:{{t.mute}}">gasto por obra e por categoria → vira o painel</span></div></div>
+    <div style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:14px;background:{{t.card2}};opacity:{{op4}}"><span style="width:28px;height:28px;border-radius:14px;background:{{bola4}};color:{{t.onLime}};display:flex;align-items:center;justify-content:center;font-weight:700">{{ic4}}</span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><b style="font-size:16px">Aba Listas <span style="font-weight:400;color:{{t.mute}};font-size:14px">· 4 listas</span></b><span style="font-size:14px;color:{{t.mute}}">Status, Categoria, Obra, Forma de pagamento → opções fixas</span></div></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px dashed {{t.cardB}};font-size:14px;color:{{t.mute}};opacity:{{op5}}"><b style="color:{{t.text}}">Macro "EnviarAprovacao"</b>· manda e-mail quando o pedido passa de R$ 5.000 → vira um aviso automático no sistema</div>
+    <div style="margin-top:auto;display:flex;gap:12px;align-items:center"><button class="bt" onClick="{{avancar}}" style="display:{{dispAvancar}};background:transparent;border:1px solid {{t.lime}};color:{{t.text}}">(simular: ler a próxima aba)</button><a class="bt" href="X3Entendi.dc.html" style="display:{{dispPronto}};background:{{t.lime}};color:{{t.onLime}}">Ver o que entendi →</a><span style="font-size:13px;color:{{t.mute2}}">Leva uns 20 segundos. Tudo aqui no seu computador.</span></div>
+   </section>
+   <aside style="display:flex;flex-direction:column;gap:10px;min-width:0">
+    <span style="font-size:13px;color:{{t.mute2}}">O raio-X da aba Pedidos:</span>
+    <div style="border-radius:14px;overflow:hidden;background:#FFFFFF;color:#1B1E22;border:1px solid {{t.cardB}}">
+     <div style="height:36px;background:#1D6F42;color:#fff;display:flex;align-items:center;padding:0 12px;font:600 13px 'Geist',sans-serif">Compras 2026.xlsx · Pedidos</div>
+     <table style="width:100%;border-collapse:collapse;font:13px 'Geist',sans-serif"><thead><tr><th style="padding:8px 10px;text-align:left;border-bottom:1px solid #DADDD3"><div style="display:flex;flex-direction:column;gap:4px"><span>Nº</span><span class="tag" style="background:#EEF7D3;color:#3F5600;align-self:flex-start">TEXTO</span></div></th><th style="padding:8px 10px;text-align:left;border-bottom:1px solid #DADDD3"><div style="display:flex;flex-direction:column;gap:4px"><span>Data</span><span class="tag" style="background:#EEF7D3;color:#3F5600;align-self:flex-start">DATA</span></div></th><th style="padding:8px 10px;text-align:left;border-bottom:1px solid #DADDD3"><div style="display:flex;flex-direction:column;gap:4px"><span>Obra</span><span class="tag" style="background:#EEF7D3;color:#3F5600;align-self:flex-start">LISTA</span></div></th><th style="padding:8px 10px;text-align:left;border-bottom:1px solid #DADDD3"><div style="display:flex;flex-direction:column;gap:4px"><span>Fornecedor</span><span class="tag" style="background:#EEF7D3;color:#3F5600;align-self:flex-start">LIGAÇÃO</span></div></th><th style="padding:8px 10px;text-align:left;border-bottom:1px solid #DADDD3"><div style="display:flex;flex-direction:column;gap:4px"><span>Status</span><span class="tag" style="background:#EEF7D3;color:#3F5600;align-self:flex-start">LISTA</span></div></th><th style="padding:8px 10px;text-align:left;border-bottom:1px solid #DADDD3"><div style="display:flex;flex-direction:column;gap:4px"><span>Total</span><span class="tag" style="background:#EEF7D3;color:#3F5600;align-self:flex-start">FÓRMULA</span></div></th></tr></thead><tbody><tr><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">PC-0412</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">22/11</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">Galpão SMS</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">Aço Forte</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">Aprovado</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">R$ 3.180</td></tr><tr><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">PC-0411</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">21/11</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">Lagoa Santa</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">Cimento BH</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">Enviado</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;background:#FDE3E1;">R$ 7.920</td></tr><tr><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">PC-0410</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">21/11</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">Galpão SMS</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">Elétrica Sul</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">Rascunho</td><td style="padding:8px 10px;border-bottom:1px solid #EEF0EA;">R$ 940</td></tr></tbody></table>
+     <div style="padding:10px 12px;font-size:12px;color:#5F665C;background:#F7F8F4">+ 409 pedidos · <span style="background:#FDE3E1;padding:1px 6px;border-radius:4px">vermelho</span> = acima de R$ 5.000 (formatação condicional)</div>
+    </div>
+    <div style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.5;color:{{t.mute}}"><b style="color:{{t.text}};font-size:14px">Como cada coisa vira sistema</b><span><b style="color:{{t.text}}">LISTA</b> vira opções fixas · <b style="color:{{t.text}}">FÓRMULA</b> vira cálculo automático · <b style="color:{{t.text}}">LIGAÇÃO</b> vira cadastro ligado · <b style="color:{{t.text}}">COR</b> vira alerta</span></div>
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', cinza: '#3A3F46', verm: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', cinza: '#C9CDC4', verm: '#D8483D' }
+};
+const PASSOS = ['1 · A IDEIA', '2 · O VISUAL', '3 · O NOME', '4 · O PROTÓTIPO', '5 · AS CONTAS', '6 · COMEÇAR'];
+const passos = (t, atual) => PASSOS.map((rot, i) => ({ rot, barra: i < atual ? t.lime : i === atual ? t.lime : t.line, cor: i <= atual ? t.text : t.mute2 }));
+const TITULO = 'Lendo a sua planilha';
+function extra(t) { const n = this.state.n; const o = {}; for (let i = 0; i < 6; i++) { const ok = i < n; o['op' + i] = ok || i === n ? 1 : .35; o['bola' + i] = ok ? t.lime : t.cardB; o['ic' + i] = ok ? '✓' : (i === n ? '…' : String(i + 1)); } const fim = n >= 6; return { ...o, lidas: Math.min(n, 5), status: fim ? 'Pronto: li a planilha inteira.' : 'Lendo a planilha…', dispGira: fim ? 'none' : 'inline-block', dispAvancar: fim ? 'none' : 'inline-flex', dispPronto: fim ? 'inline-flex' : 'none', avancar: () => this.setState({ n: n + 1 }) }; }
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { n: 2 }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const base = { tema, t, passos: passos(t, 0), titulo: TITULO };
+    return typeof extra === 'function' ? { ...base, ...extra.call(this, t) } : base;
+  }
+}
+</script>
+</body>
+</html>

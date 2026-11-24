@@ -11,6 +11,8 @@ import { ajudaIndisponivel, contextoDoPasso, criarAjudaFixture, type ContextoAju
 import { casosIndisponivel, criarCasosFixture, type PonteCasosAdmin } from './ponte-ajuda-casos'
 import { Celular } from './Celular'
 import { Contas } from './Contas'
+import { ComecarPlanilha } from './ComecarPlanilha'
+import { criarPlanilhaFixture, type PontePlanilha } from './ponte-planilha'
 import { LigarContas } from './LigarContas'
 import { criarLigarContasFixture, type PonteLigarContas } from './ponte-ligar-contas'
 import { criarTravasFixture, type PonteTravas } from './ponte-travas'
@@ -112,7 +114,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const [dono, setDono] = useState('')
   const [paradaF12, setParadaF12] = useState<ObraParada | null>(null)
   // Dentro de Minhas obras: lista (F05), nova obra (F06) ou trazer protótipo (F06c, do M15).
-  const [fluxo, setFluxo] = useState<'lista' | 'ideia' | 'trazer' | 'estilo' | 'telas' | 'batismo' | 'contas' | 'aprovar' | 'publicar' | 'publicando' | 'entrega'>('lista')
+  const [fluxo, setFluxo] = useState<'lista' | 'ideia' | 'planilha' | 'trazer' | 'estilo' | 'telas' | 'batismo' | 'contas' | 'aprovar' | 'publicar' | 'publicando' | 'entrega'>('lista')
   const [obraAtual, setObraAtual] = useState<ObraDoEstilo | null>(null)
   // A obra que acabou de nascer em "Nova obra": o Voltar do estilo volta para ela ("Obra começada!"), não para o início.
   // Caminho novo: o relato da obra criada agora (para o Voltar do estilo mostrar de novo a ideia). null = obra que veio de Minhas obras.
@@ -137,6 +139,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const abrirAjuda = (contexto: ContextoAjuda) => setPainelAjuda((a) => ({ contexto: { obra: obraAtual?.nome, pasta: obraAtual?.pasta, ...contexto }, n: (a?.n ?? 0) + 1 }))
   const pedirAjudaPasso = (p: PedidoAjudaPasso) => abrirAjuda(contextoDoPasso(p))
 
+  const pontePlanilha = useMemo<PontePlanilha | null>(() => (modoFixture() ? criarPlanilhaFixture() : (ponte.planilha ?? null)), [ponte])
   const ponteLigar = useMemo<PonteLigarContas | null>(() => (modoFixture() ? criarLigarContasFixture() : (ponte.ligarContas ?? null)), [ponte])
   // Depois de criar as contas nos sites, a mesma etapa 'contas' liga cada uma a este computador (C1Contas, 24/11/2026).
   const [ligandoContas, setLigandoContas] = useState(false)
@@ -356,8 +359,16 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'obra' && obraAtual && fluxo === 'entrega') conteudo = <Entrega obra={obraAtual} endereco={enderecoNoAr} resumo={resumoEntrega} onMudar={() => setAtivo('posobra')} />
   else if (ativo === 'obra' && obraAtual && religandoConta && ponteLigar) conteudo = <LigarContas ponte={ponteLigar} navegador={modoFixture() ? undefined : ponte.navegador} onVoltar={() => setReligandoConta(false)} onContinuar={() => setReligandoConta(false)} rotuloContinuar="Tudo ligado · Voltar à obra →" />
   else if (ativo === 'obra' && obraAtual) conteudo = <Painel obra={obraAtual} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => abrirAjuda({ origem: 'menu' })} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => setFluxo('publicar')} travas={ponteTravas} navegador={modoFixture() ? undefined : ponte.navegador} onLigarContas={ponteLigar ? () => setReligandoConta(true) : undefined} />
-  else if (ativo === 'obras' && fluxo === 'aprovar' && obraAtual) conteudo = <Aprovar obra={obraAtual} construcao={pontesModo.construcao} claude={ponteClaude} modos={pontesModo.modos} onVoltar={() => setFluxo('contas')} onComecou={() => { setFluxo('lista'); setAtivo('obra') }} />
-  else if (ativo === 'obras' && fluxo === 'ideia') conteudo = <Ideia ideia={ponteIdeia} relatoInicial={relatoDaObra ?? undefined} onVoltar={() => setFluxo('lista')} onConcluir={async ({ relato, titulo }) => {
+  else if (ativo === 'obras' && fluxo === 'aprovar' && obraAtual) conteudo = <Aprovar obra={obraAtual} construcao={pontesModo.construcao} claude={ponteClaude} modos={pontesModo.modos} onVoltar={() => setFluxo('contas')} onComecou={() => { setFluxo('lista'); setAtivo('obra') }} tampa={modoFixture() ? undefined : ponte.tampa} />
+  else if (ativo === 'obras' && fluxo === 'planilha' && pontePlanilha) conteudo = <ComecarPlanilha planilha={pontePlanilha} arquivos={ponteArquivos} criarObra={(nome) => ponteObras.criarSubpasta(nome)} onVoltar={() => setFluxo('ideia')} onConcluir={({ pasta, nome, relato }) => {
+    // A obra nasceu da planilha: segue o caminho (visual, nome, protótipo) com o relato que veio dela.
+    setObraAtual({ nome, pasta })
+    setRelatoDaObra(relato)
+    setEstiloEscolhido(null)
+    void pontePrototipo.mapear?.(pasta, nome, relato).catch(() => {})
+    setFluxo('estilo')
+  }} />
+  else if (ativo === 'obras' && fluxo === 'ideia') conteudo = <Ideia ideia={ponteIdeia} relatoInicial={relatoDaObra ?? undefined} onPlanilha={pontePlanilha && !(relatoDaObra !== null && obraAtual) ? () => setFluxo('planilha') : undefined} onVoltar={() => setFluxo('lista')} onConcluir={async ({ relato, titulo }) => {
     // Já criada nesta sessão (voltou do estilo): segue, sem criar outra pasta. Nova: cria a pasta e começa o mapa em segundo plano.
     if (relatoDaObra !== null && obraAtual) { setRelatoDaObra(relato); setFluxo('estilo'); return }
     const nome = titulo.trim() || 'Nova obra'

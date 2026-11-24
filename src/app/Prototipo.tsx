@@ -407,7 +407,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
           )}
           <div className="at-proto__abas" role="tablist" aria-label="Telas do sistema">
             {telasAqui.map((t) => (
-              <button key={t.id} type="button" role="tab" aria-selected={t.id === tela.id} className={`at-proto__aba ${t.id === tela.id ? 'at-proto__aba--on' : ''}`} onClick={() => setAba(t.id)}>{t.nome}</button>
+              <button key={t.id} type="button" role="tab" aria-selected={t.id === tela.id} className={`at-proto__aba ${t.id === tela.id ? 'at-proto__aba--on' : ''}`} onClick={() => setAba(t.id)} title={t.origem ? `Veio da aba ${t.origem} da sua planilha` : undefined}>{t.nome}</button>
             ))}
           </div>
           {(() => {
@@ -455,6 +455,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
                   <button type="button" className="at-proto__mini-abrir" aria-label={`Abrir ${t.nome}`} onClick={() => { setAba(t.id); setVista('navegar') }}>
                     <div className="at-proto__mini-celular">{doc && <iframe title={`Miniatura: ${t.nome}`} sandbox={SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer" tabIndex={-1} />}</div>
                     <span>{t.nome}</span>
+                    {t.origem && <em className="at-proto__origem">VEIO DA ABA {t.origem.toLocaleUpperCase('pt-BR')}</em>}
                   </button>
                 </li>
               )

@@ -459,3 +459,17 @@ test('conferência do Atlas: diz quando está tudo certo nas telas', async () =>
   await screen.findByTitle(/Tela Marcar horário no celular/)
   expect(screen.getByRole('status', { name: 'Conferência do Atlas' })).toHaveTextContent(/Conferi as \d+ telas: tudo certo/)
 })
+
+
+test('obra que nasceu de planilha: a tela diz de que aba da planilha veio', async () => {
+  const base = criarPrototipoFixture()
+  type ComVersoes = { versoes?: { telas: { origem?: string }[] }[] }
+  const comOrigem = (e: unknown) => {
+    const x = e as ComVersoes
+    return x && Array.isArray(x.versoes) ? { ...x, versoes: x.versoes.map((v) => ({ ...v, telas: v.telas.map((t, i) => (i === 0 ? { ...t, origem: 'Agenda' } : t)) })) } : e
+  }
+  const p = new Proxy(base, { get(o, k) { const f = (o as unknown as Record<string | symbol, unknown>)[k]; return typeof f === 'function' ? async (...a: unknown[]) => comOrigem(await (f as (...x: unknown[]) => unknown).apply(o, a)) : f } })
+  await montar(p as PontePrototipo)
+  await screen.findByText(/O protótipo · Estilo/)
+  expect(screen.getByRole('tab', { name: 'Marcar horário' })).toHaveAttribute('title', 'Veio da aba Agenda da sua planilha')
+})

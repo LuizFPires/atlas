@@ -39,3 +39,4 @@
 .at-ideia__acoes { display: flex; justify-content: flex-end; gap: 10px; }
 @media (max-width: 900px) { .at-ideia__grade { grid-template-columns: 1fr; } }
 .at-ideia__erro { margin: 0 26px 16px; color: var(--erro); font-size: 14px; }
+.at-ideia__topo-acoes { display: flex; gap: 10px; align-items: center; }

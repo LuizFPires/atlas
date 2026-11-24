@@ -26,6 +26,8 @@ import type { PonteNavegador } from './ponte-navegador'
 import type { PonteContas } from './ponte-contas'
 import type { PonteLigarContas } from './ponte-ligar-contas'
 import type { PonteTravas } from './ponte-travas'
+import type { PontePlanilha } from './ponte-planilha'
+import type { PonteTampa } from './Aprovar'
 
 /** Cofre do sistema (Windows Credential Manager / DPAPI). NUNCA grava segredo em arquivo. */
 export interface Cofre {
@@ -85,6 +87,10 @@ export interface PonteDesktop {
   ligarContas?: PonteLigarContas
   /** Fichas de trava na obra (T1Travas): site da trava e "deixar público até o GitHub voltar". */
   travas?: PonteTravas
+  /** Começar por uma planilha (X1–X3): raio-X, o que entendi, voz. */
+  planilha?: PontePlanilha
+  /** O notebook é o canteiro (TP1Tampa). */
+  tampa?: PonteTampa
 }
 
 declare global {

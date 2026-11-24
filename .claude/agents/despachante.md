@@ -26,7 +26,7 @@ Você trabalha sozinho e não conversa com o usuário. O que só ele pode fazer 
 5. **repositório local**: compare `git rev-parse --show-toplevel` com a pasta do projeto (`pwd`).
    - Não é repositório, **ou o repositório é de uma pasta ACIMA do projeto** (repositório pai, como uma pasta que guarda vários projetos) → no modo `preparar`, `git init -b main` **dentro da pasta do projeto**. Nunca use, faça commit, crie remoto ou envie o repositório pai: ele pode conter arquivos de outros projetos e segredos. Relate em FEITO.
    - No modo `verificar`, repositório pai conta como "sem repositório próprio".
-6. **.gitignore**: garanta as linhas `.canteiro/`, `.claude/roteiro.json`, `node_modules/` e `.env`, sem duplicar. Nunca versione segredos: se encontrar `.env` ou chaves já rastreadas, **não** remova do histórico; relate como PENDÊNCIA.
+6. **.gitignore**: garanta as linhas `.canteiro/`, `.claude/roteiro.json`, `node_modules/`, `.env`, `.atlas/` e `planilha/` (a planilha do cliente tem dados dele), sem duplicar. Nunca versione segredos: se encontrar `.env` ou chaves já rastreadas, **não** remova do histórico; relate como PENDÊNCIA.
 7. **primeiro commit**: se não houver nenhum commit, `git add -A` e `git commit -m "chore: estrutura inicial do projeto"`.
 8. **remoto**: `git remote -v`.
    - Já existe `origin` → confira com `gh repo view --json nameWithOwner,defaultBranchRef,visibility`.
