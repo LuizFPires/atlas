@@ -172,7 +172,8 @@ export function Batismo({ obra, batismo, nomes: conferidor, arquivos, onVoltar, 
         {modo === 'sugerir' && !pronto && <Trabalhando titulo="O Claude está pensando nos nomes" segundos={60} etapas={['Relendo o que o sistema faz e para quem é', 'Criando nomes que combinam com o seu negócio', 'Desenhando uma logo e um slogan para cada um', 'Conferindo nomes parecidos e endereços livres']} />}
 
         {modo === 'sugerir' && (<>
-        <div className="at-bat__nomes" role="radiogroup" aria-label="Nomes sugeridos">
+        {pronto && ocupado && <Trabalhando titulo="O Claude está pensando em outros nomes" segundos={60} etapas={['Relendo o que o sistema faz e para quem é', 'Criando nomes diferentes dos que você já viu', 'Desenhando uma logo e um slogan para cada um', 'Conferindo nomes parecidos e endereços livres']} />}
+        <div className={`at-bat__nomes${pronto && ocupado ? ' at-bat__nomes--esperando' : ''}`} role="radiogroup" aria-label="Nomes sugeridos" aria-busy={ocupado}>
           {nomes.map((n) => (
             <button key={n.id} type="button" role="radio" aria-checked={n.id === atual?.id} className={`at-bat__nome ${n.id === atual?.id ? 'at-bat__nome--on' : ''}`} onClick={() => setEscolhido(n.id)}>
               <span className="at-bat__amostra"><span className="at-bat__amostra-logo"><Logo id={n.logo} tamanho={26} /></span><span className="at-bat__amostra-nome">{n.nome}</span></span>
@@ -184,7 +185,7 @@ export function Batismo({ obra, batismo, nomes: conferidor, arquivos, onVoltar, 
           ))}
         </div>
         <div className="at-bat__acoes-meio">
-          <Botao variante="secundario" disabled={ocupado} onClick={() => void pedir({ evitar: vistos })}>↻ Sugerir outros</Botao>
+          <Botao variante="secundario" disabled={ocupado} onClick={() => void pedir({ evitar: vistos })}>{ocupado && pronto ? <><span className="at-bat__gira" aria-hidden="true" />Pensando em outros nomes…</> : '↻ Sugerir outros'}</Botao>
           <button type="button" className="at-bat__falar" aria-expanded={falando} onClick={() => setFalando((f) => !f)}><Icone nome="microfone" tamanho={16} />Falar uma ideia de nome</button>
         </div>
         {falando && (
