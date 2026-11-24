@@ -82,3 +82,46 @@
 @keyframes at-pn-vigia-gira { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .at-pn__vigia-giro { animation: none; } }
 .at-pn__vigia-fala { display: block; margin-top: 6px; padding: 8px 12px; border-left: 3px solid var(--erro, #E5534B); border-radius: 0 8px 8px 0; background: rgba(229, 83, 75, 0.06); font-style: normal; color: var(--text); }
+
+/* ── M41: a obra nunca fica no escuro (O1–O5 aprovados em 24/11/2026) ───────────────────────────────────────────── */
+.at-pn__selo--trabalhando { background: var(--soft); color: var(--lime-txt, var(--lime)); border: 1px solid var(--lime); }
+.at-pn__selo--esperando, .at-pn__selo--pausada { background: rgba(242, 179, 61, 0.12); color: #F2B33D; border: 1px solid #F2B33D; }
+.at-pn__selo--precisa { background: rgba(255, 155, 74, 0.12); color: #FF9B4A; border: 1px solid #FF9B4A; }
+.at-pn__selo--defeito { background: rgba(255, 107, 94, 0.12); color: #FF8478; border: 1px solid #FF6B5E; }
+:root[data-theme='claro'] .at-pn__selo--esperando, :root[data-theme='claro'] .at-pn__selo--pausada { color: #8A5A00; }
+:root[data-theme='claro'] .at-pn__selo--precisa { color: #9A4A06; }
+:root[data-theme='claro'] .at-pn__selo--defeito { color: #A8281D; }
+.at-pn__faixa { --cor: var(--lime); display: flex; gap: 16px; align-items: flex-start; padding: 18px 20px; border-radius: 18px; background: var(--card); border: 1px solid var(--cor); }
+.at-pn__faixa--esperando, .at-pn__faixa--pausada { --cor: #F2B33D; }
+.at-pn__faixa--precisa { --cor: #FF9B4A; }
+.at-pn__faixa--defeito { --cor: #FF6B5E; }
+.at-pn__faixa-bola { flex: none; width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; color: var(--cor); background: color-mix(in srgb, var(--cor) 14%, transparent); }
+.at-pn__faixa-pulso { width: 12px; height: 12px; border-radius: 6px; background: var(--cor); animation: at-pn-pulso 1.2s ease-in-out infinite; }
+@keyframes at-pn-pulso { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+.at-pn__faixa-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.at-pn__faixa-txt > b { font-size: 19px; line-height: 1.3; }
+.at-pn__faixa-txt > span { font-size: 14px; line-height: 1.5; color: var(--mute); }
+.at-pn__faixa-rot { font: 600 11px var(--font-mono); letter-spacing: 0.12em; color: var(--cor) !important; }
+.at-pn__faixa-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.at-pn__faixa-sinal { flex: none; font: 500 12px var(--font-mono); color: var(--mute2, var(--mute)); }
+.at-pn__balao { position: absolute; left: 50%; top: 34%; transform: translateX(-50%); max-width: 320px; padding: 10px 14px; border-radius: 14px; background: rgba(16, 18, 20, 0.92); border: 1px solid #C6F135; color: #EDEFEA; font-size: 14px; line-height: 1.4; text-align: center; pointer-events: none; z-index: 2; }
+.at-pn__balao b { display: block; margin-bottom: 2px; color: #C6F135; }
+.at-pn__balao--esperando, .at-pn__balao--pausada { border-color: #F2B33D; } .at-pn__balao--esperando b, .at-pn__balao--pausada b { color: #F2B33D; }
+.at-pn__balao--precisa { border-color: #FF9B4A; } .at-pn__balao--precisa b { color: #FF9B4A; }
+.at-pn__balao--defeito { border-color: #FF6B5E; } .at-pn__balao--defeito b { color: #FF8478; }
+.at-pn__diario { gap: 8px; }
+.at-pn__diario-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.at-pn__diario-item { display: grid; grid-template-columns: 52px 12px minmax(0, 1fr); gap: 8px; padding: 6px 0; font-size: 14px; line-height: 1.4; }
+.at-pn__diario-lista--longa .at-pn__diario-item { grid-template-columns: 96px 12px minmax(0, 1fr); border-bottom: 1px solid var(--card-b); padding: 9px 0; }
+.at-pn__diario-hora { font: 500 12px var(--font-mono); color: var(--mute2, var(--mute)); padding-top: 2px; }
+.at-pn__diario-bola { width: 9px; height: 9px; margin-top: 5px; border-radius: 5px; background: var(--lime); }
+.at-pn__diario-item--info .at-pn__diario-bola { background: var(--mute); }
+.at-pn__diario-item--parada .at-pn__diario-bola, .at-pn__diario-item--retomada .at-pn__diario-bola { background: #F2B33D; }
+.at-pn__diario-item--pedido .at-pn__diario-bola { background: #FF9B4A; }
+.at-pn__diario-item--defeito .at-pn__diario-bola { background: #FF6B5E; }
+.at-pn__diario-detalhe { display: block; font-style: normal; font-size: 12px; color: var(--mute); }
+.at-pn__gaveta--diario { width: min(560px, 100vw); overflow: auto; }
+.at-pn__filtros { display: flex; flex-wrap: wrap; gap: 6px; }
+.at-pn__filtro { height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--card-b); background: transparent; color: var(--mute); font: 600 13px var(--font-text); cursor: pointer; }
+.at-pn__filtro--on { border-color: var(--lime); background: var(--soft); color: var(--lime-txt, var(--lime)); }
+@media (prefers-reduced-motion: reduce) { .at-pn__faixa-pulso { animation: none; } }

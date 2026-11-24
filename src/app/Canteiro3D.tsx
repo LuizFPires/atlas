@@ -10,7 +10,7 @@ import { enderecoCanteiroSeguro } from './ponte-painel'
  * O canteiro do kit abre em 3D (`modo=3d`); o botão 2D dele fica fora do alcance do cliente neste painel (pendência de /entregar:
  * um modo "só 3D" no canteiro).
  */
-export function Canteiro3D({ endereco, pct }: { endereco: string | null; pct: number }) {
+export function Canteiro3D({ endereco, pct, balao }: { endereco: string | null; pct: number; balao?: { quem: string; texto: string; nivel: string } | null }) {
   const seguro = enderecoCanteiroSeguro(endereco)
   const src = seguro ? `${seguro}${seguro.includes('?') ? '&' : '?'}modo=3d` : null
   return (
@@ -20,6 +20,8 @@ export function Canteiro3D({ endereco, pct }: { endereco: string | null; pct: nu
       ) : (
         <img className="at-pn__cena" src={canteiroImagem} alt="Canteiro em 3D: o prédio da obra subindo, com a equipe de agentes trabalhando ao redor" data-pct={pct} />
       )}
+      {/* M41: o balão do canteiro diz a mesma frase do momento (trabalhando, esperando, precisa de você, com defeito). */}
+      {balao && <div className={`at-pn__balao at-pn__balao--${balao.nivel}`} role="note" aria-label="O que está acontecendo no canteiro"><b>{balao.quem}</b>{balao.texto}</div>}
       <span className="at-pn__canteiro-rotulo">CANTEIRO 3D · ARRASTE PARA GIRAR</span>
       <span className="at-pn__canteiro-legenda">O prédio sobe a cada tarefa aprovada pelo inspetor de qualidade.</span>
     </div>

@@ -458,14 +458,14 @@ Notas: DECISÃO do Luiz (24/11/2026, "a navegabilidade aqui entre as telas ainda
 peso: 5
 spec: S15
 tela: prototipo/caminho-novo/ObraEstado.dc.html
-- [ ] Diário da obra: cada acontecimento vira uma linha com hora, em português simples (sem senha nem chave); o detalhe técnico fica guardado para a Ajuda
-- [ ] Selo com 4 estados no topo da obra (Trabalhando, Esperando, Precisa de você, Com defeito), no lugar de "Obra em andamento"
-- [ ] Faixa "o que está acontecendo": sempre uma frase e pelo menos uma ação; "último sinal há N s" medido pelo Atlas (processo vivo e última saída), não pelo mestre de obras
+- [x] Diário da obra: cada acontecimento vira uma linha com hora, em português simples (sem senha nem chave); o detalhe técnico fica guardado para a Ajuda
+- [x] Selo com 4 estados no topo da obra (Trabalhando, Esperando, Precisa de você, Com defeito), no lugar de "Obra em andamento"
+- [x] Faixa "o que está acontecendo": sempre uma frase e pelo menos uma ação; "último sinal há N s" medido pelo Atlas (processo vivo e última saída), não pelo mestre de obras
 - [ ] Esperando a cota: hora de volta e quanto falta, o plano de hoje, "Ver planos do Claude" (abre o site do Claude; o Atlas não escolhe plano), "Esperar" e "Avisar no celular quando voltar"
 - [ ] Com defeito: depois das tentativas do vigia, o diagnóstico das 10 conferências (✓/✗) e "Corrigir com a Ajuda do Atlas"; trava do próprio Atlas nunca vira "precisa de você"
-- [ ] Diário à direita da obra (últimas linhas) e "Ver o diário completo" com filtros (Tudo, Paradas, Pedidos a você, Entregas)
-- [ ] Balão no canteiro 3D com a mesma frase do momento; barra e "ao vivo" na cor do estado
-- [ ] Cronograma (aba da obra): previsto (guardado no início da construção) x realizado por etapa, pausas de cota, linha do AGORA e término esperado com dia e hora, refeito a cada etapa entregue
+- [x] Diário à direita da obra (últimas linhas) e "Ver o diário completo" com filtros (Tudo, Paradas, Pedidos a você, Entregas)
+- [x] Balão no canteiro 3D com a mesma frase do momento; barra e "ao vivo" na cor do estado
+- [x] Cronograma (aba da obra): previsto (guardado no início da construção) x realizado por etapa, pausas de cota, linha do AGORA e término esperado com dia e hora, refeito a cada etapa entregue
 Notas: DECISÃO do Luiz (24/11/2026, "não quero que o sistema pare ... sem nenhuma ação ... o usuário não tem informação"; "parou porque estourou a cota ... tem que ter um aviso ... às vezes o usuário quer subir o plano"; "o usuário tem que ter a oportunidade de tomar uma ação"; protótipo aprovado: "Boa! Aprovado"; cronograma: "Podíamos ter uma tela também do cronograma da obra, mostrando os prazos por milestone previsto e realizado e a expectativa de data e horário de término", aprovado: "Aprovado !"). Telas O1–O6 (componente ObraEstado e O6Cronograma) em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. Vem da AUDITORIA-SPEC/PLAN do Luiz, com duas correções: "sem avanço" mede atividade (tarefa só fica ✓ no fim da etapa) e o batimento é medido pelo Atlas (o Claude não emite sinal a cada 30 s). Mantido o ritmo do vigia (2, 5 e 15 min); aviso antecipado de cota fica para depois (o Claude não informa quanto falta). DIVERGÊNCIA: substitui o aviso único do vigia e o selo "Obra em andamento" da F09.
 
 ## Milestone 42 — O protótipo cresce sem travar (40 telas no começo, mais quando o cliente pedir)

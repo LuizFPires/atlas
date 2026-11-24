@@ -3,7 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Botao, Icone } from '../ui'
 import { Canteiro3D } from './Canteiro3D'
 import { MODO_RECOMENDADO, MODOS_OBRA, PARADAS_REAIS, TEXTO_MODO, type ModoObra, type PonteModoObra } from './ponte-construcao'
-import { situacaoDaObra, type EstadoObra, type PontePainel, type Situacao } from './ponte-painel'
+import { situacaoDaObra, type EstadoObra, type LinhaDiario, type PontePainel, type Situacao } from './ponte-painel'
+import { momentoDaObra, type AcaoObra, type MomentoObra } from './momento-obra'
 import { Pausa } from './Pausa'
 import { Ocorrencia } from './Ocorrencia'
 import type { PonteOcorrencias } from './ponte-ocorrencia'
@@ -39,7 +40,6 @@ interface Props {
 }
 
 /** "10:05" no horário de Brasília. */
-const horaCurta = (iso: string) => { const d = new Date(iso); return Number.isFinite(d.getTime()) ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '' }
 
 export const recadoDoErroPainel = (e: unknown) => {
   switch (e instanceof Error ? e.message : '') {
@@ -49,21 +49,7 @@ export const recadoDoErroPainel = (e: unknown) => {
 }
 
 /** Como a obra aparece no selo do topo. */
-export const SELO: Record<Situacao, string> = {
-  'andando': 'Obra em andamento',
-  'pausada': 'Pausada por você',
-  'espera-ok': 'Esperando o seu OK',
-  'cota': 'Pausada: a cota do plano acabou',
-  'precisa-de-voce': 'Precisa de você',
-  'billing': 'Pausada: falta resolver uma cobrança',
-  'concluida': 'Obra concluída',
-}
 
-const AVISO_PARADA: Partial<Record<Situacao, string>> = {
-  'cota': 'Isto não é erro. A cota do seu plano do Claude acabou, e a obra espera sozinha. Quando a cota renovar, ela volta sozinha. Você não precisa fazer nada.',
-  'precisa-de-voce': 'Esta é uma das paradas de verdade: só você pode resolver (como entrar numa conta ou autorizar algo). O Atlas explica o passo a passo.',
-  'billing': 'Uma cobrança ou um acesso de uma conta sua precisa de atenção. É na sua conta, com você. Resolvendo, a obra continua.',
-}
 
 /** F09: painel da obra. O prédio, o %, o prazo e o "agora na obra"; detalhes técnicos só em "ver detalhes". */
 export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onVerMax, onPedirAjuda, sondagemMs = 5000, travas, navegador, onLigarContas }: Props) {
@@ -75,6 +61,7 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
   const [dispensada, setDispensada] = useState<Situacao | null>(null)
+  const [diarioAberto, setDiarioAberto] = useState(false)
   const liberada = useRef<number | null>(null)
 
   const atualizar = useCallback(async () => {
@@ -133,6 +120,20 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
   const concluida = sit === 'concluida'
   const pct = estado?.pct ?? 0
   const pctTxt = textoAvanco(concluida ? 100 : pct)
+  const momento: MomentoObra | null = estado && sit ? momentoDaObra(estado, sit) : null
+  const fazer = (a: AcaoObra) => {
+    switch (a) {
+      case 'tentar': return agir(() => painel.continuar(obra.pasta))
+      case 'continuar': return agir(() => painel.continuar(obra.pasta))
+      case 'planos': return onVerMax?.()
+      case 'esperar': return setAviso('Combinado: a obra volta sozinha. O Atlas avisa quando voltar.')
+      case 'ajuda': return onPedirAjuda?.()
+      case 'contas': return onLigarContas?.()
+      case 'diario': return setDiarioAberto(true)
+      case 'ok': return agir(() => painel.aprovarEtapa(obra.pasta))
+      case 'teste': return agir(() => painel.abrirTeste(obra.pasta))
+    }
+  }
   const pendencia = sit === 'precisa-de-voce' || sit === 'billing' ? 'tem uma pendência sua' : sit === 'espera-ok' ? 'esperando o seu OK' : 'nenhuma pendência sua'
 
   return (
@@ -142,11 +143,10 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
           <span className="at-pn__rotulo">OBRA 1 DE 1</span>
           <h1>{obra.nome}</h1>
         </div>
-        {sit && <span className={`at-pn__selo at-pn__selo--${sit}`}>● {SELO[sit]}</span>}
+        {momento && <span className={`at-pn__selo at-pn__selo--${momento.nivel}`} role="status" aria-label={`Situação da obra: ${momento.selo}`}>● {momento.selo}{momento.nivel !== 'pronta' ? ` · ${pctTxt}%` : ''}</span>}
         <div className="at-pn__acoes">
           {onLigarContas && !concluida && <Botao variante="secundario" className="at-pn__btn" onClick={onLigarContas}>Contas ligadas</Botao>}
           {(sit === 'andando' || sit === 'espera-ok') && <Botao variante="secundario" className="at-pn__btn" onClick={() => agir(() => painel.pausar(obra.pasta))}>Pausar obra</Botao>}
-          {sit === 'pausada' && <Botao variante="secundario" className="at-pn__btn" onClick={() => agir(() => painel.continuar(obra.pasta))}>Continuar obra</Botao>}
           {concluida && <Botao variante="secundario" className="at-pn__btn" onClick={() => agir(() => painel.abrirTeste(obra.pasta))}>Ver como ficou</Botao>}
           {estado?.temTeste && !concluida && <Botao className="at-pn__btn" onClick={() => agir(() => painel.abrirTeste(obra.pasta))}>Ver versão de teste</Botao>}
         </div>
@@ -165,44 +165,7 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
         </div>
       )}
 
-      {sit === 'espera-ok' && estado?.etapaPronta && (
-        <div className="at-pn__ok" role="status">
-          <div className="at-pn__pronta-txt">
-            <b>Ficou pronta a etapa M{estado.etapaPronta.n} · {estado.etapaPronta.nome}.</b>
-            <span>Você escolheu aprovar cada etapa. Dê uma olhada na versão de teste e diga quando posso seguir para a próxima.</span>
-          </div>
-          <Botao variante="secundario" className="at-pn__btn" onClick={() => agir(() => painel.abrirTeste(obra.pasta))}>Ver versão de teste</Botao>
-          <Botao className="at-pn__btn" onClick={() => agir(() => painel.aprovarEtapa(obra.pasta))}>Pode seguir</Botao>
-        </div>
-      )}
-
-      {sit && AVISO_PARADA[sit] && <p className="at-pn__parada" role="status">{AVISO_PARADA[sit]}</p>}
-
-      {/* Vigia (24/11/2026): a obra nunca fica parada em silêncio. Tentando = o Atlas já religa sozinho; precisa-voce = alerta. */}
-      {!concluida && sit !== 'pausada' && estado?.vigia && (estado.vigia.situacao === 'tentando'
-        ? (
-          <div className="at-pn__vigia" role="status" aria-label="A obra parou">
-            <span className="at-pn__vigia-giro" aria-hidden="true" />
-            <div className="at-pn__pronta-txt">
-              <b>A obra parou sozinha. O Atlas já está cuidando disso.</b>
-              <span>{estado.vigia.motivo} Vou religar sozinho{estado.vigia.proximaEm ? ` às ${horaCurta(estado.vigia.proximaEm)}` : ''} (tentativa {Math.min(estado.vigia.tentativa + 1, estado.vigia.de)} de {estado.vigia.de}).</span>
-            </div>
-            <Botao className="at-pn__btn" onClick={() => agir(() => painel.continuar(obra.pasta))}>Tentar agora</Botao>
-          </div>
-        )
-        : (
-          <div className="at-pn__vigia at-pn__vigia--alerta" role="alert" aria-label="A obra parou">
-            <span className="at-pn__vigia-bola" aria-hidden="true"><Icone nome="alerta" tamanho={22} /></span>
-            <div className="at-pn__pronta-txt">
-              <b>{estado.vigia.tentativa > 0 ? 'A obra parou. O Atlas não conseguiu continuar sozinho.' : 'A obra está parada e precisa de você.'}</b>
-              <span>{estado.vigia.motivo}{estado.vigia.tentativa > 0 ? ` Ele tentou ${estado.vigia.tentativa} ${estado.vigia.tentativa === 1 ? 'vez' : 'vezes'}. A Ajuda do Atlas já sabe o que aconteceu e resolve com você.` : ''}</span>
-              {estado.vigia.fala && <span className="at-pn__vigia-fala">“{estado.vigia.fala}”</span>}
-            </div>
-            {estado.vigia.conta && onLigarContas && <Botao className="at-pn__btn" onClick={onLigarContas}>Ligar o {estado.vigia.conta}</Botao>}
-            {onPedirAjuda && <Botao variante="secundario" className="at-pn__btn" onClick={onPedirAjuda}>Falar com o Atlas</Botao>}
-            <Botao className="at-pn__btn" onClick={() => agir(() => painel.continuar(obra.pasta))}>Tentar agora</Botao>
-          </div>
-        ))}
+      {momento && momento.nivel !== 'pronta' && <FaixaDoMomento m={momento} fazer={fazer} pode={{ planos: !!onVerMax, ajuda: !!onPedirAjuda, contas: !!onLigarContas }} />}
 
       <section className="at-pn__modo" aria-label="Modo da obra">
         <span className="at-pn__rotulo">MODO DA OBRA</span>
@@ -278,10 +241,94 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
             </div>
           </section>
         </div>
-        <Canteiro3D endereco={painel.enderecoCanteiro(obra.pasta)} pct={pct} />
+        <div className="at-pn__col">
+          <Canteiro3D endereco={painel.enderecoCanteiro(obra.pasta)} pct={pct} balao={momento && momento.nivel !== 'pronta' ? { quem: BALAO_QUEM[momento.nivel], texto: momento.nivel === 'trabalhando' ? momento.titulo : momento.titulo.split('. ')[0] + '.', nivel: momento.nivel } : null} />
+          <DiarioCurto linhas={estado?.diario ?? []} onVerTudo={() => setDiarioAberto(true)} />
+        </div>
       </div>
+      {diarioAberto && <DiarioCompleto pasta={obra.pasta} painel={painel} recentes={estado?.diario ?? []} onFechar={() => setDiarioAberto(false)} />}
 
       <div className="at-pn__rodape"><span className="at-pn__ponto" />Salvo a cada passo · pode desligar o computador quando quiser · {pendencia}</div>
+    </div>
+  )
+}
+
+const BALAO_QUEM: Record<string, string> = { trabalhando: 'Mestre de obras', esperando: 'Equipe em pausa', precisa: 'Mestre de obras', defeito: 'Mestre de obras', pausada: 'Equipe em pausa' }
+const NOME_ACAO: Record<AcaoObra, string> = { tentar: 'Tentar agora', continuar: 'Continuar obra', planos: 'Ver planos do Claude', esperar: 'Esperar, volta sozinha', ajuda: 'Falar com o Atlas', contas: 'Ligar a conta', diario: 'Ver o diário completo', ok: 'Pode seguir', teste: 'Ver versão de teste' }
+
+/** M41: a faixa do momento. Sempre uma frase do que está acontecendo e pelo menos uma ação (a obra nunca fica no escuro). */
+function FaixaDoMomento({ m, fazer, pode }: { m: MomentoObra; fazer: (a: AcaoObra) => void; pode: { planos: boolean; ajuda: boolean; contas: boolean } }) {
+  const alerta = m.nivel === 'precisa' || m.nivel === 'defeito'
+  const acoes = m.acoes.filter((a) => (a === 'planos' ? pode.planos : a === 'ajuda' ? pode.ajuda : a === 'contas' ? pode.contas : true))
+  const nome = (a: AcaoObra) => (a === 'contas' && m.conta ? `Ligar o ${m.conta}` : a === 'ajuda' && m.nivel === 'defeito' ? 'Corrigir com a Ajuda do Atlas' : NOME_ACAO[a])
+  return (
+    <section className={`at-pn__faixa at-pn__faixa--${m.nivel}`} role={alerta ? 'alert' : 'status'} aria-label="O que está acontecendo agora">
+      <span className="at-pn__faixa-bola" aria-hidden="true">{m.nivel === 'trabalhando' ? <span className="at-pn__faixa-pulso" /> : <Icone nome={m.nivel === 'esperando' || m.nivel === 'pausada' ? 'relogio' : 'alerta'} tamanho={22} />}</span>
+      <div className="at-pn__faixa-txt">
+        <span className="at-pn__faixa-rot">{m.rotulo}</span>
+        <b>{m.titulo}</b>
+        <span>{m.texto}</span>
+        {m.fala && <span className="at-pn__vigia-fala">“{m.fala}”</span>}
+        {acoes.length > 0 && (
+          <div className="at-pn__faixa-acoes">
+            {acoes.map((a, i) => <Botao key={a} variante={i === 0 && a !== 'diario' && a !== 'esperar' ? undefined : 'secundario'} className="at-pn__btn" onClick={() => fazer(a)}>{nome(a)}</Botao>)}
+          </div>
+        )}
+      </div>
+      {m.sinal && <span className="at-pn__faixa-sinal">{m.sinal}</span>}
+    </section>
+  )
+}
+
+const horaDe = (iso: string) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+const diaEHora = (iso: string) => { const d = new Date(iso); const hoje = new Date().toDateString() === d.toDateString(); return hoje ? `hoje ${horaDe(iso)}` : `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${horaDe(iso)}` }
+
+/** M41: as últimas linhas do diário, sempre à vista na obra. */
+function DiarioCurto({ linhas, onVerTudo }: { linhas: LinhaDiario[]; onVerTudo: () => void }) {
+  return (
+    <section className="at-pn__card at-pn__diario" aria-label="Diário da obra">
+      <span className="at-pn__rotulo">DIÁRIO DA OBRA</span>
+      {linhas.length === 0
+        ? <span className="at-pn__texto">Assim que a obra começar, cada passo aparece aqui, com a hora.</span>
+        : <ol className="at-pn__diario-lista">{linhas.slice(-6).map((l, i) => <li key={`${l.em}-${i}`} className={`at-pn__diario-item at-pn__diario-item--${l.tipo}`}><span className="at-pn__diario-hora">{horaDe(l.em)}</span><span className="at-pn__diario-bola" aria-hidden="true" /><span>{l.texto}</span></li>)}</ol>}
+      <button type="button" className="at-pn__link" onClick={onVerTudo}>Ver o diário completo</button>
+    </section>
+  )
+}
+
+const FILTROS: { id: string; nome: string; tipos: LinhaDiario['tipo'][] | null }[] = [
+  { id: 'tudo', nome: 'Tudo', tipos: null },
+  { id: 'paradas', nome: 'Paradas', tipos: ['parada', 'defeito', 'retomada'] },
+  { id: 'pedidos', nome: 'Pedidos a você', tipos: ['pedido'] },
+  { id: 'entregas', nome: 'Entregas', tipos: ['entrega'] },
+]
+
+/** M41: gaveta com o diário completo e filtros. */
+function DiarioCompleto({ pasta, painel, recentes, onFechar }: { pasta: string; painel: PontePainel; recentes: LinhaDiario[]; onFechar: () => void }) {
+  const [linhas, setLinhas] = useState<LinhaDiario[]>(recentes)
+  const [filtro, setFiltro] = useState('tudo')
+  useEffect(() => {
+    let vivo = true
+    if (painel.diario) painel.diario(pasta).then((l) => { if (vivo) setLinhas(l) }, () => {})
+    return () => { vivo = false }
+  }, [painel, pasta])
+  const f = FILTROS.find((x) => x.id === filtro)!
+  const vistas = linhas.filter((l) => !f.tipos || f.tipos.includes(l.tipo)).slice().reverse()
+  return (
+    <div className="at-pn__gaveta-fundo" onClick={onFechar}>
+      <aside className="at-pn__gaveta at-pn__gaveta--diario" role="dialog" aria-modal="true" aria-label="Diário completo da obra" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => { if (e.key === 'Escape') onFechar() }}>
+        <div className="at-pn__gaveta-cab">
+          <span className="at-pn__rotulo">DIÁRIO DA OBRA</span>
+          <button type="button" className="at-pn__gaveta-x" aria-label="Fechar o diário" autoFocus onClick={onFechar}><Icone nome="x" tamanho={18} /></button>
+        </div>
+        <span className="at-pn__texto">Tudo o que aconteceu na obra, em português simples. Senhas e chaves nunca aparecem aqui.</span>
+        <div className="at-pn__filtros" role="group" aria-label="Filtrar o diário">
+          {FILTROS.map((x) => <button key={x.id} type="button" aria-pressed={filtro === x.id} className={`at-pn__filtro${filtro === x.id ? ' at-pn__filtro--on' : ''}`} onClick={() => setFiltro(x.id)}>{x.nome}</button>)}
+        </div>
+        {vistas.length === 0
+          ? <span className="at-pn__texto">Nada por aqui ainda.</span>
+          : <ol className="at-pn__diario-lista at-pn__diario-lista--longa">{vistas.map((l, i) => <li key={`${l.em}-${i}`} className={`at-pn__diario-item at-pn__diario-item--${l.tipo}`}><span className="at-pn__diario-hora">{diaEHora(l.em)}</span><span className="at-pn__diario-bola" aria-hidden="true" /><span>{l.texto}{l.detalhe && <em className="at-pn__diario-detalhe">{l.detalhe}</em>}</span></li>)}</ol>}
+      </aside>
     </div>
   )
 }
