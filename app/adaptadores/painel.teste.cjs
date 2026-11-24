@@ -210,3 +210,20 @@ test('painel: diário (últimas e completo), último sinal e hora de volta da co
   fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ versao: 1, estado: 'parou', motivo: 'cota', voltaEm: '2026-11-24T18:40:00.000Z' }))
   assert.equal((await painel.ler('obra')).voltaEm, '2026-11-24T18:40:00.000Z')
 })
+
+// M41: aba Cronograma. Previsto guardado no início, real por etapa, término esperado e pausas de cota (do diário).
+test('painel: cronograma da obra com previsto, real, esperado e as pausas de cota do diário', async () => {
+  const { criarDiario } = require('./diario.cjs')
+  const diario = criarDiario()
+  const { raiz, c, painel } = montar({ diario })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  const dir = path.join(raiz, 'obra')
+  diario.registrar(dir, { tipo: 'parada', texto: 'Parou: a cota do seu plano do Claude acabou. Volta sozinha às 15:40.' })
+  diario.registrar(dir, { tipo: 'info', texto: 'O Atlas começou a trabalhar na obra' })
+  const v = await painel.cronograma('obra')
+  assert.equal(v.etapas.length, ETAPAS.length)
+  assert.ok(Date.parse(v.previstoFim) > Date.parse(v.inicio))
+  assert.equal(v.etapas[0].status, 'andamento')
+  assert.equal(v.pausas.length, 1)
+  assert.ok(v.pausas[0].fim)
+})

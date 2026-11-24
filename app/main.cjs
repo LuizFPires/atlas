@@ -78,7 +78,8 @@ const construcao = criarConstrucao({ diario, envContas: () => contasCli.envDaLin
 const vigia = criarVigia({ diario, raiz: obras.raiz(), construcao, garantirKit: (pasta) => kit.garantir(String(pasta)), listar: () => obras.listar(),
   // Desistiu de religar sozinho: avisa NA HORA, mesmo com o Atlas minimizado (o painel também mostra o alerta com o motivo).
   aoPrecisar: (_pasta, motivo) => { try { if (Notification.isSupported()) new Notification({ title: 'A obra parou e precisa de você', body: `${motivo} Abra o Atlas para resolver.` }).show() } catch { /* aviso extra */ } } })
-const painel = criarPainel({ vigia, diario, raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
+const { criarCronograma } = require('./adaptadores/cronograma.cjs')
+const painel = criarPainel({ vigia, diario, cronograma: criarCronograma(), raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
 const cota = criarCota({ raiz: obras.raiz(), construcao, painel, claudeEstado: () => claude.estado(), dadosApp: app.getPath('userData'), garantirKit: (pasta) => kit.garantir(String(pasta)) })
 // Ocorrências (F11): livro do kit da obra (docs\ocorrencias.json). A chave colada vai SÓ ao cofre (DPAPI). Canais de aviso: pendência (ver ocorrencias.cjs).
@@ -191,6 +192,7 @@ handle('atlas:painel:modo', (pasta, modo) => painel.aplicarModo(String(pasta), S
 ipcMain.on('atlas:painel:endereco', (e, pasta) => { e.returnValue = confiavel(e) ? painel.enderecoCanteiro(String(pasta)) : null })
 handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
 handle('atlas:painel:diario', (pasta) => painel.diario(String(pasta)))
+handle('atlas:painel:cronograma', (pasta) => painel.cronograma(String(pasta)))
 
 // Retomar (F12): obra em andamento ao abrir o app e "Continuar obra".
 handle('atlas:retomar:andamento', () => retomar.obraEmAndamento())
