@@ -272,6 +272,27 @@ const MIN_TRABALHO_MS = 3 * 60_000
 // Pedido que o cliente não tem como atender (permissão, terminal, comando): a trava é do Atlas. Não vira "precisa de você";
 // fica sem-avanço para o vigia tentar de novo e, sem solução, mostrar "com defeito".
 const RE_TRAVA_DO_ATLAS = /\/permissions|update-config|permiss[aãoõ]|num terminal|no terminal|rode no (?:prompt|powershell|cmd)|aprove o comando|libere o comando/i
+// Guilherme (24/11/2026): "Pede para escolher como seguir, mas não aparece as opções para escolher". A linha (kit) termina a
+// pergunta com "OPÇÃO N: rótulo | o que acontece" (a recomendada leva "(recomendada)"). Sem isso, mas com uma pergunta de
+// decisão (ex.: revisores reprovaram duas vezes), o Atlas oferece as opções padrão. A escolha volta com o /construir.
+const RE_PERGUNTA = /escolh[ae] como seguir|como (?:quer|prefere) seguir|preciso que voc[eê] (?:escolha|decida)|paro e pergunto|qual (?:caminho|op[cç][aã]o)/i
+const OPCOES_PADRAO = [
+  { rotulo: 'Corrigir e revisar de novo', explica: 'A equipe corrige o que os revisores apontaram e a revisão roda mais uma vez.', recomendada: true },
+  { rotulo: 'Seguir para a próxima etapa', explica: 'O que falta fica anotado no livro de ocorrências e a obra segue; volta nisso depois.', recomendada: false },
+]
+function opcoesDaFala(fala) {
+  const t = String(fala || '')
+  const opcoes = []
+  for (const m of t.matchAll(/^\s*OP[CÇ][AÃ]O\s*\d+\s*:\s*(.+)$/gim)) {
+    const recomendada = /\(recomendad[ao]\)/i.test(m[1])
+    const [rot, exp] = m[1].replace(/\s*\(recomendad[ao]\)\s*/i, ' ').split('|').map((x) => x.replace(/[*_`]+/g, '').trim())
+    if (rot) opcoes.push({ rotulo: rot.slice(0, 80), explica: (exp || '').slice(0, 200), recomendada })
+    if (opcoes.length >= 4) break
+  }
+  if (opcoes.length) return opcoes
+  return RE_PERGUNTA.test(t) ? OPCOES_PADRAO.map((o) => ({ ...o })) : []
+}
+
 const RE_PEDE_PESSOA = /USU[AÁ]RIO\s*:|precis[ao] (?:que voc[eê]|de voc[eê])|\b(?:ligue|ligar|conecte|conectar) (?:o|a) (?:GitHub|Vercel|Supabase)|reinstale o Atlas|aguardando (?:voc[eê]|sua)|s[oó] (?:voc[eê]|o usu[aá]rio) pode/i
 
 function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [], diario = null, aoAviso = () => {} }) {
@@ -314,7 +335,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
   }
 
   /** Liga a linha de produção na pasta da obra (a skill /construir retoma do ponto em que o PLAN parou). */
-  function religar(pasta, { nova = false } = {}) {
+  function religar(pasta, { nova = false, decisao = null } = {}) {
     const cwd = pastaDaObra(raiz, pasta)
     if (linhas.has(pasta)) return // já rodando: idempotente
     if (linhas.size > 0) throw new Error('ja-rodando')
@@ -337,7 +358,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     try { contas = envContas() || {} } catch { /* sem contas ligadas: a linha roda e registra a pendência */ }
     const env = envMinimo({ CLAUDE_PROJECT_DIR: cwd, ATLAS_APP: '1', ...envGitIsolado(dirGit), ...contas })
     const r = iniciarFluxo(args, {
-      cwd, env, entrada: '/construir',
+      cwd, env, entrada: decisao ? `/construir Você parou e perguntou como seguir. O cliente escolheu: "${String(decisao).replace(/[\r\n"]+/g, ' ').slice(0, 200)}". Siga com essa escolha.` : '/construir',
       onLinha: (l) => {
         // A última fala da linha (o resultado do turno): quando ela para pedindo algo à pessoa, é isto que o painel mostra.
         try { const j = JSON.parse(l); if (j && j.type === 'result' && typeof j.result === 'string') reg.fala = comoDado(j.result, 4000).join('\n').slice(0, 1200) } catch { /* não é JSON */ }
@@ -375,7 +396,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
         if (pctAgora < 100) motivo = 'sem-avanco'
       }
       // Parou rápido pedindo algo que só a pessoa faz (ex.: "USUÁRIO: Ligue o GitHub…"): não é falha para tentar de novo, é pedido.
-      if ((motivo === 'sem-avanco' || motivo === 'concluiu') && reg.fala && RE_PEDE_PESSOA.test(reg.fala) && !RE_TRAVA_DO_ATLAS.test(reg.fala)) {
+      if ((motivo === 'sem-avanco' || motivo === 'concluiu') && reg.fala && (RE_PEDE_PESSOA.test(reg.fala) || RE_PERGUNTA.test(reg.fala) || /^\s*OP[CÇ][AÃ]O\s*1\s*:/im.test(reg.fala)) && !RE_TRAVA_DO_ATLAS.test(reg.fala)) {
         let pctAgora = 0
         try { const t = lerTexto(path.join(cwd, 'PLAN.md')); if (t !== null) pctAgora = lerPlanoDoTexto(t).pct } catch { pctAgora = 0 }
         if (pctAgora < 100) motivo = 'precisa-voce'
@@ -383,7 +404,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
       const ultimas = reg.recentes.slice(-6).map((x) => String(x).slice(0, 200))
       anotarFim(pasta, motivo, { voltaEm, fala: reg.fala })
       if (motivo === 'concluiu') { try { const t = lerTexto(path.join(cwd, 'PLAN.md')); if (t !== null && lerPlanoDoTexto(t).pct >= 100) aoAviso('pronta', pasta) } catch { /* aviso é extra */ } }
-      gravarLinha(pasta, { estado: 'parou', motivo, codigo, desde: reg.desde, fimEm: agora().toISOString(), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}), ...(motivo === 'sem-avanco' || motivo === 'erro' || motivo === 'precisa-voce' ? { ultimas, ...(reg.fala ? { fala: reg.fala } : {}) } : {}) })
+      gravarLinha(pasta, { estado: 'parou', motivo, codigo, desde: reg.desde, fimEm: agora().toISOString(), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}), ...(motivo === 'sem-avanco' || motivo === 'erro' || motivo === 'precisa-voce' ? { ultimas, ...(reg.fala ? { fala: reg.fala } : {}) } : {}), ...(motivo === 'precisa-voce' && opcoesDaFala(reg.fala).length ? { opcoes: opcoesDaFala(reg.fala) } : {}) })
       // Registro do APP (fora da obra) que permite a retomada automática: só em fim por cota de uma linha que o app iniciou, com a obra
       // ainda por terminar e sem pausa do cliente (se uma linha mais nova já roda, ela cuida do próprio registro).
       try {
@@ -462,4 +483,4 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
   }
 }
 
-module.exports = { criarConstrucao, envGitIsolado, caminhoGitBash, ARGS_SEM_CONFIG_DE_PROJETO, FERRAMENTAS_NEGADAS, RE_COTA, etapasDoTexto, resumirLinha, previsaoPorEtapas, FERRAMENTAS_LINHA }
+module.exports = { opcoesDaFala, criarConstrucao, envGitIsolado, caminhoGitBash, ARGS_SEM_CONFIG_DE_PROJETO, FERRAMENTAS_NEGADAS, RE_COTA, etapasDoTexto, resumirLinha, previsaoPorEtapas, FERRAMENTAS_LINHA }

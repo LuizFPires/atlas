@@ -279,3 +279,20 @@ test('com defeito: a faixa mostra o que o Atlas conferiu (✓ e ✗ com a dica)'
   expect(ruim).toHaveAttribute('data-ok', 'nao')
   expect(ruim).toHaveTextContent('O teste da tela de relatórios falhou.')
 })
+
+// Guilherme (24/11/2026): "Pede para escolher como seguir, mas não aparece as opções para escolher".
+test('escolher como seguir: as opções aparecem como botões claros, a recomendada em destaque, e a escolha vai para a linha', async () => {
+  const { fx, user } = montar('automatico', { sondagemMs: 30 })
+  fx.simular.vigia({ situacao: 'precisa-voce', tentativa: 0, de: 3, motivo: 'A obra precisa que você escolha como seguir.', fala: 'O Milestone 2 está parado e preciso que você escolha como seguir.', opcoes: [
+    { rotulo: 'Corrigir e revisar de novo', explica: 'A equipe corrige o que os revisores apontaram.', recomendada: true },
+    { rotulo: 'Seguir para a próxima etapa', explica: 'O que falta fica anotado e a obra segue.', recomendada: false },
+  ] })
+  const grupo = await screen.findByRole('group', { name: 'Escolha como seguir' })
+  const botoes = within(grupo).getAllByRole('button')
+  expect(botoes).toHaveLength(2)
+  expect(botoes[0]).toHaveTextContent('Corrigir e revisar de novo')
+  expect(botoes[0]).toHaveTextContent('Recomendado')
+  expect(botoes[0]).toHaveTextContent('A equipe corrige o que os revisores apontaram.')
+  await user.click(botoes[1])
+  expect(fx.chamadas).toContain('decidir:Seguir para a próxima etapa')
+})

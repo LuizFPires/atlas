@@ -102,7 +102,9 @@ export interface EtapaCronograma {
 export interface Cronograma { inicio: string; previstoFim: string; esperadoFim: string; diferencaMs: number; pausaMs: number; entregues: number; total: number; etapas: EtapaCronograma[]; pausas: { inicio: string; fim: string | null }[] }
 
 /** fala: o que a linha disse ao parar (quando pede algo à pessoa); conta: a conta que ela pede para ligar. */
-export interface VigiaObra { situacao: 'tentando' | 'precisa-voce'; tentativa: number; de: number; motivo: string; proximaEm?: string; fala?: string; conta?: 'GitHub' | 'Vercel' | 'Supabase'; checagens?: Checagem[] }
+export interface VigiaObra { situacao: 'tentando' | 'precisa-voce'; tentativa: number; de: number; motivo: string; proximaEm?: string; fala?: string; conta?: 'GitHub' | 'Vercel' | 'Supabase'; checagens?: Checagem[]; opcoes?: OpcaoDecisao[] }
+/** Guilherme (24/11/2026): a linha parou perguntando como seguir; cada opção que o cliente pode escolher. */
+export interface OpcaoDecisao { rotulo: string; explica: string; recomendada: boolean }
 /** M41 (O4): uma das conferências que o Atlas fez ao desistir de religar sozinho. */
 export interface Checagem { nome: string; ok: boolean; dica?: string }
 
@@ -147,6 +149,8 @@ export interface PontePainel {
   diario?(pasta: string): Promise<LinhaDiario[]>
   /** M41: o cronograma da obra. */
   cronograma?(pasta: string): Promise<Cronograma>
+  /** A linha parou perguntando como seguir: o cliente escolhe uma das opções (pelo rótulo). */
+  decidir?(pasta: string, rotulo: string): Promise<void>
 }
 
 /** Só aceita o servidor local do canteiro: http://127.0.0.1:<porta>/... (nada de endereço vindo de dado). */
@@ -308,6 +312,7 @@ export function criarPainelFixture(opcoes: { plan?: string; agora?: () => Date; 
     },
     async pausar() { chamadas.push('pausar'); pausada = true },
     async continuar() { chamadas.push('continuar'); pausada = false; vigia = null; ninguem = false },
+    async decidir(_p, rotulo) { chamadas.push(`decidir:${rotulo}`); vigia = null; ninguem = false },
     async aprovarEtapa() { chamadas.push('aprovarEtapa'); etapaPronta = null },
     async aplicarModo(_pasta, modo) {
       if (!ehModoObra(modo)) throw new Error('modo-invalido')

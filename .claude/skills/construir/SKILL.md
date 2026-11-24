@@ -155,6 +155,10 @@ Quando **todos** os milestones estiverem concluídos, diga: "Obra concluída: 10
 Se `ate` tiver um milestone, ao concluir a etapa 4 dele grave `"ativo": false`, diga que o automático foi desligado e pare.
 
 ## Quando parar e perguntar, mesmo no automático
+No Atlas, o cliente responde tocando num botão. Por isso, sempre que parar para perguntar, termine a mensagem com as opções, uma por linha, neste formato exato (2 a 4 opções; a recomendada primeiro, com "(recomendada)"):
+`OPÇÃO 1: <o que fazer, em até 6 palavras> | <o que acontece, em uma frase simples> (recomendada)`
+`OPÇÃO 2: <o que fazer> | <o que acontece>`
+A escolha volta para você junto com o `/construir` ("O cliente escolheu: …"): siga com ela.
 - a pergunta não tem opção recomendada (ex.: não há PLAN e é preciso saber o próximo bloco);
 - verificação ou CI falham duas vezes seguidas depois de correções;
 - o `qa` reprovou duas vezes o mesmo milestone;

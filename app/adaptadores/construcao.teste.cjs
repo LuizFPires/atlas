@@ -508,3 +508,33 @@ test('avisos: religou depois da cota => "voltou"; terminou com tudo pronto => "p
   terminar({ codigo: 0, parado: false }); await new Promise((r) => setTimeout(r, 20))
   assert.deepEqual(avisos, ['voltou:obra', 'pronta:obra'])
 })
+
+// Guilherme (24/11/2026): "Pede para escolher como seguir, mas não aparece as opções para escolher". Quando a linha para e
+// pergunta, o Atlas guarda as opções que ela deu (OPÇÃO N: rótulo | o que acontece) ou, se não deu, as opções padrão; e a escolha
+// do cliente volta para a linha junto com o /construir.
+test('a linha que para perguntando guarda as opções (as dela ou as padrão) e a escolha volta para a linha', async () => {
+  const { opcoesDaFala } = require('./construcao.cjs')
+  assert.deepEqual(opcoesDaFala('Parei no M2.\nOPÇÃO 1: Corrigir e revisar de novo | O implementador corrige o login (recomendada)\nOPÇÃO 2: Seguir para o M3 | Fica anotado para depois'), [
+    { rotulo: 'Corrigir e revisar de novo', explica: 'O implementador corrige o login', recomendada: true },
+    { rotulo: 'Seguir para o M3', explica: 'Fica anotado para depois', recomendada: false },
+  ])
+  const padrao = opcoesDaFala('O Milestone 2 está parado e preciso que você escolha como seguir. Os três revisores reprovaram duas vezes seguidas.')
+  assert.equal(padrao.length, 2)
+  assert.ok(padrao[0].recomendada)
+  assert.match(padrao[0].rotulo, /Corrigir/)
+  assert.deepEqual(opcoesDaFala('Tudo certo, terminei o turno.'), [])
+
+  let t = Date.UTC(2026, 10, 24, 12, 0)
+  const { raiz, c, chamadas, terminar } = montar({ agora: () => new Date(t) })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  chamadas[0].o.onLinha(JSON.stringify({ type: 'result', is_error: false, result: 'O Milestone 2 está parado e preciso que você escolha como seguir. Os revisores reprovaram duas vezes.' }))
+  t += 40_000
+  terminar({ codigo: 0, parado: false })
+  await new Promise((r) => setTimeout(r, 20))
+  const l = JSON.parse(fs.readFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), 'utf8'))
+  assert.equal(l.motivo, 'precisa-voce')
+  assert.equal(l.opcoes.length, 2)
+  c.linha.religar('obra', { decisao: l.opcoes[0].rotulo })
+  assert.match(chamadas[1].o.entrada, /^\/construir /)
+  assert.match(chamadas[1].o.entrada, /Corrigir/)
+})

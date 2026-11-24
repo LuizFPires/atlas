@@ -325,6 +325,20 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
       if (!linha.rodando(pasta)) linha.religar(pasta)
     },
 
+    /** Guilherme (24/11/2026): a linha parou perguntando como seguir; o cliente escolheu uma das opções que ela deu. */
+    async decidir(pasta, rotulo) {
+      const cwd = pastaDaObra(raiz, pasta)
+      const v = vigia ? vigia.estado(pasta) : null
+      const opcao = v && Array.isArray(v.opcoes) ? v.opcoes.find((o) => o.rotulo === rotulo) : null
+      if (!opcao) throw new Error('opcao-invalida')
+      gravarEstadoLocal(pasta, { ...lerEstadoLocal(pasta), pausada: false })
+      const modo = await modos.ler(pasta)
+      if (modo) gravarRecomendadoGlobal(modo, { home, agora: agora() })
+      if (vigia && vigia.zerar) vigia.zerar(pasta)
+      if (diario) diario.registrar(cwd, { tipo: 'info', texto: `Você escolheu: ${opcao.rotulo}` })
+      if (!linha.rodando(pasta)) linha.religar(pasta, { decisao: opcao.rotulo })
+    },
+
     async aprovarEtapa(pasta) {
       const cwd = pastaDaObra(raiz, pasta)
       const p = planoDa(cwd)
