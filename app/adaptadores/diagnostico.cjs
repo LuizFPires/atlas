@@ -37,7 +37,19 @@ function criarDiagnostico({ raiz, internet, claudeEstado, contas, kitDiretorio, 
     ]
   }
 
-  return { diagnosticar }
+  /** Economia de tokens: o vigia só religa a linha quando o básico está de pé (sem isso, o Claude roda e falha, gastando cota). */
+  async function podeTrabalhar(pasta) {
+    let dir = null
+    try { dir = pastaDaObra(raiz, pasta) } catch { dir = null }
+    const [net, claude] = await Promise.all([comTempo(() => internet()), comTempo(() => claudeEstado())])
+    if (net === false) return { ok: false, motivo: 'Sem internet agora. A obra volta sozinha quando a internet voltar.' }
+    if (claude && claude.conectado === false) return { ok: false, motivo: 'O Claude deste computador saiu da conta. Abra o Atlas e entre de novo com a sua conta do Claude.' }
+    try { if (!dir) throw new Error('sem-pasta'); fs.accessSync(dir, fs.constants.W_OK) } catch { return { ok: false, motivo: 'O Atlas não consegue escrever na pasta da obra. Confira se ela não foi movida ou apagada.' } }
+    try { const livre = Number(espacoLivre(dir)); if (Number.isFinite(livre) && livre < ESPACO_MINIMO) return { ok: false, motivo: 'Falta espaço no computador. Libere pelo menos 1 GB; a obra volta sozinha.' } } catch { /* sem medida: segue */ }
+    return { ok: true }
+  }
+
+  return { diagnosticar, podeTrabalhar }
 }
 
 module.exports = { criarDiagnostico }

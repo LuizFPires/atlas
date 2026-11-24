@@ -14,6 +14,8 @@ Milestone, base, branch e PR. Leia:
 
 Olhe **o que o milestone mudou**. Pense em 100 vezes mais dados e usuários do que no teste.
 
+
+**Reconferência** (a entrada começa com `Reconferir`): confira **só** os achados listados, no diff do commit de correção (`git show --stat <hash>` e os arquivos citados). Não refaça a revisão inteira nem procure achados novos fora desses arquivos. Responda no mesmo formato.
 ## Checklist (confira cada achado antes de reportar; saídas de comando sempre filtradas)
 1. **Banco**: consulta dentro de laço (N+1); `select *` buscando colunas que a tela não usa; filtro ou ordenação por coluna sem índice (confira as migrations e proponha o índice); lista sem paginação ou sem limite; contagem total em tabela grande a cada tela.
 2. **Servidor e rede**: chamadas em sequência que poderiam ir em paralelo; a mesma chamada repetida na mesma tela; resposta grande demais; falta de cache onde o dado muda pouco; função de servidor fazendo trabalho pesado que poderia ser feito uma vez.

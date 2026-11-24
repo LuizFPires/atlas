@@ -31,7 +31,7 @@ const CHAVE_COFRE = 'atlas/dispositivo' // igual a CHAVE_COFRE de src/app/ativac
 const OBRA_ID = /^[\w.-]{1,80}$/
 const RAIZES = ['agents', 'skills', 'hooks', 'commands']
 /** Os scripts do kit que a /construir e os agentes rodam (etapa, livro de ocorrências, avanço). */
-const FERRAMENTAS_DO_KIT = ['etapa', 'ocorrencias', 'progresso']
+const FERRAMENTAS_DO_KIT = ['etapa', 'ocorrencias', 'progresso', 'revisores', 'esperar-ci']
 
 /** As instruções do kit foram escritas para um projeto com .claude; na obra do Atlas não há .claude (a linha nem liga com ele):
  *  os scripts e as skills ficam no plugin, e o estado da construção vai para .atlas/roteiro.json. A pasta do usuário (~/.claude) fica. */

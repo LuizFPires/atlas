@@ -60,3 +60,15 @@ test('uma conferência que trava ou quebra não derruba as outras', async () => 
   assert.equal(r.find((c) => c.nome === 'Internet').ok, false)
   assert.equal(r.find((c) => c.nome === 'Pasta da obra').ok, true)
 })
+
+test('economia: antes de religar, o vigia só confere o básico (internet, Claude, pasta, disco); sem isso, religar só gastaria cota', async () => {
+  assert.deepEqual(await montar().d.podeTrabalhar('obra'), { ok: true })
+  const semNet = await montar({ internet: false }).d.podeTrabalhar('obra')
+  assert.equal(semNet.ok, false)
+  assert.match(semNet.motivo, /internet/i)
+  const semClaude = await montar({ claude: false }).d.podeTrabalhar('obra')
+  assert.match(semClaude.motivo, /saiu da conta/)
+  assert.equal((await montar({ espaco: 1e6 }).d.podeTrabalhar('obra')).ok, false)
+  // conta desligada não impede (a linha registra a pendência e segue com o resto)
+  assert.equal((await montar({ github: false }).d.podeTrabalhar('obra')).ok, true)
+})

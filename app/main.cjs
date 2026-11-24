@@ -63,6 +63,9 @@ const obras = criarObras({ shell, pararLinha: (pasta) => construcao.linha.parar(
 const arquivos = criarArquivos({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
 // Ao terminar o login do Claude Code (o cliente clicou em Autorizar no navegador), traz o Atlas de volta para a frente.
 const claude = criarClaude({ shell, aoConectar: () => { const j = janelaPrincipal; if (j && !j.isDestroyed()) { if (j.isMinimized()) j.restore(); j.show(); j.focus() } } })
+// Plano do Claude (pro|max) visto por último: a construção da obra só usa o Opus no Max (economia de tokens, 24/11/2026).
+let planoClaude = null
+const estadoClaude = async () => { const e = await claude.estado(); if (e && (e.plano === 'pro' || e.plano === 'max')) planoClaude = e.plano; return e }
 const modos = criarModo({ raiz: obras.raiz() })
 // Kit por obra (PonteKit): plugin numa pasta temporária do app (fora da obra e do repositório), descartado ao fechar. Sem API configurada, vale ATLAS_KIT_PLUGIN.
 const kit = criarKit({ dadosApp: app.getPath('userData'), cofre, hashComputador: async () => hash() })
@@ -78,19 +81,19 @@ const { criarAvisoCelular, textoDoAviso } = require('./adaptadores/aviso-celular
 const avisoCelular = criarAvisoCelular({ cofre, hashComputador: async () => hash() })
 const nomeDaObra = (pasta) => String(pasta || '').replace(/[-_]+/g, ' ').replace(/^./, (c) => c.toLocaleUpperCase('pt-BR'))
 const avisarNoCelular = (tipo, pasta, motivo) => { const t = textoDoAviso(tipo, nomeDaObra(pasta), motivo); void avisoCelular.avisar(t.titulo, t.texto) }
-const construcao = criarConstrucao({ diario, aoAviso: (tipo, pasta) => avisarNoCelular(tipo, pasta), envContas: () => contasCli.envDaLinha(process.env.PATH || process.env.Path || ''), modelo: () => modelo.args(), raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, comandosDoKit: (pasta) => kit.comandos(pasta), exigirPlugin: true, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
+const construcao = criarConstrucao({ diario, aoAviso: (tipo, pasta) => avisarNoCelular(tipo, pasta), envContas: () => contasCli.envDaLinha(process.env.PATH || process.env.Path || ''), modelo: () => modelo.argsDaLinha(planoClaude), raiz: obras.raiz(), modos, claudeEstado: estadoClaude, pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, comandosDoKit: (pasta) => kit.comandos(pasta), exigirPlugin: true, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
 // Vigia (24/11/2026): linha que parou sem avançar é religada sozinha (2, 5 e 15 min, com o kit garantido) e, se não der, o painel avisa.
 const { criarDiagnostico } = require('./adaptadores/diagnostico.cjs')
 // M41 (O4): as 10 conferências quando o vigia desiste (internet, Claude, cota, contas, pasta, instruções, disco, trabalho da etapa).
-const diagnostico = criarDiagnostico({ raiz: obras.raiz(), internet: async () => net.isOnline(), claudeEstado: () => claude.estado(), contas: contasCli, kitDiretorio: (pasta) => kit.diretorio(pasta),
+const diagnostico = criarDiagnostico({ raiz: obras.raiz(), internet: async () => net.isOnline(), claudeEstado: estadoClaude, contas: contasCli, kitDiretorio: (pasta) => kit.diretorio(pasta),
   espacoLivre: (dir) => { const s = require('node:fs').statfsSync(dir); return s.bavail * s.bsize } })
-const vigia = criarVigia({ diario, diagnosticar: (pasta) => diagnostico.diagnosticar(pasta), raiz: obras.raiz(), construcao, garantirKit: (pasta) => kit.garantir(String(pasta)), listar: () => obras.listar(),
+const vigia = criarVigia({ diario, diagnosticar: (pasta) => diagnostico.diagnosticar(pasta), preCondicoes: (pasta) => diagnostico.podeTrabalhar(pasta), raiz: obras.raiz(), construcao, garantirKit: (pasta) => kit.garantir(String(pasta)), listar: () => obras.listar(),
   // Desistiu de religar sozinho: avisa NA HORA, mesmo com o Atlas minimizado (o painel também mostra o alerta com o motivo).
   aoPrecisar: (pasta, motivo) => { avisarNoCelular('parou', pasta, motivo); try { if (Notification.isSupported()) new Notification({ title: 'A obra parou', body: `${motivo} Abra o Atlas: ele mostra o que aconteceu e o que fazer.` }).show() } catch { /* aviso extra */ } } })
 const { criarCronograma } = require('./adaptadores/cronograma.cjs')
 const painel = criarPainel({ vigia, diario, cronograma: criarCronograma(), raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
-const cota = criarCota({ raiz: obras.raiz(), construcao, painel, claudeEstado: () => claude.estado(), dadosApp: app.getPath('userData'), garantirKit: (pasta) => kit.garantir(String(pasta)) })
+const cota = criarCota({ raiz: obras.raiz(), construcao, painel, claudeEstado: estadoClaude, dadosApp: app.getPath('userData'), garantirKit: (pasta) => kit.garantir(String(pasta)) })
 // Ocorrências (F11): livro do kit da obra (docs\ocorrencias.json). A chave colada vai SÓ ao cofre (DPAPI). Canais de aviso: pendência (ver ocorrencias.cjs).
 const ocorrencias = criarOcorrencias({ raiz: obras.raiz(), cofre })
 // Celular (F04b): endereço do app do Claude + preferências guardadas; a CONEXÃO (Remote Control) é pendência e não é fingida (celular.cjs).
@@ -99,19 +102,21 @@ const celular = criarCelular({ dados: require('node:path').join(app.getPath('use
 const importar = criarImportar({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
 const retomar = criarRetomar({ raiz: obras.raiz(), painel, cota, construcao })
 // Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
-const disparo = criarDisparo({ modelo: () => modelo.args(), raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() })
+const disparo = criarDisparo({ modelo: () => modelo.args(), raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: estadoClaude })
+// Economia (24/11/2026): estilo, nomes e Ajuda são pedidos curtos; usam o Opus só no plano Max (no Pro, Sonnet). O protótipo segue o escolhido.
+const disparoLeve = criarDisparo({ modelo: () => modelo.argsDaLinha(planoClaude), raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: estadoClaude })
 // Roteiro da ideia (caminho novo, 23/11/2026): conferência rápida a cada pausa, sempre com o modelo mais rápido (não o da obra).
 // Começar por uma planilha (X1–X3): raio-X aqui no computador; "o que entendi" pelo Claude lendo planilha/raio-x.md da obra.
 const planilhaObra = criarPlanilhaObra({ raiz: obras.raiz(), disparo })
 const ideia = require('./adaptadores/ideia.cjs').criarIdeia({ disparo: criarDisparo({ modelo: () => ['--model', 'claude-haiku-5-5'], raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() }) })
-const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
+const estilo = criarEstilo({ raiz: obras.raiz(), disparo: disparoLeve })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
 // Protótipo que parou no meio (sem internet, computador desligado; pedido do Luiz, 23/11/2026): ao abrir o Atlas e a cada 2 min,
 // continua sozinho de onde parou (as telas prontas ficam salvas). Ainda sem internet: tenta de novo na próxima volta.
 const retomarPrototipos = () => { void prototipo.retomarPendentes().catch(() => {}) }
 setTimeout(retomarPrototipos, 20_000).unref?.()
 setInterval(retomarPrototipos, 2 * 60_000).unref?.()
-const batismo = criarBatismo({ raiz: obras.raiz(), disparo })
+const batismo = criarBatismo({ raiz: obras.raiz(), disparo: disparoLeve })
 const nomes = criarNomes()
 // Pós-obra: roda pela MESMA linha da obra (construcao.linha) e só com licença em dia, conferida AQUI no processo principal (token do cofre).
 // O endereço da API vem de ATLAS_API_URL (https); sem ele a licença nega (fail-closed) e o pós-obra não executa.
@@ -120,7 +125,7 @@ const servidor = criarServidor()
 const posobra = criarPosObra({ raiz: obras.raiz(), disparo, construcao, licenca })
 // Ajuda do Atlas (F17): o Claude só lê; o print é SÓ da janela do Atlas; páginas só da lista fechada. Casos não resolvidos vão à API (endpoint ainda pendente).
 const ajuda = criarAjuda({
-  raiz: obras.raiz(), dadosApp: app.getPath('userData'), disparo, shell, dialog, janela: () => janelaPrincipal,
+  raiz: obras.raiz(), dadosApp: app.getPath('userData'), disparo: disparoLeve, shell, dialog, janela: () => janelaPrincipal,
   capturar: async () => { if (!janelaPrincipal) throw new Error('sem-janela'); return (await janelaPrincipal.webContents.capturePage()).toPNG() },
 })
 const casos = criarCasos({ cofre, hashComputador: async () => hash() })
@@ -181,7 +186,7 @@ handle('atlas:obras:situacao', (pasta) => obras.situacao(String(pasta)))
 handle('atlas:obras:excluir', (pasta) => obras.excluir(String(pasta)))
 handle('atlas:claude:login', () => claude.abrirLogin())
 handle('atlas:claude:site', (alvo) => claude.abrirSite(String(alvo)))
-handle('atlas:claude:estado', () => claude.estado())
+handle('atlas:claude:estado', () => estadoClaude())
 handle('atlas:claude:renovar', () => claude.renovarConexao())
 
 // Modo da obra (automático | passo a passo): <obra>\.atlas\modo.json.

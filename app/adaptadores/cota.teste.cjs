@@ -80,7 +80,7 @@ test('ler: parada por cota sem renovar -> esgotada, não renovada, com onde paro
   assert.equal(e.esgotada, true)
   assert.equal(e.renovada, false)
   assert.equal(e.plano, 'pro')
-  assert.equal(e.voltaEm, new Date(1795010000 * 1000).toISOString()) // o horário do teste (mais novo) vence o da linha
+  assert.equal(e.voltaEm, '2026-11-18T17:00:00.000Z') // antes da hora conhecida, nem testa (economia): vale o horário da linha
   assert.equal(e.parouEm.etapa, 'M2')
   assert.ok(!/[<>]/.test(e.parouEm.tarefa))
 })
@@ -197,4 +197,15 @@ test('cota como palavra inteira: "cotação" na ocorrência não vira cota', asy
   fs.mkdirSync(path.join(raiz, 'obra', 'docs'))
   fs.writeFileSync(path.join(raiz, 'obra', 'docs', 'ocorrencias.json'), JSON.stringify({ ocorrencias: [{ id: 1, status: 'aberta', servico: 'Loja', motivo: 'pedido de cotação' }] }))
   assert.equal((await cota.ler('obra')).esgotada, false)
+})
+
+test('economia: com a hora da volta conhecida, não testa antes dela (o teste também gasta); depois, testa', async () => {
+  const volta = '2026-11-18T15:00:00Z'
+  const { raiz, cota, estado, dadosApp } = montar({ resposta: LIMITE, linha: { estado: 'parou', motivo: 'cota', voltaEm: volta } })
+  criarLojaDeParadas({ raiz, dadosApp }).marcar('obra', { voltaEm: volta, em: estado.agora.toISOString() })
+  await cota.vigiar()
+  estado.agora = new Date('2026-11-18T13:30:00Z'); await cota.vigiar()
+  assert.equal(estado.testes, 0)
+  estado.agora = new Date('2026-11-18T14:59:00Z'); estado.resposta = OK; await cota.vigiar()
+  assert.equal(estado.testes, 1)
 })

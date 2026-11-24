@@ -87,9 +87,12 @@ describe('revisores de segurança e desempenho', () => {
     expect(e3).toMatch(/em paralelo/)
   })
 
-  test('a medição e o merge exigem os três aprovados', () => {
+  test('a medição e o merge exigem todos os revisores chamados aprovados (Luiz, 24/11/2026: seguranca e desempenho só quando relevantes)', () => {
+    const e3 = construir().split('### Etapa 3')[1].split('### Etapa 4')[0]
+    expect(e3).toMatch(/hooks\/revisores\.cjs/)
+    expect(e3).toMatch(/`qa` vale sempre/)
     const e4 = construir().split('### Etapa 4')[1].split('## Bloqueios externos')[0]
-    expect(e4).toMatch(/`qa`, `seguranca` e `desempenho`/)
+    expect(e4).toMatch(/aprovadas pelos revisores chamados/)
   })
 
   test('o canteiro 3D conhece os dois novos papéis', () => {

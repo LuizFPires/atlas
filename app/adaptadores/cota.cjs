@@ -153,7 +153,9 @@ function criarCota({ raiz, construcao, painel, claudeEstado, dadosApp = path.joi
     const t = testes.get(pasta)
     const agoraMs = agora().getTime()
     const antesDoHorario = voltaEm && new Date(voltaEm).getTime() - 2 * MIN > agoraMs
-    const intervalo = antesDoHorario ? 15 * MIN : 3 * MIN
+    // Economia (24/11/2026): cada teste é uma chamada ao Claude. Com a hora da volta conhecida, não testa antes dela.
+    if (!forcar && antesDoHorario) return t && t.estado !== 'renovada' ? t : { quando: agoraMs, estado: 'esgotada', voltaEm }
+    const intervalo = 3 * MIN
     if (!forcar && t && agoraMs - t.quando < intervalo) return t
     const r = await sondar()
     const novo = { quando: agoraMs, estado: r.estado, voltaEm: r.voltaEm }
