@@ -16,6 +16,11 @@ export function assinarVoz(f: () => void) { ouvintes.add(f); return () => { ouvi
 export function definirEstadoVoz(e: EstadoVoz) { estado = e; ouvintes.forEach((f) => f()) }
 
 export const RECADO_SEM_MICROFONE = 'Não consegui usar o microfone. Confira se ele está ligado e se o Windows deixa o Atlas usar o microfone (Configurações > Privacidade > Microfone).'
+export const RECADO_SEM_SOM = 'O microfone não mandou som. Confira no Windows qual microfone está ligado (Configurações > Sistema > Som > Entrada) e fale um pouco mais perto.'
+export const RECADO_NAO_ENTENDI = 'Não consegui entender o que você falou. Fale um pouco mais perto do microfone e tente de novo, ou digite no campo.'
+/** Pico abaixo disto = silêncio (o microfone não mandou som de verdade). */
+export const PICO_SILENCIO = 0.003
+export const soSilencio = (a: Float32Array) => { for (let i = 0; i < a.length; i++) if (Math.abs(a[i]) >= PICO_SILENCIO) return false; return true }
 export const RECADO_NAO_ESCREVI = 'Não consegui escrever o que você falou. Tente de novo, ou digite no campo.'
 
 /** Quem transcreve: o Whisper no computador (padrão) ou um falso nos testes. */
@@ -66,6 +71,8 @@ export const iniciarGravacao = () => gravador()
 async function gravarDoMicrofone(): Promise<Gravacao> {
   const fluxo = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } })
   const ctx = new AudioContext()
+  // Sem gesto recente (ex.: a Ajuda abrindo já ouvindo), o Chromium pode criar o áudio "suspenso": nada chega e a fala some.
+  if (ctx.state === 'suspended') await ctx.resume().catch(() => {})
   const fonte = ctx.createMediaStreamSource(fluxo)
   // ScriptProcessor: simples e presente em todo Chromium; 4096 amostras ≈ 85 ms a 48 kHz.
   const proc = ctx.createScriptProcessor(4096, 1, 1)

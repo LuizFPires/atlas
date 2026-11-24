@@ -1,9 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { useVoz } from './voz'
-import { estadoVoz, RECADO_NAO_ESCREVI, RECADO_SEM_MICROFONE, usarMotorDeVoz, type Gravacao, type Transcritor } from './voz-motor'
+import { estadoVoz, RECADO_NAO_ENTENDI, RECADO_NAO_ESCREVI, RECADO_SEM_MICROFONE, RECADO_SEM_SOM, usarMotorDeVoz, type Gravacao, type Transcritor } from './voz-motor'
 
 const AUDIO = new Float32Array([0.1, 0.2])
-function falsos({ texto = 'quero uma agenda', falhaMic = false, falhaTexto = false } = {}) {
+function falsos({ texto = 'quero uma agenda', falhaMic = false, falhaTexto = false, audio = AUDIO } = {}) {
   const chamadas: string[] = []
   const t: Transcritor = {
     preparar: async (p) => { chamadas.push('preparar'); p(50); p(100) },
@@ -12,7 +12,7 @@ function falsos({ texto = 'quero uma agenda', falhaMic = false, falhaTexto = fal
   const g = async (): Promise<Gravacao> => {
     if (falhaMic) throw new Error('NotAllowedError')
     chamadas.push('gravar')
-    return { parar: async () => { chamadas.push('parar'); return AUDIO }, cancelar: () => chamadas.push('cancelar') }
+    return { parar: async () => { chamadas.push('parar'); return audio }, cancelar: () => chamadas.push('cancelar') }
   }
   usarMotorDeVoz(t, g, { forcar: true })
   return chamadas
@@ -53,14 +53,14 @@ test('se não conseguir transcrever, avisa e não inventa texto', async () => {
   expect(falado).toEqual([])
 })
 
-test('fala vazia (silêncio) não escreve nada no campo', async () => {
+test('o Whisper não escreveu nada: não põe nada no campo e avisa com calma (antes sumia calado)', async () => {
   falsos({ texto: '   ' })
   const falado: string[] = []
   const { result } = renderHook(() => useVoz((t) => falado.push(t)))
   await act(async () => { result.current.alternar() })
   await waitFor(() => expect(result.current.gravando).toBe(true))
   await act(async () => { result.current.alternar() })
-  await waitFor(() => expect(estadoVoz().fase).toBe('livre'))
+  await waitFor(() => expect(estadoVoz()).toMatchObject({ fase: 'erro', recado: RECADO_NAO_ENTENDI }))
   expect(falado).toEqual([])
 })
 
@@ -119,3 +119,18 @@ test('rascunho ao vivo: o trecho que ainda não foi confirmado aparece em ~1 s, 
     expect(estadoVoz().rascunho).toBeUndefined()
   } finally { vi.useRealTimers() }
 })
+
+
+// Luiz, 24/11/2026: "não está funcionando a função de ouvir e transcrever": o aviso sumia sem escrever nada e sem dizer por quê.
+test('o microfone mandou só silêncio: diz isso (não some calado) e não chama o Whisper', async () => {
+  const chamadas = falsos({ audio: new Float32Array(16000) })
+  const falado: string[] = []
+  const { result } = renderHook(() => useVoz((t) => falado.push(t)))
+  await act(async () => { result.current.alternar() })
+  await waitFor(() => expect(result.current.gravando).toBe(true))
+  await act(async () => { result.current.alternar() })
+  await waitFor(() => expect(estadoVoz()).toMatchObject({ fase: 'erro', recado: RECADO_SEM_SOM }))
+  expect(falado).toEqual([])
+  expect(chamadas.some((c) => c.startsWith('transcrever'))).toBe(false)
+})
+

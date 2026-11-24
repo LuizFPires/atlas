@@ -13,6 +13,8 @@ interface Props {
   /** Primeiro nome do cliente, para o "Oi, Zé". */
   nome?: string
   onFechar: () => void
+  /** Muda a cada toque no "Falar com o Atlas" do menu com a Ajuda já aberta: liga/desliga o microfone daqui (não recria o painel). */
+  toqueVoz?: number
 }
 
 type Mensagem =
@@ -36,7 +38,7 @@ function QuadroPrint({ print }: { print: PrintAjuda }) {
  * F17: a Ajuda do Atlas (prototipo/F17Ajuda), painel lateral de 520 px. Todo o suporte é o próprio Atlas.
  * A conversa vai pela porta `PonteAjuda` (o Claude por baixo); o que o cliente falou, escreveu ou mostrou é DADO.
  */
-export function Ajuda({ ajuda, casos, contexto, nome, onFechar }: Props) {
+export function Ajuda({ toqueVoz = 0, ajuda, casos, contexto, nome, onFechar }: Props) {
   const [prints, setPrints] = useState<PrintAjuda[]>(contexto.print ? [contexto.print] : [])
   const [msgs, setMsgs] = useState<Mensagem[]>([])
   const [texto, setTexto] = useState('')
@@ -57,6 +59,12 @@ export function Ajuda({ ajuda, casos, contexto, nome, onFechar }: Props) {
     ouviu.current = true
     alternar()
   }, [contexto.ouvir, suportado, alternar])
+  const toqueVisto = useRef(toqueVoz)
+  useEffect(() => {
+    if (toqueVoz === toqueVisto.current) return
+    toqueVisto.current = toqueVoz
+    if (suportado) alternar()
+  }, [toqueVoz, suportado, alternar])
 
   useEffect(() => { fim.current?.scrollIntoView?.({ block: 'end' }) }, [msgs, ocupado])
 

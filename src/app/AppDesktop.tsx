@@ -109,7 +109,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const [ativo, setAtivo] = useState<IdTela>('obras')
   const [instalando, setInstalando] = useState(false)
   // A Ajuda do Atlas (F17) é um painel lateral por cima de qualquer tela; `n` renova a conversa a cada abertura.
-  const [painelAjuda, setPainelAjuda] = useState<{ contexto: ContextoAjuda; n: number } | null>(null)
+  const [painelAjuda, setPainelAjuda] = useState<{ contexto: ContextoAjuda; n: number; toque?: number } | null>(null)
   const [computador, setComputador] = useState('')
   const [dono, setDono] = useState('')
   const [paradaF12, setParadaF12] = useState<ObraParada | null>(null)
@@ -136,7 +136,11 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteAjuda = useMemo<PonteAjuda>(() => ajuda ?? (modoFixture() ? criarAjudaFixture() : (ponte.ajuda ?? ajudaIndisponivel)), [ajuda, ponte])
   // Casos que o Atlas não resolveu vão ao painel do administrador (ocorrencias_admin, M7); sem adaptador real, não finge que anotou.
   const ponteCasos = useMemo<PonteCasosAdmin>(() => casos ?? (modoFixture() ? criarCasosFixture() : (ponte.casos ?? casosIndisponivel)), [casos, ponte])
-  const abrirAjuda = (contexto: ContextoAjuda) => setPainelAjuda((a) => ({ contexto: { obra: obraAtual?.nome, pasta: obraAtual?.pasta, ...contexto }, n: (a?.n ?? 0) + 1 }))
+  // "Falar com o Atlas" do menu com a Ajuda já aberta: liga/desliga o microfone dela, sem recriar o painel (recriar cancelava a
+  // gravação e recomeçava: a fala nunca era escrita; Luiz, 24/11/2026).
+  const abrirAjuda = (contexto: ContextoAjuda) => setPainelAjuda((a) => (a && contexto.origem === 'menu' && contexto.ouvir
+    ? { ...a, toque: (a.toque ?? 0) + 1 }
+    : { contexto: { obra: obraAtual?.nome, pasta: obraAtual?.pasta, ...contexto }, n: (a?.n ?? 0) + 1 }))
   const pedirAjudaPasso = (p: PedidoAjudaPasso) => abrirAjuda(contextoDoPasso(p))
 
   const pontePlanilha = useMemo<PontePlanilha | null>(() => (modoFixture() ? criarPlanilhaFixture() : (ponte.planilha ?? null)), [ponte])
@@ -321,7 +325,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     if (o.etapa === 'obra') { setFluxo('lista'); setAtivo('obra'); return }
     setFluxo(o.etapa)
   }
-  const painelDeAjuda = painelAjuda ? <Ajuda key={painelAjuda.n} ajuda={ponteAjuda} casos={ponteCasos} contexto={painelAjuda.contexto} nome={dono.split(' ')[0] || undefined} onFechar={() => setPainelAjuda(null)} /> : null
+  const painelDeAjuda = painelAjuda ? <Ajuda key={painelAjuda.n} toqueVoz={painelAjuda.toque ?? 0} ajuda={ponteAjuda} casos={ponteCasos} contexto={painelAjuda.contexto} nome={dono.split(' ')[0] || undefined} onFechar={() => setPainelAjuda(null)} /> : null
   // Pagou: o cartão já virou "Licença ativa" e a tela de compra some sozinha.
   const compra = emailCompra && !licencaNoApp.pagou ? <ComprarAtlas aberto email={emailCompra} onFechar={() => setEmailCompra(null)} iniciar={iniciarCompraPeloApp} abrirPagamento={abrirPagamento} onPagamentoAberto={licencaNoApp.esperarPagamento} /> : null
   const com = (n: ReactNode) => <ContextoConectarClaude.Provider value={conectarClaude}><ContextoPlano.Provider value={planoNoMenu}><ContextoModelo.Provider value={modeloNoMenu}><ContextoLicenca.Provider value={contextoLicenca}>{n}{painelDeAjuda}{compra}<StatusVoz /></ContextoLicenca.Provider></ContextoModelo.Provider></ContextoPlano.Provider></ContextoConectarClaude.Provider>
