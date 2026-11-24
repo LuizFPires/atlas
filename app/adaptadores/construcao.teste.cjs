@@ -291,3 +291,16 @@ test('fim com código 0 depois de trabalhar de verdade (mais de 3 min) continua 
   await new Promise((r) => setTimeout(r, 20))
   assert.equal(JSON.parse(fs.readFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), 'utf8')).motivo, 'concluiu')
 })
+
+test('a linha que para pedindo algo à pessoa (ex.: ligar o GitHub) vira "precisa-voce" e guarda o que ela disse', async () => {
+  let t = Date.UTC(2026, 10, 24, 9, 0)
+  const { raiz, c, chamadas, terminar } = montar({ agora: () => new Date(t) })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  chamadas[0].o.onLinha(JSON.stringify({ type: 'result', is_error: false, result: 'Não consegui seguir.\nUSUÁRIO: Ligue o GitHub na tela As contas do Atlas (botão Ligar).' }))
+  t += 40_000
+  terminar({ codigo: 0, parado: false })
+  await new Promise((r) => setTimeout(r, 20))
+  const l = JSON.parse(fs.readFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), 'utf8'))
+  assert.equal(l.motivo, 'precisa-voce')
+  assert.match(l.fala, /Ligue o GitHub na tela As contas do Atlas/)
+})

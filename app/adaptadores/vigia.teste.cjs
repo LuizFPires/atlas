@@ -98,3 +98,20 @@ test('quando desiste, avisa o computador UMA vez (notificação do Windows), com
   assert.equal(avisos[0][0], 'obra')
   assert.match(avisos[0][1], /saiu da conta/)
 })
+
+test('linha esperando a pessoa: pede NA HORA (sem gastar 3 tentativas), com a fala da linha e a conta certa', async () => {
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-vigia-'))
+  fs.mkdirSync(path.join(raiz, 'obra', '.atlas'), { recursive: true })
+  fs.writeFileSync(path.join(raiz, 'obra', 'PLAN.md'), '## Milestone 1 — Base\npeso: 1\n- [ ] a\n')
+  const t = Date.UTC(2026, 10, 24, 9, 0)
+  const avisos = []; const religadas = []
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ estado: 'parou', motivo: 'precisa-voce', fala: 'USUÁRIO: Ligue o GitHub na tela As contas do Atlas (botão Ligar).', fimEm: new Date(t).toISOString() }))
+  const vigia = criarVigia({ raiz, construcao: { linha: { rodando: () => false, religar: (p) => religadas.push(p) } }, garantirKit: async () => {}, listar: async () => ['obra'], agora: () => new Date(t), aoPrecisar: (p, m) => avisos.push(m) })
+  await vigia.rodada()
+  const e = vigia.estado('obra')
+  assert.equal(e.situacao, 'precisa-voce')
+  assert.equal(e.conta, 'GitHub')
+  assert.match(e.fala, /Ligue o GitHub/)
+  assert.equal(religadas.length, 0)
+  assert.equal(avisos.length, 1)
+})
