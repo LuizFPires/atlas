@@ -109,7 +109,7 @@ test.each(['automatico', 'passo-a-passo'] as const)('no painel, no modo %s a oco
   const modos = criarModoObraFixture({ agenda: modo })
   const user = userEvent.setup()
   render(<TemaProvider><Painel obra={obra} painel={fx} modos={modos} ocorrencias={oc} sondagemMs={20} /></TemaProvider>)
-  expect(await screen.findByText(/^54,\d%$/)).toBeInTheDocument()
+  expect(await screen.findByText(/^54,\d\d%$/)).toBeInTheDocument()
 
   oc.simular.abrir(OCORRENCIA_EXEMPLO)
   expect(await screen.findByRole('heading', { name: 'Conecte o WhatsApp da barbearia' })).toBeInTheDocument()
@@ -126,10 +126,10 @@ test('"fazer depois" volta ao painel com o selo, e a obra segue', async () => {
   const oc = criarOcorrenciasFixture((precisa) => fx.simular.pararPor(precisa ? 'voce' : null))
   const user = userEvent.setup()
   render(<TemaProvider><Painel obra={obra} painel={fx} modos={criarModoObraFixture({ agenda: 'automatico' })} ocorrencias={oc} sondagemMs={0} /></TemaProvider>)
-  await screen.findByText(/^54,\d%$/)
+  await screen.findByText(/^54,\d\d%$/)
   oc.simular.abrir(OCORRENCIA_EXEMPLO)
   // sem sondagem o painel só relê ao agir: pausar -> relê -> mostra a ocorrência
   await user.click(screen.getByRole('button', { name: 'Pausar obra' }))
   await user.click(await screen.findByRole('button', { name: /Fazer depois/ }))
-  expect(await screen.findByText(/^54,\d%$/)).toBeInTheDocument()
+  expect(await screen.findByText(/^54,\d\d%$/)).toBeInTheDocument()
 })
