@@ -41,7 +41,7 @@ test('logo e cores sobem pelo port para estilo/identidade e viram o design-syste
   expect(arquivos.guardados[0].endsWith(['estilo', 'identidade', 'logo-barbearia.png'].join(BS))).toBe(true)
   expect(est.escritos[0].texto).toContain('estilo/identidade/logo-barbearia.png')
   expect(est.escritos[0].texto).toContain('azul #1D3557')
-  await clicar('Desenhar as telas →')
+  await clicar('Seguir para o nome →')
   expect(onConcluir).toHaveBeenCalled()
 })
 

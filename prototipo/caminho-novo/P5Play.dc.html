@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Usar o sistema (tela cheia)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} @keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:radial-gradient(circle at 50% 40%,#1E2125,#0B0C0D 70%);color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;position:relative;overflow:hidden">
+ <div style="position:absolute;left:24px;top:22px;display:flex;align-items:center;gap:12px;padding:8px 10px 8px 8px;border-radius:16px;background:rgba(20,22,25,.86);border:1px solid #2C3036;backdrop-filter:blur(8px)">
+  <a href="P4Quadro.dc.html" style="width:40px;height:40px;border-radius:12px;background:#1E2125;color:#EDEFEA;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:18px" aria-label="Sair da tela cheia">✕</a>
+  <span style="width:34px;height:34px;border-radius:17px;background:#141619;border:1px solid #2C3036;color:#C6F135;display:flex;align-items:center;justify-content:center;font-weight:800">A</span>
+  <div style="display:flex;flex-direction:column"><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">COLORE · USANDO O SISTEMA</span><b style="font-size:15px">Tela {{n}} de 5 · {{nome}}</b></div>
+ </div>
+ <div style="position:absolute;right:24px;top:22px;display:flex;gap:6px;padding:6px;border-radius:14px;background:rgba(20,22,25,.86);border:1px solid #2C3036">
+  <sc-for list="{{pontos}}" as="p" hint-placeholder-count="5"><button onClick="{{p.ir}}" title="{{p.nome}}" style="min-width:36px;height:36px;border-radius:10px;border:none;background:{{p.bg}};color:{{p.cor}};font:700 14px 'Geist Mono',monospace;cursor:pointer">{{p.n}}</button></sc-for>
+ </div>
+ <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);width:390px;height:844px;border-radius:44px;padding:0;box-shadow:0 0 0 12px #000,0 40px 120px rgba(0,0,0,.7);overflow:hidden;animation:entra .25s ease">
+  <dc-import name="AppColore" tela="{{tela}}" hint-size="390px,844px"></dc-import>
+  <div style="position:absolute;left:0;right:0;bottom:0;display:flex"><button onClick="{{ir_inicio}}" aria-label="Início" style="flex:1;height:72px;background:transparent;border:none;cursor:pointer"></button><button onClick="{{ir_pedidos}}" aria-label="Pedidos" style="flex:1;height:72px;background:transparent;border:none;cursor:pointer"></button><button onClick="{{ir_novo}}" aria-label="Orçar" style="flex:1;height:72px;background:transparent;border:none;cursor:pointer"></button><button onClick="{{ir_clientes}}" aria-label="Clientes" style="flex:1;height:72px;background:transparent;border:none;cursor:pointer"></button><button onClick="{{ir_estoque}}" aria-label="Estoque" style="flex:1;height:72px;background:transparent;border:none;cursor:pointer"></button></div>
+  <button onClick="{{ir_novo}}" aria-label="Novo orçamento" style="display:{{dispNovo}};position:absolute;left:18px;right:18px;top:{{topoNovo}}px;height:{{altNovo}}px;background:transparent;border:2px dashed {{realce}};border-radius:14px;cursor:pointer"></button>
+ </div>
+ <button onClick="{{antes}}" aria-label="Tela anterior" style="position:absolute;left:calc(50% - 300px);top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:26px;border:1px solid #2C3036;background:rgba(20,22,25,.86);color:#EDEFEA;font-size:22px;cursor:pointer">‹</button>
+ <button onClick="{{depois}}" aria-label="Próxima tela" style="position:absolute;left:calc(50% + 248px);top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:26px;border:1px solid #2C3036;background:rgba(20,22,25,.86);color:#EDEFEA;font-size:22px;cursor:pointer">›</button>
+ <div style="position:absolute;left:24px;bottom:24px;width:280px;display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:16px;background:rgba(20,22,25,.86);border:1px solid #2C3036;font-size:13px;line-height:1.5;color:#B4BBB2">
+  <b style="color:#EDEFEA;font-size:14px">Use como se fosse de verdade</b>
+  Toque nos botões e no menu de baixo do celular. As setas e os números passam de tela em tela.
+  <button onClick="{{alternarRealce}}" style="align-self:flex-start;height:34px;padding:0 12px;border-radius:10px;border:1px solid #C6F135;background:transparent;color:#C6F135;font:600 13px 'Geist',sans-serif;cursor:pointer">{{txtRealce}}</button>
+ </div>
+ <div style="position:absolute;right:24px;bottom:24px;width:420px;display:flex;align-items:center;gap:10px;padding:10px;border-radius:18px;background:rgba(20,22,25,.92);border:1px solid #2C3036">
+  <span style="width:48px;height:48px;border-radius:24px;background:#C6F135;color:#141619;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+  <span style="font:600 12px 'Geist Mono',monospace;padding:5px 9px;border-radius:999px;background:rgba(198,241,53,.1);color:#C6F135;flex:none">TELA {{n}}</span>
+  <span style="font-size:14px;color:#8E968C">Fale o que mudar nesta tela…</span>
+ </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+const TELAS = [['inicio','Início'],['pedidos','Pedidos'],['novo','Novo orçamento'],['clientes','Clientes'],['estoque','Estoque']];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { i: 0, realce: false }; }
+  renderVals() {
+    const { i, realce } = this.state;
+    const ir = (k) => () => this.setState({ i: TELAS.findIndex((x) => x[0] === k) });
+    const o = {};
+    for (const [k] of TELAS) o['ir_' + k] = ir(k);
+    const tela = TELAS[i][0];
+    return { ...o, tela, n: String(i + 1), nome: TELAS[i][1],
+      pontos: TELAS.map((x, j) => ({ n: String(j + 1), nome: x[1], bg: j === i ? '#C6F135' : 'transparent', cor: j === i ? '#141619' : '#EDEFEA', ir: () => this.setState({ i: j }) })),
+      antes: () => this.setState({ i: (i + 4) % 5 }), depois: () => this.setState({ i: (i + 1) % 5 }),
+      dispNovo: tela === 'inicio' || tela === 'clientes' ? 'block' : 'none', topoNovo: tela === 'inicio' ? 226 : 318, altNovo: tela === 'inicio' ? 72 : 44,
+      realce: realce ? '#C6F135' : 'transparent', txtRealce: realce ? 'Esconder onde dá para tocar' : 'Onde dá para tocar?', alternarRealce: () => this.setState({ realce: !realce }) };
+  }
+}
+</script>
+</body>
+</html>

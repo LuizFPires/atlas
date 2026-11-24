@@ -318,9 +318,9 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir, onAvancar
       <div className="at-estilo__rodape">
         <Botao variante="secundario" onClick={() => (guardado ? setGuardado(null) : onVoltar())}>← Voltar</Botao>
         {guardado
-          ? <Botao onClick={() => onConcluir?.(guardado)}>Desenhar as telas →</Botao>
+          ? <Botao onClick={() => onConcluir?.(guardado)}>Seguir para o nome →</Botao>
           : modo === 'tenho'
-            ? <Botao disabled={!temIdentidade || ocupado !== ''} onClick={usarIdentidade}>{ocupado === 'guardando' ? 'Guardando…' : 'Usar a minha identidade e desenhar as telas →'}</Botao>
+            ? <Botao disabled={!temIdentidade || ocupado !== ''} onClick={usarIdentidade}>{ocupado === 'guardando' ? 'Guardando…' : 'Usar a minha identidade e seguir para o nome →'}</Botao>
             : propostos && <Botao disabled={ocupado !== ''} onClick={usar}>{ocupado === 'guardando' ? 'Guardando…' : `Usar "${propostos?.find((p) => p.id === escolhido)?.nome ?? ''}" e desenhar as telas →`}</Botao>}
         <span>Vira o design system do seu sistema. Dá para ajustar depois.</span>
         {onAvancar && !guardado && <Botao variante="secundario" className="at-estilo__avancar" onClick={onAvancar}>Manter o visual de agora e seguir →</Botao>}

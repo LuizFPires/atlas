@@ -37,7 +37,7 @@ test('ideia → estilo → nome: cada Voltar volta uma etapa só, e voltar à id
   await user.click(screen.getByRole('button', { name: 'Confiança' }))
   await user.click(screen.getByRole('button', { name: 'Mostrar 3 estilos' }))
   await user.click(await screen.findByRole('button', { name: /e desenhar as telas/ }, { timeout: 4000 }))
-  await user.click(await screen.findByRole('button', { name: 'Desenhar as telas →' }, { timeout: 4000 }))
+  await user.click(await screen.findByRole('button', { name: 'Seguir para o nome →' }, { timeout: 4000 }))
   expect(await screen.findByRole('heading', { name: 'Hora do batismo.' }, { timeout: 4000 })).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: /Voltar/ }))
   expect(await screen.findByRole('heading', { name: 'Qual é a cara do seu sistema?' })).toBeInTheDocument()

@@ -57,7 +57,7 @@ test('troca de aba muda a tela do celular', async () => {
 
 test('Voltar e o botão final avisam quem chamou', async () => {
   const { user, onVoltar, onConcluir } = await montar()
-  await user.click(await screen.findByRole('button', { name: /Telas do meu jeito/ }))
+  await user.click(await screen.findByRole('button', { name: /Telas aprovadas: abrir as contas/ }))
   expect(onConcluir).toHaveBeenCalledTimes(1)
   await user.click(screen.getByRole('button', { name: /← Voltar/ }))
   expect(onVoltar).toHaveBeenCalledTimes(1)
@@ -334,7 +334,7 @@ describe('protótipo desenhado em segundo plano', () => {
     expect(await screen.findByRole('status', { name: 'O Claude está desenhando as telas' })).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: /Conte/ })).toBeNull()
     pronto = true
-    expect(await screen.findByRole('button', { name: /Telas do meu jeito/ }, { timeout: 4000 })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Telas aprovadas: abrir as contas/ }, { timeout: 4000 })).toBeInTheDocument()
   })
 
   test('mapa pronto e nada pintado ainda: começa a pintar sozinho, com o estilo escolhido', async () => {
@@ -346,7 +346,7 @@ describe('protótipo desenhado em segundo plano', () => {
       pintar,
     }
     render(<TemaProvider><Prototipo obra={OBRA_BG} estilo={ESTILOS_EXEMPLO[1]} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
-    expect(await screen.findByRole('button', { name: /Telas do meu jeito/ })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Telas aprovadas: abrir as contas/ })).toBeInTheDocument()
     expect(pintar).toHaveBeenCalledWith('meu-ponto', 'Meu Ponto', ESTILOS_EXEMPLO[1])
   })
 })
@@ -364,7 +364,7 @@ test('a pintura parou (sem internet): avisa que continua sozinho e segue acompan
   expect(await screen.findByText(/continua sozinho/)).toBeInTheDocument()
   expect(screen.queryByRole('textbox', { name: /Conte/ })).toBeNull()
   volta = true
-  expect(await screen.findByRole('button', { name: /Telas do meu jeito/ }, { timeout: 4000 })).toBeInTheDocument()
+  expect(await screen.findByRole('button', { name: /Telas aprovadas: abrir as contas/ }, { timeout: 4000 })).toBeInTheDocument()
 })
 
 describe('celular ou computador (sistemas web e sites)', () => {
@@ -472,4 +472,11 @@ test('obra que nasceu de planilha: a tela diz de que aba da planilha veio', asyn
   await montar(p as PontePrototipo)
   await screen.findByText(/O protótipo · Estilo/)
   expect(screen.getByRole('tab', { name: 'Marcar horário' })).toHaveAttribute('title', 'Veio da aba Agenda da sua planilha')
+})
+
+// Luiz, 24/11/2026: "estando aqui em protótipo, a próxima etapa seria as contas ... mas o botão está escrito dar o nome".
+test('o botão de seguir diz a próxima etapa de verdade: as contas', async () => {
+  await montar()
+  expect(await screen.findByRole('button', { name: 'Telas aprovadas: abrir as contas →' })).toBeInTheDocument()
+  expect(screen.queryByText(/dar o nome/)).toBeNull()
 })
