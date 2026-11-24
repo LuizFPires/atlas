@@ -190,12 +190,13 @@ describe('vigia (bug de 24/11): a obra nunca fica parada em silêncio', () => {
     expect(fx.chamadas).toContain('continuar')
   })
 
-  test('depois de 3 tentativas: alerta que pede você, com o motivo e a Ajuda', async () => {
+  test('depois de 3 tentativas: alerta honesto (o Atlas não conseguiu sozinho), com o motivo e a Ajuda', async () => {
     const ajuda = vi.fn()
     const { fx, user } = montar('automatico', { onPedirAjuda: ajuda, sondagemMs: 30 })
     fx.simular.vigia({ situacao: 'precisa-voce', tentativa: 3, de: 3, motivo: 'O Claude deste computador saiu da conta: é preciso entrar de novo.' })
     const alerta = await screen.findByRole('alert', { name: 'A obra parou' })
-    expect(alerta).toHaveTextContent(/precisa de você/)
+    expect(alerta).toHaveTextContent(/O Atlas não conseguiu continuar sozinho/)
+    expect(alerta).not.toHaveTextContent(/precisa de você/)
     expect(alerta).toHaveTextContent(/saiu da conta/)
     await user.click(within(alerta).getByRole('button', { name: 'Falar com o Atlas' }))
     expect(ajuda).toHaveBeenCalled()

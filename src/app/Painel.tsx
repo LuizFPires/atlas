@@ -194,8 +194,8 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
           <div className="at-pn__vigia at-pn__vigia--alerta" role="alert" aria-label="A obra parou">
             <span className="at-pn__vigia-bola" aria-hidden="true"><Icone nome="alerta" tamanho={22} /></span>
             <div className="at-pn__pronta-txt">
-              <b>A obra está parada e precisa de você.</b>
-              <span>{estado.vigia.motivo}{estado.vigia.tentativa > 0 ? ` O Atlas tentou ${estado.vigia.tentativa} ${estado.vigia.tentativa === 1 ? 'vez' : 'vezes'} sozinho e não conseguiu.` : ''}</span>
+              <b>{estado.vigia.tentativa > 0 ? 'A obra parou. O Atlas não conseguiu continuar sozinho.' : 'A obra está parada e precisa de você.'}</b>
+              <span>{estado.vigia.motivo}{estado.vigia.tentativa > 0 ? ` Ele tentou ${estado.vigia.tentativa} ${estado.vigia.tentativa === 1 ? 'vez' : 'vezes'}. A Ajuda do Atlas já sabe o que aconteceu e resolve com você.` : ''}</span>
               {estado.vigia.fala && <span className="at-pn__vigia-fala">“{estado.vigia.fala}”</span>}
             </div>
             {estado.vigia.conta && onLigarContas && <Botao className="at-pn__btn" onClick={onLigarContas}>Ligar o {estado.vigia.conta}</Botao>}
