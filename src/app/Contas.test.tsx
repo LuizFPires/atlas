@@ -110,9 +110,12 @@ test('"Não consegui" abre a ajuda do passo e leva o print do passo à Ajuda do 
 
 // Luiz, 23/11/2026: "o passo a passo das contas tem que continuar existindo, bem didático e com os vídeos".
 describe('vídeo de cada conta', () => {
-  test('botão bem visível abre o vídeo da conta da vez; fechar volta para o passo', async () => {
+  // Luiz, 24/11/2026: o vídeo aparecia duas vezes; fica só em "Não consegui fazer este passo".
+  test('o vídeo fica só em "Não consegui fazer este passo": abre o vídeo da conta da vez; fechar volta para o passo', async () => {
     montar()
-    await userEvent.click(screen.getByRole('button', { name: /Ver o vídeo desta conta/ }))
+    expect(screen.queryByRole('button', { name: /Ver o vídeo desta conta/ })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Não consegui fazer este passo' }))
+    await userEvent.click(screen.getByRole('button', { name: /Ver este passo em vídeo/ }))
     const janela = screen.getByRole('dialog', { name: 'Conta do GitHub em vídeo' })
     expect(janela.querySelector('video')).toHaveAttribute('src', expect.stringContaining('video-conta-github'))
     await userEvent.click(screen.getByRole('button', { name: 'Fechar o vídeo' }))

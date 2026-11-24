@@ -134,7 +134,6 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda, n
                 <>
                   <CartaoPasso passo={p} n={passo + 1} total={c.passos.length} />
                   {navegador && passo === 0 && <p className="at-contas__aqui"><Icone nome="seta" tamanho={16} /> O site do {c.id === 'hosp' ? 'Vercel' : c.nome} já está aberto aqui ao lado: é ali que você clica. Se preferir, use "Abrir no meu navegador".</p>}
-                  {VIDEOS[c.id] && <button type="button" className="at-contas__video" onClick={() => setVideo(true)}><Icone nome="play" tamanho={16} /> Ver o vídeo desta conta, do começo ao fim (40 s)</button>}
                   {detectada === c.id && <p className="at-contas__detectada" role="status"><Icone nome="check" tamanho={16} /> O Atlas viu sozinho: a sua conta do {c.nome} está pronta.</p>}
                   <div className="at-ativ__rodape at-claude__acoes">
                     <Botao variante="secundario" onClick={voltar} disabled={conta === 0 && passo === 0}>← Voltar</Botao>
