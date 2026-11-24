@@ -321,3 +321,28 @@ test('o despachante consegue conferir git e gh (antes "git --version" era negado
   const ok = require('./construcao.cjs').FERRAMENTAS_LINHA.split(',')
   for (const f of ['Bash(git --version)', 'Bash(gh --version)', 'Bash(gh pr list:*)']) assert.ok(ok.includes(f), f)
 })
+
+// Obra do Guilherme: o PLAN manda ler regras.md e telas.md, mas no caminho novo só existem o relato e o protótipo. O mestre de obras
+// não achava a especificação e parava. Antes de ligar, o Atlas gera os dois a partir do protótipo aprovado (sem nunca sobrescrever).
+test('antes de ligar, a obra ganha telas.md e regras.md gerados do protótipo aprovado (e os que já existem ficam)', async () => {
+  const { raiz, c } = montar()
+  const obra = path.join(raiz, 'obra')
+  const v = path.join(obra, 'prototipo', 'versoes', 'v002')
+  fs.mkdirSync(path.join(v, 'telas'), { recursive: true })
+  fs.writeFileSync(path.join(v, 'telas', 'inicio.html'), '<div>oi</div>')
+  fs.writeFileSync(path.join(v, 'telas', 'ponto.html'), '<div>ponto</div>')
+  fs.writeFileSync(path.join(v, 'versao.json'), JSON.stringify({ versao: 1, numero: 2, resumo: 'x', telas: [{ id: 'inicio', nome: 'Início', aparelho: 'celular' }, { id: 'ponto', nome: 'Bater ponto', aparelho: 'celular' }] }))
+  fs.writeFileSync(path.join(obra, 'prototipo', 'atual.json'), JSON.stringify({ versao: 1, atual: 2 }))
+  fs.writeFileSync(path.join(obra, 'prototipo', 'relato.md'), 'Quero bater ponto na obra.')
+  await c.iniciar('obra', 'Ponto', 'automatico', ETAPAS)
+  const telas = fs.readFileSync(path.join(obra, 'telas.md'), 'utf8')
+  assert.match(telas, /prototipo\/versoes\/v002\/telas\/inicio\.html/)
+  assert.match(telas, /Bater ponto/)
+  const regras = fs.readFileSync(path.join(obra, 'regras.md'), 'utf8')
+  assert.match(regras, /prototipo\/relato\.md/)
+  assert.match(regras, /design-system\.md/)
+  // não sobrescreve
+  fs.writeFileSync(path.join(obra, 'regras.md'), 'MINHAS REGRAS')
+  c.linha.parar('obra'); c.linha.religar('obra')
+  assert.equal(fs.readFileSync(path.join(obra, 'regras.md'), 'utf8'), 'MINHAS REGRAS')
+})
