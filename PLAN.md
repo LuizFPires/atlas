@@ -446,8 +446,8 @@ peso: 5
 spec: S9
 tela: prototipo/caminho-novo/P5Play.dc.html
 - [x] Ajuda em foco: a gaveta da Ajuda fica na frente, o resto do Atlas embaça, e o "ouvindo / transcrevendo" aparece dentro da gaveta (D1)
-- [ ] Quadro negro: todas as telas do protótipo lado a lado, numeradas, com zoom; tocar no número põe "TELA N" na barra de voz (P4)
-- [ ] Usar o sistema: botão Play abre o protótipo em tela cheia, com setas, números das telas e o menu do Atlas flutuando (P5)
+- [x] Quadro negro: todas as telas do protótipo lado a lado, numeradas, com zoom; tocar no número põe "TELA N" na barra de voz (P4)
+- [x] Usar o sistema: botão Play abre o protótipo em tela cheia, com setas, números das telas e o menu do Atlas flutuando (P5)
 - [ ] Bolinha verde piscando só onde já dá para tocar; tocar no que ainda não foi desenhado abre "Essa parte ainda não foi desenhada"
 - [ ] Marcações: "Marcar um ponto", pino numerado no lugar tocado; o Atlas diz se é ajustar o que existe, desenhar o que falta ou criar algo novo
 - [ ] O Atlas sugere a ação da marcação (Aceitar, Sugerir outra, Editar por texto ou voz); várias marcações vão juntas em "Mandar para o Atlas fazer" e viram uma versão nova

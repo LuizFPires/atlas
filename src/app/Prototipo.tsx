@@ -5,6 +5,8 @@ import { Pintor } from './Pintor'
 import { JanelaCelular } from './JanelaCelular'
 import { DicaDoAtlas } from './DicaDoAtlas'
 import { VersoesDaTela } from './VersoesDaTela'
+import { QuadroDeTelas } from './QuadroDeTelas'
+import { UsarSistema } from './UsarSistema'
 import { ALTURA_CELULAR, ALTURA_COMPUTADOR, LARGURA_CELULAR, LARGURA_COMPUTADOR } from './tamanhos-tela'
 import { dicasDaTela } from './dicas-do-atlas'
 import { conferirTelas, pedidoDaConferencia } from './conferencia-telas'
@@ -24,6 +26,8 @@ interface Props {
   onVoltar: () => void
   /** Segue para a próxima etapa do caminho: as contas (5). */
   onConcluir?: () => void
+  /** Como o protótipo abre: o quadro negro com todas as telas (P4, padrão) ou uma tela por vez. */
+  vistaInicial?: 'quadro' | 'navegar'
 }
 
 interface Msg { quem: 'CLAUDE' | 'VOCÊ'; txt: string }
@@ -104,7 +108,7 @@ export function ComputadorPreview({ telas, inicial, titulo, realce = false }: { 
 const PAROU = 'O desenho parou no meio: sem internet ou o Claude não respondeu. Nada se perdeu: o protótipo continua sozinho quando der. Deixe o Atlas aberto.'
 
 /** F07: telas desenhadas com o Claude no estilo escolhido, com o celular ao lado. */
-export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcluir }: Props) {
+export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcluir, vistaInicial = 'quadro' }: Props) {
   const [estado, setEstado] = useState<EstadoProto>({ versoes: [], atual: 0 })
   const [aba, setAba] = useState('')
   const [msgs, setMsgs] = useState<Msg[]>([])
@@ -115,7 +119,10 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
   const [relato, setRelato] = useState('')
   const [desenhando, setDesenhando] = useState(false)
   const [andamento, setAndamento] = useState<ProgressoProto | null>(null)
-  const [vista, setVista] = useState<'navegar' | 'todas'>('navegar')
+  const [vista, setVista] = useState<'quadro' | 'navegar'>(vistaInicial)
+  // P4/P5: a tela marcada no quadro (vira "TELA N" no pedido) e o Play em tela cheia (a partir de qual tela).
+  const [marcada, setMarcada] = useState<string | null>(null)
+  const [playEm, setPlayEm] = useState<string | null>(null)
   const [realce, setRealce] = useState(false)
   const [semDicas, setSemDicas] = useState(false)
   const [comparando, setComparando] = useState<string | null>(null)
@@ -243,7 +250,11 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
     setOcupado(true)
     setErro('')
     // O pedido (e os nomes dos prints) são DADO para o Claude: o adaptador monta com comoDado/blocoDoCliente.
-    const completo = [texto, ...prints.map((n) => `print guardado: ${n}`)].join('\n')
+    const atual = estado.versoes.find((v) => v.numero === estado.atual)
+    const alvo = marcada && atual ? atual.telas.findIndex((t) => t.id === marcada) : -1
+    const comTela = alvo >= 0 && atual ? `Na tela ${alvo + 1} (${atual.telas[alvo].nome}): ${texto}` : texto
+    const completo = [comTela, ...prints.map((n) => `print guardado: ${n}`)].join('\n')
+    setMarcada(null)
     setMsgs((m) => [...m, { quem: 'VOCÊ', txt: texto }])
     setPedido('')
     setPrints([])
@@ -305,6 +316,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
           </>
         : <>
             <label htmlFor="pedido" className="at-proto__so-leitor">Pedir ajuste</label>
+            {marcada && versao && (() => { const n = versao.telas.findIndex((t) => t.id === marcada); return n >= 0 ? <span className="at-proto__chip-tela"><span>TELA {n + 1}</span><button type="button" aria-label="Tirar a tela do pedido" onClick={() => setMarcada(null)}><Icone nome="x" tamanho={12} /></button></span> : null })()}
             <textarea id="pedido" rows={1} value={pedido} onChange={(e) => setPedido(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void enviar() } }} placeholder="Fale o que quer mudar: “troque a cor”, “crie uma tela de estoque”…" />
             {arquivos && <button type="button" className="at-proto__clipe" aria-label="Mandar foto ou print" onClick={() => void anexar()}><Icone nome="clipe" tamanho={20} /></button>}
             <Botao type="submit" disabled={!pedido.trim() || ocupado || !versao}>{ocupado ? 'Ajustando…' : 'Enviar'}</Botao>
@@ -323,11 +335,12 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
         </div>
         {versao && (
           <div className="at-proto__vistas" role="group" aria-label="Como ver o protótipo">
-            <button type="button" aria-pressed={vista === 'navegar'} onClick={() => setVista('navegar')}>Navegar</button>
-            <button type="button" aria-pressed={vista === 'todas'} onClick={() => setVista('todas')}>Todas as telas ({versao.telas.length})</button>
+            <button type="button" aria-pressed={vista === 'quadro'} onClick={() => setVista('quadro')}>Quadro de telas ({versao.telas.length})</button>
+            <button type="button" aria-pressed={vista === 'navegar'} onClick={() => setVista('navegar')}>Uma tela por vez</button>
           </div>
         )}
         <div className="at-proto__acoes">
+          {versao && <Botao variante="secundario" onClick={() => setPlayEm(marcada ?? versao.telas[0].id)}><Icone nome="play" tamanho={16} /> Usar o sistema</Botao>}
           {versao && prototipo.linkCelular && <Botao variante="secundario" onClick={() => setCelular(true)}>Ver no celular</Botao>}
           {anterior && <Botao variante="secundario" disabled={ocupado} onClick={() => void irPara(anterior.numero)}>↶ Voltar à versão {anterior.numero}</Botao>}
           <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
@@ -445,23 +458,13 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
         </section>
       )}
 
-      {versao && !comparando && vista === 'todas' && (
-        <section className="at-proto__palco" aria-label="Todas as telas">
-          <ul className="at-proto__galeria">
-            {versao.telas.map((t) => {
-              const doc = montarSrcDoc(t.html)
-              return (
-                <li key={t.id} className="at-proto__miniatura at-proto__miniatura--pronta">
-                  <button type="button" className="at-proto__mini-abrir" aria-label={`Abrir ${t.nome}`} onClick={() => { setAba(t.id); setVista('navegar') }}>
-                    <div className="at-proto__mini-celular">{doc && <iframe title={`Miniatura: ${t.nome}`} sandbox={SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer" tabIndex={-1} />}</div>
-                    <span>{t.nome}</span>
-                    {t.origem && <em className="at-proto__origem">VEIO DA ABA {t.origem.toLocaleUpperCase('pt-BR')}</em>}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
+      {versao && !comparando && vista === 'quadro' && (
+        <QuadroDeTelas telas={versao.telas} marcada={marcada} onMarcar={setMarcada} onUsar={(id) => setPlayEm(id)} />
+      )}
+
+      {versao && playEm && (
+        <UsarSistema obraNome={obra.nome} telas={versao.telas} inicial={playEm} onFechar={() => setPlayEm(null)}
+          onPedirMudanca={(id) => { setPlayEm(null); setMarcada(id); requestAnimationFrame(() => document.getElementById('pedido')?.focus()) }} />
       )}
 
       {!pedeRelato && (

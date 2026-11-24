@@ -13,7 +13,7 @@ const montar = async (prototipo: PontePrototipo = criarPrototipoFixture(), estil
   const user = userEvent.setup()
   const onVoltar = vi.fn()
   const onConcluir = vi.fn()
-  render(<TemaProvider><Prototipo obra={obra} estilo={estilo} prototipo={prototipo} onVoltar={onVoltar} onConcluir={onConcluir} /></TemaProvider>)
+  render(<TemaProvider><Prototipo vistaInicial="navegar" obra={obra} estilo={estilo} prototipo={prototipo} onVoltar={onVoltar} onConcluir={onConcluir} /></TemaProvider>)
   const campo = await screen.findByRole('textbox', { name: /Conte tudo o que você imagina/ })
   await user.type(campo, relato)
   await user.click(screen.getByRole('button', { name: 'Desenhar as telas' }))
@@ -225,7 +225,7 @@ describe('relato livre antes de desenhar', () => {
     const base = criarPrototipoFixture()
     const p: PontePrototipo = { ...base, desenhar: (...a) => { desenhos.push(a); return base.desenhar(...a) } }
     const user = userEvent.setup()
-    render(<TemaProvider><Prototipo obra={obra} estilo={ESTILOS_EXEMPLO[0]} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
+    render(<TemaProvider><Prototipo vistaInicial="navegar" obra={obra} estilo={ESTILOS_EXEMPLO[0]} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
     const etapa = await screen.findByRole('region', { name: 'Conte tudo o que você imagina' })
     expect(within(etapa).getByRole('button', { name: 'Falar' })).toBeInTheDocument()
     expect(within(etapa).getByText(/sem pressa|o tempo que quiser/i)).toBeInTheDocument()
@@ -239,7 +239,7 @@ describe('relato livre antes de desenhar', () => {
   test('obra que já tem telas abre direto nelas (sem pedir o relato de novo)', async () => {
     const p = criarPrototipoFixture()
     await p.desenhar(obra.pasta, obra.nome, ESTILOS_EXEMPLO[0], 'x')
-    render(<TemaProvider><Prototipo obra={obra} estilo={ESTILOS_EXEMPLO[0]} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
+    render(<TemaProvider><Prototipo vistaInicial="navegar" obra={obra} estilo={ESTILOS_EXEMPLO[0]} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
     expect(await screen.findByTitle(/no celular/)).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Conte tudo o que você imagina' })).toBeNull()
   })
@@ -263,16 +263,15 @@ describe('palco do protótipo', () => {
     expect(await screen.findByRole('region', { name: 'Preview do celular' })).toBeInTheDocument()
   })
 
-  test('"Todas as telas" mostra cada tela como miniatura; tocar numa abre ela grande para navegar', async () => {
+  test('"Quadro de telas" mostra todas as telas numeradas; tocar numa abre o sistema em tela cheia a partir dela', async () => {
     const { user } = await montar()
     await screen.findByRole('region', { name: 'Preview do celular' })
-    await user.click(screen.getByRole('button', { name: /Todas as telas/ }))
-    const todas = screen.getByRole('region', { name: 'Todas as telas' })
-    const abrir = within(todas).getAllByRole('button', { name: /^Abrir / })
+    await user.click(screen.getByRole('button', { name: /Quadro de telas/ }))
+    const quadro = screen.getByRole('region', { name: 'Quadro de telas' })
+    const abrir = within(quadro).getAllByRole('button', { name: /^Usar o sistema a partir da tela / })
     expect(abrir.length).toBeGreaterThan(1)
     await user.click(abrir[1])
-    expect(screen.getByRole('region', { name: 'Preview do celular' })).toBeInTheDocument()
-    expect(screen.getAllByRole('tab').find((t) => t.getAttribute('aria-selected') === 'true')).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Usando o sistema' })).toHaveTextContent(/Tela 2 de/)
   })
 
   test('a barra de voz fica embaixo, com o microfone, nas duas fases (relato e ajustes)', async () => {
@@ -330,7 +329,7 @@ describe('protótipo desenhado em segundo plano', () => {
       async estado() { return pronto ? { versoes: [{ numero: 1, resumo: 'Primeiras telas', telas: [TELA] }], atual: 1 } : { versoes: [], atual: 0 } },
       async progresso() { return pronto ? null : { fase: 'pintando', mapa: [{ id: 'inicio', nome: 'Início' }, { id: 'b', nome: 'B' }], telas: [TELA] } },
     }
-    render(<TemaProvider><Prototipo obra={OBRA_BG} estilo={ESTILOS_EXEMPLO[0]} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
+    render(<TemaProvider><Prototipo vistaInicial="navegar" obra={OBRA_BG} estilo={ESTILOS_EXEMPLO[0]} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
     expect(await screen.findByRole('status', { name: 'O Claude está desenhando as telas' })).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: /Conte/ })).toBeNull()
     pronto = true
@@ -345,7 +344,7 @@ describe('protótipo desenhado em segundo plano', () => {
       async progresso() { return { fase: 'mapa', mapa: [{ id: 'inicio', nome: 'Início' }], telas: [] } },
       pintar,
     }
-    render(<TemaProvider><Prototipo obra={OBRA_BG} estilo={ESTILOS_EXEMPLO[1]} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
+    render(<TemaProvider><Prototipo vistaInicial="navegar" obra={OBRA_BG} estilo={ESTILOS_EXEMPLO[1]} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
     expect(await screen.findByRole('button', { name: /Telas aprovadas: abrir as contas/ })).toBeInTheDocument()
     expect(pintar).toHaveBeenCalledWith('meu-ponto', 'Meu Ponto', ESTILOS_EXEMPLO[1])
   })
@@ -360,7 +359,7 @@ test('a pintura parou (sem internet): avisa que continua sozinho e segue acompan
     async progresso() { return volta ? null : { fase: 'mapa', parado: true, mapa: [{ id: 'inicio', nome: 'Início' }, { id: 'b', nome: 'B' }], telas: [TELA] } },
     async pintar() { throw new Error('claude-falhou') },
   }
-  render(<TemaProvider><Prototipo obra={{ nome: 'Meu Ponto', pasta: 'meu-ponto' }} estilo={null} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
+  render(<TemaProvider><Prototipo vistaInicial="navegar" obra={{ nome: 'Meu Ponto', pasta: 'meu-ponto' }} estilo={null} prototipo={p} onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
   expect(await screen.findByText(/continua sozinho/)).toBeInTheDocument()
   expect(screen.queryByRole('textbox', { name: /Conte/ })).toBeNull()
   volta = true
