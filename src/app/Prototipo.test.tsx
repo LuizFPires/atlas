@@ -482,3 +482,14 @@ test('o botão de seguir diz a próxima etapa de verdade: as contas', async () =
   expect(await screen.findByRole('button', { name: 'Telas aprovadas: abrir as contas →' })).toBeInTheDocument()
   expect(screen.queryByText(/dar o nome/)).toBeNull()
 })
+
+// Luiz, 24/11/2026: "essas bordas brancas no telefone ... cara de amadorismo". A barra de rolagem do iframe aparecia como uma faixa
+// branca na lateral da tela. O documento de cada tela esconde a barra (continua rolando com o dedo/roda).
+test('a tela no celular não mostra barra de rolagem ', async () => {
+  const { montarSrcDoc, montarNavegavel } = await import('./ponte-prototipo')
+  const um = montarSrcDoc('<main>oi</main>')!
+  expect(um).toContain('scrollbar-width:none')
+  expect(um).toContain('::-webkit-scrollbar{display:none')
+  const nav = montarNavegavel([{ id: 'a', nome: 'A', html: '<main>a</main>' } as never], 'a')!
+  expect(nav).toContain('scrollbar-width:none')
+})

@@ -221,3 +221,60 @@
 .at-play__marcar[aria-pressed='true'] { box-shadow: 0 0 0 3px rgba(198, 241, 53, 0.35); }
 .at-play__realce { border-color: #2C3036; color: #B4BBB2; }
 @media (prefers-reduced-motion: reduce) { .at-play__pino, .at-play__balao, .at-play__lista, .at-play__giro { animation: none; } }
+
+/* ── Aparelho premium (Luiz, 24/11/2026: "essas bordas brancas no telefone ... cara de amadorismo. Me surpreenda") ──────────────
+   Aro de metal escovado (borda com degradê), vidro preto, ilha dinâmica, reflexo sutil no vidro e sombra de objeto de verdade.
+   A tela nunca tem branco por trás: o que sobra em volta do iframe é o vidro preto do aparelho. */
+.at-proto__mini-celular,
+.at-proto__celular,
+.at-versoes__moldura:not(.at-versoes__moldura--computador) {
+  position: relative;
+  border: 2px solid transparent;
+  background: linear-gradient(#050506, #050506) padding-box, linear-gradient(150deg, #474b52 0%, #1f2125 22%, #0c0d0f 48%, #1f2125 74%, #3d4148 100%) border-box;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 34px 60px -20px rgba(0, 0, 0, 0.75), 0 14px 26px -10px rgba(0, 0, 0, 0.5);
+}
+.at-proto__mini-celular::after,
+.at-proto__celular::after,
+.at-versoes__moldura:not(.at-versoes__moldura--computador)::after,
+.at-quadro__moldura:not(.at-quadro__moldura--pc)::after {
+  content: ''; position: absolute; z-index: 3; left: 50%; transform: translateX(-50%); top: 2.4%; width: 30%; aspect-ratio: 126 / 36; border-radius: 999px;
+  background: radial-gradient(circle at 80% 50%, #1d2b3a 0 10%, #06080a 13%, #000 22%); pointer-events: none;
+}
+.at-proto__mini-celular::before,
+.at-proto__celular::before,
+.at-versoes__moldura:not(.at-versoes__moldura--computador)::before {
+  content: ''; position: absolute; z-index: 2; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.03) 22%, rgba(255, 255, 255, 0) 34%);
+}
+
+/* Miniaturas (galeria enquanto desenha e depois): proporção do telefone, sem faixa preta embaixo. */
+.at-proto__mini-celular { width: 176px; height: 366px; border-radius: 30px; padding: 5px; overflow: hidden; transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.45s ease; }
+.at-proto__mini-celular iframe { border-radius: 55px; background: #000; display: block; }
+.at-proto__galeria { perspective: 1400px; }
+.at-proto__miniatura--pronta .at-proto__mini-celular:hover,
+.at-proto__mini-abrir:hover .at-proto__mini-celular,
+.at-proto__mini-abrir:focus-visible .at-proto__mini-celular { transform: translateY(-8px) rotateX(5deg) rotateY(-7deg); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.7), 0 44px 70px -22px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(198, 241, 53, 0.25); }
+.at-proto__mini-abrir:hover .at-proto__mini-celular, .at-proto__mini-abrir:focus-visible .at-proto__mini-celular { outline: none; }
+.at-proto__mini-abrir:focus-visible .at-proto__mini-celular { box-shadow: 0 0 0 3px var(--lime), 0 44px 70px -22px rgba(0, 0, 0, 0.8); }
+
+/* Tela que ainda está sendo desenhada: o aparelho já está lá, com o esqueleto da tela e uma luz verde passando. */
+.at-proto__mini-vazio { position: relative; border-radius: 23px; overflow: hidden; background: #0d0f11; animation: none; }
+.at-proto__mini-vazio::before { content: ''; position: absolute; left: 12%; right: 12%; top: 16%; height: 62%; border-radius: 10px; background: linear-gradient(#1c1f23, #1c1f23) 0 0 / 55% 9px no-repeat, linear-gradient(#16191c, #16191c) 0 22px / 100% 64px no-repeat, linear-gradient(#16191c, #16191c) 0 98px / 47% 46px no-repeat, linear-gradient(#16191c, #16191c) 100% 98px / 47% 46px no-repeat, linear-gradient(#1c1f23, #1c1f23) 0 100% / 100% 26px no-repeat; }
+.at-proto__mini-vazio::after { content: ''; position: absolute; left: 0; right: 0; top: -45%; height: 45%; background: linear-gradient(180deg, rgba(198, 241, 53, 0) 0%, rgba(198, 241, 53, 0.12) 80%, rgba(198, 241, 53, 0.55) 100%); animation: at-proto-varre 2s cubic-bezier(0.45, 0, 0.25, 1) infinite; }
+.at-proto__mini-vazio .at-proto__mini-giro { position: relative; z-index: 1; }
+@keyframes at-proto-varre { to { top: 100%; } }
+
+/* Telefone grande (navegar) e versões: vidro preto em volta da tela, nunca branco. */
+.at-proto__celular { border-radius: 54px; padding: 10px; }
+.at-proto__vidro { border-radius: 44px; background: #000; }
+.at-versoes__moldura:not(.at-versoes__moldura--computador) { border-radius: 40px; padding: 7px; }
+.at-versoes__moldura:not(.at-versoes__moldura--computador) .at-versoes__vidro { border-radius: 32px; background: #000; }
+
+/* Quadro negro: cada tela ganha o aro e o vidro do aparelho por fora (sem mudar o tamanho da tela). */
+.at-quadro__moldura:not(.at-quadro__moldura--pc) { overflow: hidden; border-radius: 30px; background: #000; box-shadow: 0 0 0 7px #050506, 0 0 0 9px #26292d, 0 0 0 10px rgba(0, 0, 0, 0.7), 0 40px 80px -20px rgba(0, 0, 0, 0.75); outline-offset: 14px; }
+.at-quadro__moldura:not(.at-quadro__moldura--pc)::after { top: 1.6%; width: 28%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .at-proto__mini-vazio::after { animation: none; opacity: 0; }
+  .at-proto__mini-celular { transition: none; }
+}
