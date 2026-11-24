@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · X4 Protótipo vindo da planilha</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes cnpulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.5)}70%{box-shadow:0 0 0 22px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}
+@keyframes cnonda{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes cngiro{to{transform:rotate(360deg)}}
+@keyframes cnpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.cn-grav{animation:cnpulso 1.4s infinite}
+.cn-onda span{display:block;width:4px;border-radius:2px;background:#F05A4F;animation:cnonda 1s infinite ease-in-out}
+.cn-giro{animation:cngiro 1s linear infinite}
+.cn-pisca{animation:cnpisca 1.2s infinite} .bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:12px;font:700 15px 'Geist',sans-serif;cursor:pointer;white-space:nowrap;box-sizing:border-box;border:none;text-decoration:none} .tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;font:600 10px 'Geist Mono',monospace;letter-spacing:.08em}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden;position:relative">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA · 1 · A IDEIA</span><h1 style="margin:0;font-size:26px;letter-spacing:-.01em">{{titulo}}</h1></div>
+  <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="6"><li style="display:flex;flex-direction:column;gap:7px"><span style="height:4px;border-radius:2px;background:{{p.barra}}"></span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{p.cor}}">{{p.rot}}</span></li></sc-for>
+  </ol>
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:260px minmax(0,1fr);gap:20px">
+   <aside style="display:flex;flex-direction:column;gap:8px">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">5 TELAS · TODAS VIERAM DA PLANILHA</span>
+    <div style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;background:{{t.soft}};border:1px solid {{t.lime}}"><b style="font-size:15px">Pedidos</b><span class="tag" style="background:{{t.card}};color:{{t.limeTxt}};align-self:flex-start">VEIO DA ABA PEDIDOS</span></div><div style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;background:{{t.card2}};border:1px solid {{t.cardB}}"><b style="font-size:15px">Novo pedido</b><span class="tag" style="background:{{t.card}};color:{{t.limeTxt}};align-self:flex-start">VEIO DA ABAS PEDIDOS E ITENS</span></div><div style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;background:{{t.card2}};border:1px solid {{t.cardB}}"><b style="font-size:15px">Aprovar pedido</b><span class="tag" style="background:{{t.card}};color:{{t.limeTxt}};align-self:flex-start">VEIO DA COR VERMELHA + MACRO</span></div><div style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;background:{{t.card2}};border:1px solid {{t.cardB}}"><b style="font-size:15px">Fornecedores</b><span class="tag" style="background:{{t.card}};color:{{t.limeTxt}};align-self:flex-start">VEIO DA ABA FORNECEDORES</span></div><div style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;background:{{t.card2}};border:1px solid {{t.cardB}}"><b style="font-size:15px">Resumo do mês</b><span class="tag" style="background:{{t.card}};color:{{t.limeTxt}};align-self:flex-start">VEIO DA ABA RESUMO DO MÊS</span></div>
+   </aside>
+   <section style="display:flex;flex-direction:column;gap:10px;min-width:0">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font-size:14px;color:{{t.mute}}">Pedidos · computador</span><span class="tag" style="margin-left:auto;background:{{t.soft}};color:{{t.limeTxt}}">PASSE O MOUSE PARA VER DE ONDE VEIO</span></div>
+    <div style="flex:1;border-radius:14px;overflow:hidden;background:#F7F8F4;color:#1B1E22;border:1px solid {{t.cardB}};display:flex;flex-direction:column">
+     <div style="height:34px;background:#E9EBE6;display:flex;align-items:center;gap:8px;padding:0 12px"><span style="width:10px;height:10px;border-radius:5px;background:#E46A5E"></span><span style="width:10px;height:10px;border-radius:5px;background:#E8C14A"></span><span style="width:10px;height:10px;border-radius:5px;background:#6CC070"></span><span style="margin-left:8px;font:500 12px 'Geist Mono',monospace;color:#5F665C">compras.seudominio.com.br</span></div>
+     <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px;flex:1">
+      <div style="display:flex;align-items:center;gap:12px"><b style="font-size:22px">Pedidos de compra</b><span style="font-size:13px;color:#5F665C">412 pedidos · vindos da sua planilha</span><span style="margin-left:auto;background:#1B1E22;color:#fff;padding:9px 14px;border-radius:10px;font-weight:600;font-size:13px">+ Novo pedido</span></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+       <div style="background:#fff;border-radius:12px;padding:12px;border:1px solid #E6E8E1;position:relative"><span style="font-size:12px;color:#5F665C">Gasto em novembro</span><b style="display:block;font-size:20px">R$ 84.310</b><span class="tag" style="position:absolute;top:8px;right:8px;background:#EEF7D3;color:#3F5600">RESUMO DO MÊS</span></div>
+       <div style="background:#fff;border-radius:12px;padding:12px;border:2px solid #F05A4F;position:relative"><span style="font-size:12px;color:#5F665C">Esperando aprovação</span><b style="display:block;font-size:20px">3 pedidos</b><span class="tag" style="position:absolute;top:8px;right:8px;background:#FDE3E1;color:#9B2C22">COR VERMELHA</span></div>
+       <div style="background:#fff;border-radius:12px;padding:12px;border:1px solid #E6E8E1"><span style="font-size:12px;color:#5F665C">Fornecedores ativos</span><b style="display:block;font-size:20px">38</b></div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:1px solid #E6E8E1;overflow:hidden">
+       <div style="display:grid;grid-template-columns:90px 1fr 1fr 170px 90px;gap:10px;padding:8px 14px;font:600 11px 'Geist Mono',monospace;color:#8E968C;background:#F7F8F4"><span>Nº</span><span>OBRA</span><span>FORNECEDOR</span><span>STATUS <span class="tag" style="background:#EEF7D3;color:#3F5600">LISTA</span></span><span style="text-align:right">TOTAL <span class="tag" style="background:#EEF7D3;color:#3F5600">FÓRMULA</span></span></div>
+       <div style="display:grid;grid-template-columns:90px 1fr 1fr 170px 90px;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid #EEF0EA;font-size:13px"><b>PC-0412</b><span>Galpão SMS</span><span>Aço Forte</span><span style="background:#EEF0EA;color:#3A3F46;padding:3px 8px;border-radius:999px;justify-self:start;font-weight:600">Aprovado</span><b style="text-align:right">R$ 3.180</b></div><div style="display:grid;grid-template-columns:90px 1fr 1fr 170px 90px;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid #EEF0EA;font-size:13px"><b>PC-0411</b><span>Lagoa Santa</span><span>Cimento BH</span><span style="background:#FDE3E1;color:#9B2C22;padding:3px 8px;border-radius:999px;justify-self:start;font-weight:600">Aguardando aprovação</span><b style="text-align:right">R$ 7.920</b></div><div style="display:grid;grid-template-columns:90px 1fr 1fr 170px 90px;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid #EEF0EA;font-size:13px"><b>PC-0410</b><span>Galpão SMS</span><span>Elétrica Sul</span><span style="background:#EEF0EA;color:#3A3F46;padding:3px 8px;border-radius:999px;justify-self:start;font-weight:600">Rascunho</span><b style="text-align:right">R$ 940</b></div>
+      </div>
+     </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px"><a class="bt" href="CN3Visual.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Gostei, escolher o visual →</a><span style="font-size:13px;color:{{t.mute2}}">É o protótipo com o visual provisório. No passo 2 você escolhe o estilo.</span></div>
+   </section>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', cinza: '#3A3F46', verm: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', cinza: '#C9CDC4', verm: '#D8483D' }
+};
+const PASSOS = ['1 · A IDEIA', '2 · O VISUAL', '3 · O NOME', '4 · O PROTÓTIPO', '5 · AS CONTAS', '6 · COMEÇAR'];
+const passos = (t, atual) => PASSOS.map((rot, i) => ({ rot, barra: i < atual ? t.lime : i === atual ? t.lime : t.line, cor: i <= atual ? t.text : t.mute2 }));
+const TITULO = 'O protótipo, a partir da planilha';
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = {}; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const base = { tema, t, passos: passos(t, 0), titulo: TITULO };
+    return typeof extra === 'function' ? { ...base, ...extra.call(this, t) } : base;
+  }
+}
+</script>
+</body>
+</html>

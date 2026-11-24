@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · TP1 Antes de começar (tampa)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes cnpulso{0%{box-shadow:0 0 0 0 rgba(240,90,79,.5)}70%{box-shadow:0 0 0 22px rgba(240,90,79,0)}100%{box-shadow:0 0 0 0 rgba(240,90,79,0)}}
+@keyframes cnonda{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes cngiro{to{transform:rotate(360deg)}}
+@keyframes cnpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.cn-grav{animation:cnpulso 1.4s infinite}
+.cn-onda span{display:block;width:4px;border-radius:2px;background:#F05A4F;animation:cnonda 1s infinite ease-in-out}
+.cn-giro{animation:cngiro 1s linear infinite}
+.cn-pisca{animation:cnpisca 1.2s infinite} .bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:12px;font:700 15px 'Geist',sans-serif;cursor:pointer;white-space:nowrap;box-sizing:border-box;border:none;text-decoration:none} .tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;font:600 10px 'Geist Mono',monospace;letter-spacing:.08em}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden;position:relative">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA · 6 · COMEÇAR</span><h1 style="margin:0;font-size:26px;letter-spacing:-.01em">{{titulo}}</h1></div>
+  <ol style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+   <sc-for list="{{passos}}" as="p" hint-placeholder-count="6"><li style="display:flex;flex-direction:column;gap:7px"><span style="height:4px;border-radius:2px;background:{{p.barra}}"></span><span style="font:500 11px 'Geist Mono',monospace;letter-spacing:.1em;color:{{p.cor}}">{{p.rot}}</span></li></sc-for>
+  </ol>
+  <div style="flex:1;position:relative;border-radius:20px;background:{{t.card}};opacity:.35"></div>
+  <div style="position:absolute;inset:0;background:rgba(10,11,12,.6);display:flex;align-items:center;justify-content:center">
+   <div role="dialog" style="width:640px;background:{{t.card}};border:1px solid {{t.cardB}};border-radius:18px;padding:28px;display:flex;flex-direction:column;gap:16px;box-shadow:0 30px 80px rgba(0,0,0,.5)">
+    <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">ANTES DE COMEÇAR</span>
+    <h2 style="margin:0;font-size:24px;line-height:1.3">O seu notebook é o canteiro. Enquanto ele estiver ligado, a obra anda.</h2>
+    <div style="display:flex;flex-direction:column;gap:10px">
+     <div style="display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:{{t.card2}}"><span style="color:{{t.limeTxt}};font-weight:700">1</span><span style="font-size:15px;line-height:1.45"><b>Deixe na tomada.</b> Na bateria, o Windows desliga para economizar.</span></div>
+     <div style="display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:{{t.card2}};border:1px solid {{t.lime}}"><span style="color:{{t.limeTxt}};font-weight:700">2</span><div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:15px;line-height:1.45"><b>Fechar a tampa faz o notebook dormir</b>, e a obra para. O Atlas pode ajustar o Windows para continuar trabalhando de tampa fechada (na tomada) e desfaz sozinho quando a obra terminar.</span><div style="display:flex;gap:10px"><button class="bt" onClick="{{ajustar}}" style="height:42px;background:{{t.lime}};color:{{t.onLime}}">{{btnAjustar}}</button><span class="tag" style="display:{{dispRec}};align-self:center;background:{{t.lime}};color:{{t.onLime}}">RECOMENDADO</span><button class="bt" style="height:42px;background:transparent;border:1px solid {{t.cardB}};color:{{t.text}}">Eu deixo a tampa aberta</button></div></div></div>
+     <div style="display:flex;gap:12px;padding:12px 14px;border-radius:12px;background:{{t.card2}}"><span style="color:{{t.limeTxt}};font-weight:700">3</span><span style="font-size:15px;line-height:1.45"><b>Desligou? Sem problema.</b> Ao ligar de novo, o Atlas continua de onde parou. Nada se perde.</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center"><a class="bt" href="K3Obra.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Começar a obra →</a><span style="font-size:13px;color:{{t.mute2}}">O Windows vai pedir a sua permissão para o ajuste.</span></div>
+   </div>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', input: '#16181B', line: '#2A2E33', cinza: '#3A3F46', verm: '#F05A4F' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', input: '#FFFFFF', line: '#E6E8E1', cinza: '#C9CDC4', verm: '#D8483D' }
+};
+const PASSOS = ['1 · A IDEIA', '2 · O VISUAL', '3 · O NOME', '4 · O PROTÓTIPO', '5 · AS CONTAS', '6 · COMEÇAR'];
+const passos = (t, atual) => PASSOS.map((rot, i) => ({ rot, barra: i < atual ? t.lime : i === atual ? t.lime : t.line, cor: i <= atual ? t.text : t.mute2 }));
+const TITULO = 'Meu Ponto';
+function extra(t) { const ok = this.state.ok; return { btnAjustar: ok ? 'Ajustado ✓' : 'Ajustar para mim', dispRec: ok ? 'none' : 'inline-flex', ajustar: () => this.setState({ ok: true }) }; }
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { ok: false }; }
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const base = { tema, t, passos: passos(t, 5), titulo: TITULO };
+    return typeof extra === 'function' ? { ...base, ...extra.call(this, t) } : base;
+  }
+}
+</script>
+</body>
+</html>
