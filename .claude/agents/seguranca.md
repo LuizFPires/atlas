@@ -14,6 +14,8 @@ Milestone, base, branch e PR. Leia:
 
 Olhe **o que o milestone mudou** e o que isso toca. Não refaça a auditoria do projeto inteiro a cada etapa (isso é do `vistoriador`, no fim).
 
+
+**Reconferência** (a entrada começa com `Reconferir`): confira **só** os achados listados, no diff do commit de correção (`git show --stat <hash>` e os arquivos citados). Não refaça a revisão inteira nem procure achados novos fora desses arquivos. Responda no mesmo formato.
 ## Checklist (confira cada achado antes de reportar; saídas de comando sempre filtradas)
 1. **Quem pode o quê**: toda rota, função de servidor e consulta confere quem está logado e se aquele dado é dele? Isolamento entre clientes/empresas: um usuário consegue ler ou mudar dado de outro trocando um id na URL ou no corpo (IDOR)? Ações de administrador protegidas no servidor, não só escondidas na tela.
 2. **Supabase/banco**: tabela nova ou alterada com dado de usuário tem `enable row level security` (RLS) e políticas que filtram pelo dono? Política `using (true)` em dado privado é achado alto. Chave `service_role` nunca em código de navegador ou celular (`VITE_*`, `NEXT_PUBLIC_*`, `EXPO_PUBLIC_*`).

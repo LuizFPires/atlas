@@ -103,18 +103,20 @@ const importar = criarImportar({ raiz: obras.raiz(), dialog, janela: () => janel
 const retomar = criarRetomar({ raiz: obras.raiz(), painel, cota, construcao })
 // Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
 const disparo = criarDisparo({ modelo: () => modelo.args(), raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: estadoClaude })
+// Economia (24/11/2026): estilo, nomes e Ajuda são pedidos curtos; usam o Opus só no plano Max (no Pro, Sonnet). O protótipo segue o escolhido.
+const disparoLeve = criarDisparo({ modelo: () => modelo.argsDaLinha(planoClaude), raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: estadoClaude })
 // Roteiro da ideia (caminho novo, 23/11/2026): conferência rápida a cada pausa, sempre com o modelo mais rápido (não o da obra).
 // Começar por uma planilha (X1–X3): raio-X aqui no computador; "o que entendi" pelo Claude lendo planilha/raio-x.md da obra.
 const planilhaObra = criarPlanilhaObra({ raiz: obras.raiz(), disparo })
 const ideia = require('./adaptadores/ideia.cjs').criarIdeia({ disparo: criarDisparo({ modelo: () => ['--model', 'claude-haiku-5-5'], raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() }) })
-const estilo = criarEstilo({ raiz: obras.raiz(), disparo })
+const estilo = criarEstilo({ raiz: obras.raiz(), disparo: disparoLeve })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
 // Protótipo que parou no meio (sem internet, computador desligado; pedido do Luiz, 23/11/2026): ao abrir o Atlas e a cada 2 min,
 // continua sozinho de onde parou (as telas prontas ficam salvas). Ainda sem internet: tenta de novo na próxima volta.
 const retomarPrototipos = () => { void prototipo.retomarPendentes().catch(() => {}) }
 setTimeout(retomarPrototipos, 20_000).unref?.()
 setInterval(retomarPrototipos, 2 * 60_000).unref?.()
-const batismo = criarBatismo({ raiz: obras.raiz(), disparo })
+const batismo = criarBatismo({ raiz: obras.raiz(), disparo: disparoLeve })
 const nomes = criarNomes()
 // Pós-obra: roda pela MESMA linha da obra (construcao.linha) e só com licença em dia, conferida AQUI no processo principal (token do cofre).
 // O endereço da API vem de ATLAS_API_URL (https); sem ele a licença nega (fail-closed) e o pós-obra não executa.
@@ -123,7 +125,7 @@ const servidor = criarServidor()
 const posobra = criarPosObra({ raiz: obras.raiz(), disparo, construcao, licenca })
 // Ajuda do Atlas (F17): o Claude só lê; o print é SÓ da janela do Atlas; páginas só da lista fechada. Casos não resolvidos vão à API (endpoint ainda pendente).
 const ajuda = criarAjuda({
-  raiz: obras.raiz(), dadosApp: app.getPath('userData'), disparo, shell, dialog, janela: () => janelaPrincipal,
+  raiz: obras.raiz(), dadosApp: app.getPath('userData'), disparo: disparoLeve, shell, dialog, janela: () => janelaPrincipal,
   capturar: async () => { if (!janelaPrincipal) throw new Error('sem-janela'); return (await janelaPrincipal.webContents.capturePage()).toPNG() },
 })
 const casos = criarCasos({ cofre, hashComputador: async () => hash() })

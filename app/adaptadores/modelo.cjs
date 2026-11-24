@@ -10,7 +10,7 @@ const path = require('node:path')
 
 /** Lista fechada. Para atualizar quando sair modelo novo: trocar aqui (e o RECOMENDADO). */
 const MODELOS = [
-  { id: 'claude-opus-5-5', nome: 'Opus 5.5', explica: 'O melhor resultado. Gasta mais da cota do seu plano: na construção da obra, só no plano Max (no Pro, a obra usa o Sonnet para a cota render).' },
+  { id: 'claude-opus-5-5', nome: 'Opus 5.5', explica: 'O melhor resultado. Gasta mais da cota do seu plano: fora do protótipo, só no plano Max (no Pro, a obra, a Ajuda, o estilo e os nomes usam o Sonnet para a cota render).' },
   { id: 'claude-sonnet-5-5', nome: 'Sonnet 5.5', explica: 'Mais rápido e econômico. Bom resultado, gasta menos cota.' },
   { id: 'claude-haiku-5-5', nome: 'Haiku 5.5', explica: 'O mais rápido. Só para obras bem simples.' },
 ]

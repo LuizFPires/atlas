@@ -80,7 +80,7 @@ O Atlas roda você sem ninguém no terminal e acompanha tudo pelo painel. Cada t
 2. Com o relatório dele (STATUS concluido): `git push -u origin <branch>` e abra o PR para a base **sem merge**:
    `gh pr create --base <base> --title "MN — <título>" --body "<itens e decisões>"`
    Se o PR já existir, só faça push.
-3. Espere o CI: `gh pr checks <n> --watch`. Reporte o resultado. CI vermelho → chame um **novo** `implementador` com `Corrija o CI do PR #n do Milestone N: <falha resumida>`.
+3. Espere o CI com `node .claude/hooks/esperar-ci.cjs <n>` (no Bash, com timeout de 600000; se voltar "ainda rodando", rode de novo): ele espera calado e devolve uma linha (verde, vermelho com o nome do que falhou, ausente ou travado pela cobrança). **Nunca use `gh pr checks --watch`** (reimprime a tabela a cada 10 s e enche a conversa). Para ver uma falha, só `gh run view <id> --log-failed | tail -60`. CI vermelho → chame um **novo** `implementador` com `Corrija o CI do PR #n do Milestone N: <falha resumida>`.
 4. Se o STATUS for parcial ou bloqueado, registre a pendência e decida (ou pergunte) antes de seguir. Se o bloqueio for **externo** (billing, cota, serviço fora do ar), não pare: siga a seção "Bloqueios externos".
 
 ### Etapa 3 — Revisar e testar (subagente independente)
@@ -93,11 +93,11 @@ O Atlas roda você sem ninguém no terminal e acompanha tudo pelo painel. Cada t
 2. Achados **altos e médios** (de qualquer revisor chamado) se corrigem sempre; **baixos**, quando baratos. Junte os achados num só pedido e chame um **novo** `implementador`:
    `Corrija os achados do Milestone N: <lista com arquivo:linha>. Commit: fix(mN): review fixes — <resumo>.`
    Se uma migration já foi commitada, a correção vem numa migration nova. Achados aceitos sem correção vão para `Notas:` com o motivo.
-3. Push e espere o CI. Depois da correção, chame de novo **só** o revisor que reprovou (ou os que reprovaram), com a lista do que foi corrigido. Não crie commit vazio nem repita verificações sem mudança que justifique.
+3. Push e espere o CI (`esperar-ci.cjs`). Depois da correção, chame de novo **só** o revisor que reprovou (ou os que reprovaram), com a entrada `Reconferir o Milestone N, PR #n, commit <hash da correção>: <lista dos achados corrigidos>`: ele confere só esses achados, não a obra toda. Não crie commit vazio nem repita verificações sem mudança que justifique.
 4. Duas reprovações seguidas do mesmo milestone → pare e pergunte, mesmo no automático.
 
 ### Etapa 4 — Merge (você)
-1. **Medição**: no PLAN, troque `- [ ]` por `- [x]` **somente** nas tarefas aprovadas pelos revisores chamados na etapa 3 (todos com VEREDITO aprovado, sem achado alto ou médio em aberto) (Edit pontual). Commit `docs(mN): medição`, push, espere o CI. É isso que faz o prédio subir no canteiro.
+1. **Medição**: no PLAN, troque `- [ ]` por `- [x]` **somente** nas tarefas aprovadas pelos revisores chamados na etapa 3 (todos com VEREDITO aprovado, sem achado alto ou médio em aberto) (Edit pontual). Commit `docs(mN): medição`, push, espere o CI (`esperar-ci.cjs`). É isso que faz o prédio subir no canteiro.
 2. `git status`: nada do milestone sem commit, nada alheio ao trabalho. Avise sobre o que ficou de fora.
 3. Confira o CI da versão atual da branch. **Só faça merge com os checks exigidos verdes e sem bloqueio de revisão.** CI rodando não é sucesso. Sem CI configurado, diga isso e siga os critérios do projeto, sem alegar CI verde.
    **CI travado por minutos/cobrança do GitHub** (o job nem começa: "recent account payments have failed", "spending limit", "billing"): não é CI vermelho. Registre a trava `github-minutos` (abaixo), rode **aqui** a mesma conferência do workflow (`npm ci` ou `npm install`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, os que existirem) e, se tudo passar, faça o merge com `--subject "Merge pull request #<n>: MN — <título> (conferido no computador: GitHub sem minutos)"`. Nunca deixe o repositório público por conta própria: isso é decisão do usuário, na ficha do Atlas.

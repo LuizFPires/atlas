@@ -489,3 +489,17 @@ tela: prototipo/caminho-novo/PalcoObra.dc.html
 - [x] Chip "Andares · N de M prontos" abre a gaveta dos andares: cada etapa é um andar, de baixo para cima (pronto verde, atual piscando, os que faltam apagados) e "Ver no cronograma"
 - [x] Os balões técnicos do canteiro 3D somem no app; fica um balão só, em português simples
 Notas: DECISÃO do Luiz (24/11/2026, "O mais legal é o prédio subindo. Preciso ver 3 opções de layout ... com ênfase no prédio subindo"; escolheu "a opção do protótipo A, com opção de clicar em um 'chip' chamado 'andares' que abre um drawer lateral para pegar a ideia do C"; aprovado: "Vamos nessa última opção de protótipo"). Telas L4PalcoAndares e L5PalcoAndaresAberto (componente PalcoObra) em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. DIVERGÊNCIA: substitui a grade da F09/M41 (cartões de avanço e "agora na obra" ao lado do canteiro) pelo palco em tela cheia; o modo da obra desce para baixo do palco.
+
+## Milestone 44 — Economia de tokens: a linha só gasta com o que faz a obra andar
+peso: 3
+spec: S19
+tela: prototipo/caminho-novo/ObraEstado.dc.html
+- [x] O estado da obra (avanço, milestone, branch, roteiro, modo, por que parou) vai pronto na entrada do /construir; a linha não gasta 8 a 10 passos para se achar
+- [x] Só religa com avanço ou motivo novo: turno sem tarefa, commit, etapa ou PR novo espera 5 min e tenta uma vez; no segundo seguido, pede o cliente. Sem internet, Claude, pasta ou disco, espera sem gastar tentativa
+- [x] No Atlas, sem checkpoint e sem pergunta entre etapas: automático segue direto; passo a passo para só depois do merge do milestone
+- [x] Consumo de cada turno (passos, tokens, custo estimado) guardado em .atlas/consumo.jsonl e o último em linha.json
+- [x] Sonnet na execução e nos revisores; Opus só no plano Max (na obra, na Ajuda, no estilo e nos nomes). O protótipo segue o modelo escolhido
+- [x] Revisores pelo que o milestone mudou (hooks/revisores.cjs): qa sempre; seguranca e desempenho quando relevantes; reconferência só dos achados corrigidos
+- [x] CI esperado em silêncio (hooks/esperar-ci.cjs, uma linha) no lugar de gh pr checks --watch
+- [x] Teste de cota não chama o Claude antes da hora de volta conhecida
+Notas: DECISÃO do Luiz (24/11/2026, "Os tokens do Guilherme já estouraram!! ... Precisamos otimizar!!"; "Pode fazer do 1 ao 4 e nas duas decisões eu concordo com as sugestões"; "Nós precisamos ter um sistema eficiente em tokens. Essa é a principal proposta de valor do Atlas"). Origem: a obra do Guilherme ligou a linha 65 vezes e o coordenador releu PLAN (28x), roteiro.json (38x), recomendado.json (25x), gh auth status (17x) e git remote (16x). DIVERGÊNCIA: o roteiro da /construir chamava os três revisores em toda etapa e tinha checkpoint a cada 3 milestones; no Atlas, isso muda como acima. O vistoriador (vistoria final) continua no Opus.

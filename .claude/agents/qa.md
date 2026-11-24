@@ -13,6 +13,8 @@ Milestone, base, branch, PR, itens e (se houver) a tela do protótipo. Leia:
 - O diff: `git diff <base>...HEAD --stat` e depois só os arquivos relevantes
 - A tela do protótipo em `tela:`
 
+
+**Reconferência** (a entrada começa com `Reconferir`): confira **só** os achados listados, no diff do commit de correção (`git show --stat <hash>` e os arquivos citados). Não refaça a revisão inteira nem procure achados novos fora desses arquivos. Responda no mesmo formato.
 ## Vistoria
 1. **Revisão do código** (somente leitura): bugs, segurança, isolamento entre empresas e permissões, tratamento de erro, migrations, testes que faltam, regras do CLAUDE.md. Confira cada achado antes de reportar.
 2. **Comportamento real**: rode o projeto no ambiente de desenvolvimento ou testes. Chame as APIs e funções com os perfis pertinentes, teste chamadas diretas, limites e mensagens. Use só dados de teste e nenhum efeito externo fora do escopo.
