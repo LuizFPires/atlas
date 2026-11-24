@@ -3,6 +3,7 @@ import { recadoDoErroAprovar } from './Aprovar'
 test('erros conhecidos de "Começar a obra" ganham recado claro', () => {
   expect(recadoDoErroAprovar(new Error('claude-falhou'))).toMatch(/O Claude não respondeu/)
   expect(recadoDoErroAprovar(new Error('plano-invalido'))).toMatch(/não consegui ler o plano/i)
+  expect(recadoDoErroAprovar(new Error('kit-indisponivel'))).toMatch(/instruções da obra/)
   expect(recadoDoErroAprovar(new Error('sem-etapas'))).toMatch(/plano da obra ainda não ficou pronto/)
 })
 

@@ -89,6 +89,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { montarBoasVindas, montarConfirmacaoDegustacao, montarCortesia, remetentePessoal } from './emails.ts'
 import { montarAvisoAtraso, montarCodigoAtivacao } from './emails-avisos.ts'
 import { criarFonteAtualizacaoStorage, criarLinkInstaladorStorage, lerConfigInstalador } from './instalador-storage.ts'
+import { KIT_EMBUTIDO } from './kit-embutido.ts'
+import { juntarKit } from './kit.ts'
 
 function env(nome: string): string {
   const v = Deno.env.get(nome)
@@ -413,23 +415,30 @@ async function listarRecursivo(bucket: any, prefixo: string, prof = 0, acc: stri
   return acc
 }
 
-/** Carrega o kit de uma obra: base/ + <obra>/ (a obra vence). Só em memória; sem base e sem obra = erro (não entrega kit vazio). */
+/** Carrega o kit de uma obra: o kit EMBUTIDO na função (kit-embutido.ts, gerado do .claude/ do repositório) + o bucket
+ *  base/ + <obra>/ (o bucket vence pelo mesmo caminho). Só em memória. Sem nada no bucket (ou sem bucket), entrega o embutido:
+ *  24/11/2026, o bucket estava vazio e nenhuma obra começava ("código: kit-indisponivel"). */
 export function criarCarregarKit() {
   return async (obraId: string) => {
     // Só slug/UUID seguro: começa com alfanumérico, só [a-z0-9-] depois. Rejeita ".", "..", ponto inicial e separadores — o valor vira prefixo do bucket.list.
     if (!/^[a-z0-9][a-z0-9-]{0,79}$/i.test(obraId)) throw new Error('kit: obra inválida')
-    const bucket = db().storage.from(Deno.env.get('ATLAS_KIT_BUCKET') ?? 'kit')
-    const mapa = new Map<string, string>() // caminho relativo -> conteúdo
-    for (const raiz of ['base', obraId]) {
-      for (const completo of await listarRecursivo(bucket, raiz)) {
-        const rel = completo.slice(raiz.length + 1)
-        const { data, error } = await bucket.download(completo)
-        if (error || !data) throw new Error(`kit: não consegui ler ${completo}`)
-        mapa.set(rel, await data.text())
+    const doStorage: { caminho: string; conteudo: string }[] = []
+    try {
+      const bucket = db().storage.from(Deno.env.get('ATLAS_KIT_BUCKET') ?? 'kit')
+      for (const raiz of ['base', obraId]) {
+        for (const completo of await listarRecursivo(bucket, raiz)) {
+          const { data, error } = await bucket.download(completo)
+          if (error || !data) throw new Error(`kit: não consegui ler ${completo}`)
+          doStorage.push({ caminho: completo.slice(raiz.length + 1), conteudo: await data.text() })
+        }
       }
+    } catch (e) {
+      if (doStorage.length > 0) throw e // leu parte e falhou: não entrega kit pela metade
+      // sem bucket ou vazio: segue só com o embutido
     }
-    if (mapa.size === 0) throw new Error('kit: nenhum arquivo no bucket (suba o kit em base/ ou na pasta da obra)')
-    return [...mapa].map(([caminho, conteudo]) => ({ caminho, conteudo }))
+    const kit = juntarKit(KIT_EMBUTIDO, doStorage)
+    if (kit.length === 0) throw new Error('kit: vazio')
+    return kit
   }
 }
 
