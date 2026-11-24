@@ -177,3 +177,33 @@ describe('"Começar a obra" sempre responde perto do botão', () => {
     await vi.waitFor(() => expect(onComecou).toHaveBeenCalled())
   })
 })
+
+test('antes de começar: o notebook é o canteiro (tomada, tampa e "desligou, continua"); ajustar a tampa e depois começar', async () => {
+  const user = userEvent.setup()
+  const construcao = criarConstrucaoFixture()
+  const iniciar = vi.spyOn(construcao, 'iniciar')
+  const tampa = { ajustada: vi.fn(async () => false), ajustar: vi.fn(async () => ({ ok: true as const })) }
+  render(<TemaProvider><Aprovar obra={obra} construcao={construcao} claude={criarClaudeFixture({ conectado: true, plano: 'pro' })} modos={criarModoObraFixture()} onVoltar={() => {}} tampa={tampa} /></TemaProvider>)
+  await screen.findByText('Base e login')
+  await user.click(screen.getByRole('button', { name: 'Começar a obra' }))
+  const d = await screen.findByRole('dialog', { name: /O seu notebook é o canteiro/ })
+  expect(within(d).getByText(/Deixe na tomada/)).toBeInTheDocument()
+  expect(within(d).getByText(/Desligou\? Sem problema/)).toBeInTheDocument()
+  expect(iniciar).not.toHaveBeenCalled()
+  await user.click(within(d).getByRole('button', { name: 'Ajustar para mim' }))
+  expect(tampa.ajustar).toHaveBeenCalled()
+  expect(await within(d).findByText('Ajustado ✓')).toBeInTheDocument()
+  await user.click(within(d).getByRole('button', { name: 'Começar a obra →' }))
+  expect(iniciar).toHaveBeenCalled()
+})
+
+test('tampa já ajustada: começa direto, sem aviso', async () => {
+  const user = userEvent.setup()
+  const construcao = criarConstrucaoFixture()
+  const iniciar = vi.spyOn(construcao, 'iniciar')
+  render(<TemaProvider><Aprovar obra={obra} construcao={construcao} claude={criarClaudeFixture({ conectado: true, plano: 'pro' })} modos={criarModoObraFixture()} onVoltar={() => {}} tampa={{ ajustada: async () => true, ajustar: async () => ({ ok: true }) }} /></TemaProvider>)
+  await screen.findByText('Base e login')
+  await user.click(screen.getByRole('button', { name: 'Começar a obra' }))
+  expect(iniciar).toHaveBeenCalled()
+  expect(screen.queryByRole('dialog')).toBeNull()
+})

@@ -28,6 +28,8 @@ interface Props {
   relatoInicial?: string
   /** Pausa sem digitar/falar antes de conferir o roteiro (teste usa pouco). */
   esperaMs?: number
+  /** "Tenho uma planilha" (prototipo/caminho-novo/X1): começa pela planilha que a pessoa já usa. */
+  onPlanilha?: () => void
 }
 
 /**
@@ -35,7 +37,7 @@ interface Props {
  * ideia livremente, falando. O roteiro à esquerda é só um guia: a cada pausa o Claude (rápido) diz quais tópicos já foram
  * respondidos e a bolinha fica verde. No fim, o Atlas pergunta só o que faltou.
  */
-export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2500 }: Props) {
+export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2500, onPlanilha }: Props) {
   const [rascunho, setRascunho] = useState<Rascunho>(() => { const r = lerRascunho(); return relatoInicial && !r.relato ? { ...r, relato: relatoInicial } : r })
   const [erro, setErro] = useState('')
   const [cobertos, setCobertos] = useState<Partial<Record<IdTopico, string>>>({})
@@ -123,7 +125,10 @@ export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2
           <span className="at-ideia__rotulo">NOVA OBRA · PRIMEIRO PASSO</span>
           <h1>Conte a sua ideia para o Atlas</h1>
         </div>
-        <Botao variante="secundario" onClick={onVoltar}>← Minhas obras</Botao>
+        <div className="at-ideia__topo-acoes">
+          {onPlanilha && <Botao variante="secundario" onClick={onPlanilha}>Tenho uma planilha →</Botao>}
+          <Botao variante="secundario" onClick={onVoltar}>← Minhas obras</Botao>
+        </div>
       </header>
       <div className="at-ideia__grade">
         <aside className="at-ideia__roteiro">

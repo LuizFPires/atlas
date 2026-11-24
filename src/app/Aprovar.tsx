@@ -6,6 +6,10 @@ import { NOME_PLANO } from './claude-plano'
 import { MODO_RECOMENDADO, MODOS_OBRA, PARADAS_REAIS, TEXTO_MODO, type Etapa, type ModoObra, type Planejamento, type PonteConstrucao, type PonteModoObra } from './ponte-construcao'
 import './aprovar.css'
 
+/** O notebook é o canteiro (TP1Tampa): ajustar a tampa na tomada (powercfg, com o clique da pessoa). Só no Atlas instalado. */
+export interface PonteTampa { ajustada(): Promise<boolean>; ajustar(): Promise<{ ok: true } | { ok: false; motivo: string }> }
+const CHAVE_EU_CUIDO = 'atlas:tampa:eu-cuido'
+
 interface Props {
   obra: ObraDoEstilo
   construcao: PonteConstrucao
@@ -16,6 +20,7 @@ interface Props {
   onVoltar: () => void
   /** Depois que a obra começou (PLAN.md gerado e construção disparada no modo escolhido): segue para o painel da obra (M19); até lá, volta às obras. */
   onComecou?: () => void
+  tampa?: PonteTampa
 }
 
 export const recadoDoErroAprovar = (e: unknown) => {
@@ -48,7 +53,7 @@ export function textoCota(pausas: number): string {
 }
 
 /** F08: aprovar e começar a obra. Mostra etapas, prazo no plano do cliente e consumo da cota. */
-export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou }: Props) {
+export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou, tampa }: Props) {
   const [plano, setPlano] = useState<Plano | undefined>()
   const [plan, setPlan] = useState<Planejamento | null>(null)
   const [erro, setErro] = useState('')
@@ -57,6 +62,7 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou }
   const [guardado, setGuardado] = useState(false)
   const [ocupado, setOcupado] = useState(false)
   const [comecou, setComecou] = useState<{ modo: ModoObra; plan: string } | null>(null)
+  const [avisoTampa, setAvisoTampa] = useState<null | 'aberto' | 'ajustando' | 'ajustado' | 'nao-deu'>(null)
 
   useEffect(() => {
     let vivo = true
@@ -72,6 +78,22 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou }
     setModo(novo)
     setErro('')
     try { await modos.gravar(obra.pasta, novo); setGuardado(true) } catch (x) { setModo(anterior); setErro(recadoDoErroAprovar(x)) }
+  }
+
+  // Antes de começar: "o notebook é o canteiro" (TP1Tampa). Aparece até a tampa estar ajustada ou a pessoa dizer que cuida disso.
+  const pedirComecar = async () => {
+    if (!plan || ocupado || comecou) return
+    let euCuido = false
+    try { euCuido = localStorage.getItem(CHAVE_EU_CUIDO) === '1' } catch { /* sem armazenamento */ }
+    const ajustada = tampa ? await tampa.ajustada().catch(() => false) : true
+    if (!tampa || ajustada || euCuido) { void comecar(); return }
+    setAvisoTampa('aberto')
+  }
+  const ajustarTampa = async () => {
+    if (!tampa) return
+    setAvisoTampa('ajustando')
+    const r = await tampa.ajustar().catch(() => ({ ok: false as const, motivo: 'nao-deu' }))
+    setAvisoTampa(r.ok ? 'ajustado' : 'nao-deu')
   }
 
   const comecar = async () => {
@@ -167,8 +189,33 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou }
               )}
               <div className="at-apr__rodape">
                 <Botao variante="secundario" onClick={onVoltar}>Voltar ao protótipo</Botao>
-                <Botao className="at-apr__comecar" disabled={ocupado || !!comecou} onClick={() => void comecar()}>{ocupado ? 'Começando a obra…' : 'Começar a obra'}</Botao>
+                <Botao className="at-apr__comecar" disabled={ocupado || !!comecou} onClick={() => void pedirComecar()}>{ocupado ? 'Começando a obra…' : 'Começar a obra'}</Botao>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {avisoTampa && (
+        <div className="at-apr__tampa-fundo">
+          <div role="dialog" aria-modal="true" aria-labelledby="apr-tampa-tit" className="at-apr__tampa">
+            <span className="at-apr__rotulo">ANTES DE COMEÇAR</span>
+            <h2 id="apr-tampa-tit">O seu notebook é o canteiro. Enquanto ele estiver ligado, a obra anda.</h2>
+            <ol>
+              <li><b>Deixe na tomada.</b> Na bateria, o Windows desliga para economizar.</li>
+              <li>
+                <b>Fechar a tampa faz o notebook dormir</b>, e a obra para. O Atlas pode ajustar o Windows para continuar trabalhando de tampa fechada (na tomada) e desfaz sozinho quando a obra terminar.
+                <div className="at-apr__tampa-acoes">
+                  {avisoTampa === 'ajustado'
+                    ? <span className="at-apr__tampa-ok" role="status">Ajustado ✓</span>
+                    : <Botao onClick={() => void ajustarTampa()} disabled={avisoTampa === 'ajustando'}>{avisoTampa === 'ajustando' ? 'Ajustando…' : 'Ajustar para mim'}</Botao>}
+                  {avisoTampa !== 'ajustado' && <Botao variante="secundario" onClick={() => { try { localStorage.setItem(CHAVE_EU_CUIDO, '1') } catch { /* nada */ } setAvisoTampa(null); void comecar() }}>Eu deixo a tampa aberta</Botao>}
+                </div>
+                {avisoTampa === 'nao-deu' && <span className="at-apr__tampa-erro" role="alert">Não consegui ajustar o Windows daqui. Deixe a tampa aberta enquanto a obra anda.</span>}
+              </li>
+              <li><b>Desligou? Sem problema.</b> Ao ligar de novo, o Atlas continua de onde parou. Nada se perde.</li>
+            </ol>
+            <div className="at-apr__tampa-acoes">
+              <Botao onClick={() => { setAvisoTampa(null); void comecar() }}>Começar a obra →</Botao>
             </div>
           </div>
         </div>

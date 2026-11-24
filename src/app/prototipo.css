@@ -121,3 +121,4 @@
 .at-proto__conf--pontos svg { color: #F2B84B; }
 .at-proto__conf b { color: var(--text); }
 .at-proto__conf-btn { min-height: 36px; padding: 0 12px; border-radius: 10px; border: 0; background: var(--lime); color: var(--on-lime); font: 700 13px var(--font-text); cursor: pointer; }
+.at-proto__origem { font: 600 10px var(--font-mono); font-style: normal; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 999px; background: var(--soft); color: var(--lime-txt); align-self: flex-start; }

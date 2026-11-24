@@ -460,3 +460,12 @@ test('relato: devolve o que o cliente contou (para voltar à etapa da ideia); se
   fs.writeFileSync(path.join(raiz, 'obra', 'prototipo', 'relato.md'), 'Quero bater o ponto pelo celular.')
   assert.equal(await p.relato('obra'), 'Quero bater o ponto pelo celular.')
 })
+
+test('obra que nasceu de planilha: a aba de origem de cada tela vem do mapa e fica gravada na versão', () => {
+  const { mapaDoJson, telasDoJson } = require('./prototipo.cjs')
+  const m = mapaDoJson({ telas: [{ id: 'pedidos', nome: 'Pedidos', descricao: 'lista', origem: 'Pedidos' }, { id: 'inicio', nome: 'Início', descricao: 'x' }] })
+  assert.equal(m[0].origem, 'Pedidos')
+  assert.equal('origem' in m[1], false)
+  const t = telasDoJson({ telas: [{ id: 'pedidos', nome: 'Pedidos', html: '<div>x</div>', origem: '<b>Pedidos</b>' }] }).telas
+  assert.equal(t[0].origem.includes('<'), false)
+})

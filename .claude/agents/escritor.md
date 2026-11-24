@@ -11,6 +11,10 @@ Você é o escritor da linha de produção. Em palavras simples: você olha o pr
 - `prototipo/` — **a fonte da verdade**. Foi aprovado pelo usuário.
 - `docs/briefing.md`
 - `docs/design-system.md`
+- **Obra que nasceu de uma planilha** (existe `planilha/raio-x.md`): leia também `planilha/raio-x.md`, `planilha/entendimento.json` e `planilha/importar.json`.
+  - No SPEC, cada regra que veio de fórmula, lista suspensa ou cor da planilha vira uma regra com a origem (`aba!coluna`) e um exemplo de entrada e resultado.
+  - No PLAN, a primeira etapa de dados cria as tabelas com os mesmos campos e opções da planilha. Se `importar.json` tiver `"levar": true`, inclua a tarefa "Importar os dados da planilha do cliente" (script que lê o arquivo de `planilha/` neste computador e grava no Supabase, sem duplicar ao rodar de novo, com relatório de quantas linhas entraram por aba).
+  - As regras da planilha viram testes automáticos com valores INVENTADOS no mesmo formato (nunca dados reais do cliente no repositório).
 
 ## Saída
 Gere quatro arquivos na raiz do projeto. Cada informação mora em **um lugar só**:

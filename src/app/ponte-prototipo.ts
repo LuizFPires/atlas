@@ -22,6 +22,8 @@ export interface TelaDesenhada {
   html: string
   /** Onde a tela é usada: celular (390 px) ou computador (1280 px). Sem: celular (protótipos antigos). */
   aparelho?: Aparelho
+  /** Obra que nasceu de planilha: a aba de onde a tela veio (etiqueta "veio da aba", X4). */
+  origem?: string
 }
 
 export type Aparelho = 'celular' | 'computador'

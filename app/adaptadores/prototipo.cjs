@@ -36,6 +36,8 @@ const PERIGOSO = /<\s*(script|iframe|object|embed)\b/i
 
 /** Onde a tela é usada (Luiz, 23/11/2026: "o Atlas é para mobile e web"): celular (390 px) ou computador (1280 px). Sem dizer: celular. */
 const aparelhoDe = (x) => (x === 'computador' ? 'computador' : 'celular')
+/** Aba da planilha de onde a tela veio (obra que começou por planilha): só para a etiqueta "veio da aba". */
+const comOrigem = (o) => (typeof o === 'string' && o.trim() ? { origem: umaLinha(o, 60) } : {})
 
 const nomeVersao = (n) => `v${String(n).padStart(3, '0')}`
 
@@ -47,7 +49,7 @@ function telasDoJson(obj, { podeVazio = false } = {}) {
     if (!t || typeof t !== 'object' || typeof t.id !== 'string' || !ID_TELA.test(t.id) || ids.has(t.id)) throw new Error('telas-invalidas')
     if (typeof t.html !== 'string' || t.html.length === 0 || t.html.length > MAX_HTML || PERIGOSO.test(t.html) || t.html.includes('\0')) throw new Error('telas-invalidas')
     ids.add(t.id)
-    return { id: t.id, nome: umaLinha(t.nome, 60, t.id), html: t.html, aparelho: aparelhoDe(t.aparelho) }
+    return { id: t.id, nome: umaLinha(t.nome, 60, t.id), html: t.html, aparelho: aparelhoDe(t.aparelho), ...comOrigem(t.origem) }
   })
   return {
     telas,
@@ -67,11 +69,11 @@ function mapaDoJson(obj) {
   return obj.telas.map((t) => {
     if (!t || typeof t.id !== 'string' || !ID_TELA.test(t.id) || ids.has(t.id)) throw new Error('mapa-invalido')
     ids.add(t.id)
-    return { id: t.id, nome: umaLinha(t.nome, 60, t.id), descricao: umaLinha(t.descricao, 400), aparelho: aparelhoDe(t.aparelho) }
+    return { id: t.id, nome: umaLinha(t.nome, 60, t.id), descricao: umaLinha(t.descricao, 400), aparelho: aparelhoDe(t.aparelho), ...comOrigem(t.origem) }
   })
 }
 
-const FORMATO_MAPA = 'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"telas":[{"id":"minusculas-e-hifen","nome":"nome para o cliente","aparelho":"celular","descricao":"o que a tela mostra, o que dá para fazer nela e para quais telas ela leva"}]}. Em cada tela, "aparelho":"celular" ou "computador": onde quem usa essa tela vai usá-la. Aplicativo de quem está na rua, no canteiro ou com o cliente = celular; painel do escritório, sistema de gestão, relatórios grandes e site = computador. Um mesmo sistema pode ter as duas partes (ex.: o app da equipe no celular e o painel do escritório no computador). Se o relato não deixar claro, use celular.'
+const FORMATO_MAPA = 'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"telas":[{"id":"minusculas-e-hifen","nome":"nome para o cliente","aparelho":"celular","descricao":"o que a tela mostra, o que dá para fazer nela e para quais telas ela leva"}]}. Em cada tela, "aparelho":"celular" ou "computador": onde quem usa essa tela vai usá-la. Aplicativo de quem está na rua, no canteiro ou com o cliente = celular; painel do escritório, sistema de gestão, relatórios grandes e site = computador. Um mesmo sistema pode ter as duas partes (ex.: o app da equipe no celular e o painel do escritório no computador). Se o relato não deixar claro, use celular. Se a obra nasceu de uma PLANILHA, cada tela leva também "origem": o nome da aba de onde ela veio (ex.: "origem":"Pedidos"); tela que não veio de aba nenhuma fica sem "origem".'
 
 function pedidoMapa(obraNome, estilo, relato) {
   return [
@@ -81,6 +83,7 @@ function pedidoMapa(obraNome, estilo, relato) {
     '- Ordem: a jornada principal primeiro, a começar pela tela de entrada.',
     `- No máximo ${MAX_TELAS} telas. Na descrição de cada uma, diga para quais telas ela leva (os links).`,
     '- Antes de responder, releia o relato e confira se NADA que o cliente disse ficou sem tela.',
+    '- Se existir planilha/raio-x.md na pasta da obra, o sistema NASCE dessa planilha (leia o arquivo): faça uma lista, um formulário (as listas suspensas viram as opções; as fórmulas viram campos calculados, nunca digitados) e um detalhe para cada aba de cadastro ou movimento; um painel para as abas de resumo, tabelas dinâmicas e gráficos; e transforme cada regra de cor em alerta. Use os títulos das colunas da planilha.',
     FORMATO_MAPA,
     '',
     'Nome da obra:',
@@ -95,7 +98,7 @@ function pedidoMapa(obraNome, estilo, relato) {
 function pedidoLote(obraNome, estilo, mapa, lote, referencia) {
   return [
     REGRA_CONTEUDO_CLIENTE,
-    `FASE 2 de 2: desenhe AGORA só estas ${lote.length} telas do mapa (ids: ${lote.map((t) => t.id).join(', ')}), no estilo abaixo e seguindo design-system.md, telas.md, regras.md e prototipo/relato.md da pasta da obra (se existirem).`,
+    `FASE 2 de 2: desenhe AGORA só estas ${lote.length} telas do mapa (ids: ${lote.map((t) => t.id).join(', ')}), no estilo abaixo e seguindo design-system.md, telas.md, regras.md, prototipo/relato.md e planilha/raio-x.md da pasta da obra (se existirem). Obra que nasceu de planilha: use os títulos das colunas, as opções das listas e linhas parecidas com as do exemplo da planilha, para o cliente reconhecer os dados dele.`,
     'As outras telas do mapa são desenhadas em outros pedidos: use os ids delas nos links (href="#tela-ID"), mesmo que não estejam neste lote.',
     '',
     ...DIRECAO_DE_ARTE,
@@ -175,7 +178,7 @@ function criarPrototipo({ raiz, disparo }) {
         if (!t || typeof t.id !== 'string' || !ID_TELA.test(t.id)) continue
         const html = lerTexto(caminhoSeguro(raiz, pasta, 'prototipo', 'versoes', nome, 'telas', `${t.id}.html`), MAX_HTML)
         if (html === null) continue
-        telas.push({ id: t.id, nome: umaLinha(t.nome, 60, t.id), html, aparelho: aparelhoDe(t.aparelho) })
+        telas.push({ id: t.id, nome: umaLinha(t.nome, 60, t.id), html, aparelho: aparelhoDe(t.aparelho), ...comOrigem(t.origem) })
       }
       if (telas.length) out.push({ numero, resumo: umaLinha(meta.resumo, 80, 'Versão'), telas })
     }
@@ -199,7 +202,7 @@ function criarPrototipo({ raiz, disparo }) {
       try { fs.mkdirSync(alvo) } catch (e) { if (e.code === 'EEXIST') continue; throw e }
       garantirSubpasta(raiz, pasta, 'prototipo', 'versoes', nomeVersao(numero), 'telas')
       for (const t of telas) criarArquivoExclusivo(caminhoSeguro(raiz, pasta, 'prototipo', 'versoes', nomeVersao(numero), 'telas', `${t.id}.html`), t.html)
-      criarArquivoExclusivo(caminhoSeguro(raiz, pasta, 'prototipo', 'versoes', nomeVersao(numero), 'versao.json'), JSON.stringify({ versao: 1, numero, resumo, telas: telas.map((t) => ({ id: t.id, nome: t.nome, aparelho: aparelhoDe(t.aparelho) })) }) + '\n')
+      criarArquivoExclusivo(caminhoSeguro(raiz, pasta, 'prototipo', 'versoes', nomeVersao(numero), 'versao.json'), JSON.stringify({ versao: 1, numero, resumo, telas: telas.map((t) => ({ id: t.id, nome: t.nome, aparelho: aparelhoDe(t.aparelho), ...comOrigem(t.origem) })) }) + '\n')
       gravarAtomico(caminhoSeguro(raiz, pasta, 'prototipo', 'atual.json'), JSON.stringify({ versao: 1, atual: numero }) + '\n')
       return numero
     }
@@ -272,7 +275,7 @@ function criarPrototipo({ raiz, disparo }) {
         if (!r.telas.every((t) => pedidos.has(t.id))) throw new Error('telas-invalidas') // nada fora do lote
         for (const t of r.telas) {
           const doMapa = mapa.find((m) => m.id === t.id)
-          const tela = doMapa ? { ...t, aparelho: doMapa.aparelho } : t // quem decide o aparelho é o mapa
+          const tela = doMapa ? { ...t, aparelho: doMapa.aparelho, ...comOrigem(doMapa.origem) } : t // quem decide o aparelho (e a aba de origem) é o mapa
           feitas.set(t.id, tela); guardarNoRascunho(pasta, tela)
         }
         publicar()
@@ -408,7 +411,8 @@ function criarPrototipo({ raiz, disparo }) {
         // Aparelho que o Claude não repetiu num ajuste: fica o da tela (o painel do computador não vira celular).
         const disse = new Set((Array.isArray(bruto.telas) ? bruto.telas : []).filter((t) => t && (t.aparelho === 'celular' || t.aparelho === 'computador')).map((t) => t.id))
         const antes = new Map(atual.telas.map((t) => [t.id, t.aparelho]))
-        const novas = new Map(r.telas.map((t) => [t.id, disse.has(t.id) || !antes.has(t.id) ? t : { ...t, aparelho: antes.get(t.id) }]))
+        const origemAntes = new Map(atual.telas.map((t) => [t.id, t.origem]))
+        const novas = new Map(r.telas.map((t) => { const x = disse.has(t.id) || !antes.has(t.id) ? t : { ...t, aparelho: antes.get(t.id) }; return [t.id, x.origem || !origemAntes.get(t.id) ? x : { ...x, origem: origemAntes.get(t.id) }] }))
         const telas = atual.telas.filter((t) => !remover.has(t.id)).map((t) => novas.get(t.id) ?? t)
         for (const t of r.telas) if (!atual.telas.some((x) => x.id === t.id)) telas.push(novas.get(t.id))
         if (!telas.length || telas.length > MAX_TELAS || (!r.telas.length && !remover.size)) throw new Error('telas-invalidas')
@@ -448,7 +452,7 @@ function criarPrototipo({ raiz, disparo }) {
         const atual = e.versoes.find((v) => v.numero === e.atual)
         const tela = atual?.telas.find((t) => t.id === String(telaId))
         if (!tela) throw new Error('tela-inexistente')
-        const [nova] = telasDoJson({ telas: [{ id: tela.id, nome: tela.nome, html: String(html ?? ''), aparelho: tela.aparelho }] }).telas
+        const [nova] = telasDoJson({ telas: [{ id: tela.id, nome: tela.nome, html: String(html ?? ''), aparelho: tela.aparelho, origem: tela.origem }] }).telas
         gravarVersao(pasta, umaLinha(`${tela.nome} escolhido: ${umaLinha(titulo, 40, 'versão')}`, 80, 'Versão escolhida'), atual.telas.map((t) => (t.id === tela.id ? nova : t)))
         return ler(pasta)
       })
@@ -466,4 +470,4 @@ function criarPrototipo({ raiz, disparo }) {
   }
 }
 
-module.exports = { criarPrototipo, telasDoJson, pedidoAjustar, MAX_HTML }
+module.exports = { criarPrototipo, telasDoJson, mapaDoJson, pedidoAjustar, MAX_HTML }
