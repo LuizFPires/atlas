@@ -173,3 +173,16 @@ test('Voltar e Fiz isso ficam fixos no rodapé, depois de "Não consegui" e da a
   const video = screen.getByRole('button', { name: /Ver este passo em vídeo/ })
   expect(video.compareDocumentPosition(rodape) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 })
+
+// Luiz, 24/11/2026: tela das contas em toda a largura (sem a moldura cinza), sem o logo repetido e sem a lista de passos da
+// instalação à esquerda; as contas viram bolinhas em linha, ligadas, no topo.
+test('tela larga: sem moldura, sem logo nem passos da instalação; as contas são uma trilha de bolinhas no topo', () => {
+  const { container } = render(<TemaProvider><Contas contas={criarContasFixture()} onContinuar={() => {}} /></TemaProvider>)
+  expect(container.querySelector('.at-ativ-fundo')).toBeNull()
+  expect(container.querySelector('.at-ativ__lado')).toBeNull()
+  expect(screen.queryByText('Confirmar e-mail')).toBeNull()
+  const trilha = screen.getByRole('list', { name: 'As contas' })
+  expect(trilha).toHaveClass('at-contas__trilha')
+  expect(trilha.querySelectorAll('li')).toHaveLength(4)
+  expect(trilha.querySelectorAll('.at-contas__conector')).toHaveLength(3)
+})

@@ -60,3 +60,9 @@ test('se o login falhar, a linha diz e deixa tentar de novo', async () => {
   f.falhar('github')
   expect(await screen.findByRole('button', { name: 'Tentar de novo o GitHub' })).toBeInTheDocument()
 })
+
+test('tela larga: sem moldura e sem os passos da instalação à esquerda', () => {
+  const { container } = render(<TemaProvider><LigarContas ponte={criarLigarContasFixture()} onContinuar={() => {}} onVoltar={() => {}} sondagemMs={20} /></TemaProvider>)
+  expect(container.querySelector('.at-ativ-fundo')).toBeNull()
+  expect(container.querySelector('.at-ativ__lado')).toBeNull()
+})

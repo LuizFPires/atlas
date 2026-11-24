@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { Botao, Icone } from '../ui'
-import { LateralPassos } from './Ativacao'
 import type { PedidoAjudaPasso } from './ajuda-passo'
 import { CartaoPasso, PreviaSite } from './GuiaConta'
 import { NavegadorEmbutido } from './NavegadorEmbutido'
@@ -110,18 +109,21 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda, n
   }
 
   return (
-    <div className="at-ativ-fundo">
-      <div className="at-ativ at-contas">
-        <LateralPassos agora={4} />
+    <div className="at-contas-tela">
+      <div className="at-contas">
         <section className="at-contas__corpo">
-          <div className="at-contas__abas">
+          {/* As contas em linha, ligadas, no topo (Luiz, 24/11/2026): mais largura para o site ao lado. */}
+          <ol className="at-contas__trilha" aria-label="As contas">
             {CONTAS.map((x, i) => (
-              <button key={x.id} type="button" className={`at-contas__aba ${i === conta ? 'at-contas__aba--atual' : ''} ${feitas[x.id] ? 'at-contas__aba--feita' : ''}`} aria-current={i === conta ? 'step' : undefined} onClick={() => ir(i)}>
-                <span className="at-contas__aba-bola">{feitas[x.id] ? <Icone nome="check" tamanho={12} /> : i + 1}</span>
-                {x.nome}
-              </button>
+              <li key={x.id}>
+                {i > 0 && <span className={`at-contas__conector${feitas[CONTAS[i - 1].id] ? ' at-contas__conector--feito' : ''}`} aria-hidden="true" />}
+                <button type="button" className={`at-contas__aba ${i === conta ? 'at-contas__aba--atual' : ''} ${feitas[x.id] ? 'at-contas__aba--feita' : ''}`} aria-current={i === conta ? 'step' : undefined} onClick={() => ir(i)}>
+                  <span className="at-contas__aba-bola">{feitas[x.id] ? <Icone nome="check" tamanho={12} /> : i + 1}</span>
+                  {x.nome}
+                </button>
+              </li>
             ))}
-          </div>
+          </ol>
           <div className={`at-contas__grade ${navegador && !c.opcional ? 'at-contas__grade--nav' : ''}`}>
             <div className="at-claude__col">
               <div className="at-claude__cab">
