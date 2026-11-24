@@ -1,5 +1,6 @@
 // Store em memória: fixture dos testes (sem conexão com Supabase).
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
+import type { AssinaturaPush, CanalPush } from './push.ts'
 import { dominioRegistravel, LIMIARES_AUDITORIA, PROVEDORES_COMUNS, protegeProvedor } from './auditoria.ts'
 import type { CanalCelular, Pedido, ProjetoCelular, Referencia } from './celular.ts'
 import type { Ativacao, BarradaTeste, EventoRadar, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, Personalizacao, StatusObraLinha, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
@@ -395,6 +396,16 @@ export class StoreMemoria implements Store {
 }
 
 /** M33: canal celular ↔ computador em memória (testes e modo fixture). Espelha as regras das tabelas celular_* (0029). */
+/** M41: assinaturas de aviso no celular, em memória (testes). */
+export function criarCanalPushMemoria(): CanalPush {
+  const porLicenca = new Map<string, AssinaturaPush[]>()
+  return {
+    async guardar(l, a) { const xs = (porLicenca.get(l) ?? []).filter((x) => x.endpoint !== a.endpoint); xs.push(a); porLicenca.set(l, xs) },
+    async listar(l) { return (porLicenca.get(l) ?? []).slice() },
+    async apagar(l, endpoint) { porLicenca.set(l, (porLicenca.get(l) ?? []).filter((x) => x.endpoint !== endpoint)) },
+  }
+}
+
 export function criarCanalCelularMemoria() {
   const sinais = new Map<string, { visto_em: Date; ocupado: string | null }>()
   const pedidos: Pedido[] = []

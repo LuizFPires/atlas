@@ -16,6 +16,7 @@ Deno.serve(async (req) => {
   const sk = Deno.env.get('ATLAS_SIGN_SK')
   if (!segredo || !servico || !sk) return new Response('configuração ausente', { status: 503 })
   const { criarStoreSupabase, criarCarregarKit, enviarCodigo } = await import('../_shared/adaptadores_supabase.ts')
+  const { criarCanalPush, criarEnvioPush } = await import('../_shared/adaptadores_supabase.ts')
   const { criarArmazemPrototipos, criarCanalCelular, criarAtualizacao, criarInstalador, enviarAvisoAtraso, enviarBoasVindas, enviarConfirmacaoDegustacao, enviarCortesia, gerarCodigoEntrada, enviarCodigoEntrada } = await import('../_shared/adaptadores_supabase.ts')
   const deps = { store: criarStoreSupabase(), agora: () => new Date(), enviarCodigoPorEmail: enviarCodigo, segredo, chaveAssinatura: await importarChavePrivada(sk) }
   // Pagamento: a conta Stripe é SEMPRE do cliente. Chaves por conta (STRIPE_<ref>_SK / STRIPE_<ref>_WHSEC) vêm dos
@@ -55,6 +56,11 @@ Deno.serve(async (req) => {
       prototipos: criarArmazemPrototipos(),
       // M33: celular como controle remoto do notebook (tabelas celular_*, migration 0029).
       celular: criarCanalCelular(),
+      // M41: avisos no celular (Web Push, tabela celular_push da migration 0030). As chaves VAPID são segredos do Supabase,
+      // criados pelo Luiz; sem elas, só as rotas de aviso respondem 503.
+      push: criarCanalPush(),
+      enviarPush: criarEnvioPush(Deno.env.get('VAPID_PUBLIC_KEY'), Deno.env.get('VAPID_PRIVATE_KEY'), Deno.env.get('VAPID_SUBJECT')),
+      chavePublicaPush: Deno.env.get('VAPID_PUBLIC_KEY') ?? undefined,
       admin,
       pagamento,
       cadastro,

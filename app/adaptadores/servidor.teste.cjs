@@ -73,3 +73,11 @@ test('M33: as rotas do celular passam, com limites próprios para as telas e as 
   assert.equal((await s.postar('/celular/sinal', {}, {})).corpo.length, 300_000)
   assert.equal((await s.postar('/verificar', {}, {})).corpo.length, 20_000)
 })
+
+// M42 (24/11/2026): o protótipo cresce além de 40 telas; o celular aceita até 10 MB (prototipo-link.ts). Antes, aqui, o corpo
+// parava em 1,6 MB e as telas de um protótipo grande nunca chegavam ao celular.
+test('protótipo grande (5 MB) sobe para o celular; e o aviso do celular (M41) é uma rota permitida', async () => {
+  const { s } = montar({ status: 200, corpo: '{}' })
+  await s.postar('/celular/projeto', { documento: 'd'.repeat(5_000_000) }, {})
+  await s.postar('/celular/avisar', { titulo: 'A obra voltou', texto: 'x' }, {})
+})

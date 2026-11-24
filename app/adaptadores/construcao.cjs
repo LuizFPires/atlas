@@ -274,7 +274,7 @@ const MIN_TRABALHO_MS = 3 * 60_000
 const RE_TRAVA_DO_ATLAS = /\/permissions|update-config|permiss[aãoõ]|num terminal|no terminal|rode no (?:prompt|powershell|cmd)|aprove o comando|libere o comando/i
 const RE_PEDE_PESSOA = /USU[AÁ]RIO\s*:|precis[ao] (?:que voc[eê]|de voc[eê])|\b(?:ligue|ligar|conecte|conectar) (?:o|a) (?:GitHub|Vercel|Supabase)|reinstale o Atlas|aguardando (?:voc[eê]|sua)|s[oó] (?:voc[eê]|o usu[aá]rio) pode/i
 
-function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [], diario = null }) {
+function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [], diario = null, aoAviso = () => {} }) {
   /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
   const linhas = new Map()
   // M41: diário da obra (o Atlas escreve; nunca o Claude). Sem diário injetado, nada muda.
@@ -359,6 +359,8 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
     })
     reg.parar = r.parar
     linhas.set(pasta, reg)
+    // M41: aviso no celular. Ligou depois de uma parada por cota => "a obra voltou a trabalhar".
+    try { const antes = lerJson(caminhoSeguro(raiz, pasta, '.atlas', 'linha.json')); if (antes && antes.estado === 'parou' && antes.motivo === 'cota') aoAviso('voltou', pasta) } catch { /* aviso é extra */ }
     gravarLinha(pasta, { estado: 'rodando', desde: reg.desde })
     anotar(pasta, 'info', 'O Atlas começou a trabalhar na obra')
     paradas.apagar(pasta) // religou: o registro de parada por cota acabou (um novo fim por cota grava de novo)
@@ -380,6 +382,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
       }
       const ultimas = reg.recentes.slice(-6).map((x) => String(x).slice(0, 200))
       anotarFim(pasta, motivo, { voltaEm, fala: reg.fala })
+      if (motivo === 'concluiu') { try { const t = lerTexto(path.join(cwd, 'PLAN.md')); if (t !== null && lerPlanoDoTexto(t).pct >= 100) aoAviso('pronta', pasta) } catch { /* aviso é extra */ } }
       gravarLinha(pasta, { estado: 'parou', motivo, codigo, desde: reg.desde, fimEm: agora().toISOString(), ...(motivo === 'cota' && voltaEm ? { voltaEm } : {}), ...(motivo === 'sem-avanco' || motivo === 'erro' || motivo === 'precisa-voce' ? { ultimas, ...(reg.fala ? { fala: reg.fala } : {}) } : {}) })
       // Registro do APP (fora da obra) que permite a retomada automática: só em fim por cota de uma linha que o app iniciou, com a obra
       // ainda por terminar e sem pausa do cliente (se uma linha mais nova já roda, ela cuida do próprio registro).

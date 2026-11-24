@@ -485,3 +485,26 @@ test('diário: pausa do cliente e pedido à pessoa ficam registrados com o tipo 
   assert.equal(ult.tipo, 'pedido')
   assert.match(ult.texto, /Ligue o GitHub/)
 })
+
+// M41: aviso no celular. A linha que liga depois de uma parada por cota avisa "voltou"; a que termina com a obra em 100%, "pronta".
+test('avisos: religou depois da cota => "voltou"; terminou com tudo pronto => "pronta"', async () => {
+  const avisos = []
+  let t = Date.UTC(2026, 10, 24, 12, 0)
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-aviso-')); const home = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-aviso-h-'))
+  fs.mkdirSync(path.join(raiz, 'obra'))
+  const chamadas = []; let terminar
+  const c = criarConstrucao({ raiz, home, dadosApp: fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-aviso-d-')), modos: criarModo({ raiz }), claudeEstado: async () => ({ conectado: true }), resolver: () => ({ cmd: 'x' }),
+    iniciarFluxo: (args, o) => { chamadas.push({ args, o }); return { parar: () => terminar({ codigo: null, parado: true }), fim: new Promise((r) => { terminar = r }) } },
+    agora: () => new Date(t), aoAviso: (tipo, pasta) => avisos.push(`${tipo}:${pasta}`) })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ versao: 1, estado: 'parou', motivo: 'cota' }))
+  terminar({ codigo: null, parado: true }); await new Promise((r) => setTimeout(r, 20))
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'linha.json'), JSON.stringify({ versao: 1, estado: 'parou', motivo: 'cota' }))
+  c.linha.religar('obra')
+  assert.deepEqual(avisos, ['voltou:obra'])
+  const plan = path.join(raiz, 'obra', 'PLAN.md')
+  fs.writeFileSync(plan, fs.readFileSync(plan, 'utf8').replace(/- \[ \]/g, '- [x]'))
+  t += 30 * 60_000
+  terminar({ codigo: 0, parado: false }); await new Promise((r) => setTimeout(r, 20))
+  assert.deepEqual(avisos, ['voltou:obra', 'pronta:obra'])
+})

@@ -11,7 +11,7 @@
 'use strict'
 const { CHAVE_COFRE, enderecoDaApi } = require('./licenca.cjs')
 
-const MAX_DOCUMENTO = 1_500_000
+const MAX_DOCUMENTO = 10_000_000 // = prototipo-link.ts do servidor (M42: o protótipo cresce além de 40 telas)
 const PROTEGIDO = /^<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src 'none'/
 const LINK_RE = /^https:\/\/[a-z0-9.-]+\/p\/[A-Za-z0-9_-]{40,64}$/
 

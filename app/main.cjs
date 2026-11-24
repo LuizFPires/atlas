@@ -73,7 +73,12 @@ const contasCli = criarContasCli({ dadosApp: app.getPath('userData'), cofre, env
 void contasCli.recarregar()
 const { criarDiario } = require('./adaptadores/diario.cjs')
 const diario = criarDiario() // M41: diário da obra (.atlas/diario.jsonl), escrito pela linha e pelo vigia
-const construcao = criarConstrucao({ diario, envContas: () => contasCli.envDaLinha(process.env.PATH || process.env.Path || ''), modelo: () => modelo.args(), raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, comandosDoKit: (pasta) => kit.comandos(pasta), exigirPlugin: true, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
+const { criarAvisoCelular, textoDoAviso } = require('./adaptadores/aviso-celular.cjs')
+// M41: aviso no celular do dono (a cota voltou, a obra parou, a obra ficou pronta). Nunca trava a obra.
+const avisoCelular = criarAvisoCelular({ cofre, hashComputador: async () => hash() })
+const nomeDaObra = (pasta) => String(pasta || '').replace(/[-_]+/g, ' ').replace(/^./, (c) => c.toLocaleUpperCase('pt-BR'))
+const avisarNoCelular = (tipo, pasta, motivo) => { const t = textoDoAviso(tipo, nomeDaObra(pasta), motivo); void avisoCelular.avisar(t.titulo, t.texto) }
+const construcao = criarConstrucao({ diario, aoAviso: (tipo, pasta) => avisarNoCelular(tipo, pasta), envContas: () => contasCli.envDaLinha(process.env.PATH || process.env.Path || ''), modelo: () => modelo.args(), raiz: obras.raiz(), modos, claudeEstado: () => claude.estado(), pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, comandosDoKit: (pasta) => kit.comandos(pasta), exigirPlugin: true, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
 // Vigia (24/11/2026): linha que parou sem avançar é religada sozinha (2, 5 e 15 min, com o kit garantido) e, se não der, o painel avisa.
 const { criarDiagnostico } = require('./adaptadores/diagnostico.cjs')
 // M41 (O4): as 10 conferências quando o vigia desiste (internet, Claude, cota, contas, pasta, instruções, disco, trabalho da etapa).
@@ -81,7 +86,7 @@ const diagnostico = criarDiagnostico({ raiz: obras.raiz(), internet: async () =>
   espacoLivre: (dir) => { const s = require('node:fs').statfsSync(dir); return s.bavail * s.bsize } })
 const vigia = criarVigia({ diario, diagnosticar: (pasta) => diagnostico.diagnosticar(pasta), raiz: obras.raiz(), construcao, garantirKit: (pasta) => kit.garantir(String(pasta)), listar: () => obras.listar(),
   // Desistiu de religar sozinho: avisa NA HORA, mesmo com o Atlas minimizado (o painel também mostra o alerta com o motivo).
-  aoPrecisar: (_pasta, motivo) => { try { if (Notification.isSupported()) new Notification({ title: 'A obra parou', body: `${motivo} Abra o Atlas: ele mostra o que aconteceu e o que fazer.` }).show() } catch { /* aviso extra */ } } })
+  aoPrecisar: (pasta, motivo) => { avisarNoCelular('parou', pasta, motivo); try { if (Notification.isSupported()) new Notification({ title: 'A obra parou', body: `${motivo} Abra o Atlas: ele mostra o que aconteceu e o que fazer.` }).show() } catch { /* aviso extra */ } } })
 const { criarCronograma } = require('./adaptadores/cronograma.cjs')
 const painel = criarPainel({ vigia, diario, cronograma: criarCronograma(), raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
