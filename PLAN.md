@@ -611,3 +611,11 @@ tela: prototipo/caminho-novo/Q1Escolher.dc.html
 - [x] No painel, "Continuar obra" / "Tentar agora" com outra obra trabalhando oferece a mesma escolha da M51 (fila, ao mesmo tempo, esta primeiro) em vez de "Não consegui fazer isso agora"
 Notas: Luiz (25/11/2026, "Aqui no app está mostrando que está construindo, mas parece que o Guilherme não tem token para agora. Verifique se tem alguma incompatibilidade lá"). Causa: a obra "Acompanhamento do mercado financeiro" não rodava porque a obra "Ponto" estava trabalhando (uma linha por vez); o celular só olhava a % e mostrava "Construindo", e o botão do painel escondia o motivo ('ja-rodando') atrás de "Não consegui". Não era falta de cota.
 
+## Milestone 55 — Celular: o prédio em primeiro plano na tela da obra
+peso: 1
+spec: S11
+tela: prototipo/celular/ObraPredio.dc.html
+- [x] O prédio desenhado com os números da obra (um andar por etapa: prontos acesos, o atual contornado em verde, os que faltam tracejados) ocupando quase a tela toda, com o % grande e "Andares · N de M prontos"
+- [x] Embaixo, um cartão só com a etapa e a última notícia (no lugar da foto fixa e do título "Notícias" solto)
+Notas: DECISÃO do Luiz (25/11/2026, "Essa tela precisava mostrar o prédio maior. Está com muita área vazia na tela"; protótipo M08b aprovado: "Aprovado"). A foto fixa do canteiro (com "lendo PLAN.md") sai da tela da obra; o prédio é um SVG leve gerado no celular (src/celular/predio.ts). DIVERGÊNCIA: o botão "Falar com o Atlas" do protótipo não entra (o celular ainda não tem pedido de mudança para uma obra em construção; mesma ausência da M08 original).
+

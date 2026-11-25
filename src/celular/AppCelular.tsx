@@ -2,7 +2,7 @@
 // O celular é o controle remoto do notebook do cliente: daqui saem os pedidos (ideia, visual, ajustes, nome, construir, pausar)
 // e aqui chegam o estado do notebook, o progresso, as telas e o status das obras. Quem desenha e constrói é sempre o Claude
 // do cliente, no notebook dele. As telas recebidas são NÃO confiáveis: só aparecem num iframe com sandbox vazio.
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Icone, type NomeIcone } from '../ui/Icone'
 import { useVoz } from '../ui/voz'
 import { Monograma } from '../marca/Marca'
@@ -11,6 +11,7 @@ import type { ObraStatus } from '../web/obras-status'
 import type { ApiCelular, EstadoCelular, Projeto, Visual } from './api'
 import { ambienteDoNavegador, ligarAvisos, situacaoDosAvisos, type SituacaoAvisos } from './avisos'
 import { semFaceId, type FaceId } from './faceid'
+import { predioSvg } from './predio'
 import './celular.css'
 
 type Tela = 'entrar' | 'faceid-ligar' | 'faceid-abrir' | 'obras' | 'ideia' | 'visual' | 'projeto' | 'obra' | 'desligado'
@@ -470,6 +471,9 @@ function ObraTela({ obra, projeto, onVoltar, onPausar, onContinuar }: { obra: Ob
   const nome = obra?.nome ?? projeto?.nome ?? 'Obra'
   const pct = obra?.percentual ?? 0
   const agir = async (f: () => Promise<void>) => { setIndo(true); try { await f() } finally { setIndo(false) } }
+  const total = obra?.total_etapas ?? 0
+  const prontos = !obra ? 0 : obra.estado === 'pronta' ? total : Math.max(0, Math.min(total, obra.etapa_atual.numero - 1))
+  const predioUrl = useMemo(() => `data:image/svg+xml;utf8,${encodeURIComponent(predioSvg({ andares: total || 8, prontos }))}`, [total, prontos])
   return (
     <main className="cel">
       <header className="cel-topo">
@@ -477,24 +481,25 @@ function ObraTela({ obra, projeto, onVoltar, onPausar, onContinuar }: { obra: Ob
         <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}><span className="cel-forte" style={{ fontSize: 17 }}>{nome}</span>
           <span className="cel-sub"><span className={`cel-ponto ${pausada ? 'cel-ponto--off' : 'cel-ponto--vivo'}`} />{!obra ? 'Começando a obra no notebook' : pausada ? 'Parada' : obra.estado === 'pronta' ? 'Pronta' : 'Construindo agora no notebook'}</span></span>
       </header>
-      <div className="cel-corpo" style={{ paddingTop: 4 }}>
-        <div className="cel-canteiro">
-          <img src={canteiro} alt="O canteiro da obra: o prédio subindo" />
-          <div>
-            <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><span className="cel-forte" style={{ fontSize: 14 }}>{obra ? `Etapa ${obra.etapa_atual.numero} de ${obra.total_etapas} · ${obra.etapa_atual.rotulo}` : 'Preparando o canteiro'}</span><span className="cel-pct">{pct}%</span></span>
-            <span className="cel-barra"><span style={{ width: `${pct}%` }} /></span>
-          </div>
-        </div>
+      {/* M08b (aprovado em 25/11/2026): o prédio em primeiro plano, desenhado com os números da obra (um andar por etapa). */}
+      <div className="cel-corpo cel-obra">
+        <section className="cel-predio" aria-label="O prédio da obra">
+          <img src={predioUrl} alt={`O prédio: ${prontos} de ${total} andares prontos${obra && obra.estado !== 'pronta' ? `, o ${prontos + 1}º em obra` : ''}`} />
+          <div className="cel-predio-pct"><span>{pct}%</span><small>{total ? `ANDARES · ${prontos} DE ${total} ${prontos === 1 ? 'PRONTO' : 'PRONTOS'}` : 'PREPARANDO O CANTEIRO'}</small></div>
+        </section>
         {obra && (obra.estado === 'aguardando_aprovacao' || /Precisa de você/.test(obra.ultima_noticia)) && (
           <div className="cel-cartao cel-cartao--aviso">
             <span className="cel-forte" style={{ color: '#F6D28E', display: 'flex', gap: 8, alignItems: 'center' }}><Icone nome="alerta" />Precisa de você</span>
             <span style={{ fontSize: 14, lineHeight: 1.45 }}>{obra.ultima_noticia}</span>
           </div>
         )}
-        <span className="cel-rotulo">Notícias</span>
-        {obra ? (
-          <div className="cel-noticia"><time>{hora(obra.quando)}</time><span style={{ fontSize: 15, lineHeight: 1.4 }}>{obra.ultima_noticia || 'Sem novidades ainda.'}</span></div>
-        ) : <div className="cel-vazio">As notícias da obra aparecem aqui assim que o notebook começar.</div>}
+        <div className="cel-cartao cel-obra-agora">
+          <span className="cel-rotulo">{obra ? `Etapa ${obra.etapa_atual.numero} de ${obra.total_etapas}` : 'Começando'}</span>
+          <b>{obra ? obra.etapa_atual.rotulo : 'Preparando o canteiro'}</b>
+          {obra
+            ? <span className="cel-obra-noticia"><time>{hora(obra.quando)}</time>{obra.ultima_noticia || 'Sem novidades ainda.'}</span>
+            : <span className="cel-obra-noticia">As notícias da obra aparecem aqui assim que o notebook começar.</span>}
+        </div>
       </div>
       <footer className="cel-rodape">
         {pausada
