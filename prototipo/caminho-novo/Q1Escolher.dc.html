@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Outra obra já está trabalhando: você escolhe como começar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes qpisca{0%,100%{opacity:1}50%{opacity:.35}} .q-pisca{animation:qpisca 1.2s infinite}
+@media (prefers-reduced-motion: reduce){.q-pisca{animation:none}}</style>
+</helmet>
+<div style="position:relative;width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obras" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px;filter:blur(1px);opacity:.5">
+  <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">NOVA OBRA · 6 · COMEÇAR</span><h1 style="margin:0;font-size:26px">Estoque da Loja</h1></div>
+  <div style="flex:1;display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:24px"><section style="background:{{t.card}};border:1px solid {{t.cardB}};border-radius:20px"></section><aside style="background:{{t.card}};border:1px solid {{t.lime}};border-radius:20px"></aside></div>
+ </main>
+ <div style="position:absolute;inset:0;background:rgba(10,11,13,.55)"></div>
+ <section role="dialog" aria-modal="true" aria-label="Como começar esta obra" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:1040px;box-sizing:border-box;padding:28px 30px;border-radius:24px;background:{{t.card}};border:1px solid {{t.cardB}};box-shadow:0 30px 80px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:flex-start;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:6px">
+    <span style="display:flex;align-items:center;gap:8px;font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}"><span class="q-pisca" style="width:7px;height:7px;border-radius:4px;background:{{t.lime}}"></span>O ATLAS JÁ ESTÁ TRABALHANDO NO MEU PONTO</span>
+    <b style="font-size:24px;letter-spacing:-.01em">Como você quer começar o Estoque da Loja?</b>
+    <span style="font-size:15px;line-height:1.5;color:{{t.mute}};max-width:720px">As obras usam a mesma cota do seu plano do Claude. Escolha o que importa mais agora. O Atlas mostra antes o que muda em cada caminho.</span>
+   </div>
+   <span style="margin-left:auto;flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding:10px 14px;border-radius:14px;background:{{t.card2}};border:1px solid {{t.cardB}}"><span style="font:600 10px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">SEU PLANO DO CLAUDE</span><b style="font-size:17px">{{planoNome}}</b></span>
+  </div>
+  <div role="radiogroup" aria-label="Como começar" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+   <sc-for list="{{opcoes}}" as="o" hint-placeholder-count="3">
+    <a href="{{o.href}}" role="radio" aria-checked="{{o.on}}" style="display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:18px;background:{{o.bg}};border:{{o.borda}};color:{{t.text}}">
+     <div style="display:flex;align-items:center;gap:10px">
+      <span style="width:20px;height:20px;flex:none;border-radius:50%;border:2px solid {{o.anel}};display:flex;align-items:center;justify-content:center"><span style="width:10px;height:10px;border-radius:5px;background:{{o.miolo}}"></span></span>
+      <b style="font-size:17px">{{o.titulo}}</b>
+      <sc-if value="{{o.rec}}"><span style="margin-left:auto;padding:3px 8px;border-radius:999px;background:{{t.lime}};color:{{t.onLime}};font:700 10px 'Geist Mono',monospace;letter-spacing:.08em">RECOMENDADO</span></sc-if>
+     </div>
+     <span style="font-size:14px;line-height:1.5;color:{{t.mute}}">{{o.frase}}</span>
+     <div style="display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid {{t.line}}">
+      <sc-for list="{{o.efeitos}}" as="e" hint-placeholder-count="3">
+       <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;margin-top:5px;width:8px;height:8px;border-radius:4px;background:{{e.cor}}"></span><span style="display:flex;flex-direction:column;gap:1px"><span style="font:600 10px 'Geist Mono',monospace;letter-spacing:.1em;color:{{t.mute2}}">{{e.rot}}</span><span style="font-size:14px;line-height:1.4">{{e.txt}}</span></span></div>
+      </sc-for>
+     </div>
+    </a>
+   </sc-for>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+   <span style="font-size:13px;line-height:1.5;color:{{t.mute2}};max-width:560px">Os prazos são uma estimativa pelo ritmo das últimas horas. Dá para mudar a qualquer momento no Canteiro de obras, sem perder nada.</span>
+   <a href="CN7Comecar.dc.html" style="margin-left:auto;display:flex;align-items:center;height:48px;padding:0 18px;border-radius:12px;border:1px solid {{t.cardB}};color:{{t.text}};font:600 15px 'Geist',sans-serif">Agora não</a>
+   <a href="Q4Canteiro.dc.html" style="display:flex;align-items:center;height:48px;padding:0 22px;border-radius:12px;background:{{t.lime}};color:{{t.onLime}};font:700 15px 'Geist',sans-serif">{{botao}} →</a>
+  </div>
+ </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"plano":{"editor":"enum","options":["pro","max"],"default":"pro"},"escolha":{"editor":"enum","options":["fila","juntas","primeiro"],"default":"fila"},"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', card2: '#191B1E', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', line: '#2A2E33', ambar: '#F2B84B', verde: '#C6F135', cinza: '#8E968C' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', card2: '#F7F8F4', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', line: '#E6E8E1', ambar: '#A86A00', verde: '#4E6B00', cinza: '#6B7268' }
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const max = (this.props.plano ?? 'pro') === 'max';
+    const escolha = this.props.escolha ?? (max ? 'juntas' : 'fila');
+    const bom = t.verde, atencao = t.ambar, neutro = t.cinza;
+    const E = (rot, txt, cor) => ({ rot, txt, cor });
+    const base = {
+      fila: { titulo: 'Colocar na fila', frase: 'O Meu Ponto termina primeiro. O Estoque da Loja começa sozinho logo depois, sem você fazer nada.', href: 'Q1Escolher.dc.html',
+        efeitos: max
+          ? [E('COTA DO CLAUDE', 'Gasta no mesmo ritmo de hoje.', bom), E('MEU PONTO', 'Pronto amanhã, ~18h (como previsto).', bom), E('ESTOQUE DA LOJA', 'Começa amanhã ~18h · pronto sábado, ~20h.', neutro)]
+          : [E('COTA DO CLAUDE', 'Gasta no mesmo ritmo de hoje.', bom), E('MEU PONTO', 'Pronto amanhã, ~18h (como previsto).', bom), E('ESTOQUE DA LOJA', 'Começa amanhã ~18h · pronto segunda, ~12h.', neutro)] },
+      juntas: { titulo: 'Trabalhar ao mesmo tempo', frase: 'As duas obras andam juntas, cada uma com a sua equipe. O canteiro mostra os dois prédios subindo.', href: 'Q2Juntas.dc.html',
+        efeitos: max
+          ? [E('COTA DO CLAUDE', 'Gasta umas 2× mais rápido. No Max ainda costuma sobrar.', atencao), E('MEU PONTO', 'Pronto amanhã, ~21h (≈ 3 h depois).', atencao), E('ESTOQUE DA LOJA', 'Começa agora · pronto sexta, ~16h (mais de 1 dia antes).', bom)]
+          : [E('COTA DO CLAUDE', 'Acaba umas 2× mais rápido. As duas param juntas esperando ela voltar.', atencao), E('MEU PONTO', 'Pronto sábado, ~10h (≈ 16 h depois).', atencao), E('ESTOQUE DA LOJA', 'Começa agora · pronto segunda, ~10h (quase igual à fila).', neutro)] },
+      primeiro: { titulo: 'Esta primeiro', frase: 'O Meu Ponto pausa no ponto em que está e volta sozinho quando o Estoque da Loja terminar.', href: 'Q3Primeiro.dc.html',
+        efeitos: [E('COTA DO CLAUDE', 'Gasta no mesmo ritmo de hoje.', bom), E('ESTOQUE DA LOJA', max ? 'Começa agora · pronto quinta, ~22h.' : 'Começa agora · pronto sexta, ~20h.', bom), E('MEU PONTO', max ? 'Volta quinta ~22h · pronto sexta, ~16h.' : 'Volta sexta ~20h · pronto segunda, ~12h.', atencao)] }
+    };
+    const rec = max ? 'juntas' : 'fila';
+    const opcoes = ['fila', 'juntas', 'primeiro'].map((id) => { const o = base[id]; const on = id === escolha;
+      return { ...o, rec: id === rec, on: on ? 'true' : 'false', bg: on ? t.soft : t.card2, borda: on ? `2px solid ${t.lime}` : `1px solid ${t.cardB}`, anel: on ? t.lime : t.cardB, miolo: on ? t.lime : 'transparent' } });
+    const botao = { fila: 'Colocar na fila', juntas: 'Começar ao mesmo tempo', primeiro: 'Começar esta primeiro' }[escolha];
+    return { tema, t, opcoes, botao, planoNome: max ? 'Max' : 'Pro' };
+  }
+}
+</script>
+</body>
+</html>
