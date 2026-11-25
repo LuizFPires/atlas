@@ -1,3 +1,4 @@
+import { mensagemPolitica } from './ponte-politica'
 import { useEffect, useState } from 'react'
 import { palavras } from './plataforma'
 import { Botao, Icone, Trabalhando } from '../ui'
@@ -37,6 +38,7 @@ export const recadoDoErroAprovar = (e: unknown) => {
     case 'plan-nao-gravado': case 'plan-invalido': return 'Não consegui gravar o plano da obra na pasta. Confira se a pasta da obra existe e tente de novo.'
     case 'claude-falhou': return 'O Claude não respondeu agora (pode ser o limite do seu plano por algumas horas). Tente de novo daqui a pouco.'
     case 'plano-invalido': return 'Não consegui ler o plano que o Claude montou. Toque em Começar a obra de novo: ele monta outro.'
+    case 'obra-embargada': case 'uso-recusado': case 'politica-bloqueado': return mensagemPolitica((e as Error).message) ?? ''
     case 'kit-indisponivel': return 'Não consegui buscar no servidor do Atlas as instruções da obra. Confira a internet e toque em Começar a obra de novo.'
     case 'sem-etapas': return 'O plano da obra ainda não ficou pronto. Espere ele aparecer à esquerda e toque em Começar a obra.'
     default: {

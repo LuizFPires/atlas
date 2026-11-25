@@ -165,6 +165,9 @@ A cada `checkpoint` milestones (padrão 3), mesmo no automático, pare: "Checkpo
 Quando **todos** os milestones estiverem concluídos, diga: "Obra concluída: 100%. Próximo passo: /entregar (vistoria final, produção e lojas)."
 Se `ate` tiver um milestone, ao concluir a etapa 4 dele grave `"ativo": false`, diga que o automático foi desligado e pare.
 
+## Política do Atlas (pare sempre)
+Se o milestone (ou o pedido do pós-obra) levar a obra a virar um sistema que constrói sistemas — recebe ideias/protótipos, monta plano de construção e põe agentes de IA para programar software —, **pare a obra** e não chame implementador: é concorrente do Atlas e vai contra os termos de uso. Registre `node .claude/hooks/ocorrencias.cjs abrir --servico Atlas --motivo "política do Atlas: sistema que constrói sistemas" --acao "esperar a análise da equipe do Atlas"` e termine. Chatbot ou textos feitos por IA não são isso.
+
 ## Quando parar e perguntar, mesmo no automático
 No Atlas, o cliente responde tocando num botão. Por isso, sempre que parar para perguntar, termine a mensagem com as opções, uma por linha, neste formato exato (2 a 4 opções; a recomendada primeiro, com "(recomendada)"):
 `OPÇÃO 1: <o que fazer, em até 6 palavras> | <o que acontece, em uma frase simples> (recomendada)`

@@ -329,7 +329,25 @@ export interface Store {
   baixarSinalRadar(sinalId: string, por: string, quando: Date): Promise<void>
   /** DELETE radar_eventos WHERE criado_em < antes (retenção). Devolve quantas linhas. */
   limparEventosRadar(antes: Date): Promise<number>
+
+  // ── M65: política (o Atlas não constrói outro Atlas) ──
+  /** INSERT politica_eventos. */
+  registrarEventoPolitica(e: EventoPolitica): Promise<void>
+  /** politica_eventos WHERE licenca_id AND obra_id AND criado_em >= desde (desde = última liberação). */
+  eventosPoliticaDaObra(licencaId: string, obraId: string, desde: Date): Promise<EventoPolitica[]>
+  /** politica_eventos WHERE criado_em >= desde ORDER BY criado_em DESC LIMIT n (painel). */
+  eventosPoliticaRecentes(desde: Date, limite: number): Promise<EventoPolitica[]>
+  /** politica_obras da licença (inclui a linha '*' da licença inteira). */
+  situacoesPolitica(licencaId: string): Promise<SituacaoPolitica[]>
+  /** politica_obras WHERE situacao IN ('embargada','recusada') (painel). */
+  situacoesPoliticaAbertas(): Promise<SituacaoPolitica[]>
+  /** UPSERT politica_obras (licenca_id, obra_id). */
+  definirSituacaoPolitica(s: SituacaoPolitica): Promise<void>
 }
+
+export type OndePolitica = 'ideia' | 'prototipo' | 'planilha' | 'posobra' | 'codigo' | 'engano'
+export interface EventoPolitica { licenca_id: string; obra_id: string; onde: OndePolitica; texto: string; criado_em: Date }
+export interface SituacaoPolitica { licenca_id: string; obra_id: string; situacao: 'embargada' | 'liberada' | 'mantida' | 'recusada'; desde: Date; decidido_por: string | null }
 
 /** Radar de pirataria (0028). NUNCA IP: só a UF derivada do acesso e o id CURTO do dispositivo (8 hex). */
 export interface EventoRadar { licenca_id: string; tipo: 'instancia_recusada' | 'acesso'; uf: string | null; dispositivo: string | null; criado_em: Date }

@@ -98,14 +98,14 @@ const { criarDiagnostico } = require('./adaptadores/diagnostico.cjs')
 // M41 (O4): as 10 conferências quando o vigia desiste (internet, Claude, cota, contas, pasta, instruções, disco, trabalho da etapa).
 const diagnostico = criarDiagnostico({ raiz: obras.raiz(), internet: async () => net.isOnline(), claudeEstado: estadoClaude, contas: contasCli, kitDiretorio: (pasta) => kit.diretorio(pasta),
   espacoLivre: (dir) => { const s = require('node:fs').statfsSync(dir); return s.bavail * s.bsize } })
-const vigia = criarVigia({ diario, diagnosticar: (pasta) => diagnostico.diagnosticar(pasta), preCondicoes: (pasta) => diagnostico.podeTrabalhar(pasta), raiz: obras.raiz(), construcao, garantirKit: (pasta) => kit.garantir(String(pasta)), listar: () => obras.listar(),
-  fila: filaObras, comecarDaFila: async (pasta) => { await kit.garantir(String(pasta)); await painel.continuar(String(pasta)) },
+const vigia = criarVigia({ diario, diagnosticar: (pasta) => diagnostico.diagnosticar(pasta), preCondicoes: (pasta) => diagnostico.podeTrabalhar(pasta), raiz: obras.raiz(), construcao, garantirKit: (pasta) => garantirObra(String(pasta)), listar: () => obras.listar(),
+  fila: filaObras, comecarDaFila: async (pasta) => { await garantirObra(String(pasta)); await painel.continuar(String(pasta)) },
   // Desistiu de religar sozinho: avisa NA HORA, mesmo com o Atlas minimizado (o painel também mostra o alerta com o motivo).
   aoPrecisar: (pasta, motivo) => { avisarNoCelular('parou', pasta, motivo); try { if (Notification.isSupported()) new Notification({ title: 'A obra parou', body: `${motivo} Abra o Atlas: ele mostra o que aconteceu e o que fazer.` }).show() } catch { /* aviso extra */ } } })
 const { criarCronograma } = require('./adaptadores/cronograma.cjs')
 const painel = criarPainel({ fila: filaObras, vigia, diario, cronograma: criarCronograma(), raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
-const cota = criarCota({ recursos: recursosClaude, raiz: obras.raiz(), construcao, painel, claudeEstado: estadoClaude, dadosApp: app.getPath('userData'), garantirKit: (pasta) => kit.garantir(String(pasta)) })
+const cota = criarCota({ recursos: recursosClaude, raiz: obras.raiz(), construcao, painel, claudeEstado: estadoClaude, dadosApp: app.getPath('userData'), garantirKit: (pasta) => garantirObra(String(pasta)) })
 // Ocorrências (F11): livro do kit da obra (docs\ocorrencias.json). A chave colada vai SÓ ao cofre (DPAPI). Canais de aviso: pendência (ver ocorrencias.cjs).
 const ocorrencias = criarOcorrencias({ raiz: obras.raiz(), cofre })
 // Celular (F04b): endereço do app do Claude + preferências guardadas; a CONEXÃO (Remote Control) é pendência e não é fingida (celular.cjs).
@@ -134,7 +134,16 @@ const nomes = criarNomes()
 // O endereço da API vem de ATLAS_API_URL (https); sem ele a licença nega (fail-closed) e o pós-obra não executa.
 const licenca = criarLicenca({ cofre, hashComputador: async () => hash() })
 const servidor = criarServidor()
-const posobra = criarPosObra({ raiz: obras.raiz(), disparo, construcao, licenca })
+// M65: o Atlas não constrói outro Atlas. O servidor é a fonte da verdade do embargo (sem kit, a linha não roda).
+const politica = require('./adaptadores/politica.cjs').criarPolitica({ raiz: obras.raiz(), cofre, hashComputador: async () => hash() })
+const posobra = criarPosObra({ raiz: obras.raiz(), disparo, construcao, licenca, politica: { registrar: async (pasta, onde, texto) => { const s = await politica.registrar(pasta, onde, texto); if (s === 'embargada' || s === 'recusada') embargar(pasta); return s } } })
+/** Obra embargada: o kit sai do computador e a linha para (o servidor já não entrega o kit de novo). */
+function embargar(pasta) { try { kit.descartar(String(pasta)) } catch { /* já sem kit */ } try { if (construcao.linha.rodando(String(pasta))) painel.pausar(String(pasta)) } catch { /* já parada */ } }
+/** Antes de ligar a linha: sinais no código (camada 4) e o kit da obra (o servidor recusa obra embargada). */
+async function garantirObra(pasta) {
+  try { await politica.conferirCodigo(String(pasta)) } catch (e) { if (e && (e.message === 'obra-embargada' || e.message === 'uso-recusado')) embargar(pasta); throw e }
+  return kit.garantir(String(pasta))
+}
 // Ajuda do Atlas (F17): o Claude só lê; o print é SÓ da janela do Atlas; páginas só da lista fechada. Casos não resolvidos vão à API (endpoint ainda pendente).
 const ajuda = criarAjuda({
   raiz: obras.raiz(), dadosApp: app.getPath('userData'), disparo: disparoLeve, shell, dialog, janela: () => janelaPrincipal,
@@ -240,7 +249,7 @@ handle('atlas:modos:gravar', (pasta, modo) => modos.gravar(String(pasta), String
 
 // Planejar e iniciar a construção (PLAN.md + linha de produção do kit na pasta da obra).
 handle('atlas:construcao:planejar', (pasta, nome) => construcao.planejar(String(pasta), String(nome)))
-handle('atlas:construcao:iniciar', async (pasta, nome, modo, etapas, como) => { await kit.garantir(String(pasta)); return construcao.iniciar(String(pasta), String(nome), String(modo), Array.isArray(etapas) ? etapas : [], como ? String(como) : null) })
+handle('atlas:construcao:iniciar', async (pasta, nome, modo, etapas, como) => { await garantirObra(String(pasta)); return construcao.iniciar(String(pasta), String(nome), String(modo), Array.isArray(etapas) ? etapas : [], como ? String(como) : null) })
 // M51: quem está trabalhando e quem espera na fila (com o prazo que falta, para o front mostrar o que muda em cada caminho).
 handle('atlas:fila:estado', async () => {
   const comPrazo = async (pasta) => { let e = null; try { e = await painel.ler(pasta) } catch { /* sem estado */ } return { pasta, nome: nomeDaObra(pasta), restanteMin: e && Number.isFinite(e.restanteMin) ? e.restanteMin : null } }
@@ -256,7 +265,7 @@ handle('atlas:fila:mudar', async (pasta, como) => {
   if (c === 'juntas') filaObras.juntar([...outras, p])
   else if (c === 'primeiro') { for (const x of outras) { await painel.pausar(x); filaObras.entrar(x, p) } filaObras.sair(p) }
   else throw new Error('como-invalido')
-  await kit.garantir(p)
+  await garantirObra(p)
   await painel.continuar(p)
   filaObras.sair(p)
 })
@@ -264,22 +273,22 @@ handle('atlas:fila:mudar', async (pasta, como) => {
 // Painel da obra: andamento, pausa/continua, OK da etapa, modo, canteiro 3D (só 127.0.0.1) e versão de teste.
 handle('atlas:painel:ler', (pasta) => painel.ler(String(pasta)))
 handle('atlas:painel:pausar', (pasta) => painel.pausar(String(pasta)))
-handle('atlas:painel:continuar', async (pasta) => { vigia.zerar(String(pasta)); await kit.garantir(String(pasta)); return painel.continuar(String(pasta)) })
-handle('atlas:painel:aprovar', async (pasta) => { await kit.garantir(String(pasta)); return painel.aprovarEtapa(String(pasta)) })
+handle('atlas:painel:continuar', async (pasta) => { vigia.zerar(String(pasta)); await garantirObra(String(pasta)); return painel.continuar(String(pasta)) })
+handle('atlas:painel:aprovar', async (pasta) => { await garantirObra(String(pasta)); return painel.aprovarEtapa(String(pasta)) })
 handle('atlas:painel:modo', (pasta, modo) => painel.aplicarModo(String(pasta), String(modo)))
 ipcMain.on('atlas:painel:endereco', (e, pasta) => { e.returnValue = confiavel(e) ? painel.enderecoCanteiro(String(pasta)) : null })
 handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
 handle('atlas:painel:diario', (pasta) => painel.diario(String(pasta)))
 handle('atlas:painel:cronograma', (pasta) => painel.cronograma(String(pasta)))
-handle('atlas:painel:decidir', async (pasta, rotulo) => { await kit.garantir(String(pasta)); return painel.decidir(String(pasta), String(rotulo ?? '').slice(0, 80)) })
+handle('atlas:painel:decidir', async (pasta, rotulo) => { await garantirObra(String(pasta)); return painel.decidir(String(pasta), String(rotulo ?? '').slice(0, 80)) })
 
 // Retomar (F12): obra em andamento ao abrir o app e "Continuar obra".
 handle('atlas:retomar:andamento', () => retomar.obraEmAndamento())
-handle('atlas:retomar:continuar', async (pasta) => { await kit.garantir(String(pasta)); return retomar.continuar({ pasta: String(pasta) }) })
+handle('atlas:retomar:continuar', async (pasta) => { await garantirObra(String(pasta)); return retomar.continuar({ pasta: String(pasta) }) })
 
 // Cota do plano (F10): ler o estado, retomar quando o Claude voltou a responder. A vigia retoma sozinha (sem clique) as obras paradas por cota.
 handle('atlas:cota:ler', (pasta) => cota.ler(String(pasta)))
-handle('atlas:cota:retomar', async (pasta) => { await kit.garantir(String(pasta)); return cota.retomar(String(pasta)) })
+handle('atlas:cota:retomar', async (pasta) => { await garantirObra(String(pasta)); return cota.retomar(String(pasta)) })
 
 // Ocorrências (F11): o único tipo de parada que exige o cliente. resolver recebe a chave (se houver) e a entrega direto ao cofre.
 handle('atlas:ocorrencias:ler', (pasta) => ocorrencias.ler(String(pasta)))
@@ -317,7 +326,13 @@ handle('atlas:prototipo:whatsapp', (url) => linkCelular.abrirWhatsApp(String(url
 handle('atlas:modelo:ler', () => ({ atual: modelo.ler(), lista: modelo.lista() }))
 handle('atlas:modelo:gravar', (id) => modelo.gravar(String(id)))
 handle('atlas:prototipo:progresso', (pasta) => prototipo.progresso(String(pasta)))
-handle('atlas:ideia:conferir', (relato, fim) => ideia.conferir(String(relato ?? ''), { fim: fim === true }))
+handle('atlas:ideia:conferir', async (relato, fim) => {
+  const r = await ideia.conferir(String(relato ?? ''), { fim: fim === true })
+  if (r && r.politica && r.politica.bloqueia) r.politica.situacao = (await politica.registrar('nova-obra', 'ideia', String(relato ?? ''))) || 'livre'
+  return r
+})
+handle('atlas:politica:analise', (obra, texto) => politica.analise(String(obra), String(texto ?? '')))
+handle('atlas:politica:situacao', (obra) => politica.situacao(String(obra)))
 handle('atlas:prototipo:mapear', (pasta, nome, relato) => prototipo.mapear(String(pasta), String(nome), String(relato ?? '')))
 handle('atlas:prototipo:pintar', (pasta, nome, estilo) => prototipo.pintar(String(pasta), String(nome), estilo))
 
@@ -330,7 +345,7 @@ handle('atlas:nomes:conferir', (nome) => nomes.conferir(String(nome)))
 
 // Pós-obra (F14): entender (só explica) e executar (exige licença em dia; mesmo pipeline da obra).
 handle('atlas:posobra:entender', (pasta, pedido) => posobra.entender(String(pasta), pedido))
-handle('atlas:posobra:executar', async (pasta, pedido, plano) => { await kit.garantir(String(pasta)); return posobra.executar(String(pasta), pedido, plano) })
+handle('atlas:posobra:executar', async (pasta, pedido, plano) => { await garantirObra(String(pasta)); return posobra.executar(String(pasta), pedido, plano) })
 handle('atlas:posobra:historico', (pasta) => posobra.historico(String(pasta)))
 
 // Ajuda do Atlas (F17): conversar (Claude só leitor), print da janela do Atlas, anexar imagem, abrir página da lista fechada; casos -> API.

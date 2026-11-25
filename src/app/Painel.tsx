@@ -1,3 +1,4 @@
+import { mensagemPolitica } from './ponte-politica'
 import { textoAvanco } from './avanco'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Botao, Icone } from '../ui'
@@ -54,6 +55,8 @@ interface Props {
 /** "10:05" no horário de Brasília. */
 
 export const recadoDoErroPainel = (e: unknown) => {
+  const politica = mensagemPolitica(e instanceof Error ? e.message : '')
+  if (politica) return politica
   switch (e instanceof Error ? e.message : '') {
     case 'ja-rodando': return 'Outra obra está trabalhando agora neste computador. Escolha se esta espera na fila, trabalha junto ou vai primeiro.'
     case 'indisponivel': return 'Quem acompanha a obra ainda não está ligado neste computador. Quando estiver, esta tela passa a mostrar a obra de verdade; você não precisa refazer nada.'

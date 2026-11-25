@@ -27,6 +27,7 @@ const { caminhoSeguro, criarArquivoExclusivo } = require('../seguro.cjs')
 const { pastaDaObra, gravarAtomico, lerTexto, lerJson } = require('./obra-fs.cjs')
 const { validarPlanObra } = require('./plan-md.cjs')
 const { REGRA_CONTEUDO_CLIENTE, blocoDoCliente, umaLinha, comoDado, extrairJson, garantirSubpasta } = require('./projeto-comum.cjs')
+const { REGRA_POLITICA, politicaDoJson } = require('./politica.cjs')
 
 const TIPOS = ['mudar', 'quebrou']
 const NOME_PRINT = /^[a-z0-9][a-z0-9._-]{0,80}$/
@@ -46,6 +47,8 @@ function montarPedidoPosObra(p) {
 
 function planoDoTexto(texto) {
   const o = extrairJson(texto, 'objeto')
+  const politica = politicaDoJson(o)
+  if (politica.bloqueia) return { entendi: '', passos: [], minutos: 0, politica }
   const entendi = umaLinha(o.entendi, 400)
   const passos = (Array.isArray(o.passos) ? o.passos : []).slice(0, 8).map((s) => umaLinha(s, 200)).filter(Boolean)
   if (!entendi || passos.length === 0) throw new Error('plano-invalido')
@@ -56,8 +59,9 @@ function planoDoTexto(texto) {
 const dataCurta = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}` }
 
 /** `deps`: { raiz, disparo, construcao (com .linha), licenca ({verificar}), agora? }. */
-function criarPosObra({ raiz, disparo, construcao, licenca, agora = () => new Date() }) {
+function criarPosObra({ raiz, disparo, construcao, licenca, politica = null, agora = () => new Date() }) {
   const emUso = new Set()
+  const bloqueados = new Set() // pasta: o último pedido entendido foi bloqueado pela política (executar recusa)
 
   function pedidoValido(pasta, pedido) {
     if (!pedido || typeof pedido !== 'object' || !TIPOS.includes(pedido.tipo)) throw new Error('pedido-invalido')
@@ -89,12 +93,20 @@ function criarPosObra({ raiz, disparo, construcao, licenca, agora = () => new Da
       const p = pedidoValido(pasta, pedido)
       const instrucao = [
         'Explique, em português simples (para quem não programa), o que você vai fazer para atender o pedido abaixo NESTA obra. Leia o que precisar (telas.md, regras.md, o código, os prints). Você NÃO altera nada agora.',
-        'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"entendi":"frase começando por \'Você quer…\' e terminando com \'Vou:\'","passos":["3 a 6 passos curtos"],"minutos":20}',
+        `${REGRA_POLITICA} Olhe a obra INTEIRA (telas.md, regras.md, PLAN.md, o código e posobra/pedidos): pedidos em partes que, somados, levam a isso também são bloqueados.`,
+        'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"entendi":"frase começando por \'Você quer…\' e terminando com \'Vou:\'","passos":["3 a 6 passos curtos"],"minutos":20,"politica":{"bloqueia":false,"sinais":[]}}',
         '',
       ].join('\n')
       // A obra já foi construída pela linha: o .git dela é aceito (permitirGit); os hooks seguem neutralizados pelo git isolado.
       const texto = await disparo.perguntar(pasta, `${instrucao}\n${montarPedidoPosObra(p)}`, { permitirGit: true })
-      return planoDoTexto(texto)
+      const plano = planoDoTexto(texto)
+      if (plano.politica && plano.politica.bloqueia) {
+        bloqueados.add(pasta)
+        const situacao = politica ? await politica.registrar(pasta, 'posobra', p.texto || '(pedido por print)') : null
+        return { ...plano, politica: { ...plano.politica, situacao: situacao || 'livre' } }
+      }
+      bloqueados.delete(pasta)
+      return plano
     },
 
     async executar(pasta, pedido, plano) {
@@ -107,6 +119,7 @@ function criarPosObra({ raiz, disparo, construcao, licenca, agora = () => new Da
       // 2) Revalida o que veio da tela.
       const p = pedidoValido(pasta, pedido)
       const pl = plano && typeof plano === 'object' ? { entendi: umaLinha(plano.entendi, 400), passos: (Array.isArray(plano.passos) ? plano.passos : []).slice(0, 8).map((s) => umaLinha(s, 200)).filter(Boolean), minutos: Math.min(240, Math.max(1, Math.round(Number(plano.minutos)) || 20)) } : null
+      if (bloqueados.has(pasta)) throw new Error('politica-bloqueado')
       if (!pl || !pl.entendi || pl.passos.length === 0) throw new Error('plano-invalido')
       if (emUso.has(pasta) || construcao.linha.rodando(pasta)) throw new Error('ja-rodando')
       emUso.add(pasta)

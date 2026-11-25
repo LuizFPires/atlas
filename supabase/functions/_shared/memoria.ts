@@ -3,7 +3,7 @@
 import type { AssinaturaPush, CanalPush } from './push.ts'
 import { dominioRegistravel, LIMIARES_AUDITORIA, PROVEDORES_COMUNS, protegeProvedor } from './auditoria.ts'
 import type { CanalCelular, Pedido, ProjetoCelular, Referencia } from './celular.ts'
-import type { Ativacao, BarradaTeste, EventoRadar, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, Personalizacao, StatusObraLinha, StatusPagamento, Store, Troca, TrocaAtomica } from './tipos.ts'
+import type { Ativacao, BarradaTeste, EventoRadar, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, Personalizacao, StatusObraLinha, StatusPagamento, Store, Troca, TrocaAtomica, EventoPolitica, SituacaoPolitica } from './tipos.ts'
 
 export class StoreMemoria implements Store {
   clientes: Cliente[] = []
@@ -314,6 +314,17 @@ export class StoreMemoria implements Store {
   }
   async baixasRadar() { return [...this.baixasDoRadar].map(([sinal_id, b]) => ({ sinal_id, resolvida_em: b.em })) }
   async baixarSinalRadar(id: string, por: string, quando: Date) { this.baixasDoRadar.set(id, { por, em: quando }) }
+  eventosDaPolitica: EventoPolitica[] = []
+  situacoesDaPolitica: SituacaoPolitica[] = []
+  async registrarEventoPolitica(e: EventoPolitica) { this.eventosDaPolitica.push({ ...e }) }
+  async eventosPoliticaDaObra(licencaId: string, obraId: string, desde: Date) { return this.eventosDaPolitica.filter((e) => e.licenca_id === licencaId && e.obra_id === obraId && e.criado_em >= desde).map((e) => ({ ...e })) }
+  async eventosPoliticaRecentes(desde: Date, limite: number) { return this.eventosDaPolitica.filter((e) => e.criado_em >= desde).sort((a, b) => b.criado_em.getTime() - a.criado_em.getTime()).slice(0, limite).map((e) => ({ ...e })) }
+  async situacoesPolitica(licencaId: string) { return this.situacoesDaPolitica.filter((s) => s.licenca_id === licencaId).map((s) => ({ ...s })) }
+  async situacoesPoliticaAbertas() { return this.situacoesDaPolitica.filter((s) => s.situacao === 'embargada' || s.situacao === 'recusada').map((s) => ({ ...s })) }
+  async definirSituacaoPolitica(s: SituacaoPolitica) {
+    this.situacoesDaPolitica = this.situacoesDaPolitica.filter((x) => !(x.licenca_id === s.licenca_id && x.obra_id === s.obra_id))
+    this.situacoesDaPolitica.push({ ...s })
+  }
   async limparEventosRadar(antes: Date) { const n = this.eventosDoRadar.length; this.eventosDoRadar = this.eventosDoRadar.filter((e) => e.criado_em >= antes); return n - this.eventosDoRadar.length }
 
   async clientePorId(id: string) { return this.clientes.find((c) => c.id === id) ?? null }

@@ -4,18 +4,19 @@ import type { NomeIcone } from '../ui/Icone'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from './compra'
 import { MSG_LINK_VENCIDO, MSG_RECUPERACAO, linkDeRecuperacaoComErro, tokenDeRecuperacao, validarNovaSenha } from './admin-api'
-import type { AdminApi, CortesiaAtiva, DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, RadarPirataria, MapaClientes, GravidadeSinal, SinalRadar, TipoSinal, Situacao } from './admin-api'
+import type { AdminApi, CasoPolitica, DecisaoPolitica, PainelPolitica, CortesiaAtiva, DominioBloqueado, FluxoCaixa as FluxoCaixaDado, ItemAtencao, LinhaCadastro, LinhaCliente, LinhaEntrega, PainelAdmin, RadarPirataria, MapaClientes, GravidadeSinal, SinalRadar, TipoSinal, Situacao } from './admin-api'
 import { FILTROS, filtrarClientes, fluxoPorMes, indicadoresGerenciais, type FiltroConta } from './admin-calc'
 import { LegendaMapa, MapaBrasil, nomeUf, resumirMapa, textoUf } from './AdminMapa'
 import { NOME_REGIAO } from './mapa-brasil'
 import './admin.css'
 
-type Aba = 'geral' | 'caixa' | 'acoes' | 'radar' | 'mapa' | 'entregas'
+type Aba = 'geral' | 'caixa' | 'acoes' | 'radar' | 'politica' | 'mapa' | 'entregas'
 const MENU: { id: Aba; nome: string; icone: NomeIcone }[] = [
   { id: 'geral', nome: 'Visão geral', icone: 'brilho' },
   { id: 'caixa', nome: 'Fluxo de caixa', icone: 'moeda' },
   { id: 'acoes', nome: 'Ações', icone: 'raio' },
   { id: 'radar', nome: 'Radar', icone: 'escudo' },
+  { id: 'politica', nome: 'Política', icone: 'alerta' },
   { id: 'mapa', nome: 'Mapa', icone: 'mapa' },
   { id: 'entregas', nome: 'Marca d’água', icone: 'pasta' },
 ]
@@ -229,6 +230,7 @@ function Painel({ api, email, onSair }: { api: AdminApi; email: string; onSair: 
         {aba === 'caixa' && <FluxoCaixa api={api} />}
         {aba === 'acoes' && <Acoes api={api} />}
         {aba === 'radar' && <Radar api={api} />}
+        {aba === 'politica' && <Politica api={api} />}
         {aba === 'mapa' && <Mapa api={api} />}
         {aba === 'entregas' && <Entregas api={api} />}
       </main>
@@ -770,6 +772,82 @@ function Radar({ api }: { api: AdminApi }) {
                     <button type="button" className="ad-link" aria-expanded={exp} aria-label={`${exp ? 'Esconder' : 'Ver'} detalhes de ${s.cliente}`} onClick={() => setAberto(exp ? null : s.id)}>{exp ? 'Esconder detalhes' : 'Ver detalhes'}</button>
                     <button type="button" className="ad-link ad-link--mudo" aria-label={`Já verifiquei o sinal de ${s.cliente}`} onClick={() => baixa(s.id)}>Já verifiquei</button>
                   </div>
+                </article>
+              )
+            })}
+          </section>
+        </>
+      )}
+    </>
+  )
+}
+
+const SITUACAO_POLITICA: Record<CasoPolitica['situacao'], { texto: string; classe: string }> = {
+  embargada: { texto: 'Embargada', classe: 'ad-st--erro' },
+  mantida: { texto: 'Embargo mantido', classe: 'ad-st--aviso' },
+  recusada: { texto: 'Uso recusado', classe: 'ad-st--erro' },
+  liberada: { texto: 'Liberada', classe: 'ad-st--ok' },
+  livre: { texto: 'Sem embargo', classe: 'ad-st--neutro' },
+}
+const ONDE_POLITICA: Record<string, string> = { ideia: 'Na ideia', prototipo: 'No protótipo', planilha: 'Na planilha', posobra: 'No pedido depois da obra', codigo: 'No código da obra', engano: 'Pedido de análise' }
+const MSG_DECISAO: Record<DecisaoPolitica, string> = { liberar: 'Pronto, obra liberada. O cliente pode seguir.', manter: 'Pronto, o embargo continua.', recusar: 'Pronto, o uso do Atlas foi recusado para essa licença.' }
+
+/** Aba "Política": obras embargadas porque pediam um sistema que constrói sistemas. A decisão é sempre da equipe. */
+function Politica({ api }: { api: AdminApi }) {
+  const buscar = useCallback(async () => {
+    const r = await api.politica()
+    return r.ok ? ({ ok: true, v: r.politica } as const) : r
+  }, [api])
+  const { dado, erro, recarregar } = useCarga<PainelPolitica>(buscar)
+  const [msg, setMsg] = useState('')
+  const [confirmar, setConfirmar] = useState<string | null>(null)
+  const decidir = async (c: CasoPolitica, d: DecisaoPolitica) => {
+    setConfirmar(null)
+    const r = await api.decidirPolitica(c.licenca_id, c.obra_id, d)
+    setMsg(r.ok ? MSG_DECISAO[d] : r.mensagem)
+    if (r.ok) await recarregar()
+  }
+  const agora = new Date()
+  return (
+    <>
+      <div className="ad-titulo"><h1>Política</h1><span className="ad-mute">obras que pediam um sistema que constrói sistemas</span></div>
+      {erro && <p role="alert" className="ad-erro">{erro}</p>}
+      {!dado && !erro && <p role="status" className="ad-mute">Carregando os casos…</p>}
+      {dado && (
+        <>
+          <div className="ad-kpis" role="group" aria-label="Resumo da Política">
+            <div className={`ad-kpi ${dado.casos.some((c) => c.situacao === 'embargada') ? 'ad-kpi--aviso' : ''}`}><span className="ad-kpi-nome">Esperando a equipe</span><span className="ad-kpi-v">{dado.casos.filter((c) => c.situacao === 'embargada').length}</span><span className="ad-mute2">obras embargadas sem decisão</span></div>
+            <div className="ad-kpi"><span className="ad-kpi-nome">Bloqueios no mês</span><span className="ad-kpi-v">{dado.no_mes}</span><span className="ad-mute2">pedidos parados pelo Atlas</span></div>
+          </div>
+          {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
+          <section className="ad-card" aria-label="Casos">
+            <span className="ad-rotulo">CASOS</span>
+            {dado.casos.length === 0 && <p className="ad-mute">Nenhuma obra embargada. Tudo calmo.</p>}
+            {dado.casos.map((c) => {
+              const s = SITUACAO_POLITICA[c.situacao] ?? SITUACAO_POLITICA.livre
+              const chave = `${c.licenca_id}/${c.obra_id}`
+              const aberta = c.situacao === 'embargada' || c.situacao === 'mantida'
+              return (
+                <article key={chave} className="ad-sinal" aria-label={`${c.cliente} — ${c.obra_id}`}>
+                  <div className="ad-sinal-topo">
+                    <span className={`ad-st ${s.classe}`}>{s.texto}</span>
+                    <span className="ad-alerta-tipo">{ONDE_POLITICA[c.ultimo.onde] ?? c.ultimo.onde}</span>
+                    <span className="ad-mute2">{quandoFoi(c.ultimo.quando, agora)} · {c.bloqueios} {c.bloqueios === 1 ? 'bloqueio' : 'bloqueios'}</span>
+                  </div>
+                  <b>{c.cliente}</b> <span className="ad-mute2">obra {c.obra_id === '*' ? '(licença toda)' : c.obra_id}</span>
+                  <p className="ad-p">O que pediu: “{c.ultimo.texto}”</p>
+                  {c.analise && <p className="ad-p">Explicação do cliente: “{c.analise}”</p>}
+                  {c.situacao !== 'recusada' && (
+                    <div className="ad-linha">
+                      {c.situacao !== 'liberada' && <button type="button" className="ad-link" aria-label={`Liberar a obra de ${c.cliente}`} onClick={() => decidir(c, 'liberar')}>Liberar</button>}
+                      {aberta && c.situacao !== 'mantida' && <button type="button" className="ad-link ad-link--mudo" aria-label={`Manter o embargo de ${c.cliente}`} onClick={() => decidir(c, 'manter')}>Manter embargo</button>}
+                      {confirmar === chave
+                        ? <><span className="ad-mute2">O cliente não usa mais o Atlas. Tem certeza?</span>
+                          <button type="button" className="ad-link" onClick={() => decidir(c, 'recusar')}>Sim, recusar o uso</button>
+                          <button type="button" className="ad-link ad-link--mudo" onClick={() => setConfirmar(null)}>Cancelar</button></>
+                        : <button type="button" className="ad-link ad-link--mudo" aria-label={`Recusar o uso de ${c.cliente}`} onClick={() => setConfirmar(chave)}>Recusar o uso</button>}
+                    </div>
+                  )}
                 </article>
               )
             })}

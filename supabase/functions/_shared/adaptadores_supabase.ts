@@ -73,6 +73,7 @@
 //   ocorrenciasAbertas         SELECT ocorrencias_admin WHERE NOT resolvida ORDER BY criada_em DESC LIMIT n
 //   resolverOcorrencia         UPDATE ocorrencias_admin SET resolvida,resolvida_por,resolvida_em WHERE id AND NOT resolvida RETURNING id
 //   entregasRecentes/DaLicenca/PorMarca   SELECT entregas_kit (licenca_id,obra_id,marca_dagua,baixado_em) ORDER BY baixado_em DESC
+//   registrarEventoPolitica / eventosPolitica* / situacoesPolitica* / definirSituacaoPolitica   politica_eventos e politica_obras (0031)
 //   registrarEventoRadar / eventosRadar / limparEventosRadar   INSERT / SELECT / DELETE radar_eventos (0028; nunca IP: só UF e dispositivo curto)
 //   barradasDeTeste            SELECT degustacoes_dispositivos (dispositivo_hmac,licenca_id,barradas,ultima_barrada_em) WHERE barradas>=n; só 8 chars do HMAC saem
 //   baixasRadar / baixarSinalRadar   SELECT / UPSERT radar_baixas (0028)
@@ -150,6 +151,8 @@ const entrega = (r: any) => ({ licenca_id: r.licenca_id, obra_id: r.obra_id, mar
 const codigo = (r: any) => r && { id: r.id, cliente_id: r.cliente_id, finalidade: r.finalidade, codigo_hash: r.codigo_hash, tentativas: r.tentativas, expira_em: new Date(r.expira_em), usado_em: dt(r.usado_em) }
 const link = (r: any) => r && { id: r.id, cliente_id: r.cliente_id, token_hash: r.token_hash, expira_em: new Date(r.expira_em), usado_em: dt(r.usado_em) }
 const troca = (r: any) => ({ licenca_id: r.licenca_id, de_hash: r.de_hash, para_hash: r.para_hash ?? null, feita_em: new Date(r.feita_em), por_admin: r.por_admin })
+const eventoPolitica = (r: any) => ({ licenca_id: r.licenca_id, obra_id: r.obra_id, onde: r.onde, texto: r.texto, criado_em: new Date(r.criado_em) })
+const situacaoPolitica = (r: any) => ({ licenca_id: r.licenca_id, obra_id: r.obra_id, situacao: r.situacao, desde: new Date(r.desde), decidido_por: r.decidido_por ?? null })
 const ocorrencia = (r: any) => ({ id: r.id, cliente_id: r.cliente_id, tipo: r.tipo, descricao: r.descricao, autor: r.autor ?? null, resolvida: r.resolvida, criada_em: new Date(r.criada_em), resolvida_por: r.resolvida_por ?? null, resolvida_em: dt(r.resolvida_em), chave: r.chave ?? null })
 
 /** Converte o `set` de licença (Date -> ISO). Campos undefined ficam de fora; id/cliente_id nunca são alterados. */
@@ -396,6 +399,16 @@ export function criarStoreSupabase() {
       ok(await t('radar_baixas').upsert({ sinal_id: id, resolvida_por: por, resolvida_em: iso(quando) }, { onConflict: 'sinal_id' }), 'baixarSinalRadar')
     },
     async limparEventosRadar(antes: Date) { return ok(await t('radar_eventos').delete().lt('criado_em', antes.toISOString()).select('id'), 'limparEventosRadar').length },
+    async registrarEventoPolitica(e: any) { ok(await t('politica_eventos').insert({ licenca_id: e.licenca_id, obra_id: e.obra_id, onde: e.onde, texto: e.texto, criado_em: iso(e.criado_em) }), 'registrarEventoPolitica') },
+    async eventosPoliticaDaObra(licencaId: string, obraId: string, desde: Date) {
+      return (await ler(() => t('politica_eventos').select('licenca_id,obra_id,onde,texto,criado_em').eq('licenca_id', licencaId).eq('obra_id', obraId).gte('criado_em', desde.toISOString()).order('criado_em').order('id'))).map(eventoPolitica)
+    },
+    async eventosPoliticaRecentes(desde: Date, limite: number) {
+      return (await ler(() => t('politica_eventos').select('licenca_id,obra_id,onde,texto,criado_em').gte('criado_em', desde.toISOString()).order('criado_em', { ascending: false }).order('id'), limite)).map(eventoPolitica)
+    },
+    async situacoesPolitica(licencaId: string) { return (await ler(() => t('politica_obras').select('licenca_id,obra_id,situacao,desde,decidido_por').eq('licenca_id', licencaId).order('obra_id'))).map(situacaoPolitica) },
+    async situacoesPoliticaAbertas() { return (await ler(() => t('politica_obras').select('licenca_id,obra_id,situacao,desde,decidido_por').in('situacao', ['embargada', 'recusada']).order('desde', { ascending: false }).order('obra_id'))).map(situacaoPolitica) },
+    async definirSituacaoPolitica(s: any) { ok(await t('politica_obras').upsert({ licenca_id: s.licenca_id, obra_id: s.obra_id, situacao: s.situacao, desde: iso(s.desde), decidido_por: s.decidido_por ?? null }, { onConflict: 'licenca_id,obra_id' }), 'definirSituacaoPolitica') },
     async entregasPorMarca(marca: string) { return (await ler(() => t('entregas_kit').select(C_ENTREGA).eq('marca_dagua', marca).order('baixado_em', { ascending: false }).order('id'))).map(entrega) },
   }
 }

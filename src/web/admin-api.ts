@@ -93,8 +93,16 @@ export interface AdminApi {
   resolverSinalRadar(id: string): Promise<Resp>
   /** Mapa do Brasil: clientes e compras por estado. Sem a rota no servidor, devolve ok:true com `ligado:false`. */
   mapaClientes(): Promise<Resp<{ mapa: MapaClientes }>>
+  /** M65: tentativas bloqueadas e obras embargadas (o Atlas não constrói outro Atlas). */
+  politica(): Promise<Resp<{ politica: PainelPolitica }>>
+  /** A decisão é sempre da equipe: liberar a obra, manter o embargo ou recusar o uso do Atlas. */
+  decidirPolitica(licencaId: string, obraId: string, decisao: DecisaoPolitica): Promise<Resp>
   sair(): void
 }
+
+export type DecisaoPolitica = 'liberar' | 'manter' | 'recusar'
+export interface CasoPolitica { licenca_id: string; obra_id: string; cliente: string; bloqueios: number; ultimo: { onde: string; texto: string; quando: string }; analise: string | null; situacao: 'livre' | 'embargada' | 'mantida' | 'recusada' | 'liberada' }
+export interface PainelPolitica { casos: CasoPolitica[]; no_mes: number }
 
 export const RESUMO_VAZIO: ResumoRadar = { licencas_sob_suspeita: 0, sinais_abertos: 0, por_tipo: { instancia_recusada: 0, troca_frequente: 0, regioes_distantes: 0, degustacao_repetida: 0 } }
 
@@ -231,6 +239,12 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       return { ok: true, radar: { ligado: false, mensagem: 'O Radar ainda está sendo ligado no servidor. Quando estiver pronto, os sinais aparecem aqui sozinhos.', resumo: RESUMO_VAZIO, sinais: [] } }
     },
     resolverSinalRadar: (id) => servidor('/admin/radar/resolver', { id }),
+    async politica() {
+      const r = await servidor<{ casos?: CasoPolitica[]; no_mes?: number }>('/admin/politica')
+      if (r.ok && Array.isArray(r.casos)) return { ok: true, politica: { casos: r.casos, no_mes: typeof r.no_mes === 'number' ? r.no_mes : 0 } }
+      return r.ok ? { ok: true, politica: { casos: [], no_mes: 0 } } : r
+    },
+    decidirPolitica: (licenca_id, obra_id, decisao) => servidor('/admin/politica/decidir', { licenca_id, obra_id, decisao }),
     async mapaClientes() {
       const r = await servidor<{ total?: number; por_uf?: LinhaUf[]; por_cidade?: CidadeCliente[]; atualizado_em?: string }>('/admin/mapa')
       if (r.ok && Array.isArray(r.por_uf) && typeof r.total === 'number') {

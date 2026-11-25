@@ -1,7 +1,7 @@
 // Modo demonstração do painel do administrador: dados de mentira, em memória, só para olhar e clicar sem servidor.
 // Só entra quando modoFixture() é verdadeiro (dev). Em produção o App usa criarAdminApi() (login + lista de admins no servidor).
 import { ESTADOS } from './mapa-brasil'
-import { RESUMO_VAZIO, type AdminApi, type SinalRadar, type RadarPirataria, type DominioBloqueado, type FluxoCaixa, type MapaClientes, type CidadeCliente, type ItemAtencao, type LinhaCadastro, type LinhaCliente, type LinhaEntrega, type PainelAdmin } from './admin-api'
+import { RESUMO_VAZIO, type AdminApi, type CasoPolitica, type SinalRadar, type RadarPirataria, type DominioBloqueado, type FluxoCaixa, type MapaClientes, type CidadeCliente, type ItemAtencao, type LinhaCadastro, type LinhaCliente, type LinhaEntrega, type PainelAdmin } from './admin-api'
 
 const HORA = 3600_000
 const DIA = 24 * HORA
@@ -81,6 +81,9 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
   const nomeDe = (id: string) => { const x = clientes.find((y) => y.licenca_id === id); return x ? (x.empresa || x.nome) : id }
   const sin = (id: string, tipo: SinalRadar['tipo'], gravidade: SinalRadar['gravidade'], lic: string | null, descricao: string, ms: number, detalhes: SinalRadar['detalhes']): SinalRadar =>
     ({ id, tipo, gravidade, licenca_id: lic, cliente: lic ? nomeDe(lic) : 'Teste grátis', descricao, quando: atras(agora, ms), detalhes })
+  let casosPolitica: CasoPolitica[] = [
+    { licenca_id: 'lic-0042', obra_id: 'fabrica-de-apps', cliente: 'Paulo R.', bloqueios: 2, ultimo: { onde: 'posobra', texto: 'quero que o sistema receba ideias e use agentes para construir apps', quando: '2026-11-24T21:10:00Z' }, analise: 'É só um gerador de orçamentos, não constrói software.', situacao: 'embargada' },
+  ]
   let sinaisRadar: SinalRadar[] = [
     sin('rd-1', 'instancia_recusada', 'alta', 'lic-02', 'Um segundo computador tentou abrir o Atlas com a licença deste cliente e o guardião barrou. Já é a terceira vez esta semana.', 3 * HORA, { dispositivo_hash: 'a94f1c07', tentativas: 3 }),
     sin('rd-2', 'regioes_distantes', 'alta', 'lic-02', 'A mesma licença validou de Recife (PE) e de Porto Alegre (RS) em menos de 2 horas.', 5 * HORA, { regioes: ['Recife (PE)', 'Porto Alegre (RS)'] }),
@@ -175,6 +178,8 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
     fluxoCaixa: () => ok({ fluxo }),
     radarPirataria: () => ok({ radar: radar() }),
     mapaClientes: () => ok({ mapa: mapa() }),
+    politica: () => ok({ politica: { no_mes: casosPolitica.length + 7, casos: casosPolitica } }),
+    decidirPolitica(licencaId, obraId, decisao) { casosPolitica = casosPolitica.map((c) => (c.licenca_id === licencaId && c.obra_id === obraId ? { ...c, situacao: decisao === 'liberar' ? 'liberada' : decisao === 'manter' ? 'mantida' : 'recusada' } : c)); return ok({}) },
     resolverSinalRadar(id) { sinaisRadar = sinaisRadar.filter((x) => x.id !== id); return ok({}) },
     sair() { /* demonstração: não há sessão para encerrar */ },
   }
