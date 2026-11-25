@@ -163,3 +163,34 @@ test('enquanto baixa, diz quanto já veio (para a barra de progresso com tempo p
   assert.equal((await fim).estado, 'baixada')
   assert.equal(a.andamento(), null, 'terminou: some a barra (aparece o botão)')
 })
+
+test('Mac (M48): pede a versão do Mac, guarda o .zip conferido e, ao fechar, troca o Atlas.app sozinho (reabre só no "Atualizar agora")', async () => {
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-atu-'))
+  const chamadas = [], trocas = []
+  const buscar = async (url, init = {}) => {
+    chamadas.push({ url, init })
+    if (url.endsWith('/atualizacao')) return new Response(JSON.stringify({ atualizar: true, versao: '0.1.42', sha512: SHA, tamanho: EXE.length, url: 'https://s.supabase.co/assinado' }))
+    return new Response(EXE)
+  }
+  const a = criarAtualizador({ versaoAtual: '0.1.0', cofre: cofre(), hashComputador: async () => 'h', api: 'https://api.test/x', buscar, pasta, sistema: 'mac',
+    executar: () => { throw new Error('no Mac não roda .exe') }, trocarApp: (zip, o) => trocas.push({ zip, ...o }) })
+  assert.deepEqual(await a.verificarEBaixar(), { estado: 'baixada', versao: '0.1.42' })
+  assert.equal(JSON.parse(chamadas[0].init.body).sistema, 'mac')
+  assert.ok(a.pronta().caminho.endsWith('Atlas-0.1.42.zip'))
+  let saiu = false
+  assert.equal(a.instalarAgora(() => { saiu = true }), true)
+  assert.equal(saiu, true)
+  assert.equal(a.instalarAoSair(), true)
+  assert.deepEqual(trocas, [{ zip: a.pronta().caminho, reabrir: true }])
+  assert.equal(a.instalarAoSair(), false, 'uma vez só')
+})
+
+test('Mac: fechar o Atlas normalmente troca a versão, mas não reabre sozinho', async () => {
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-atu-'))
+  const trocas = []
+  const buscar = async (url) => (url.endsWith('/atualizacao') ? new Response(JSON.stringify({ atualizar: true, versao: '0.1.42', sha512: SHA, tamanho: EXE.length, url: 'https://s/x' })) : new Response(EXE))
+  const a = criarAtualizador({ versaoAtual: '0.1.0', cofre: cofre(), hashComputador: async () => 'h', api: 'https://api.test/x', buscar, pasta, sistema: 'mac', executar: () => {}, trocarApp: (zip, o) => trocas.push(o) })
+  await a.verificarEBaixar()
+  assert.equal(a.instalarAoSair(), true)
+  assert.deepEqual(trocas, [{ reabrir: false }])
+})

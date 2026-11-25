@@ -15,7 +15,7 @@ import { type DepsEntrada, pedirCodigoEntrada } from './entrada.ts'
 import { trocarComputador } from './troca.ts'
 import { verificar } from './verificar.ts'
 import { criarCheckout } from './pagamento/checkout.ts'
-import { type FonteAtualizacao, verAtualizacao } from './atualizacao.ts'
+import { type FontesAtualizacao, verAtualizacao } from './atualizacao.ts'
 import { type ArmazemPrototipos, publicarPrototipo, verPrototipo } from './prototipo-link.ts'
 import type { DepsPagamento } from './pagamento/config.ts'
 import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts'
@@ -31,7 +31,7 @@ export interface Contexto {
   deps: Deps
   carregarKit: CarregarKit
   /** Atualização automática do app: manifesto + endereço temporário do .exe. Ausente = "nada a atualizar". */
-  atualizacao?: FonteAtualizacao
+  atualizacao?: FontesAtualizacao
   /** Links provisórios do protótipo (pasta privada). Ausente = "link indisponível". */
   prototipos?: ArmazemPrototipos
   /** M33: canal celular ↔ notebook (fila de pedidos, sinal, projetos, fotos). Ausente = rotas do celular respondem 503. */
@@ -301,7 +301,7 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
       case '/prototipo/ver':
         return json(await verPrototipo(ctx.deps, ctx.prototipos, s('token')), 200, { 'Cache-Control': 'no-store' })
       case '/atualizacao':
-        return json(await verAtualizacao(ctx.deps, ctx.atualizacao, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, versao: s('versao') }), 200, { 'Cache-Control': 'no-store' })
+        return json(await verAtualizacao(ctx.deps, ctx.atualizacao, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, versao: s('versao'), sistema: s('sistema') === 'mac' ? 'mac' : 'windows' }), 200, { 'Cache-Control': 'no-store' })
       case '/entregar-kit': {
         const r = await entregarKit(ctx.deps, ctx.carregarKit, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, obra_id: s('obra_id') })
         const { cabecalhos, ...corpo } = r

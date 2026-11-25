@@ -81,5 +81,51 @@
       "from": "instalador/caminhos.ts",
       "to": "instalador/caminhos.ts"
     }
-  ]
+  ],
+  "mac": {
+    "icon": "instalador/recursos/icon-mac.png",
+    "category": "public.app-category.developer-tools",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": [
+          "universal"
+        ]
+      },
+      {
+        "target": "zip",
+        "arch": [
+          "universal"
+        ]
+      }
+    ],
+    "artifactName": "Atlas-${version}-mac.${ext}",
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "instalador/entitlements.mac.plist",
+    "entitlementsInherit": "instalador/entitlements.mac.plist",
+    "extendInfo": {
+      "NSMicrophoneUsageDescription": "O Atlas usa o microfone para você falar em vez de digitar."
+    },
+    "notarize": true
+  },
+  "dmg": {
+    "title": "Atlas",
+    "contents": [
+      {
+        "x": 150,
+        "y": 190
+      },
+      {
+        "x": 450,
+        "y": 190,
+        "type": "link",
+        "path": "/Applications"
+      }
+    ],
+    "window": {
+      "width": 600,
+      "height": 400
+    }
+  }
 }

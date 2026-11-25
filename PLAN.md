@@ -541,11 +541,11 @@ Notas: DECISÃO do Luiz (24/11/2026, "no momento que o usuário clica no link l�
 peso: 3
 spec: S11b
 tela: prototipo/caminho-novo/M3Abrir.dc.html
-- [ ] Build do Mac na nuvem (GitHub, máquina Mac): .dmg universal (chip da Apple e Intel) e .zip para a atualização
+- [x] Build do Mac na nuvem (GitHub, máquina Mac): .dmg universal (chip da Apple e Intel) e .zip para a atualização
 - [ ] Assinatura com Developer ID e notarização da Apple (certificado e chave criados pelo Luiz, guardados como segredos do GitHub; nunca no chat nem em arquivo)
-- [ ] Atualização automática no Mac: baixa em silêncio, confere a impressão digital e instala quando o Atlas fecha (igual ao Windows)
-- [ ] Teste de instalação no Mac da nuvem a cada PR que mexe no app ou no instalador
-Notas: DECISÃO do Luiz (24/11/2026, protótipo aprovado: "OK"). Sem a notarização, o Mac bloqueia o app ("desenvolvedor não identificado") e um leigo não passa dessa tela.
+- [x] Atualização automática no Mac: baixa em silêncio, confere a impressão digital e instala quando o Atlas fecha (igual ao Windows)
+- [x] Teste de instalação no Mac da nuvem a cada PR que mexe no app ou no instalador
+Notas: DECISÃO do Luiz (24/11/2026, protótipo aprovado: "OK"). Workflow "Atlas para Mac" (instalador-mac.yml): sem os segredos da Apple o arquivo sai sem assinatura, só para teste, e não vai para a página. Sem a notarização, o Mac bloqueia o app ("desenvolvedor não identificado") e um leigo não passa dessa tela.
 
 ## Milestone 49 — Teste de ponta a ponta num Mac de verdade
 peso: 1

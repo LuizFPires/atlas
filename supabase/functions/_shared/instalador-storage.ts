@@ -42,14 +42,14 @@ export function criarLinkInstaladorStorage(cfg: ConfigInstalador, doBucket: DoBu
 
 /** Atualização automática: o manifesto (atualizacao.json) e o endereço temporário do MESMO .exe da página de instalação.
  *  Qualquer dúvida devolve null; quem valida o conteúdo do manifesto é atualizacao.ts. */
-export function criarFonteAtualizacaoStorage(cfg: ConfigInstalador, doBucket: DoBucket) {
+export function criarFonteAtualizacaoStorage(cfg: ConfigInstalador, doBucket: DoBucket, manifestoNome = ARQUIVO_MANIFESTO) {
   return {
     async manifesto(): Promise<unknown> {
       try {
         // Chamar COMO MÉTODO: o cliente do Supabase usa this (separar a função perdia o this e o manifesto vinha null; 23/11/2026).
         const pasta = doBucket(cfg.bucket)
         if (!pasta.download) return null
-        const { data, error } = await pasta.download(ARQUIVO_MANIFESTO)
+        const { data, error } = await pasta.download(manifestoNome)
         if (error || !data || data.size > 4096) return null
         return JSON.parse(await data.text())
       } catch {
@@ -59,3 +59,8 @@ export function criarFonteAtualizacaoStorage(cfg: ConfigInstalador, doBucket: Do
     link: criarLinkInstaladorStorage(cfg, doBucket),
   }
 }
+
+/** M48: a atualização do Mac fica na mesma pasta privada: Atlas-mac.zip (o Atlas.app) e atualizacao-mac.json (escritos pelo
+ *  workflow do Mac). Liga junto com o instalador do Windows (mesma pasta). */
+export const ARQUIVO_ATUALIZACAO_MAC = 'Atlas-mac.zip'
+export const ARQUIVO_MANIFESTO_MAC = 'atualizacao-mac.json'

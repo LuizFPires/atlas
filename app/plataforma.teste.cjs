@@ -38,3 +38,18 @@ test('pausar no Mac derruba o grupo inteiro (Claude e subagentes); no Windows us
   pararArvore({ pid: 99, kill: () => {} }, { plataforma: 'win32', executar: (cmd, args) => chamadas.push([cmd, ...args]) })
   assert.deepEqual(chamadas[0], ['taskkill', '/pid', '99', '/T', '/F'])
 })
+
+test('Mac (M48): a troca do Atlas.app roda depois que o Atlas fecha, num processo à parte, e desfaz se algo falhar', () => {
+  const { trocarAppMac, SCRIPT_TROCA } = require('./plataforma.cjs')
+  const chamadas = []
+  const spawn = (cmd, args, o) => { chamadas.push({ cmd, args, o }); return { unref: () => {} } }
+  assert.equal(trocarAppMac('/u/Atlas-0.1.42.zip', { reabrir: true }, { spawn, execPath: '/Applications/Atlas.app/Contents/MacOS/Atlas', pid: 123 }), true)
+  const c = chamadas[0]
+  assert.equal(c.cmd, '/bin/sh')
+  assert.deepEqual(c.args.slice(2), ['atlas-atualizar', '123', '/u/Atlas-0.1.42.zip', '/Applications/Atlas.app', '1'])
+  assert.equal(c.o.detached, true)
+  assert.match(SCRIPT_TROCA, /kill -0/)
+  assert.match(SCRIPT_TROCA, /ditto -x -k/)
+  assert.match(SCRIPT_TROCA, /\.old" "\$app"/, 'volta a versão antiga se a nova não entrar')
+  assert.equal(trocarAppMac('/u/x.zip', {}, { spawn, execPath: '/usr/local/bin/electron', pid: 1 }), false, 'fora de um Atlas.app (modo dev): não mexe em nada')
+})

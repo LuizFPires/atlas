@@ -36,19 +36,25 @@ export function manifestoValido(m: unknown): Manifesto | null {
   return { versao, sha512, tamanho }
 }
 
+/** M48: uma fonte por sistema. Passar só uma fonte (como antes) vale para o Windows. */
+export type FontesAtualizacao = FonteAtualizacao | { windows?: FonteAtualizacao; mac?: FonteAtualizacao }
+
 export async function verAtualizacao(
   d: Deps,
-  fonte: FonteAtualizacao | undefined,
-  a: { email: string; computador_hash: string; token_dispositivo: string; versao: string },
+  fontes: FontesAtualizacao | undefined,
+  a: { email: string; computador_hash: string; token_dispositivo: string; versao: string; sistema?: string | null },
 ): Promise<RespostaAtualizacao> {
   if (!VERSAO_RE.test(a.versao)) throw new ErroRegra('versao_invalida', 'Versão do app inválida.')
   const v = await verificar(d, a)
   if (!v.licenca_id) throw new ErroRegra('negado', 'Não foi possível conferir a atualização.', 403)
+  const mac = a.sistema === 'mac'
+  const porSistema = fontes && !('manifesto' in fontes) ? fontes : { windows: fontes as FonteAtualizacao | undefined }
+  const fonte = mac ? porSistema.mac : porSistema.windows
   if (!fonte) return { atualizar: false, motivo: 'sem-configuracao' }
   const m = manifestoValido(await fonte.manifesto().catch(() => null))
   if (!m) return { atualizar: false, motivo: 'sem-manifesto' }
   if (compararVersoes(m.versao, a.versao) <= 0) return { atualizar: false, motivo: 'atual' }
-  const url = await fonte.link(`Atlas-Atualizacao-${m.versao}.exe`).catch(() => null)
+  const url = await fonte.link(`Atlas-Atualizacao-${m.versao}.${mac ? 'zip' : 'exe'}`).catch(() => null)
   if (!url || !/^https:\/\//.test(url)) return { atualizar: false, motivo: 'sem-link' }
   return { atualizar: true, ...m, url }
 }

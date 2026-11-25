@@ -89,7 +89,7 @@ import type { CanalPush, EnvioPush } from './push.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { montarBoasVindas, montarConfirmacaoDegustacao, montarCortesia, remetentePessoal } from './emails.ts'
 import { montarAvisoAtraso, montarCodigoAtivacao } from './emails-avisos.ts'
-import { criarFonteAtualizacaoStorage, criarLinkInstaladorStorage, lerConfigInstalador } from './instalador-storage.ts'
+import { ARQUIVO_ATUALIZACAO_MAC, ARQUIVO_MANIFESTO_MAC, criarFonteAtualizacaoStorage, criarLinkInstaladorStorage, lerConfigInstalador } from './instalador-storage.ts'
 import { KIT_EMBUTIDO } from './kit-embutido.ts'
 import { juntarKit } from './kit.ts'
 
@@ -471,7 +471,10 @@ export function criarArmazemPrototipos() {
 /** Atualização automática do app: mesma pasta e mesmo .exe do instalador, mais o atualizacao.json. Sem configuração: undefined. */
 export function criarAtualizacao() {
   const cfg = lerConfigInstalador((nome) => Deno.env.get(nome))
-  return cfg ? criarFonteAtualizacaoStorage(cfg, (bucket) => db().storage.from(bucket)) : undefined
+  if (!cfg) return undefined
+  const doBucket = (bucket: string) => db().storage.from(bucket)
+  // M48: o Mac tem a sua (o .zip do Atlas.app e o atualizacao-mac.json), na mesma pasta privada.
+  return { windows: criarFonteAtualizacaoStorage(cfg, doBucket), mac: criarFonteAtualizacaoStorage({ ...cfg, arquivo: ARQUIVO_ATUALIZACAO_MAC }, doBucket, ARQUIVO_MANIFESTO_MAC) }
 }
 
 export function criarInstalador(): { link: (nomeDoDownload: string) => Promise<string | null> } | undefined {
