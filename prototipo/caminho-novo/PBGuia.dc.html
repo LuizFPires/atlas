@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Passo a passo com o site ao lado</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none} .bt{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:12px;font:700 15px 'Geist',sans-serif;cursor:pointer;white-space:nowrap;box-sizing:border-box;border:none}
+@keyframes pulso{0%{box-shadow:0 0 0 0 rgba(198,241,53,.8)}70%{box-shadow:0 0 0 14px rgba(198,241,53,0)}100%{box-shadow:0 0 0 0 rgba(198,241,53,0)}}
+.alvo{animation:pulso 1.6s infinite;outline:3px solid #C6F135;outline-offset:3px}
+@media (prefers-reduced-motion: reduce){.alvo{animation:none}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:#141619;color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden;position:relative">
+ <dc-import name="Shell" ativo="obras" tema="escuro" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px;display:grid;grid-template-columns:420px minmax(0,1fr);gap:24px">
+  <!-- Coluna do passo -->
+  <div style="display:flex;flex-direction:column;gap:16px;min-height:0">
+   <a href="{{voltar}}" style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#8E968C">← PONTO</a>
+   <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#C6F135">{{rotulo}} · PASSO {{n}} DE {{total}}</span>
+   <div style="height:6px;border-radius:3px;background:#2A2E33;overflow:hidden"><div style="height:100%;width:{{pct}}%;background:#C6F135"></div></div>
+   <b style="font-size:24px;line-height:1.3;letter-spacing:-.01em">{{texto}}</b>
+   <sc-if value="{{temTraducao}}" hint-placeholder-val="{{ true }}">
+    <span style="align-self:flex-start;font-size:14px;line-height:1.45;background:rgba(198,241,53,.10);border-radius:10px;padding:8px 12px">{{traducao}}</span>
+   </sc-if>
+   <sc-if value="{{temCopiar}}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:8px">
+     <sc-for list="{{copiar}}" as="c" hint-placeholder-count="2">
+      <span style="display:flex;align-items:center;gap:10px;height:52px;padding:0 8px 0 14px;border-radius:12px;background:#1E2125;border:1px solid #2C3036"><span style="display:flex;flex-direction:column"><span style="font-size:12px;color:#8E968C">{{c.campo}}</span><b style="font:600 15px 'Geist Mono',monospace">{{c.valor}}</b></span><span style="margin-left:auto;height:36px;padding:0 14px;border-radius:9px;background:#C6F135;color:#141619;font:700 14px 'Geist',sans-serif;display:flex;align-items:center">{{c.botao}}</span></span>
+     </sc-for>
+    </div>
+   </sc-if>
+   <sc-if value="{{temDica}}" hint-placeholder-val="{{ true }}">
+    <span style="font-size:14px;line-height:1.5;color:#B4BBB2">{{dica}}</span>
+   </sc-if>
+   <div style="display:flex;gap:10px;align-items:center">
+    <button class="bt" onClick="{{anterior}}" style="background:transparent;border:1px solid #2C3036;color:#EDEFEA;display:{{dispAnterior}}">← Voltar</button>
+    <sc-if value="{{naoUltimo}}" hint-placeholder-val="{{ true }}">
+     <button class="bt" onClick="{{proximo}}" style="background:transparent;border:1px solid #C6F135;color:#EDEFEA">(simular: fiz este passo)</button>
+    </sc-if>
+    <sc-if value="{{ultimo}}" hint-placeholder-val="{{ false }}">
+     <a class="bt" href="{{fim}}" style="background:#C6F135;color:#141619">{{fimTexto}}</a>
+    </sc-if>
+   </div>
+   <span style="font-size:13px;line-height:1.5;color:#8E968C">O Atlas olha o site junto com você e passa para o próximo passo sozinho quando vê que deu certo.</span>
+   <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;background:#1E2125;border:1px solid #2C3036">
+    <b style="font-size:16px">Travou, deu erro ou ficou com dúvida?</b>
+    <span style="font-size:14px;line-height:1.45;color:#B4BBB2">O Atlas já está vendo esta tela e sabe em que passo você está. Pode perguntar falando, escrevendo ou mandando um print (ou uma foto do celular).</span>
+    <a href="PB14AjudaPrint.dc.html" class="bt" style="align-self:flex-start;background:#C6F135;color:#141619">Falar com o Atlas</a>
+   </div>
+  </div>
+  <!-- O site de verdade (simulado) -->
+  <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+   <span style="font-size:13px;color:#8E968C">{{legendaSite}}</span>
+   <div style="flex:1;border-radius:14px;overflow:hidden;border:1px solid #2C3036;background:#FFFFFF;color:#1B1E22;display:flex;flex-direction:column">
+    <div style="height:40px;background:#E9EBE6;display:flex;align-items:center;gap:8px;padding:0 12px;flex:none"><span style="width:10px;height:10px;border-radius:5px;background:#E46A5E"></span><span style="width:10px;height:10px;border-radius:5px;background:#E8C14A"></span><span style="width:10px;height:10px;border-radius:5px;background:#6CC070"></span><span style="flex:1;margin-left:8px;height:24px;border-radius:6px;background:#FFF;font:500 12px 'Geist Mono',monospace;display:flex;align-items:center;padding:0 10px;color:#5F665C">{{url}}</span></div>
+    <div style="height:56px;display:flex;align-items:center;gap:16px;padding:0 28px;border-bottom:1px solid #E6E8E1;flex:none">
+     <b style="font-size:17px;color:{{marcaCor}}">{{marca}}</b>
+     <span style="margin-left:auto;display:flex;gap:10px;align-items:center">
+      <sc-for list="{{topo}}" as="b" hint-placeholder-count="1">
+       <span class="{{b.cls}}" style="height:36px;padding:0 16px;border-radius:8px;display:flex;align-items:center;font:600 14px 'Geist',sans-serif;background:{{b.fundo}};color:{{b.cor}}">{{b.txt}}</span>
+      </sc-for>
+     </span>
+    </div>
+    <div style="flex:1;min-height:0;padding:28px 40px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+     <b style="font-size:22px">{{siteTitulo}}</b>
+     <span style="font-size:14px;color:#5F665C;max-width:560px;line-height:1.5">{{siteTexto}}</span>
+     <sc-for list="{{itens}}" as="i" hint-placeholder-count="3">
+      <div class="{{i.cls}}" style="{{i.estilo}}">{{i.txt}}<span style="margin-left:auto;color:#8E968C;font-size:13px">{{i.lado}}</span></div>
+     </sc-for>
+    </div>
+   </div>
+  </div>
+ </main>
+ <sc-if value="{{ajudaAberta}}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;background:rgba(10,11,13,.55);backdrop-filter:blur(3px)"></div>
+  <aside style="position:absolute;right:24px;top:24px;bottom:24px;width:520px;border-radius:20px;background:#1A1D21;border:1px solid #2C3036;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+   <div style="display:flex;align-items:center;gap:10px;padding:18px 20px;border-bottom:1px solid #2A2E33">
+    <b style="font-size:17px">Ajuda do Atlas</b><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#C6F135">VENDO: REGISTRO.BR · PASSO 7 DE 7</span>
+    <a href="PB10GuiaRegistro.dc.html" style="margin-left:auto;color:#8E968C;font-size:20px">×</a>
+   </div>
+   <div style="flex:1;min-height:0;padding:20px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+    <div style="align-self:flex-end;max-width:380px;display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:16px 16px 4px 16px;background:#2A3A12">
+     <div style="height:120px;border-radius:10px;background:#FFF;color:#1B1E22;display:flex;flex-direction:column;gap:6px;padding:12px;box-sizing:border-box;font-size:12px"><b style="font-size:13px">Alterar servidores DNS</b><span style="color:#B3261E;font-weight:700">⚠ Pesquisa recusada</span><span style="color:#5F665C">ns1.vercel-dns.com</span></div>
+     <span style="font-size:15px">Apareceu isso aqui quando cliquei em salvar 😕</span>
+    </div>
+    <div style="align-self:flex-start;max-width:420px;display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:16px 16px 16px 4px;background:#24282D;font-size:15px;line-height:1.5">
+     <span>Calma, não é erro seu e nada foi perdido. 🙂</span>
+     <span>"Pesquisa recusada" quer dizer que o Registro.br perguntou para a Vercel "você cuida do pontoampla.com.br?" e a Vercel ainda não tinha respondido.</span>
+     <span><b>Já arrumei do meu lado:</b> conferi a sua conta da Vercel e o domínio está lá, respondendo agora.</span>
+     <span>Faça só isto: clique de novo em <b>Salvar alterações</b>. Se aparecer de novo, me mande outro print que eu olho na hora.</span>
+    </div>
+    <span style="align-self:flex-start;font:600 11px 'Geist Mono',monospace;letter-spacing:.08em;color:#8E968C">O ATLAS CONFERIU NA SUA VERCEL · 18:14</span>
+   </div>
+   <div style="display:flex;align-items:center;gap:8px;padding:14px 16px;border-top:1px solid #2A2E33">
+    <span style="flex:1;height:48px;border-radius:12px;background:#16181B;border:1px solid #2C3036;display:flex;align-items:center;padding:0 14px;color:#8E968C;font-size:15px">Escreva, fale ou cole um print…</span>
+    <span title="Mandar print" style="width:48px;height:48px;border-radius:12px;border:1px solid #2C3036;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EDEFEA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-9 8"/></svg></span>
+    <span title="Falar" style="width:48px;height:48px;border-radius:12px;background:#C6F135;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#141619" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+   </div>
+  </aside>
+ </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"guia":{"editor":"enum","options":["registro","apple","google"],"default":"registro"},"ajuda":{"editor":"boolean","default":false},"passo":{"editor":"number","default":1},"$preview":{"width":1440,"height":900}}'>
+const LINHA = 'display:flex;align-items:center;gap:10px;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid #E1E4DC;font-size:15px;background:#FFF;max-width:560px;box-sizing:border-box';
+const CAMPO = 'display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border-radius:8px;border:1px solid #C9CDC3;font-size:15px;color:#8E968C;background:#FFF;max-width:420px;box-sizing:border-box';
+const BOTAO = (bg, cor) => `align-self:flex-start;display:flex;align-items:center;height:44px;padding:0 22px;border-radius:8px;font-weight:700;font-size:15px;background:${bg};color:${cor}`;
+const CINZA = 'height:12px;border-radius:6px;background:#EEF0EA;max-width:520px';
+const i = (txt, estilo, alvo, lado = '') => ({ txt, estilo, cls: alvo ? 'alvo' : '', lado });
+const b = (txt, fundo, cor, alvo) => ({ txt, fundo, cor, cls: alvo ? 'alvo' : '' });
+
+const GUIAS = {
+  registro: {
+    rotulo: 'USAR MEU DOMÍNIO NO REGISTRO.BR', marca: 'registro.br', marcaCor: '#1F5FAD', voltar: 'PB6Dominio.dc.html',
+    legenda: 'O site do Registro.br, aberto dentro do Atlas:', fim: 'PB7DominioNoAr.dc.html', fimTexto: 'Pronto, salvei →',
+    passos: [
+      { texto: 'Clique no botão Entrar, lá no alto, à direita do site.', dica: 'Use o mesmo acesso que você usou quando comprou o domínio.', url: 'registro.br',
+        topo: [b('Entrar', '#1F5FAD', '#FFF', true)], titulo: 'Registro de domínios para a internet no Brasil', texto2: '', itens: [i('', CINZA), i('', CINZA)] },
+      { texto: 'Digite o seu usuário e a sua senha do Registro.br. Depois clique em Avançar.', dica: 'Quem digita é você: o Atlas não vê nem guarda a sua senha. Esqueceu? Clique em "Esqueci minha senha", troque pelo e-mail e volte aqui.', url: 'registro.br/login',
+        topo: [], titulo: 'Acesse sua conta', itens: [i('Usuário', CAMPO, true), i('Senha', CAMPO, true), i('Avançar', BOTAO('#1F5FAD', '#FFF'))] },
+      { texto: 'Clique no quadradinho "Não sou um robô".', traducao: 'É só para o site saber que é uma pessoa de verdade. Se pedir para escolher fotos, escolha as que ele pedir.', url: 'registro.br/login',
+        topo: [], titulo: 'Acesse sua conta', itens: [i('☐  Não sou um robô', CAMPO + ';color:#1B1E22', true)] },
+      { texto: 'Apareceu a lista dos seus domínios. Clique em pontoampla.com.br.', url: 'registro.br/painel',
+        topo: [b('Sair', '#EEF0EA', '#1B1E22')], titulo: 'Meus domínios', itens: [i('pontoampla.com.br', LINHA + ';font-weight:700;color:#1F5FAD', true, 'expira em 2027'), i('outrodominio.com.br', LINHA, false, 'expira em 2026')] },
+      { texto: 'Desça a página até a parte DNS e clique em Alterar servidores DNS.', traducao: 'Servidores DNS são como o endereço do correio: dizem para a internet onde o seu sistema mora.', url: 'registro.br/painel/pontoampla.com.br',
+        topo: [b('Sair', '#EEF0EA', '#1B1E22')], titulo: 'pontoampla.com.br', itens: [i('Titular · Renovação · Contatos', LINHA + ';color:#5F665C'), i('DNS', LINHA + ';font-weight:700;border:none;padding:0'), i('Alterar servidores DNS', BOTAO('#FFF', '#1F5FAD') + ';border:2px solid #1F5FAD', true)] },
+      { texto: 'Aperte Copiar 1 aqui no Atlas e cole no campo Servidor 1. Depois Copiar 2 no Servidor 2.', traducao: 'Para colar: clique dentro do campo e aperte Ctrl e V juntos (no Mac, Command e V).',
+        dica: 'Se já tiver outros nomes nesses campos, apague e cole os novos. Sobrou um Servidor 3? Deixe em branco.', url: 'registro.br/painel/pontoampla.com.br/dns',
+        copiar: [{ campo: 'Servidor 1', valor: 'ns1.vercel-dns.com', botao: 'Copiar 1' }, { campo: 'Servidor 2', valor: 'ns2.vercel-dns.com', botao: 'Copiar 2' }],
+        topo: [], titulo: 'Alterar servidores DNS', itens: [i('Servidor 1:  ns1.vercel-dns.com', CAMPO + ';color:#1B1E22', true), i('Servidor 2:  ns2.vercel-dns.com', CAMPO + ';color:#1B1E22', true)] },
+      { texto: 'Por último, clique em Salvar alterações. A sua parte acabou!', dica: 'Depois o Atlas espera a internet atualizar (de 10 minutos a algumas horas) e avisa no celular.', url: 'registro.br/painel/pontoampla.com.br/dns',
+        topo: [], titulo: 'Alterar servidores DNS', itens: [i('Servidor 1:  ns1.vercel-dns.com', CAMPO + ';color:#1B1E22'), i('Servidor 2:  ns2.vercel-dns.com', CAMPO + ';color:#1B1E22'), i('Salvar alterações', BOTAO('#2E8B57', '#FFF'), true)] }
+    ]
+  },
+  apple: {
+    rotulo: 'APP STORE · CRIAR A SUA CONTA DA APPLE', marca: ' Apple Developer', marcaCor: '#1B1E22', voltar: 'PB8Lojas.dc.html',
+    legenda: 'Isto acontece no seu iPhone. O Atlas mostra igualzinho aqui:', fim: 'PB12GuiaGoogle.dc.html', fimTexto: 'Pronto, paguei → agora o Google',
+    passos: [
+      { texto: 'No seu iPhone, aponte a câmera para o QR ao lado. Ele abre o app Apple Developer na App Store. Toque em Obter.', dica: 'O app é grátis e é da própria Apple.', url: 'App Store · Apple Developer',
+        topo: [], titulo: 'Apple Developer', texto2: '', itens: [i('QR para baixar o app', LINHA + ';height:160px;width:160px;justify-content:center;background:#F3F4F1', true), i('Obter', BOTAO('#0A84FF', '#FFF'))] },
+      { texto: 'Abra o app e toque em Conta, embaixo à direita. Entre com a sua Conta Apple (a mesma do iCloud).', traducao: 'A Apple pede um código no seu iPhone para confirmar que é você. Digite o código que aparecer.', url: 'App Apple Developer · Conta',
+        topo: [], titulo: 'Conta', itens: [i('', CINZA), i('Iniciar sessão', BOTAO('#0A84FF', '#FFF'), true)] },
+      { texto: 'Toque em Inscrever-se agora.', traducao: 'Inscrever-se = entrar no programa da Apple que deixa publicar apps.', url: 'App Apple Developer · Conta',
+        topo: [], titulo: 'Apple Developer Program', itens: [i('Inscrever-se agora', BOTAO('#0A84FF', '#FFF'), true)] },
+      { texto: 'Confira o seu nome completo, igualzinho ao do documento. Sem apelido e sem nome da empresa.', dica: 'Nome diferente do documento é o motivo nº 1 de a Apple atrasar a aprovação. Se for MEI, use o seu nome e o seu CPF: é o caminho certo para MEI.', url: 'App Apple Developer · Inscrição',
+        topo: [], titulo: 'Suas informações', itens: [i('Nome: Luiz Felipe', CAMPO + ';color:#1B1E22', true), i('Sobrenome: Pires', CAMPO + ';color:#1B1E22', true), i('Continuar', BOTAO('#0A84FF', '#FFF'))] },
+      { texto: 'Leia e aceite o contrato da Apple: toque em Aceitar.', traducao: 'O Atlas resume: você promete seguir as regras da App Store, e a Apple cobra a anuidade.', url: 'App Apple Developer · Contrato',
+        topo: [], titulo: 'Contrato de licença', itens: [i('', CINZA), i('', CINZA), i('Aceitar', BOTAO('#0A84FF', '#FFF'), true)] },
+      { texto: 'Toque em Comprar. A anuidade aparece em reais e é paga com o cartão da sua Conta Apple.', dica: 'É cobrada todo ano e renova sozinha. O Atlas não vê o cartão. A Apple confirma por e-mail, normalmente em até 2 dias: o Atlas fica de olho e continua sozinho.', url: 'App Apple Developer · Assinatura',
+        topo: [], titulo: 'Apple Developer Program · 1 ano', itens: [i('Comprar', BOTAO('#0A84FF', '#FFF'), true)] }
+    ]
+  },
+  google: {
+    rotulo: 'GOOGLE PLAY · CRIAR A SUA CONTA DO GOOGLE', marca: 'Google Play Console', marcaCor: '#01875F', voltar: 'PB8Lojas.dc.html',
+    legenda: 'O site do Google Play, aberto dentro do Atlas:', fim: 'PB13Testadores.dc.html', fimTexto: 'Pronto → chamar os testadores',
+    passos: [
+      { texto: 'Entre com a sua conta Google (a do Gmail). Se já estiver entrado, clique em Continuar.', dica: 'Use uma conta que você vai manter para sempre: o app fica preso a ela.', url: 'play.google.com/console/signup',
+        topo: [], titulo: 'Criar uma conta de desenvolvedor', itens: [i('Continuar', BOTAO('#01875F', '#FFF'), true)] },
+      { texto: 'O Google pergunta para quem é a conta. Clique em Você (conta pessoal).', traducao: 'Foi o caminho que você escolheu no Atlas. Empresa com D-U-N-S escolhe "Uma organização ou empresa".', url: 'play.google.com/console/signup',
+        topo: [], titulo: 'Para quem é esta conta?', itens: [i('◉  Você', LINHA + ';font-weight:700', true), i('○  Uma organização ou empresa', LINHA)] },
+      { texto: 'No campo Nome do desenvolvedor, escreva o nome que vai aparecer na loja embaixo do app.', copiar: [{ campo: 'Sugestão do Atlas', valor: 'Ampla Sistemas', botao: 'Copiar' }], url: 'play.google.com/console/signup',
+        topo: [], titulo: 'Sobre você', itens: [i('Nome do desenvolvedor', CAMPO, true), i('', CINZA)] },
+      { texto: 'O Google manda um código para o seu e-mail e outro para o seu celular. Digite cada um no campo que pedir.', traducao: 'É só para confirmar que o e-mail e o celular são seus.', url: 'play.google.com/console/signup',
+        topo: [], titulo: 'Verificar seus dados de contato', itens: [i('Código do e-mail', CAMPO, true), i('Código do celular', CAMPO, true)] },
+      { texto: 'Clique em Pagar: são US$ 25, uma vez só, no seu cartão.', dica: 'O Atlas não vê o cartão. O valor aparece convertido para reais na fatura.', url: 'play.google.com/console/signup',
+        topo: [], titulo: 'Taxa de registro', itens: [i('US$ 25,00 · uma vez', LINHA), i('Pagar', BOTAO('#01875F', '#FFF'), true)] },
+      { texto: 'Por último, mande uma foto do seu RG ou CNH quando o Google pedir.', dica: 'O Google confere em alguns dias. Enquanto isso, o Atlas já prepara o app e os testadores.', url: 'play.google.com/console/verification',
+        topo: [], titulo: 'Verificar sua identidade', itens: [i('Enviar documento', BOTAO('#01875F', '#FFF'), true)] }
+    ]
+  }
+};
+
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { k: Math.max(0, (p && p.passo ? p.passo : 1) - 1) }; }
+  renderVals() {
+    const g = GUIAS[this.props.guia ?? 'registro'] || GUIAS.registro;
+    const total = g.passos.length, k = Math.min(this.state.k, total - 1), p = g.passos[k];
+    return {
+      ajudaAberta: !!this.props.ajuda, rotulo: g.rotulo, n: k + 1, total, pct: Math.round(((k + 1) / total) * 100), voltar: g.voltar,
+      texto: p.texto, temTraducao: !!p.traducao, traducao: p.traducao || '', temDica: !!p.dica, dica: p.dica || '',
+      temCopiar: !!p.copiar, copiar: p.copiar || [],
+      naoUltimo: k < total - 1, ultimo: k === total - 1, fim: g.fim, fimTexto: g.fimTexto,
+      dispAnterior: k > 0 ? 'inline-flex' : 'none',
+      proximo: () => this.setState({ k: k + 1 }), anterior: () => this.setState({ k: Math.max(0, k - 1) }),
+      legendaSite: g.legenda, url: p.url, marca: g.marca, marcaCor: g.marcaCor, topo: p.topo || [],
+      siteTitulo: p.titulo, siteTexto: p.texto2 || '', itens: p.itens || []
+    };
+  }
+}
+</script>
+</body>
+</html>

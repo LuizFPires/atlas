@@ -470,7 +470,7 @@
    "y": 23360,
    "w": 1440,
    "h": 900,
-   "title": "Publicar 6 · Usar meu domínio: o Atlas confere e mostra a única troca no Registro.br",
+   "title": "Publicar 6 · Usar meu domínio: o Atlas confere e abre o Registro.br ao lado",
    "is_interactive": true
   },
   "PB7DominioNoAr.dc.html": {
@@ -478,23 +478,63 @@
    "y": 23360,
    "w": 1440,
    "h": 900,
-   "title": "Publicar 7 · Domínio próprio: o Atlas vigia até responder e liga o cadeado",
+   "title": "Publicar 8 · Domínio próprio: o Atlas vigia até responder e liga o cadeado",
    "is_interactive": true
   },
   "PB8Lojas.dc.html": {
-   "x": 4560,
-   "y": 23360,
-   "w": 1440,
-   "h": 900,
-   "title": "Publicar 8 · Colocar nas lojas: o que o Atlas faz e quais contas são suas",
-   "is_interactive": true
-  },
-  "PB9LojasProntas.dc.html": {
    "x": 0,
    "y": 24380,
    "w": 1440,
    "h": 900,
-   "title": "Publicar 9 · No teste das lojas: falta só o seu “Enviar para revisão”",
+   "title": "Publicar 10 · Lojas: em nome de quem? (pessoa/MEI ou empresa) e o que muda",
+   "is_interactive": true
+  },
+  "PB9LojasProntas.dc.html": {
+   "x": 4560,
+   "y": 25400,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 13 · No teste das lojas: falta só o seu “Enviar para revisão”",
+   "is_interactive": true
+  },
+  "PB10GuiaRegistro.dc.html": {
+   "x": 1520,
+   "y": 24380,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 7 · Registro.br clique por clique (7 passos, botão piscando no site)",
+   "is_interactive": true
+  },
+  "PB14AjudaPrint.dc.html": {
+   "x": 3040,
+   "y": 24380,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 7b · Travou? Fale com o Atlas: ele lê o print e resolve (\"Pesquisa recusada\")",
+   "is_interactive": true
+  },
+  "PB11GuiaApple.dc.html": {
+   "x": 0,
+   "y": 25400,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 11 · Conta da Apple pelo iPhone, clique por clique",
+   "is_interactive": true
+  },
+  "PB12GuiaGoogle.dc.html": {
+   "x": 1520,
+   "y": 25400,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 12 · Conta do Google Play, clique por clique",
+   "is_interactive": true
+  },
+  "PB13Testadores.dc.html": {
+   "x": 3040,
+   "y": 25400,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 12b · Os 12 testadores por 14 dias: o Atlas convida e conta",
    "is_interactive": true
   }
  },
@@ -559,7 +599,12 @@
   "PB6Dominio.dc.html",
   "PB7DominioNoAr.dc.html",
   "PB8Lojas.dc.html",
-  "PB9LojasProntas.dc.html"
+  "PB9LojasProntas.dc.html",
+  "PB10GuiaRegistro.dc.html",
+  "PB14AjudaPrint.dc.html",
+  "PB11GuiaApple.dc.html",
+  "PB12GuiaGoogle.dc.html",
+  "PB13Testadores.dc.html"
  ],
  "notes": {
   "titulo": {
