@@ -93,3 +93,48 @@ test('acompanhar a obra e pausar pelo celular', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Pausar' }))
   expect(api.pedidos[0]).toMatchObject({ tipo: 'pausar', obra_id: 'o1' })
 })
+
+// M52 (protótipo M09b/M10/M11 aprovado em 25/11/2026): Face ID para abrir o app.
+function faceFalso(o: { ligado?: boolean; reconhece?: boolean[] } = {}) {
+  let ligado = !!o.ligado, destravado = false
+  const respostas = [...(o.reconhece ?? [true])]
+  return {
+    disponivel: async () => true, ligado: () => ligado, destravado: () => destravado,
+    ligar: vi.fn(async () => { ligado = true; destravado = true; return true }),
+    conferir: vi.fn(async () => { const ok = respostas.shift() ?? true; if (ok) destravado = true; return ok }),
+    desligar: vi.fn(() => { ligado = false; destravado = false }),
+  }
+}
+
+test('depois do primeiro código, oferece ligar o Face ID', async () => {
+  const api = criarApiCelularFixture({ logado: false })
+  const face = faceFalso()
+  render(<AppCelular api={api} intervalo={20} faceId={face} />)
+  await userEvent.type(screen.getByLabelText('E-mail da sua compra'), 'ze@barbearia.com')
+  await userEvent.click(screen.getByRole('button', { name: 'Receber o código' }))
+  await userEvent.type(await screen.findByLabelText('Código que chegou no e-mail'), '482071')
+  await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+  expect(await screen.findByRole('heading', { name: 'Da próxima vez, é só olhar para o celular' })).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Ligar o Face ID' }))
+  expect(face.ligar).toHaveBeenCalledWith('ze@barbearia.com', expect.any(String))
+  expect(await screen.findByRole('heading', { name: 'Minhas obras' })).toBeInTheDocument()
+})
+
+test('com o Face ID ligado, abrir o app pede o rosto; não reconheceu oferece tentar de novo ou o código', async () => {
+  const api = criarApiCelularFixture({ logado: true })
+  const face = faceFalso({ ligado: true, reconhece: [false, true] })
+  render(<AppCelular api={api} intervalo={20} faceId={face} />)
+  await userEvent.click(screen.getByRole('button', { name: 'Entrar com o Face ID' }))
+  expect(await screen.findByRole('heading', { name: 'Não reconheci' })).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+  expect(await screen.findByRole('heading', { name: 'Minhas obras' })).toBeInTheDocument()
+})
+
+test('"Entrar com o código do e-mail" sai e desliga o Face ID deste aparelho', async () => {
+  const api = criarApiCelularFixture({ logado: true })
+  const face = faceFalso({ ligado: true })
+  render(<AppCelular api={api} intervalo={20} faceId={face} />)
+  await userEvent.click(screen.getByRole('button', { name: 'Entrar com o código do e-mail' }))
+  expect(face.desligar).toHaveBeenCalled()
+  expect(screen.getByLabelText('E-mail da sua compra')).toBeInTheDocument()
+})

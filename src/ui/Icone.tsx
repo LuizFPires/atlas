@@ -89,6 +89,7 @@ const CAMINHOS = {
   livro: <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4zM5 17a3 3 0 0 1 3-3h11" />,
   escudo: <path d="M12 3 4.5 6v6c0 4.4 3.2 7.9 7.5 9 4.3-1.1 7.5-4.6 7.5-9V6L12 3zM9 12l2.2 2.2L15.5 10" />,
   chevron: <path d="m15 6-6 6 6 6" />,
+  rosto: <><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" /><path d="M9 9.5v1M15 9.5v1M12 9.5v3.5h-1M9.5 16c1.5 1.2 3.5 1.2 5 0" /></>,
   alerta: <path d="M12 3 2 20h20L12 3zM12 10v4.5M12 17.2v.1" />,
   mapa: (
     <>

@@ -18,6 +18,7 @@ import { criarAdminApi } from './web/admin-api'
 import { criarAdminFixture } from './web/admin-fixture'
 import { PaginaLegal } from './web/Legal'
 import { idLegalDoCaminho } from './web/textos-legais'
+import { criarFaceIdNavegador } from './celular/faceid'
 import { AppDesktop, noAppDesktop } from './app/AppDesktop'
 import { AppCelular } from './celular/AppCelular'
 import { criarApiCelularFixture, criarApiCelularPortal } from './celular/api'
@@ -28,6 +29,8 @@ const AppMercearia = lazy(() => import('./modelos/mercearia/AppMercearia').then(
 const AppAcademia = lazy(() => import('./modelos/academia/AppAcademia').then((m) => ({ default: m.AppAcademia })))
 
 // M52: no app do celular (/app) o login fica guardado no aparelho e se renova sozinho; no Portal web, só enquanto a aba está aberta.
+// M52: Face ID para abrir o app do celular (chave do próprio aparelho; o rosto nunca sai do iPhone).
+const faceIdCelular = criarFaceIdNavegador()
 const portalApi = criarPortalApi(undefined, undefined, { lembrar: typeof window !== 'undefined' && window.location.pathname.startsWith('/app') })
 const adminApi = modoFixture() ? criarAdminFixture() : criarAdminApi()
 // Personalização do app pronto (M32 b): em produção grava pela rota /portal/personalizacao (escopada pelo login).
@@ -39,7 +42,7 @@ const statusObras = modoFixture() ? criarStatusObrasFixture() : criarStatusObras
 // M33: o aplicativo do dono no celular (PWA) fica em "/app": o projeto e a obra, com o notebook do escritório trabalhando.
 const apiCelular = modoFixture() ? criarApiCelularFixture() : criarApiCelularPortal(portalApi)
 function Aplicativo() {
-  return <AppCelular api={apiCelular} />
+  return <AppCelular api={apiCelular} faceId={modoFixture() ? undefined : faceIdCelular} />
 }
 
 function PaginaVendas() {
