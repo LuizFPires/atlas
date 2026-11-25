@@ -56,4 +56,27 @@ function pararArvore(filho, { plataforma = process.platform, kill = process.kill
   agendar(() => { try { kill(-filho.pid, 'SIGKILL') } catch { /* o grupo já acabou */ } })
 }
 
-module.exports = { pastasDeProgramasMac, pathCompleto, acharPrograma, idDoMac, pararArvore }
+/** Atualização no Mac (M48): espera o Atlas fechar, abre o .zip conferido e troca o Atlas.app. Se a troca falhar, volta a versão antiga.
+ *  Argumentos: $1 pid do Atlas, $2 .zip, $3 caminho do Atlas.app, $4 1 = reabrir ("Atualizar agora"). */
+const SCRIPT_TROCA = [
+  'pid="$1"; zip="$2"; app="$3"; reabrir="$4"',
+  'i=0; while kill -0 "$pid" 2>/dev/null && [ $i -lt 120 ]; do sleep 1; i=$((i+1)); done',
+  'tmp=$(mktemp -d) || exit 1',
+  '/usr/bin/ditto -x -k "$zip" "$tmp" || exit 1',
+  'novo="$tmp/Atlas.app"; [ -d "$novo" ] || exit 1',
+  'rm -rf "$app.old"',
+  'mv "$app" "$app.old" || exit 1',
+  'if mv "$novo" "$app"; then rm -rf "$app.old" "$zip"; else mv "$app.old" "$app"; fi',
+  'rm -rf "$tmp"',
+  '[ "$reabrir" = "1" ] && /usr/bin/open "$app"',
+  'exit 0',
+].join('\n')
+
+function trocarAppMac(zip, { reabrir = false } = {}, { spawn = require('node:child_process').spawn, execPath = process.execPath, pid = process.pid } = {}) {
+  const app = path.posix.resolve(execPath, '..', '..', '..')
+  if (!app.endsWith('.app')) return false
+  spawn('/bin/sh', ['-c', SCRIPT_TROCA, 'atlas-atualizar', String(pid), String(zip), app, reabrir ? '1' : '0'], { detached: true, stdio: 'ignore' }).unref()
+  return true
+}
+
+module.exports = { pastasDeProgramasMac, pathCompleto, acharPrograma, idDoMac, pararArvore, trocarAppMac, SCRIPT_TROCA }

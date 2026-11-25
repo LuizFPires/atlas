@@ -30,10 +30,14 @@ function compararVersoes(a, b) {
   return 0
 }
 
-/** deps: { versaoAtual, cofre, hashComputador, api, buscar (fetch), pasta (userData\atualizacao), executar(cmd, args) }. */
-function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = globalThis.fetch, pasta, executar }) {
+/** deps: { versaoAtual, cofre, hashComputador, api, buscar (fetch), pasta (userData\atualizacao), executar(cmd, args) }.
+ *  Mac (M48): sistema 'mac' pede a versão do Mac (um .zip do Atlas.app, conferido pela mesma impressão digital) e, ao fechar,
+ *  trocarApp(zip, { reabrir }) troca o Atlas.app (sem senha: a pasta Aplicativos do cliente aceita). Reabre só no "Atualizar agora". */
+function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = globalThis.fetch, pasta, executar, sistema = 'windows', trocarApp = null }) {
   const arqPronta = path.join(pasta, 'pronta.json')
+  const ext = sistema === 'mac' ? 'zip' : 'exe'
   let instalou = false
+  let reabrir = false
   let ocupado = false
   /** Última conferência (23/11/2026, caso do Guilherme): sem isso, "não atualizou" não tinha explicação nenhuma. */
   let ultima = null
@@ -46,14 +50,14 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
     try {
       const p = JSON.parse(fs.readFileSync(arqPronta, 'utf8'))
       if (!p || !VERSAO_RE.test(p.versao) || compararVersoes(p.versao, versaoAtual) <= 0) { limpar(); return null }
-      const caminho = path.join(pasta, `Atlas-${p.versao}.exe`)
+      const caminho = path.join(pasta, `Atlas-${p.versao}.${ext}`)
       return fs.existsSync(caminho) ? { versao: p.versao, caminho } : null
     } catch { return null }
   }
 
   async function baixar(info) {
     fs.mkdirSync(pasta, { recursive: true })
-    const destino = path.join(pasta, `Atlas-${info.versao}.exe`)
+    const destino = path.join(pasta, `Atlas-${info.versao}.${ext}`)
     const parcial = `${destino}.part`
     try {
       const r = await buscar(info.url, { signal: AbortSignal.timeout(30 * 60_000) })
@@ -100,7 +104,7 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
           const r = await buscar(`${base}/atualizacao`, {
             method: 'POST', redirect: 'error', signal: AbortSignal.timeout(15_000),
             headers: { 'Content-Type': 'application/json', 'X-Atlas-Dispositivo': ativ.token },
-            body: JSON.stringify({ email: ativ.email, computador_hash: await hashComputador(), versao: versaoAtual }),
+            body: JSON.stringify({ email: ativ.email, computador_hash: await hashComputador(), versao: versaoAtual, ...(sistema === 'mac' ? { sistema: 'mac' } : {}) }),
           })
           const texto = await r.text()
           if (r.status === 404) return { estado: 'servidor-sem-rota' }
@@ -136,6 +140,7 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
      *  instalador reabre o Atlas. Sem versão pronta não fecha nada. */
     instalarAgora(sair) {
       if (instalou || !pronta()) return false
+      reabrir = true
       sair()
       return true
     },
@@ -146,7 +151,10 @@ function criarAtualizador({ versaoAtual, cofre, hashComputador, api, buscar = gl
       const p = pronta()
       if (!p) return false
       instalou = true
-      try { executar(p.caminho, ['/S']); return true } catch { return false }
+      try {
+        if (sistema === 'mac') { if (typeof trocarApp !== 'function') return false; trocarApp(p.caminho, { reabrir }); return true }
+        executar(p.caminho, ['/S']); return true
+      } catch { return false }
     },
   }
 }

@@ -434,22 +434,25 @@ const atualizador = criarAtualizador({
   versaoAtual: app.getVersion(), cofre, hashComputador: async () => hash(), api: process.env.ATLAS_API_URL,
   pasta: require('node:path').join(app.getPath('userData'), 'atualizacao'),
   executar: (cmd, args) => spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true }).unref(),
+  // Mac (M48): a versão do Mac é um .zip do Atlas.app; ao fechar, um processo à parte troca o app (plataforma.cjs).
+  sistema: process.platform === 'darwin' ? 'mac' : 'windows',
+  trocarApp: (zip, o) => require('./plataforma.cjs').trocarAppMac(zip, o),
 })
-if (app.isPackaged && process.platform === 'win32') {
+if (app.isPackaged && (process.platform === 'win32' || process.platform === 'darwin')) {
   const conferir = () => { void atualizador.verificarEBaixar().catch(() => {}) }
   setTimeout(conferir, PRIMEIRA_CONFERENCIA_MS)
   setInterval(conferir, INTERVALO_CONFERENCIA_MS).unref()
 }
 
 // Faixa "Nova versão" no topo (NovaVersao.tsx): a tela só recebe o número da versão já baixada e conferida, e pede "atualizar agora".
-const atualizaAqui = app.isPackaged && process.platform === 'win32'
+const atualizaAqui = app.isPackaged && (process.platform === 'win32' || process.platform === 'darwin')
 handle('atlas:atualizacao:pronta', () => (atualizaAqui ? (atualizador.pronta()?.versao ?? null) : null))
 handle('atlas:atualizacao:situacao', () => (atualizaAqui ? atualizador.ultima() : null))
 handle('atlas:atualizacao:andamento', () => (atualizaAqui ? atualizador.andamento() : null))
 handle('atlas:atualizacao:procurar', async () => { if (!atualizaAqui) return { estado: 'atual', versaoAtual: app.getVersion() }; const r = await atualizador.verificarEBaixar(); return atualizador.ultima() ?? { ...r, versaoAtual: app.getVersion() } })
 handle('atlas:atualizacao:instalar', () => atualizaAqui && atualizador.instalarAgora(() => setTimeout(() => app.quit(), 300)))
 
-app.on('before-quit', () => { contasCli.encerrar(); construcao.encerrar(); painel.encerrar(); kit.descartarTudo(); if (app.isPackaged && process.platform === 'win32') atualizador.instalarAoSair() })
+app.on('before-quit', () => { contasCli.encerrar(); construcao.encerrar(); painel.encerrar(); kit.descartarTudo(); if (atualizaAqui) atualizador.instalarAoSair() })
 kit.descartarTudo() // sobra de uma queda anterior
 
 // O computador é o canteiro: durante a obra ele não pode dormir.

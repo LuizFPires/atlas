@@ -74,3 +74,16 @@ describe('/atualizacao diz o motivo quando não manda versão (caso do Guilherme
     expect(await pedir(fonte(NOVA, null))).toMatchObject({ atualizar: false, motivo: 'sem-link' })
   })
 })
+
+describe('/atualizacao no Mac (M48)', () => {
+  it('o Mac recebe a versão do Mac (o .zip do Atlas.app), nunca o .exe; sem versão do Mac publicada, diz "sem-configuracao"', async () => {
+    const m = montar()
+    await m.ativar()
+    const win = fonte(NOVA), mac = fonte({ ...NOVA, versao: '0.1.43' })
+    const r = await verAtualizacao(m.deps, { windows: win, mac }, { email, computador_hash: H1, token_dispositivo: TOKEN, versao: '0.1.0', sistema: 'mac' })
+    expect(r).toMatchObject({ atualizar: true, versao: '0.1.43' })
+    expect(mac.nomes).toEqual(['Atlas-Atualizacao-0.1.43.zip'])
+    expect(win.nomes).toEqual([])
+    expect(await verAtualizacao(m.deps, { windows: win }, { email, computador_hash: H1, token_dispositivo: TOKEN, versao: '0.1.0', sistema: 'mac' })).toEqual({ atualizar: false, motivo: 'sem-configuracao' })
+  })
+})

@@ -1,0 +1,159 @@
+# Gera o Atlas para Mac (M48): um .dmg universal (chip da Apple e Intel) para a página de instalação e um .zip do Atlas.app para a
+# atualização automática. Roda num Mac da nuvem do GitHub e confere que o app instala, abre e responde ao link atlas://.
+#
+# Assinatura e conferência da Apple (notarização): ligam sozinhas quando os segredos abaixo existirem no GitHub (criados pelo Luiz,
+# nunca no chat nem em arquivo). Sem eles o arquivo sai SEM assinatura: serve só para teste interno e NÃO é enviado à página
+# (o Mac bloquearia o cliente com "desenvolvedor não identificado").
+#   MAC_CERTIFICADO_P12_BASE64  certificado "Developer ID Application" exportado em .p12, em base64
+#   MAC_CERTIFICADO_SENHA       a senha do .p12
+#   APPLE_API_KEY_P8_BASE64     a chave de API do App Store Connect (.p8), em base64
+#   APPLE_API_KEY_ID            o Key ID dessa chave
+#   APPLE_API_ISSUER            o Issuer ID da conta
+name: Atlas para Mac
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['app/**', 'instalador/**', 'src/app/**', '.github/workflows/instalador-mac.yml']
+  pull_request:
+    paths: ['app/**', 'instalador/**', 'src/app/**', '.github/workflows/instalador-mac.yml']
+
+permissions:
+  contents: read
+
+env:
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+  SUPABASE_URL: https://jwnrzcyudurdrxhjfdua.supabase.co
+  ATLAS_API: https://jwnrzcyudurdrxhjfdua.supabase.co/functions/v1/api
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Versão deste Atlas
+        run: npm version "0.1.${{ github.run_number }}" --no-git-tag-version --allow-same-version
+
+      - name: Tela do app (dist-app) com o endereço do servidor
+        run: npm run build:app
+        env:
+          VITE_API_URL: ${{ env.ATLAS_API }}
+          VITE_CONTA_ID: 71bb1474-0ddd-44c1-a17b-40050f94ae7d
+
+      - name: Endereço do servidor para o processo principal (app/config.json)
+        run: |
+          printf '{ "api": "%s" }\n' "$ATLAS_API" > app/config.json
+
+      - name: Assinatura da Apple (só se os segredos existirem)
+        id: assinatura
+        env:
+          P12: ${{ secrets.MAC_CERTIFICADO_P12_BASE64 }}
+          P12_SENHA: ${{ secrets.MAC_CERTIFICADO_SENHA }}
+          P8: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          # Diz quais segredos existem (só sim/não, nunca o valor), para o Luiz saber o que falta.
+          for par in "MAC_CERTIFICADO_P12_BASE64:$P12" "MAC_CERTIFICADO_SENHA:$P12_SENHA" "APPLE_API_KEY_P8_BASE64:$P8" "APPLE_API_KEY_ID:$KEY_ID" "APPLE_API_ISSUER:$ISSUER"; do
+            nome="${par%%:*}"; valor="${par#*:}"
+            if [ -n "$valor" ]; then echo "segredo $nome: sim"; else echo "segredo $nome: NÃO"; fi
+          done
+          if [ -n "$P12" ] && [ -n "$P12_SENHA" ] && [ -n "$P8" ] && [ -n "$KEY_ID" ] && [ -n "$ISSUER" ]; then
+            echo "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+            mkdir -p "$RUNNER_TEMP/apple"
+            echo "$P8" | base64 --decode > "$RUNNER_TEMP/apple/AuthKey.p8"
+            {
+              echo "CSC_LINK=$RUNNER_TEMP/cert.p12"
+              echo "CSC_KEY_PASSWORD=$P12_SENHA"
+              echo "APPLE_API_KEY=$RUNNER_TEMP/apple/AuthKey.p8"
+              echo "APPLE_API_KEY_ID=$KEY_ID"
+              echo "APPLE_API_ISSUER=$ISSUER"
+              # Sem isto o electron-builder pula a assinatura em PR (e o PR não conferiria a assinatura nem a Apple).
+              echo "CSC_FOR_PULL_REQUEST=true"
+            } >> "$GITHUB_ENV"
+            echo "assinado=sim" >> "$GITHUB_OUTPUT"
+            echo "Assinatura e notarização: LIGADAS"
+          else
+            node -e "
+              const fs = require('fs')
+              const c = JSON.parse(fs.readFileSync('instalador/electron-builder.json', 'utf8'))
+              c.mac.identity = null; c.mac.notarize = false; c.mac.hardenedRuntime = false
+              fs.writeFileSync('instalador/electron-builder.json', JSON.stringify(c, null, 2))
+            "
+            echo "CSC_IDENTITY_AUTO_DISCOVERY=false" >> "$GITHUB_ENV"
+            echo "assinado=nao" >> "$GITHUB_OUTPUT"
+            echo "::warning::Sem os segredos da Apple: o Atlas para Mac sai SEM assinatura (só para teste; não vai para a página)."
+          fi
+
+      - name: Gerar o Atlas para Mac (.dmg e .zip, universal)
+        run: npm exec --package=electron-builder@26.18.0 -- electron-builder --config instalador/electron-builder.json --mac --universal --publish never
+
+      - name: Conferir que instala, abre e responde ao atlas://
+        env:
+          ASSINADO: ${{ steps.assinatura.outputs.assinado }}
+        run: |
+          dmg=$(ls release/Atlas-*-mac.dmg | head -1); zip=$(ls release/Atlas-*-mac.zip | head -1)
+          [ -f "$dmg" ] && [ -f "$zip" ] || { echo "::error::o .dmg ou o .zip não foi gerado"; exit 1; }
+          echo "Gerados: $(basename "$dmg") ($(du -m "$dmg" | cut -f1) MB) e $(basename "$zip")"
+          ponto=$(hdiutil attach "$dmg" -nobrowse -noautoopen | awk -F'\t' '/\/Volumes\//{print $NF}' | tail -1)
+          [ -d "$ponto/Atlas.app" ] || { echo "::error::o .dmg não tem o Atlas.app"; exit 1; }
+          [ -L "$ponto/Applications" ] && echo "atalho para Aplicativos: sim" || { echo "::error::o .dmg não tem o atalho para Aplicativos"; exit 1; }
+          rm -rf /Applications/Atlas.app && cp -R "$ponto/Atlas.app" /Applications/
+          hdiutil detach "$ponto" -quiet
+          plist=/Applications/Atlas.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleURLTypes:0:CFBundleURLSchemes:0' "$plist" | grep -qx atlas && echo "atlas:// registrado: sim" || { echo "::error::atlas:// não registrado"; exit 1; }
+          lipo -archs /Applications/Atlas.app/Contents/MacOS/Atlas | tee /dev/stderr | grep -q arm64 && lipo -archs /Applications/Atlas.app/Contents/MacOS/Atlas | grep -q x86_64 || { echo "::error::não é universal"; exit 1; }
+          if [ "$ASSINADO" = "sim" ]; then
+            codesign --verify --deep --strict /Applications/Atlas.app && echo "assinatura: ok"
+            spctl --assess --type execute -vv /Applications/Atlas.app && echo "conferência da Apple (Gatekeeper): ok"
+          fi
+          open /Applications/Atlas.app
+          sleep 20
+          if pgrep -x Atlas >/dev/null; then echo "Atlas abriu: sim"; else echo "::error::o Atlas não abriu"; exit 1; fi
+          pkill -x Atlas || true
+          {
+            echo "## Atlas para Mac"
+            echo "- Arquivo: **$(basename "$dmg")** ($(du -m "$dmg" | cut -f1) MB), universal (chip da Apple e Intel)"
+            echo "- Assinado e conferido pela Apple: **$ASSINADO**"
+            echo "- Instalou, abriu e registrou atlas://: **sim**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # A página entrega o .dmg e a atualização usa o .zip: só a main (ou disparo manual) troca, e SÓ se assinado e conferido
+      # pela Apple. Mesma pasta privada do Windows (bucket "instalador"); o manifesto vai depois do .zip.
+      - name: Enviar para a pasta privada do Supabase
+        if: github.event_name != 'pull_request' && steps.assinatura.outputs.assinado == 'sim'
+        env:
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          [ -n "$SUPABASE_KEY" ] || { echo "::warning::Sem SUPABASE_SERVICE_ROLE_KEY: nada enviado."; exit 0; }
+          base="$SUPABASE_URL/storage/v1"
+          auth=(-H "Authorization: Bearer $SUPABASE_KEY" -H "apikey: $SUPABASE_KEY")
+          enviar() { c=$(curl -sS -o envio.json -w '%{http_code}' -X POST "${auth[@]}" -H "Content-Type: $3" -H 'x-upsert: true' --data-binary "@$1" "$base/object/instalador/$2"); echo "$2: HTTP $c"; [ "$c" = "200" ] || { cat envio.json; exit 1; }; }
+          dmg=$(ls release/Atlas-*-mac.dmg | head -1); zip=$(ls release/Atlas-*-mac.zip | head -1)
+          enviar "$dmg" Atlas.dmg application/octet-stream
+          enviar "$zip" Atlas-mac.zip application/zip
+          node -e "
+            const fs = require('fs'), crypto = require('crypto')
+            const b = fs.readFileSync(process.argv[1])
+            fs.writeFileSync('atualizacao-mac.json', JSON.stringify({ versao: require('./package.json').version, sha512: crypto.createHash('sha512').update(b).digest('base64'), tamanho: b.length }))
+          " "$zip"
+          cat atualizacao-mac.json; echo
+          enviar atualizacao-mac.json atualizacao-mac.json application/json
+
+      - name: Guardar o Atlas para Mac
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-mac
+          path: |
+            release/Atlas-*-mac.dmg
+            release/Atlas-*-mac.zip
+          if-no-files-found: warn
+          retention-days: 7
