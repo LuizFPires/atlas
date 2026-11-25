@@ -116,3 +116,14 @@
 .cel-face-pe { display: flex; flex-direction: column; gap: 10px; }
 .cel-face-nota { text-align: center; line-height: 1.5; }
 .cel-saida { display: block; margin-top: 8px; font-size: 12px; color: #8E968C; }
+/* M08b · o prédio em primeiro plano (aprovado em 25/11/2026) */
+.cel-obra { flex: 1; min-height: 0; padding-top: 4px; }
+.cel-predio { position: relative; flex: 1; min-height: 300px; border-radius: 24px; overflow: hidden; background: radial-gradient(120% 80% at 50% 30%, #22303A 0%, #16191C 70%); }
+.cel-predio img { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 92%; object-fit: contain; object-position: center bottom; }
+.cel-predio-pct { position: absolute; left: 16px; top: 14px; display: flex; flex-direction: column; gap: 2px; }
+.cel-predio-pct span { font: 700 46px/1 'Geist', sans-serif; letter-spacing: -0.03em; color: var(--lime); }
+.cel-predio-pct small { font: 600 11px 'Geist Mono', monospace; letter-spacing: 0.1em; color: var(--mute2); }
+.cel-obra-agora { gap: 6px; }
+.cel-obra-agora b { font-size: 17px; line-height: 1.3; }
+.cel-obra-noticia { display: flex; gap: 10px; font-size: 14px; line-height: 1.4; color: var(--mute); }
+.cel-obra-noticia time { font: 500 13px 'Geist Mono', monospace; color: var(--mute2); flex: none; }
