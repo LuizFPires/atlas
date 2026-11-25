@@ -42,9 +42,9 @@ test('erro ao colocar no ar: a Ajuda do Atlas abre sozinha, sabendo onde parou',
   expect(await screen.findByRole('complementary', { name: 'Ajuda do Atlas' })).toBeInTheDocument()
 })
 
-test('no ar: "Usar meu domínio" segue para o guia do domínio', { timeout: 15000 }, async () => {
+test('no ar: "Usar meu domínio" abre o domínio próprio ao lado do prédio (M57)', { timeout: 15000 }, async () => {
   await ate(criarNoArFixture({ passoMs: 5 }))
   await userEvent.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
   await userEvent.click(await screen.findByRole('button', { name: /Usar meu domínio/ }, { timeout: 6000 }))
-  expect(await screen.findByRole('heading', { level: 1, name: /Seu próprio endereço/ })).toBeInTheDocument()
+  expect(await screen.findByRole('textbox', { name: 'Seu domínio' })).toBeInTheDocument()
 })

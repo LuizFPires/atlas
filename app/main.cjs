@@ -154,7 +154,7 @@ const casos = criarCasos({ cofre, hashComputador: async () => hash() })
 const publicar = criarPublicar({ raiz: obras.raiz(), shell, cofre })
 // Colocar no ar com um clique (M56): contas do cliente já ligadas (contas-cli), Claude só leitor na vistoria, correções pela linha da obra.
 const { criarNoAr } = require('./adaptadores/no-ar.cjs')
-const { pedirApiSupabase, sondarSite } = require('./adaptadores/no-ar-rede.cjs')
+const { pedirApiSupabase, sondarSite, sondarDominio } = require('./adaptadores/no-ar-rede.cjs')
 const noAr = criarNoAr({
   raiz: obras.raiz(), cofre,
   vercel: (args, o = {}) => contasCli.rodarFerramenta('vercel', args, o),
@@ -165,6 +165,17 @@ const noAr = criarNoAr({
   perguntar: (pasta, pedido) => disparo.perguntar(pasta, pedido, { permitirGit: true, tipo: 'vistoria' }),
   linhaRodando: (pasta) => construcao.linha.rodando(pasta),
   corrigir: (pasta, achados) => posobra.executar(pasta, { tipo: 'quebrou', texto: `Antes de abrir ao público, a vistoria final pediu: ${achados.join(' ')}` }, { entendi: 'Você quer abrir o sistema ao público com tudo seguro. Vou:', passos: achados, minutos: 20 }),
+})
+
+// Domínio próprio (M57): liga na Vercel do cliente e vigia a troca no Registro.br; avisa no celular quando abre com cadeado.
+const { criarDominio } = require('./adaptadores/dominio.cjs')
+const dominio = criarDominio({
+  raiz: obras.raiz(),
+  vercel: (args, o = {}) => contasCli.rodarFerramenta('vercel', args, o),
+  rdap: (caminho) => require('./adaptadores/nomes.cjs').pedirStatus('rdap.registro.br', caminho),
+  resolvedor: () => { const r = new (require('node:dns').promises.Resolver)({ timeout: 3000, tries: 1 }); r.setServers(['1.1.1.1', '8.8.8.8']); return r },
+  sondar: (d) => sondarDominio(d),
+  avisar: (titulo, texto) => avisoCelular.avisar(titulo, texto),
 })
 
 if (!app.requestSingleInstanceLock()) app.quit()
@@ -369,6 +380,10 @@ handle('atlas:noar:livre', (nome, pasta) => noAr.nomeLivre(String(nome), pasta =
 handle('atlas:noar:iniciar', async (pasta, nome) => { await garantirFerramentas(); return noAr.iniciar(String(pasta), String(nome)) })
 handle('atlas:noar:estado', (pasta) => noAr.estado(String(pasta)))
 handle('atlas:noar:corrigir', (pasta) => noAr.corrigir(String(pasta)))
+handle('atlas:dominio:conferir', (pasta, d) => dominio.conferir(String(pasta), String(d)))
+handle('atlas:dominio:ligar', async (pasta, d) => { await garantirFerramentas(); return dominio.ligar(String(pasta), String(d)) })
+handle('atlas:dominio:estado', (pasta) => dominio.estado(String(pasta)))
+handle('atlas:dominio:conferirAgora', (pasta) => dominio.conferirAgora(String(pasta)))
 
 // Kit por obra: a tela só recebe { ok, obraId, marca }; o caminho do plugin nunca sai do processo principal.
 handle('atlas:kit:entregar', (obraId) => kit.entregar(String(obraId)))
@@ -543,6 +558,8 @@ function abrir() {
 }
 
 app.whenReady().then(abrir)
+// Domínios que ainda esperam a troca no Registro.br: volta a vigiar ao abrir o Atlas.
+app.whenReady().then(async () => { try { dominio.retomar((await obras.listar()).map((o) => o.pasta || o)) } catch { /* sem obras = nada a vigiar */ } })
 // Vigia da cota: 20 s depois de abrir (o app pode ter sido ligado com o Windows) e a cada 2 min; só obras paradas POR COTA.
 setTimeout(() => { const v = () => cota.vigiar().catch(() => {}); v(); setInterval(v, 120_000).unref() }, 20_000).unref()
 setTimeout(() => { const v = () => vigia.rodada().catch(() => {}); v(); setInterval(v, 60_000).unref() }, 30_000).unref()

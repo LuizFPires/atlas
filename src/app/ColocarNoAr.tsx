@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { predioSvg } from '../celular/predio'
 import { caminhoQr, enderecoDoSistema, linkWhatsapp, matrizQr, recadoEquipe } from './entrega-dados'
+import { DominioProprio } from './DominioProprio'
+import type { PonteDominio } from './ponte-dominio'
 import { PASSOS_NO_AR, explicarErro, type EstadoNoAr, type PonteNoAr, type SituacaoNomeNoAr } from './ponte-no-ar'
 import './colocar-no-ar.css'
 
@@ -21,6 +23,9 @@ interface Props {
   onLigarContas?: () => void
   /** De quanto em quanto tempo a tela pergunta como está. */
   intervaloMs?: number
+  /** Domínio próprio (M57): com a ponte, "Usar meu domínio" abre aqui mesmo, ao lado do prédio. */
+  dominio?: PonteDominio
+  abrirRegistro?: () => Promise<void>
 }
 
 type Tela = 'pronta' | 'endereco'
@@ -32,7 +37,15 @@ const ICONE_OK = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
  * O endereço já vem escolhido e as contas são as ligadas no começo da obra: o cliente só aperta "Colocar no ar".
  * Daí em diante o Atlas faz sozinho (vistoria, banco, publicação, GitHub, teste) e a tela só acompanha.
  */
-export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000 }: Props) {
+export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro }: Props) {
+  const [vendoDominio, setVendoDominio] = useState(false)
+  const [enderecoDominio, setEnderecoDominio] = useState<string | null>(null)
+  useEffect(() => {
+    if (!dominio) return
+    let vivo = true
+    void dominio.estado(obra.pasta).then((e) => { if (vivo && e.fase === 'noar' && e.endereco) setEnderecoDominio(e.endereco) }, () => {})
+    return () => { vivo = false }
+  }, [dominio, obra.pasta])
   const [estado, setEstado] = useState<EstadoNoAr | null>(null)
   const [tela, setTela] = useState<Tela>('pronta')
   const [nome, setNome] = useState('')
@@ -93,7 +106,7 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
 
   const fase = estado?.fase ?? 'parado'
   const noArAgora = fase === 'noar'
-  const link = useMemo(() => (noArAgora ? enderecoDoSistema(estado?.endereco ?? null) : null), [noArAgora, estado?.endereco])
+  const link = useMemo(() => (noArAgora ? enderecoDoSistema(enderecoDominio ?? estado?.endereco ?? null) : null), [noArAgora, enderecoDominio, estado?.endereco])
   const matriz = useMemo(() => (link ? matrizQr(link) : null), [link])
   const predio = useMemo(() => `data:image/svg+xml;utf8,${encodeURIComponent(predioSvg({ andares, prontos: andares, altura: 560 }))}`, [andares])
   const selo = noArAgora ? 'NO AR' : fase === 'parado' ? 'PRONTA PARA PUBLICAR' : fase === 'erro' ? 'PRECISA DE VOCÊ' : 'PUBLICANDO'
@@ -195,7 +208,10 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
             </section>
           )}
 
-          {noArAgora && (
+          {noArAgora && vendoDominio && dominio && (
+            <DominioProprio pasta={obra.pasta} dominio={dominio} sugestao={estado?.nome ?? nome} abrirRegistro={abrirRegistro ?? (async () => {})} onNoAr={setEnderecoDominio} onVoltar={() => setVendoDominio(false)} onAjuda={onAjuda} intervaloMs={Math.max(intervaloMs, 30)} />
+          )}
+          {noArAgora && !vendoDominio && (
             <>
               <section className="at-noar__card at-noar__card--lime">
                 <span className="at-noar__rot at-noar__rot--lime">ESTÁ NO AR · ENTREGA DAS CHAVES</span>
@@ -212,10 +228,10 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
                 {estado?.avisos.map((a) => <span key={a} className="at-noar__nota">{a}</span>)}
                 <span className="at-noar__nota">Daqui pra frente, toda mudança que você pedir no pós-obra entra no ar sozinha, depois dos testes.</span>
               </section>
-              {(onDominio || onLojas) && (
+              {(onDominio || dominio || onLojas) && (
                 <section className="at-noar__card at-noar__card--calmo">
                   <span className="at-noar__rot">PRÓXIMOS PASSOS · SÓ SE VOCÊ QUISER</span>
-                  {onDominio && <button type="button" className="at-noar__prox" onClick={() => onDominio(link)}><span><b>Usar meu domínio</b><span className="at-noar__mudo">{nomeMostrado}.com.br no lugar do .vercel.app</span></span><span className="at-noar__verde">→</span></button>}
+                  {(dominio || onDominio) && <button type="button" className="at-noar__prox" onClick={() => (dominio ? setVendoDominio(true) : onDominio?.(link))}><span><b>{enderecoDominio ? 'Meu domínio' : 'Usar meu domínio'}</b><span className="at-noar__mudo">{enderecoDominio ? enderecoDominio.replace(/^https:\/\//, '') : `${nomeMostrado}.com.br no lugar do .vercel.app`}</span></span><span className="at-noar__verde">→</span></button>}
                   {onLojas && <button type="button" className="at-noar__prox" onClick={() => onLojas(link)}><span><b>Colocar na App Store e no Google Play</b><span className="at-noar__mudo">o {obra.nome} aparece nas lojas, com ícone e página</span></span><span className="at-noar__verde">→</span></button>}
                 </section>
               )}

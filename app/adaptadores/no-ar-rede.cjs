@@ -2,6 +2,7 @@
 // https na porta 443, sem seguir redirecionamento, tempo e tamanho limitados.
 //  pedirApiSupabase(metodo, caminho, corpo, token): SÓ api.supabase.com, caminho /v1/... fixo do adaptador. O token vai no cabeçalho
 //    (nunca no endereço) e nunca aparece em erro. Resposta 2xx = JSON; outra = erro curto ('supabase-<código>').
+//  sondarDominio(dominio): só https://<domínio .br do cliente>/ (M57, o cadeado chegou?).
 //  sondarSite(url): SÓ https://<nome>.vercel.app/ (ou a mesma origem). Devolve status, cabeçalhos e até 200 KB do corpo.
 'use strict'
 const https = require('node:https')
@@ -48,4 +49,11 @@ async function sondarSite(url, { enviar = pedir } = {}) {
   return enviar({ host: `${m[1]}.vercel.app`, metodo: 'GET', caminho: '/', cabecalhos: { Accept: 'text/html' }, maxCorpo: 200_000 })
 }
 
-module.exports = { pedirApiSupabase, sondarSite, pedir, HOST_API }
+// M57: https://<domínio do cliente>/ — só domínio do Registro.br (dominio.cjs valida), sem seguir redirect, IP público.
+async function sondarDominio(dominio, { enviar = pedir } = {}) {
+  const { dominioValido } = require('./dominio.cjs')
+  if (!dominioValido(dominio)) throw new Error('dominio-invalido')
+  return enviar({ host: dominio, metodo: 'GET', caminho: '/', cabecalhos: { Accept: 'text/html' }, maxCorpo: 1000 })
+}
+
+module.exports = { pedirApiSupabase, sondarSite, sondarDominio, pedir, HOST_API }
