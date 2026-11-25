@@ -1,5 +1,5 @@
 import { textoAvanco } from './avanco'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Botao, Icone } from '../ui'
 import { Canteiro3D } from './Canteiro3D'
 import { MODO_RECOMENDADO, MODOS_OBRA, PARADAS_REAIS, TEXTO_MODO, type ModoObra, type PonteModoObra } from './ponte-construcao'
@@ -17,6 +17,10 @@ import './painel.css'
 
 interface Props {
   obra: ObraDoEstilo
+  /** M50 (PalcoObra): as abas da obra entram na MESMA linha do título, como no protótipo (sobra altura para o prédio). */
+  abas?: ReactNode
+  /** M50: "← Canteiro de obras" acima do título (no lugar da linha separada das abas). */
+  onCanteiro?: () => void
   painel: PontePainel
   /** O mesmo armazém do modo que a tela de aprovar (F08) grava: `<obra>\.atlas\modo.json`. */
   modos: PonteModoObra
@@ -54,7 +58,7 @@ export const recadoDoErroPainel = (e: unknown) => {
 
 
 /** F09: painel da obra. O prédio, o %, o prazo e o "agora na obra"; detalhes técnicos só em "ver detalhes". */
-export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onVerMax, onPedirAjuda, sondagemMs = 5000, travas, navegador, onLigarContas, onVerCronograma }: Props) {
+export function Painel({ obra, abas, onCanteiro, painel, modos, cota, ocorrencias, onPublicar, onVerMax, onPedirAjuda, sondagemMs = 5000, travas, navegador, onLigarContas, onVerCronograma }: Props) {
   const [estado, setEstado] = useState<EstadoObra | null>(null)
   const [modo, setModo] = useState<ModoObra | null>(null)
   const [modoLido, setModoLido] = useState(false)
@@ -65,6 +69,16 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
   const [diarioAberto, setDiarioAberto] = useState(false)
   const [andares, setAndares] = useState(false)
   const liberada = useRef<number | null>(null)
+  const palcoRef = useRef<HTMLElement | null>(null)
+  // M50: o protótipo foi desenhado num palco de ~1136 × 794. Em telas menores (notebook com zoom do Windows) os cartões encolhem na
+  // mesma proporção, para o prédio continuar sendo o centro da tela.
+  useEffect(() => {
+    const el = palcoRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => { const r = el.getBoundingClientRect(); if (!r.width || !r.height) return; el.style.setProperty('--k', String(Math.max(0.6, Math.min(1, r.width / 1136, r.height / 794)).toFixed(3))) })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const atualizar = useCallback(async () => {
     try { setEstado(await painel.ler(obra.pasta)) } catch (x) { setErro(recadoDoErroPainel(x)) }
@@ -142,9 +156,12 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
     <div className="at-pn">
       <div className="at-pn__topo">
         <div className="at-pn__titulo">
-          <span className="at-pn__rotulo">OBRA 1 DE 1</span>
+          {onCanteiro
+            ? <button type="button" className="at-pn__voltar" onClick={onCanteiro}><Icone nome="seta-esquerda" tamanho={12} />Canteiro de obras</button>
+            : <span className="at-pn__rotulo">OBRA 1 DE 1</span>}
           <h1>{obra.nome}</h1>
         </div>
+        {abas}
         {momento && <span className={`at-pn__selo at-pn__selo--${momento.nivel}`} role="status" aria-label={`Situação da obra: ${momento.selo}`}>● {momento.selo}{momento.nivel !== 'pronta' ? ` · ${pctTxt}%` : ''}</span>}
         <div className="at-pn__acoes">
           {onLigarContas && !concluida && <Botao variante="secundario" className="at-pn__btn" onClick={onLigarContas}>Contas ligadas</Botao>}
@@ -168,13 +185,13 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
       )}
 
       {/* M43 (PalcoObra aprovado em 24/11/2026): o prédio é o palco; os números e a frase do momento flutuam por cima dele. */}
-      <section className="at-pn__palco" aria-label="Palco da obra">
-        <Canteiro3D endereco={painel.enderecoCanteiro(obra.pasta)} pct={pct} balao={momento && momento.nivel !== 'pronta' ? { quem: BALAO_QUEM[momento.nivel], texto: momento.nivel === 'trabalhando' ? momento.titulo : momento.titulo.split('. ')[0] + '.', nivel: momento.nivel } : null} />
+      <section className="at-pn__palco" aria-label="Palco da obra" ref={palcoRef}>
+        <Canteiro3D endereco={painel.enderecoCanteiro(obra.pasta)} pct={pct} balao={momento && momento.nivel === 'trabalhando' ? { quem: 'Mestre de obras', texto: momento.titulo, nivel: momento.nivel } : null} />
         <section className="at-pn__hud at-pn__hud--esq" aria-label="Avanço da obra">
           {momento && <span className={`at-pn__hud-rot at-pn__hud-rot--${momento.nivel}`}>{momento.nivel === 'trabalhando' && <span className="at-pn__faixa-pulso" aria-hidden="true" />}{momento.selo.toLocaleUpperCase('pt-BR')}{momento.sinal ? ` · ${momento.sinal.toLocaleUpperCase('pt-BR')}` : ''}</span>}
           <span className="at-pn__hud-pct">{pctTxt}%</span>
-          <span className="at-pn__hud-sub">{estado ? `${concluida ? estado.tarefas : estado.feitas} de ${estado.tarefas} tarefas` : ''}{estado?.etapa ? ` · Etapa M${estado.etapa.n} de ${estado.etapas.length} · ${estado.etapa.nome}` : concluida ? ' · Todas as etapas prontas' : ''}</span>
-          <div className="at-pn__barra at-pn__hud-barra" role="progressbar" aria-label="Avanço da obra" aria-valuemin={0} aria-valuemax={100} aria-valuenow={concluida ? 100 : pct}><div style={{ width: `${concluida ? 100 : pct}%` }} /></div>
+          {/* M50: como no protótipo, só a etapa (sem a contagem de tarefas e sem barra: o % já diz o avanço). */}
+          <span className="at-pn__hud-sub" title={estado ? `${concluida ? estado.tarefas : estado.feitas} de ${estado.tarefas} tarefas` : undefined}>{estado?.etapa ? `Etapa M${estado.etapa.n} de ${estado.etapas.length} · ${estado.etapa.nome}` : concluida ? 'Todas as etapas prontas' : ''}</span>
           {estado && estado.etapas.length > 0 && (
             <button type="button" className="at-pn__chip-andares" aria-haspopup="dialog" onClick={() => setAndares(true)}>
               <Icone nome="obra" tamanho={16} />Andares · {estado.etapas.filter((e) => e.total > 0 && e.feitas === e.total).length} de {estado.etapas.length} prontos
@@ -242,7 +259,6 @@ export function Painel({ obra, painel, modos, cota, ocorrencias, onPublicar, onV
   )
 }
 
-const BALAO_QUEM: Record<string, string> = { trabalhando: 'Mestre de obras', esperando: 'Equipe em pausa', precisa: 'Mestre de obras', defeito: 'Mestre de obras', pausada: 'Equipe em pausa' }
 const NOME_ACAO: Record<AcaoObra, string> = { tentar: 'Tentar agora', continuar: 'Continuar obra', planos: 'Ver planos do Claude', esperar: 'Esperar, volta sozinha', ajuda: 'Falar com o Atlas', contas: 'Ligar a conta', diario: 'Ver o diário completo', ok: 'Pode seguir', teste: 'Ver versão de teste' }
 
 /** M41: a faixa do momento. Sempre uma frase do que está acontecendo e pelo menos uma ação (a obra nunca fica no escuro). */
@@ -250,8 +266,15 @@ function FaixaDoMomento({ m, fazer, pode, recentes = [], escolher }: { m: Moment
   const alerta = m.nivel === 'precisa' || m.nivel === 'defeito'
   const acoes = [...m.acoes, ...(m.acoes.includes('diario') ? [] : ['diario' as AcaoObra])].filter((a) => (a === 'planos' ? pode.planos : a === 'ajuda' ? pode.ajuda : a === 'contas' ? pode.contas : true))
   const nome = (a: AcaoObra) => (a === 'contas' && m.conta ? `Ligar o ${m.conta}` : a === 'ajuda' && m.nivel === 'defeito' ? 'Corrigir com a Ajuda do Atlas' : NOME_ACAO[a])
+  // M50 (PalcoObra): sem opções nem conferências, a faixa é UMA linha — a frase à esquerda e os botões à direita.
+  const compacta = !(m.opcoes && escolher) && !m.checagens && !m.fala
+  const botoes = acoes.length > 0 && (
+    <div className="at-pn__faixa-acoes">
+      {acoes.map((a, i) => <Botao key={a} variante={i === 0 && a !== 'diario' && a !== 'esperar' ? undefined : 'secundario'} className="at-pn__btn" onClick={() => fazer(a)}>{nome(a)}</Botao>)}
+    </div>
+  )
   return (
-    <section className={`at-pn__faixa at-pn__faixa--${m.nivel}`} role={alerta ? 'alert' : 'status'} aria-label="O que está acontecendo agora">
+    <section className={`at-pn__faixa at-pn__faixa--${m.nivel}${compacta ? ' at-pn__faixa--compacta' : ''}`} role={alerta ? 'alert' : 'status'} aria-label="O que está acontecendo agora">
       <span className="at-pn__faixa-bola" aria-hidden="true">{m.nivel === 'trabalhando' ? <span className="at-pn__faixa-pulso" /> : <Icone nome={m.nivel === 'esperando' || m.nivel === 'pausada' ? 'relogio' : 'alerta'} tamanho={22} />}</span>
       <div className="at-pn__faixa-txt">
         <span className="at-pn__faixa-rot">{m.rotulo}</span>
@@ -279,12 +302,9 @@ function FaixaDoMomento({ m, fazer, pode, recentes = [], escolher }: { m: Moment
             ))}
           </ul>
         )}
-        {acoes.length > 0 && (
-          <div className="at-pn__faixa-acoes">
-            {acoes.map((a, i) => <Botao key={a} variante={i === 0 && a !== 'diario' && a !== 'esperar' ? undefined : 'secundario'} className="at-pn__btn" onClick={() => fazer(a)}>{nome(a)}</Botao>)}
-          </div>
-        )}
+        {!compacta && botoes}
       </div>
+      {compacta && botoes}
       {m.sinal && <span className="at-pn__faixa-sinal">{m.sinal}</span>}
     </section>
   )

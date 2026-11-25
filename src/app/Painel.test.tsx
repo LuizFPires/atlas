@@ -20,12 +20,12 @@ const montar = (modo: ModoObra | null = 'automatico', opcoes: { painel?: PontePa
 }
 
 // M43 (PalcoObra aprovado pelo Luiz em 24/11/2026): o prédio é o palco; os números flutuam por cima dele.
-test('o palco: o % ponderado, as tarefas, a etapa, quanto falta e quando termina, por cima do canteiro', async () => {
+test('o palco: o % ponderado, a etapa, quanto falta e quando termina, por cima do canteiro', async () => {
   montar()
   const palco = await screen.findByRole('region', { name: 'Palco da obra' })
   expect(await within(palco).findByText(PCT)).toBeInTheDocument()
-  expect(within(palco).getByText(/13 de 24 tarefas/)).toBeInTheDocument()
-  expect(within(palco).getByText(/M5 de 8 · Confirmação por WhatsApp/)).toBeInTheDocument()
+  expect(within(palco).getByText('Etapa M5 de 8 · Confirmação por WhatsApp')).toBeInTheDocument() // M50: como no PalcoObra, sem a contagem de tarefas
+  expect(within(palco).queryByRole('progressbar')).toBeNull()
   expect(within(palco).getByText(/≈ 2 h 12/)).toBeInTheDocument()
   expect(within(palco).getByText('Hoje, ~17h')).toBeInTheDocument()
   expect(within(palco).getByRole('img', { name: /Canteiro em 3D/ })).toBeInTheDocument()
@@ -269,6 +269,17 @@ test('o balão do canteiro diz a mesma coisa que a faixa', async () => {
   const balao = await screen.findByRole('note', { name: 'O que está acontecendo no canteiro' })
   expect(balao).toHaveTextContent(/Mestre de obras/)
 })
+
+// M50 (Luiz, 25/11/2026: "com menos interferência visual"): o balão só aparece com a equipe trabalhando; parada, quem fala é a faixa.
+test('pausada: sem balão por cima do prédio, e a faixa é uma linha com os botões ao lado', async () => {
+  const { user } = montar('automatico', { sondagemMs: 30 })
+  await screen.findByText(PCT)
+  expect(screen.getByRole('status', { name: 'O que está acontecendo agora' }).className).toMatch(/at-pn__faixa--compacta/)
+  await user.click(screen.getByRole('button', { name: 'Pausar obra' }))
+  await screen.findByText('Você pausou a obra.')
+  expect(screen.queryByRole('note', { name: 'O que está acontecendo no canteiro' })).toBeNull()
+})
+
 
 test('com defeito: a faixa mostra o que o Atlas conferiu (✓ e ✗ com a dica)', async () => {
   const { fx } = montar('automatico', { sondagemMs: 30 })

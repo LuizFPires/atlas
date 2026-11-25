@@ -91,6 +91,9 @@ export function iniciar(palco, obterEstado) {
   controles.autoRotateSpeed = 0.35;
   let ultimoToque = 0;
   controles.addEventListener('start', () => { ultimoToque = performance.now(); controles.autoRotate = false; });
+  // Atlas (M50, PalcoObra): dentro do app (?cena=1) a câmera fica perto do prédio e acompanha a altura dele: o prédio é o palco.
+  const soCena = document.documentElement.classList.contains('so-cena');
+  if (soCena) { controles.target.set(PRED.x, 6, PRED.z); camera.position.set(PRED.x + 52, 34, PRED.z + 58); controles.minDistance = 22; }
 
   // luzes
   const hemi = new THREE.HemisphereLight(0xdfeeff, 0x5a4630, 0.8);
@@ -379,7 +382,8 @@ export function iniciar(palco, obterEstado) {
     renderer.setSize(r.width, r.height, false);
     renderer.domElement.style.width = r.width + 'px'; renderer.domElement.style.height = r.height + 'px';
     camera.aspect = r.width / r.height;
-    camera.position.setLength(r.width < 600 ? 150 : 112);
+    const dist = soCena ? (r.width / r.height < 1.25 ? 88 : 64) : (r.width < 600 ? 150 : 112);
+    camera.position.sub(controles.target).setLength(dist).add(controles.target);
     camera.updateProjectionMatrix();
   };
   const ro = new ResizeObserver(medir); ro.observe(palco); medir();
@@ -538,6 +542,7 @@ export function iniciar(palco, obterEstado) {
     }
 
     if (!controles.autoRotate && performance.now() - ultimoToque > 25000) controles.autoRotate = true;
+    if (soCena && performance.now() - ultimoToque > 25000) { const alvoY = THREE.MathUtils.clamp(topo * .55 + 3, 6, 20); const dy = (alvoY - controles.target.y) * Math.min(1, dt * .6); controles.target.y += dy; camera.position.y += dy; }
     controles.update();
     renderer.render(cena, camera);
   }
