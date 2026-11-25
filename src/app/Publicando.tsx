@@ -22,6 +22,8 @@ interface Props {
   /** Deu erro de verdade num passo do Atlas (não é "ocupado"): abre a Ajuda do Atlas sozinha, com o print e o registro do passo. */
   onErro?: (pedido: PedidoAjudaPasso, erro: { titulo: string; detalhe: string }) => void
   onVoltar?: () => void
+  /** M56: o sistema já está no ar pelo "Colocar no ar" (este endereço): o guia do endereço grátis não se repete. */
+  jaNoAr?: string | null
   /** De quanto em quanto tempo o Atlas confere se a internet já reconheceu o domínio. Padrão: 5 minutos. */
   sondagemMs?: number
 }
@@ -33,12 +35,12 @@ type Auto = { estado: 'rodando' | 'ok' | 'erro'; texto: string; chave: string; o
  * Cada passo mostra quem faz (VOCÊ ou O ATLAS). Pagamento e "Enviar para revisão" são SEMPRE do cliente: o Atlas só guia,
  * abre o site oficial e faz a parte técnica (publicar, ler o DNS, esperar a internet, gerar o cartaz).
  */
-export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, onErro, onVoltar, sondagemMs = 5 * 60_000 }: Props) {
-  const ids = useMemo(() => guiasEscolhidos(selecao), [selecao])
+export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, onErro, onVoltar, jaNoAr = null, sondagemMs = 5 * 60_000 }: Props) {
+  const ids = useMemo(() => guiasEscolhidos(selecao).filter((id) => !(jaNoAr && id === 'gratis')), [selecao, jaNoAr])
   const slug = slugDaObra(obra.nome)
   const [nomeBase, setNomeBase] = useState(slug) // o que o cliente está digitando
   const [nomeAlvo, setNomeAlvo] = useState(slug) // o nome já confirmado (só muda em "Conferir de novo")
-  const [endereco, setEndereco] = useState(`${slug}.vercel.app`)
+  const [endereco, setEndereco] = useState(jaNoAr ? jaNoAr.replace(/^https?:\/\//, '') : `${slug}.vercel.app`)
   const [noAr, setNoAr] = useState<string | null>(null) // só preenche quando o adaptador de verdade publicou (a entrega F13 não finge)
   const [dns, setDns] = useState<RegistroDns[] | null>(null)
   const dominio = `${slugDaObra(nomeAlvo)}.com.br`

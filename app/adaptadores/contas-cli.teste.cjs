@@ -136,3 +136,16 @@ test('instalar as ferramentas: versões fixas, dentro da pasta do Atlas, sem glo
   assert.ok(!c.args.includes('-g'))
   assert.ok(c.args.some((a) => /^vercel@\d/.test(a)) && c.args.some((a) => /^supabase@\d/.test(a)))
 })
+
+test('rodarFerramenta (colocar no ar): só vercel/supabase, na pasta da obra, valor pela entrada', async () => {
+  const vistos = []
+  const { contas } = montar({ rodar: async (cmd, args, o) => { vistos.push({ args, o }); return { codigo: 0, saida: 'ok' } } })
+  const r = await contas.rodarFerramenta('vercel', ['env', 'add', 'VITE_SUPABASE_URL', 'production'], { cwd: '/obras/ponto', entrada: 'https://x.supabase.co' })
+  assert.equal(r.codigo, 0)
+  assert.equal(vistos[0].o.cwd, '/obras/ponto')
+  assert.equal(vistos[0].o.entrada, 'https://x.supabase.co')
+  assert.equal(vistos[0].o.env.CI, '1')
+  assert.ok(!vistos[0].args.includes('https://x.supabase.co'))
+  assert.equal((await contas.rodarFerramenta('gh', ['x'])).codigo, 1)
+  assert.equal((await contas.rodarFerramenta('vercel', [1])).codigo, 1)
+})

@@ -25,11 +25,12 @@ const CHAVE_SUPABASE = 'contas/supabase'
 const MAX_SAIDA = 200_000
 
 /** Roda e espera (sem shell, a não ser .cmd do npm com argumentos FIXOS). Saída = stdout+stderr, com teto. */
-function rodarProcesso(cmd, args, { env, cwd, timeoutMs = 20_000 } = {}) {
+function rodarProcesso(cmd, args, { env, cwd, timeoutMs = 20_000, entrada = null } = {}) {
   return new Promise((resolve) => {
     let saida = ''
     let p
-    try { p = spawn(cmd, args, { env, cwd, windowsHide: true, shell: /\.cmd$/i.test(cmd), stdio: ['ignore', 'pipe', 'pipe'] }) } catch { resolve({ codigo: 1, saida: '' }); return }
+    try { p = spawn(cmd, args, { env, cwd, windowsHide: true, shell: /\.cmd$/i.test(cmd), stdio: [entrada === null ? 'ignore' : 'pipe', 'pipe', 'pipe'] }) } catch { resolve({ codigo: 1, saida: '' }); return }
+    if (entrada !== null) { try { p.stdin.end(String(entrada)) } catch { /* fechou */ } } // valor de segredo vai pela entrada, nunca nos argumentos
     const junta = (b) => { if (saida.length < MAX_SAIDA) saida += String(b) }
     p.stdout.on('data', junta)
     p.stderr.on('data', junta)
@@ -105,8 +106,8 @@ function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = inic
   const supabase = () => viaNode(['supabase', 'dist', 'supabase.js'])
   const ferramentaDe = (conta) => (conta === 'github' ? gh() : vercel())
 
-  const rodarCom = async (f, args, extra = {}, timeoutMs = 20_000) => {
-    try { return await rodar(f.cmd, [...f.pre, ...args], { env: { ...env, ...f.env, ...extra }, timeoutMs }) } catch { return { codigo: 1, saida: '' } }
+  const rodarCom = async (f, args, extra = {}, timeoutMs = 20_000, opcoes = {}) => {
+    try { return await rodar(f.cmd, [...f.pre, ...args], { env: { ...env, ...f.env, ...extra }, timeoutMs, ...opcoes }) } catch { return { codigo: 1, saida: '' } }
   }
 
   const self = {
@@ -198,6 +199,14 @@ function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = inic
         hosp: { ligado: v.codigo === 0, usuario: v.codigo === 0 ? linhaV : null },
         supabase: { ligado: !!chave, usuario: null },
       }
+    },
+
+    /** "Colocar no ar" (no-ar.cjs): roda a CLI da Vercel ou do Supabase do cliente na pasta da obra. Segredo só por `env`/`entrada`. */
+    async rodarFerramenta(nome, args, { cwd, env: extra = {}, entrada = null, timeoutMs = 120_000 } = {}) {
+      if (nome !== 'vercel' && nome !== 'supabase') return { codigo: 1, saida: '' }
+      if (!Array.isArray(args) || !args.every((a) => typeof a === 'string')) return { codigo: 1, saida: '' }
+      const f = nome === 'vercel' ? vercel() : supabase()
+      return rodarCom(f, args, nome === 'vercel' ? { CI: '1', ...extra } : extra, timeoutMs, { cwd, entrada })
     },
 
     /** Ambiente extra da linha de produção: ferramentas no PATH e a chave do Supabase (só se existir). */

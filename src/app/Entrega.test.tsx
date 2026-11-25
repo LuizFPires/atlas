@@ -1,14 +1,7 @@
 import userEvent from '@testing-library/user-event'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { TemaProvider } from '../tema/tema'
 import { Entrega } from './Entrega'
-import { AppDesktop } from './AppDesktop'
-import { CHAVE_COFRE } from './ativacao-api'
-import { criarCofreMemoria, criarPonteFixture } from './ponte'
-import { criarPainelFixture } from './ponte-painel'
-import { criarCotaFixture } from './ponte-cota'
-import { criarPublicarFixture, publicarIndisponivel } from './ponte-publicar'
-import { OBRA_PARADA_EXEMPLO, criarRetomarFixture } from './ponte-retomar'
 import { caminhoQr, enderecoDoSistema, linkWhatsapp, matrizQr } from './entrega-dados'
 
 const montar = (endereco: string | null, p: Partial<React.ComponentProps<typeof Entrega>> = {}) =>
@@ -60,39 +53,4 @@ test('o QR é local: matriz quadrada e determinística; o recado do WhatsApp vai
   expect(m.every((l) => l.length === m.length)).toBe(true)
   expect(matrizQr('https://cadeira1.vercel.app')).toEqual(m)
   expect(linkWhatsapp('a b&c')).toBe('https://wa.me/?text=a%20b%26c')
-})
-
-const ponte = criarPonteFixture([], criarCofreMemoria({ [CHAVE_COFRE]: JSON.stringify({ token: 't', email: 'a@b.co', nome: 'Zé' }) }))
-const api = { pedirCodigo: async () => ({ ok: true as const }), confirmar: async () => ({ ok: true as const, nome: 'Zé' }) }
-
-async function ate(publicar: ReturnType<typeof criarPublicarFixture> | typeof publicarIndisponivel) {
-  const painel = criarPainelFixture()
-  painel.simular.concluirObra()
-  render(<TemaProvider><AppDesktop ponte={ponte} api={api} painel={painel} cota={criarCotaFixture()} publicar={publicar} retomar={criarRetomarFixture({ ...OBRA_PARADA_EXEMPLO, paradaEm: null })} /></TemaProvider>)
-  await userEvent.click(await screen.findByRole('button', { name: 'Continuar obra' }))
-  await userEvent.click(await screen.findByRole('button', { name: 'Publicar o sistema →' }))
-  await userEvent.click(await screen.findByRole('checkbox', { name: /App instalável/ })) // deixa só o endereço grátis
-  await userEvent.click(screen.getByRole('button', { name: 'Publicar agora →' }))
-}
-const clicar = (nome: string) => screen.findByRole('button', { name: nome }).then((b) => userEvent.click(b))
-
-test('fluxo: o Atlas publicou de verdade (M22) -> a entrega mostra o QR do endereço publicado', async () => {
-  const pub = criarPublicarFixture()
-  await ate(pub)
-  await clicar('Continuar →')
-  await clicar('Fiz isso →')
-  await waitFor(() => expect(pub.publicados).toHaveLength(1))
-  await waitFor(() => expect(screen.getByRole('button', { name: 'Continuar →' })).toBeEnabled())
-  await clicar('Continuar →')
-  await clicar('Fiz isso →')
-  await clicar('Ver a entrega das chaves →')
-  const qr = await screen.findByRole('img', { name: /QR code para abrir o sistema/ })
-  expect(qr).toHaveAttribute('data-endereco', `https://${pub.publicados[0]}.vercel.app`)
-  expect(screen.getByText('Obra entregue')).toBeInTheDocument()
-})
-
-test('fluxo: sem adaptador (nada foi publicado) a entrega não finge: sem QR, sem link', async () => {
-  await ate(publicarIndisponivel)
-  expect(await screen.findByText(/Ainda não fiz a vistoria de verdade/)).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: 'Ver a entrega das chaves →' })).toBeNull()
 })

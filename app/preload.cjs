@@ -211,6 +211,14 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     lerProgresso: (pasta) => chamar('atlas:publicar:ler', String(pasta)),
     gravarProgresso: (pasta, p) => chamar('atlas:publicar:gravar', String(pasta), JSON.parse(JSON.stringify(p ?? {}))),
   },
+  noAr: {
+    // Colocar no ar (M56): só pasta e nome; tudo é revalidado no processo principal.
+    sugerir: (pasta, obraNome, extra) => chamar('atlas:noar:sugerir', String(pasta), String(obraNome), extra === undefined ? undefined : String(extra)),
+    nomeLivre: (nome, pasta) => chamar('atlas:noar:livre', String(nome), pasta === undefined ? undefined : String(pasta)),
+    iniciar: (pasta, nome) => chamar('atlas:noar:iniciar', String(pasta), String(nome)),
+    estado: (pasta) => chamar('atlas:noar:estado', String(pasta)),
+    corrigir: (pasta) => chamar('atlas:noar:corrigir', String(pasta)),
+  },
   kit: {
     // o kit fica no processo principal (pasta temporária do app); aqui só volta { ok, obraId, marca } e a tela pode pedir para descartar.
     entregar: async (obraId) => {
