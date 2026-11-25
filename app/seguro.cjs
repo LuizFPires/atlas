@@ -48,7 +48,11 @@ async function abrirExterno(shell, url, hosts = HOSTS_OFICIAIS) {
 function resolverClaude(env = process.env) {
   const fixo = env.ATLAS_CLAUDE_EXE
   if (fixo) return /\.(cmd|bat)$/i.test(fixo) ? null : { cmd: fixo, prefixo: [], env }
-  if (process.platform !== 'win32') return { cmd: 'claude', prefixo: [], env }
+  if (process.platform !== 'win32') {
+    // Mac (M46): caminho completo, achado no PATH já com as pastas do Mac (plataforma.cjs). Sem ele: "o Claude não está instalado".
+    const cmd = require('./plataforma.cjs').acharPrograma('claude', env.PATH)
+    return cmd ? { cmd, prefixo: [], env } : null
+  }
   const dirs = String(env.PATH || env.Path || '').split(path.delimiter).filter((d) => d && path.isAbsolute(d))
   for (const d of dirs) {
     const exe = path.join(d, 'claude.exe')
@@ -75,13 +79,13 @@ function executarClaude(args, { cwd, entrada, timeoutMs = 30_000, maxSaida = 1_0
   if (!r) return Promise.reject(new Error('claude-nao-instalado'))
   return new Promise((resolve, reject) => {
     let filho
-    try { filho = spawn(r.cmd, [...r.prefixo, ...args], { cwd, env: r.env, windowsHide: true, shell: false, stdio: ['pipe', 'pipe', 'pipe'] }) } catch (e) {
+    try { filho = spawn(r.cmd, [...r.prefixo, ...args], { cwd, env: r.env, windowsHide: true, shell: false, stdio: ['pipe', 'pipe', 'pipe'], detached: process.platform !== 'win32' }) } catch (e) {
       reject(new Error(e && e.code === 'ENOENT' ? 'claude-nao-instalado' : 'claude-falhou')); return
     }
     let out = ''
     let err = ''
     let fim = false
-    const t = setTimeout(() => { filho.kill(); encerrar(reject, new Error('claude-timeout')) }, timeoutMs)
+    const t = setTimeout(() => { require('./plataforma.cjs').pararArvore(filho); encerrar(reject, new Error('claude-timeout')) }, timeoutMs)
     function encerrar(fn, v) { if (fim) return; fim = true; clearTimeout(t); fn(v) }
     filho.stdout.on('data', (d) => { out += d; if (out.length > maxSaida) { filho.kill(); encerrar(reject, new Error('claude-saida-grande')) } })
     filho.stderr.on('data', (d) => { err = (err + d).slice(-4000) })
@@ -106,7 +110,7 @@ function iniciarClaudeEmFluxo(args, { cwd, entrada, env = process.env, resolvido
   const r = resolvido || resolverClaude(env)
   if (!r) throw new Error('claude-nao-instalado')
   let filho
-  try { filho = spawn(r.cmd, [...r.prefixo, ...args], { cwd, env: r.env, windowsHide: true, shell: false, stdio: ['pipe', 'pipe', 'pipe'] }) } catch (e) {
+  try { filho = spawn(r.cmd, [...r.prefixo, ...args], { cwd, env: r.env, windowsHide: true, shell: false, stdio: ['pipe', 'pipe', 'pipe'], detached: process.platform !== 'win32' }) } catch (e) {
     throw new Error(e && e.code === 'ENOENT' ? 'claude-nao-instalado' : 'claude-falhou')
   }
   let parado = false
@@ -137,9 +141,7 @@ function iniciarClaudeEmFluxo(args, { cwd, entrada, env = process.env, resolvido
   try { if (typeof entrada === 'string') filho.stdin.end(entrada); else filho.stdin.end() } catch { /* idem */ }
   const parar = () => {
     parado = true
-    if (process.platform === 'win32' && filho.pid) {
-      try { require('node:child_process').execFile('taskkill', ['/pid', String(filho.pid), '/T', '/F'], { windowsHide: true }, () => {}) } catch { filho.kill() }
-    } else filho.kill()
+    require('./plataforma.cjs').pararArvore(filho) // Windows: taskkill /T; Mac: o grupo inteiro (Claude e subagentes)
   }
   return { parar, fim }
 }

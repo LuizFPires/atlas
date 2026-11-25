@@ -8,6 +8,12 @@ const crypto = require('node:crypto')
 const os = require('node:os')
 const path = require('node:path')
 const { execFileSync, spawn } = require('node:child_process')
+// Mac (M46): aberto pelo Finder, o app recebe um PATH mínimo e não acharia claude, gh, git nem node. Acrescenta as pastas certas
+// (as do próprio Atlas primeiro). Vale para o app e para tudo o que ele roda (a linha de produção herda este PATH).
+if (process.platform === 'darwin') {
+  const { pastasDeProgramasMac, pathCompleto } = require('./plataforma.cjs')
+  process.env.PATH = pathCompleto(process.env.PATH, pastasDeProgramasMac({ home: os.homedir(), dadosApp: app.getPath('userData') }))
+}
 const { criarCofre } = require('./cofre.cjs')
 const { criarObras } = require('./adaptadores/obras.cjs')
 const { criarArquivos } = require('./adaptadores/arquivos.cjs')
@@ -140,6 +146,14 @@ if (!app.requestSingleInstanceLock()) app.quit()
 // O cliente clicou em "Liberar o Atlas neste computador" na página do e-mail com o app já aberto: o Windows tenta abrir outro
 // Atlas com atlas://ativar?t=<código>; quem recebe é este aqui. Guarda o código, avisa a tela e traz a janela para a frente.
 app.setAsDefaultProtocolClient('atlas')
+// Mac (M46): o link atlas:// chega por 'open-url' (no Windows vem no argv de uma segunda instância). Mesmo caminho do código.
+app.on('open-url', (e, url) => {
+  e.preventDefault()
+  const t = tokenDoLink([String(url)])
+  if (!t) return
+  argvTela = comToken(argvTela, t)
+  if (janelaPrincipal) { janelaPrincipal.webContents.send('atlas:link', t); if (janelaPrincipal.isMinimized()) janelaPrincipal.restore(); janelaPrincipal.focus() }
+})
 app.on('second-instance', (_e, argvNovo) => {
   const t = tokenDoLink(argvNovo)
   if (t) {
@@ -150,6 +164,10 @@ app.on('second-instance', (_e, argvNovo) => {
 })
 
 function idDaMaquina() {
+  if (process.platform === 'darwin') { // Mac (M46): número do hardware (IOPlatformUUID); o nome do computador muda fácil
+    try { const id = require('./plataforma.cjs').idDoMac(execFileSync('/usr/sbin/ioreg', ['-rd1', '-c', 'IOPlatformExpertDevice'], { encoding: 'utf8', timeout: 10_000 })); if (id) return id } catch { /* cai no nome */ }
+    return `${os.hostname()}|${os.userInfo().username}`
+  }
   try {
     const s = execFileSync('reg', ['query', 'HKLM\\SOFTWARE\\Microsoft\\Cryptography', '/v', 'MachineGuid'], { encoding: 'utf8' })
     const m = /MachineGuid\s+REG_SZ\s+(\S+)/.exec(s)
@@ -175,7 +193,14 @@ handle('atlas:hash', () => hash())
 handle('atlas:pagamento:abrir', (url) => abrirExterno(shell, String(url), HOSTS_PAGAMENTO))
 // Chamadas da tela ao servidor de licenças (ativação, licença): rota de lista fechada e base fixa, revalidadas em servidor.cjs.
 handle('atlas:servidor:postar', (rota, corpo, cabecalhos) => servidor.postar(rota, corpo, cabecalhos))
-handle('atlas:descricao', () => `${os.hostname().toUpperCase()} · Windows ${Number(os.release().split('.')[2]) >= 22000 ? '11' : '10'}`)
+handle('atlas:descricao', () => {
+  if (process.platform === 'darwin') { // M46: o nome que o cliente deu ao Mac ("MacBook Air do Zé")
+    let nome = os.hostname().replace(/\.local$/, '')
+    try { nome = execFileSync('/usr/sbin/scutil', ['--get', 'ComputerName'], { encoding: 'utf8', timeout: 5_000 }).trim() || nome } catch { /* fica o hostname */ }
+    return `${nome} · macOS`
+  }
+  return `${os.hostname().toUpperCase()} · Windows ${Number(os.release().split('.')[2]) >= 22000 ? '11' : '10'}`
+})
 
 // Arquivos da obra, pasta das obras e Claude (portas de base).
 handle('atlas:arquivos:escolher', (tipo) => arquivos.escolher(String(tipo)))
@@ -426,7 +451,8 @@ handle('atlas:sono', (ligado) => {
 
 function abrir() {
   // Sem o menu padrão do Electron (File, Edit, View, Window): o cliente é leigo e o app tem o próprio menu lateral.
-  Menu.setApplicationMenu(null)
+  // No Mac (M46) o menu fica, mínimo: sem ele Cmd+C, Cmd+V, Cmd+Q e Cmd+W param de funcionar.
+  Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'windowMenu' }]) : null)
   // Abre junto com o Windows (ao ligar o computador). Com obra em andamento, a tela inicial é Retomar (F12): a regra está em
   // src/app/tela.ts (telaInicial). Para desligar: Configurações → Abrir com o Windows (a tela F12 avisa o cliente).
   app.setLoginItemSettings({ openAtLogin: true })

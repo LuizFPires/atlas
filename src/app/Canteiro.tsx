@@ -1,4 +1,5 @@
 import { textoAvanco } from './avanco'
+import { palavras } from './plataforma'
 import { useEffect, useMemo, useState } from 'react'
 import { Icone } from '../ui'
 import canteiroImagem from '../assets/canteiro-3d.jpg'
@@ -221,7 +222,7 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova }: Prop
           <div className="at-ct__confirma" role="alertdialog" aria-modal="true" aria-labelledby="ct-exc-tit" aria-describedby="ct-exc-txt">
             <span className="at-ct__confirma-ico" aria-hidden="true"><Icone nome="lixeira" tamanho={22} /></span>
             <h2 id="ct-exc-tit">Excluir a obra "{excluindo.nome}"?</h2>
-            <p id="ct-exc-txt">Isso <b>não tem volta</b> pelo Atlas: a construção para, a obra sai do Canteiro e a pasta dela vai para a Lixeira do Windows, com o protótipo e tudo o que já foi feito.</p>
+            <p id="ct-exc-txt">Isso <b>não tem volta</b> pelo Atlas: a construção para, a obra sai do Canteiro e a pasta dela vai para {palavras().lixeira}, com o protótipo e tudo o que já foi feito.</p>
             {erroExcluir && <p className="at-ct__confirma-erro" role="alert">{erroExcluir}</p>}
             <div className="at-ct__confirma-acoes">
               <button type="button" className="at-ct__cancelar" autoFocus onClick={() => setExcluindo(null)} disabled={ocupado}>Cancelar</button>

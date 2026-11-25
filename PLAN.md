@@ -519,13 +519,13 @@ Notas: DECISÃO do Luiz (24/11/2026, depois do teste às cegas X/Y: "Não, eu n�
 peso: 4
 spec: S11b
 tela: prototipo/caminho-novo/M5Preparando.dc.html
-- [ ] Achar claude, gh, git e node no Mac mesmo com o Atlas aberto pelo Finder (caminhos padrão e os do próprio Atlas), e passar esses caminhos para a linha de produção
-- [ ] Menu mínimo do Mac (Atlas, Editar, Janela): Cmd+C, Cmd+V, Cmd+Q e Cmd+W funcionam
-- [ ] Licença: identificar o Mac pelo número de hardware (IOPlatformUUID), nunca pelo nome do computador
-- [ ] Pausar e fechar encerram a linha inteira (Claude e todos os subagentes), sem processo escondido gastando cota
-- [ ] Abrir pelo link atlas:// (open-url do Mac) com o código do link de instalação
-- [ ] Pasta das obras em ~/Atlas/Obras; textos do Mac ("Finder" no lugar de "Explorador"); sem ajuste de tampa, com o aviso da tampa aberta e carregador ligado
-Notas: DECISÃO do Luiz (24/11/2026, "o que a gente tem que fazer para o Atlas poder rodar também no Mac ... da mesma forma que funciona no Windows"; protótipo M1–M5 aprovado: "OK"). DIVERGÊNCIA: CLAUDE.md passa a citar a pasta das obras no Mac (~/Atlas/Obras).
+- [x] Achar claude, gh, git e node no Mac mesmo com o Atlas aberto pelo Finder (caminhos padrão e os do próprio Atlas), e passar esses caminhos para a linha de produção
+- [x] Menu mínimo do Mac (Atlas, Editar, Janela): Cmd+C, Cmd+V, Cmd+Q e Cmd+W funcionam
+- [x] Licença: identificar o Mac pelo número de hardware (IOPlatformUUID), nunca pelo nome do computador
+- [x] Pausar e fechar encerram a linha inteira (Claude e todos os subagentes), sem processo escondido gastando cota
+- [x] Abrir pelo link atlas:// (open-url do Mac) com o código do link de instalação
+- [x] Pasta das obras em ~/Atlas/Obras; textos do Mac ("Finder" no lugar de "Explorador"); sem ajuste de tampa, com o aviso da tampa aberta e carregador ligado
+Notas: DECISÃO do Luiz (24/11/2026, "o que a gente tem que fazer para o Atlas poder rodar também no Mac ... da mesma forma que funciona no Windows"; protótipo M1–M5 aprovado: "OK"). DIVERGÊNCIA: CLAUDE.md passa a citar a pasta das obras no Mac (~/Atlas/Obras). Conferido por testes automáticos (plataforma.cjs, plataforma.ts); a prova num Mac de verdade fica no M49. Textos de F12 e F13b continuam iguais ao protótipo no Windows; F12 ganha a variante do Mac (Itens de Início).
 
 ## Milestone 47 — Instalar no Mac: a página reconhece o computador
 peso: 3
