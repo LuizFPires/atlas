@@ -28,6 +28,8 @@ export interface Visual { modo: 'prints' | 'marca' | 'sugere'; observacao: strin
 
 export interface ApiCelular {
   logado(): boolean
+  /** Por que o login caiu sozinho da última vez (diagnóstico; null se não caiu). */
+  ultimaSaida?(): { quando: string; motivo: string } | null
   pedirCodigo(email: string): Promise<void>
   entrar(email: string, codigo: string): Promise<void>
   sair(): void
@@ -59,6 +61,7 @@ export function lerEstado(d: Record<string, unknown>): EstadoCelular {
 export function criarApiCelularPortal(portal: PortalApi): ApiCelular {
   return {
     logado: () => portal.logado(),
+    ultimaSaida: () => portal.ultimaSaida?.() ?? null,
     async pedirCodigo(email) { const r = await portal.pedirCodigoLogin(email); if (!r.ok) throw falha(r) },
     async entrar(email, codigo) { const r = await portal.entrar(email, codigo); if (!r.ok) throw falha(r) },
     sair: () => portal.sair(),
