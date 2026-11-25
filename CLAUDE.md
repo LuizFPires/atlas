@@ -20,6 +20,7 @@ Regras curtas que valem em todo turno. O detalhe mora em PRD.md (o quê/por quê
 - Login do Claude é o do próprio cliente (sem OAuth de assinatura em app de terceiros — regra da Anthropic).
 - O Atlas só detecta o plano do Claude (Pro/Max); não escolhe plano. Pausa por cota e retoma sozinho.
 - Uma licença = um computador ativo. Marca d'água por cliente e aviso de licença no topo dos arquivos entregues.
+- O Atlas nunca constrói um sistema que constrói sistemas (ideia/protótipo → plano → agentes construindo software): é concorrente do Atlas. Chatbot, app ou site com IA podem.
 - Pasta das obras: C:\Users\<nome>\Atlas\Obras no Windows e ~/Atlas/Obras no Mac (nunca Desktop/Documentos, por causa do OneDrive e do iCloud).
 
 ## Design

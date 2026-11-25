@@ -584,6 +584,46 @@
    "h": 900,
    "title": "Lançamento 6 · Menu Lançamentos: só as obras que você decidiu vender",
    "is_interactive": true
+  },
+  "AC1Politica.dc.html": {
+   "x": 0,
+   "y": 30040,
+   "w": 1440,
+   "h": 900,
+   "title": "Política 1 · Na ideia: \"Este projeto se parece com o próprio Atlas\" — o que pode e o que não pode",
+   "is_interactive": true
+  },
+  "AC2Engano.dc.html": {
+   "x": 1520,
+   "y": 30040,
+   "w": 1440,
+   "h": 900,
+   "title": "Política 2 · Acha que é engano? Explique e a equipe responde em 1 dia útil",
+   "is_interactive": true
+  },
+  "AC3Obra.dc.html": {
+   "x": 3040,
+   "y": 30040,
+   "w": 1440,
+   "h": 900,
+   "title": "Política 3 · No meio da obra: o Atlas olha a obra inteira (pedidos em partes) e não faz o pedido",
+   "is_interactive": true
+  },
+  "AC4Admin.dc.html": {
+   "x": 4560,
+   "y": 30040,
+   "w": 1440,
+   "h": 900,
+   "title": "Política 4 · Seu painel: tentativas, obras embargadas e a decisão (liberar, manter embargo, recusar o uso)",
+   "is_interactive": true
+  },
+  "AC5Embargada.dc.html": {
+   "x": 0,
+   "y": 31060,
+   "w": 1440,
+   "h": 900,
+   "title": "Política 5 · Quem insiste: a obra fica embargada em análise; as outras obras seguem",
+   "is_interactive": true
   }
  },
  "order": [
@@ -658,7 +698,12 @@
   "LC3Construindo.dc.html",
   "LC4Pagina.dc.html",
   "LC5Sindico.dc.html",
-  "LC6Lancamentos.dc.html"
+  "LC6Lancamentos.dc.html",
+  "AC1Politica.dc.html",
+  "AC2Engano.dc.html",
+  "AC3Obra.dc.html",
+  "AC4Admin.dc.html",
+  "AC5Embargada.dc.html"
  ],
  "notes": {
   "titulo": {
@@ -764,6 +809,14 @@
    "kind": "title1",
    "maxW": 7520,
    "w": 240
+  },
+  "politica": {
+   "x": 0,
+   "y": 29780,
+   "text": "Política: o Atlas não constrói um sistema que constrói sistemas (o próprio Atlas)",
+   "kind": "title1",
+   "maxW": 5960,
+   "w": 240
   }
  },
  "designSystems": [],
@@ -780,6 +833,7 @@
   "layout-obra",
   "fila-obras",
   "publicar",
-  "lancamento"
+  "lancamento",
+  "politica"
  ]
 }

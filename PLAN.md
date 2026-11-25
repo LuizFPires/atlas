@@ -699,3 +699,15 @@ tela: prototipo/caminho-novo/CN1Ideia.dc.html
 - [ ] Para vender: dados separados por empresa desde o começo, cadastro sozinho, planos e limites, termos e privacidade (LGPD) para o público
 - [ ] Uso interno que depois vira venda: obra de adaptação, com aviso antes de que leva mais tempo
 Notas: DECISÃO do Luiz (25/11/2026, "se houver algum benefício na criação do produto, a gente vai manter, porque aí vai mudar a forma de ser construído"). A linha de confirmação ainda não está desenhada no CN1Ideia: precisa de um ajuste de protótipo aprovado antes de implementar.
+
+## Milestone 65 — O Atlas não constrói outro Atlas
+peso: 2
+spec: S19
+tela: prototipo/caminho-novo/AC1Politica.dc.html
+- [ ] Termos de uso: proíbem usar o Atlas para criar um sistema que constrói sistemas (concorrente do Atlas)
+- [ ] Porteiro na ideia: sistema que recebe ideias/protótipos, monta um plano de construção e põe agentes de IA para construir software é bloqueado, com o que pode e o que não pode e "Acha que é engano? Explique"
+- [ ] O porteiro olha a obra inteira: protótipo, documentos, planilha importada e cada pedido do pós-obra, somados ao histórico (pega quem tenta em partes)
+- [ ] Dentro da construção: a regra vai nas instruções dos agentes (entregues por obra) e a linha para se o código passar a chamar agentes de programação para construir software
+- [ ] Quem insiste: a obra fica embargada em análise (só aquela; as outras seguem e dá para começar outra)
+- [ ] Painel do administrador: tentativas, obras embargadas e a decisão do Luiz (liberar, manter embargo, recusar o uso pelos termos)
+Notas: DECISÃO do Luiz (25/11/2026, "o nosso Atlas não pode gerar outro sistema como o Atlas!! ... qualquer sinal de tentativa de clonar ou construir algo próximo ao que o Atlas entrega, precisa ser bloqueado pelo próprio Atlas"). Alcance (Luiz, 25/11/2026): chatbot, app ou site com IA são permitidos; bloqueado é o sistema que transforma ideia/protótipo em plano de construção e põe agentes para construir software. Quem insiste (Luiz): "a obra está embargada e nós vamos analisar ... se o usuário insistir, a gente pode recusar que ele continue utilizando"; a decisão é sempre da equipe, nunca automática. Camadas 1–5 aprovadas ("eu gostei de todas. Pode implementar dessa forma"). Os termos de uso precisam de revisão de um advogado.
