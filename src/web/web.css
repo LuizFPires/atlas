@@ -376,4 +376,7 @@
   .v-ag-barra { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .v-ag-conta { padding: 20px; }
 }
-
+/* M47: a página reconhece o computador (M1Pagina / M2Arrastar). */
+.v-inst { display: flex; flex-direction: column; gap: 14px; }
+.v-inst__selo { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 17px; background: rgba(198, 241, 53, 0.1); border: 1px solid var(--lime); color: var(--text); font: 600 14px var(--font-text); }
+.v-inst__outro { align-self: flex-start; padding: 0; border: none; background: none; color: var(--lime-txt, var(--lime)); font: 500 14px var(--font-text); text-decoration: underline; cursor: pointer; }

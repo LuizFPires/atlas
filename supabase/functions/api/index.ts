@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   if (!segredo || !servico || !sk) return new Response('configuração ausente', { status: 503 })
   const { criarStoreSupabase, criarCarregarKit, enviarCodigo } = await import('../_shared/adaptadores_supabase.ts')
   const { criarCanalPush, criarEnvioPush } = await import('../_shared/adaptadores_supabase.ts')
-  const { criarArmazemPrototipos, criarCanalCelular, criarAtualizacao, criarInstalador, enviarAvisoAtraso, enviarBoasVindas, enviarConfirmacaoDegustacao, enviarCortesia, gerarCodigoEntrada, enviarCodigoEntrada } = await import('../_shared/adaptadores_supabase.ts')
+  const { criarArmazemPrototipos, criarCanalCelular, criarAtualizacao, criarInstalador, criarInstaladorMac, enviarAvisoAtraso, enviarBoasVindas, enviarConfirmacaoDegustacao, enviarCortesia, gerarCodigoEntrada, enviarCodigoEntrada } = await import('../_shared/adaptadores_supabase.ts')
   const deps = { store: criarStoreSupabase(), agora: () => new Date(), enviarCodigoPorEmail: enviarCodigo, segredo, chaveAssinatura: await importarChavePrivada(sk) }
   // Pagamento: a conta Stripe é SEMPRE do cliente. Chaves por conta (STRIPE_<ref>_SK / STRIPE_<ref>_WHSEC) vêm dos
   // segredos do Supabase, resolvidas por referência guardada em contas_gateway. Nunca uma conta central do Luiz.
@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
   const pagamento = { ...deps, segredos, stripe: (chave: string) => criarStripeApi(chave, fetch), enviarAvisoAtraso }
   // Cadastro pós-pagamento (M4). enviarBoasVindas monta o texto com montarBoasVindas (_shared/emails.ts); o envio real é do /entregar.
   // Download do instalador (/instalar/baixar): só liga com ATLAS_INSTALADOR_ARQUIVO definido; sem ele a página avisa que ainda não há arquivo.
-  const cadastro = { ...deps, enviarBoasVindas, instalador: criarInstalador() }
+  const cadastro = { ...deps, enviarBoasVindas, instalador: criarInstalador(), instaladorMac: criarInstaladorMac() }
   // Portal (M6, /conta): o JWT do Supabase Auth é validado NO SERVIDOR (GET /auth/v1/user com o token do cliente + chave anon);
   // só vale com e-mail confirmado. O resto (dono, licença, ações) é decidido por portal.ts a partir dessa identidade.
   const autenticarPortal = async (jwt) => {

@@ -63,8 +63,8 @@ test('computador com instalador publicado: o botão pede o endereço e começa o
   const ir = vi.fn()
   render(<Instalar api={comInstalador({ baixar })} token={T} ir={ir} />)
   expect(screen.queryByTestId('download-pendente')).toBeNull()
-  await userEvent.click(await screen.findByRole('button', { name: /Baixar o instalador/ }))
-  expect(baixar).toHaveBeenCalledWith(T)
+  await userEvent.click(await screen.findByRole('button', { name: /Baixar o Atlas para Windows/ }))
+  expect(baixar).toHaveBeenCalledWith(T, 'windows')
   expect(ir).toHaveBeenCalledWith('https://arquivos.test/Atlas-Instalador.exe?assinatura=1')
   expect(await screen.findByRole('status')).toHaveTextContent(/download começou/)
 })
@@ -90,17 +90,17 @@ test('o servidor não entregou o arquivo: recado honesto, nada é baixado e dá 
   const ir = vi.fn()
   const api = comInstalador({ baixar: async () => ({ ok: false, mensagem: 'O instalador ainda não está disponível para baixar.' }) })
   render(<Instalar api={api} token={T} ir={ir} />)
-  await userEvent.click(await screen.findByRole('button', { name: /Baixar o instalador/ }))
+  await userEvent.click(await screen.findByRole('button', { name: /Baixar o Atlas para Windows/ }))
   expect(await screen.findByRole('alert')).toHaveTextContent('O instalador ainda não está disponível para baixar.')
   expect(ir).not.toHaveBeenCalled()
-  expect(screen.getByRole('button', { name: /Baixar o instalador/ })).toBeEnabled()
+  expect(screen.getByRole('button', { name: /Baixar o Atlas para Windows/ })).toBeEnabled()
 })
 
 test('no celular não aparece botão de baixar, mesmo com o instalador publicado', async () => {
   const api = comInstalador({ abrir: async () => ({ ok: true, celular: true, aviso: 'Abra no computador.', podeReenviar: true, expiraEm: null, instalador: true }) })
   render(<Instalar api={api} token={T} />)
   expect(await screen.findByRole('button', { name: /Enviar para o meu computador/ })).toBeInTheDocument()
-  expect(screen.queryByRole('button', { name: /Baixar o instalador/ })).toBeNull()
+  expect(screen.queryByRole('button', { name: /Baixar o Atlas para Windows/ })).toBeNull()
 })
 
 test('adaptador: /instalar/abrir informa o instalador e /instalar/baixar só aceita endereço https', async () => {
@@ -124,4 +124,44 @@ test('avisa antes da tela azul do Windows, com os dois cliques que o cliente vai
   expect(aviso).toHaveTextContent('O Windows protegeu o computador')
   expect(aviso).toHaveTextContent('Mais informações')
   expect(aviso).toHaveTextContent('Executar assim mesmo')
+})
+
+// ---- M47: a página reconhece o computador (Mac e Windows) --------------------------------------------------------------------
+
+const comDois = (extra: Partial<InstalarApi> = {}): InstalarApi => comInstalador({
+  abrir: async () => ({ ok: true, celular: false, aviso: null, podeReenviar: false, expiraEm: null, instalador: true, instaladorMac: true }),
+  ...extra,
+})
+
+test('Mac: a página já diz que é Mac e o botão baixa o arquivo do Mac (ninguém escolhe nada)', async () => {
+  const baixar = vi.fn(async () => ({ ok: true as const, url: 'https://arquivos.test/Atlas.dmg?assinatura=1' }))
+  render(<Instalar api={comDois({ baixar })} token={T} ir={vi.fn()} sistemaInicial="mac" />)
+  expect(await screen.findByTestId('sistema-reconhecido')).toHaveTextContent('Mac')
+  expect(screen.queryByRole('note', { name: 'Aviso do Windows' })).toBeNull()
+  await userEvent.click(screen.getByRole('button', { name: /Baixar o Atlas para Mac/ }))
+  expect(baixar).toHaveBeenCalledWith(T, 'mac')
+})
+
+test('Mac depois de baixar: arrastar para Aplicativos e "Já arrastei: abrir o Atlas" leva o código pelo atlas://', async () => {
+  render(<Instalar api={comDois({ baixar: async () => ({ ok: true as const, url: 'https://arquivos.test/Atlas.dmg' }) })} token={T} ir={vi.fn()} sistemaInicial="mac" />)
+  await userEvent.click(await screen.findByRole('button', { name: /Baixar o Atlas para Mac/ }))
+  expect(await screen.findByText(/Arraste o Atlas para a pasta Aplicativos/)).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Já arrastei: abrir o Atlas/ })).toHaveAttribute('href', `atlas://ativar?t=${T}`)
+  expect(screen.getByText(/clique em/)).toHaveTextContent(/Abrir/)
+})
+
+test('"Não é um Mac?" troca para o Windows (e vice-versa) sem recarregar', async () => {
+  const baixar = vi.fn(async () => ({ ok: true as const, url: 'https://arquivos.test/x.exe' }))
+  render(<Instalar api={comDois({ baixar })} token={T} ir={vi.fn()} sistemaInicial="mac" />)
+  await userEvent.click(await screen.findByRole('button', { name: /Não é um Mac\? Baixar para Windows/ }))
+  expect(screen.getByTestId('sistema-reconhecido')).toHaveTextContent('Windows')
+  await userEvent.click(screen.getByRole('button', { name: /Baixar o Atlas para Windows/ }))
+  expect(baixar).toHaveBeenCalledWith(T, 'windows')
+})
+
+test('Mac sem o arquivo publicado ainda: recado honesto e o caminho do Windows à mão', async () => {
+  render(<Instalar api={comInstalador()} token={T} ir={vi.fn()} sistemaInicial="mac" />)
+  expect(await screen.findByText(/versão do Atlas para Mac fica pronta em breve/)).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Baixar o Atlas para Mac/ })).toBeNull()
+  expect(screen.getByRole('button', { name: /Baixar para Windows/ })).toBeInTheDocument()
 })
