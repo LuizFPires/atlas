@@ -474,7 +474,7 @@ describe('cortesia manual no painel', () => {
     const { api, chamadas } = ambiente((url) => (url.endsWith('/admin/painel') ? resp(comCortesia) : url.endsWith('/admin/cortesia') ? resp({ ok: true, nova: true, validade_em: '2026-11-28T02:59:59.000Z' }) : undefined))
     montar(api)
     const clientes = await screen.findByRole('region', { name: 'Clientes' })
-    expect(within(clientes).getByText(/cortesia até 29\/11\/2026/)).toBeInTheDocument()
+    expect(within(clientes).getByText(/Cortesia até 29\/11\/2026/)).toBeInTheDocument()
     await irParaAcoes()
     const form = screen.getByRole('region', { name: 'Liberar cortesia' })
     await userEvent.type(within(form).getByLabelText('E-mail da pessoa'), 'Amigo@Email.com')

@@ -498,7 +498,8 @@ function LinhaDoCliente({ c, cad, agora, onLiberar }: { c: LinhaCliente; cad?: L
       {cad
         ? <span className={`ad-st ${cad.situacao === 'feito' ? 'ad-st--ok' : 'ad-st--aviso'}`}>{cad.situacao === 'feito' ? `Feito em ${dia(cad.cadastro_em)}` : 'Ainda não respondeu'}</span>
         : <span className="ad-mute">—</span>}
-      <span className={`ad-st ${st.classe}`}>{st.texto}{c.tipo === 'cortesia' && <small className="ad-mute"> · cortesia até {dia(c.validade_em ?? null)}</small>}</span>
+      {/* O selo numa linha só; a cortesia embaixo, fora do selo (antes quebrava o selo em duas linhas). */}
+      <span className="ad-sit"><span className={`ad-st ${st.classe}`}>{st.texto}</span>{c.tipo === 'cortesia' && <small className="ad-mute">Cortesia até {dia(c.validade_em ?? null)}</small>}</span>
       <span>{c.obras > 0 ? `${c.obras} ${c.obras === 1 ? 'entregue' : 'entregues'}` : '—'}</span>
       <span className="ad-mute">{c.travado_em ? `travado em: ${TRAVADO[c.travado_em]}` : quandoFoi(c.ultimo_sinal_em, agora)}</span>
       <button type="button" className="ad-link" aria-label={`Liberar troca de ${c.empresa || c.nome}`} onClick={onLiberar} disabled={c.situacao === 'cancelada'}>Liberar troca</button>
