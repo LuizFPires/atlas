@@ -1,3 +1,5 @@
+import { BloqueioPolitica } from './BloqueioPolitica'
+import { politicaIndisponivel, type PontePolitica, type ResultadoPolitica } from './ponte-politica'
 import { useEffect, useRef, useState } from 'react'
 import { Icone, Microfone, useVoz } from '../ui'
 import { textoDaObra } from './ponte-cota'
@@ -13,6 +15,8 @@ interface Props {
   licenca: PonteLicenca
   /** Depois que a correção virou versão de teste: ver o andamento no painel da obra. */
   onAcompanhar?: () => void
+  /** M65: análise quando o pedido é bloqueado pela política. */
+  politica?: PontePolitica
 }
 
 const ROTULO_STATUS: Record<StatusPedido, string> = { 'no-ar': 'No ar', 'para-conferir': 'Para conferir', 'em-andamento': 'Em andamento' }
@@ -21,7 +25,8 @@ const ROTULO_STATUS: Record<StatusPedido, string> = { 'no-ar': 'No ar', 'para-co
  * F14: pós-obra. O cliente conta, com as palavras dele, o que quer mudar (falando, escrevendo ou mandando um print).
  * Tudo o que ele diz é DADO para o Claude (o adaptador delimita); o print é só uma imagem guardada na pasta da obra.
  */
-export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar }: Props) {
+export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politica = politicaIndisponivel }: Props) {
+  const [bloqueio, setBloqueio] = useState<ResultadoPolitica | null>(null)
   const [tipo, setTipo] = useState<TipoPedido>('mudar')
   const [texto, setTexto] = useState('')
   const [prints, setPrints] = useState<string[]>([])
@@ -72,7 +77,9 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar }: Prop
     setErro('')
     try {
       const p = await posobra.entender(obra.pasta, pedido)
-      if (id === reqId.current && vivo.current) setExplicado({ plano: p, pedido })
+      if (id !== reqId.current || !vivo.current) return
+      if (p.politica?.bloqueia) { setBloqueio(p.politica); setPlano(); return }
+      setExplicado({ plano: p, pedido })
     } catch (x) {
       if (id !== reqId.current) return
       setPlano()
@@ -99,6 +106,14 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar }: Prop
       if (x instanceof SemLicencaError) setRecadoLic(recadoLicenca(x.motivo))
       else setErro('Não consegui começar agora. Nada foi mexido no seu sistema. Tente de novo em instantes.')
     } finally { setRodando(false) }
+  }
+
+  if (bloqueio) {
+    return (
+      <main className="at-pos">
+        <BloqueioPolitica modo={bloqueio.situacao === 'embargada' || bloqueio.situacao === 'recusada' ? 'embargada' : 'pedido'} sinais={bloqueio.sinais} obra={obra.pasta} politica={politica} onVoltar={() => { setBloqueio(null); setTexto(''); setPrints([]) }} />
+      </main>
+    )
   }
 
   return (

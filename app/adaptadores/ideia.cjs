@@ -8,6 +8,7 @@
 // sobre o problema e quem usa; em poucos segundos as duas primeiras bolinhas ficam verdes.
 'use strict'
 const { REGRA_CONTEUDO_CLIENTE, blocoDoCliente, umaLinha, extrairJson } = require('./projeto-comum.cjs')
+const { REGRA_POLITICA, politicaDoJson } = require('./politica.cjs')
 
 const TOPICOS = [
   { id: 'problema', pergunta: 'Qual problema você resolve?' },
@@ -30,9 +31,9 @@ function pedido(relato, fim) {
     fim
       ? `Depois, olhe o relato inteiro e diga o que FALTOU para desenhar as telas do sistema: no máximo ${MAX_FALTAM} perguntas curtas, em português simples, cada uma com o porquê em uma frase ("Você não contou..."). Só o que for importante; se nada faltou, lista vazia.`
       : 'Não faça perguntas agora: "faltam" fica vazio.',
-    ...(fim ? ['Dê também um "titulo" provisório para o sistema: de 2 a 4 palavras, o que ele faz (ex.: "Agenda da barbearia"), sem inventar marca.'] : []),
+    ...(fim ? ['Dê também um "titulo" provisório para o sistema: de 2 a 4 palavras, o que ele faz (ex.: "Agenda da barbearia"), sem inventar marca.', REGRA_POLITICA, 'Se bloquear, diga em "politica" até 4 "sinais" curtos (o que no relato mostra isso).'] : []),
     'Você não grava nada e não roda comandos.',
-    `Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"cobertos":[{"id":"problema","resumo":"..."}],"faltam":[{"pergunta":"...?","porque":"..."}]${fim ? ',"titulo":"..."' : ''}}`,
+    `Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"cobertos":[{"id":"problema","resumo":"..."}],"faltam":[{"pergunta":"...?","porque":"..."}]${fim ? ',"titulo":"...","politica":{"bloqueia":false,"sinais":[]}' : ''}}`,
     '',
     'Relato do cliente:',
     ...blocoDoCliente(relato, '(vazio)'),
@@ -55,7 +56,7 @@ function criarIdeia({ disparo }) {
         : []
       if (!fim) return { cobertos, faltam }
       const t = umaLinha(j.titulo, 60)
-      return { cobertos, faltam, titulo: t.length > 40 ? t.slice(0, 40).replace(/\s+\S*$/, '') : t }
+      return { cobertos, faltam, titulo: t.length > 40 ? t.slice(0, 40).replace(/\s+\S*$/, '') : t, politica: politicaDoJson(j) }
     },
   }
 }

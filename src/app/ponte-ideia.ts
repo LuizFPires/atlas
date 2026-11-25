@@ -1,3 +1,4 @@
+import type { ResultadoPolitica } from './ponte-politica'
 // Roteiro da ideia (caminho novo, pedido do Luiz em 23/11/2026). O adaptador real é app/adaptadores/ideia.cjs (Claude rápido, sem pasta).
 export type IdTopico = 'problema' | 'quem' | 'primeiro' | 'essencial' | 'informacoes' | 'hoje' | 'mais'
 
@@ -13,7 +14,8 @@ export const TOPICOS: { id: IdTopico; pergunta: string; dica: string }[] = [
 ]
 
 /** titulo: só no fim — 2 a 4 palavras do que o sistema faz (vira o nome da pasta; o nome de verdade vem no batismo). */
-export type Conferencia = { cobertos: { id: IdTopico; resumo: string }[]; faltam: { pergunta: string; porque: string }[]; titulo?: string }
+/** politica: só no fim — o porteiro do M65 (a ideia é um sistema que constrói sistemas?). */
+export type Conferencia = { cobertos: { id: IdTopico; resumo: string }[]; faltam: { pergunta: string; porque: string }[]; titulo?: string; politica?: ResultadoPolitica }
 
 export interface PonteIdeia {
   /** Quais tópicos o relato já respondeu. fim = true: também o que faltou (no máximo 3 perguntas). */

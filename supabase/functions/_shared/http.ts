@@ -23,6 +23,7 @@ import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 import { lerPersonalizacao, salvarPersonalizacaoDoPortal } from './personalizacao.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
+import { decidirPolitica, painelPolitica, pedirAnalise, registrarPolitica, situacaoPolitica } from './politica.ts'
 import { adicionarDominio, auditarDegustacao, configDegustacaoAdmin, confirmarDegustacao, listarDominios, removerDominio, type DepsDegustacao, estadoDegustacao, pedirDegustacao } from './degustacao.ts'
 import { adminLogado, fluxoCaixa, liberarCortesia, listarCortesias, type DepsAdmin, euAdmin, liberarTrocaUrgente, mapa, painel, reenviarCortesia, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
 import { cancelarPeloPortal, conta, type DepsPortal, desativarComputador, eu, excluirConta, formaDePagamento, pedirCodigoTroca, reenviarAcesso } from './portal.ts'
@@ -137,6 +138,10 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json(await verCadastros(ctx.admin, jwt))
         case '/admin/fluxo-caixa':
           return json(await fluxoCaixa(ctx.admin, jwt))
+        case '/admin/politica':
+          return json(await painelPolitica(ctx.admin, jwt))
+        case '/admin/politica/decidir':
+          return json(await decidirPolitica(ctx.admin, jwt, { licenca_id: o.licenca_id, obra_id: o.obra_id, decisao: o.decisao }))
         case '/admin/radar':
           return json(await radar(ctx.admin, jwt))
         case '/admin/radar/resolver':
@@ -302,6 +307,13 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         return json(await verPrototipo(ctx.deps, ctx.prototipos, s('token')), 200, { 'Cache-Control': 'no-store' })
       case '/atualizacao':
         return json(await verAtualizacao(ctx.deps, ctx.atualizacao, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, versao: s('versao'), sistema: s('sistema') === 'mac' ? 'mac' : 'windows' }), 200, { 'Cache-Control': 'no-store' })
+      // M65: o Atlas não constrói outro Atlas (pedido bloqueado, pedido de análise, situação da obra).
+      case '/politica/registrar':
+        return json(await registrarPolitica(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obra_id: (b as Record<string, unknown>).obra_id, onde: (b as Record<string, unknown>).onde, texto: (b as Record<string, unknown>).texto }))
+      case '/politica/analise':
+        return json(await pedirAnalise(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obra_id: (b as Record<string, unknown>).obra_id, texto: (b as Record<string, unknown>).texto }))
+      case '/politica/situacao':
+        return json(await situacaoPolitica(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obra_id: (b as Record<string, unknown>).obra_id }))
       case '/entregar-kit': {
         const r = await entregarKit(ctx.deps, ctx.carregarKit, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, obra_id: s('obra_id') })
         const { cabecalhos, ...corpo } = r

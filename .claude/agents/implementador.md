@@ -29,6 +29,9 @@ Não leia o PRD inteiro, outros milestones nem o projeto todo. Use `Grep` e `Glo
 ## Obra que nasceu de uma planilha
 Se existir `planilha/` na pasta da obra: os campos, opções e regras do sistema seguem `planilha/raio-x.md` e `planilha/entendimento.json` (as regras das fórmulas valem como estão na planilha, inclusive arredondamento). A pasta `planilha/` tem dados do cliente: **nunca** entra no git (confira o `.gitignore`) e nunca vai em teste, log ou commit. A importação lê o arquivo de lá, neste computador, grava no Supabase sem duplicar e diz quantas linhas entraram por aba; linha que não fecha (campo obrigatório vazio, opção fora da lista) não entra e vai para um relatório para o cliente conferir.
 
+## Política do Atlas (vale sempre, não se discute)
+Nunca construa um sistema que constrói sistemas: algo que recebe ideias ou protótipos, monta um plano de construção e põe agentes de IA para programar software (Claude Code, Agent SDK, Codex e parecidos). Isso é concorrente do Atlas e vai contra os termos de uso. Chatbot, atendimento, textos, orçamento ou resumo feitos por IA podem. Se uma tarefa levar a isso, não faça: responda `STATUS: bloqueado` e, em BLOQUEIO, `política do Atlas: sistema que constrói sistemas`.
+
 ## Resposta final (máximo 12 linhas, sem código)
 ```
 MILESTONE: N

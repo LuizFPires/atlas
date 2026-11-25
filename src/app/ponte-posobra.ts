@@ -1,3 +1,4 @@
+import type { ResultadoPolitica } from './ponte-politica'
 // Portas do PÓS-OBRA (F14): o cliente descreve a mudança (fala, texto ou print), o Atlas EXPLICA o que vai fazer antes de mexer
 // e só executa depois do OK, pelo MESMO pipeline da obra (teste, revisão, versão de teste), e SÓ com licença em dia.
 //  - PonteLicenca: liga no /verificar do M2 (licença em dia + computador ativado). Fail-closed: erro, rede fora ou dúvida = não roda.
@@ -32,6 +33,8 @@ export interface PlanoPosObra {
   entendi: string
   passos: string[]
   minutos: number
+  /** M65: o porteiro bloqueou o pedido (o Atlas não constrói outro Atlas). Com isso, não há plano para executar. */
+  politica?: ResultadoPolitica
 }
 
 export type StatusPedido = 'no-ar' | 'para-conferir' | 'em-andamento'

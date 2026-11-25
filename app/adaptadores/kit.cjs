@@ -206,7 +206,7 @@ function criarKit({ dadosApp, cofre, hashComputador, api = process.env.ATLAS_API
       } catch { return { ok: false, mensagem: MSG.rede } }
       let d = null
       try { d = JSON.parse(texto) } catch { /* resposta estranha */ }
-      if (!ok) return { ok: false, mensagem: d && typeof d.mensagem === 'string' ? d.mensagem.slice(0, 300) : MSG.negado }
+      if (!ok) return { ok: false, mensagem: d && typeof d.mensagem === 'string' ? d.mensagem.slice(0, 300) : MSG.negado, ...(d && (d.erro === 'obra_embargada' || d.erro === 'uso_recusado') ? { codigo: d.erro } : {}) }
       let v
       try { v = validarResposta(d) } catch { return { ok: false, mensagem: MSG.incompleto } }
       try {
@@ -233,7 +233,8 @@ function criarKit({ dadosApp, cofre, hashComputador, api = process.env.ATLAS_API
       if (self.diretorio(obraId)) return self.diretorio(obraId)
       if (!api0) return null
       const r = await self.entregar(String(obraId))
-      if (!r.ok) throw new Error('kit-indisponivel')
+      // M65: o servidor embargou a obra (ou recusou o uso): a tela mostra o embargo, não um erro de kit.
+      if (!r.ok) throw new Error(r.codigo === 'obra_embargada' ? 'obra-embargada' : r.codigo === 'uso_recusado' ? 'uso-recusado' : 'kit-indisponivel')
       return self.diretorio(obraId)
     },
 

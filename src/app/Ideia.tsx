@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Botao, CampoFalado, Icone, Microfone, useVoz } from '../ui'
 import { TOPICOS, type Conferencia, type IdTopico, type PonteIdeia } from './ponte-ideia'
+import { BloqueioPolitica } from './BloqueioPolitica'
+import { politicaIndisponivel, type PontePolitica } from './ponte-politica'
 import './ideia.css'
 
 /** O que a pessoa contou fica guardado (sair pelo menu ou fechar o Atlas não perde nada; pedido do Luiz, 23/11/2026). */
@@ -30,6 +32,8 @@ interface Props {
   esperaMs?: number
   /** "Tenho uma planilha" (prototipo/caminho-novo/X1): começa pela planilha que a pessoa já usa. */
   onPlanilha?: () => void
+  /** M65: "Acha que é engano? Explique" quando a ideia é bloqueada pela política. */
+  politica?: PontePolitica
 }
 
 /**
@@ -37,11 +41,12 @@ interface Props {
  * ideia livremente, falando. O roteiro à esquerda é só um guia: a cada pausa o Claude (rápido) diz quais tópicos já foram
  * respondidos e a bolinha fica verde. No fim, o Atlas pergunta só o que faltou.
  */
-export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2500, onPlanilha }: Props) {
+export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2500, onPlanilha, politica = politicaIndisponivel }: Props) {
   const [rascunho, setRascunho] = useState<Rascunho>(() => { const r = lerRascunho(); return relatoInicial && !r.relato ? { ...r, relato: relatoInicial } : r })
   const [erro, setErro] = useState('')
   const [cobertos, setCobertos] = useState<Partial<Record<IdTopico, string>>>({})
-  const [etapa, setEtapa] = useState<'contar' | 'conferindo' | 'faltou'>('contar')
+  const [etapa, setEtapa] = useState<'contar' | 'conferindo' | 'faltou' | 'politica'>('contar')
+  const [sinaisPolitica, setSinaisPolitica] = useState<string[]>([])
   const [faltou, setFaltou] = useState<{ itens: Conferencia['faltam']; titulo: string }>({ itens: [], titulo: '' })
   const [respostas, setRespostas] = useState<string[]>([])
   const { relato, pulados } = rascunho
@@ -82,6 +87,8 @@ export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2
     setEtapa('conferindo')
     const c: Conferencia | null = await ideia.conferir(relato, true).catch(() => null)
     const titulo = c?.titulo ?? ''
+    // M65: o Atlas não constrói outro Atlas — a ideia não vira obra.
+    if (c?.politica?.bloqueia) { setSinaisPolitica(c.politica.sinais); setEtapa('politica'); return }
     if (!c || c.faltam.length === 0) { await concluir(relato, titulo); return }
     setFaltou({ itens: c.faltam, titulo })
     setRespostas(c.faltam.map(() => ''))
@@ -91,6 +98,14 @@ export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2
   const seguir = () => {
     const extras = faltou.itens.map((f, i) => (respostas[i]?.trim() ? `${f.pergunta} ${respostas[i].trim()}` : '')).filter(Boolean)
     void concluir([relato, ...extras].join('\n\n'), faltou.titulo)
+  }
+
+  if (etapa === 'politica') {
+    return (
+      <div className="at-ideia at-ideia--faltou">
+        <BloqueioPolitica modo="ideia" sinais={sinaisPolitica} obra="nova-obra" politica={politica} onVoltar={() => { mudar({ relato: '' }); setCobertos({}); setEtapa('contar') }} />
+      </div>
+    )
   }
 
   if (etapa === 'faltou') {

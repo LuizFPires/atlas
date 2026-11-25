@@ -20,6 +20,7 @@ import type { PonteAjuda } from './ponte-ajuda'
 import type { PonteCasosAdmin } from './ponte-ajuda-casos'
 import type { PontePublicar } from './ponte-publicar'
 import type { PonteNoAr } from './ponte-no-ar'
+import type { PontePolitica } from './ponte-politica'
 import type { PonteKit } from '../kit/entrega-kit'
 import type { PonteAtualizacao } from './NovaVersao'
 import type { PonteIdeia } from './ponte-ideia'
@@ -81,6 +82,8 @@ export interface PonteDesktop {
   publicar?: PontePublicar
   /** Colocar no ar com um clique (M56, no-ar.cjs). */
   noAr?: PonteNoAr
+  /** M65: o Atlas não constrói outro Atlas (politica.cjs). */
+  politica?: PontePolitica
   /** Kit por obra (entrega-kit.ts): o processo principal guarda numa pasta temporária do app, fora da obra. */
   kit?: PonteKit
   /** Atualizador (atualizador.cjs): versão nova já baixada e "Atualizar agora". Só no Atlas instalado no Windows. */

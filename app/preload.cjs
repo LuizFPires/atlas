@@ -211,6 +211,11 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     lerProgresso: (pasta) => chamar('atlas:publicar:ler', String(pasta)),
     gravarProgresso: (pasta, p) => chamar('atlas:publicar:gravar', String(pasta), JSON.parse(JSON.stringify(p ?? {}))),
   },
+  politica: {
+    // M65: só a análise ("é engano") e a situação da obra; o bloqueio em si acontece no processo principal.
+    analise: (obra, texto) => chamar('atlas:politica:analise', String(obra), String(texto ?? '')),
+    situacao: (obra) => chamar('atlas:politica:situacao', String(obra)),
+  },
   noAr: {
     // Colocar no ar (M56): só pasta e nome; tudo é revalidado no processo principal.
     sugerir: (pasta, obraNome, extra) => chamar('atlas:noar:sugerir', String(pasta), String(obraNome), extra === undefined ? undefined : String(extra)),
