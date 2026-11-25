@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Lançamento: vender o sistema</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes lcgira{to{transform:rotate(360deg)}} .lc-gira{animation:lcgira 1s linear infinite}
+@keyframes lcpisca{0%,100%{opacity:1}50%{opacity:.35}} .lc-pisca{animation:lcpisca 1.2s infinite}
+@media (prefers-reduced-motion: reduce){.lc-gira,.lc-pisca{animation:none}}</style>
+</helmet>
+<div style="position:relative;width:1440px;height:900px;background:#141619;color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="lancamentos" tema="escuro" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:flex-end;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">{{volta}}</span><h1 style="margin:0;font-size:28px;letter-spacing:-.01em">{{titulo}}</h1></div>
+   <span style="margin-left:auto;font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{seloCor}}">{{selo}}</span>
+  </div>
+
+  <!-- Telas com a cena (prédio pronto + paisagismo + stand) -->
+  <sc-if value="{{comCena}}" hint-placeholder-val="{{ true }}">
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 460px;gap:24px">
+   <section style="position:relative;border-radius:24px;overflow:hidden;border:1px solid #2C3036;background:radial-gradient(120% 80% at 50% 30%,#22303A 0%,#16191C 70%)">
+    <img src="{{cena}}" alt="{{cenaAlt}}" style="position:absolute;left:0;right:0;top:70px;bottom:{{cenaBase}}px;width:100%;height:calc(100% - 70px - {{cenaBase}}px);object-fit:contain;object-position:center bottom">
+    <div style="position:absolute;left:24px;top:22px;display:flex;flex-direction:column;gap:4px">
+     <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">{{cenaRotulo}}</span>
+     <span style="font-size:15px;color:#B4BBB2">{{cenaSub}}</span>
+    </div>
+    <sc-if value="{{tConstruindo}}" hint-placeholder-val="{{ false }}">
+     <div style="position:absolute;left:20px;right:20px;bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:rgba(16,18,20,.86);border:1px solid #2C3036">
+       <span style="width:38px;height:38px;border-radius:19px;background:#C6F135;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141619" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/><path d="M12 4v-2"/></svg></span>
+       <span style="display:flex;flex-direction:column;gap:2px;min-width:0"><b style="font-size:14px">Incorporador</b><span style="font-size:13px;color:#B4BBB2;line-height:1.35">ligando a cobrança na sua conta Asaas</span></span>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:rgba(16,18,20,.86);border:1px solid #2C3036">
+       <span style="width:38px;height:38px;border-radius:19px;background:#8E968C;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141619" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg></span>
+       <span style="display:flex;flex-direction:column;gap:2px;min-width:0"><b style="font-size:14px">Síndico</b><span style="font-size:13px;color:#B4BBB2;line-height:1.35">na vez dele: o painel do dono</span></span>
+      </div>
+     </div>
+    </sc-if>
+   </section>
+
+   <aside style="display:flex;flex-direction:column;gap:14px;min-height:0">
+    <!-- Começar -->
+    <sc-if value="{{tComecar}}" hint-placeholder-val="{{ true }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #C6F135">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">OPCIONAL · VENDER O PONTO PARA OUTRAS EMPRESAS</span>
+      <b style="font-size:24px;line-height:1.2">O prédio ficou pronto. Agora é montar o stand e vender os apartamentos.</b>
+      <div style="display:flex;flex-direction:column;gap:10px">
+       <span style="display:flex;gap:10px;font-size:14px;line-height:1.45;color:#B4BBB2"><b style="color:#EDEFEA;min-width:104px">Incorporador</b>traz o cliente: página de vendas, preços e a cobrança na sua conta de recebimento.</span>
+       <span style="display:flex;gap:10px;font-size:14px;line-height:1.45;color:#B4BBB2"><b style="color:#EDEFEA;min-width:104px">Síndico</b>administra o cliente: o seu painel de dono, com quem paga, quem atrasou, plano grátis e financeiro.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:#191B1E">
+       <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">PREÇOS QUE O ATLAS SUGERE · DÁ PARA MUDAR DEPOIS</span>
+       <sc-for list="{{planos}}" as="p" hint-placeholder-count="3">
+        <span style="display:flex;justify-content:space-between;gap:10px;font-size:14px"><span>{{p.nome}} <span style="color:#8E968C">· {{p.limite}}</span></span><b>{{p.preco}}</b></span>
+       </sc-for>
+      </div>
+      <a href="LC2Recebimento.dc.html" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Começar o lançamento →</a>
+      <span style="font-size:13px;line-height:1.5;color:#8E968C">O dinheiro cai na sua conta, no seu CPF ou CNPJ. O Atlas nunca toca nele. Quer só usar na sua empresa? É só não começar: nada muda.</span>
+     </section>
+    </sc-if>
+
+    <!-- Construindo -->
+    <sc-if value="{{tConstruindo}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:12px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036;flex:1;min-height:0">
+      <span style="display:flex;align-items:center;gap:8px;font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135"><span class="lc-pisca" style="width:8px;height:8px;border-radius:4px;background:#C6F135"></span>MONTANDO O STAND · 2 DE 6</span>
+      <b style="font-size:20px;line-height:1.3">O Incorporador e o Síndico estão trabalhando. Você não precisa fazer nada agora.</b>
+      <ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column">
+       <sc-for list="{{passos}}" as="p" hint-placeholder-count="6">
+        <li style="display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #2A2E33">
+         <span class="{{p.anim}}" style="{{p.bola}}">{{p.marca}}</span>
+         <span style="display:flex;flex-direction:column;gap:2px"><b style="font-size:14px;color:{{p.cor}}">{{p.titulo}}</b><span style="font-size:13px;line-height:1.4;color:#8E968C">{{p.sub}}</span></span>
+        </li>
+       </sc-for>
+      </ol>
+     </section>
+    </sc-if>
+   </aside>
+  </div>
+  </sc-if>
+
+  <!-- Recebimento: o cliente escolhe Stripe ou Asaas -->
+  <sc-if value="{{tRecebimento}}" hint-placeholder-val="{{ false }}">
+   <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+     <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">ONDE O DINHEIRO DAS VENDAS VAI CAIR · VOCÊ ESCOLHE</span>
+     <b style="font-size:24px;line-height:1.25">As duas são como uma maquininha de cartão da internet. O dinheiro cai na sua conta do banco, no seu CPF ou CNPJ.</b>
+     <span style="font-size:15px;color:#B4BBB2">O Atlas liga qualquer uma das duas do mesmo jeito, com o passo a passo clique por clique. Dá para trocar depois.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036">
+      <b style="font-size:26px;color:#EDEFEA">Stripe</b>
+      <div style="display:flex;flex-direction:column;gap:8px">
+       <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">A FAVOR</span>
+       <span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#C6F135">✓</span>Assinatura no cartão muito estável, usada no mundo todo</span><span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#C6F135">✓</span>Aceita cartão de fora do Brasil</span><span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#C6F135">✓</span>Boleto</span><span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#C6F135">✓</span>Painel e recibos muito completos</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+       <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#F2B84B">CONTRA</span>
+       <span style="display:flex;gap:10px;font-size:15px;line-height:1.45;color:#B4BBB2"><span style="color:#F2B84B">—</span>Pix só para pagamento avulso: não dá para cobrar a mensalidade no Pix</span><span style="display:flex;gap:10px;font-size:15px;line-height:1.45;color:#B4BBB2"><span style="color:#F2B84B">—</span>Não parcela no cartão: o plano anual fica à vista</span>
+      </div>
+      <a href="LC3Construindo.dc.html" style="margin-top:8px;height:54px;border-radius:12px;background:#C6F135;color:#141619;font:700 16px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Escolher o Stripe →</a>
+     </section>
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036">
+      <b style="font-size:26px;color:#EDEFEA">Asaas</b>
+      <div style="display:flex;flex-direction:column;gap:8px">
+       <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">A FAVOR</span>
+       <span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#C6F135">✓</span>Mensalidade no Pix, que cai sozinha todo mês (Pix Automático)</span><span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#C6F135">✓</span>Parcela no cartão: o anual pode ser em até 10×</span><span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#C6F135">✓</span>Boleto e cartão todo mês</span><span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#C6F135">✓</span>Empresa brasileira, tudo em português</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+       <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#F2B84B">CONTRA</span>
+       <span style="display:flex;gap:10px;font-size:15px;line-height:1.45;color:#B4BBB2"><span style="color:#F2B84B">—</span>Feito para vender dentro do Brasil: se um dia vender para fora, o Stripe é melhor</span>
+      </div>
+      <a href="LC3Construindo.dc.html" style="margin-top:8px;height:54px;border-radius:12px;background:#C6F135;color:#141619;font:700 16px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Escolher o Asaas →</a>
+     </section>
+    </div>
+    <span style="font-size:14px;color:#8E968C">Ficou em dúvida? Pergunte ao Atlas: "qual é melhor para quem vende para padarias?". Ele responde com o seu caso.</span>
+   </div>
+  </sc-if>
+
+  <!-- Página de vendas: protótipo para conferir com marcações (mesmo padrão do protótipo do app) -->
+  <sc-if value="{{tPagina}}" hint-placeholder-val="{{ false }}">
+   <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px">
+    <div style="position:relative;border-radius:14px;overflow:hidden;border:2px solid #C6F135;background:#FFFFFF;color:#1B1E22;display:flex;flex-direction:column;min-height:0">
+     <div style="height:36px;background:#E9EBE6;display:flex;align-items:center;gap:8px;padding:0 12px;flex:none"><span style="width:10px;height:10px;border-radius:5px;background:#E46A5E"></span><span style="width:10px;height:10px;border-radius:5px;background:#E8C14A"></span><span style="width:10px;height:10px;border-radius:5px;background:#6CC070"></span><span style="flex:1;margin-left:8px;height:22px;border-radius:6px;background:#FFF;font:500 12px 'Geist Mono',monospace;display:flex;align-items:center;padding:0 10px;color:#5F665C">protótipo · página de vendas do Ponto</span><span style="font:600 11px 'Geist Mono',monospace;color:#4E6B00;background:#E6F5B8;padding:3px 8px;border-radius:6px">MARCANDO · TOQUE NA PÁGINA</span></div>
+     <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;cursor:crosshair">
+      <div style="display:flex;align-items:center;gap:20px;padding:14px 32px;border-bottom:1px solid #EEF0EA"><b style="font-size:18px;color:{{ds.cor}}">● Ponto</b><span style="margin-left:auto;font-size:14px;color:#5F665C">Como funciona · Preços · Dúvidas</span><span style="font-size:14px;font-weight:600;color:{{ds.cor}}">Entrar</span></div>
+      <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:24px;padding:26px 32px;align-items:center">
+       <div style="display:flex;flex-direction:column;gap:12px">
+        <b style="font-size:30px;line-height:1.1;letter-spacing:-.02em">O ponto da sua equipe no celular, sem papel e sem relógio na parede.</b>
+        <span style="font-size:15px;line-height:1.5;color:#5F665C">Cada funcionário bate o ponto pelo celular, com a localização. Você vê tudo num painel e fecha a folha do mês em um clique.</span>
+        <span style="display:flex;gap:10px"><span style="height:42px;padding:0 18px;border-radius:{{ds.raio}};background:{{ds.cor}};color:#FFF;font-weight:700;display:flex;align-items:center">Testar grátis 14 dias</span><span style="height:42px;padding:0 16px;border-radius:{{ds.raio}};border:1px solid #C9CDC3;display:flex;align-items:center;font-weight:600">Ver os preços</span></span>
+       </div>
+       <div style="height:180px;border-radius:16px;background:linear-gradient(135deg,#E7EEF8,#F4F6F1);display:flex;align-items:center;justify-content:center;color:#5F665C;font-size:13px">fotos das telas do Ponto</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:4px 32px 20px">
+       <sc-for list="{{precosPagina}}" as="p" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:5px;padding:14px;border-radius:14px;border:{{p.borda}}"><b style="font-size:15px">{{p.nome}}</b><b style="font-size:22px">{{p.preco}}</b><span style="font-size:13px;color:#5F665C">{{p.sub}}</span><span style="margin-top:4px;height:34px;border-radius:{{ds.raio}};background:{{p.btnBg}};color:{{p.btnCor}};font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center">{{p.btn}}</span></div>
+       </sc-for>
+      </div>
+     </div>
+     <sc-for list="{{pinos}}" as="m" hint-placeholder-count="3">
+      <span style="position:absolute;left:{{m.x}}px;top:{{m.y}}px;width:30px;height:30px;border-radius:15px 15px 15px 2px;background:{{m.fundo}};color:#141619;font:700 14px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.35)">{{m.n}}</span>
+     </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;min-height:0">
+     <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">PÁGINA DE VENDAS · VERSÃO 1 · CONFIRA</span>
+     <span style="font-size:14px;line-height:1.5;color:#B4BBB2">Feita com o mesmo visual do Ponto (cores, letras e botões). Toque em qualquer ponto da página e fale ou escreva o que quer mudar.</span>
+     <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">SUAS MARCAÇÕES · 3</span>
+     <sc-for list="{{marcas}}" as="m" hint-placeholder-count="3">
+      <div style="display:flex;gap:10px;padding:12px;border-radius:12px;background:#1E2125;border:1px solid {{m.borda}}">
+       <span style="width:26px;height:26px;border-radius:13px;background:{{m.fundo}};color:#141619;font:700 13px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center;flex:none">{{m.n}}</span>
+       <span style="font-size:14px;line-height:1.45">{{m.texto}}</span>
+      </div>
+     </sc-for>
+     <a href="#" style="height:50px;border-radius:12px;border:1px solid #C6F135;color:#EDEFEA;font:700 15px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Mandar os 3 ajustes para o Atlas</a>
+     <span style="font-size:13px;line-height:1.5;color:#8E968C">O Atlas ajusta e mostra a versão 2. Vocês vão e voltam quantas vezes quiser.</span>
+     <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid #2A2E33">
+      <a href="LC5Sindico.dc.html" style="height:52px;border-radius:12px;background:#C6F135;color:#141619;font:700 16px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Aprovar e publicar a página →</a>
+      <span style="font-size:13px;line-height:1.5;color:#8E968C">Só vai para a internet depois que você aprovar. Antes de abrir, o Atlas faz uma compra de teste (sem dinheiro de verdade).</span>
+     </div>
+    </div>
+   </div>
+  </sc-if>
+
+  <!-- Painel do Síndico (o painel do dono) -->
+  <sc-if value="{{tSindico}}" hint-placeholder-val="{{ false }}">
+   <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:14px">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+     <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+      <div style="display:flex;flex-direction:column;gap:4px;padding:16px 18px;border-radius:16px;background:#1E2125;border:1px solid #2C3036">
+       <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">{{k.rotulo}}</span>
+       <span style="font:700 30px 'Geist',sans-serif;letter-spacing:-.02em;color:{{k.cor}}">{{k.valor}}</span>
+       <span style="font-size:13px;color:#8E968C">{{k.sub}}</span>
+      </div>
+     </sc-for>
+    </div>
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:14px">
+     <section style="display:flex;flex-direction:column;border-radius:18px;background:#1E2125;border:1px solid #2C3036;overflow:hidden;min-height:0">
+      <div style="display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid #2A2E33"><b style="font-size:16px">Clientes</b>
+       <span style="margin-left:auto;display:flex;gap:6px">
+        <sc-for list="{{filtros}}" as="f" hint-placeholder-count="4"><span style="height:30px;padding:0 12px;border-radius:15px;font-size:13px;display:flex;align-items:center;background:{{f.bg}};color:{{f.cor}}">{{f.nome}}</span></sc-for>
+       </span>
+      </div>
+      <div style="display:grid;grid-template-columns:1.4fr .9fr .9fr 1fr 110px;padding:10px 18px;font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#8E968C;border-bottom:1px solid #2A2E33"><span>EMPRESA</span><span>PLANO</span><span>SITUAÇÃO</span><span>PRÓXIMO PAGAMENTO</span><span></span></div>
+      <sc-for list="{{clientes}}" as="c" hint-placeholder-count="6">
+       <div style="display:grid;grid-template-columns:1.4fr .9fr .9fr 1fr 110px;align-items:center;padding:11px 18px;border-bottom:1px solid #24282D;font-size:14px">
+        <span style="display:flex;flex-direction:column"><b>{{c.empresa}}</b><span style="font-size:12px;color:#8E968C">{{c.gente}}</span></span>
+        <span>{{c.plano}}</span>
+        <span style="justify-self:start;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:{{c.selBg}};color:{{c.selCor}};white-space:nowrap">{{c.situacao}}</span>
+        <span style="color:#B4BBB2">{{c.proximo}}</span>
+        <span style="justify-self:end;font-size:13px;font-weight:600;color:#C6F135">{{c.acao}}</span>
+       </div>
+      </sc-for>
+     </section>
+     <section style="display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:18px;background:#1E2125;border:1px solid #2C3036">
+      <b style="font-size:16px">Preços e planos</b>
+      <sc-for list="{{planosEdit}}" as="p" hint-placeholder-count="3">
+       <div style="display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:#191B1E;border:1px solid #2C3036">
+        <span style="display:flex;justify-content:space-between"><b style="font-size:14px">{{p.nome}}</b><span style="font-size:13px;color:#C6F135">editar</span></span>
+        <span style="font-size:13px;line-height:1.45;color:#B4BBB2">{{p.detalhe}}</span>
+       </div>
+      </sc-for>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;background:#191B1E;border:1px solid #2C3036">
+       <b style="font-size:14px">Liberar acesso grátis</b>
+       <span style="font-size:13px;line-height:1.45;color:#B4BBB2">Para um parceiro ou para testar: escolha a empresa e até quando. Sem cobrar nada.</span>
+      </div>
+      <span style="margin-top:auto;font-size:13px;line-height:1.5;color:#8E968C">Tudo aqui também pode ser falado: "libera o plano grátis para a Padaria Sol até março".</span>
+     </section>
+    </div>
+   </div>
+  </sc-if>
+
+  <!-- Menu Lançamentos -->
+  <sc-if value="{{tLista}}" hint-placeholder-val="{{ false }}">
+   <div style="display:flex;flex-direction:column;gap:14px">
+    <span style="font-size:15px;color:#B4BBB2">Só aparecem aqui as obras que você decidiu vender. As de uso interno continuam em Obras concluídas.</span>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+     <sc-for list="{{lancamentos}}" as="l" hint-placeholder-count="2">
+      <a href="{{l.href}}" style="display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:20px;background:#1E2125;border:1px solid {{l.borda}};color:#EDEFEA">
+       <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:{{l.cor}}">{{l.estado}}</span>
+       <b style="font-size:20px">{{l.nome}}</b>
+       <span style="font-size:14px;color:#8E968C">{{l.endereco}}</span>
+       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:8px;border-top:1px solid #2A2E33">
+        <span style="display:flex;flex-direction:column"><b style="font-size:18px">{{l.clientes}}</b><span style="font-size:12px;color:#8E968C">clientes pagando</span></span>
+        <span style="display:flex;flex-direction:column"><b style="font-size:18px">{{l.mes}}</b><span style="font-size:12px;color:#8E968C">entrou este mês</span></span>
+       </div>
+      </a>
+     </sc-for>
+     <div style="display:flex;flex-direction:column;gap:10px;justify-content:center;padding:20px;border-radius:20px;border:1px dashed #2C3036;color:#8E968C;font-size:14px;line-height:1.5">Para lançar outra obra, abra a obra concluída e toque em "Quer vender este sistema?".</div>
+    </div>
+   </div>
+  </sc-if>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tela":{"editor":"enum","options":["comecar","recebimento","construindo","pagina","sindico","lista"],"default":"comecar"},"$preview":{"width":1440,"height":900}}'>
+function cenaSvg({ stand = 'nada' } = {}) {
+  const L = 640, A = 560, cx = 300, base = A - 120, dx = 92, dy = 53, n = 12, fh = 26;
+  const pt = (a) => a.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const o = [];
+  // gramado e calçada
+  o.push(`<polygon points="${pt([[cx + 40, base + 110], [cx - 250, base - 50], [cx + 20, base - 200], [cx + 330, base - 30]])}" fill="#22402A"/>`);
+  o.push(`<polygon points="${pt([[cx, base + 38], [cx - dx - 46, base - dy + 12], [cx, base - 2 * dy - 14], [cx + dx + 46, base - dy + 12]])}" fill="#3A3F45"/>`);
+  o.push(`<polygon points="${pt([[cx + 40, base + 30], [cx + 210, base + 128], [cx + 236, base + 113], [cx + 66, base + 15]])}" fill="#4A4F55"/>`);
+  // prédio
+  for (let i = 0; i < n; i++) {
+    const y = base - i * fh;
+    o.push(`<polygon points="${pt([[cx, y], [cx - dx, y - dy], [cx - dx, y - dy - fh], [cx, y - fh]])}" fill="#2F343A"/><polygon points="${pt([[cx, y], [cx + dx, y - dy], [cx + dx, y - dy - fh], [cx, y - fh]])}" fill="#24282D"/>`);
+    for (const s of [-1, 1]) for (let k = 0; k < 4; k++) {
+      const t0 = 0.1 + k * 0.215, t1 = t0 + 0.13, x0 = cx + s * dx * t0, x1 = cx + s * dx * t1, yb0 = y - dy * t0 - fh * 0.22, yb1 = y - dy * t1 - fh * 0.22, h = fh * 0.52;
+      o.push(`<polygon points="${pt([[x0, yb0], [x1, yb1], [x1, yb1 - h], [x0, yb0 - h]])}" fill="${((i * 7 + k * 3 + (s > 0 ? 1 : 0)) % 5) !== 0 ? '#F2D27A' : '#3A3F45'}"/>`);
+    }
+  }
+  const yt = base - n * fh;
+  o.push(`<polygon points="${pt([[cx, yt], [cx - dx, yt - dy], [cx, yt - 2 * dy], [cx + dx, yt - dy]])}" fill="#3A3F45"/><line x1="${cx}" y1="${yt - dy}" x2="${cx}" y2="${yt - dy - 44}" stroke="#EDEFEA" stroke-width="2"/><polygon points="${pt([[cx, yt - dy - 44], [cx + 26, yt - dy - 36], [cx, yt - dy - 28]])}" fill="#C6F135"/>`);
+  // árvores (paisagismo)
+  const arv = (x, y, r) => `<ellipse cx="${x}" cy="${y + 4}" rx="${r * 0.9}" ry="${r * 0.35}" fill="#16301D"/><rect x="${x - 2}" y="${y - r * 0.6}" width="4" height="${r * 0.7}" fill="#5A4632"/><circle cx="${x}" cy="${y - r * 0.9}" r="${r * 0.62}" fill="#3F8A4E"/><circle cx="${x - r * 0.3}" cy="${y - r * 0.75}" r="${r * 0.42}" fill="#4FA35F"/>`;
+  [[cx - 200, base - 40, 26], [cx - 150, base - 6, 22], [cx - 240, base - 70, 20], [cx + 150, base + 60, 24], [cx + 250, base + 10, 22], [cx - 60, base + 64, 20], [cx + 280, base - 40, 18]].forEach(([x, y, r]) => o.push(arv(x, y, r)));
+  // stand de vendas
+  const sx = cx + 210, sy = base + 96;
+  if (stand !== 'nada') {
+    const pronto = stand === 'pronto';
+    const sdx = 54, sdy = 31, sh = 40;
+    o.push(`<polygon points="${pt([[sx, sy], [sx - sdx, sy - sdy], [sx - sdx, sy - sdy - sh], [sx, sy - sh]])}" fill="${pronto ? '#EDEFEA' : 'none'}" stroke="${pronto ? 'none' : '#C6F135'}" stroke-dasharray="${pronto ? '' : '5 4'}" stroke-width="2"/>`);
+    o.push(`<polygon points="${pt([[sx, sy], [sx + sdx, sy - sdy], [sx + sdx, sy - sdy - sh], [sx, sy - sh]])}" fill="${pronto ? '#D5D9CF' : 'none'}" stroke="${pronto ? 'none' : '#C6F135'}" stroke-dasharray="${pronto ? '' : '5 4'}" stroke-width="2"/>`);
+    if (pronto) {
+      o.push(`<polygon points="${pt([[sx - sdx + 10, sy - sdy - 6], [sx - 8, sy - 10], [sx - 8, sy - 30], [sx - sdx + 10, sy - sdy - 26]])}" fill="#7FB3E8" opacity=".85"/>`);
+      o.push(`<polygon points="${pt([[sx, sy - sh], [sx - sdx, sy - sdy - sh], [sx, sy - 2 * sdy - sh], [sx + sdx, sy - sdy - sh]])}" fill="#C6F135"/>`);
+      o.push(`<line x1="${sx + 70}" y1="${sy - 10}" x2="${sx + 70}" y2="${sy - 96}" stroke="#EDEFEA" stroke-width="2"/><rect x="${sx + 70}" y="${sy - 96}" width="62" height="26" rx="3" fill="#C6F135"/><text x="${sx + 101}" y="${sy - 79}" font-family="Geist Mono,monospace" font-size="11" font-weight="700" fill="#141619" text-anchor="middle">VENDAS</text>`);
+    } else {
+      o.push(`<line x1="${sx + 74}" y1="${sy}" x2="${sx + 74}" y2="${sy - 130}" stroke="#F2B84B" stroke-width="3"/><line x1="${sx + 74}" y1="${sy - 130}" x2="${sx - 30}" y2="${sy - 126}" stroke="#F2B84B" stroke-width="3"/><line x1="${sx - 10}" y1="${sy - 127}" x2="${sx - 10}" y2="${sy - 70}" stroke="#B4BBB2" stroke-width="1.5"/><rect x="${sx - 22}" y="${sy - 70}" width="24" height="14" fill="#C6F135"/>`);
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L} ${A}">${o.join('')}</svg>`;
+}
+class Component extends DCLogic {
+  renderVals() {
+    const tela = this.props.tela ?? 'comecar';
+    const ok = 'width:24px;height:24px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font:700 12px Geist,sans-serif;';
+    const passos = [
+      ['Protótipo da página de vendas', 'Incorporador · com o design system do Ponto, para você marcar e pedir ajustes.', 'feito'],
+      ['Cobrança na sua conta Asaas', 'Incorporador · Pix, boleto, cartão e anual em até 10× (o que você escolheu).', 'agora'],
+      ['Cadastro sozinho depois de pagar', 'Incorporador · pagou, a conta é criada e o acesso chega no e-mail.', 'falta'],
+      ['Cada empresa vê só os dados dela', 'Síndico · já veio pronto da obra (era para vender).', 'feito'],
+      ['O seu painel de dono', 'Síndico · clientes, quem atrasou, plano grátis, financeiro e preços.', 'falta'],
+      ['Compra de teste de ponta a ponta', 'O Atlas compra como um cliente, sem dinheiro de verdade.', 'falta']
+    ].map(([titulo, sub, e]) => ({ titulo, sub, marca: e === 'feito' ? '✓' : e === 'agora' ? '◌' : '', anim: e === 'agora' ? 'lc-gira' : '',
+      cor: e === 'falta' ? '#8E968C' : '#EDEFEA',
+      bola: ok + (e === 'feito' ? 'background:#2A3A12;color:#C6F135' : e === 'agora' ? 'border:2px solid #C6F135;color:#C6F135' : 'border:2px solid #2C3036') }));
+        const planos = [
+      { nome: 'Grátis', limite: 'até 3 funcionários', preco: 'R$ 0' },
+      { nome: 'Mensal', limite: 'sem limite', preco: 'R$ 49/mês' },
+      { nome: 'Anual', limite: 'sem limite', preco: '10× de R$ 47' }
+    ];
+    const S = (v) => v ? '✓' : '—';
+    const tabela = [
+      ['Cartão, todo mês', 1, 1], ['Pix, todo mês (Pix Automático)', 0, 1], ['Anual parcelado no cartão', 0, 1], ['Boleto', 1, 1]
+    ].map(([item, s, a]) => ({ item, s: S(s), a: S(a), sCor: s ? '#EDEFEA' : '#5F665C', aCor: a ? '#C6F135' : '#5F665C' }));
+    const precosPagina = [
+      { nome: 'Grátis', preco: 'R$ 0', sub: 'até 3 funcionários', btn: 'Começar', borda: '1px solid #E1E4DC', btnBg: '#EEF0EA', btnCor: '#1B1E22' },
+      { nome: 'Mensal', preco: 'R$ 49/mês', sub: 'Pix, boleto ou cartão', btn: 'Assinar', borda: '2px solid #1F5FAD', btnBg: '#1F5FAD', btnCor: '#FFF' },
+      { nome: 'Anual', preco: '10× R$ 47', sub: 'ou R$ 470 à vista no Pix', btn: 'Assinar', borda: '1px solid #E1E4DC', btnBg: '#EEF0EA', btnCor: '#1B1E22' }
+    ];
+    const ds = { cor: '#1F5FAD', raio: '10px' };
+    const pinos = [{ n: '1', x: 380, y: 112 }, { n: '2', x: 200, y: 290 }, { n: '3', x: 690, y: 372 }].map((m, i) => ({ ...m, fundo: i === 2 ? '#EDEFEA' : '#C6F135' }));
+    const marcas = [
+      ['1', 'Trocar o título por "Bata o ponto pelo celular em 3 segundos".'],
+      ['2', 'O botão de teste grátis tem que ser maior e falar "Começar grátis, sem cartão".'],
+      ['3', 'No anual, mostrar quanto economiza: "2 meses de graça".']
+    ].map(([n, texto], i) => ({ n, texto, fundo: i === 2 ? '#EDEFEA' : '#C6F135', borda: i === 2 ? '#C6F135' : '#2C3036' }));
+    const kpis = [
+      { rotulo: 'CLIENTES PAGANDO', valor: '38', sub: '+6 este mês', cor: '#EDEFEA' },
+      { rotulo: 'ENTRA POR MÊS', valor: 'R$ 1.862', sub: 'assinaturas ativas', cor: '#C6F135' },
+      { rotulo: 'ATRASADOS', valor: '3', sub: 'R$ 147 a receber', cor: '#F2B84B' },
+      { rotulo: 'NO PLANO GRÁTIS', valor: '21', sub: '4 perto do limite', cor: '#EDEFEA' }
+    ];
+    const filtros = ['Todos', 'Em dia', 'Atrasados', 'Grátis'].map((nome, i) => ({ nome, bg: i === 0 ? '#C6F135' : '#191B1E', cor: i === 0 ? '#141619' : '#B4BBB2' }));
+    const sit = { dia: ['Em dia', 'rgba(198,241,53,.14)', '#C6F135'], atraso: ['Atrasado 5 dias', 'rgba(242,184,75,.16)', '#F2B84B'], gratis: ['Grátis', '#24282D', '#B4BBB2'], liberado: ['Liberado até mar', '#24282D', '#B4BBB2'] };
+    const clientes = [
+      ['Padaria Sol', '12 funcionários', 'Anual', 'dia', '10/12 · parcela 3 de 10', 'abrir'],
+      ['Oficina Ribeiro', '7 funcionários', 'Mensal', 'atraso', 'venceu 20/11', 'cobrar'],
+      ['Clínica Bem Estar', '18 funcionários', 'Mensal', 'dia', '02/12', 'abrir'],
+      ['Mercadinho Ana', '3 funcionários', 'Grátis', 'gratis', '—', 'oferecer plano'],
+      ['Construtora Lima', '40 funcionários', 'Anual', 'liberado', '—', 'abrir'],
+      ['Academia Força', '9 funcionários', 'Mensal', 'dia', '28/11', 'abrir']
+    ].map(([empresa, gente, plano, s, proximo, acao]) => ({ empresa, gente, plano, proximo, acao, situacao: sit[s][0], selBg: sit[s][1], selCor: sit[s][2] }));
+    const planosEdit = [
+      { nome: 'Grátis', detalhe: 'Até 3 funcionários · sem prazo' },
+      { nome: 'Mensal · R$ 49', detalhe: 'Pix Automático, boleto ou cartão · tolerância de 7 dias no atraso' },
+      { nome: 'Anual · R$ 470', detalhe: 'À vista no Pix ou até 10× no cartão' }
+    ];
+    const lancamentos = [
+      { nome: 'Ponto', endereco: 'pontoampla.com.br', estado: '● VENDENDO', cor: '#C6F135', borda: '#C6F135', clientes: '38', mes: 'R$ 1.862', href: 'LC5Sindico.dc.html' },
+      { nome: 'Agenda da Barbearia', endereco: 'agendabarba.vercel.app', estado: 'MONTANDO O STAND', cor: '#F2B84B', borda: '#2C3036', clientes: '—', mes: '—', href: 'LC3Construindo.dc.html' }
+    ];
+    const comCena = ['comecar', 'construindo'].includes(tela);
+    const stand = tela === 'comecar' ? 'nada' : 'obra';
+    return {
+      titulo: tela === 'lista' ? 'Lançamentos' : 'Ponto · Lançamento', volta: tela === 'lista' ? 'AS OBRAS QUE VOCÊ ESTÁ VENDENDO' : '← LANÇAMENTOS',
+      cenaBase: tela === 'construindo' ? 100 : 10,
+      comCena, tComecar: tela === 'comecar', tRecebimento: tela === 'recebimento', tConstruindo: tela === 'construindo', tPagina: tela === 'pagina', tSindico: tela === 'sindico', tLista: tela === 'lista',
+      cena: 'data:image/svg+xml;utf8,' + encodeURIComponent(cenaSvg({ stand })),
+      cenaAlt: stand === 'nada' ? 'O prédio pronto, com jardim e árvores em volta' : 'O prédio pronto com jardim, e o stand de vendas sendo montado ao lado',
+      cenaRotulo: stand === 'nada' ? 'PRÉDIO PRONTO · NO AR' : 'STAND DE VENDAS EM OBRA',
+      cenaSub: stand === 'nada' ? 'pontoampla.com.br · 12 de 12 andares' : 'o jardim ficou pronto; o stand sobe enquanto a página de vendas é feita',
+      selo: tela === 'sindico' ? 'VENDENDO · PAINEL DO DONO' : tela === 'pagina' ? 'CONFERIR A PÁGINA' : tela === 'lista' ? '' : tela === 'comecar' ? 'OPCIONAL' : 'MONTANDO O STAND',
+      seloCor: tela === 'sindico' || tela === 'pagina' ? '#C6F135' : tela === 'comecar' ? '#8E968C' : '#F2B84B',
+      passos, planos, tabela, ds, pinos, marcas, precosPagina, kpis, filtros, clientes, planosEdit, lancamentos
+    };
+  }
+}
+</script>
+</body>
+</html>

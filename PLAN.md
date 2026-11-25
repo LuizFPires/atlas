@@ -594,15 +594,6 @@ tela: prototipo/caminho-novo/PalcoObra.dc.html
 - [x] Qualidade automática: computador fraco (até 4 núcleos ou 4 GB) sem suavização de bordas e na resolução da tela; se o quadro ainda passar de 25 ms, baixa a resolução sozinho
 Notas: DECISÃO do Luiz (25/11/2026, "Do 3D pode implementar como sugeriu"). O 3D roda só na placa de vídeo do cliente e não gasta cota do Claude; a mudança só reduz o trabalho do computador. Conferido com foto da cena real (igual à anterior). Vem junto com o app (kit/canteiro), não com o kit embutido do servidor.
 
-## Milestone 53 — O canteiro 3D leve, sem mudar o que se vê
-peso: 1
-spec: S9
-tela: prototipo/caminho-novo/PalcoObra.dc.html
-- [x] Quadros por segundo conforme o momento: 60 só mexendo na cena, 30 com a equipe trabalhando, 15 sem ninguém trabalhando e nenhum com o Atlas minimizado ou escondido
-- [x] Sombras recalculadas 2× por segundo (antes a cada quadro)
-- [x] Qualidade automática: computador fraco (até 4 núcleos ou 4 GB) sem suavização de bordas e na resolução da tela; se o quadro ainda passar de 25 ms, baixa a resolução sozinho
-Notas: DECISÃO do Luiz (25/11/2026, "Do 3D pode implementar como sugeriu"). O 3D roda só na placa de vídeo do cliente e não gasta cota do Claude; a mudança só reduz o trabalho do computador. Conferido com foto da cena real (igual à anterior). Vem junto com o app (kit/canteiro), não com o kit embutido do servidor.
-
 ## Milestone 54 — O celular e o notebook dizem a mesma coisa sobre a obra
 peso: 1
 spec: S9
@@ -619,3 +610,104 @@ tela: prototipo/celular/ObraPredio.dc.html
 - [x] Embaixo, um cartão só com a etapa e a última notícia (no lugar da foto fixa e do título "Notícias" solto)
 Notas: DECISÃO do Luiz (25/11/2026, "Essa tela precisava mostrar o prédio maior. Está com muita área vazia na tela"; protótipo M08b aprovado: "Aprovado"). A foto fixa do canteiro (com "lendo PLAN.md") sai da tela da obra; o prédio é um SVG leve gerado no celular (src/celular/predio.ts). DIVERGÊNCIA: o botão "Falar com o Atlas" do protótipo não entra (o celular ainda não tem pedido de mudança para uma obra em construção; mesma ausência da M08 original).
 
+## Milestone 56 — Colocar no ar com um clique: o Atlas publica sozinho
+peso: 3
+spec: S16
+tela: prototipo/caminho-novo/PB1Publicar.dc.html
+- [ ] Obra a 100%: endereço .vercel.app já escolhido, contas já ligadas, custo R$ 0 e um botão só, "Colocar no ar"
+- [ ] Trocar o nome (opcional): o Atlas confere na hora se o .vercel.app está livre e sugere nomes livres
+- [ ] Publicação sozinha, passo a passo na tela: vistoria final, banco na conta Supabase do cliente (São Paulo), publicação na Vercel do cliente com as variáveis, ligação ao GitHub (mudança aprovada entra no ar sozinha), teste de verdade no endereço, pronto para instalar no celular
+- [ ] Vistoria achou algo: o Atlas corrige pela linha da obra, testa de novo e continua
+- [ ] No ar: endereço, QR para instalar e "Mandar pelo WhatsApp" (mensagem pronta, o envio é do cliente)
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). O Atlas usa as contas ligadas no começo da obra (gh, Vercel, Supabase); senha do banco gerada na hora e guardada só no cofre do computador (DPAPI/Keychain), nunca em arquivo. Banco começa vazio. DIVERGÊNCIA: o botão "Cartaz para imprimir" saiu (Luiz, 25/11/2026, "não faz o menor sentido").
+
+## Milestone 57 — Domínio próprio: o Atlas liga e vigia, o cliente faz uma troca no Registro.br
+peso: 2
+spec: S16
+tela: prototipo/caminho-novo/PB6Dominio.dc.html
+- [ ] "Usar meu domínio": o Atlas confere o domínio (dono, se tem e-mail) e já liga na Vercel do cliente antes de mandar ao Registro.br (evita "Pesquisa recusada")
+- [ ] Sem e-mail no domínio: troca dos servidores DNS para os da Vercel; com e-mail: só os registros que faltam, sem derrubar o e-mail
+- [ ] Ainda não tem domínio: o Atlas confere se o nome está livre e abre a compra no Registro.br (pagamento do cliente)
+- [ ] O Atlas vigia até o domínio responder, liga o cadeado (https), atualiza QR e WhatsApp e avisa no celular
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Sem senha do Registro.br no Atlas: quem entra e salva é o cliente.
+
+## Milestone 58 — Passo a passo clique por clique com o site ao lado e a Ajuda lendo print
+peso: 3
+spec: S18
+tela: prototipo/caminho-novo/PB10GuiaRegistro.dc.html
+- [ ] Guia de passos com o site de verdade aberto dentro do Atlas: uma frase por passo, o botão certo piscando, tradução de cada palavra técnica e botões "Copiar"
+- [ ] O Atlas olha a página e passa ao próximo passo sozinho quando vê que deu certo
+- [ ] Guias prontos: Registro.br (7 passos), conta da Apple pelo iPhone (6), conta do Google Play (6), conta do Stripe e conta do Asaas
+- [ ] "Falar com o Atlas" em todo passo: já sabe a tela e o passo; aceita voz, texto, print e foto do celular; responde o que fazer (ex.: "Pesquisa recusada")
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Pedido do Luiz (25/11/2026, "explicar como se o usuário tivesse 5 anos ... clique por clique" e "pelo Fale com o Atlas ... mandar o print, o Atlas ler e responder ... 100% cercado"). Os nomes dos botões de cada site são conferidos no site real na implementação (os sites mudam). O Atlas nunca digita senha, código ou cartão.
+
+## Milestone 59 — Lojas: App Store e Google Play
+peso: 3
+spec: S16
+tela: prototipo/caminho-novo/PB8Lojas.dc.html
+- [ ] Uma pergunta antes: em nome de quem o app aparece (pessoa/MEI ou empresa), já marcada pelo CNPJ do cadastro, com o que muda em cada caminho
+- [ ] Empresa: o Atlas guia D-U-N-S (grátis, até 30 dias), e-mail no domínio da empresa e site no ar no domínio
+- [ ] O Atlas monta sozinho ícone, nome, textos, fotos das telas, política de privacidade e a versão de app (EAS na nuvem) e envia para o TestFlight e para o teste do Google
+- [ ] Google com conta pessoal: os 12 testadores por 14 dias seguidos — convite pelo WhatsApp, contagem de pessoas e dias, aviso se alguém sair, pedido final já preenchido
+- [ ] Pronto: falta só o "Enviar para revisão" de cada loja, que é do cliente
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Fontes: Apple (MEI entra como pessoa física; organização exige D-U-N-S, e-mail no domínio e site), Google (contas pessoais criadas depois de 13/11/2023: 12 testadores por 14 dias). Contas e pagamentos das lojas são do cliente.
+
+## Milestone 60 — Lançamento: menu, começar de dentro da obra e onde o dinheiro cai
+peso: 2
+spec: S16
+tela: prototipo/caminho-novo/LC1Lancamento.dc.html
+- [ ] Item "Lançamentos" no menu lateral: só as obras que o cliente decidiu vender
+- [ ] Na obra no ar: "Quer vender o [app] para outras empresas?" (opcional; sem clicar, nada muda)
+- [ ] Começar: o que o Incorporador e o Síndico fazem e os preços sugeridos pelo Atlas (grátis, mensal, anual)
+- [ ] Stripe ou Asaas lado a lado, com a favor e contra de cada um; o cliente escolhe e o Atlas liga a conta dele (guia clique por clique)
+- [ ] Novos agentes no kit: Incorporador (página de vendas, preços, cobrança, cadastro depois de pagar) e Síndico (painel do dono)
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Decisões do Luiz em 25/11/2026: agentes "Incorporador" e "Síndico" ("Eu gostei do incorporador e do síndico"); Lançamento é opcional, no menu lateral e começa de dentro de cada obra ("muitas vezes ele pode querer fazer um produto para uso interno"); gateway à escolha do cliente entre Stripe e Asaas com prós e contras claros. Motivo da escolha: conta Stripe brasileira não tem Pix na mensalidade (Pix Automático) nem parcelamento no cartão. Dinheiro sempre na conta do cliente.
+
+## Milestone 61 — Página de vendas: protótipo com marcações antes de publicar
+peso: 2
+spec: S14
+tela: prototipo/caminho-novo/LC4Pagina.dc.html
+- [ ] O Incorporador desenha a página de vendas com o design system do próprio app (cores, letras, botões)
+- [ ] Marcações iguais às do protótipo do app: tocar num ponto, falar ou escrever o ajuste, mandar e receber a versão seguinte
+- [ ] Só publica depois de "Aprovar e publicar"; antes de abrir, compra de teste sem dinheiro de verdade (pagou → conta criada → acesso no e-mail)
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Pedido do Luiz (25/11/2026, "mesmo padrão e critério que nós utilizamos na construção do aplicativo, inclusive aproveitando o design system").
+
+## Milestone 62 — O painel do Síndico: o dono administra os clientes
+peso: 3
+spec: S16
+tela: prototipo/caminho-novo/LC5Sindico.dc.html
+- [ ] Números do topo: clientes pagando, quanto entra por mês, atrasados, no plano grátis
+- [ ] Lista de clientes com filtros (todos, em dia, atrasados, grátis) e ações (abrir, cobrar, oferecer plano)
+- [ ] Preços e planos editáveis (grátis, mensal, anual e parcelamento conforme o gateway) e "Liberar acesso grátis" por empresa e prazo
+- [ ] Situação de cada cliente atualizada pelo aviso (webhook) do Stripe ou do Asaas, com assinatura conferida; atraso com tolerância e bloqueio automático
+- [ ] Tudo também por voz ("libera o plano grátis para a Padaria Sol até março")
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Fica no sistema do cliente (rota de dono), não no Atlas. Chaves do gateway só em variável do servidor do cliente.
+
+## Milestone 63 — O canteiro muda no fim: jardim em volta e stand de vendas
+peso: 1
+spec: S15
+tela: prototipo/caminho-novo/LC3Construindo.dc.html
+- [ ] Obra a 100%: o canteiro 3D ganha jardim e árvores em volta do prédio pronto
+- [ ] Lançamento em construção: o stand de vendas sobe ao lado (grua e contorno), com o Incorporador e o Síndico trabalhando; stand pronto com a placa "Vendas"
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Pedido do Luiz (25/11/2026, "colocar um paisagismo no entorno ali do prédio ... e aí agora é venda ... fica mais lúdico"). DIVERGÊNCIA consciente: o protótipo desenha a cena em 2D; no app é o canteiro 3D (regra do CLAUDE.md).
+
+## Milestone 64 — Obra para vender nasce pronta para vender
+peso: 2
+spec: S14
+tela: prototipo/caminho-novo/CN1Ideia.dc.html
+- [ ] O Atlas deduz pela ideia se o sistema é para uso interno ou para vender e confirma numa linha ("Pelo que você contou, é para vender a outras empresas. Certo?")
+- [ ] Para vender: dados separados por empresa desde o começo, cadastro sozinho, planos e limites, termos e privacidade (LGPD) para o público
+- [ ] Uso interno que depois vira venda: obra de adaptação, com aviso antes de que leva mais tempo
+Notas: DECISÃO do Luiz (25/11/2026, "se houver algum benefício na criação do produto, a gente vai manter, porque aí vai mudar a forma de ser construído"). A linha de confirmação ainda não está desenhada no CN1Ideia: precisa de um ajuste de protótipo aprovado antes de implementar.
+
+## Milestone 65 — O Atlas não constrói outro Atlas
+peso: 2
+spec: S19
+tela: prototipo/caminho-novo/AC1Politica.dc.html
+- [ ] Termos de uso: proíbem usar o Atlas para criar um sistema que constrói sistemas (concorrente do Atlas)
+- [ ] Porteiro na ideia: sistema que recebe ideias/protótipos, monta um plano de construção e põe agentes de IA para construir software é bloqueado, com o que pode e o que não pode e "Acha que é engano? Explique"
+- [ ] O porteiro olha a obra inteira: protótipo, documentos, planilha importada e cada pedido do pós-obra, somados ao histórico (pega quem tenta em partes)
+- [ ] Dentro da construção: a regra vai nas instruções dos agentes (entregues por obra) e a linha para se o código passar a chamar agentes de programação para construir software
+- [ ] Quem insiste: a obra fica embargada em análise (só aquela; as outras seguem e dá para começar outra)
+- [ ] Painel do administrador: tentativas, obras embargadas e a decisão do Luiz (liberar, manter embargo, recusar o uso pelos termos)
+Notas: DECISÃO do Luiz (25/11/2026, "o nosso Atlas não pode gerar outro sistema como o Atlas!! ... qualquer sinal de tentativa de clonar ou construir algo próximo ao que o Atlas entrega, precisa ser bloqueado pelo próprio Atlas"). Alcance (Luiz, 25/11/2026): chatbot, app ou site com IA são permitidos; bloqueado é o sistema que transforma ideia/protótipo em plano de construção e põe agentes para construir software. Quem insiste (Luiz): "a obra está embargada e nós vamos analisar ... se o usuário insistir, a gente pode recusar que ele continue utilizando"; a decisão é sempre da equipe, nunca automática. Camadas 1–5 aprovadas ("eu gostei de todas. Pode implementar dessa forma"). Os termos de uso precisam de revisão de um advogado.

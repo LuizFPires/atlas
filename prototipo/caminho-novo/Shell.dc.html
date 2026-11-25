@@ -33,7 +33,7 @@
  </div>
 </aside>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"ativo":{"editor":"enum","options":["obras","canteiro","concluidas"],"default":"obras"},"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":248,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"ativo":{"editor":"enum","options":["obras","canteiro","concluidas","lancamentos"],"default":"obras"},"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":248,"height":900}}'>
 class Component extends DCLogic {
   renderVals() {
     const claro = (this.props.tema ?? 'escuro') === 'claro';
@@ -41,11 +41,13 @@ class Component extends DCLogic {
       ? { side: '#1F2226', sideBorder: '#1F2226', sideCard: '#2A2E33', sideMute: '#B9BEB5', sideBorder2: '#3A3F46', lime: '#B6E22E', mono: '/_blob/cf1beaa186df4dada45f5f7027b51b02', actBg: '#B6E22E', actCor: '#1B1E22', actMarca: '#1B1E22' }
       : { side: '#101214', sideBorder: '#24282D', sideCard: '#1A1D21', sideMute: '#9BA39A', sideBorder2: '#2C3036', lime: '#C6F135', mono: '/_blob/12f422513e54daca2767634612b51c95', actBg: '#22262B', actCor: '#EDEFEA', actMarca: '#C6F135' };
     const ativo = this.props.ativo ?? 'obras';
+    // Lançamentos (Luiz, 25/11/2026): só as obras que o cliente decidiu vender.
     // Menu novo (Luiz, 23/11/2026): tudo de uma obra mora dentro dela. Protótipo, Obra, Pós-obra e Como retomar saíram do menu.
     const base = [
       { id: 'obras', nome: 'Nova obra', href: 'CN1Ideia.dc.html' },
       { id: 'canteiro', nome: 'Canteiro de obras', href: 'K1Canteiro.dc.html' },
-      { id: 'concluidas', nome: 'Obras concluídas', href: 'K2Concluidas.dc.html' }
+      { id: 'concluidas', nome: 'Obras concluídas', href: 'K2Concluidas.dc.html' },
+      { id: 'lancamentos', nome: 'Lançamentos', href: 'LC6Lancamentos.dc.html' }
     ];
     const itens = base.map(i => i.id === ativo
       ? { ...i, bg: t.actBg, cor: t.actCor, marca: t.actMarca, peso: 600 }

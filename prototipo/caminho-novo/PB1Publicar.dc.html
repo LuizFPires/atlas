@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Colocar o sistema no ar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes pbgira{to{transform:rotate(360deg)}} .pb-gira{animation:pbgira 1s linear infinite}
+@keyframes pbpisca{0%,100%{opacity:1}50%{opacity:.35}} .pb-pisca{animation:pbpisca 1.2s infinite}
+@media (prefers-reduced-motion: reduce){.pb-gira,.pb-pisca{animation:none}}</style>
+</helmet>
+<div style="position:relative;width:1440px;height:900px;background:#141619;color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obras" tema="escuro" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:flex-end;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">← CANTEIRO DE OBRAS</span><h1 style="margin:0;font-size:28px;letter-spacing:-.01em">Ponto</h1></div>
+   <span style="margin-left:auto;font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{seloCor}}">{{selo}}</span>
+  </div>
+
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 460px;gap:24px">
+   <!-- O prédio pronto -->
+   <section style="position:relative;border-radius:24px;overflow:hidden;border:1px solid #2C3036;background:radial-gradient(120% 80% at 50% 30%,#22303A 0%,#16191C 70%)">
+    <img src="{{predio}}" alt="{{predioAlt}}" style="position:absolute;inset:110px 0 10px 0;width:100%;height:calc(100% - 120px);object-fit:contain;object-position:center bottom">
+    <div style="position:absolute;left:24px;top:22px;display:flex;flex-direction:column;gap:4px">
+     <span style="font:700 64px/1 'Geist',sans-serif;letter-spacing:-.03em;color:#C6F135">100%</span>
+     <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">12 DE 12 ANDARES PRONTOS · TESTES OK</span>
+    </div>
+    <sc-if value="{{noArSelo}}" hint-placeholder-val="{{ false }}">
+     <span style="position:absolute;right:24px;top:24px;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:#C6F135;color:#141619;font:700 13px 'Geist',sans-serif"><span style="width:8px;height:8px;border-radius:4px;background:#141619"></span>NO AR</span>
+    </sc-if>
+   </section>
+
+   <!-- Lado direito: muda por tela -->
+   <aside style="display:flex;flex-direction:column;gap:14px;min-height:0">
+
+    <sc-if value="{{tPronta}}" hint-placeholder-val="{{ true }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #C6F135">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">A OBRA FICOU PRONTA</span>
+      <b style="font-size:26px;line-height:1.2;letter-spacing:-.01em">Agora é colocar no ar para a sua equipe usar.</b>
+      <span style="font-size:15px;line-height:1.5;color:#B4BBB2">O Atlas publica o Ponto num endereço na internet, liga o banco de dados de verdade e deixa pronto para instalar no celular, como um app. Tudo nas suas contas.</span>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:#191B1E">
+       <span style="display:flex;justify-content:space-between;gap:10px;font-size:14px"><span style="color:#B4BBB2">Endereço (o Atlas já escolheu)</span><b>pontoampla.vercel.app <a href="PB2Endereco.dc.html" style="color:#C6F135;font-weight:600;margin-left:6px">trocar</a></b></span>
+       <span style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#B4BBB2">Contas</span><b style="color:#C6F135">✓ GitHub · Vercel · Supabase</b></span>
+       <span style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#B4BBB2">Quanto custa</span><b>R$ 0 (planos grátis)</b></span>
+       <span style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#B4BBB2">O que você faz</span><b>só este clique</b></span>
+      </div>
+      <a href="PB3Publicando.dc.html" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Colocar no ar →</a>
+      <span style="font-size:13px;line-height:1.5;color:#8E968C">Daqui pra frente o Atlas faz tudo sozinho: vistoria, banco de dados, publicação e teste. Se algo der errado, ele corrige antes de abrir as portas.</span>
+     </section>
+     <section style="display:flex;flex-direction:column;gap:10px;padding:18px 20px;border-radius:18px;background:#191B1E;border:1px solid #2C3036">
+      <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">DEPOIS DE NO AR, SE QUISER · O ATLAS JÁ DEIXA PRONTO</span>
+      <span style="display:flex;justify-content:space-between;gap:10px;font-size:14px"><span>Domínio próprio (pontoampla.com.br)</span><span style="color:#8E968C">~R$ 40/ano</span></span>
+      <span style="display:flex;justify-content:space-between;gap:10px;font-size:14px"><span>App Store e Google Play</span><span style="color:#8E968C">US$ 99/ano · US$ 25 uma vez</span></span>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{tEndereco}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">OPCIONAL · ESCOLHER OUTRO NOME</span>
+      <b style="font-size:24px;line-height:1.2">Digite ou fale um nome. O Atlas confere na hora se está livre.</b>
+      <span style="display:flex;align-items:center;height:56px;border-radius:12px;border:2px solid #C6F135;background:#16181B;padding:0 16px;font:600 18px 'Geist',sans-serif"><span>ponto</span><span style="color:#8E968C;font-weight:500">.vercel.app</span><span style="margin-left:auto;font:600 13px 'Geist',sans-serif;color:#F28B6B">✗ já é de outra pessoa</span></span>
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;font-size:11px;color:#8E968C;padding-top:4px">LIVRES AGORA · TOQUE PARA ESCOLHER</span>
+      <div style="display:flex;flex-direction:column;gap:8px">
+       <sc-for list="{{nomes}}" as="n" hint-placeholder-count="4">
+        <span style="display:flex;align-items:center;gap:10px;height:48px;padding:0 14px;border-radius:12px;border:1px solid {{n.borda}};background:{{n.fundo}};font-size:15px"><b>{{n.nome}}</b><span style="color:#8E968C">.vercel.app</span><span style="margin-left:auto;font-size:13px;color:#C6F135">{{n.estado}}</span></span>
+       </sc-for>
+      </div>
+      <span style="font-size:13px;line-height:1.5;color:#8E968C">É o endereço grátis. Quer algo como ponto.com.br? Depois de no ar, use “Usar meu domínio”.</span>
+      <a href="PB3Publicando.dc.html" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Usar pontoampla e colocar no ar →</a>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{tPublicando}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036;flex:1;min-height:0">
+      <span style="display:flex;align-items:center;gap:8px;font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135"><span class="pb-pisca" style="width:8px;height:8px;border-radius:4px;background:#C6F135"></span>COLOCANDO NO AR · O ATLAS FAZ SOZINHO</span>
+      <b style="font-size:22px;line-height:1.25">Pode deixar o Atlas trabalhando. Ele avisa no celular quando estiver pronto.</b>
+      <ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px">
+       <sc-for list="{{passos}}" as="p" hint-placeholder-count="6">
+        <li style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #2A2E33">
+         <span class="{{p.anim}}" style="{{p.bola}}">{{p.marca}}</span>
+         <span style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px;color:{{p.cor}}">{{p.titulo}}</b><span style="font-size:13px;line-height:1.45;color:#8E968C">{{p.sub}}</span></span>
+        </li>
+       </sc-for>
+      </ol>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{tVistoria}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #F2B84B">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#F2B84B">A VISTORIA ACHOU 2 PONTOS · NÃO É ERRO SEU</span>
+      <b style="font-size:22px;line-height:1.25">Antes de abrir as portas, o Atlas vai acertar isto:</b>
+      <div style="display:flex;flex-direction:column;gap:10px">
+       <span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#F2B84B">•</span>Um funcionário conseguia ver o ponto de outro funcionário. Vai ficar cada um vendo só o seu.</span>
+       <span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#F2B84B">•</span>Falta a página de privacidade (LGPD) no rodapé do app.</span>
+      </div>
+      <span style="font-size:14px;line-height:1.5;color:#B4BBB2">O Atlas corrige pela mesma linha da obra, testa de novo e continua a publicação sozinho. Leva uns 20 minutos.</span>
+      <a href="PB3Publicando.dc.html" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Corrigir e continuar →</a>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{noAr}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #C6F135">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">ESTÁ NO AR · ENTREGA DAS CHAVES</span>
+      <b style="font-size:24px;line-height:1.2">pontoampla.vercel.app</b>
+      <div style="display:flex;gap:16px;align-items:center">
+       <span style="width:132px;height:132px;border-radius:14px;background:#EDEFEA;display:flex;align-items:center;justify-content:center;color:#141619;font:700 13px 'Geist Mono',monospace;flex:none">QR CODE</span>
+       <span style="font-size:14px;line-height:1.5;color:#B4BBB2">Aponte a câmera do celular. No iPhone: Compartilhar → Adicionar à Tela de Início. No Android: Instalar app.</span>
+      </div>
+      <div style="display:flex;gap:10px">
+       <a href="#" style="flex:1;height:48px;border-radius:12px;background:#C6F135;color:#141619;font:700 15px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Mandar pelo WhatsApp</a>
+      </div>
+      <span style="font-size:13px;line-height:1.5;color:#8E968C">Daqui pra frente, toda mudança que você pedir no pós-obra entra no ar sozinha, depois dos testes.</span>
+     </section>
+     <section style="display:flex;flex-direction:column;gap:10px;padding:18px 20px;border-radius:18px;background:#191B1E;border:1px solid #2C3036">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;font-size:11px;color:#8E968C">PRÓXIMOS PASSOS · SÓ SE VOCÊ QUISER</span>
+      <a href="PB6Dominio.dc.html" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:#1E2125;color:#EDEFEA"><span style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">Usar meu domínio</b><span style="font-size:13px;color:#8E968C">pontoampla.com.br no lugar do .vercel.app</span></span><span style="margin-left:auto;color:#C6F135">→</span></a>
+      <a href="PB8Lojas.dc.html" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:#1E2125;color:#EDEFEA"><span style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">Colocar na App Store e no Google Play</b><span style="font-size:13px;color:#8E968C">o Ponto aparece nas lojas, com ícone e página</span></span><span style="margin-left:auto;color:#C6F135">→</span></a>
+      <a href="LC1Lancamento.dc.html" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:#1E2125;color:#EDEFEA"><span style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">Quer vender o Ponto para outras empresas?</b><span style="font-size:13px;color:#8E968C">o Atlas monta a página de vendas e o seu painel de dono</span></span><span style="margin-left:auto;color:#C6F135">→</span></a>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{tDominio}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">USAR MEU DOMÍNIO</span>
+      <b style="font-size:24px;line-height:1.2">Qual domínio você quer usar?</b>
+      <span style="display:flex;align-items:center;height:56px;border-radius:12px;border:2px solid #C6F135;background:#16181B;padding:0 16px;font:600 18px 'Geist',sans-serif">pontoampla.com.br</span>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:#191B1E">
+       <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;font-size:11px;color:#8E968C">O ATLAS CONFERIU</span>
+       <span style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#B4BBB2">Dono</span><b>você · Registro.br</b></span>
+       <span style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#B4BBB2">Tem e-mail nele?</span><b>não</b></span>
+       <span style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#B4BBB2">Ligado à sua Vercel</span><b style="color:#C6F135">✓ feito</b></span>
+      </div>
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;font-size:11px;color:#C6F135">A SUA PARTE · 1 TROCA NO REGISTRO.BR</span>
+      <span style="font-size:15px;line-height:1.5;color:#B4BBB2">São 7 cliques no site do Registro.br, que abre aqui dentro do Atlas. Ele mostra um de cada vez, com o botão certo piscando. Você vai colar estes dois nomes:</span>
+      <sc-for list="{{ns}}" as="s" hint-placeholder-count="2">
+       <span style="display:flex;align-items:center;height:44px;padding:0 14px;border-radius:10px;background:#16181B;border:1px solid #2C3036;font:500 15px 'Geist Mono',monospace">{{s}}<span style="margin-left:auto;font:600 13px 'Geist',sans-serif;color:#C6F135">copiar</span></span>
+      </sc-for>
+      <a href="PB10GuiaRegistro.dc.html" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Abrir o Registro.br ao lado →</a>
+      <span style="font-size:13px;line-height:1.5;color:#8E968C">Se o domínio tivesse e-mail, o Atlas não trocaria os servidores: mostraria só 2 linhas para acrescentar, e o e-mail continuaria funcionando. Ainda não tem domínio? O Atlas confere se o nome está livre e abre a compra no Registro.br (~R$ 40/ano, pago por você).</span>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{tDominioOk}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036;border-color:#C6F135">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">DOMÍNIO PRÓPRIO · O ATLAS VIGIA SOZINHO</span>
+      <b style="font-size:24px;line-height:1.2">pontoampla.com.br</b>
+      <ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column">
+       <sc-for list="{{passosDom}}" as="p" hint-placeholder-count="4">
+        <li style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #2A2E33">
+         <span class="{{p.anim}}" style="{{p.bola}}">{{p.marca}}</span>
+         <span style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px;color:{{p.cor}}">{{p.titulo}}</b><span style="font-size:13px;line-height:1.45;color:#8E968C">{{p.sub}}</span></span>
+        </li>
+       </sc-for>
+      </ol>
+      <span style="font-size:14px;line-height:1.5;color:#B4BBB2">Pode fechar o Atlas. Quando o domínio responder, ele avisa no celular. O endereço .vercel.app continua funcionando e leva para o novo.</span>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{tLojas}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036;overflow:auto">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">COLOCAR NAS LOJAS · 1 PERGUNTA ANTES</span>
+      <b style="font-size:22px;line-height:1.25">Na loja, o Ponto vai aparecer em nome de quem?</b>
+      <span style="font-size:14px;color:#B4BBB2">O Atlas já marcou pelo CNPJ do seu cadastro. Cada caminho tem um jeito diferente de criar as contas:</span>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:14px;background:#1F2A12;border:2px solid #C6F135">
+       <span style="display:flex;align-items:center;gap:8px"><b style="font-size:16px">◉ No meu nome (pessoa física ou MEI)</b><span style="margin-left:auto;font:600 10px 'Geist Mono',monospace;letter-spacing:.1em;padding:3px 8px;border-radius:6px;background:#C6F135;color:#141619;white-space:nowrap;flex:none">MAIS RÁPIDO</span></span>
+       <span style="font-size:13px;line-height:1.45;color:#B4BBB2">Apple: inscrição pelo iPhone, pronta em uns 2 dias. Google: antes de abrir para todos, 12 pessoas precisam testar o app por 14 dias seguidos (regra do Google). O Atlas convida e acompanha.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:14px;background:#191B1E;border:1px solid #2C3036">
+       <b style="font-size:16px">○ No nome da empresa (LTDA, S/A…)</b>
+       <span style="font-size:13px;line-height:1.45;color:#8E968C">Precisa de 3 coisas antes: o número D-U-N-S da empresa (grátis, pode levar até 30 dias), um e-mail com o domínio da empresa (contato@pontoampla.com.br) e o site no ar nesse domínio. Sem a regra dos 12 testadores. O Atlas guia cada uma.</span>
+      </div>
+      <span style="font-size:13px;line-height:1.45;color:#8E968C">Custos, pagos por você: Apple ~US$ 99 por ano (aparece em reais) · Google US$ 25 uma vez.</span>
+      <a href="PB11GuiaApple.dc.html" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Começar pela Apple →</a>
+      <span style="font-size:13px;line-height:1.45;color:#8E968C">Enquanto você cria as contas, o Atlas já monta ícone, textos, fotos das telas, política de privacidade e a versão de app.</span>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{tTestadores}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">GOOGLE PLAY · OS 12 TESTADORES</span>
+      <b style="font-size:22px;line-height:1.25">O Google pede 12 pessoas usando o app por 14 dias antes de abrir para todos.</b>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+       <div style="display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;background:#191B1E"><span style="font:700 34px 'Geist',sans-serif;color:#C6F135">9 de 12</span><span style="font-size:13px;color:#8E968C">pessoas já entraram</span></div>
+       <div style="display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:14px;background:#191B1E"><span style="font:700 34px 'Geist',sans-serif">dia 3</span><span style="font-size:13px;color:#8E968C">de 14 · conta só com 12</span></div>
+      </div>
+      <span style="font-size:15px;line-height:1.5;color:#B4BBB2">Faltam 3 pessoas. Pode ser a equipe, a família ou amigos com Android. Cada uma só toca no link do convite e instala.</span>
+      <a href="#" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Mandar o convite pelo WhatsApp</a>
+      <span style="font-size:13px;line-height:1.5;color:#8E968C">O Atlas conta os dias sozinho e avisa se alguém sair do teste (aí o prazo recomeça). No dia 14, ele já deixa preenchido o pedido para abrir o app para todos: você só confere e aperta enviar.</span>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{tLojasOk}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036;border-color:#C6F135">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">PRONTO PARA AS LOJAS · FALTA SÓ O SEU ENVIO</span>
+      <b style="font-size:22px;line-height:1.25">O Ponto já está no teste das duas lojas. Instale no seu celular e confira.</b>
+      <ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column">
+       <sc-for list="{{passosLoja}}" as="p" hint-placeholder-count="4">
+        <li style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #2A2E33">
+         <span style="{{p.bola}}">{{p.marca}}</span>
+         <span style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px;color:{{p.cor}}">{{p.titulo}}</b><span style="font-size:13px;line-height:1.45;color:#8E968C">{{p.sub}}</span></span>
+        </li>
+       </sc-for>
+      </ol>
+      <div style="display:flex;gap:10px">
+       <a href="#" style="flex:1;height:48px;border-radius:12px;border:1px solid #2C3036;color:#EDEFEA;font:600 15px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Abrir a App Store Connect</a>
+       <a href="#" style="flex:1;height:48px;border-radius:12px;border:1px solid #2C3036;color:#EDEFEA;font:600 15px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Abrir o Google Play Console</a>
+      </div>
+      <span style="font-size:13px;line-height:1.5;color:#8E968C">Gostou? Em cada loja, aperte “Enviar para revisão”. Esse clique é seu: é você quem publica em seu nome. A revisão leva de 1 a 3 dias e o Atlas avisa quando aprovar.</span>
+     </section>
+    </sc-if>
+
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tela":{"editor":"enum","options":["pronta","endereco","publicando","vistoria","noar","dominio","dominiook","lojas","lojasok","testadores"],"default":"pronta"},"$preview":{"width":1440,"height":900}}'>
+function predioSvg({ andares = 8, prontos = 3, largura = 360, altura = 420 } = {}) {
+  const n = Math.max(1, Math.min(20, andares)), p = Math.max(0, Math.min(n, prontos))
+  const cx = largura / 2, base = altura - 70, dx = 92, dy = 53, fh = Math.min(30, (altura - 150) / n)
+  const pt = (a) => a.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
+  const out = []
+  out.push(`<polygon points="${pt([[cx, base + 38], [cx - dx - 46, base - dy + 12], [cx, base - 2 * dy - 14], [cx + dx + 46, base - dy + 12]])}" fill="#2B2118" stroke="#3A2E22"/>`)
+  for (let i = 0; i < n; i++) {
+    const y = base - i * fh
+    const L = [[cx, y], [cx - dx, y - dy], [cx - dx, y - dy - fh], [cx, y - fh]], R = [[cx, y], [cx + dx, y - dy], [cx + dx, y - dy - fh], [cx, y - fh]]
+    out.push(`<polygon points="${pt(L)}" fill="#2F343A"/><polygon points="${pt(R)}" fill="#24282D"/>`)
+    for (const s of [-1, 1]) for (let k = 0; k < 4; k++) {
+      const t0 = 0.1 + k * 0.215, t1 = t0 + 0.13, x0 = cx + s * dx * t0, x1 = cx + s * dx * t1, yb0 = y - dy * t0 - fh * 0.22, yb1 = y - dy * t1 - fh * 0.22, h = fh * 0.52
+      out.push(`<polygon points="${pt([[x0, yb0], [x1, yb1], [x1, yb1 - h], [x0, yb0 - h]])}" fill="${((i * 7 + k * 3 + (s > 0 ? 1 : 0)) % 5) !== 0 ? '#F2D27A' : '#3A3F45'}"/>`)
+    }
+    if (i === p - 1) { const yt = y - fh; out.push(`<polygon points="${pt([[cx, yt], [cx - dx, yt - dy], [cx, yt - 2 * dy], [cx + dx, yt - dy]])}" fill="#3A3F45"/>`); out.push(`<line x1="${cx}" y1="${yt - dy}" x2="${cx}" y2="${yt - dy - 44}" stroke="#EDEFEA" stroke-width="2"/><polygon points="${pt([[cx, yt - dy - 44], [cx + 26, yt - dy - 36], [cx, yt - dy - 28]])}" fill="#C6F135"/>`) }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${largura} ${altura}">${out.join('')}</svg>`
+}
+class Component extends DCLogic {
+  renderVals() {
+    const tela = this.props.tela ?? 'pronta';
+    const ok = 'width:26px;height:26px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;font:700 13px Geist,sans-serif;';
+    const passos = [
+      ['Vistoria final', 'Segurança, privacidade (LGPD) e cada pessoa vendo só o que é dela.', 'feito'],
+      ['Banco de dados na sua conta Supabase', 'Criado em São Paulo, vazio, com as tabelas do Ponto.', 'feito'],
+      ['Publicando na sua conta Vercel', 'Montando o sistema e ligando ao banco.', 'agora'],
+      ['Ligando ao seu GitHub', 'Toda mudança aprovada no pós-obra entra no ar sozinha.', 'falta'],
+      ['Teste de verdade no endereço', 'O Atlas usa o sistema como um funcionário: entra, bate o ponto, confere.', 'falta'],
+      ['Pronto para instalar no celular', 'Ícone, nome e o QR code para a equipe.', 'falta']
+    ].map(([titulo, sub, e]) => ({ titulo, sub, marca: e === 'feito' ? '✓' : e === 'agora' ? '◌' : '', anim: e === 'agora' ? 'pb-gira' : '',
+      cor: e === 'falta' ? '#8E968C' : '#EDEFEA',
+      bola: ok + (e === 'feito' ? 'background:#2A3A12;color:#C6F135' : e === 'agora' ? 'border:2px solid #C6F135;color:#C6F135' : 'border:2px solid #2C3036') }));
+    const contas = [
+      ['G', 'GitHub', 'guarda o código (já ligado na obra)'],
+      ['▲', 'Vercel', 'deixa o sistema no ar'],
+      ['S', 'Supabase', 'guarda os dados de verdade']
+    ].map(([marca, nome, para]) => ({ marca, nome, para, estado: '✓ ligada', bg: '#2A3A12', cor: '#C6F135' }));
+    const passo = (lista) => lista.map(([titulo, sub, e]) => ({ titulo, sub, marca: e === 'feito' ? '✓' : e === 'agora' ? '◌' : '', anim: e === 'agora' ? 'pb-gira' : '',
+      cor: e === 'falta' ? '#8E968C' : '#EDEFEA',
+      bola: ok + (e === 'feito' ? 'background:#2A3A12;color:#C6F135' : e === 'agora' ? 'border:2px solid #C6F135;color:#C6F135' : 'border:2px solid #2C3036') }));
+    const nomes = ['pontoampla', 'pontoampla-equipe', 'ampla-ponto', 'meuponto-ampla'].map((nome, i) => ({ nome, estado: i === 0 ? '✓ livre · escolhido' : '✓ livre', borda: i === 0 ? '#C6F135' : '#2C3036', fundo: i === 0 ? '#1F2A12' : '#16181B' }));
+    const ns = ['ns1.vercel-dns.com', 'ns2.vercel-dns.com'];
+    const passosDom = passo([
+      ['Domínio ligado à sua Vercel', 'Feito pelo Atlas.', 'feito'],
+      ['A troca no Registro.br', 'O Atlas viu a mudança chegar.', 'feito'],
+      ['Esperando a internet atualizar', 'Costuma levar de 10 minutos a 2 horas.', 'agora'],
+      ['Cadeado (https), QR e WhatsApp com o endereço novo', 'O Atlas liga e atualiza sozinho.', 'falta']
+    ]);
+    const lojas = [
+      { nome: 'App Store (iPhone)', sub: 'Conta Apple Developer da empresa · US$ 99 por ano. Pede o CNPJ e um número D-U-N-S (grátis, o Atlas mostra como pedir).', estado: 'falta criar', cor: '#F2B84B' },
+      { nome: 'Google Play (Android)', sub: 'Conta de desenvolvedor do Google · US$ 25 uma vez só.', estado: '✓ ligada', cor: '#C6F135' }
+    ];
+    const passosLoja = passo([
+      ['Página das lojas pronta', 'Ícone, nome, textos e 5 fotos das telas.', 'feito'],
+      ['Política de privacidade publicada', 'pontoampla.vercel.app/privacidade', 'feito'],
+      ['iPhone: no TestFlight', 'Já dá para instalar no seu iPhone pelo app TestFlight.', 'feito'],
+      ['Android: no teste com os 12 testadores', 'Dia 14 de 14 completo: o pedido para abrir a todos já está preenchido.', 'feito']
+    ]);
+    const noAr = tela === 'noar';
+    return {
+      predio: 'data:image/svg+xml;utf8,' + encodeURIComponent(predioSvg({ andares: 12, prontos: 12, altura: 560 })),
+      predioAlt: 'O prédio pronto: 12 de 12 andares, com a bandeira no topo',
+      tPronta: tela === 'pronta', tEndereco: tela === 'endereco', tPublicando: tela === 'publicando', tVistoria: tela === 'vistoria', noAr, noArSelo: noAr || tela.startsWith('dominio') || tela.startsWith('lojas') || tela === 'testadores', tDominio: tela === 'dominio', tDominioOk: tela === 'dominiook', tLojas: tela === 'lojas', tLojasOk: tela === 'lojasok', tTestadores: tela === 'testadores',
+      selo: (noAr || tela.startsWith('dominio') || tela.startsWith('lojas') || tela === 'testadores') ? 'NO AR' : tela === 'pronta' ? 'PRONTA PARA PUBLICAR' : 'PUBLICANDO', seloCor: noAr || tela === 'pronta' || tela.startsWith('dominio') || tela.startsWith('lojas') || tela === 'testadores' ? '#C6F135' : '#F2B84B',
+      passos, contas, nomes, ns, passosDom, lojas, passosLoja
+    };
+  }
+}
+</script>
+</body>
+</html>
