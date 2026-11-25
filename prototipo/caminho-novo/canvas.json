@@ -536,6 +536,54 @@
    "h": 900,
    "title": "Publicar 12b · Os 12 testadores por 14 dias: o Atlas convida e conta",
    "is_interactive": true
+  },
+  "LC1Lancamento.dc.html": {
+   "x": 0,
+   "y": 27740,
+   "w": 1440,
+   "h": 900,
+   "title": "Lançamento 1 · Começa de dentro da obra, só se quiser: o que o Incorporador e o Síndico fazem e os preços sugeridos",
+   "is_interactive": true
+  },
+  "LC2Recebimento.dc.html": {
+   "x": 1520,
+   "y": 27740,
+   "w": 1440,
+   "h": 900,
+   "title": "Lançamento 2 · Onde o dinheiro cai: Stripe ou Asaas, com a diferença em português",
+   "is_interactive": true
+  },
+  "LC3Construindo.dc.html": {
+   "x": 3040,
+   "y": 27740,
+   "w": 1440,
+   "h": 900,
+   "title": "Lançamento 3 · O stand sobe ao lado do prédio pronto (jardim em volta) enquanto os dois agentes trabalham",
+   "is_interactive": true
+  },
+  "LC4Pagina.dc.html": {
+   "x": 4560,
+   "y": 27740,
+   "w": 1440,
+   "h": 900,
+   "title": "Lançamento 4 · A página de vendas pronta, com compra de teste feita",
+   "is_interactive": true
+  },
+  "LC5Sindico.dc.html": {
+   "x": 0,
+   "y": 28760,
+   "w": 1440,
+   "h": 900,
+   "title": "Lançamento 5 · O painel do Síndico: clientes, quem atrasou, grátis, financeiro, preços e parcelamento",
+   "is_interactive": true
+  },
+  "LC6Lancamentos.dc.html": {
+   "x": 1520,
+   "y": 28760,
+   "w": 1440,
+   "h": 900,
+   "title": "Lançamento 6 · Menu Lançamentos: só as obras que você decidiu vender",
+   "is_interactive": true
   }
  },
  "order": [
@@ -604,7 +652,13 @@
   "PB14AjudaPrint.dc.html",
   "PB11GuiaApple.dc.html",
   "PB12GuiaGoogle.dc.html",
-  "PB13Testadores.dc.html"
+  "PB13Testadores.dc.html",
+  "LC1Lancamento.dc.html",
+  "LC2Recebimento.dc.html",
+  "LC3Construindo.dc.html",
+  "LC4Pagina.dc.html",
+  "LC5Sindico.dc.html",
+  "LC6Lancamentos.dc.html"
  ],
  "notes": {
   "titulo": {
@@ -702,6 +756,14 @@
    "kind": "title1",
    "maxW": 7520,
    "w": 240
+  },
+  "lancamento": {
+   "x": 0,
+   "y": 27480,
+   "text": "Lançamento (opcional): o Incorporador traz o cliente e o Síndico administra · o prédio ganha jardim e stand de vendas",
+   "kind": "title1",
+   "maxW": 7520,
+   "w": 240
   }
  },
  "designSystems": [],
@@ -717,6 +779,7 @@
   "transparencia",
   "layout-obra",
   "fila-obras",
-  "publicar"
+  "publicar",
+  "lancamento"
  ]
 }
