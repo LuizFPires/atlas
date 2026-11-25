@@ -424,6 +424,46 @@
    "h": 900,
    "title": "Fila 5 · O canteiro mostra quem trabalha e quem está na fila (e dá para mudar a ordem)",
    "is_interactive": true
+  },
+  "PB1Publicar.dc.html": {
+   "x": 0,
+   "y": 22340,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 1 · Obra pronta: endereço e contas já escolhidos, só o clique Colocar no ar",
+   "is_interactive": true
+  },
+  "PB2Endereco.dc.html": {
+   "x": 1520,
+   "y": 22340,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 2 · Opcional: trocar o nome do endereço",
+   "is_interactive": true
+  },
+  "PB3Publicando.dc.html": {
+   "x": 3040,
+   "y": 22340,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 3 · Colocando no ar: o Atlas faz sozinho, passo a passo",
+   "is_interactive": true
+  },
+  "PB4Vistoria.dc.html": {
+   "x": 4560,
+   "y": 22340,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 4 · A vistoria achou 2 pontos: o Atlas corrige antes de abrir as portas",
+   "is_interactive": true
+  },
+  "PB5NoAr.dc.html": {
+   "x": 0,
+   "y": 23360,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 5 · No ar: endereço, QR para instalar e mandar para a equipe",
+   "is_interactive": true
   }
  },
  "order": [
@@ -478,7 +518,12 @@
   "Q2Juntas.dc.html",
   "Q3Primeiro.dc.html",
   "Q1bMax.dc.html",
-  "Q4Canteiro.dc.html"
+  "Q4Canteiro.dc.html",
+  "PB1Publicar.dc.html",
+  "PB2Endereco.dc.html",
+  "PB3Publicando.dc.html",
+  "PB4Vistoria.dc.html",
+  "PB5NoAr.dc.html"
  ],
  "notes": {
   "titulo": {
@@ -568,6 +613,14 @@
    "kind": "title1",
    "maxW": 5960,
    "w": 240
+  },
+  "publicar": {
+   "x": 0,
+   "y": 22080,
+   "text": "Obra a 100%: um clique e o Atlas coloca no ar sozinho (vistoria, banco, publicação, teste e QR)",
+   "kind": "title1",
+   "maxW": 7520,
+   "w": 240
   }
  },
  "designSystems": [],
@@ -582,6 +635,7 @@
   "quadro",
   "transparencia",
   "layout-obra",
-  "fila-obras"
+  "fila-obras",
+  "publicar"
  ]
 }

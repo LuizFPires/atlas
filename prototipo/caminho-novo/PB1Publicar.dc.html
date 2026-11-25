@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Colocar o sistema no ar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes pbgira{to{transform:rotate(360deg)}} .pb-gira{animation:pbgira 1s linear infinite}
+@keyframes pbpisca{0%,100%{opacity:1}50%{opacity:.35}} .pb-pisca{animation:pbpisca 1.2s infinite}
+@media (prefers-reduced-motion: reduce){.pb-gira,.pb-pisca{animation:none}}</style>
+</helmet>
+<div style="position:relative;width:1440px;height:900px;background:#141619;color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obras" tema="escuro" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:flex-end;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">← CANTEIRO DE OBRAS</span><h1 style="margin:0;font-size:28px;letter-spacing:-.01em">Ponto</h1></div>
+   <span style="margin-left:auto;font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{seloCor}}">{{selo}}</span>
+  </div>
+
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 460px;gap:24px">
+   <!-- O prédio pronto -->
+   <section style="position:relative;border-radius:24px;overflow:hidden;border:1px solid #2C3036;background:radial-gradient(120% 80% at 50% 30%,#22303A 0%,#16191C 70%)">
+    <img src="{{predio}}" alt="{{predioAlt}}" style="position:absolute;inset:110px 0 10px 0;width:100%;height:calc(100% - 120px);object-fit:contain;object-position:center bottom">
+    <div style="position:absolute;left:24px;top:22px;display:flex;flex-direction:column;gap:4px">
+     <span style="font:700 64px/1 'Geist',sans-serif;letter-spacing:-.03em;color:#C6F135">100%</span>
+     <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">12 DE 12 ANDARES PRONTOS · TESTES OK</span>
+    </div>
+    <sc-if value="{{noAr}}" hint-placeholder-val="{{ false }}">
+     <span style="position:absolute;right:24px;top:24px;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:#C6F135;color:#141619;font:700 13px 'Geist',sans-serif"><span style="width:8px;height:8px;border-radius:4px;background:#141619"></span>NO AR</span>
+    </sc-if>
+   </section>
+
+   <!-- Lado direito: muda por tela -->
+   <aside style="display:flex;flex-direction:column;gap:14px;min-height:0">
+
+    <sc-if value="{{tPronta}}" hint-placeholder-val="{{ true }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #C6F135">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">A OBRA FICOU PRONTA</span>
+      <b style="font-size:26px;line-height:1.2;letter-spacing:-.01em">Agora é colocar no ar para a sua equipe usar.</b>
+      <span style="font-size:15px;line-height:1.5;color:#B4BBB2">O Atlas publica o Ponto num endereço na internet, liga o banco de dados de verdade e deixa pronto para instalar no celular, como um app. Tudo nas suas contas.</span>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:#191B1E">
+       <span style="display:flex;justify-content:space-between;gap:10px;font-size:14px"><span style="color:#B4BBB2">Endereço (o Atlas já escolheu)</span><b>pontoampla.vercel.app <a href="PB2Endereco.dc.html" style="color:#C6F135;font-weight:600;margin-left:6px">trocar</a></b></span>
+       <span style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#B4BBB2">Contas</span><b style="color:#C6F135">✓ GitHub · Vercel · Supabase</b></span>
+       <span style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#B4BBB2">Quanto custa</span><b>R$ 0 (planos grátis)</b></span>
+       <span style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#B4BBB2">O que você faz</span><b>só este clique</b></span>
+      </div>
+      <a href="PB3Publicando.dc.html" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Colocar no ar →</a>
+      <span style="font-size:13px;line-height:1.5;color:#8E968C">Daqui pra frente o Atlas faz tudo sozinho: vistoria, banco de dados, publicação e teste. Se algo der errado, ele corrige antes de abrir as portas.</span>
+     </section>
+     <section style="display:flex;flex-direction:column;gap:10px;padding:18px 20px;border-radius:18px;background:#191B1E;border:1px solid #2C3036">
+      <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">DEPOIS, SE QUISER</span>
+      <span style="display:flex;justify-content:space-between;gap:10px;font-size:14px"><span>Domínio próprio (ponto.com.br)</span><span style="color:#8E968C">~R$ 40/ano</span></span>
+      <span style="display:flex;justify-content:space-between;gap:10px;font-size:14px"><span>App Store e Google Play</span><span style="color:#8E968C">contas das lojas</span></span>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{tEndereco}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:16px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">OPCIONAL · TROCAR O NOME DO ENDEREÇO</span>
+      <b style="font-size:24px;line-height:1.2">O Atlas escolheu este nome. Quer outro?</b>
+      <label style="display:flex;flex-direction:column;gap:8px">
+       <span style="font-size:13px;color:#B4BBB2">É o que a equipe digita no celular. Dá para trocar depois por um domínio próprio.</span>
+       <span style="display:flex;align-items:center;height:56px;border-radius:12px;border:2px solid #C6F135;background:#16181B;padding:0 16px;font:600 18px 'Geist',sans-serif"><span>pontoampla</span><span style="color:#8E968C;font-weight:500">.vercel.app</span><span style="margin-left:auto;display:flex;align-items:center;gap:6px;font:600 13px 'Geist',sans-serif;color:#C6F135">✓ livre</span></span>
+      </label>
+      <div style="display:flex;flex-direction:column;gap:10px;padding-top:6px;border-top:1px solid #2A2E33">
+       <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">AS SUAS CONTAS (JÁ LIGADAS NA OBRA)</span>
+       <sc-for list="{{contas}}" as="c" hint-placeholder-count="3">
+        <span style="display:flex;align-items:center;gap:12px;font-size:15px"><span style="width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:{{c.bg}};color:{{c.cor}};font-weight:700;flex:none">{{c.marca}}</span><span style="display:flex;flex-direction:column"><b>{{c.nome}}</b><span style="font-size:13px;color:#8E968C">{{c.para}}</span></span><span style="margin-left:auto;font-size:13px;color:{{c.cor}}">{{c.estado}}</span></span>
+       </sc-for>
+      </div>
+      <span style="font-size:13px;line-height:1.5;color:#8E968C">O banco começa vazio: os dados de teste ficam só no seu computador. O Atlas não paga nada nem cria conta por você.</span>
+      <a href="PB3Publicando.dc.html" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Usar este nome e colocar no ar →</a>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{tPublicando}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036;flex:1;min-height:0">
+      <span style="display:flex;align-items:center;gap:8px;font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135"><span class="pb-pisca" style="width:8px;height:8px;border-radius:4px;background:#C6F135"></span>COLOCANDO NO AR · O ATLAS FAZ SOZINHO</span>
+      <b style="font-size:22px;line-height:1.25">Pode deixar o Atlas trabalhando. Ele avisa no celular quando estiver pronto.</b>
+      <ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px">
+       <sc-for list="{{passos}}" as="p" hint-placeholder-count="6">
+        <li style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #2A2E33">
+         <span class="{{p.anim}}" style="{{p.bola}}">{{p.marca}}</span>
+         <span style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px;color:{{p.cor}}">{{p.titulo}}</b><span style="font-size:13px;line-height:1.45;color:#8E968C">{{p.sub}}</span></span>
+        </li>
+       </sc-for>
+      </ol>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{tVistoria}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #F2B84B">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#F2B84B">A VISTORIA ACHOU 2 PONTOS · NÃO É ERRO SEU</span>
+      <b style="font-size:22px;line-height:1.25">Antes de abrir as portas, o Atlas vai acertar isto:</b>
+      <div style="display:flex;flex-direction:column;gap:10px">
+       <span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#F2B84B">•</span>Um funcionário conseguia ver o ponto de outro funcionário. Vai ficar cada um vendo só o seu.</span>
+       <span style="display:flex;gap:10px;font-size:15px;line-height:1.45"><span style="color:#F2B84B">•</span>Falta a página de privacidade (LGPD) no rodapé do app.</span>
+      </div>
+      <span style="font-size:14px;line-height:1.5;color:#B4BBB2">O Atlas corrige pela mesma linha da obra, testa de novo e continua a publicação sozinho. Leva uns 20 minutos.</span>
+      <a href="PB3Publicando.dc.html" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Corrigir e continuar →</a>
+     </section>
+    </sc-if>
+
+    <sc-if value="{{noAr}}" hint-placeholder-val="{{ false }}">
+     <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #C6F135">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">ESTÁ NO AR · ENTREGA DAS CHAVES</span>
+      <b style="font-size:24px;line-height:1.2">pontoampla.vercel.app</b>
+      <div style="display:flex;gap:16px;align-items:center">
+       <span style="width:132px;height:132px;border-radius:14px;background:#EDEFEA;display:flex;align-items:center;justify-content:center;color:#141619;font:700 13px 'Geist Mono',monospace;flex:none">QR CODE</span>
+       <span style="font-size:14px;line-height:1.5;color:#B4BBB2">Aponte a câmera do celular. No iPhone: Compartilhar → Adicionar à Tela de Início. No Android: Instalar app.</span>
+      </div>
+      <div style="display:flex;gap:10px">
+       <a href="#" style="flex:1;height:48px;border-radius:12px;background:#C6F135;color:#141619;font:700 15px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Mandar para a equipe</a>
+       <a href="#" style="flex:1;height:48px;border-radius:12px;border:1px solid #2C3036;color:#EDEFEA;font:600 15px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Cartaz para imprimir</a>
+      </div>
+      <span style="font-size:13px;line-height:1.5;color:#8E968C">Daqui pra frente, toda mudança que você pedir no pós-obra entra no ar sozinha, depois dos testes.</span>
+     </section>
+    </sc-if>
+
+   </aside>
+  </div>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tela":{"editor":"enum","options":["pronta","endereco","publicando","vistoria","noar"],"default":"pronta"},"$preview":{"width":1440,"height":900}}'>
+function predioSvg({ andares = 8, prontos = 3, largura = 360, altura = 420 } = {}) {
+  const n = Math.max(1, Math.min(20, andares)), p = Math.max(0, Math.min(n, prontos))
+  const cx = largura / 2, base = altura - 70, dx = 92, dy = 53, fh = Math.min(30, (altura - 150) / n)
+  const pt = (a) => a.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
+  const out = []
+  out.push(`<polygon points="${pt([[cx, base + 38], [cx - dx - 46, base - dy + 12], [cx, base - 2 * dy - 14], [cx + dx + 46, base - dy + 12]])}" fill="#2B2118" stroke="#3A2E22"/>`)
+  for (let i = 0; i < n; i++) {
+    const y = base - i * fh
+    const L = [[cx, y], [cx - dx, y - dy], [cx - dx, y - dy - fh], [cx, y - fh]], R = [[cx, y], [cx + dx, y - dy], [cx + dx, y - dy - fh], [cx, y - fh]]
+    out.push(`<polygon points="${pt(L)}" fill="#2F343A"/><polygon points="${pt(R)}" fill="#24282D"/>`)
+    for (const s of [-1, 1]) for (let k = 0; k < 4; k++) {
+      const t0 = 0.1 + k * 0.215, t1 = t0 + 0.13, x0 = cx + s * dx * t0, x1 = cx + s * dx * t1, yb0 = y - dy * t0 - fh * 0.22, yb1 = y - dy * t1 - fh * 0.22, h = fh * 0.52
+      out.push(`<polygon points="${pt([[x0, yb0], [x1, yb1], [x1, yb1 - h], [x0, yb0 - h]])}" fill="${((i * 7 + k * 3 + (s > 0 ? 1 : 0)) % 5) !== 0 ? '#F2D27A' : '#3A3F45'}"/>`)
+    }
+    if (i === p - 1) { const yt = y - fh; out.push(`<polygon points="${pt([[cx, yt], [cx - dx, yt - dy], [cx, yt - 2 * dy], [cx + dx, yt - dy]])}" fill="#3A3F45"/>`); out.push(`<line x1="${cx}" y1="${yt - dy}" x2="${cx}" y2="${yt - dy - 44}" stroke="#EDEFEA" stroke-width="2"/><polygon points="${pt([[cx, yt - dy - 44], [cx + 26, yt - dy - 36], [cx, yt - dy - 28]])}" fill="#C6F135"/>`) }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${largura} ${altura}">${out.join('')}</svg>`
+}
+class Component extends DCLogic {
+  renderVals() {
+    const tela = this.props.tela ?? 'pronta';
+    const ok = 'width:26px;height:26px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;font:700 13px Geist,sans-serif;';
+    const passos = [
+      ['Vistoria final', 'Segurança, privacidade (LGPD) e cada pessoa vendo só o que é dela.', 'feito'],
+      ['Banco de dados na sua conta Supabase', 'Criado em São Paulo, vazio, com as tabelas do Ponto.', 'feito'],
+      ['Publicando na sua conta Vercel', 'Montando o sistema e ligando ao banco.', 'agora'],
+      ['Ligando ao seu GitHub', 'Toda mudança aprovada no pós-obra entra no ar sozinha.', 'falta'],
+      ['Teste de verdade no endereço', 'O Atlas usa o sistema como um funcionário: entra, bate o ponto, confere.', 'falta'],
+      ['Pronto para instalar no celular', 'Ícone, nome e o QR code para a equipe.', 'falta']
+    ].map(([titulo, sub, e]) => ({ titulo, sub, marca: e === 'feito' ? '✓' : e === 'agora' ? '◌' : '', anim: e === 'agora' ? 'pb-gira' : '',
+      cor: e === 'falta' ? '#8E968C' : '#EDEFEA',
+      bola: ok + (e === 'feito' ? 'background:#2A3A12;color:#C6F135' : e === 'agora' ? 'border:2px solid #C6F135;color:#C6F135' : 'border:2px solid #2C3036') }));
+    const contas = [
+      ['G', 'GitHub', 'guarda o código (já ligado na obra)'],
+      ['▲', 'Vercel', 'deixa o sistema no ar'],
+      ['S', 'Supabase', 'guarda os dados de verdade']
+    ].map(([marca, nome, para]) => ({ marca, nome, para, estado: '✓ ligada', bg: '#2A3A12', cor: '#C6F135' }));
+    const noAr = tela === 'noar';
+    return {
+      predio: 'data:image/svg+xml;utf8,' + encodeURIComponent(predioSvg({ andares: 12, prontos: 12, altura: 560 })),
+      predioAlt: 'O prédio pronto: 12 de 12 andares, com a bandeira no topo',
+      tPronta: tela === 'pronta', tEndereco: tela === 'endereco', tPublicando: tela === 'publicando', tVistoria: tela === 'vistoria', noAr,
+      selo: noAr ? 'NO AR' : tela === 'pronta' ? 'PRONTA PARA PUBLICAR' : 'PUBLICANDO', seloCor: noAr || tela === 'pronta' ? '#C6F135' : '#F2B84B',
+      passos, contas
+    };
+  }
+}
+</script>
+</body>
+</html>
