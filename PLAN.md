@@ -594,3 +594,11 @@ tela: prototipo/caminho-novo/PalcoObra.dc.html
 - [x] Qualidade automática: computador fraco (até 4 núcleos ou 4 GB) sem suavização de bordas e na resolução da tela; se o quadro ainda passar de 25 ms, baixa a resolução sozinho
 Notas: DECISÃO do Luiz (25/11/2026, "Do 3D pode implementar como sugeriu"). O 3D roda só na placa de vídeo do cliente e não gasta cota do Claude; a mudança só reduz o trabalho do computador. Conferido com foto da cena real (igual à anterior). Vem junto com o app (kit/canteiro), não com o kit embutido do servidor.
 
+## Milestone 54 — O celular e o notebook dizem a mesma coisa sobre a obra
+peso: 1
+spec: S9
+tela: prototipo/caminho-novo/Q1Escolher.dc.html
+- [x] O celular mostra o mesmo momento do painel do notebook: "Construindo" só com a equipe trabalhando; esperando (outra obra, cota, religando) aparece como parada, com a frase do painel; precisa de você e com defeito aparecem como "Sua vez"
+- [x] No painel, "Continuar obra" / "Tentar agora" com outra obra trabalhando oferece a mesma escolha da M51 (fila, ao mesmo tempo, esta primeiro) em vez de "Não consegui fazer isso agora"
+Notas: Luiz (25/11/2026, "Aqui no app está mostrando que está construindo, mas parece que o Guilherme não tem token para agora. Verifique se tem alguma incompatibilidade lá"). Causa: a obra "Acompanhamento do mercado financeiro" não rodava porque a obra "Ponto" estava trabalhando (uma linha por vez); o celular só olhava a % e mostrava "Construindo", e o botão do painel escondia o motivo ('ja-rodando') atrás de "Não consegui". Não era falta de cota.
+

@@ -217,9 +217,8 @@ export function criarConstrucaoFixture(modos: PonteModoObra = criarModoObraFixtu
     async fila() { return { trabalhando: trabalhandoAgora.map((t) => ({ ...t })), fila: naFila.map((f) => ({ ...f })), juntas: [] } },
     async mudarVez(pasta, como) {
       const i = naFila.findIndex((f) => f.pasta === pasta)
-      if (i < 0) throw new Error('fora-da-fila')
-      if (como === 'fila') return
-      naFila.splice(i, 1)
+      if (como === 'fila') { if (i < 0 && trabalhandoAgora.length) naFila.push({ pasta, depoisDe: trabalhandoAgora[0].pasta }); return }
+      if (i >= 0) naFila.splice(i, 1)
       if (como === 'primeiro') { for (const t of trabalhandoAgora.splice(0)) naFila.push({ pasta: t.pasta, depoisDe: pasta }) }
       trabalhandoAgora.push({ pasta, nome: pasta, restanteMin: null })
     },

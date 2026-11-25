@@ -11,7 +11,8 @@ import { MAX_DOC_CELULAR, montarNavegavel, type PontePrototipo, type TelaDesenha
 import type { EntradaEstilo, EstiloProposto, PonteEstilo } from './ponte-estilo'
 import type { NomeProposto, PonteBatismo } from './ponte-batismo'
 import type { ModoObra, PonteConstrucao, PonteModoObra } from './ponte-construcao'
-import type { PontePainel } from './ponte-painel'
+import { situacaoDaObra, type PontePainel } from './ponte-painel'
+import { momentoDaObra } from './momento-obra'
 import type { PonteObras } from './ponte-obras'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { ObraStatus } from '../web/obras-status'
@@ -232,21 +233,21 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
       const lig = porPasta.get(pasta)
       const id = lig?.id ?? pasta
       if (!/^[\w.-]{1,64}$/.test(id)) continue
-      const estado: ObraStatus['estado'] = e.pct >= 100 ? 'pronta' : e.pausadaPorVoce || e.parada === 'cota' ? 'pausada' : e.parada || e.etapaPronta ? 'aguardando_aprovacao' : 'construindo'
+      // Luiz (25/11/2026): o celular dizia "Construindo" com ninguém trabalhando (a obra esperava outra, ou a cota tinha acabado).
+      // Agora o celular diz o MESMO que o painel do notebook: o momento da obra (trabalhando, esperando, precisa de você, com defeito).
+      const modo = (await p.modos.ler(pasta).catch(() => null)) ?? 'automatico'
+      const m = momentoDaObra(e, situacaoDaObra(modo, e))
+      const estado: ObraStatus['estado'] = m.nivel === 'pronta' ? 'pronta' : m.nivel === 'trabalhando' ? 'construindo' : m.nivel === 'precisa' || m.nivel === 'defeito' ? 'aguardando_aprovacao' : 'pausada'
       const ativa = !achouAtiva && estado === 'construindo' && e.agora.length > 0
       if (ativa) achouAtiva = true
-      const noticia = e.parada === 'voce' ? 'Precisa de você no notebook: abra o Atlas lá para ver o passo a passo.'
-        : e.parada === 'cota' ? 'A cota do Claude acabou. A obra continua sozinha quando ela renovar.'
-          : e.parada === 'billing' ? 'Uma cobrança de uma conta sua precisa de atenção. Abra o Atlas no notebook.'
-            : e.pausadaPorVoce ? 'Obra pausada por você.'
-              : e.etapaPronta ? `A etapa "${e.etapaPronta.nome}" terminou e espera o seu OK.`
-                : e.pct >= 100 ? 'Obra pronta.'
-                  : e.etapa ? `Trabalhando em: ${e.etapa.nome}.` : ''
+      const noticia = m.nivel === 'trabalhando' ? (e.etapa ? `Trabalhando em: ${e.etapa.nome}.` : m.titulo)
+        : m.nivel === 'precisa' || m.nivel === 'defeito' ? `${m.titulo} Abra o Atlas no notebook para ver o que fazer.`
+          : m.titulo
       obras.push({
         id, nome: (lig?.nome ?? pasta.replace(/-/g, ' ')).slice(0, 80),
         etapa_atual: { numero: e.etapa?.n ?? e.etapas.length, rotulo: (e.etapa?.nome ?? 'Tudo pronto').slice(0, 80) },
         total_etapas: e.etapas.length, percentual: Math.max(0, Math.min(100, Math.round(e.pct))), estado, ativa_agora: ativa,
-        ultima_noticia: noticia, quando: new Date().toISOString(),
+        ultima_noticia: noticia.slice(0, 200), quando: new Date().toISOString(),
       })
     }
     await canal.status(obras)
