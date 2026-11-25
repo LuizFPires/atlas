@@ -139,3 +139,23 @@ describe('baixar o instalador pelo link do e-mail', () => {
     expect(nomeDoInstalador('../../x'.padEnd(30, 'a'))).toBe('Atlas-Instalador.exe')
   })
 })
+
+describe('M47: Mac e Windows (a página reconhece o computador)', () => {
+  const MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'
+  it('Mac de verdade é computador; iPad que se diz "Macintosh" mas tem toque é celular', () => {
+    expect(ehCelular(MAC, 1440)).toBe(false)
+    expect(ehCelular(MAC, 1366, true)).toBe(true)
+  })
+  it('abrir informa se o arquivo do Mac já está publicado; baixar entrega o do sistema pedido, com o nome certo', async () => {
+    const { m, deps } = pronto()
+    const { token } = await gerarLink(m.deps, 'ana@loja.com')
+    const pedidos: string[] = []
+    const comos = { ...deps, instalador: { link: async (n: string) => { pedidos.push(`win:${n}`); return 'https://arquivos.test/win' } }, instaladorMac: { link: async (n: string) => { pedidos.push(`mac:${n}`); return 'https://arquivos.test/mac' } } }
+    expect(await abrirLink(comos, { token, user_agent: MAC, largura: 1440 })).toMatchObject({ instalador: true, instalador_mac: true })
+    expect(await abrirLink({ ...deps, instalador: comos.instalador }, { token, user_agent: MAC, largura: 1440 })).toMatchObject({ instalador_mac: false })
+    expect(await baixarInstalador(comos, { token, sistema: 'mac' })).toEqual({ url: 'https://arquivos.test/mac' })
+    expect(await baixarInstalador(comos, { token })).toEqual({ url: 'https://arquivos.test/win' })
+    expect(pedidos).toEqual(['mac:Atlas.dmg', `win:${nomeDoInstalador(token)}`])
+    await expect(baixarInstalador({ ...deps, instalador: comos.instalador }, { token, sistema: 'mac' })).rejects.toMatchObject({ codigo: 'instalador_indisponivel' })
+  })
+})

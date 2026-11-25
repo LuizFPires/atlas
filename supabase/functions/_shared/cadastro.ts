@@ -25,6 +25,8 @@ export interface DepsCadastro extends Deps {
   /** Instalador para baixar. Ausente = ainda não publicado. `link(nome)` devolve um endereço https temporário do arquivo, que
    *  baixa com esse nome (o nome leva o código do link), ou null. */
   instalador?: { link: (nomeDoDownload: string) => Promise<string | null> }
+  /** M47: o arquivo do Mac (.dmg), na mesma pasta privada. */
+  instaladorMac?: { link: (nomeDoDownload: string) => Promise<string | null> }
 }
 
 export interface PedidoCadastro { session_id?: unknown; nome?: unknown; empresa?: unknown; ramo?: unknown; email?: unknown; cidade?: unknown; uf?: unknown }

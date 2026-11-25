@@ -9,20 +9,22 @@ const CELULAR_RE = /android|iphone|ipad|ipod|mobile|windows phone|opera mini|sil
 /** Telas estreitas (CSS px) contam como celular/tablet mesmo com user-agent de "desktop" (iPadOS, modo desktop). */
 export const LARGURA_MAX_CELULAR = 820
 
-export function ehCelular(userAgent: string | null | undefined, largura?: number | null): boolean {
+export function ehCelular(userAgent: string | null | undefined, largura?: number | null, toque?: boolean | null): boolean {
   if ((userAgent ?? '').length > 0 && CELULAR_RE.test(userAgent as string)) return true
+  // iPad (iPadOS) se apresenta como "Macintosh": um Mac de verdade não tem tela de toque (M47).
+  if (toque === true && /Macintosh/i.test(userAgent ?? '')) return true
   return typeof largura === 'number' && Number.isFinite(largura) && largura > 0 && largura <= LARGURA_MAX_CELULAR
 }
 
 export const AVISO_ABRA_NO_COMPUTADOR = 'Abra no computador onde você vai construir. O Atlas se instala no computador, não no celular. Toque em "Enviar para o meu computador" e a gente manda o acesso de novo para o seu e-mail.'
 
 /** `instalador`: o arquivo já está publicado e pode ser pedido em /instalar/baixar (a página só mostra o botão se for true). */
-export interface AberturaLink { valido: true; celular: boolean; aviso: string | null; expira_em: Date; pode_reenviar: boolean; instalador: boolean }
+export interface AberturaLink { valido: true; celular: boolean; aviso: string | null; expira_em: Date; pode_reenviar: boolean; instalador: boolean; /** M47: o arquivo do Mac já está publicado. */ instalador_mac: boolean }
 
-export async function abrirLink(d: DepsCadastro, a: { token: string; user_agent?: string | null; largura?: number | null }): Promise<AberturaLink> {
+export async function abrirLink(d: DepsCadastro, a: { token: string; user_agent?: string | null; largura?: number | null; toque?: boolean | null }): Promise<AberturaLink> {
   const l = await validarLink(d, a.token) // inválido/usado/vencido: ErroRegra com mensagem clara
-  const celular = ehCelular(a.user_agent, a.largura)
-  return { valido: true, celular, aviso: celular ? AVISO_ABRA_NO_COMPUTADOR : null, expira_em: l.expira_em, pode_reenviar: celular, instalador: !!d.instalador }
+  const celular = ehCelular(a.user_agent, a.largura, a.toque)
+  return { valido: true, celular, aviso: celular ? AVISO_ABRA_NO_COMPUTADOR : null, expira_em: l.expira_em, pode_reenviar: celular, instalador: !!d.instalador, instalador_mac: !!d.instaladorMac }
 }
 
 /** Nome com que o instalador chega ao computador. Leva o código do link: o instalador lê o próprio nome e entrega o código ao
@@ -36,10 +38,13 @@ const semInstalador = () => new ErroRegra('instalador_indisponivel', 'O instalad
 
 /** Botão "Baixar o instalador": só quem tem link válido recebe o endereço temporário do arquivo. Baixar NÃO consome o link
  *  (quem consome é a ativação). Qualquer dúvida sobre o arquivo vira recado honesto, nunca um endereço inventado. */
-export async function baixarInstalador(d: DepsCadastro, a: { token: string }): Promise<{ url: string }> {
+export async function baixarInstalador(d: DepsCadastro, a: { token: string; sistema?: string | null }): Promise<{ url: string }> {
   await validarLink(d, a.token) // inválido/usado/vencido: ErroRegra com mensagem clara, antes de tocar no arquivo
-  if (!d.instalador) throw semInstalador()
-  const url = await d.instalador.link(nomeDoInstalador(a.token)).catch(() => null)
+  // M47: o Mac recebe o .dmg (o código do link volta ao Atlas pelo botão "Já arrastei: abrir o Atlas", não pelo nome do arquivo).
+  const mac = a.sistema === 'mac'
+  const fonte = mac ? d.instaladorMac : d.instalador
+  if (!fonte) throw semInstalador()
+  const url = await fonte.link(mac ? 'Atlas.dmg' : nomeDoInstalador(a.token)).catch(() => null)
   if (!url || !/^https:\/\//.test(url)) throw semInstalador()
   return { url }
 }

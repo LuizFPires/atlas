@@ -256,9 +256,9 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
           return json({ erro: 'muitas_solicitacoes', mensagem: 'Muitas tentativas. Espere uns minutos.' }, 429)
         }
         if (rota === '/instalar/enviar-para-computador') return json(await reenviarParaComputador(ctx.cadastro, { token: s('token') }))
-        if (rota === '/instalar/baixar') return json(await baixarInstalador(ctx.cadastro, { token: s('token') }))
+        if (rota === '/instalar/baixar') return json(await baixarInstalador(ctx.cadastro, { token: s('token'), sistema: s('sistema') === 'mac' ? 'mac' : 'windows' }))
         const largura = typeof (b as Record<string, unknown>).largura === 'number' ? ((b as Record<string, unknown>).largura as number) : null
-        return json(await abrirLink(ctx.cadastro, { token: s('token'), user_agent: req.headers.get('User-Agent'), largura }))
+        return json(await abrirLink(ctx.cadastro, { token: s('token'), user_agent: req.headers.get('User-Agent'), largura, toque: (b as Record<string, unknown>).toque === true }))
       }
       // Portal (F15): o cliente já está autenticado lá; aqui só entra chamada de serviço.
       case '/compra/cancelar':

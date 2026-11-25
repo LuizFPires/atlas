@@ -637,3 +637,10 @@ export function criarCanalCelular(): CanalCelular {
     },
   }
 }
+
+/** M47: o arquivo do Mac (.dmg) na mesma pasta privada. Liga com ATLAS_INSTALADOR_MAC_ARQUIVO; sem ele a página diz que a versão
+ *  para Mac ainda não está disponível (e oferece a do Windows). */
+export function criarInstaladorMac(): { link: (nomeDoDownload: string) => Promise<string | null> } | undefined {
+  const cfg = lerConfigInstalador((nome) => (nome === 'ATLAS_INSTALADOR_ARQUIVO' ? Deno.env.get('ATLAS_INSTALADOR_MAC_ARQUIVO') : Deno.env.get(nome)))
+  return cfg ? { link: criarLinkInstaladorStorage(cfg, (bucket) => db().storage.from(bucket)) } : undefined
+}

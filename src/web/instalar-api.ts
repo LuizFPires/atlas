@@ -1,8 +1,9 @@
 // Ponte de instalação (M5): cliente da API pública. O token do link é a prova; abrir NÃO consome o link. Sem segredo aqui.
 import { configCompra, type ConfigCompra } from './compra'
+import { temToque, type Sistema } from './sistema'
 
 export type ResultadoAbertura =
-  | { ok: true; celular: boolean; aviso: string | null; podeReenviar: boolean; expiraEm: string | null; /** O instalador já está publicado para baixar. */ instalador?: boolean }
+  | { ok: true; celular: boolean; aviso: string | null; podeReenviar: boolean; expiraEm: string | null; /** O instalador já está publicado para baixar. */ instalador?: boolean; /** M47: o do Mac também. */ instaladorMac?: boolean }
   | { ok: false; mensagem: string }
 export type ResultadoReenvio = { ok: true } | { ok: false; mensagem: string; limite?: boolean }
 export type ResultadoDownload = { ok: true; url: string } | { ok: false; mensagem: string }
@@ -10,8 +11,8 @@ export type ResultadoDownload = { ok: true; url: string } | { ok: false; mensage
 export interface InstalarApi {
   abrir(token: string): Promise<ResultadoAbertura>
   enviarParaComputador(token: string): Promise<ResultadoReenvio>
-  /** Pede o endereço temporário do instalador. Não consome o link do e-mail. */
-  baixar(token: string): Promise<ResultadoDownload>
+  /** Pede o endereço temporário do instalador (do Mac ou do Windows). Não consome o link do e-mail. */
+  baixar(token: string, sistema?: Sistema): Promise<ResultadoDownload>
 }
 
 const MSG_REDE = 'Sem conexão com o servidor. Veja a sua internet e tente de novo.'
@@ -28,17 +29,17 @@ export function criarInstalarApi(cfg: Pick<ConfigCompra, 'api'> | null = configC
       if (!cfg) return { ok: false, mensagem: MSG_OFF }
       try {
         const largura = typeof window === 'undefined' ? null : window.innerWidth
-        const { r, c } = await post('/instalar/abrir', { token, largura })
+        const { r, c } = await post('/instalar/abrir', { token, largura, toque: temToque() })
         if (r.ok && c.valido === true) {
-          return { ok: true, celular: c.celular === true, aviso: typeof c.aviso === 'string' ? c.aviso : null, podeReenviar: c.pode_reenviar === true, expiraEm: typeof c.expira_em === 'string' ? c.expira_em : null, instalador: c.instalador === true }
+          return { ok: true, celular: c.celular === true, aviso: typeof c.aviso === 'string' ? c.aviso : null, podeReenviar: c.pode_reenviar === true, expiraEm: typeof c.expira_em === 'string' ? c.expira_em : null, instalador: c.instalador === true, instaladorMac: c.instalador_mac === true }
         }
         return { ok: false, mensagem: c.mensagem ?? MSG_GENERICA }
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },
-    async baixar(token) {
+    async baixar(token, sistema = 'windows') {
       if (!cfg) return { ok: false, mensagem: MSG_OFF }
       try {
-        const { r, c } = await post('/instalar/baixar', { token })
+        const { r, c } = await post('/instalar/baixar', { token, sistema })
         // Só um endereço https serve: qualquer outra coisa é tratada como "não deu", nunca aberta.
         if (r.ok && typeof c.url === 'string' && /^https:\/\//.test(c.url)) return { ok: true, url: c.url }
         return { ok: false, mensagem: c.mensagem ?? MSG_GENERICA }
