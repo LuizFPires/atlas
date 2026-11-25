@@ -88,25 +88,74 @@ function guardarSessao(t: string) {
   try { if (t) sessionStorage.setItem(CHAVE_SESSAO, t); else sessionStorage.removeItem(CHAVE_SESSAO) } catch { /* sem armazenamento: vale só nesta carga */ }
 }
 
-export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typeof fetch = fetch): PortalApi {
-  let token = lerSessao()
+// M52 (Luiz, 25/11/2026: "toda hora desconecta ... precisa sustentar o login"). No app do celular (/app) o login fica guardado no
+// aparelho e se renova sozinho: guardamos a chave de renovação do Supabase Auth (refresh token, que troca a cada uso) e pedimos um
+// acesso novo antes do de 1 hora vencer, ou quando o servidor responde 401. Só sai com "Sair" ou se a renovação for recusada.
+export const CHAVE_SESSAO_LONGA = 'atlas.celular.sessao'
+interface SessaoLonga { acesso: string; renovar: string; venceEm: number }
+function lerLonga(): SessaoLonga | null {
+  try {
+    const j = JSON.parse(localStorage.getItem(CHAVE_SESSAO_LONGA) ?? 'null') as Partial<SessaoLonga> | null
+    return j && typeof j.acesso === 'string' && typeof j.renovar === 'string' && j.renovar && typeof j.venceEm === 'number' ? { acesso: j.acesso, renovar: j.renovar, venceEm: j.venceEm } : null
+  } catch { return null }
+}
+function guardarLonga(s: SessaoLonga | null) {
+  try { if (s) localStorage.setItem(CHAVE_SESSAO_LONGA, JSON.stringify(s)); else localStorage.removeItem(CHAVE_SESSAO_LONGA) } catch { /* sem armazenamento: vale só nesta carga */ }
+}
+const MARGEM_MS = 2 * 60_000
+
+export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typeof fetch = fetch, opcoes: { lembrar?: boolean; agora?: () => number } = {}): PortalApi {
+  const lembrar = opcoes.lembrar === true
+  const agora = opcoes.agora ?? (() => Date.now())
+  let longa = lembrar ? lerLonga() : null
+  let token = longa ? longa.acesso : lerSessao()
+  const guardar = (acesso: string, renovar?: unknown, expiraEm?: unknown) => {
+    token = acesso
+    if (lembrar && acesso && typeof renovar === 'string' && renovar) {
+      longa = { acesso, renovar, venceEm: agora() + (typeof expiraEm === 'number' && expiraEm > 0 ? expiraEm : 3600) * 1000 }
+      guardarLonga(longa)
+    } else if (!acesso) { longa = null; if (lembrar) guardarLonga(null) }
+    if (!lembrar) guardarSessao(acesso)
+  }
+  /** Troca a chave de renovação por um acesso novo (uma troca por vez). false = recusada: o login acabou de verdade. */
+  let renovando: Promise<boolean> | null = null
+  const renovar = (): Promise<boolean> => {
+    if (!cfg || !longa) return Promise.resolve(false)
+    if (renovando) return renovando
+    const chave = longa.renovar
+    renovando = (async () => {
+      try {
+        const r = await f(`${cfg.authUrl}/token?grant_type=refresh_token`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: cfg.anonKey }, body: JSON.stringify({ refresh_token: chave }) })
+        const d = (await r.json().catch(() => ({}))) as Record<string, unknown>
+        if (r.ok && typeof d.access_token === 'string') { guardar(d.access_token, d.refresh_token, d.expires_in); return true }
+        if (r.status === 400 || r.status === 401 || r.status === 403) guardar('') // recusada: volta para o login
+        return false
+      } catch { return false } // sem internet: mantém o login e tenta de novo depois
+      finally { renovando = null }
+    })()
+    return renovando
+  }
   const auth = async (caminho: string, corpo: object) => {
     const r = await f(`${cfg!.authUrl}${caminho}`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: cfg!.anonKey }, body: JSON.stringify(corpo) })
     return { r, d: (await r.json().catch(() => ({}))) as Record<string, unknown> }
   }
   /** POST autenticado. 401 = sessão vencida: derruba a sessão local para a tela voltar ao login. */
   const servidor = async <T extends object>(rota: string, corpo: object = {}): Promise<Resp<T>> => {
-    if (!cfg || !token) return { ok: false, mensagem: MSG_OFF }
+    if (!cfg || (!token && !longa)) return { ok: false, mensagem: MSG_OFF }
+    if (longa && agora() > longa.venceEm - MARGEM_MS) await renovar()
+    if (!token) return { ok: false, mensagem: 'Entre de novo na sua conta.' }
     try {
-      const r = await f(`${cfg.api}${rota}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(corpo) })
+      const chamar = () => f(`${cfg.api}${rota}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(corpo) })
+      let r = await chamar()
+      if (r.status === 401 && longa && await renovar()) r = await chamar() // acesso vencido: renova uma vez e tenta de novo
       const c = (await r.json().catch(() => ({}))) as Record<string, unknown> & { mensagem?: string }
-      if (r.status === 401) { token = ''; guardarSessao(''); return { ok: false, mensagem: c.mensagem ?? 'Entre de novo na sua conta.' } }
+      if (r.status === 401) { guardar(''); return { ok: false, mensagem: c.mensagem ?? 'Entre de novo na sua conta.' } }
       if (!r.ok) return { ok: false, mensagem: c.mensagem ?? 'Não deu certo agora. Tente de novo em instantes.' }
       return { ok: true, ...(c as T) }
     } catch { return { ok: false, mensagem: MSG_REDE } }
   }
   return {
-    logado: () => token !== '',
+    logado: () => token !== '' || longa !== null,
     async pedirCodigoLogin(email) {
       const e = email.trim().toLowerCase()
       if (!EMAIL_RE.test(e)) return { ok: false, mensagem: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.' }
@@ -128,8 +177,7 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
         const { r, d } = await auth('/verify', { type: 'email', email: email.trim().toLowerCase(), token: c })
         const t = d.access_token
         if (!r.ok || typeof t !== 'string') return { ok: false, mensagem: 'Código incorreto ou vencido. Peça um novo.' }
-        token = t
-        guardarSessao(t)
+        guardar(t, d.refresh_token, d.expires_in)
         return { ok: true }
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },
@@ -163,10 +211,10 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
     cancelarMensalidade: () => servidor<{ encerra_em: string }>('/portal/mensalidade/cancelar', { confirmar: true }),
     async excluirConta() {
       const r = await servidor('/portal/conta/excluir', { confirmar: true })
-      if (r.ok) { token = ''; guardarSessao('') } // a sessão morreu junto com a conta
+      if (r.ok) guardar('') // a sessão morreu junto com a conta
       return r
     },
-    sair() { token = ''; guardarSessao('') },
+    sair() { guardar('') },
     celular: () => servidor<Record<string, unknown>>('/portal/celular'),
     pedirCelular: (tipo, obra_id, dados) => servidor<{ id: string; obra_id: string }>('/portal/celular/pedido', { tipo, ...(obra_id ? { obra_id } : {}), dados }),
     fotoCelular: (imagem) => servidor<{ id: string }>('/portal/celular/referencia', { imagem }),

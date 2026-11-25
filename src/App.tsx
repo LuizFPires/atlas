@@ -27,7 +27,8 @@ const AppRestaurante = lazy(() => import('./modelos/restaurante/AppRestaurante')
 const AppMercearia = lazy(() => import('./modelos/mercearia/AppMercearia').then((m) => ({ default: m.AppMercearia })))
 const AppAcademia = lazy(() => import('./modelos/academia/AppAcademia').then((m) => ({ default: m.AppAcademia })))
 
-const portalApi = criarPortalApi()
+// M52: no app do celular (/app) o login fica guardado no aparelho e se renova sozinho; no Portal web, só enquanto a aba está aberta.
+const portalApi = criarPortalApi(undefined, undefined, { lembrar: typeof window !== 'undefined' && window.location.pathname.startsWith('/app') })
 const adminApi = modoFixture() ? criarAdminFixture() : criarAdminApi()
 // Personalização do app pronto (M32 b): em produção grava pela rota /portal/personalizacao (escopada pelo login).
 const personalizacao = modoFixture() ? criarPersonalizacaoFixture() : criarPersonalizacaoPortal(portalApi)
