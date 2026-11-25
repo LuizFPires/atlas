@@ -75,6 +75,7 @@ function Entrar({ api, onEntrou }: { api: ApiCelular; onEntrou: (email: string) 
             <label htmlFor={idC} className="cel-rotulo">Código que chegou no e-mail</label>
             <input id={idC} inputMode="numeric" autoComplete="one-time-code" value={codigo} onChange={(e) => setCodigo(e.target.value)} style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '.3em', fontSize: 22 }} />
             <span className="cel-sub">Mandamos para {email}</span>
+            {(() => { const sa = api.ultimaSaida?.(); return sa ? <span className="cel-sub cel-saida">O login caiu sozinho em {new Date(sa.quando).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · código {sa.motivo}. Se acontecer de novo, mande uma foto desta linha.</span> : null })()}
           </div>
         )}
         {erro && <p className="cel-erro" role="alert">{erro}</p>}

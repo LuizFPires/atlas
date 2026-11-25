@@ -32,6 +32,8 @@ export interface ContaPortal {
 export interface PortalApi {
   /** Já existe uma sessão aberta nesta aba? */
   logado(): boolean
+  /** Celular: por que o login caiu sozinho da última vez (null se a pessoa saiu ou nunca caiu). */
+  ultimaSaida?(): SaidaDoLogin | null
   pedirCodigoLogin(email: string): Promise<Resp>
   entrar(email: string, codigo: string): Promise<Resp>
   eu(): Promise<Resp<{ perfil: PerfilPortal }>>
@@ -103,6 +105,15 @@ function guardarLonga(s: SessaoLonga | null) {
   try { if (s) localStorage.setItem(CHAVE_SESSAO_LONGA, JSON.stringify(s)); else localStorage.removeItem(CHAVE_SESSAO_LONGA) } catch { /* sem armazenamento: vale só nesta carga */ }
 }
 const MARGEM_MS = 2 * 60_000
+// Por que o login caiu sozinho (só no celular): guardado no aparelho para a próxima tela de entrar contar. Sem dado da pessoa.
+export const CHAVE_SAIDA = 'atlas.celular.saida'
+export interface SaidaDoLogin { quando: string; motivo: string }
+function lerSaida(): SaidaDoLogin | null {
+  try { const j = JSON.parse(localStorage.getItem(CHAVE_SAIDA) ?? 'null') as SaidaDoLogin | null; return j && typeof j.motivo === 'string' && typeof j.quando === 'string' ? j : null } catch { return null }
+}
+function gravarSaida(motivo: string | null) {
+  try { if (motivo) localStorage.setItem(CHAVE_SAIDA, JSON.stringify({ quando: new Date().toISOString(), motivo: motivo.slice(0, 120) })); else localStorage.removeItem(CHAVE_SAIDA) } catch { /* sem armazenamento */ }
+}
 
 export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typeof fetch = fetch, opcoes: { lembrar?: boolean; agora?: () => number } = {}): PortalApi {
   const lembrar = opcoes.lembrar === true
@@ -128,7 +139,7 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
         const r = await f(`${cfg.authUrl}/token?grant_type=refresh_token`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: cfg.anonKey }, body: JSON.stringify({ refresh_token: chave }) })
         const d = (await r.json().catch(() => ({}))) as Record<string, unknown>
         if (r.ok && typeof d.access_token === 'string') { guardar(d.access_token, d.refresh_token, d.expires_in); return true }
-        if (r.status === 400 || r.status === 401 || r.status === 403) guardar('') // recusada: volta para o login
+        if (r.status === 400 || r.status === 401 || r.status === 403) { if (lembrar) gravarSaida(`renovacao-${r.status} ${String(d.error_code ?? d.code ?? d.msg ?? d.error ?? '')}`.trim()); guardar('') } // recusada: volta para o login
         return false
       } catch { return false } // sem internet: mantém o login e tenta de novo depois
       finally { renovando = null }
@@ -149,7 +160,7 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
       let r = await chamar()
       if (r.status === 401 && longa && await renovar()) r = await chamar() // acesso vencido: renova uma vez e tenta de novo
       const c = (await r.json().catch(() => ({}))) as Record<string, unknown> & { mensagem?: string }
-      if (r.status === 401) { guardar(''); return { ok: false, mensagem: c.mensagem ?? 'Entre de novo na sua conta.' } }
+      if (r.status === 401) { if (lembrar && !lerSaida()) gravarSaida(`servidor-401 ${rota}`); guardar(''); return { ok: false, mensagem: c.mensagem ?? 'Entre de novo na sua conta.' } }
       if (!r.ok) return { ok: false, mensagem: c.mensagem ?? 'Não deu certo agora. Tente de novo em instantes.' }
       return { ok: true, ...(c as T) }
     } catch { return { ok: false, mensagem: MSG_REDE } }
@@ -178,6 +189,7 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
         const t = d.access_token
         if (!r.ok || typeof t !== 'string') return { ok: false, mensagem: 'Código incorreto ou vencido. Peça um novo.' }
         guardar(t, d.refresh_token, d.expires_in)
+        if (lembrar) gravarSaida(typeof d.refresh_token === 'string' && d.refresh_token ? null : 'entrou-sem-chave-de-renovacao')
         return { ok: true }
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },
@@ -214,7 +226,8 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
       if (r.ok) guardar('') // a sessão morreu junto com a conta
       return r
     },
-    sair() { guardar('') },
+    sair() { if (lembrar) gravarSaida(null); guardar('') },
+    ultimaSaida: () => (lembrar ? lerSaida() : null),
     celular: () => servidor<Record<string, unknown>>('/portal/celular'),
     pedirCelular: (tipo, obra_id, dados) => servidor<{ id: string; obra_id: string }>('/portal/celular/pedido', { tipo, ...(obra_id ? { obra_id } : {}), dados }),
     fotoCelular: (imagem) => servidor<{ id: string }>('/portal/celular/referencia', { imagem }),

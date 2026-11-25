@@ -115,3 +115,4 @@
 .cel-face-rot { color: #C6F135; }
 .cel-face-pe { display: flex; flex-direction: column; gap: 10px; }
 .cel-face-nota { text-align: center; line-height: 1.5; }
+.cel-saida { display: block; margin-top: 8px; font-size: 12px; color: #8E968C; }

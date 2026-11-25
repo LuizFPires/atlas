@@ -75,3 +75,19 @@ test('Portal web (sem lembrar): continua só enquanto a aba está aberta', async
   a.sair()
   expect(a.logado()).toBe(false)
 })
+
+test('quando o login cai sozinho, o aparelho guarda o porquê (para a tela de entrar mostrar); "Sair" não conta', async () => {
+  const { f } = servidorFalso({
+    '/verify': [{ status: 200, corpo: { access_token: 'A1', refresh_token: 'R1', expires_in: 3600 } }],
+    '/token?grant_type=refresh_token': [{ status: 400, corpo: { error_code: 'refresh_token_already_used' } }],
+    '/portal/eu': [{ status: 401, corpo: {} }],
+  })
+  const a = criarPortalApi(cfg, f, { lembrar: true })
+  await a.entrar('ana@loja.com', '123456')
+  expect(a.ultimaSaida?.()).toBeNull()
+  await a.eu()
+  expect(a.ultimaSaida?.()?.motivo).toBe('renovacao-400 refresh_token_already_used')
+  await a.entrar('ana@loja.com', '123456')
+  a.sair()
+  expect(a.ultimaSaida?.()).toBeNull()
+})
