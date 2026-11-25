@@ -614,12 +614,12 @@ Notas: DECISÃO do Luiz (25/11/2026, "Essa tela precisava mostrar o prédio maio
 peso: 3
 spec: S16
 tela: prototipo/caminho-novo/PB1Publicar.dc.html
-- [ ] Obra a 100%: endereço .vercel.app já escolhido, contas já ligadas, custo R$ 0 e um botão só, "Colocar no ar"
-- [ ] Trocar o nome (opcional): o Atlas confere na hora se o .vercel.app está livre e sugere nomes livres
-- [ ] Publicação sozinha, passo a passo na tela: vistoria final, banco na conta Supabase do cliente (São Paulo), publicação na Vercel do cliente com as variáveis, ligação ao GitHub (mudança aprovada entra no ar sozinha), teste de verdade no endereço, pronto para instalar no celular
-- [ ] Vistoria achou algo: o Atlas corrige pela linha da obra, testa de novo e continua
-- [ ] No ar: endereço, QR para instalar e "Mandar pelo WhatsApp" (mensagem pronta, o envio é do cliente)
-Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). O Atlas usa as contas ligadas no começo da obra (gh, Vercel, Supabase); senha do banco gerada na hora e guardada só no cofre do computador (DPAPI/Keychain), nunca em arquivo. Banco começa vazio. DIVERGÊNCIA: o botão "Cartaz para imprimir" saiu (Luiz, 25/11/2026, "não faz o menor sentido").
+- [x] Obra a 100%: endereço .vercel.app já escolhido, contas já ligadas, custo R$ 0 e um botão só, "Colocar no ar"
+- [x] Trocar o nome (opcional): o Atlas confere na hora se o .vercel.app está livre e sugere nomes livres
+- [x] Publicação sozinha, passo a passo na tela: vistoria final, banco na conta Supabase do cliente (São Paulo), publicação na Vercel do cliente com as variáveis, ligação ao GitHub (mudança aprovada entra no ar sozinha), teste de verdade no endereço, pronto para instalar no celular
+- [x] Vistoria achou algo: o Atlas corrige pela linha da obra, testa de novo e continua
+- [x] No ar: endereço, QR para instalar e "Mandar pelo WhatsApp" (mensagem pronta, o envio é do cliente)
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). O Atlas usa as contas ligadas no começo da obra (gh, Vercel, Supabase); senha do banco gerada na hora e guardada só no cofre do computador (DPAPI/Keychain), nunca em arquivo. Banco começa vazio. Feito em app/adaptadores/no-ar.cjs (+ no-ar-rede.cjs) e src/app/ColocarNoAr.tsx. Conferir numa conta real: o campo `region` do POST /v1/projects (a doc marca como obsoleto), `vercel git connect` e o tempo do primeiro deploy. Vistoria reprovada vai pela linha da obra (pós-obra) e recomeça sozinha quando a linha termina. Erro abre a Ajuda do Atlas sozinha. "Usar meu domínio" e "Lojas" usam os guias antigos até o M57–M59. DIVERGÊNCIA: o botão "Cartaz para imprimir" saiu (Luiz, 25/11/2026, "não faz o menor sentido").
 
 ## Milestone 57 — Domínio próprio: o Atlas liga e vigia, o cliente faz uma troca no Registro.br
 peso: 2

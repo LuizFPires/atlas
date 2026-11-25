@@ -143,6 +143,20 @@ const ajuda = criarAjuda({
 const casos = criarCasos({ cofre, hashComputador: async () => hash() })
 // Publicação (F13a/b): sites e consultas só de hosts oficiais; o deploy (publicarNoAr) falha honesto até haver token/fluxo (ver publicar.cjs).
 const publicar = criarPublicar({ raiz: obras.raiz(), shell, cofre })
+// Colocar no ar com um clique (M56): contas do cliente já ligadas (contas-cli), Claude só leitor na vistoria, correções pela linha da obra.
+const { criarNoAr } = require('./adaptadores/no-ar.cjs')
+const { pedirApiSupabase, sondarSite } = require('./adaptadores/no-ar-rede.cjs')
+const noAr = criarNoAr({
+  raiz: obras.raiz(), cofre,
+  vercel: (args, o = {}) => contasCli.rodarFerramenta('vercel', args, o),
+  supabase: (args, o = {}) => contasCli.rodarFerramenta('supabase', args, o),
+  git: (args, { cwd } = {}) => rodarProcesso('git', args, { env: envMinimo({ GIT_CONFIG_NOSYSTEM: '1' }), cwd, timeoutMs: 15_000 }),
+  apiSupabase: (metodo, caminho, corpo, token) => pedirApiSupabase(metodo, caminho, corpo, token),
+  sondar: (url) => sondarSite(url),
+  perguntar: (pasta, pedido) => disparo.perguntar(pasta, pedido, { permitirGit: true, tipo: 'vistoria' }),
+  linhaRodando: (pasta) => construcao.linha.rodando(pasta),
+  corrigir: (pasta, achados) => posobra.executar(pasta, { tipo: 'quebrou', texto: `Antes de abrir ao público, a vistoria final pediu: ${achados.join(' ')}` }, { entendi: 'Você quer abrir o sistema ao público com tudo seguro. Vou:', passos: achados, minutos: 20 }),
+})
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -335,6 +349,11 @@ handle('atlas:publicar:noar', (slug) => publicar.publicarNoAr(String(slug)))
 handle('atlas:publicar:cartaz', (endereco, pasta) => publicar.gerarCartaz(String(endereco), pasta === undefined ? undefined : String(pasta)))
 handle('atlas:publicar:ler', (pasta) => publicar.lerProgresso(String(pasta)))
 handle('atlas:publicar:gravar', (pasta, p) => publicar.gravarProgresso(String(pasta), p))
+handle('atlas:noar:sugerir', async (pasta, obraNome, extra) => { await garantirFerramentas(); return noAr.sugerir(String(pasta), String(obraNome), extra === undefined ? '' : String(extra)) })
+handle('atlas:noar:livre', (nome, pasta) => noAr.nomeLivre(String(nome), pasta === undefined ? null : String(pasta)))
+handle('atlas:noar:iniciar', async (pasta, nome) => { await garantirFerramentas(); return noAr.iniciar(String(pasta), String(nome)) })
+handle('atlas:noar:estado', (pasta) => noAr.estado(String(pasta)))
+handle('atlas:noar:corrigir', (pasta) => noAr.corrigir(String(pasta)))
 
 // Kit por obra: a tela só recebe { ok, obraId, marca }; o caminho do plugin nunca sai do processo principal.
 handle('atlas:kit:entregar', (obraId) => kit.entregar(String(obraId)))
