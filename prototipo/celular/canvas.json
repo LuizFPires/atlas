@@ -1,18 +1,179 @@
-{"v":3,"createdOnFiles":{"v":1,"at":"2026-11-23T09:32:41Z"},"title":"Atlas no celular (PWA)","launch":{"view":"canvas"},"pages":[],"boards":{
-"Entrar.dc.html":{"x":0,"y":0,"w":390,"h":844,"title":"M00 · Entrar","is_interactive":true,"radius":36},
-"Main.dc.html":{"x":470,"y":0,"w":390,"h":844,"title":"M01 · Minhas obras","is_interactive":true,"radius":36},
-"Ideia.dc.html":{"x":940,"y":0,"w":390,"h":844,"title":"M02 · Etapa 1 de 3: a ideia","is_interactive":true,"radius":36},
-"Visual.dc.html":{"x":1410,"y":0,"w":390,"h":844,"title":"M03 · Etapa 2 de 3: o visual","is_interactive":true,"radius":36},
-"Desenhando.dc.html":{"x":1880,"y":0,"w":390,"h":844,"title":"M04 · O notebook desenhando","is_interactive":true,"radius":36},
-"Prototipo.dc.html":{"x":0,"y":1264,"w":390,"h":844,"title":"M05 · Protótipo navegável","is_interactive":true,"radius":36},
-"Nome.dc.html":{"x":470,"y":1264,"w":390,"h":844,"title":"M06 · Etapa 3 de 3: o nome","is_interactive":true,"radius":36},
-"Aprovar.dc.html":{"x":940,"y":1264,"w":390,"h":844,"title":"M07 · Deixar o Atlas construir","is_interactive":true,"radius":36},
-"Obra.dc.html":{"x":1410,"y":1264,"w":390,"h":844,"title":"M08 · Acompanhar a obra","is_interactive":true,"radius":36},
-"Desligado.dc.html":{"x":1880,"y":1264,"w":390,"h":844,"title":"M09 · Notebook desligado","is_interactive":true,"radius":36}
-},"order":["Main.dc.html","Entrar.dc.html","Ideia.dc.html","Visual.dc.html","Desenhando.dc.html","Prototipo.dc.html","Nome.dc.html","Aprovar.dc.html","Obra.dc.html","Desligado.dc.html"],
-"notes":{
-"t1":{"x":0,"y":-300,"text":"Projeto pelo celular: ideia, visual e telas","kind":"title1","maxW":2270},
-"t2":{"x":0,"y":964,"text":"Nome, construir e acompanhar a obra","kind":"title1","maxW":2270},
-"n1":{"x":2350,"y":0,"w":360,"text":"Como funciona: o notebook do cliente fica ligado no escritório com o Atlas aberto. O celular manda cada pedido (a fala, as fotos de referência, o nome) pelo servidor do Atlas; quem desenha e constrói é o Claude do próprio cliente, no notebook. As telas prontas voltam para o celular. Nada de Claude rodando no servidor do Atlas.","fill":"green","size":"m"},
-"n2":{"x":2350,"y":1264,"w":360,"text":"Se o notebook estiver desligado ou com o Atlas fechado, o pedido fica guardado e começa sozinho quando ele voltar (M09). Toque nos botões para navegar: o fluxo começa em M00 · Entrar.","fill":"orange","size":"m"}
-},"designSystems":[]}
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-23T09:32:41Z"
+ },
+ "title": "Atlas no celular (PWA)",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Entrar.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "M00 · Entrar",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "Main.dc.html": {
+   "x": 470,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "M01 · Minhas obras",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "Ideia.dc.html": {
+   "x": 940,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "M02 · Etapa 1 de 3: a ideia",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "Visual.dc.html": {
+   "x": 1410,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "M03 · Etapa 2 de 3: o visual",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "Desenhando.dc.html": {
+   "x": 1880,
+   "y": 0,
+   "w": 390,
+   "h": 844,
+   "title": "M04 · O notebook desenhando",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "Prototipo.dc.html": {
+   "x": 0,
+   "y": 1264,
+   "w": 390,
+   "h": 844,
+   "title": "M05 · Protótipo navegável",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "Nome.dc.html": {
+   "x": 470,
+   "y": 1264,
+   "w": 390,
+   "h": 844,
+   "title": "M06 · Etapa 3 de 3: o nome",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "Aprovar.dc.html": {
+   "x": 940,
+   "y": 1264,
+   "w": 390,
+   "h": 844,
+   "title": "M07 · Deixar o Atlas construir",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "Obra.dc.html": {
+   "x": 1410,
+   "y": 1264,
+   "w": 390,
+   "h": 844,
+   "title": "M08 · Acompanhar a obra",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "Desligado.dc.html": {
+   "x": 1880,
+   "y": 1264,
+   "w": 390,
+   "h": 844,
+   "title": "M09 · Notebook desligado",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "FaceID.dc.html": {
+   "x": 0,
+   "y": 2528,
+   "w": 390,
+   "h": 844,
+   "title": "M09b · Depois do código: ligar o Face ID",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "FaceAbrir.dc.html": {
+   "x": 470,
+   "y": 2528,
+   "w": 390,
+   "h": 844,
+   "title": "M10 · Abrir o app com o Face ID",
+   "is_interactive": true,
+   "radius": 36
+  },
+  "FaceFalhou.dc.html": {
+   "x": 940,
+   "y": 2528,
+   "w": 390,
+   "h": 844,
+   "title": "M11 · O Face ID não reconheceu",
+   "is_interactive": true,
+   "radius": 36
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "Entrar.dc.html",
+  "Ideia.dc.html",
+  "Visual.dc.html",
+  "Desenhando.dc.html",
+  "Prototipo.dc.html",
+  "Nome.dc.html",
+  "Aprovar.dc.html",
+  "Obra.dc.html",
+  "Desligado.dc.html",
+  "FaceID.dc.html",
+  "FaceAbrir.dc.html",
+  "FaceFalhou.dc.html"
+ ],
+ "notes": {
+  "t1": {
+   "x": 0,
+   "y": -300,
+   "text": "Projeto pelo celular: ideia, visual e telas",
+   "kind": "title1",
+   "maxW": 2270
+  },
+  "t2": {
+   "x": 0,
+   "y": 964,
+   "text": "Nome, construir e acompanhar a obra",
+   "kind": "title1",
+   "maxW": 2270
+  },
+  "n1": {
+   "x": 2350,
+   "y": 0,
+   "w": 360,
+   "text": "Como funciona: o notebook do cliente fica ligado no escritório com o Atlas aberto. O celular manda cada pedido (a fala, as fotos de referência, o nome) pelo servidor do Atlas; quem desenha e constrói é o Claude do próprio cliente, no notebook. As telas prontas voltam para o celular. Nada de Claude rodando no servidor do Atlas.",
+   "fill": "green",
+   "size": "m"
+  },
+  "n2": {
+   "x": 2350,
+   "y": 1264,
+   "w": 360,
+   "text": "Se o notebook estiver desligado ou com o Atlas fechado, o pedido fica guardado e começa sozinho quando ele voltar (M09). Toque nos botões para navegar: o fluxo começa em M00 · Entrar.",
+   "fill": "orange",
+   "size": "m"
+  }
+ },
+ "designSystems": []
+}

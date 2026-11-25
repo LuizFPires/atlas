@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Entrar com o Face ID</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes fpulso{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:.85}} .f-pulso{animation:fpulso 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.f-pulso{animation:none}}</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;background:#141619;color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;display:flex;flex-direction:column;box-sizing:border-box;padding:28px 24px 34px;overflow:hidden">
+ <div style="display:flex;align-items:center;gap:8px"><img src="/_blob/d75562038b21cd8e298dcfc0c04ef9cd" alt="" style="width:34px;height:19px;object-fit:contain"><img src="/_blob/a100dc4e2e64acf4a114194b3e713597" alt="Atlas" style="width:84px;height:13px;object-fit:contain"></div>
+
+ <sc-if value="{{ativar}}" hint-placeholder-val="{{ true }}">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center">
+   <span style="width:96px;height:96px;border-radius:28px;display:flex;align-items:center;justify-content:center;background:rgba(198,241,53,.10);border:1px solid #C6F135;color:#C6F135"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9.5v1M15 9.5v1M12 9.5v3.5h-1M9.5 16c1.5 1.2 3.5 1.2 5 0"/></svg></span>
+   <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">VOCÊ ENTROU</span>
+   <h1 style="margin:0;font-size:28px;line-height:1.15;letter-spacing:-.02em">Da próxima vez, é só olhar para o celular</h1>
+   <p style="margin:0;font-size:16px;line-height:1.5;color:#B4BBB2">Ligue o Face ID e o Atlas abre direto nas suas obras, sem código no e-mail. Ninguém mais consegue abrir pelo seu celular.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+   <a href="Main.dc.html" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px">Ligar o Face ID</a>
+   <a href="Main.dc.html" style="height:48px;border-radius:12px;color:#B4BBB2;font:600 15px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Agora não</a>
+   <span style="font-size:12px;line-height:1.5;color:#8E968C;text-align:center">O seu rosto fica só no iPhone: o Atlas nunca recebe a imagem. Dá para desligar quando quiser, em Sair.</span>
+  </div>
+ </sc-if>
+
+ <sc-if value="{{abrir}}" hint-placeholder-val="{{ false }}">
+  <img src="/_blob/212adbee8fe55acdda68303347927aec" alt="" style="width:342px;height:200px;object-fit:cover;border-radius:20px;margin-top:28px;opacity:.9">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center">
+   <span class="{{pulso}}" style="width:84px;height:84px;border-radius:24px;display:flex;align-items:center;justify-content:center;background:{{icoBg}};border:1px solid {{icoBorda}};color:{{icoCor}}"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9.5v1M15 9.5v1M12 9.5v3.5h-1M9.5 16c1.5 1.2 3.5 1.2 5 0"/></svg></span>
+   <h1 style="margin:0;font-size:26px;letter-spacing:-.02em">{{titulo}}</h1>
+   <p style="margin:0;font-size:15px;line-height:1.5;color:#B4BBB2;max-width:300px">{{texto}}</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+   <a href="Main.dc.html" style="height:56px;border-radius:12px;background:#C6F135;color:#141619;font:700 17px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">{{botao}}</a>
+   <a href="Entrar.dc.html" style="height:48px;border-radius:12px;color:#B4BBB2;font:600 15px 'Geist',sans-serif;display:flex;align-items:center;justify-content:center">Entrar com o código do e-mail</a>
+  </div>
+ </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tela":{"editor":"enum","options":["ativar","abrir","falhou"],"default":"ativar"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tela = this.props.tela ?? 'ativar';
+    const falhou = tela === 'falhou';
+    return {
+      ativar: tela === 'ativar', abrir: tela !== 'ativar',
+      titulo: falhou ? 'Não reconheci' : 'Olá, Zé',
+      texto: falhou ? 'Tente de novo olhando para a tela, ou entre com o código do e-mail.' : 'Olhe para o celular para abrir as suas obras.',
+      botao: falhou ? 'Tentar de novo' : 'Entrar com o Face ID',
+      pulso: falhou ? '' : 'f-pulso',
+      icoBg: falhou ? 'rgba(242,184,75,.12)' : 'rgba(198,241,53,.10)', icoBorda: falhou ? '#F2B84B' : '#C6F135', icoCor: falhou ? '#F2B84B' : '#C6F135'
+    };
+  }
+}
+</script>
+</body>
+</html>
