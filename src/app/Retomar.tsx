@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ehMac } from './plataforma'
 import { Botao, Icone } from '../ui'
 import canteiroImagem from '../assets/canteiro-3d.jpg'
 import { Monograma, NomeAtlas } from '../marca/Marca'
@@ -61,7 +62,7 @@ export function Retomar({ obra, nome, retomar, onContinuou, onAgoraNao, agora = 
           <button type="button" className="at-rt__link" onClick={onAgoraNao}>Agora não</button>
         </div>
       </div>
-      <span className="at-rt__rodape">O Atlas abre sozinho quando você liga o computador. Para desligar isso: Configurações → Abrir com o Windows.</span>
+      <span className="at-rt__rodape">{ehMac() ? 'O Atlas abre sozinho quando você liga o computador. Para desligar isso: Ajustes do Sistema → Geral → Itens de Início.' : 'O Atlas abre sozinho quando você liga o computador. Para desligar isso: Configurações → Abrir com o Windows.'}</span>
     </div>
   )
 }

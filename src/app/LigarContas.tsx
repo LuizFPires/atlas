@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { palavras } from './plataforma'
 import { Botao, Icone } from '../ui'
 import type { PonteNavegador, Retangulo } from './ponte-navegador'
 import type { ContaLigavel, EstadoLigacao, PonteLigarContas } from './ponte-ligar-contas'
@@ -174,7 +175,7 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
                           <Botao onClick={() => void enviarChave()} disabled={!chave.trim() || testando}>{testando ? 'Conferindo…' : 'Pronto'}</Botao>
                         </div>
                         {avisoChave && <p className="at-ativ__erro" role="alert">{avisoChave}</p>}
-                        <span className="at-ativ__txt">A chave fica guardada no cofre do Windows, nunca num arquivo. Dá para apagar quando quiser, no próprio site.</span>
+                        <span className="at-ativ__txt">A chave fica guardada {palavras().cofre}, nunca num arquivo. Dá para apagar quando quiser, no próprio site.</span>
                         <button type="button" className="at-ativ__link" onClick={() => void ponte.siteFora('supabase')}>Abrir no meu navegador</button>
                       </div>
                     )}

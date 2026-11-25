@@ -39,6 +39,8 @@ export interface Cofre {
 export interface PonteDesktop {
   /** Argumentos de linha de comando do app (ex.: --tela=F02). */
   argv: string[]
+  /** M46: 'mac' no Mac; sem o campo (versões antigas), Windows. */
+  plataforma?: 'mac' | 'windows'
   cofre: Cofre
   /** Impressão digital do computador (SHA-256 hex, 64 caracteres). O id da máquina nunca sai em claro. */
   hashComputador(): Promise<string>

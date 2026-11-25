@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { palavras } from './plataforma'
 import { Botao, Icone, Trabalhando } from '../ui'
 import type { ObraDoEstilo } from './Estilo'
 import type { PonteClaude, Plano } from './ponte-claude'
@@ -201,14 +202,18 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou, 
             <span className="at-apr__rotulo">ANTES DE COMEÇAR</span>
             <h2 id="apr-tampa-tit">O seu notebook é o canteiro. Enquanto ele estiver ligado, a obra anda.</h2>
             <ol>
-              <li><b>Deixe na tomada.</b> Na bateria, o Windows desliga para economizar.</li>
+              <li><b>Deixe na tomada.</b> Na bateria, {palavras().sistema} desliga para economizar.</li>
               <li>
-                <b>Fechar a tampa faz o notebook dormir</b>, e a obra para. O Atlas pode ajustar o Windows para continuar trabalhando de tampa fechada (na tomada) e desfaz sozinho quando a obra terminar.
+                <b>Fechar a tampa faz o notebook dormir</b>, e a obra para.{palavras().ajustaTampa
+                  ? ' O Atlas pode ajustar o Windows para continuar trabalhando de tampa fechada (na tomada) e desfaz sozinho quando a obra terminar.'
+                  : ' Deixe a tampa aberta enquanto a obra anda. Se fechar, ela volta sozinha quando você abrir.'}
                 <div className="at-apr__tampa-acoes">
-                  {avisoTampa === 'ajustado'
+                  {!palavras().ajustaTampa
+                    ? <Botao onClick={() => { try { localStorage.setItem(CHAVE_EU_CUIDO, '1') } catch { /* nada */ } setAvisoTampa(null); void comecar() }}>Entendi, vou deixar aberta</Botao>
+                    : avisoTampa === 'ajustado'
                     ? <span className="at-apr__tampa-ok" role="status">Ajustado ✓</span>
                     : <Botao onClick={() => void ajustarTampa()} disabled={avisoTampa === 'ajustando'}>{avisoTampa === 'ajustando' ? 'Ajustando…' : 'Ajustar para mim'}</Botao>}
-                  {avisoTampa !== 'ajustado' && <Botao variante="secundario" onClick={() => { try { localStorage.setItem(CHAVE_EU_CUIDO, '1') } catch { /* nada */ } setAvisoTampa(null); void comecar() }}>Eu deixo a tampa aberta</Botao>}
+                  {palavras().ajustaTampa && avisoTampa !== 'ajustado' && <Botao variante="secundario" onClick={() => { try { localStorage.setItem(CHAVE_EU_CUIDO, '1') } catch { /* nada */ } setAvisoTampa(null); void comecar() }}>Eu deixo a tampa aberta</Botao>}
                 </div>
                 {avisoTampa === 'nao-deu' && <span className="at-apr__tampa-erro" role="alert">Não consegui ajustar o Windows daqui. Deixe a tampa aberta enquanto a obra anda.</span>}
               </li>

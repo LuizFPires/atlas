@@ -121,6 +121,7 @@ function caminhoGh(env = process.env, existe = fs.existsSync, plataforma = proce
     const exe = path.win32.join(pf, 'GitHub CLI', 'gh.exe')
     if (existe(exe)) return `"${exe.split('\\').join('/')}"`
   }
+  if (plataforma !== 'win32') { const achado = require('../plataforma.cjs').acharPrograma('gh', env.PATH, existe); if (achado) return achado } // Mac (M46)
   return 'gh'
 }
 

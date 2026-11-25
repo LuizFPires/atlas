@@ -21,6 +21,7 @@ const chamar = async (canal, ...args) => {
 // Só o que o front precisa; nada de Node exposto.
 contextBridge.exposeInMainWorld('atlasDesktop', {
   argv: ipcRenderer.sendSync('atlas:argv'),
+  plataforma: process.platform === 'darwin' ? 'mac' : 'windows', // M46: as telas usam as palavras do computador do cliente
   cofre: {
     guardar: (c, v) => chamar('atlas:cofre:guardar', String(c), String(v)),
     ler: (c) => chamar('atlas:cofre:ler', String(c)),

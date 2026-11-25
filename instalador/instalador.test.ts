@@ -131,8 +131,8 @@ describe('config do electron-builder e scripts', () => {
     expect(Object.keys(import.meta.glob('../app/icone.png', { eager: true, query: '?url' }))).toHaveLength(1)
     expect(principal).toContain("icon: path.join(__dirname, 'icone.png')")
   })
-  it('a janela do app não mostra o menu padrão do Electron (File, Edit, View, Window)', () => {
-    expect(principal).toContain('Menu.setApplicationMenu(null)')
+  it('a janela do app não mostra o menu padrão do Electron (File, Edit, View, Window); no Mac, só o mínimo para Cmd+C/V/Q (M46)', () => {
+    expect(principal).toMatch(/Menu\.setApplicationMenu\(process\.platform === 'darwin' \? Menu\.buildFromTemplate\(\[\{ role: 'appMenu' \}, \{ role: 'editMenu' \}, \{ role: 'windowMenu' \}\]\) : null\)/)
   })
   it('o aviso de erro não trava a instalação silenciosa', () => {
     expect(nsh).toMatch(/MessageBox MB_ICONEXCLAMATION "[^"]+" \/SD IDOK/)
