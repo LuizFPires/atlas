@@ -625,11 +625,11 @@ Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1
 peso: 2
 spec: S16
 tela: prototipo/caminho-novo/PB6Dominio.dc.html
-- [ ] "Usar meu domínio": o Atlas confere o domínio (dono, se tem e-mail) e já liga na Vercel do cliente antes de mandar ao Registro.br (evita "Pesquisa recusada")
-- [ ] Sem e-mail no domínio: troca dos servidores DNS para os da Vercel; com e-mail: só os registros que faltam, sem derrubar o e-mail
-- [ ] Ainda não tem domínio: o Atlas confere se o nome está livre e abre a compra no Registro.br (pagamento do cliente)
-- [ ] O Atlas vigia até o domínio responder, liga o cadeado (https), atualiza QR e WhatsApp e avisa no celular
-Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Sem senha do Registro.br no Atlas: quem entra e salva é o cliente.
+- [x] "Usar meu domínio": o Atlas confere o domínio (dono, se tem e-mail) e já liga na Vercel do cliente antes de mandar ao Registro.br (evita "Pesquisa recusada")
+- [x] Sem e-mail no domínio: troca dos servidores DNS para os da Vercel; com e-mail: só os registros que faltam, sem derrubar o e-mail
+- [x] Ainda não tem domínio: o Atlas confere se o nome está livre e abre a compra no Registro.br (pagamento do cliente)
+- [x] O Atlas vigia até o domínio responder, liga o cadeado (https), atualiza QR e WhatsApp e avisa no celular
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Sem senha do Registro.br no Atlas: quem entra e salva é o cliente. Andamento (25/11/2026): um botão só ("Conferir e ligar"): o Atlas pergunta ao RDAP do Registro.br, olha o e-mail (MX), liga o domínio e o www na Vercel do cliente (`vercel domains add`) e lê na hora o que colar (`vercel api`: servidores DNS ou registros A/CNAME). Vigia a cada 5 min (até 72 h, depois mostra "Já salvei, confere de novo" e a Ajuda), confere o cadeado e avisa no celular; o QR e o WhatsApp passam para o domínio. "Dono" mostra "registrado no Registro.br" (o RDAP não diz se é o próprio cliente). Falta conferir numa conta real: as respostas de /v5/domains e /v6/domains/config pela CLI e o domínio com e-mail. A compra abre o Registro.br (pesquisa já preenchida fica para o M58).
 
 ## Milestone 58 — Passo a passo clique por clique com o site ao lado e a Ajuda lendo print
 peso: 3

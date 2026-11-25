@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { TemaProvider } from '../tema/tema'
 import { ColocarNoAr } from './ColocarNoAr'
 import { criarNoArFixture, explicarErro, noArIndisponivel, type EstadoNoAr, type PonteNoAr } from './ponte-no-ar'
+import { criarDominioFixture } from './ponte-dominio'
 
 const obra = { nome: 'Ponto', pasta: 'ponto' }
 const montar = (noAr: PonteNoAr, p: Partial<React.ComponentProps<typeof ColocarNoAr>> = {}) =>
@@ -82,4 +83,16 @@ test('sem adaptador: não finge que publicou', async () => {
 test('explicarErro: conta certa para religar', () => {
   expect(explicarErro('vercel-deploy').conta).toBe('vercel')
   expect(explicarErro('teste-falhou').frase).toMatch(/não diz que está no ar/)
+})
+
+test('domínio próprio (M57): abre ao lado do prédio e, no ar, o QR e o WhatsApp passam para o endereço novo', async () => {
+  const user = userEvent.setup()
+  montar(criarNoArFixture({ passoMs: 5 }), { dominio: criarDominioFixture({ passoMs: 5 }), abrirRegistro: async () => {} })
+  await user.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
+  await user.click(await screen.findByRole('button', { name: /Usar meu domínio/ }, { timeout: 2000 }))
+  await user.type(screen.getByRole('textbox', { name: 'Seu domínio' }), 'pontoampla.com.br')
+  await user.click(screen.getByRole('button', { name: /Conferir e ligar/ }))
+  await user.click(await screen.findByRole('button', { name: 'Voltar' }, { timeout: 3000 }))
+  await waitFor(() => expect(screen.getByRole('img', { name: /QR code/ })).toHaveAttribute('data-endereco', 'https://pontoampla.com.br'))
+  expect(screen.getByRole('link', { name: 'Mandar pelo WhatsApp' }).getAttribute('href')).toMatch(/pontoampla\.com\.br/)
 })

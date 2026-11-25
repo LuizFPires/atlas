@@ -224,6 +224,13 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     estado: (pasta) => chamar('atlas:noar:estado', String(pasta)),
     corrigir: (pasta) => chamar('atlas:noar:corrigir', String(pasta)),
   },
+  dominio: {
+    // Domínio próprio (M57): só pasta e domínio; tudo é revalidado no processo principal.
+    conferir: (pasta, d) => chamar('atlas:dominio:conferir', String(pasta), String(d)),
+    ligar: (pasta, d) => chamar('atlas:dominio:ligar', String(pasta), String(d)),
+    estado: (pasta) => chamar('atlas:dominio:estado', String(pasta)),
+    conferirAgora: (pasta) => chamar('atlas:dominio:conferirAgora', String(pasta)),
+  },
   kit: {
     // o kit fica no processo principal (pasta temporária do app); aqui só volta { ok, obraId, marca } e a tela pode pedir para descartar.
     entregar: async (obraId) => {
