@@ -5,6 +5,8 @@ import type { ObraDoEstilo } from './Estilo'
 import type { PonteClaude, Plano } from './ponte-claude'
 import { NOME_PLANO } from './claude-plano'
 import { MODO_RECOMENDADO, MODOS_OBRA, PARADAS_REAIS, TEXTO_MODO, type Etapa, type ModoObra, type Planejamento, type PonteConstrucao, type PonteModoObra } from './ponte-construcao'
+import { EscolherComeco } from './EscolherComeco'
+import type { ComoComecar, EstadoFila } from './ponte-construcao'
 import './aprovar.css'
 
 /** O notebook é o canteiro (TP1Tampa): ajustar a tampa na tomada (powercfg, com o clique da pessoa). Só no Atlas instalado. */
@@ -28,7 +30,8 @@ export const recadoDoErroAprovar = (e: unknown) => {
   switch (e instanceof Error ? e.message : '') {
     case 'indisponivel': return 'Quem monta o plano da obra ainda não está ligado neste computador. Quando estiver, esta tela passa a funcionar; você não precisa refazer nada.'
     case 'ja-iniciada': return 'Esta obra já foi começada antes. Nada se perdeu: é só abrir o painel da obra.'
-    case 'ja-rodando': return 'O Atlas já está trabalhando nesta obra. Abra o painel para acompanhar.'
+    case 'ja-rodando': return 'O Atlas está começando outra obra agora. Espere alguns segundos e toque em Começar a obra de novo.'
+    case 'outra-obra-trabalhando': return 'Outra obra está trabalhando agora. Escolha como começar esta: na fila, ao mesmo tempo ou esta primeiro.'
     case 'claude-nao-logado': return 'O Claude não está conectado neste computador. Conecte o Claude (o Atlas te guia) e toque em Começar a obra de novo.'
     case 'claude-nao-instalado': return 'O Claude não está instalado neste computador. Peça ajuda ao Atlas no botão Falar com o Atlas: ele te guia para instalar.'
     case 'plan-nao-gravado': case 'plan-invalido': return 'Não consegui gravar o plano da obra na pasta. Confira se a pasta da obra existe e tente de novo.'
@@ -64,6 +67,8 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou, 
   const [ocupado, setOcupado] = useState(false)
   const [comecou, setComecou] = useState<{ modo: ModoObra; plan: string } | null>(null)
   const [avisoTampa, setAvisoTampa] = useState<null | 'aberto' | 'ajustando' | 'ajustado' | 'nao-deu'>(null)
+  // M51: outra obra trabalhando -> o cliente escolhe fila, ao mesmo tempo ou esta primeiro (Q1Escolher).
+  const [escolhendo, setEscolhendo] = useState<EstadoFila | null>(null)
 
   useEffect(() => {
     let vivo = true
@@ -97,17 +102,25 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou, 
     setAvisoTampa(r.ok ? 'ajustado' : 'nao-deu')
   }
 
-  const comecar = async () => {
+  const comecar = async (como?: ComoComecar) => {
     if (!plan || ocupado || comecou) return
     setOcupado(true)
     setErroComecar(null)
     try {
-      const r = await construcao.iniciar(obra.pasta, obra.nome, modo, plan.etapas)
+      const r = await construcao.iniciar(obra.pasta, obra.nome, modo, plan.etapas, como)
+      setEscolhendo(null)
       setComecou(r)
-      onComecou?.() // deu certo: direto para o painel da obra, onde o prédio começa a subir
+      onComecou?.() // deu certo: direto para o painel da obra, onde o prédio começa a subir (ou espera a vez, na fila)
     } catch (x) {
+      const codigo = x instanceof Error ? x.message : ''
+      // M51: outra obra trabalhando — o cliente escolhe como começar, vendo antes o que muda.
+      if (codigo === 'outra-obra-trabalhando' && construcao.fila) {
+        const f = await construcao.fila().catch(() => null)
+        if (f && f.trabalhando.length > 0) { setEscolhendo(f); return }
+      }
+      setEscolhendo(null)
       // O recado fica logo acima do botão (não no topo da página, fora da vista de quem rolou até aqui).
-      setErroComecar({ codigo: x instanceof Error ? x.message : '', texto: recadoDoErroAprovar(x) })
+      setErroComecar({ codigo, texto: recadoDoErroAprovar(x) })
     } finally { setOcupado(false) }
   }
 
@@ -185,7 +198,7 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou, 
               {erroComecar && (
                 <div className="at-apr__erro at-apr__erro--perto" role="alert">
                   <span>{erroComecar.texto}</span>
-                  {onComecou && (erroComecar.codigo === 'ja-iniciada' || erroComecar.codigo === 'ja-rodando') && <button type="button" className="at-apr__link" onClick={onComecou}>Ver a obra</button>}
+                  {onComecou && erroComecar.codigo === 'ja-iniciada' && <button type="button" className="at-apr__link" onClick={onComecou}>Ver a obra</button>}
                 </div>
               )}
               <div className="at-apr__rodape">
@@ -224,6 +237,10 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou, 
             </div>
           </div>
         </div>
+      )}
+      {escolhendo && plan && (
+        <EscolherComeco nova={obra.nome} atual={escolhendo.trabalhando[0]} novaH={plan.previsao[plano ?? 'pro'] ? plan.previsao[plano ?? 'pro'].dias * 24 : null} plano={plano ?? 'pro'} ocupado={ocupado}
+          onEscolher={(c) => void comecar(c)} onCancelar={() => setEscolhendo(null)} />
       )}
     </div>
   )

@@ -150,3 +150,25 @@ test('Canteiro com trava: o cartão diz qual conta e quando volta; a que precisa
   expect(within(cartoes.find((c) => /Loja/.test(c.getAttribute('aria-label') ?? ''))!).getByText('PRECISA DE VOCÊ · 1 CLIQUE')).toBeInTheDocument()
   expect(screen.getByText('PUBLICA AMANHÃ · SOZINHO')).toBeInTheDocument()
 })
+
+// M51 (Q4Canteiro): quem trabalha, quem espera na fila, e "Mudar a ordem".
+test('Canteiro com fila: o selo NA FILA, a faixa "1 trabalhando, 1 na fila" e mudar a ordem para ao mesmo tempo', async () => {
+  const user = userEvent.setup()
+  const naFila = { depoisDe: 'meu-ponto', nome: 'Meu ponto' }
+  const SIT2: Record<string, SituacaoObra> = { 'meu-ponto': SITUACOES['meu-ponto'], estoque: S({ estilo: true, prototipo: true, marca: true, plano: true }) }
+  const ponte2 = { ...ponte, listar: async () => Object.keys(SIT2), situacao: async (p: string) => SIT2[p] } as unknown as PonteObras
+  const painel2 = { ler: async (p: string) => (p === 'estoque' ? { pct: 0, naFila } : { pct: 64, agora: [{ sigla: 'IM', quem: 'Equipe', oque: 'a tela do mês', tom: 'ativo' as const }] }) }
+  const mudarVez = vi.fn(async () => {})
+  const construcao = { fila: async () => ({ trabalhando: [{ pasta: 'meu-ponto', nome: 'Meu ponto', restanteMin: 600 }], fila: [{ pasta: 'estoque', depoisDe: 'meu-ponto' }], juntas: [] }), mudarVez }
+  render(<Canteiro modo="canteiro" obras={ponte2} painel={painel2} construcao={construcao} plano="pro" onAbrir={() => {}} onNova={() => {}} />)
+  const faixa = await screen.findByRole('region', { name: 'Como as obras estão dividindo o Claude' })
+  expect(faixa).toHaveTextContent('1 obra trabalhando, 1 na fila')
+  expect(faixa).toHaveTextContent('Estoque começa sozinha quando Meu ponto ficar pronta')
+  const estoque = screen.getAllByRole('article').find((a) => /^Estoque/.test(a.getAttribute('aria-label') ?? ''))!
+  expect(within(estoque).getByText('NA FILA')).toBeInTheDocument()
+  await user.click(within(faixa).getByRole('button', { name: 'Mudar a ordem' }))
+  const dialogo = await screen.findByRole('dialog', { name: 'Como começar esta obra' })
+  await user.click(within(dialogo).getAllByRole('radio')[1])
+  await user.click(within(dialogo).getByRole('button', { name: 'Começar ao mesmo tempo →' }))
+  expect(mudarVez).toHaveBeenCalledWith('estoque', 'juntas')
+})

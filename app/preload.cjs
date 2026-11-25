@@ -223,7 +223,11 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
   construcao: {
     planejar: (pasta, obraNome) => chamar('atlas:construcao:planejar', String(pasta), String(obraNome)),
     // etapas: só n/nome/desc/tela como texto; o processo principal revalida tudo.
-    iniciar: (pasta, obraNome, modo, etapas) => chamar('atlas:construcao:iniciar', String(pasta), String(obraNome), String(modo),
-      (Array.isArray(etapas) ? etapas : []).slice(0, 20).map((e) => ({ n: String(e && e.n), nome: String(e && e.nome), desc: String(e && e.desc), ...(e && e.tela ? { tela: String(e.tela) } : {}) }))),
+    iniciar: (pasta, obraNome, modo, etapas, como) => chamar('atlas:construcao:iniciar', String(pasta), String(obraNome), String(modo),
+      (Array.isArray(etapas) ? etapas : []).slice(0, 20).map((e) => ({ n: String(e && e.n), nome: String(e && e.nome), desc: String(e && e.desc), ...(e && e.tela ? { tela: String(e.tela) } : {}) })),
+      ['fila', 'juntas', 'primeiro'].includes(como) ? como : ''),
+    // M51: quem trabalha, quem espera na fila, e "Mudar a ordem".
+    fila: () => chamar('atlas:fila:estado'),
+    mudarVez: (pasta, como) => chamar('atlas:fila:mudar', String(pasta), String(como)),
   },
 })

@@ -144,7 +144,7 @@ describe('"Começar a obra" sempre responde perto do botão', () => {
   const falhando = (codigo: string): PonteConstrucao => ({ ...criarConstrucaoFixture(), iniciar: async () => { throw new Error(codigo) } })
   test.each([
     ['ja-iniciada', /já foi começada/],
-    ['ja-rodando', /já está trabalhando/],
+    ['ja-rodando', /começando outra obra/], // M51: o texto antigo dizia "nesta obra" (confundia quando era outra)
     ['claude-nao-logado', /Claude não está conectado/],
     ['claude-nao-instalado', /Claude não está instalado/],
     ['plan-nao-gravado', /não consegui gravar o plano/i],

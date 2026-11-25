@@ -163,7 +163,7 @@ function kitDirDoApp({ empacotado, recursos }) {
  * `porta` (teste): fixa a porta; padrão = porta livre aleatória a cada subida. `subir` (teste): substitui o spawn do canteiro
  * (sem nonce: o servidor falso do teste não o conhece). Padrão de kitDir (hooks/ e canteiro/): a pasta .claude do app (ATLAS_KIT_DIR).
  */
-function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir, contarCommits, vigia = null, diario = null, cronograma = null }) {
+function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir, contarCommits, vigia = null, diario = null, cronograma = null, fila = null }) {
   const hooks = path.join(kitDir, 'hooks')
   const canteiroDir = path.join(kitDir, 'canteiro')
   const linha = construcao.linha
@@ -201,7 +201,7 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
       const r = kit.calcularPrazo(cwd)
       if (r && r.status === 'estimado' && Number.isFinite(r.restanteMs)) {
         const min = r.restanteMs / 60000
-        return { restante: textoRestante(min), previsao: textoPrevisao(agora(), min) }
+        return { restante: textoRestante(min), previsao: textoPrevisao(agora(), min), restanteMin: Math.round(min) }
       }
     } catch { /* sem estimativa */ }
     return { restante: null, previsao: null }
@@ -268,13 +268,16 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
         const ultima = prontas[prontas.length - 1]
         if (ultima) etapaPronta = { n: ultima.n, nome: nomeCurto(ultima.titulo) }
       }
-      const { restante, previsao } = prazoDa(cwd, p)
+      const { restante, previsao, restanteMin = null } = prazoDa(cwd, p)
+      const espera = !acabou && fila ? fila.ler().fila.find((x) => x.pasta === pasta) : null
       const feito = linha.recentes(pasta).slice(-1)[0]
       return {
         pct: acabou ? 100 : avancoFino(p, lerRoteiroDa(cwd), (branch) => (contarCommits ? contarCommits(cwd, branch) : commitsDaBranch(cwd, branch))), tarefas: p.tarefas, feitas: p.feitas,
         etapa: prox ? { n: prox.n, nome: nomeCurto(prox.titulo) } : null,
         etapas: p.milestones.map((m) => ({ n: m.n, nome: nomeCurto(m.titulo), feitas: m.feitas, total: m.total, pct: m.pct })),
-        restante, previsao,
+        restante, previsao, restanteMin,
+        // M51: na fila, esperando outra obra ficar pronta (começa sozinha).
+        naFila: espera ? { depoisDe: espera.depoisDe, nome: String(espera.depoisDe).replace(/[-_]+/g, ' ').replace(/^./, (c) => c.toLocaleUpperCase('pt-BR')) } : null,
         agora: rodando && !acabou ? [{ sigla: 'IM', quem: 'Equipe de execução', oque: feito || (prox ? `Construindo a etapa ${nomeCurto(prox.titulo)}` : 'Construindo'), tom: 'ativo' }] : [],
         pausadaPorVoce: local.pausada,
         parada,

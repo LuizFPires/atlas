@@ -565,3 +565,15 @@ tela: prototipo/caminho-novo/PalcoObra.dc.html
 - [x] Em telas menores (notebook com zoom do Windows) os cartões encolhem na proporção do palco, até 60%
 - [x] Cabeçalho numa linha: "← Canteiro de obras" e o título, as abas ao lado e os botões à direita
 Notas: DECISÃO do Luiz (25/11/2026, "A tela ainda não está como o protótipo aprovado. Olha o tamanho dos cards, balões de conversa e etc? O prédio subindo precisa ficar mais visível na tela. Com menos interferência visual"). Fonte: PalcoObra (aprovado no M43). DIVERGÊNCIA consciente: a contagem de tarefas sai do cartão (fica no "title" e nos Andares); com a equipe parada não há balão, quem fala é a faixa de baixo; o balão saiu do meio do prédio para a metade direita da barra de baixo (pedido do Luiz, 25/11/2026, "para tirar isso da tela e deixar o prédio o mais limpo possível"). Conferido com fotos da tela em 1440×900 e 1093×614.
+
+## Milestone 51 — Duas obras ao mesmo tempo: o cliente escolhe a fila, juntas ou esta primeiro
+peso: 2
+spec: S9
+tela: prototipo/caminho-novo/Q1Escolher.dc.html
+- [x] Com outra obra trabalhando, "Começar a obra" abre a escolha: colocar na fila, trabalhar ao mesmo tempo ou esta primeiro, mostrando antes o que muda na cota do Claude e no prazo de cada obra (recomendado: fila no Pro, ao mesmo tempo no Max)
+- [x] Fila de verdade: a obra espera a vez e começa sozinha quando a da frente fica pronta (o vigia confere a cada minuto); "esta primeiro" pausa a outra e ela volta sozinha depois
+- [x] Ao mesmo tempo: as obras marcadas trabalham juntas, cada uma com a sua linha
+- [x] Canteiro de obras mostra "N trabalhando, M na fila", o selo NA FILA no cartão e o botão "Mudar a ordem"; o painel da obra da fila diz que ela espera a vez
+- [x] Mensagem certa quando o Atlas ainda está começando outra obra (antes dizia "já está trabalhando nesta obra")
+Notas: DECISÃO do Luiz (25/11/2026, "podíamos deixar o usuário decidir se entra em fila, obra por obra, se faz simultâneo e etc e o Atlas avisa das consequências, principalmente em termos de consumo de tokens e velocidade de desenvolvimento"; protótipo Q1–Q5 aprovado: "Pode seguir"). Antes o Atlas rodava uma obra por vez no computador e recusava a segunda. Prazos da janela: conta simples pelo ritmo real da obra que trabalha e pela previsão da nova (juntas: Pro 0,5 e Max 0,85 do ritmo enquanto as duas andam). A janela fala em cota do Claude, nunca em tokens. Fila guardada em <Obras>\.atlas-fila.json (só nomes de pasta).
+

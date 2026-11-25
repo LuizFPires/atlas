@@ -67,6 +67,8 @@ export function momentoDaObra(e: EstadoObra, sit: Situacao, agora: Date = new Da
   if (v && v.situacao === 'precisa-voce') {
     return { nivel: 'precisa', selo: 'Precisa de você', rotulo: 'PRECISA DE VOCÊ', titulo: v.motivo || 'A obra está esperando você.', texto: 'Assim que resolver, a obra continua sozinha.', ...(v.fala ? { fala: v.fala } : {}), ...(v.conta ? { conta: v.conta } : {}), acoes: v.conta ? ['contas', 'ajuda'] : ['ajuda', 'tentar'] }
   }
+  // M51: na fila, esperando outra obra ficar pronta. Não é erro e não pede nada.
+  if (e.naFila && !e.agora[0]) return { nivel: 'esperando', selo: 'Na fila', rotulo: 'NA FILA', titulo: `Na fila: começa sozinha quando a obra ${e.naFila.nome} ficar pronta.`, texto: 'Você não precisa fazer nada. Para mudar a ordem, use o Canteiro de obras.', acoes: ['diario'] }
   const quem = e.agora[0]
   if (quem) return { nivel: 'trabalhando', selo: 'Trabalhando', rotulo: 'AGORA NA OBRA', titulo: quem.oque, texto: 'Tudo certo. A equipe está trabalhando, e o Atlas confere sozinho, a cada minuto, se ela continua andando.', sinal: sinalHa(e.sinal, agora), acoes: ['diario'] }
   return { nivel: 'esperando', selo: 'Esperando', rotulo: 'NINGUÉM TRABALHANDO', titulo: 'Ninguém trabalhando agora.', texto: 'O Atlas confere a cada minuto e religa sozinho. Se preferir, religue agora.', acoes: ['tentar', 'diario'] }
