@@ -73,6 +73,8 @@ function montarPedidoAjuda(contexto, historico, mensagem) {
   const ctx = [
     contexto.onde && `Onde: ${textoDaObra(contexto.onde, 80)}`,
     contexto.passo && `Passo ${contexto.passo.passo} de ${contexto.passo.totalPassos} (${textoDaObra(contexto.passo.conta, 60)})`,
+    contexto.passo?.instrucao && `O que o passo pede: ${textoDaObra(contexto.passo.instrucao, 300)}`,
+    contexto.passo?.saber && `O que já se sabe deste site: ${textoDaObra(contexto.passo.saber, 600)}`,
     contexto.erro && `Erro: ${textoDaObra(contexto.erro.titulo, 120)} ${textoDaObra(contexto.erro.detalhe, 300)}`.trim(),
     contexto.print && `Print: ${nomeDoPrint(contexto.print)}`,
   ].filter(Boolean).join('\n')
@@ -99,7 +101,7 @@ function sanearPrint(p) {
 function sanearContexto(c) {
   const o = c && typeof c === 'object' ? c : {}
   const passo = o.passo && typeof o.passo === 'object' && Number.isFinite(Number(o.passo.passo)) && Number.isFinite(Number(o.passo.totalPassos))
-    ? { passo: Number(o.passo.passo), totalPassos: Number(o.passo.totalPassos), conta: str(o.passo.conta, 80) } : undefined
+    ? { passo: Number(o.passo.passo), totalPassos: Number(o.passo.totalPassos), conta: str(o.passo.conta, 80), ...(typeof o.passo.instrucao === 'string' ? { instrucao: str(o.passo.instrucao, 300) } : {}), ...(typeof o.passo.saber === 'string' ? { saber: str(o.passo.saber, 600) } : {}) } : undefined
   const erro = o.erro && typeof o.erro === 'object' ? { titulo: str(o.erro.titulo, 200), ...(typeof o.erro.detalhe === 'string' ? { detalhe: str(o.erro.detalhe, 600) } : {}) } : undefined
   const print = sanearPrint(o.print)
   return { onde: str(o.onde, 120) || undefined, passo, erro, print }

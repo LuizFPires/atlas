@@ -48,3 +48,16 @@ test('no ar: "Usar meu domínio" abre o domínio próprio ao lado do prédio (M5
   await userEvent.click(await screen.findByRole('button', { name: /Usar meu domínio/ }, { timeout: 6000 }))
   expect(await screen.findByRole('textbox', { name: 'Seu domínio' })).toBeInTheDocument()
 })
+
+test('domínio próprio → passo a passo do Registro.br com o servidor para copiar e o "Falar com o Atlas" (M58)', { timeout: 15000 }, async () => {
+  await ate(criarNoArFixture({ passoMs: 5 }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
+  await userEvent.click(await screen.findByRole('button', { name: /Usar meu domínio/ }, { timeout: 6000 }))
+  await userEvent.type(await screen.findByRole('textbox', { name: 'Seu domínio' }), 'pontoampla.com.br')
+  await userEvent.click(screen.getByRole('button', { name: /Conferir e ligar/ }))
+  await userEvent.click(await screen.findByRole('button', { name: /passo a passo/ }))
+  expect(await screen.findByText('PASSO 1 DE 7')).toBeInTheDocument()
+  expect(screen.getByText('USAR MEU DOMÍNIO NO REGISTRO.BR')).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: '← VOLTAR' }))
+  expect(await screen.findByText(/A SUA PARTE/)).toBeInTheDocument()
+})

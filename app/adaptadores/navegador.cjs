@@ -22,7 +22,13 @@ const SITES = {
   hosp: 'https://vercel.com/signup',
   pag: 'https://dashboard.stripe.com/register',
 }
-const DOMINIOS = ['github.com', 'supabase.com', 'vercel.com', 'stripe.com']
+// M58: guias clique por clique com o site de verdade ao lado. Google (bloqueia login dentro de apps) e Apple (é no iPhone) não abrem aqui.
+const GUIAS_SITE = {
+  registro: 'https://registro.br/painel/',
+  stripe: 'https://dashboard.stripe.com/register',
+  asaas: 'https://www.asaas.com/onboarding/createAccount',
+}
+const DOMINIOS = ['github.com', 'supabase.com', 'vercel.com', 'stripe.com', 'registro.br', 'asaas.com']
 
 function urlPermitida(url) {
   let u
@@ -51,9 +57,12 @@ const posicaoValida = (b) => b && ['x', 'y', 'width', 'height'].every((k) => Num
 function criarNavegador({ criarView, avisar, abrirFora, logadoNoGithub }) {
   let view = null
   let contaAtual = null
+  let guiaAtual = null
+  let visivel = false
   const prontas = new Set()
 
   const pagina = async (url) => {
+    if (guiaAtual) { avisar({ guia: guiaAtual, url: String(url).slice(0, 300), pronta: false }); return }
     if (!contaAtual) return
     const conta = contaAtual
     const logado = conta === 'github' ? await logadoNoGithub().catch(() => false) : false
@@ -80,9 +89,27 @@ function criarNavegador({ criarView, avisar, abrirFora, logadoNoGithub }) {
       if (!posicaoValida(bounds)) throw new Error('posicao-invalida')
       const v = garantir()
       contaAtual = conta
+      guiaAtual = null
       v.setBounds({ x: Math.round(bounds.x), y: Math.round(bounds.y), width: Math.round(bounds.width), height: Math.round(bounds.height) })
-      v.setVisible(true)
+      v.setVisible(true); visivel = true
       v.loadURL(SITES[conta])
+    },
+    /** M58: o site do guia (endereço fixo aqui). A cada página a tela recebe { guia, url } e decide se o passo andou. */
+    async abrirGuia(guia, bounds) {
+      if (!Object.prototype.hasOwnProperty.call(GUIAS_SITE, guia)) throw new Error('guia-invalido')
+      if (!posicaoValida(bounds)) throw new Error('posicao-invalida')
+      const v = garantir()
+      contaAtual = null
+      guiaAtual = guia
+      v.setBounds({ x: Math.round(bounds.x), y: Math.round(bounds.y), width: Math.round(bounds.width), height: Math.round(bounds.height) })
+      v.setVisible(true); visivel = true
+      v.loadURL(GUIAS_SITE[guia])
+    },
+    abrirGuiaNoComputador(guia) { if (Object.prototype.hasOwnProperty.call(GUIAS_SITE, guia)) abrirFora(GUIAS_SITE[guia]) },
+    /** "Falar com o Atlas" num passo: o print é do site que o cliente está vendo (só se estiver à mostra). */
+    async capturar() {
+      if (!view || !visivel || typeof view.capturar !== 'function') return null
+      try { return await view.capturar() } catch { return null }
     },
     /** Ligar as contas (contas-cli.cjs): abre o endereço que o PROCESSO PRINCIPAL recebeu da CLI (nunca da tela), só de site das contas. */
     async abrirEndereco(url, bounds) {
@@ -90,22 +117,23 @@ function criarNavegador({ criarView, avisar, abrirFora, logadoNoGithub }) {
       if (!posicaoValida(bounds)) throw new Error('posicao-invalida')
       const v = garantir()
       contaAtual = null // aqui não há "conta pronta" a detectar: quem diz se ligou é a própria CLI
+      guiaAtual = null
       v.setBounds({ x: Math.round(bounds.x), y: Math.round(bounds.y), width: Math.round(bounds.width), height: Math.round(bounds.height) })
-      v.setVisible(true)
+      v.setVisible(true); visivel = true
       v.loadURL(String(url))
     },
     posicionar(bounds) {
       if (!view || !posicaoValida(bounds)) return
       view.setBounds({ x: Math.round(bounds.x), y: Math.round(bounds.y), width: Math.round(bounds.width), height: Math.round(bounds.height) })
     },
-    mostrar(sim) { if (view) view.setVisible(!!sim) },
+    mostrar(sim) { if (view) { view.setVisible(!!sim); visivel = !!sim } },
     voltar() { if (view) view.voltar() },
     recarregar() { if (view) view.recarregar() },
     /** Abre o site da conta no navegador do computador (botão "abrir no meu navegador"). */
     abrirNoComputador(conta) { if (Object.prototype.hasOwnProperty.call(SITES, conta)) abrirFora(SITES[conta]) },
     async pronta(conta) { return prontas.has(conta) },
-    fechar() { if (view) { view.destruir(); view = null; contaAtual = null } },
+    fechar() { if (view) { view.destruir(); view = null; contaAtual = null; guiaAtual = null; visivel = false } },
   }
 }
 
-module.exports = { criarNavegador, SITES, urlPermitida, contaPronta }
+module.exports = { criarNavegador, SITES, GUIAS_SITE, urlPermitida, contaPronta }

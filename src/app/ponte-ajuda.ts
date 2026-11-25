@@ -126,6 +126,8 @@ export function montarPedidoAjuda(contexto: ContextoAjuda, historico: Turno[], m
   const ctx = [
     contexto.onde && `Onde: ${textoDaObra(contexto.onde, 80)}`,
     contexto.passo && `Passo ${contexto.passo.passo} de ${contexto.passo.totalPassos} (${textoDaObra(contexto.passo.conta, 60)})`,
+    contexto.passo?.instrucao && `O que o passo pede: ${textoDaObra(contexto.passo.instrucao, 300)}`,
+    contexto.passo?.saber && `O que já se sabe deste site: ${textoDaObra(contexto.passo.saber, 600)}`,
     contexto.erro && `Erro: ${textoDaObra(contexto.erro.titulo, 120)} ${textoDaObra(contexto.erro.detalhe, 300)}`.trim(),
     contexto.print && `Print: ${nomeDoPrint(contexto.print)}`,
   ].filter(Boolean).join('\n')
@@ -205,7 +207,7 @@ export const ajudaIndisponivel: PonteAjuda & { readonly indisponivel: true } = {
 export function contextoDoPasso(p: PedidoAjudaPasso): ContextoAjuda {
   return {
     origem: 'passo',
-    onde: p.origem === 'F13b' ? 'a publicação' : 'as contas',
+    onde: p.origem === 'guia' ? `o passo a passo do ${p.conta}` : p.origem === 'F13b' ? 'a publicação' : 'as contas',
     passo: p,
     print: { url: p.print.url, titulo: p.print.titulo, detalhe: p.print.botaoCerto ? `O botão certo aqui é "${p.print.botaoCerto}".` : undefined },
   }

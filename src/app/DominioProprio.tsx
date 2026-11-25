@@ -12,6 +12,8 @@ interface Props {
   onNoAr?: (endereco: string) => void
   onVoltar?: () => void
   onAjuda?: (contexto: { onde: string; erro?: string }) => void
+  /** M58: abre o passo a passo clique por clique com o Registro.br ao lado (no lugar de só abrir o site). */
+  onAbrirGuia?: (estado: EstadoDominio) => void
   intervaloMs?: number
 }
 
@@ -21,7 +23,7 @@ const ICONE_OK = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
  * Domínio próprio (M57; prototipo/caminho-novo/PB6Dominio e PB7DominioOk). O cliente digita o domínio e aperta UM botão:
  * o Atlas confere, liga na Vercel dele e mostra só o que colar no Registro.br. Daí em diante vigia sozinho até o cadeado.
  */
-export function DominioProprio({ pasta, dominio, sugestao, abrirRegistro, onNoAr, onVoltar, onAjuda, intervaloMs = 15_000 }: Props) {
+export function DominioProprio({ pasta, dominio, sugestao, abrirRegistro, onNoAr, onVoltar, onAjuda, onAbrirGuia, intervaloMs = 15_000 }: Props) {
   const [texto, setTexto] = useState('')
   const [conferido, setConferido] = useState<ConferidoDominio | null>(null)
   const [estado, setEstado] = useState<EstadoDominio | null>(null)
@@ -101,7 +103,7 @@ export function DominioProprio({ pasta, dominio, sugestao, abrirRegistro, onNoAr
               <li key={s}><code>{s}</code><button type="button" className="at-dom__btn" aria-label={`Copiar ${s}`} onClick={() => copiar(s)}>{copiado === s ? 'copiado' : 'copiar'}</button></li>
             ))}
         </ul>
-        <button type="button" className="at-noar__prim" onClick={abrir}>Abrir o Registro.br →</button>
+        <button type="button" className="at-noar__prim" onClick={() => (onAbrirGuia ? onAbrirGuia(estado) : abrir())}>{onAbrirGuia ? 'Abrir o Registro.br com o passo a passo →' : 'Abrir o Registro.br →'}</button>
         <PassosDominio estado={estado} />
         {estado.fase === 'demorando'
           ? <>

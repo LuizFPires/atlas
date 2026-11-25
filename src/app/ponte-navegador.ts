@@ -3,7 +3,8 @@
 import type { IdConta } from './contas-passos'
 
 export type Retangulo = { x: number; y: number; width: number; height: number }
-export type PaginaNavegador = { conta: IdConta; url: string; pronta: boolean }
+export type IdGuiaSite = 'registro' | 'stripe' | 'asaas'
+export type PaginaNavegador = { conta?: IdConta; guia?: IdGuiaSite; url: string; pronta: boolean }
 
 export interface PonteNavegador {
   abrir(conta: IdConta, onde: Retangulo): Promise<void>
@@ -14,6 +15,9 @@ export interface PonteNavegador {
   /** Abre o site da conta no navegador do computador (plano B). */
   fora(conta: IdConta): Promise<void>
   fechar(): Promise<void>
+  /** M58: o site de um guia (endereço fixo no processo principal) e o plano B no navegador do computador. */
+  abrirGuia?(guia: IdGuiaSite, onde: Retangulo): Promise<void>
+  foraGuia?(guia: IdGuiaSite): Promise<void>
   /** A cada página nova: o endereço e se a conta já ficou pronta. Devolve a função que para de ouvir. */
   aoMudarPagina(f: (p: PaginaNavegador) => void): () => void
 }

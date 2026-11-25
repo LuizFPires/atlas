@@ -147,7 +147,8 @@ async function garantirObra(pasta) {
 // Ajuda do Atlas (F17): o Claude só lê; o print é SÓ da janela do Atlas; páginas só da lista fechada. Casos não resolvidos vão à API (endpoint ainda pendente).
 const ajuda = criarAjuda({
   raiz: obras.raiz(), dadosApp: app.getPath('userData'), disparo: disparoLeve, shell, dialog, janela: () => janelaPrincipal,
-  capturar: async () => { if (!janelaPrincipal) throw new Error('sem-janela'); return (await janelaPrincipal.webContents.capturePage()).toPNG() },
+  // Com o site de um guia à mostra (M58), o print é do site que o cliente está vendo; senão, da janela do Atlas.
+  capturar: async () => { const site = await navegador.capturar(); if (site && site.length) return site; if (!janelaPrincipal) throw new Error('sem-janela'); return (await janelaPrincipal.webContents.capturePage()).toPNG() },
 })
 const casos = criarCasos({ cofre, hashComputador: async () => hash() })
 // Publicação (F13a/b): sites e consultas só de hosts oficiais; o deploy (publicarNoAr) falha honesto até haver token/fluxo (ver publicar.cjs).
@@ -423,6 +424,7 @@ const navegador = criarNavegador({
       on: (n, f) => wc.on(n, f),
       voltar: () => { if (wc.navigationHistory.canGoBack()) wc.navigationHistory.goBack() },
       recarregar: () => wc.reload(),
+      capturar: async () => (await wc.capturePage()).toPNG(),
       destruir: () => { try { janelaPrincipal?.contentView.removeChildView(v) } catch { /* janela já fechou */ } wc.close() },
     }
   },
@@ -438,6 +440,8 @@ handle('atlas:navegador:recarregar', () => navegador.recarregar())
 handle('atlas:navegador:fora', (conta) => navegador.abrirNoComputador(String(conta)))
 handle('atlas:navegador:pronta', (conta) => navegador.pronta(String(conta)))
 handle('atlas:navegador:fechar', () => navegador.fechar())
+handle('atlas:navegador:guia', (guia, b) => navegador.abrirGuia(String(guia), b))
+handle('atlas:navegador:guiaFora', (guia) => navegador.abrirGuiaNoComputador(String(guia)))
 
 // Ligar as contas a este computador (C1Contas). A tela recebe só o código e o estado; o endereço vem da CLI e é conferido aqui.
 const garantirFerramentas = async () => { if (!contasCli.ferramentasProntas() && !(await contasCli.instalarFerramentas())) throw new Error('ferramentas-indisponiveis') }
