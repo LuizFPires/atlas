@@ -438,7 +438,7 @@
    "y": 22340,
    "w": 1440,
    "h": 900,
-   "title": "Publicar 2 · Opcional: trocar o nome do endereço",
+   "title": "Publicar 2 · Opcional: testar nomes .vercel.app (o Atlas confere se está livre)",
    "is_interactive": true
   },
   "PB3Publicando.dc.html": {
@@ -463,6 +463,38 @@
    "w": 1440,
    "h": 900,
    "title": "Publicar 5 · No ar: endereço, QR para instalar e mandar pelo WhatsApp",
+   "is_interactive": true
+  },
+  "PB6Dominio.dc.html": {
+   "x": 1520,
+   "y": 23360,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 6 · Usar meu domínio: o Atlas confere e mostra a única troca no Registro.br",
+   "is_interactive": true
+  },
+  "PB7DominioNoAr.dc.html": {
+   "x": 3040,
+   "y": 23360,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 7 · Domínio próprio: o Atlas vigia até responder e liga o cadeado",
+   "is_interactive": true
+  },
+  "PB8Lojas.dc.html": {
+   "x": 4560,
+   "y": 23360,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 8 · Colocar nas lojas: o que o Atlas faz e quais contas são suas",
+   "is_interactive": true
+  },
+  "PB9LojasProntas.dc.html": {
+   "x": 0,
+   "y": 24380,
+   "w": 1440,
+   "h": 900,
+   "title": "Publicar 9 · No teste das lojas: falta só o seu “Enviar para revisão”",
    "is_interactive": true
   }
  },
@@ -523,7 +555,11 @@
   "PB2Endereco.dc.html",
   "PB3Publicando.dc.html",
   "PB4Vistoria.dc.html",
-  "PB5NoAr.dc.html"
+  "PB5NoAr.dc.html",
+  "PB6Dominio.dc.html",
+  "PB7DominioNoAr.dc.html",
+  "PB8Lojas.dc.html",
+  "PB9LojasProntas.dc.html"
  ],
  "notes": {
   "titulo": {
