@@ -186,7 +186,7 @@ export function Painel({ obra, abas, onCanteiro, painel, modos, cota, ocorrencia
 
       {/* M43 (PalcoObra aprovado em 24/11/2026): o prédio é o palco; os números e a frase do momento flutuam por cima dele. */}
       <section className="at-pn__palco" aria-label="Palco da obra" ref={palcoRef}>
-        <Canteiro3D endereco={painel.enderecoCanteiro(obra.pasta)} pct={pct} balao={momento && momento.nivel === 'trabalhando' ? { quem: 'Mestre de obras', texto: momento.titulo, nivel: momento.nivel } : null} />
+        <Canteiro3D endereco={painel.enderecoCanteiro(obra.pasta)} pct={pct} balao={null} />
         <section className="at-pn__hud at-pn__hud--esq" aria-label="Avanço da obra">
           {momento && <span className={`at-pn__hud-rot at-pn__hud-rot--${momento.nivel}`}>{momento.nivel === 'trabalhando' && <span className="at-pn__faixa-pulso" aria-hidden="true" />}{momento.selo.toLocaleUpperCase('pt-BR')}{momento.sinal ? ` · ${momento.sinal.toLocaleUpperCase('pt-BR')}` : ''}</span>}
           <span className="at-pn__hud-pct">{pctTxt}%</span>
@@ -205,7 +205,14 @@ export function Painel({ obra, abas, onCanteiro, painel, modos, cota, ocorrencia
         </section>
         {momento && momento.nivel !== 'pronta' && (
           <div className="at-pn__palco-base">
-            <FaixaDoMomento m={momento} fazer={fazer} pode={{ planos: !!onVerMax, ajuda: !!onPedirAjuda, contas: !!onLigarContas }} recentes={(estado?.diario ?? []).slice(-2).reverse()} escolher={painel.decidir ? (r) => { void agir(() => painel.decidir!(obra.pasta, r)) } : undefined} />
+            <FaixaDoMomento m={momento} fazer={fazer} pode={{ planos: !!onVerMax, ajuda: !!onPedirAjuda, contas: !!onLigarContas }} recentes={(estado?.diario ?? []).slice(-2).reverse()} escolher={painel.decidir ? (r) => { void agir(() => painel.decidir!(obra.pasta, r)) } : undefined} semAcoes={momento.nivel === 'trabalhando'} />
+            {/* M50 (Luiz, 25/11/2026): o balão sai do meio do prédio e vira a metade direita da barra de baixo, com o diário. */}
+            {momento.nivel === 'trabalhando' && (
+              <div className="at-pn__balao at-pn__balao--canto" role="note" aria-label="O que está acontecendo no canteiro">
+                <div className="at-pn__balao-txt"><b>Mestre de obras</b><span>{momento.titulo}</span></div>
+                <Botao variante="secundario" className="at-pn__btn" onClick={() => fazer('diario')}>{NOME_ACAO.diario}</Botao>
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -262,13 +269,13 @@ export function Painel({ obra, abas, onCanteiro, painel, modos, cota, ocorrencia
 const NOME_ACAO: Record<AcaoObra, string> = { tentar: 'Tentar agora', continuar: 'Continuar obra', planos: 'Ver planos do Claude', esperar: 'Esperar, volta sozinha', ajuda: 'Falar com o Atlas', contas: 'Ligar a conta', diario: 'Ver o diário completo', ok: 'Pode seguir', teste: 'Ver versão de teste' }
 
 /** M41: a faixa do momento. Sempre uma frase do que está acontecendo e pelo menos uma ação (a obra nunca fica no escuro). */
-function FaixaDoMomento({ m, fazer, pode, recentes = [], escolher }: { m: MomentoObra; fazer: (a: AcaoObra) => void; pode: { planos: boolean; ajuda: boolean; contas: boolean }; recentes?: LinhaDiario[]; escolher?: (rotulo: string) => void }) {
+function FaixaDoMomento({ m, fazer, pode, recentes = [], escolher, semAcoes = false }: { m: MomentoObra; fazer: (a: AcaoObra) => void; pode: { planos: boolean; ajuda: boolean; contas: boolean }; recentes?: LinhaDiario[]; escolher?: (rotulo: string) => void; semAcoes?: boolean }) {
   const alerta = m.nivel === 'precisa' || m.nivel === 'defeito'
   const acoes = [...m.acoes, ...(m.acoes.includes('diario') ? [] : ['diario' as AcaoObra])].filter((a) => (a === 'planos' ? pode.planos : a === 'ajuda' ? pode.ajuda : a === 'contas' ? pode.contas : true))
   const nome = (a: AcaoObra) => (a === 'contas' && m.conta ? `Ligar o ${m.conta}` : a === 'ajuda' && m.nivel === 'defeito' ? 'Corrigir com a Ajuda do Atlas' : NOME_ACAO[a])
   // M50 (PalcoObra): sem opções nem conferências, a faixa é UMA linha — a frase à esquerda e os botões à direita.
   const compacta = !(m.opcoes && escolher) && !m.checagens && !m.fala
-  const botoes = acoes.length > 0 && (
+  const botoes = !semAcoes && acoes.length > 0 && (
     <div className="at-pn__faixa-acoes">
       {acoes.map((a, i) => <Botao key={a} variante={i === 0 && a !== 'diario' && a !== 'esperar' ? undefined : 'secundario'} className="at-pn__btn" onClick={() => fazer(a)}>{nome(a)}</Botao>)}
     </div>

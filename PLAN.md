@@ -560,7 +560,8 @@ peso: 1
 spec: S9
 tela: prototipo/caminho-novo/PalcoObra.dc.html
 - [x] Câmera do canteiro perto do prédio, acompanhando a altura dele (só dentro do app; o painel do kit no navegador não muda)
-- [x] Cartões por cima do prédio como no protótipo: só a etapa (sem contagem de tarefas nem barra), balão só com a equipe trabalhando, faixa de baixo numa linha com os botões ao lado
+- [x] Cartões por cima do prédio como no protótipo: só a etapa (sem contagem de tarefas nem barra), faixa de baixo numa linha com os botões ao lado
+- [x] Balão do mestre de obras fora do prédio: com a equipe trabalhando, a barra de baixo se divide em duas metades (à esquerda o que está sendo feito e o diário recente; à direita o balão e "Ver o diário completo")
 - [x] Em telas menores (notebook com zoom do Windows) os cartões encolhem na proporção do palco, até 60%
 - [x] Cabeçalho numa linha: "← Canteiro de obras" e o título, as abas ao lado e os botões à direita
-Notas: DECISÃO do Luiz (25/11/2026, "A tela ainda não está como o protótipo aprovado. Olha o tamanho dos cards, balões de conversa e etc? O prédio subindo precisa ficar mais visível na tela. Com menos interferência visual"). Fonte: PalcoObra (aprovado no M43). DIVERGÊNCIA consciente: a contagem de tarefas sai do cartão (fica no "title" e nos Andares); com a equipe parada não há balão, quem fala é a faixa de baixo. Conferido com fotos da tela em 1440×900 e 1093×614.
+Notas: DECISÃO do Luiz (25/11/2026, "A tela ainda não está como o protótipo aprovado. Olha o tamanho dos cards, balões de conversa e etc? O prédio subindo precisa ficar mais visível na tela. Com menos interferência visual"). Fonte: PalcoObra (aprovado no M43). DIVERGÊNCIA consciente: a contagem de tarefas sai do cartão (fica no "title" e nos Andares); com a equipe parada não há balão, quem fala é a faixa de baixo; o balão saiu do meio do prédio para a metade direita da barra de baixo (pedido do Luiz, 25/11/2026, "para tirar isso da tela e deixar o prédio o mais limpo possível"). Conferido com fotos da tela em 1440×900 e 1093×614.

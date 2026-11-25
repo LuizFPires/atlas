@@ -242,7 +242,7 @@ test('diário: últimas linhas na obra e o completo na gaveta, com filtro de par
   const { user } = montar('automatico')
   const faixa = await screen.findByRole('status', { name: 'O que está acontecendo agora' })
   expect(within(faixa).getByText(/Escrevendo o código/)).toBeInTheDocument() // as últimas linhas do diário, na barra do palco
-  await user.click(within(faixa).getByRole('button', { name: 'Ver o diário completo' }))
+  await user.click(within(screen.getByRole('note', { name: 'O que está acontecendo no canteiro' })).getByRole('button', { name: 'Ver o diário completo' })) // M50: o diário fica na metade direita, com o balão
   const gaveta = await screen.findByRole('dialog', { name: 'Diário completo da obra' })
   expect(within(gaveta).getByText('Terminou a etapa Agenda do dia')).toBeInTheDocument()
   await user.click(within(gaveta).getByRole('button', { name: 'Paradas' }))
@@ -268,6 +268,9 @@ test('o balão do canteiro diz a mesma coisa que a faixa', async () => {
   montar('automatico')
   const balao = await screen.findByRole('note', { name: 'O que está acontecendo no canteiro' })
   expect(balao).toHaveTextContent(/Mestre de obras/)
+  // M50: o balão mora na metade direita da barra de baixo, com o diário (nada flutuando no meio do prédio)
+  expect(balao.closest('.at-pn__palco-base')).not.toBeNull()
+  expect(within(balao).getByRole('button', { name: 'Ver o diário completo' })).toBeInTheDocument()
 })
 
 // M50 (Luiz, 25/11/2026: "com menos interferência visual"): o balão só aparece com a equipe trabalhando; parada, quem fala é a faixa.
