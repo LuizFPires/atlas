@@ -577,3 +577,11 @@ tela: prototipo/caminho-novo/Q1Escolher.dc.html
 - [x] Mensagem certa quando o Atlas ainda está começando outra obra (antes dizia "já está trabalhando nesta obra")
 Notas: DECISÃO do Luiz (25/11/2026, "podíamos deixar o usuário decidir se entra em fila, obra por obra, se faz simultâneo e etc e o Atlas avisa das consequências, principalmente em termos de consumo de tokens e velocidade de desenvolvimento"; protótipo Q1–Q5 aprovado: "Pode seguir"). Antes o Atlas rodava uma obra por vez no computador e recusava a segunda. Prazos da janela: conta simples pelo ritmo real da obra que trabalha e pela previsão da nova (juntas: Pro 0,5 e Max 0,85 do ritmo enquanto as duas andam). A janela fala em cota do Claude, nunca em tokens. Fila guardada em <Obras>\.atlas-fila.json (só nomes de pasta).
 
+## Milestone 52 — Celular: o login fica e o Face ID abre o app
+peso: 1
+spec: S11
+tela: prototipo/celular/Entrar.dc.html
+- [x] O login do app do celular fica guardado no aparelho e se renova sozinho (só pede o código do e-mail na primeira vez ou depois de "Sair")
+- [ ] Face ID para abrir o app (protótipo para aprovar antes)
+Notas: DECISÃO do Luiz (25/11/2026, "E toda hora desconecta!! Vamos colocar o Face ID para acessar o app para o acesso ser rápido e precisa sustentar o login. Não dá para toda hora o usuário ter que mandar o código no email"). Causa: o login do /app ficava no sessionStorage (o iPhone apaga ao fechar o app) e só o acesso de 1 hora era guardado, sem a chave de renovação. Agora, só no /app, o refresh token do Supabase Auth fica no aparelho (localStorage) e o acesso é renovado antes de vencer ou num 401; renovação recusada volta ao login; sem internet, o login continua. O Portal web continua só enquanto a aba está aberta.
+
