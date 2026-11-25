@@ -126,6 +126,15 @@
    "title": "M11 · O Face ID não reconheceu",
    "is_interactive": true,
    "radius": 36
+  },
+  "ObraPredio.dc.html": {
+   "x": 0,
+   "y": 3500,
+   "w": 390,
+   "h": 844,
+   "title": "M08b · Acompanhar a obra com o prédio em primeiro plano (um andar por etapa)",
+   "is_interactive": true,
+   "radius": 36
   }
  },
  "order": [
@@ -141,7 +150,8 @@
   "Desligado.dc.html",
   "FaceID.dc.html",
   "FaceAbrir.dc.html",
-  "FaceFalhou.dc.html"
+  "FaceFalhou.dc.html",
+  "ObraPredio.dc.html"
  ],
  "notes": {
   "t1": {
