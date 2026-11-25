@@ -60,6 +60,11 @@ jobs:
           KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           ISSUER: ${{ secrets.APPLE_API_ISSUER }}
         run: |
+          # Diz quais segredos existem (só sim/não, nunca o valor), para o Luiz saber o que falta.
+          for par in "MAC_CERTIFICADO_P12_BASE64:$P12" "MAC_CERTIFICADO_SENHA:$P12_SENHA" "APPLE_API_KEY_P8_BASE64:$P8" "APPLE_API_KEY_ID:$KEY_ID" "APPLE_API_ISSUER:$ISSUER"; do
+            nome="${par%%:*}"; valor="${par#*:}"
+            if [ -n "$valor" ]; then echo "segredo $nome: sim"; else echo "segredo $nome: NÃO"; fi
+          done
           if [ -n "$P12" ] && [ -n "$P12_SENHA" ] && [ -n "$P8" ] && [ -n "$KEY_ID" ] && [ -n "$ISSUER" ]; then
             echo "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
             mkdir -p "$RUNNER_TEMP/apple"
@@ -70,6 +75,8 @@ jobs:
               echo "APPLE_API_KEY=$RUNNER_TEMP/apple/AuthKey.p8"
               echo "APPLE_API_KEY_ID=$KEY_ID"
               echo "APPLE_API_ISSUER=$ISSUER"
+              # Sem isto o electron-builder pula a assinatura em PR (e o PR não conferiria a assinatura nem a Apple).
+              echo "CSC_FOR_PULL_REQUEST=true"
             } >> "$GITHUB_ENV"
             echo "assinado=sim" >> "$GITHUB_OUTPUT"
             echo "Assinatura e notarização: LIGADAS"
