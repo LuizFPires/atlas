@@ -22,6 +22,8 @@ const chamar = async (canal, ...args) => {
 contextBridge.exposeInMainWorld('atlasDesktop', {
   argv: ipcRenderer.sendSync('atlas:argv'),
   plataforma: process.platform === 'darwin' ? 'mac' : 'windows', // M46: as telas usam as palavras do computador do cliente
+  // M47: primeiro uso no Mac (o Atlas prepara o computador). No Windows não existe (o instalador já fez).
+  ...(process.platform === 'darwin' ? { prepararMac: { estado: () => chamar('atlas:prepararMac:estado'), iniciar: () => chamar('atlas:prepararMac:iniciar') } } : {}),
   cofre: {
     guardar: (c, v) => chamar('atlas:cofre:guardar', String(c), String(v)),
     ler: (c) => chamar('atlas:cofre:ler', String(c)),

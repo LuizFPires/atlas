@@ -533,9 +533,9 @@ spec: S11b
 tela: prototipo/caminho-novo/M1Pagina.dc.html
 - [x] A página do link do e-mail reconhece Mac ou Windows pelo navegador e mostra só o botão certo, com "Não é um Mac?" de reserva (celular segue o fluxo atual)
 - [x] Mac: depois de baixar, a página ensina a arrastar para Aplicativos e o botão "Já arrastei: abrir o Atlas" abre o Atlas pelo atlas:// com o código do link
-- [ ] Primeiro uso no Mac: Node portátil, GitHub CLI e Claude Code instalados pelo Atlas na pasta dele, sem senha de administrador; Git pelas ferramentas da Apple (um clique), com a explicação na tela
+- [x] Primeiro uso no Mac: Node portátil, GitHub CLI e Claude Code instalados pelo Atlas na pasta dele, sem senha de administrador; Git pelas ferramentas da Apple (um clique), com a explicação na tela
 - [x] O servidor guarda e entrega o arquivo do Mac e o do Windows (cada um com o seu endereço temporário e a sua impressão digital)
-Notas: DECISÃO do Luiz (24/11/2026, "no momento que o usuário clica no link lá do e-mail, já é possível identificar automático se é Mac ou Windows, e aí o usuário não tem que escolher nada? Seria melhor assim"). Telas M1Pagina, M1bWindows, M2Arrastar, M4Codigo e M5Preparando.
+Notas: DECISÃO do Luiz (24/11/2026, "no momento que o usuário clica no link lá do e-mail, já é possível identificar automático se é Mac ou Windows, e aí o usuário não tem que escolher nada? Seria melhor assim"). Telas M1Pagina, M1bWindows, M2Arrastar, M4Codigo e M5Preparando. Primeiro uso: Node (última LTS) e GitHub CLI baixados dos sites oficiais e conferidos pela impressão digital oficial; Claude Code pelo npm do Node portátil; nada de sudo nem curl | sh. Conferido por testes automáticos; a prova num Mac real fica no M49.
 
 ## Milestone 48 — Mac assinado e verificado pela Apple, com atualização automática
 peso: 3

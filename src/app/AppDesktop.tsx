@@ -66,7 +66,7 @@ import { criarExecutorRemoto, criarMemoriaRemotoLocal, ligarCelularRemoto } from
 import { criarCanalRemotoApi } from './celular-canal'
 import { ComprarAtlas, type PedidoCompraNoApp } from './ComprarAtlas'
 import { configCompra, iniciarCompra, type ResultadoCompra } from '../web/compra'
-import { criarPonteFixture, ponteDoAmbiente, type PonteDesktop } from './ponte'
+import { criarPonteFixture, ponteDoAmbiente, type EstadoPreparo, type PonteDesktop } from './ponte'
 import { telaInicial, TELA_ATIVACAO, TELA_CELULAR, TELA_CLAUDE, TELA_CONTAS, TELA_RETOMAR } from './tela'
 import { useImpedirSono } from './sono'
 
@@ -247,6 +247,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
 
   const ponteNomes = useMemo<PonteNomes>(() => nomes ?? (modoFixture() ? criarNomesFixture() : (ponte.nomes ?? nomesIndisponivel)), [nomes, ponte])
 
+  const prepararMac = usePrepararMac(ponte)
   const tokenLink = useTokenDoLink(ponte)
   const ativacao = useMemo<AtivacaoApi>(
     () => {
@@ -335,7 +336,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     return <>{<AcessoEncerrado encerrado={licencaNoApp.encerrado} onComprar={abrirCompra} />}{compra}</>
   }
   if (tela === TELA_ATIVACAO) {
-    return com(<Ativacao api={ativacao} computador={computador} onInstalando={setInstalando} onContinuar={() => { void licencaNoApp.conferir(); setTela(TELA_CLAUDE) }} />)
+    return com(<Ativacao api={ativacao} computador={computador} onInstalando={(sim) => { setInstalando(sim); if (sim) prepararMac.iniciar() }} {...(ponte.prepararMac ? { preparo: prepararMac.estado, onTentarPreparo: prepararMac.iniciar } : {})} onContinuar={() => { void licencaNoApp.conferir(); setTela(TELA_CLAUDE) }} />)
   }
   if (tela === TELA_CLAUDE) return com(<Claude claude={ponteClaude} onContinuar={() => { const v = voltarDoClaude.current; voltarDoClaude.current = null; setTela(v ?? TELA_CELULAR) }} onPedirAjuda={() => abrirAjuda({ origem: 'menu', onde: 'a conexão com o Claude' })} />)
   // Caminho novo (23/11/2026): as contas saíram da instalação e vêm antes de começar a construção (fluxo 'contas'). --tela=F04 ainda abre.
@@ -405,4 +406,18 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   }
   // "Ajuda do Atlas" no menu abre o painel por cima da tela atual (não troca de tela).
   return com(<Obras ativo={ativo} onFalar={() => abrirAjuda({ origem: 'menu', ouvir: true })} onNavegar={(t) => { if (t === 'ajuda') { abrirAjuda({ origem: 'menu' }); return } setAtivo(t); if (t === 'obras') setFluxo('lista') }}>{conteudo}</Obras>)
+}
+
+/** M47: primeiro uso no Mac. Começa quando a ativação passa para "instalando" e acompanha cada passo até ficar pronto. */
+function usePrepararMac(ponte: PonteDesktop) {
+  const [estado, setEstado] = useState<EstadoPreparo | null>(null)
+  const ativo = useRef(false)
+  const iniciar = useCallback(() => {
+    const pm = ponte.prepararMac
+    if (!pm || ativo.current) return
+    ativo.current = true
+    const olhar = window.setInterval(() => { void pm.estado().then((e) => { if (e) setEstado(e) }).catch(() => {}) }, 1500)
+    void pm.iniciar().then((e) => { if (e) setEstado(e) }).catch(() => {}).finally(() => { window.clearInterval(olhar); ativo.current = false })
+  }, [ponte])
+  return { estado, iniciar }
 }

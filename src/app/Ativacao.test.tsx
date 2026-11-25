@@ -103,3 +103,34 @@ test('com o link vencido: fica na tela do e-mail, com o recado do servidor', asy
   expect(await screen.findByRole('alert')).toHaveTextContent('Esse link venceu.')
   expect(screen.getByRole('heading', { name: 'Vamos ativar o seu Atlas' })).toBeInTheDocument()
 })
+
+// ---- M47: primeiro uso no Mac (M5Preparando) ---------------------------------------------------------------------------------
+const passo = (id: string, nome: string, estado: 'fila' | 'agora' | 'esperando-voce' | 'pronto' | 'erro', txt = 'x', dica?: string) => ({ id, nome, txt, estado, ...(dica ? { dica } : {}) })
+
+test('Mac: cada passo de verdade, o pedido da Apple explicado e o Continuar só quando tudo ficou pronto', async () => {
+  const onContinuar = montar(api(), { faseInicial: 'instalando', computador: 'MacBook Air do Zé · macOS', preparo: { percentual: 20, pronto: false, passos: [
+    passo('node', 'Motor do Atlas (Node)', 'pronto'), passo('git', 'Ferramentas da Apple (Git)', 'esperando-voce', 'A Apple está pedindo permissão: clique em Instalar e depois em Concordar.'),
+    passo('gh', 'GitHub', 'fila'), passo('claude', 'Claude Code (oficial)', 'fila'), passo('obras', 'Pasta das obras', 'fila'),
+  ] } })
+  expect(screen.getByRole('progressbar', { name: 'Preparando o seu Mac' })).toHaveAttribute('aria-valuenow', '20')
+  expect(screen.getByText(/clique em Instalar/)).toBeInTheDocument()
+  expect(screen.getByText('ESPERANDO VOCÊ')).toBeInTheDocument()
+  expect(screen.getByText(/deixe a tampa aberta e o carregador ligado/)).toBeInTheDocument()
+  expect(screen.queryByText(/Enquanto instala, 3 coisas/)).toBeNull()
+  expect(screen.getByRole('button', { name: 'Preparando…' })).toBeDisabled()
+  expect(onContinuar).not.toHaveBeenCalled()
+})
+
+test('Mac: deu erro num passo, o recado diz o que fazer e "Tentar de novo" recomeça de onde parou', async () => {
+  const tentar = vi.fn()
+  montar(api(), { faseInicial: 'instalando', onTentarPreparo: tentar, preparo: { percentual: 0, pronto: false, passos: [passo('node', 'Motor do Atlas (Node)', 'erro', 'x', 'Não consegui baixar agora. Confira a internet e toque em "Tentar de novo".')] } })
+  expect(screen.getByText(/Confira a internet/)).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+  expect(tentar).toHaveBeenCalled()
+})
+
+test('Mac: tudo pronto, segue para conectar o Claude', async () => {
+  const onContinuar = montar(api(), { faseInicial: 'instalando', preparo: { percentual: 100, pronto: true, passos: [passo('node', 'Motor do Atlas (Node)', 'pronto')] } })
+  await userEvent.click(screen.getByRole('button', { name: /Continuar/ }))
+  expect(onContinuar).toHaveBeenCalled()
+})

@@ -41,6 +41,8 @@ export interface PonteDesktop {
   argv: string[]
   /** M46: 'mac' no Mac; sem o campo (versões antigas), Windows. */
   plataforma?: 'mac' | 'windows'
+  /** M47: primeiro uso no Mac (o Atlas prepara o computador). Só existe no Mac. */
+  prepararMac?: { estado(): Promise<EstadoPreparo | null>; iniciar(): Promise<EstadoPreparo | null> }
   cofre: Cofre
   /** Impressão digital do computador (SHA-256 hex, 64 caracteres). O id da máquina nunca sai em claro. */
   hashComputador(): Promise<string>
@@ -121,3 +123,7 @@ export function criarPonteFixture(argv: string[] = [], cofre: Cofre = criarCofre
 }
 
 export const ponteDoAmbiente = (): PonteDesktop | null => (typeof window !== 'undefined' ? (window.atlasDesktop ?? null) : null)
+
+/** M47: um passo do primeiro uso no Mac (app/adaptadores/preparar-mac.cjs). */
+export interface PassoPreparo { id: string; nome: string; txt: string; estado: 'fila' | 'agora' | 'esperando-voce' | 'pronto' | 'erro'; dica?: string }
+export interface EstadoPreparo { passos: PassoPreparo[]; percentual: number; pronto: boolean }

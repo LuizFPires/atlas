@@ -401,6 +401,15 @@ handle('atlas:travas:ehPublico', (pasta) => travasAcoes.publico(String(pasta)))
 // O notebook é o canteiro (TP1Tampa): a tampa na tomada vira "não fazer nada" com o clique da pessoa e volta ao normal quando
 // nenhuma obra está em construção (todas com o PLAN em 100% ou sem obra).
 const powercfg = require('node:path').join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'powercfg.exe')
+// Mac (M47): o primeiro uso prepara o computador (Node, Git da Apple, GitHub, Claude Code e a pasta das obras), sem senha de
+// administrador. No Windows quem faz isso é o instalador.
+const prepararMac = process.platform === 'darwin' ? require('./adaptadores/preparar-mac.cjs').criarPrepararMac({
+  dadosApp: app.getPath('userData'), home: os.homedir(),
+  baixar: async (url) => { const r = await fetch(url, { headers: { 'User-Agent': 'Atlas', Accept: '*/*' }, redirect: 'follow' }); if (!r.ok) throw new Error(`http-${r.status}`); return Buffer.from(await r.arrayBuffer()) },
+  rodar: (cmd, args, { timeoutMs } = {}) => rodarProcesso(cmd, args, { env: envMinimo(), timeoutMs }),
+}) : null
+handle('atlas:prepararMac:estado', () => (prepararMac ? prepararMac.estado() : null))
+handle('atlas:prepararMac:iniciar', () => (prepararMac ? prepararMac.preparar() : null))
 const tampa = criarTampa({ dadosApp: app.getPath('userData'), rodar: (args) => rodarProcesso(powercfg, args, { env: envMinimo(), timeoutMs: 15_000 }) })
 handle('atlas:tampa:ajustada', () => tampa.ajustada())
 handle('atlas:tampa:ajustar', () => tampa.ajustar())
