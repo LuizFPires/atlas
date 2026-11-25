@@ -105,3 +105,13 @@
 .cel-noticia time { font: 500 13px 'Geist Mono', monospace; color: var(--mute2); width: 48px; flex: none; }
 .cel-erro { color: #FFB4AE; font-size: 14px; }
 .cel-carregando { flex: 1; display: grid; place-items: center; color: var(--mute); }
+/* M52 · Face ID (M09b, M10, M11) */
+.cel-face { align-items: center; text-align: center; justify-content: center; }
+.cel-face-ico { width: 88px; height: 88px; border-radius: 26px; display: grid; place-items: center; background: rgba(198, 241, 53, 0.10); border: 1px solid #C6F135; color: #C6F135; }
+.cel-face-ico--falhou { background: rgba(242, 184, 75, 0.12); border-color: #F2B84B; color: #F2B84B; }
+.cel-face-pulso { animation: cel-face-pulso 1.6s ease-in-out infinite; }
+@keyframes cel-face-pulso { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.06) } }
+@media (prefers-reduced-motion: reduce) { .cel-face-pulso { animation: none; } }
+.cel-face-rot { color: #C6F135; }
+.cel-face-pe { display: flex; flex-direction: column; gap: 10px; }
+.cel-face-nota { text-align: center; line-height: 1.5; }

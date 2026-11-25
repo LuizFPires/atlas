@@ -10,9 +10,10 @@ import canteiro from '../assets/canteiro-3d.jpg'
 import type { ObraStatus } from '../web/obras-status'
 import type { ApiCelular, EstadoCelular, Projeto, Visual } from './api'
 import { ambienteDoNavegador, ligarAvisos, situacaoDosAvisos, type SituacaoAvisos } from './avisos'
+import { semFaceId, type FaceId } from './faceid'
 import './celular.css'
 
-type Tela = 'entrar' | 'obras' | 'ideia' | 'visual' | 'projeto' | 'obra' | 'desligado'
+type Tela = 'entrar' | 'faceid-ligar' | 'faceid-abrir' | 'obras' | 'ideia' | 'visual' | 'projeto' | 'obra' | 'desligado'
 type Aba = 'andamento' | 'concluidas' | 'paradas' | 'excluidas'
 
 const protegido = (d: string) => d.startsWith('<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src \'none\'')
@@ -52,7 +53,7 @@ function MicFalar({ aoFalar, titulo, sub, pequeno }: { aoFalar: (t: string) => v
 // O tamanho do código é o do e-mail (o Supabase manda de 6 a 8 números): a tela não promete um número de dígitos.
 const CODIGO_OK = /^\d{6,8}$/
 
-function Entrar({ api, onEntrou }: { api: ApiCelular; onEntrou: () => void }) {
+function Entrar({ api, onEntrou }: { api: ApiCelular; onEntrou: (email: string) => void }) {
   const [email, setEmail] = useState('')
   const [codigo, setCodigo] = useState('')
   const [fase, setFase] = useState<'email' | 'codigo'>('email')
@@ -81,7 +82,7 @@ function Entrar({ api, onEntrou }: { api: ApiCelular; onEntrou: () => void }) {
       <footer className="cel-rodape">
         {fase === 'email'
           ? <button type="button" className="cel-botao" disabled={indo || !email.includes('@')} onClick={() => agir(async () => { await api.pedirCodigo(email.trim()); setFase('codigo') })}>Receber o código</button>
-          : <button type="button" className="cel-botao" disabled={indo || !CODIGO_OK.test(codigo.replace(/\D/g, ''))} onClick={() => agir(async () => { await api.entrar(email.trim(), codigo); onEntrou() })}>Entrar</button>}
+          : <button type="button" className="cel-botao" disabled={indo || !CODIGO_OK.test(codigo.replace(/\D/g, ''))} onClick={() => agir(async () => { await api.entrar(email.trim(), codigo); onEntrou(email.trim()) })}>Entrar</button>}
       </footer>
     </main>
   )
@@ -526,9 +527,50 @@ function Desligado({ visto, onVoltar }: { visto: string | null; onVoltar: () => 
   )
 }
 
+// ── M09b / M10 / M11 Face ID (protótipo aprovado em 25/11/2026) ──
+function LigarFaceId({ onLigar, onAgoraNao }: { onLigar: () => Promise<void>; onAgoraNao: () => void }) {
+  const [indo, setIndo] = useState(false)
+  return (
+    <main className="cel">
+      <header className="cel-topo"><span className="cel-marca"><Monograma largura={34} altura={19} />ATLAS</span></header>
+      <div className="cel-corpo cel-face">
+        <span className="cel-face-ico" aria-hidden="true"><Icone nome="rosto" tamanho={44} /></span>
+        <span className="cel-rotulo cel-face-rot">Você entrou</span>
+        <h1 className="cel-titulo">Da próxima vez, é só olhar para o celular</h1>
+        <p className="cel-texto">Ligue o Face ID e o Atlas abre direto nas suas obras, sem código no e-mail. Ninguém mais consegue abrir pelo seu celular.</p>
+      </div>
+      <footer className="cel-rodape cel-face-pe">
+        <button type="button" className="cel-botao" disabled={indo} onClick={() => { setIndo(true); void onLigar().finally(() => setIndo(false)) }}>Ligar o Face ID</button>
+        <button type="button" className="cel-botao cel-botao--sec" onClick={onAgoraNao}>Agora não</button>
+        <span className="cel-sub cel-face-nota">O seu rosto fica só no iPhone: o Atlas nunca recebe a imagem. Dá para desligar quando quiser, em Sair.</span>
+      </footer>
+    </main>
+  )
+}
+
+function AbrirComFaceId({ nome, onConferir, onCodigo }: { nome: string; onConferir: () => Promise<boolean>; onCodigo: () => void }) {
+  const [falhou, setFalhou] = useState(false)
+  const [indo, setIndo] = useState(false)
+  return (
+    <main className="cel">
+      <header className="cel-topo"><span className="cel-marca"><Monograma largura={34} altura={19} />ATLAS</span></header>
+      <div className="cel-corpo cel-face">
+        <img src={canteiro} alt="" style={{ width: '100%', height: 200, objectFit: 'cover', borderRadius: 20, opacity: 0.9 }} />
+        <span className={`cel-face-ico${falhou ? ' cel-face-ico--falhou' : ' cel-face-pulso'}`} aria-hidden="true"><Icone nome="rosto" tamanho={44} /></span>
+        <h1 className="cel-titulo">{falhou ? 'Não reconheci' : `Olá${nome ? `, ${nome.split(' ')[0]}` : ''}`}</h1>
+        <p className="cel-texto" role={falhou ? 'alert' : undefined}>{falhou ? 'Tente de novo olhando para a tela, ou entre com o código do e-mail.' : 'Olhe para o celular para abrir as suas obras.'}</p>
+      </div>
+      <footer className="cel-rodape cel-face-pe">
+        <button type="button" className="cel-botao" disabled={indo} onClick={() => { setIndo(true); void onConferir().then((ok) => { if (!ok) setFalhou(true) }).finally(() => setIndo(false)) }}>{falhou ? 'Tentar de novo' : 'Entrar com o Face ID'}</button>
+        <button type="button" className="cel-botao cel-botao--sec" onClick={onCodigo}>Entrar com o código do e-mail</button>
+      </footer>
+    </main>
+  )
+}
+
 // ── O app ──
-export function AppCelular({ api, intervalo = 4000 }: { api: ApiCelular; intervalo?: number }) {
-  const [tela, setTela] = useState<Tela>(api.logado() ? 'obras' : 'entrar')
+export function AppCelular({ api, intervalo = 4000, faceId = semFaceId }: { api: ApiCelular; intervalo?: number; faceId?: FaceId }) {
+  const [tela, setTela] = useState<Tela>(!api.logado() ? 'entrar' : faceId.ligado() && !faceId.destravado() ? 'faceid-abrir' : 'obras')
   const [estado, setEstado] = useState<EstadoCelular | null>(null)
   const [obras, setObras] = useState<ObraStatus[]>([])
   const [nome, setNome] = useState('')
@@ -537,7 +579,8 @@ export function AppCelular({ api, intervalo = 4000 }: { api: ApiCelular; interva
   const [visual, setVisual] = useState<Visual & { previas: string[] }>({ modo: 'sugere', observacao: '', cores: [], referencias: [], previas: [] })
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
-  const logado = tela !== 'entrar'
+  const [emailEntrou, setEmailEntrou] = useState('')
+  const logado = tela !== 'entrar' && tela !== 'faceid-abrir'
   const viva = useRef(true)
 
   const atualizar = useCallback(async () => {
@@ -569,11 +612,13 @@ export function AppCelular({ api, intervalo = 4000 }: { api: ApiCelular; interva
     <nav className="cel-menu" aria-label="Menu">
       <button type="button" aria-current={tela === 'obras' ? 'page' : undefined} onClick={irObras}><Icone nome="obra" />Obras</button>
       <button type="button" onClick={() => { setRelato(''); setVisual({ modo: 'sugere', observacao: '', cores: [], referencias: [], previas: [] }); setTela('ideia') }}><Icone nome="microfone" />Nova obra</button>
-      <button type="button" onClick={() => { api.sair(); setTela('entrar') }}><Icone nome="x" />Sair</button>
+      <button type="button" onClick={() => { api.sair(); faceId.desligar(); setTela('entrar') }}><Icone nome="x" />Sair</button>
     </nav>
   )
 
-  if (tela === 'entrar') return <Entrar api={api} onEntrou={() => setTela('obras')} />
+  if (tela === 'entrar') return <Entrar api={api} onEntrou={(em) => { setEmailEntrou(em); void faceId.disponivel().then((d) => setTela(d && !faceId.ligado() ? 'faceid-ligar' : 'obras'), () => setTela('obras')) }} />
+  if (tela === 'faceid-ligar') return <LigarFaceId onAgoraNao={() => setTela('obras')} onLigar={async () => { await faceId.ligar(emailEntrou, nome); setTela('obras') }} />
+  if (tela === 'faceid-abrir') return <AbrirComFaceId nome={nome} onCodigo={() => { api.sair(); faceId.desligar(); setTela('entrar') }} onConferir={async () => { const ok = await faceId.conferir(); if (ok) setTela('obras'); return ok }} />
   if (tela === 'ideia') return <Ideia relato={relato} setRelato={setRelato} onVoltar={irObras} onContinuar={() => setTela('visual')} />
   if (tela === 'visual') {
     return <VisualTela api={api} visual={visual} setVisual={setVisual} onVoltar={() => setTela('ideia')} enviando={enviando} erro={erro} onMandar={async () => {
