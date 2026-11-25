@@ -13,6 +13,9 @@ import type { ObraDoEstilo } from './Estilo'
 import { FichaTrava } from './FichaTrava'
 import type { PonteTravas } from './ponte-travas'
 import type { PonteNavegador } from './ponte-navegador'
+import { EscolherComeco } from './EscolherComeco'
+import type { EstadoFila, PonteConstrucao } from './ponte-construcao'
+import type { Plano } from './ponte-claude'
 import './painel.css'
 
 interface Props {
@@ -43,12 +46,16 @@ interface Props {
   onLigarContas?: () => void
   /** M43: "Ver no cronograma" na gaveta dos andares leva à aba Cronograma. */
   onVerCronograma?: () => void
+  /** M54: com outra obra trabalhando, "Tentar agora"/"Continuar" oferece fila, ao mesmo tempo ou esta primeiro (como na M51). */
+  filaObras?: Pick<PonteConstrucao, 'fila' | 'mudarVez'>
+  plano?: Plano
 }
 
 /** "10:05" no horário de Brasília. */
 
 export const recadoDoErroPainel = (e: unknown) => {
   switch (e instanceof Error ? e.message : '') {
+    case 'ja-rodando': return 'Outra obra está trabalhando agora neste computador. Escolha se esta espera na fila, trabalha junto ou vai primeiro.'
     case 'indisponivel': return 'Quem acompanha a obra ainda não está ligado neste computador. Quando estiver, esta tela passa a mostrar a obra de verdade; você não precisa refazer nada.'
     default: return 'Não consegui fazer isso agora. Tente de novo em instantes.'
   }
@@ -58,7 +65,7 @@ export const recadoDoErroPainel = (e: unknown) => {
 
 
 /** F09: painel da obra. O prédio, o %, o prazo e o "agora na obra"; detalhes técnicos só em "ver detalhes". */
-export function Painel({ obra, abas, onCanteiro, painel, modos, cota, ocorrencias, onPublicar, onVerMax, onPedirAjuda, sondagemMs = 5000, travas, navegador, onLigarContas, onVerCronograma }: Props) {
+export function Painel({ obra, abas, onCanteiro, filaObras, plano = 'pro', painel, modos, cota, ocorrencias, onPublicar, onVerMax, onPedirAjuda, sondagemMs = 5000, travas, navegador, onLigarContas, onVerCronograma }: Props) {
   const [estado, setEstado] = useState<EstadoObra | null>(null)
   const [modo, setModo] = useState<ModoObra | null>(null)
   const [modoLido, setModoLido] = useState(false)
@@ -105,9 +112,17 @@ export function Painel({ obra, abas, onCanteiro, painel, modos, cota, ocorrencia
     painel.aprovarEtapa(obra.pasta).then(atualizar, (x) => setErro(recadoDoErroPainel(x)))
   }, [modoLido, modo, etapaPronta, painel, obra.pasta, atualizar])
 
+  const [escolhendo, setEscolhendo] = useState<EstadoFila | null>(null)
   const agir = async (fn: () => Promise<void>) => {
     setErro('')
-    try { await fn(); await atualizar() } catch (x) { setErro(recadoDoErroPainel(x)) }
+    try { await fn(); await atualizar() } catch (x) {
+      // M54 (Guilherme, 25/11/2026: "Tentar agora" respondia "Não consegui" porque outra obra trabalhava): oferece a escolha.
+      if (x instanceof Error && x.message === 'ja-rodando' && filaObras?.fila) {
+        const f = await filaObras.fila().catch(() => null)
+        if (f && f.trabalhando.some((t) => t.pasta !== obra.pasta)) { setEscolhendo(f); return }
+      }
+      setErro(recadoDoErroPainel(x))
+    }
   }
 
   const trocarModo = async (novo: ModoObra) => {
@@ -261,6 +276,12 @@ export function Painel({ obra, abas, onCanteiro, painel, modos, cota, ocorrencia
       {andares && estado && <GavetaAndares etapas={estado.etapas} onFechar={() => setAndares(false)} onVerCronograma={onVerCronograma ? () => { setAndares(false); onVerCronograma() } : undefined} />}
       {diarioAberto && <DiarioCompleto pasta={obra.pasta} painel={painel} recentes={estado?.diario ?? []} onFechar={() => setDiarioAberto(false)} />}
 
+      {escolhendo && filaObras?.mudarVez && (() => {
+        const outra = escolhendo.trabalhando.find((t) => t.pasta !== obra.pasta)!
+        return <EscolherComeco nova={obra.nome} atual={outra} novaH={estado?.restanteMin != null ? estado.restanteMin / 60 : null} plano={plano} textoCancelar="Deixar como está"
+          onCancelar={() => setEscolhendo(null)}
+          onEscolher={(c) => { setEscolhendo(null); void agir(() => filaObras.mudarVez!(obra.pasta, c)) }} />
+      })()}
       <div className="at-pn__rodape"><span className="at-pn__ponto" />Salvo a cada passo · pode desligar o computador quando quiser · {pendencia}</div>
     </div>
   )

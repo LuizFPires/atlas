@@ -310,3 +310,20 @@ test('escolher como seguir: as opções aparecem como botões claros, a recomend
   await user.click(botoes[1])
   expect(fx.chamadas).toContain('decidir:Seguir para a próxima etapa')
 })
+
+// M54 (Guilherme, 25/11/2026): "Continuar" com outra obra trabalhando respondia "Não consegui fazer isso agora".
+test('continuar com outra obra trabalhando: oferece fila, ao mesmo tempo ou esta primeiro', async () => {
+  const { criarConstrucaoFixture, criarModoObraFixture: cm } = await import('./ponte-construcao')
+  const fx = criarPainelFixture({ agora })
+  const painel = { ...fx, continuar: async () => { throw new Error('ja-rodando') } }
+  const filaObras = criarConstrucaoFixture(cm(), undefined, [{ pasta: 'ponto', nome: 'Ponto', restanteMin: 300 }])
+  const user = userEvent.setup()
+  render(<TemaProvider><Painel obra={obra} painel={painel} modos={cm({ agenda: 'automatico' })} sondagemMs={0} filaObras={filaObras} /></TemaProvider>)
+  await screen.findByText(PCT)
+  await user.click(screen.getByRole('button', { name: 'Pausar obra' }))
+  await user.click(await screen.findByRole('button', { name: 'Continuar obra' }))
+  const dialogo = await screen.findByRole('dialog', { name: 'Como começar esta obra' })
+  expect(dialogo).toHaveTextContent('TRABALHANDO NA OBRA PONTO')
+  await user.click(within(dialogo).getByRole('button', { name: 'Colocar na fila →' }))
+  expect(filaObras.naFila).toEqual([{ pasta: 'agenda', depoisDe: 'ponto' }])
+})

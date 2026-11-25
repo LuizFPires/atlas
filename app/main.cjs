@@ -236,9 +236,9 @@ handle('atlas:fila:estado', async () => {
 // M51: "Mudar a ordem" no Canteiro, para uma obra que espera na fila.
 handle('atlas:fila:mudar', async (pasta, como) => {
   const p = String(pasta); const c = String(como)
-  if (!filaObras.naFila(p)) throw new Error('fora-da-fila')
-  if (c === 'fila') return
   const outras = construcao.trabalhando().filter((x) => x !== p)
+  // M54: também vale para uma obra parada que não estava na fila ("Tentar agora" com outra obra trabalhando).
+  if (c === 'fila') { if (!filaObras.naFila(p) && outras.length) filaObras.entrar(p, outras[0]); return }
   if (c === 'juntas') filaObras.juntar([...outras, p])
   else if (c === 'primeiro') { for (const x of outras) { await painel.pausar(x); filaObras.entrar(x, p) } filaObras.sair(p) }
   else throw new Error('como-invalido')
