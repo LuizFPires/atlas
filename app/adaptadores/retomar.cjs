@@ -28,7 +28,7 @@ function nomeDoPlan(texto, pasta) {
 const mtime = (caminho) => { try { return fs.statSync(caminho).mtimeMs } catch { return 0 } }
 
 /** `deps`: { raiz, painel (real), cota? (PonteCota), construcao (para saber se a linha roda agora) } */
-function criarRetomar({ raiz, painel, cota, construcao }) {
+function criarRetomar({ raiz, painel, cota, construcao, fila = null }) {
   return {
     async obraEmAndamento() {
       let nomes
@@ -37,6 +37,7 @@ function criarRetomar({ raiz, painel, cota, construcao }) {
       for (const pasta of nomes) {
         try {
           if (construcao.linha.rodando(pasta)) continue
+          if (fila && fila.naFila(pasta)) continue // M51: espera a vez; quem começa é o vigia, quando a da frente ficar pronta
           const texto = lerTexto(caminhoSeguro(raiz, pasta, 'PLAN.md'))
           if (texto === null) continue
           const p = lerPlanoDoTexto(texto)

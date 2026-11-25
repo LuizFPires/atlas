@@ -60,6 +60,10 @@ export interface EtapaDaObra { n: number; nome: string; feitas: number; total: n
 
 export interface EstadoObra {
   pct: number
+  /** M51: esperando a vez na fila; começa sozinha quando a obra `nome` ficar pronta. */
+  naFila?: { depoisDe: string; nome: string } | null
+  /** M51: minutos de trabalho que faltam (pelo ritmo real); null sem medida. */
+  restanteMin?: number | null
   tarefas: number
   feitas: number
   /** Etapa em andamento (a próxima não concluída); null quando a obra acabou. */

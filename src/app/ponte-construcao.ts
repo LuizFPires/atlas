@@ -104,11 +104,30 @@ export interface ResultadoInicio {
   modo: ModoObra
 }
 
+/** M51: o que fazer quando outra obra já está trabalhando (o cliente escolhe; prototipo/caminho-novo/Q1Escolher). */
+export type ComoComecar = 'fila' | 'juntas' | 'primeiro'
+export const COMO_COMECAR: readonly ComoComecar[] = ['fila', 'juntas', 'primeiro']
+
+export interface EstadoFila {
+  /** Obras com a equipe trabalhando agora, com o que falta (minutos de trabalho, pelo ritmo real; null sem medida ainda). */
+  trabalhando: { pasta: string; nome: string; restanteMin: number | null }[]
+  /** Obras esperando a vez, na ordem: cada uma começa sozinha quando `depoisDe` ficar pronta. */
+  fila: { pasta: string; depoisDe: string }[]
+  juntas: string[]
+}
+
 export interface PonteConstrucao {
   /** Pede ao Claude as etapas da obra (lendo telas.md/regras.md/design-system.md da pasta) e a previsão por plano. */
   planejar(pasta: string, obraNome: string): Promise<Planejamento>
-  /** Gera o PLAN.md da obra (nunca sobrescreve um existente), guarda o modo e inicia a construção nesse modo. */
-  iniciar(pasta: string, obraNome: string, modo: ModoObra, etapas: Etapa[]): Promise<ResultadoInicio>
+  /**
+   * Gera o PLAN.md da obra (nunca sobrescreve um existente), guarda o modo e inicia a construção nesse modo. Com outra obra
+   * trabalhando e sem `como`, falha com 'outra-obra-trabalhando' sem gravar nada (M51).
+   */
+  iniciar(pasta: string, obraNome: string, modo: ModoObra, etapas: Etapa[], como?: ComoComecar): Promise<ResultadoInicio>
+  /** M51: quem trabalha e quem espera. */
+  fila?(): Promise<EstadoFila>
+  /** M51: "Mudar a ordem" de uma obra que espera na fila. */
+  mudarVez?(pasta: string, como: ComoComecar): Promise<void>
 }
 
 // ---- PLAN.md da obra do cliente (formato obrigatório do painel) ---------------------------------------------------------------
@@ -182,24 +201,44 @@ export function criarModoObraFixture(iniciais: Record<string, ModoObra> = {}): M
 
 export interface ConstrucaoFixture extends PonteConstrucao {
   /** Cada início de obra "disparado" (só na memória). */
-  readonly iniciadas: { pasta: string; modo: ModoObra; plan: string; recomendado: { ativo: boolean } }[]
+  readonly iniciadas: { pasta: string; modo: ModoObra; plan: string; recomendado: { ativo: boolean }; como?: ComoComecar }[]
+  /** M51: obras "trabalhando" no fixture (para simular a escolha fila / juntas / esta primeiro). */
+  readonly trabalhandoAgora: { pasta: string; nome: string; restanteMin: number | null }[]
+  readonly naFila: { pasta: string; depoisDe: string }[]
 }
 
 /** Mock: não toca no disco nem dispara nada. Grava o modo no mesmo armazém de preferências que o painel (M19) lê. */
-export function criarConstrucaoFixture(modos: PonteModoObra = criarModoObraFixture(), raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): ConstrucaoFixture {
+export function criarConstrucaoFixture(modos: PonteModoObra = criarModoObraFixture(), raiz = 'C:\\Users\\Zé\\Atlas\\Obras', trabalhando: { pasta: string; nome: string; restanteMin: number | null }[] = []): ConstrucaoFixture {
   const iniciadas: ConstrucaoFixture['iniciadas'] = []
+  const trabalhandoAgora = trabalhando.map((t) => ({ ...t }))
+  const naFila: { pasta: string; depoisDe: string }[] = []
   return {
-    iniciadas,
+    iniciadas, trabalhandoAgora, naFila,
+    async fila() { return { trabalhando: trabalhandoAgora.map((t) => ({ ...t })), fila: naFila.map((f) => ({ ...f })), juntas: [] } },
+    async mudarVez(pasta, como) {
+      const i = naFila.findIndex((f) => f.pasta === pasta)
+      if (i < 0) throw new Error('fora-da-fila')
+      if (como === 'fila') return
+      naFila.splice(i, 1)
+      if (como === 'primeiro') { for (const t of trabalhandoAgora.splice(0)) naFila.push({ pasta: t.pasta, depoisDe: pasta }) }
+      trabalhandoAgora.push({ pasta, nome: pasta, restanteMin: null })
+    },
     async planejar() { return { etapas: ETAPAS_EXEMPLO.map((e) => ({ ...e })), previsao: PREVISAO_EXEMPLO } },
-    async iniciar(pasta, obraNome, modo, etapas) {
+    async iniciar(pasta, obraNome, modo, etapas, como) {
       if (!ehModoObra(modo)) throw new Error('modo-invalido')
       if (!etapas.length) throw new Error('sem-etapas')
       if (iniciadas.some((i) => i.pasta === pasta)) throw new Error('ja-iniciada')
+      if (trabalhandoAgora.length > 0 && !como) throw new Error('outra-obra-trabalhando')
       const plan = montarPlanMd(obraNome, etapas)
       // Porteiro do formato do painel: PLAN fora do formato nunca começa uma obra.
       if (!validarPlanNovo(plan).ok) throw new Error('plan-invalido')
       await modos.gravar(pasta, modo)
-      iniciadas.push({ pasta, modo, plan, recomendado: paraRecomendado(modo) })
+      iniciadas.push({ pasta, modo, plan, recomendado: paraRecomendado(modo), ...(como ? { como } : {}) })
+      if (trabalhandoAgora.length > 0 && como === 'fila') naFila.push({ pasta, depoisDe: trabalhandoAgora[0].pasta })
+      else if (como) { // sem `como` o fixture não passa a contar a obra como "trabalhando" (os testes antigos começam várias obras)
+        if (como === 'primeiro') for (const t of trabalhandoAgora.splice(0)) naFila.push({ pasta: t.pasta, depoisDe: pasta })
+        trabalhandoAgora.push({ pasta, nome: obraNome, restanteMin: null })
+      }
       return { plan: `${raiz}\\${pasta}\\PLAN.md`, modo }
     },
   }

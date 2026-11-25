@@ -50,6 +50,7 @@ const { montarPlanMd, validarPlanNovo, comoDado } = require('./plan-md.cjs')
 const { ehModoObra, gravarRecomendadoGlobal } = require('./modo.cjs')
 const { detectarCota } = require('./cota.cjs')
 const { limparFala } = require('./vigia.cjs')
+const { criarFilaMemoria, ehComo } = require('./fila-obras.cjs')
 
 /**
  * Ferramentas permitidas à linha: SUBCOMANDOS EXATOS, sem curinga em git/gh/npm inteiros. Isto é lista de permissão do Claude,
@@ -298,8 +299,8 @@ function opcoesDaFala(fala) {
 
 const RE_PEDE_PESSOA = /USU[AÁ]RIO\s*:|precis[ao] (?:que voc[eê]|de voc[eê])|\b(?:ligue|ligar|conecte|conectar) (?:o|a) (?:GitHub|Vercel|Supabase)|reinstale o Atlas|aguardando (?:voc[eê]|sua)|s[oó] (?:voc[eê]|o usu[aá]rio) pode/i
 
-function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [], diario = null, aoAviso = () => {}, recursos = null }) {
-  /** pasta -> { parar, recentes: string[], desde } (uma linha por vez). */
+function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, agora = () => new Date(), dadosApp = path.join(path.dirname(raiz), '.atlas-app'), iniciarFluxo = iniciarClaudeEmFluxo, executar = executarClaude, resolver = resolverClaude, modelo = () => [], envContas = () => ({}), exigirPlugin = false, comandosDoKit = () => [], diario = null, aoAviso = () => {}, recursos = null, fila = criarFilaMemoria(), pausarObra = null }) {
+  /** pasta -> { parar, recentes: string[], desde }. M51: mais de uma só quando o cliente escolheu "ao mesmo tempo" (fila-obras.cjs). */
   const linhas = new Map()
   // M41: diário da obra (o Atlas escreve; nunca o Claude). Sem diário injetado, nada muda.
   const dirDe = (pasta) => { try { return pastaDaObra(raiz, pasta) } catch { return null } }
@@ -325,6 +326,8 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
   /** Paradas por cota vistas pelo APP, fora da obra (cota-store.cjs): a retomada automática só confia nisto. */
   const paradas = criarLojaDeParadas({ raiz, dadosApp })
   let iniciando = false // reserva durante iniciar() (há awaits entre a conferência e o religar)
+  /** M51: outra obra trabalhando impede esta? Só não impede quando todas (esta e as que rodam) foram marcadas "ao mesmo tempo". */
+  const ocupadoPorOutra = (pasta) => { const outras = [...linhas.keys()].filter((p) => p !== pasta); return outras.length > 0 && !(fila.junta(pasta) && outras.every((p) => fila.junta(p))) }
 
   const claudePronto = async () => {
     if (!resolver(process.env)) throw new Error('claude-nao-instalado')
@@ -341,7 +344,7 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
   function religar(pasta, { nova = false, decisao = null } = {}) {
     const cwd = pastaDaObra(raiz, pasta)
     if (linhas.has(pasta)) return // já rodando: idempotente
-    if (linhas.size > 0) throw new Error('ja-rodando')
+    if (ocupadoPorOutra(pasta)) throw new Error('ja-rodando')
     garantirSemConfigDeProjeto(cwd, { permitirGit: !nova }) // config de projeto suspeita: não roda (obra nova: .git de fora também não)
     const plugin = typeof pluginDir === 'function' ? pluginDir(pasta) : pluginDir // função: kit por obra (kit.cjs), sem gravar na obra
     // Sem o kit o Claude não conhece /construir: terminava em segundos e o painel lia "concluiu" (bug de 24/11/2026). Nunca roda assim.
@@ -449,18 +452,29 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
       return { etapas, previsao: previsaoPorEtapas(etapas.length) }
     },
 
-    async iniciar(pasta, obraNome, modo, etapas) {
+    /** M51: as obras com a linha rodando agora (o front mostra quem está trabalhando ao oferecer fila / juntas / esta primeiro). */
+    trabalhando: () => [...linhas.keys()],
+
+    /**
+     * `como` (M51): o que fazer se outra obra já estiver trabalhando — 'fila', 'juntas' ou 'primeiro'. Sem `como` e com outra obra
+     * trabalhando: 'outra-obra-trabalhando' (o front pergunta ao cliente, mostrando o que muda em cada caminho). Nada é gravado.
+     */
+    async iniciar(pasta, obraNome, modo, etapas, como = null) {
       if (!ehModoObra(modo)) throw new Error('modo-invalido')
       if (!Array.isArray(etapas) || etapas.length === 0 || etapas.length > MAX_ETAPAS) throw new Error('sem-etapas')
       const cwd = pastaDaObra(raiz, pasta)
       garantirSemConfigDeProjeto(cwd)
       const arquivoPlan = caminhoSeguro(raiz, pasta, 'PLAN.md')
       if (fs.existsSync(arquivoPlan)) throw new Error('ja-iniciada')
-      if (linhas.size > 0 || iniciando) throw new Error('ja-rodando')
+      if (iniciando) throw new Error('ja-rodando')
+      if (como !== null && !ehComo(como)) throw new Error('como-invalido')
+      const outras = () => [...linhas.keys()].filter((p) => p !== pasta)
+      if (outras().length > 0 && !como) throw new Error('outra-obra-trabalhando')
       iniciando = true // reserva já aqui: duas chamadas concorrentes não passam as duas
       try {
         await claudePronto() // falha calma ANTES de gravar qualquer coisa
-        if (linhas.size > 0) throw new Error('ja-rodando')
+        const frente = outras()
+        if (frente.length > 0 && !como) throw new Error('outra-obra-trabalhando')
         if (fs.existsSync(arquivoPlan)) throw new Error('ja-iniciada')
         const plan = montarPlanMd(obraNome, etapas)
         if (!validarPlanNovo(plan).ok) throw new Error('plan-invalido') // porteiro do formato do painel
@@ -472,7 +486,15 @@ function criarConstrucao({ raiz, modos, claudeEstado, pluginDir = null, home, ag
         try {
           await modos.gravar(pasta, modo)
           gravarRecomendadoGlobal(modo, { home, agora: agora() })
-          religar(pasta, { nova: true })
+          if (frente.length > 0 && como === 'fila') fila.entrar(pasta, frente[0]) // espera a vez; o vigia começa quando a da frente ficar pronta
+          else {
+            if (frente.length > 0 && como === 'juntas') fila.juntar([...frente, pasta])
+            if (frente.length > 0 && como === 'primeiro') {
+              if (typeof pausarObra !== 'function') throw new Error('como-invalido')
+              for (const p of frente) { await pausarObra(p); fila.entrar(p, pasta) } // volta sozinha quando esta ficar pronta
+            }
+            religar(pasta, { nova: true })
+          }
         } catch (e) {
           for (const f of [arquivoPlan, caminhoSeguro(raiz, pasta, '.atlas', 'modo.json')]) { try { fs.unlinkSync(f) } catch { /* não existia */ } }
           try { if (antes === null) fs.unlinkSync(recomendado); else gravarAtomico(recomendado, antes) } catch { /* melhor esforço */ }

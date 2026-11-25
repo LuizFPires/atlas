@@ -69,7 +69,7 @@ const ESPERA_SEM_AVANCO_MS = 5 * 60_000
 const MAX_SEM_AVANCO = 2
 const MOTIVO_SEM_AVANCO = 'A obra terminou dois turnos seguidos sem avançar. Para não gastar sua cota à toa, o Atlas parou de religar sozinho.'
 
-function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new Date(), aoPrecisar = () => {}, diario = null, diagnosticar = null, preCondicoes = null }) {
+function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new Date(), aoPrecisar = () => {}, diario = null, diagnosticar = null, preCondicoes = null, fila = null, comecarDaFila = null }) {
   /** O que falta para valer a pena religar (internet, Claude, disco). null = pode. Nunca lança. */
   const falta = async (pasta) => {
     if (!preCondicoes) return null
@@ -188,12 +188,32 @@ function criarVigia({ raiz, construcao, garantirKit, listar, agora = () => new D
     }
   }
 
+  /** M51: a obra da frente ficou pronta (ou foi excluída)? Então começa sozinha a que esperava por ela. */
+  async function andarFila() {
+    if (!fila || typeof comecarDaFila !== 'function') return
+    for (const x of fila.ler().fila) {
+      try { if (!require('node:fs').existsSync(pastaDaObra(raiz, x.pasta))) { fila.sair(x.pasta); continue } } catch { fila.sair(x.pasta); continue } // obra excluída
+      let pronta
+      try { pronta = pctDoPlan(pastaDaObra(raiz, x.depoisDe)) >= 100 } catch { pronta = true } // a obra da frente não existe mais
+      if (!pronta || construcao.linha.rodando(x.pasta)) continue
+      if (await falta(x.pasta)) continue
+      try {
+        await comecarDaFila(x.pasta)
+        fila.sair(x.pasta); fila.terminou(x.depoisDe)
+        anotar(x.pasta, 'retomada', 'Chegou a vez desta obra na fila: o Atlas começou sozinho')
+      } catch { /* outra obra ainda trabalhando ou sem condição: tenta na próxima passada */ }
+    }
+  }
+
   return {
     /** Uma passada em todas as obras (o main chama a cada minuto). Nunca lança. */
     async rodada() {
       if (ocupado) return
       ocupado = true
-      try { for (const p of await listar()) { try { await olhar(p) } catch { /* uma obra com problema não para as outras */ } } } finally { ocupado = false }
+      try {
+        for (const p of await listar()) { try { await olhar(p) } catch { /* uma obra com problema não para as outras */ } }
+        await andarFila()
+      } finally { ocupado = false }
     },
     /** O que o painel mostra: null (nada a dizer), 'tentando' (com tentativa e próxima hora) ou 'precisa-voce' (com o motivo). */
     estado(pasta) {

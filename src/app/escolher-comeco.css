@@ -1,0 +1,37 @@
+/* M51 · Q1Escolher: outra obra já está trabalhando; o cliente escolhe fila, ao mesmo tempo ou esta primeiro. Só tokens do Atlas. */
+.at-esc__fundo { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgba(10, 11, 13, 0.55); }
+.at-esc { width: min(1040px, 100%); max-height: calc(100vh - 48px); overflow: auto; box-sizing: border-box; padding: 28px 30px; border-radius: 24px; background: var(--card); border: 1px solid var(--card-b); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45); display: flex; flex-direction: column; gap: 18px; color: var(--text); }
+.at-esc__cab { display: flex; align-items: flex-start; gap: 16px; }
+.at-esc__tit { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.at-esc__tit > b { font-size: 24px; letter-spacing: -0.01em; }
+.at-esc__rot { display: flex; align-items: center; gap: 8px; font: 600 11px var(--font-mono); letter-spacing: 0.12em; color: var(--lime-txt, var(--lime)); }
+.at-esc__pulso { width: 7px; height: 7px; border-radius: 4px; background: var(--lime); animation: at-esc-pulso 1.2s ease-in-out infinite; }
+@keyframes at-esc-pulso { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
+@media (prefers-reduced-motion: reduce) { .at-esc__pulso { animation: none; } }
+.at-esc__texto { font-size: 15px; line-height: 1.5; color: var(--mute); max-width: 720px; }
+.at-esc__plano { margin-left: auto; flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; padding: 10px 14px; border-radius: 14px; background: var(--card2); border: 1px solid var(--card-b); }
+.at-esc__plano span { font: 600 10px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2, var(--mute)); }
+.at-esc__plano b { font-size: 17px; }
+.at-esc__opcoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .at-esc__opcoes { grid-template-columns: 1fr; } }
+.at-esc__op { all: unset; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 18px; background: var(--card2); border: 1px solid var(--card-b); color: var(--text); }
+.at-esc__op:hover { border-color: var(--lime); }
+.at-esc__op:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.at-esc__op--on { background: var(--soft); border: 2px solid var(--lime); padding: 17px; }
+.at-esc__op-cab { display: flex; align-items: center; gap: 10px; }
+.at-esc__op-cab b { font-size: 17px; }
+.at-esc__anel { width: 20px; height: 20px; flex: none; border-radius: 50%; border: 2px solid var(--card-b); display: grid; place-items: center; box-sizing: border-box; }
+.at-esc__anel span { width: 10px; height: 10px; border-radius: 5px; }
+.at-esc__op--on .at-esc__anel { border-color: var(--lime); }
+.at-esc__op--on .at-esc__anel span { background: var(--lime); }
+.at-esc__rec { margin-left: auto; padding: 3px 8px; border-radius: 999px; background: var(--lime); color: var(--on-lime); font: 700 10px var(--font-mono); letter-spacing: 0.08em; }
+.at-esc__frase { font-size: 14px; line-height: 1.5; color: var(--mute); }
+.at-esc__efeitos { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line, var(--card-b)); }
+.at-esc__ef { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.4; }
+.at-esc__ef em { display: block; font: 600 10px var(--font-mono); font-style: normal; letter-spacing: 0.1em; color: var(--mute2, var(--mute)); }
+.at-esc__ponto { flex: none; margin-top: 5px; width: 8px; height: 8px; border-radius: 4px; background: var(--mute2, var(--mute)); }
+.at-esc__ef--bom .at-esc__ponto { background: var(--lime); }
+.at-esc__ef--atencao .at-esc__ponto { background: #F2B84B; }
+.at-esc__pe { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.at-esc__nota { font-size: 13px; line-height: 1.5; color: var(--mute2, var(--mute)); max-width: 560px; margin-right: auto; }
+.at-esc__btn { height: 48px; padding: 0 20px; border-radius: 12px; font-size: 15px; }

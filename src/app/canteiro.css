@@ -91,3 +91,11 @@
 .at-ct__fora-lista li { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--card-b); font-size: 14px; }
 .at-ct__fora-lista li span { color: var(--mute); line-height: 1.45; }
 .at-ct__fora-lista .at-ct__fora-voce { border: 2px solid var(--aviso); }
+/* M51 (Q4Canteiro): quantas obras trabalham, quantas esperam na fila, e "Mudar a ordem". */
+.at-ct__fila { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 16px; background: var(--card); border: 1px solid var(--card-b); }
+.at-ct__fila-ico { flex: none; width: 36px; height: 36px; border-radius: 18px; display: grid; place-items: center; background: var(--soft); color: var(--lime-txt, var(--lime)); }
+.at-ct__fila-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.at-ct__fila-txt b { font-size: 15px; }
+.at-ct__fila-txt span { font-size: 13px; line-height: 1.45; color: var(--mute); }
+.at-ct__fila-erro { color: #FF8478 !important; }
+.at-ct__fila-btn { flex: none; }

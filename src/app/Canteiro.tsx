@@ -9,6 +9,9 @@ import type { ObraParaContinuar } from './Obras'
 import type { ParadaReal, QuemTrabalha } from './ponte-painel'
 import { quandoParou, type PonteRetomar } from './ponte-retomar'
 import { fichaDaTrava, type TravaObra } from './travas'
+import { EscolherComeco } from './EscolherComeco'
+import type { ComoComecar, EstadoFila, PonteConstrucao } from './ponte-construcao'
+import type { Plano } from './ponte-claude'
 import './canteiro.css'
 
 // Canteiro de obras e Obras concluídas (Milestone 37; protótipo prototipo/caminho-novo/K1Canteiro e K2Concluidas, aprovado pelo
@@ -45,7 +48,7 @@ function PlacaDeObra({ nome, parou }: { nome: string; parou: string }) {
 }
 
 /** O que o painel da obra diz (só o que o cartão usa). */
-type LeituraPainel = { pct: number; parada?: ParadaReal | null; pausadaPorVoce?: boolean; agora?: QuemTrabalha[]; trava?: TravaObra | null }
+type LeituraPainel = { pct: number; parada?: ParadaReal | null; pausadaPorVoce?: boolean; agora?: QuemTrabalha[]; trava?: TravaObra | null; naFila?: { depoisDe: string; nome: string } | null }
 /** Situação de uma obra em construção, para o selo e a linha do cartão. */
 type Vivo = { selo: string; linha: string; acao: string; tom: 'lime' | 'cinza' | 'ambar'; religar?: boolean; volta?: string; travaVoce?: boolean; travaResumo?: string; travaLinha?: string }
 type Lida = { pasta: string; nome: string; fase: FaseObra; vivo?: Vivo }
@@ -60,6 +63,8 @@ function vivoDa(l: LeituraPainel | null, parouEm: string | null | undefined): Vi
     const f = fichaDaTrava(l.trava)
     return { selo: f.selo, linha: f.linha, volta: f.volta, acao: f.precisaDeVoce ? 'Resolver agora' : 'Abrir a obra', tom: f.precisaDeVoce ? 'ambar' : l.trava.tipo === 'github-minutos' ? 'lime' : 'cinza', travaVoce: f.precisaDeVoce, travaResumo: f.precisaDeVoce ? 'precisa de você' : f.volta.toLocaleLowerCase('pt-BR').replace(' · ', ', '), travaLinha: f.linha }
   }
+  // M51 (Q4Canteiro): esperando a vez; começa sozinha quando a da frente ficar pronta.
+  if (l.naFila) return { selo: 'NA FILA', linha: `Na fila: começa sozinha quando a obra ${l.naFila.nome} ficar pronta.`, acao: 'Abrir a obra', tom: 'ambar' }
   if (l.pausadaPorVoce) return { selo: 'PAUSADA POR VOCÊ', linha: 'A obra está esperando você mandar seguir.', acao: 'Continuar obra', tom: 'cinza' }
   if (parouEm !== undefined) return { selo: 'PARADA', linha: `Parou ${quandoParou(parouEm, new Date()) ?? 'há pouco'}, quando o computador desligou.`, acao: 'Continuar obra', tom: 'cinza', religar: true }
   const ativo = l.agora?.find((q) => q.tom === 'ativo')
@@ -80,9 +85,16 @@ interface Props {
   retomar?: PonteRetomar
   onAbrir: (o: ObraParaContinuar) => void
   onNova: () => void
+  /** M51: quem trabalha, quem espera na fila e "Mudar a ordem" (Q4Canteiro). */
+  construcao?: Pick<PonteConstrucao, 'fila' | 'mudarVez'>
+  plano?: Plano
 }
 
-export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova }: Props) {
+export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova, construcao, plano = 'pro' }: Props) {
+  const [fila, setFila] = useState<EstadoFila | null>(null)
+  const [mudando, setMudando] = useState(false)
+  const [erroFila, setErroFila] = useState('')
+  const [versao, setVersao] = useState(0)
   const [lidas, setLidas] = useState<Lida[] | null>(null)
   const [filtro, setFiltro] = useState<Filtro>('todas')
   const [busca, setBusca] = useState('')
@@ -117,12 +129,14 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova }: Prop
         const vivo = fase.etapa === 'obra' && !fase.concluida ? vivoDa(leitura, parada?.pasta === pasta ? parada.paradaEm : undefined) : undefined
         out.push({ pasta, nome: nomeDaPasta(pasta), fase, vivo })
       }
+      const f = modo === 'canteiro' && construcao?.fila ? await construcao.fila().catch(() => null) : null
       if (!vivo) return
+      setFila(f)
       setLidas(out)
       if (modo === 'canteiro' && !avisoDeTravasMostrado && out.some((o) => o.vivo?.travaVoce)) { avisoDeTravasMostrado = true; setAvisoTravas(true) }
     })()
     return () => { vivo = false }
-  }, [obras, painel, retomar, modo])
+  }, [obras, painel, retomar, modo, construcao, versao])
 
   const daqui = useMemo(() => {
     const todas = (lidas ?? []).filter((o) => (modo === 'concluidas' ? o.fase.concluida : !o.fase.concluida))
@@ -186,6 +200,23 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova }: Prop
         </div>
       )}
 
+      {modo === 'canteiro' && fila && fila.fila.length > 0 && (() => {
+        const primeira = fila.fila[0]
+        const nomeDe = (p: string) => (lidas ?? []).find((o) => o.pasta === p)?.nome ?? nomeDaPasta(p)
+        const n = fila.trabalhando.length
+        return (
+          <section className="at-ct__fila" aria-label="Como as obras estão dividindo o Claude">
+            <span className="at-ct__fila-ico" aria-hidden="true"><Icone nome="lista" tamanho={18} /></span>
+            <div className="at-ct__fila-txt">
+              <b>{n === 1 ? '1 obra trabalhando' : `${n} obras trabalhando`}, {fila.fila.length === 1 ? '1 na fila' : `${fila.fila.length} na fila`}</b>
+              <span>{plano === 'max' ? 'Plano Max' : 'Plano Pro'}: uma obra por vez gasta a cota no ritmo de sempre. {nomeDe(primeira.pasta)} começa sozinha quando {nomeDe(primeira.depoisDe)} ficar pronta.</span>
+              {erroFila && <span className="at-ct__fila-erro" role="alert">{erroFila}</span>}
+            </div>
+            <button type="button" className="at-ct__cancelar at-ct__fila-btn" onClick={() => { setErroFila(''); setMudando(true) }}>Mudar a ordem</button>
+          </section>
+        )
+      })()}
+
       <div className="at-ct__cartoes">
         {mostradas.map((o) => <Cartao key={o.pasta} o={o} onAbrir={() => { void abrir(o) }} onExcluir={modo === 'canteiro' && obras.excluir && !o.fase.concluida ? () => { setErroExcluir(''); setExcluindo(o) } : undefined} />)}
       </div>
@@ -214,6 +245,21 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova }: Prop
               </div>
             </div>
           </div>
+        )
+      })()}
+
+      {mudando && fila && fila.fila[0] && construcao?.mudarVez && (() => {
+        const espera = fila.fila[0]
+        const nomeDe = (p: string) => (lidas ?? []).find((o) => o.pasta === p)?.nome ?? nomeDaPasta(p)
+        const atual = fila.trabalhando.find((t) => t.pasta === espera.depoisDe) ?? fila.trabalhando[0] ?? { pasta: espera.depoisDe, nome: nomeDe(espera.depoisDe), restanteMin: null }
+        return (
+          <EscolherComeco nova={nomeDe(espera.pasta)} atual={{ nome: nomeDe(atual.pasta), restanteMin: atual.restanteMin }} novaH={null} plano={plano} ocupado={ocupado} textoCancelar="Deixar como está"
+            onCancelar={() => setMudando(false)}
+            onEscolher={(c: ComoComecar) => {
+              if (c === 'fila') { setMudando(false); return }
+              setOcupado(true)
+              construcao.mudarVez!(espera.pasta, c).then(() => { setMudando(false); setVersao((v) => v + 1) }, () => { setMudando(false); setErroFila('Não consegui mudar a ordem agora. Tente de novo em instantes.') }).finally(() => setOcupado(false))
+            }} />
         )
       })()}
 

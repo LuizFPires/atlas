@@ -90,17 +90,20 @@ const { criarAvisoCelular, textoDoAviso } = require('./adaptadores/aviso-celular
 const avisoCelular = criarAvisoCelular({ cofre, hashComputador: async () => hash() })
 const nomeDaObra = (pasta) => String(pasta || '').replace(/[-_]+/g, ' ').replace(/^./, (c) => c.toLocaleUpperCase('pt-BR'))
 const avisarNoCelular = (tipo, pasta, motivo) => { const t = textoDoAviso(tipo, nomeDaObra(pasta), motivo); void avisoCelular.avisar(t.titulo, t.texto) }
-const construcao = criarConstrucao({ recursos: recursosClaude, diario, aoAviso: (tipo, pasta) => avisarNoCelular(tipo, pasta), envContas: () => contasCli.envDaLinha(process.env.PATH || process.env.Path || ''), modelo: () => modelo.argsDaLinha(planoClaude), raiz: obras.raiz(), modos, claudeEstado: estadoClaude, pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, comandosDoKit: (pasta) => kit.comandos(pasta), exigirPlugin: true, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
+// M51: fila das obras (o cliente escolhe fila, ao mesmo tempo ou esta primeiro; fila-obras.cjs).
+const filaObras = require('./adaptadores/fila-obras.cjs').criarFila({ raiz: obras.raiz() })
+const construcao = criarConstrucao({ fila: filaObras, pausarObra: (pasta) => painel.pausar(pasta), recursos: recursosClaude, diario, aoAviso: (tipo, pasta) => avisarNoCelular(tipo, pasta), envContas: () => contasCli.envDaLinha(process.env.PATH || process.env.Path || ''), modelo: () => modelo.argsDaLinha(planoClaude), raiz: obras.raiz(), modos, claudeEstado: estadoClaude, pluginDir: (pasta) => kit.diretorio(pasta) || process.env.ATLAS_KIT_PLUGIN || null, comandosDoKit: (pasta) => kit.comandos(pasta), exigirPlugin: true, dadosApp: app.getPath('userData') }) // userData: o MESMO da cota (registro de parada por cota fora da obra)
 // Vigia (24/11/2026): linha que parou sem avançar é religada sozinha (2, 5 e 15 min, com o kit garantido) e, se não der, o painel avisa.
 const { criarDiagnostico } = require('./adaptadores/diagnostico.cjs')
 // M41 (O4): as 10 conferências quando o vigia desiste (internet, Claude, cota, contas, pasta, instruções, disco, trabalho da etapa).
 const diagnostico = criarDiagnostico({ raiz: obras.raiz(), internet: async () => net.isOnline(), claudeEstado: estadoClaude, contas: contasCli, kitDiretorio: (pasta) => kit.diretorio(pasta),
   espacoLivre: (dir) => { const s = require('node:fs').statfsSync(dir); return s.bavail * s.bsize } })
 const vigia = criarVigia({ diario, diagnosticar: (pasta) => diagnostico.diagnosticar(pasta), preCondicoes: (pasta) => diagnostico.podeTrabalhar(pasta), raiz: obras.raiz(), construcao, garantirKit: (pasta) => kit.garantir(String(pasta)), listar: () => obras.listar(),
+  fila: filaObras, comecarDaFila: async (pasta) => { await kit.garantir(String(pasta)); await painel.continuar(String(pasta)) },
   // Desistiu de religar sozinho: avisa NA HORA, mesmo com o Atlas minimizado (o painel também mostra o alerta com o motivo).
   aoPrecisar: (pasta, motivo) => { avisarNoCelular('parou', pasta, motivo); try { if (Notification.isSupported()) new Notification({ title: 'A obra parou', body: `${motivo} Abra o Atlas: ele mostra o que aconteceu e o que fazer.` }).show() } catch { /* aviso extra */ } } })
 const { criarCronograma } = require('./adaptadores/cronograma.cjs')
-const painel = criarPainel({ vigia, diario, cronograma: criarCronograma(), raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
+const painel = criarPainel({ fila: filaObras, vigia, diario, cronograma: criarCronograma(), raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
 const cota = criarCota({ recursos: recursosClaude, raiz: obras.raiz(), construcao, painel, claudeEstado: estadoClaude, dadosApp: app.getPath('userData'), garantirKit: (pasta) => kit.garantir(String(pasta)) })
 // Ocorrências (F11): livro do kit da obra (docs\ocorrencias.json). A chave colada vai SÓ ao cofre (DPAPI). Canais de aviso: pendência (ver ocorrencias.cjs).
@@ -109,7 +112,7 @@ const ocorrencias = criarOcorrencias({ raiz: obras.raiz(), cofre })
 const celular = criarCelular({ dados: require('node:path').join(app.getPath('userData'), 'celular') })
 // Importar (F06c): o .zip de outra IA é NÃO CONFIÁVEL; descompacta com todas as defesas (ver adaptadores/importar.cjs).
 const importar = criarImportar({ raiz: obras.raiz(), dialog, janela: () => janelaPrincipal })
-const retomar = criarRetomar({ raiz: obras.raiz(), painel, cota, construcao })
+const retomar = criarRetomar({ raiz: obras.raiz(), painel, cota, construcao, fila: filaObras })
 // Bloco "criação de projeto": o Claude destes passos é só leitor (projeto-comum.cjs); o git isolado é o mesmo da construção.
 const disparo = criarDisparo({ recursos: recursosClaude, modelo: () => modelo.args(), raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: estadoClaude })
 // Economia (24/11/2026): estilo, nomes e Ajuda são pedidos curtos; usam o Opus só no plano Max (no Pro, Sonnet). O protótipo segue o escolhido.
@@ -223,7 +226,26 @@ handle('atlas:modos:gravar', (pasta, modo) => modos.gravar(String(pasta), String
 
 // Planejar e iniciar a construção (PLAN.md + linha de produção do kit na pasta da obra).
 handle('atlas:construcao:planejar', (pasta, nome) => construcao.planejar(String(pasta), String(nome)))
-handle('atlas:construcao:iniciar', async (pasta, nome, modo, etapas) => { await kit.garantir(String(pasta)); return construcao.iniciar(String(pasta), String(nome), String(modo), Array.isArray(etapas) ? etapas : []) })
+handle('atlas:construcao:iniciar', async (pasta, nome, modo, etapas, como) => { await kit.garantir(String(pasta)); return construcao.iniciar(String(pasta), String(nome), String(modo), Array.isArray(etapas) ? etapas : [], como ? String(como) : null) })
+// M51: quem está trabalhando e quem espera na fila (com o prazo que falta, para o front mostrar o que muda em cada caminho).
+handle('atlas:fila:estado', async () => {
+  const comPrazo = async (pasta) => { let e = null; try { e = await painel.ler(pasta) } catch { /* sem estado */ } return { pasta, nome: nomeDaObra(pasta), restanteMin: e && Number.isFinite(e.restanteMin) ? e.restanteMin : null } }
+  const f = filaObras.ler()
+  return { trabalhando: await Promise.all(construcao.trabalhando().map(comPrazo)), fila: f.fila, juntas: f.juntas }
+})
+// M51: "Mudar a ordem" no Canteiro, para uma obra que espera na fila.
+handle('atlas:fila:mudar', async (pasta, como) => {
+  const p = String(pasta); const c = String(como)
+  if (!filaObras.naFila(p)) throw new Error('fora-da-fila')
+  if (c === 'fila') return
+  const outras = construcao.trabalhando().filter((x) => x !== p)
+  if (c === 'juntas') filaObras.juntar([...outras, p])
+  else if (c === 'primeiro') { for (const x of outras) { await painel.pausar(x); filaObras.entrar(x, p) } filaObras.sair(p) }
+  else throw new Error('como-invalido')
+  await kit.garantir(p)
+  await painel.continuar(p)
+  filaObras.sair(p)
+})
 
 // Painel da obra: andamento, pausa/continua, OK da etapa, modo, canteiro 3D (só 127.0.0.1) e versão de teste.
 handle('atlas:painel:ler', (pasta) => painel.ler(String(pasta)))
