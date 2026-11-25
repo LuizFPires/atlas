@@ -585,3 +585,12 @@ tela: prototipo/celular/Entrar.dc.html
 - [x] Face ID para abrir o app: oferecido depois do primeiro código; ao abrir, pede o rosto; se não reconhecer, tentar de novo ou entrar com o código
 Notas: DECISÃO do Luiz (25/11/2026, "E toda hora desconecta!! Vamos colocar o Face ID para acessar o app para o acesso ser rápido e precisa sustentar o login. Não dá para toda hora o usuário ter que mandar o código no email"). Causa: o login do /app ficava no sessionStorage (o iPhone apaga ao fechar o app) e só o acesso de 1 hora era guardado, sem a chave de renovação. Agora, só no /app, o refresh token do Supabase Auth fica no aparelho (localStorage) e o acesso é renovado antes de vencer ou num 401; renovação recusada volta ao login; sem internet, o login continua. O Portal web continua só enquanto a aba está aberta. Face ID (protótipo M09b/M10/M11 aprovado: "o protótipo está aprovado"): chave de acesso do próprio aparelho (WebAuthn, autenticador da plataforma, verificação do usuário obrigatória); o rosto nunca sai do iPhone. É a trava de abrir o app neste aparelho, conferida no próprio aparelho (o servidor não confere a assinatura; o login continua sendo o do código). Sair desliga o Face ID.
 
+## Milestone 53 — O canteiro 3D leve, sem mudar o que se vê
+peso: 1
+spec: S9
+tela: prototipo/caminho-novo/PalcoObra.dc.html
+- [x] Quadros por segundo conforme o momento: 60 só mexendo na cena, 30 com a equipe trabalhando, 15 sem ninguém trabalhando e nenhum com o Atlas minimizado ou escondido
+- [x] Sombras recalculadas 2× por segundo (antes a cada quadro)
+- [x] Qualidade automática: computador fraco (até 4 núcleos ou 4 GB) sem suavização de bordas e na resolução da tela; se o quadro ainda passar de 25 ms, baixa a resolução sozinho
+Notas: DECISÃO do Luiz (25/11/2026, "Do 3D pode implementar como sugeriu"). O 3D roda só na placa de vídeo do cliente e não gasta cota do Claude; a mudança só reduz o trabalho do computador. Conferido com foto da cena real (igual à anterior). Vem junto com o app (kit/canteiro), não com o kit embutido do servidor.
+

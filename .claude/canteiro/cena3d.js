@@ -67,10 +67,14 @@ const LUGAR = {
 };
 
 export function iniciar(palco, obterEstado) {
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // Atlas (M53, Luiz em 25/11/2026: o 3D leve sem mudar o que se vê). Computador fraco (até 4 núcleos ou 4 GB): sem serrilhado
+  // suavizado e na resolução da tela; os outros até 1,5×. Se mesmo assim cada quadro pesar, baixa a qualidade sozinho (abaixo).
+  const fraco = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+  const renderer = new THREE.WebGLRenderer({ antialias: !fraco, powerPreference: 'low-power' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, fraco ? 1 : 1.5));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = false; // M53: as sombras mudam devagar (o prédio sobe): recalcula 2× por segundo, não a cada quadro
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.domElement.className = 'cena3d';
@@ -100,7 +104,7 @@ export function iniciar(palco, obterEstado) {
   cena.add(hemi);
   const sol = new THREE.DirectionalLight(0xfff1dc, 2.2);
   sol.castShadow = true;
-  sol.shadow.mapSize.set(2048, 2048);
+  sol.shadow.mapSize.set(fraco ? 1024 : 2048, fraco ? 1024 : 2048);
   Object.assign(sol.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 220 });
   sol.shadow.bias = -0.0005;
   cena.add(sol, sol.target);
@@ -393,11 +397,21 @@ export function iniciar(palco, obterEstado) {
   const v3 = new THREE.Vector3();
   function topoObra(p) { const cheio = p / 100 * PRED.pav; return .4 + Math.min(PRED.pav, Math.floor(cheio)) * PRED.h + (cheio % 1 > .35 && cheio < PRED.pav ? PRED.h : 0); }
 
+  // M53: quantos quadros por segundo. Mexendo na cena: 60. Equipe trabalhando: 30. Ninguém trabalhando: 15. Atlas minimizado ou
+  // escondido: nenhum. O prédio sobe devagar, então ninguém vê a diferença; o computador esquenta bem menos.
+  let ultimaSombra = 0, custo = 0, quadros = 0, rebaixado = false;
+  const ritmoMs = (E) => {
+    if (document.hidden) return Infinity;
+    if (performance.now() - ultimoToque < 3000) return 0;
+    const ativos = Object.values((E && E.agentes) || {}).some((a) => a && a.ativo);
+    return ativos ? 33 : 66;
+  };
   function quadro(t) {
     if (!rodando) return;
     requestAnimationFrame(quadro);
-    const dt = Math.min(.1, (t - ultimo) / 1000); ultimo = t;
     const E = obterEstado() || {};
+    if (t - ultimo < ritmoMs(E) - 2) return;
+    const dt = Math.min(.1, (t - ultimo) / 1000); ultimo = t;
     const ag = E.agentes || {};
     const alvoPct = E.plano ? E.plano.pct : 0;
     pctVisto += (alvoPct - pctVisto) * Math.min(1, dt * 1.2);
@@ -544,7 +558,17 @@ export function iniciar(palco, obterEstado) {
     if (!controles.autoRotate && performance.now() - ultimoToque > 25000) controles.autoRotate = true;
     if (soCena && performance.now() - ultimoToque > 25000) { const alvoY = THREE.MathUtils.clamp(topo * .55 + 3, 6, 20); const dy = (alvoY - controles.target.y) * Math.min(1, dt * .6); controles.target.y += dy; camera.position.y += dy; }
     controles.update();
+    if (t - ultimaSombra > 500) { renderer.shadowMap.needsUpdate = true; ultimaSombra = t; }
+    const ini = performance.now();
     renderer.render(cena, camera);
+    // M53: se mesmo assim cada quadro passa de 25 ms (computador fraco), baixa a qualidade uma vez: resolução 1× e sombras raras.
+    if (!rebaixado) {
+      custo += performance.now() - ini; quadros++;
+      if (quadros >= 90) {
+        if (custo / quadros > 25) { rebaixado = true; renderer.setPixelRatio(1); medir(); }
+        custo = 0; quadros = 0;
+      }
+    }
   }
   ultimoToque = performance.now() - 20000;
   requestAnimationFrame(quadro);
