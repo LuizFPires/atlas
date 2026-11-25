@@ -201,3 +201,34 @@
 .at-pn__opcao-ir { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; font: 700 13px var(--font-text); color: #C6F135; }
 :root[data-theme='claro'] .at-pn__faixa:not(.at-pn__palco-base .at-pn__faixa) .at-pn__opcao { color: var(--text); border-color: var(--card-b); background: var(--card2); }
 :root[data-theme='claro'] .at-pn__faixa:not(.at-pn__palco-base .at-pn__faixa) .at-pn__opcao-exp { color: var(--mute); }
+/* M50 (PalcoObra, Luiz em 25/11/2026: "o prédio subindo precisa ficar mais visível, com menos interferência visual").
+   1) Cabeçalho numa linha só: "← Canteiro de obras" + título, as abas ao lado e os botões à direita (como no protótipo). */
+.at-pn__voltar { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font: 500 12px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute2); }
+.at-pn__voltar:hover { color: var(--text); }
+.at-pn__voltar:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; border-radius: 4px; }
+.at-pn__topo:has(.at-abobra__abas) { row-gap: 10px; }
+.at-pn__voltar { white-space: nowrap; }
+.at-pn__topo:has(.at-abobra__abas) h1 { font-size: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 28vw; }
+.at-pn__topo .at-abobra__abas { margin-left: 12px; flex: none; }
+.at-pn__topo .at-abobra__aba { min-height: 34px; padding: 0 14px; font-size: 13px; }
+.at-pn__topo:has(.at-abobra__abas) .at-pn__btn { height: 38px; padding: 0 14px; font-size: 13px; border-radius: 10px; }
+.at-pn:has(.at-abobra__abas) { gap: 14px; }
+.at-pn:has(.at-abobra__abas) .at-pn__palco { height: clamp(400px, calc(100vh - 150px), 900px); }
+@media (max-width: 1280px) { .at-pn:has(.at-abobra__abas) .at-pn__palco { height: clamp(380px, calc(100vh - 200px), 900px); } }
+/* 2) Os cartões por cima do prédio encolhem junto com o palco (--k vem do Painel: 1 no tamanho do protótipo, até 0,6). */
+.at-pn__palco .at-pn__hud, .at-pn__palco .at-pn__palco-base, .at-pn__palco .at-pn__balao { zoom: var(--k, 1); }
+.at-pn__palco .at-pn__hud--esq { max-width: 44%; }
+/* 3) A faixa de baixo é uma linha: um ponto, a frase com as últimas linhas do diário e os botões à direita. */
+.at-pn__palco-base .at-pn__faixa--compacta .at-pn__faixa-bola { width: 12px; height: 12px; background: transparent; }
+.at-pn__palco-base .at-pn__faixa--compacta .at-pn__faixa-bola svg { width: 16px; height: 16px; }
+.at-pn__palco-base .at-pn__faixa--compacta .at-pn__faixa-pulso { width: 10px; height: 10px; }
+.at-pn__palco-base .at-pn__faixa--compacta .at-pn__faixa-recentes { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.at-pn__palco-base .at-pn__faixa--compacta > .at-pn__faixa-acoes { flex: none; margin: 0; flex-wrap: nowrap; }
+.at-pn__palco-base .at-pn__faixa--compacta .at-pn__btn { height: 38px; padding: 0 14px; font-size: 13px; border-radius: 10px; }
+/* M50 (Luiz, 25/11/2026: "a largura dividida em duas metades"): com a equipe trabalhando, a barra de baixo tem duas metades —
+   à esquerda o que está sendo feito e as últimas linhas do diário; à direita o balão do mestre de obras e o diário completo. */
+.at-pn__palco-base:has(.at-pn__balao--canto) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; overflow: visible; }
+.at-pn__palco .at-pn__balao--canto { position: static; transform: none; zoom: 1; max-width: none; display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 18px; text-align: left; pointer-events: auto; background: rgba(16, 18, 20, 0.86); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.at-pn__balao-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.at-pn__balao-txt span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.at-pn__balao--canto .at-pn__btn { flex: none; height: 38px; padding: 0 14px; font-size: 13px; border-radius: 10px; }
