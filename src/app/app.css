@@ -42,3 +42,18 @@
 .at-ativ__dica > div { display: flex; flex-direction: column; gap: 3px; }
 .at-ativ__dica b { font-size: 16px; }
 .at-ativ__dica > div span { font-size: 15px; line-height: 1.5; color: var(--mute); }
+/* M47: primeiro uso no Mac (M5Preparando). */
+.at-prep { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.at-prep__item { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--card-b); }
+.at-prep__item div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.at-prep__item b { font-size: 15px; }
+.at-prep__item div span { font-size: 13px; line-height: 1.45; color: var(--mute); }
+.at-prep__bola { width: 28px; height: 28px; flex: none; border-radius: 14px; display: grid; place-items: center; font-weight: 700; font-size: 14px; background: #3A3F46; color: var(--on-lime); }
+.at-prep__rotulo { font: 600 11px var(--font-mono, 'Geist Mono', monospace); letter-spacing: 0.08em; color: var(--mute); }
+.at-prep__item--pronto .at-prep__bola { background: var(--lime); }
+.at-prep__item--pronto .at-prep__rotulo { color: var(--lime-txt, var(--lime)); }
+.at-prep__item--agora, .at-prep__item--esperando-voce { border: 2px solid #F2B84B; background: rgba(242, 184, 75, 0.08); }
+.at-prep__item--agora .at-prep__bola, .at-prep__item--esperando-voce .at-prep__bola { background: #F2B84B; }
+.at-prep__item--agora .at-prep__rotulo, .at-prep__item--esperando-voce .at-prep__rotulo { color: #F2B84B; }
+.at-prep__item--erro { border: 2px solid #E5484D; }
+.at-prep__item--erro .at-prep__bola { background: #E5484D; color: #fff; }

@@ -3,6 +3,7 @@ import { AVISO_EMAIL } from '../ui/aviso-email'
 import { Botao, CampoFalado, Icone, Microfone, useVoz, type NomeIcone } from '../ui'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import { juntarFalaEmail } from '../web/compra'
+import type { EstadoPreparo } from './ponte'
 import './app.css'
 
 /** O que a tela precisa do servidor de licenças (S4): quem implementa fica em ativacao-api.ts. */
@@ -44,6 +45,9 @@ interface Props {
   onContinuar: () => void
   /** Avisa o app que a instalação começou (para impedir o computador de dormir). */
   onInstalando?: (instalando: boolean) => void
+  /** M47 (Mac, tela M5Preparando): o Atlas prepara o computador; a tela mostra cada passo de verdade. Sem isso (Windows): como antes. */
+  preparo?: EstadoPreparo | null
+  onTentarPreparo?: () => void
 }
 
 /** Lateral escura com os 5 passos de começar (F02 e F03 usam a mesma). `agora` é o passo atual (1 a 5). */
@@ -69,7 +73,7 @@ export function LateralPassos({ agora }: { agora: number }) {
 }
 
 /** F02: instalar e ativar. E-mail da compra -> código de 6 números -> instalação com as 3 dicas (prototipo/F02Ativacao). */
-export function Ativacao({ api, computador, faseInicial = 'email', emailInicial = '', progresso = null, onContinuar, onInstalando }: Props) {
+export function Ativacao({ api, computador, faseInicial = 'email', emailInicial = '', progresso = null, onContinuar, onInstalando, preparo, onTentarPreparo }: Props) {
   const [fase, setFase] = useState<FaseAtivacao>(faseInicial)
   const [email, setEmail] = useState(emailInicial)
   const [codigo, setCodigo] = useState('')
@@ -158,7 +162,10 @@ export function Ativacao({ api, computador, faseInicial = 'email', emailInicial 
             </form>
           )}
 
-          {fase === 'instalando' && (
+          {fase === 'instalando' && preparo !== undefined && (
+            <PreparandoMac preparo={preparo} nome={nome} onTentar={onTentarPreparo} onContinuar={onContinuar} />
+          )}
+          {fase === 'instalando' && preparo === undefined && (
             <div className="at-ativ__form">
               <div className="at-ativ__progresso">
                 <span className="at-ativ__prog-nome">Instalando o Atlas</span>
@@ -181,6 +188,45 @@ export function Ativacao({ api, computador, faseInicial = 'email', emailInicial 
             </div>
           )}
         </section>
+      </div>
+    </div>
+  )
+}
+
+const MARCA_PASSO: Record<string, { ic: string; rotulo: string }> = {
+  pronto: { ic: '✓', rotulo: 'PRONTO' }, agora: { ic: '…', rotulo: 'AGORA' }, 'esperando-voce': { ic: '!', rotulo: 'ESPERANDO VOCÊ' }, fila: { ic: '·', rotulo: 'NA FILA' }, erro: { ic: '!', rotulo: 'NÃO DEU' },
+}
+
+/** M47 (tela M5Preparando, aprovada pelo Luiz em 24/11/2026): o Atlas instala o resto sozinho no Mac; o cliente só acompanha. */
+function PreparandoMac({ preparo, nome, onTentar, onContinuar }: { preparo: EstadoPreparo | null; nome: string; onTentar?: () => void; onContinuar: () => void }) {
+  const erro = preparo?.passos.find((p) => p.estado === 'erro')
+  return (
+    <div className="at-ativ__form">
+      <div className="at-ativ__progresso">
+        <span className="at-ativ__prog-nome">Preparando o seu Mac</span>
+        <div className="at-ativ__barra" role="progressbar" aria-label="Preparando o seu Mac" aria-valuemin={0} aria-valuemax={100} aria-valuenow={preparo?.percentual ?? 0}>
+          <div style={{ width: `${preparo?.percentual ?? 0}%` }} />
+        </div>
+        <span className="at-ativ__prog-resta">{preparo?.pronto ? 'pronto' : 'uns minutos'}</span>
+      </div>
+      <h1 className="at-ativ__h1-menor">O Atlas instala o resto sozinho{nome ? `, ${nome}` : ''}. Você só acompanha.</h1>
+      <ul className="at-prep" aria-label="O que o Atlas está preparando">
+        {(preparo?.passos ?? []).map((p) => (
+          <li key={p.id} className={`at-prep__item at-prep__item--${p.estado}`}>
+            <span className="at-prep__bola" aria-hidden="true">{MARCA_PASSO[p.estado]?.ic}</span>
+            <div><b>{p.nome}</b><span>{p.estado === 'erro' && p.dica ? p.dica : p.txt}</span></div>
+            <span className="at-prep__rotulo">{MARCA_PASSO[p.estado]?.rotulo}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="at-ativ__dica">
+        <span className="at-ativ__dica-icone"><Icone nome="computador" tamanho={22} /></span>
+        <div><b>O Mac é o seu canteiro.</b><span>Enquanto a obra constrói, deixe a tampa aberta e o carregador ligado. Com a tampa fechada, o Mac dorme e a obra pausa (ela volta sozinha quando você abrir).</span></div>
+      </div>
+      <div className="at-ativ__rodape">
+        {erro
+          ? <Botao onClick={onTentar}>Tentar de novo</Botao>
+          : <Botao onClick={onContinuar} disabled={!preparo?.pronto}>{preparo?.pronto ? <>Continuar <Icone nome="seta" tamanho={18} /></> : 'Preparando…'}</Botao>}
       </div>
     </div>
   )
