@@ -60,6 +60,8 @@ describe('lojas (M59, PB8/PB9/PB13)', () => {
     const zap = await screen.findByRole('link', { name: 'Mandar o convite pelo WhatsApp' })
     expect(zap.getAttribute('href')).toMatch(/^https:\/\/wa\.me\/\?text=.*teste%2Fabcdefghjk23/)
     expect(await screen.findByText(/de 12 pessoas já entraram/)).toBeInTheDocument()
+    // O Google não avisa quem sai do teste: o Atlas sugere uma folga para não perder os 14 dias.
+    expect(screen.getByText('Convide umas 15 pessoas: se alguém sair do teste, ainda sobram 12 (o Google não avisa quem saiu).')).toBeInTheDocument()
   })
 })
 

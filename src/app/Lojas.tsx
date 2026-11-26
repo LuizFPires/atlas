@@ -155,6 +155,7 @@ export function Lojas({ pasta, appNome, lojas, onGuia, dominio = null, onVoltar,
               </>
             )}
             {zap && <a className="at-noar__prim at-lojas__zap" href={zap} target="_blank" rel="noopener noreferrer">Mandar o convite pelo WhatsApp</a>}
+            {zap && !teste?.completo && <span className="at-noar__mudo">Convide umas 15 pessoas: se alguém sair do teste, ainda sobram 12 (o Google não avisa quem saiu).</span>}
           </>
         ))}
         {item('app', 'Versão de app e envio aos testes das lojas', e.envio.fase === 'teste', textoEnvio(e), (
