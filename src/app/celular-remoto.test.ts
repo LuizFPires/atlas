@@ -112,6 +112,15 @@ test('o celular recebe o andamento logo que muda (a cada 30 s), sem reenviar o q
   expect(status.length).toBe(1)
 })
 
+test('o andamento vai para o celular com 2 casas decimais (igual ao notebook)', async () => {
+  const { ex, status, pontes } = montar()
+  await pontes.obras.criarSubpasta('barbearia')
+  const ler = pontes.painel.ler.bind(pontes.painel)
+  pontes.painel.ler = async (pasta: string) => ({ ...(await ler(pasta)), pct: 2.7234 })
+  await ex.publicarStatus()
+  expect(status[0][0].percentual).toBe(2.72)
+})
+
 test('pedido de uma obra que este notebook não conhece: responde erro em palavras simples, sem travar a fila', async () => {
   const { ex, respostas } = montar([[pedido({ id: '1'.repeat(32), tipo: 'ajuste', obra_id: 'c9999999999999999', dados: { texto: 'x' } }), pedido({ id: '2'.repeat(32), tipo: 'pausar', obra_id: 'c9999999999999999' })]])
   await ex.batida(); await ex.ocioso()

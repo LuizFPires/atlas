@@ -260,7 +260,7 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
       obras.push({
         id, nome: (lig?.nome ?? pasta.replace(/-/g, ' ')).slice(0, 80),
         etapa_atual: { numero: e.etapa?.n ?? e.etapas.length, rotulo: (e.etapa?.nome ?? 'Tudo pronto').slice(0, 80) },
-        total_etapas: e.etapas.length, percentual: Math.max(0, Math.min(100, Math.round(e.pct))), estado, ativa_agora: ativa,
+        total_etapas: e.etapas.length, percentual: Math.max(0, Math.min(100, Math.floor(e.pct * 100 + 1e-6) / 100)), estado, ativa_agora: ativa,
         ultima_noticia: noticia.slice(0, 200), quando: new Date().toISOString(),
       })
     }

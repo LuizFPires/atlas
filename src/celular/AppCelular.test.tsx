@@ -1,5 +1,5 @@
 // M33 — o app do Atlas no celular: o projeto inteiro e o acompanhamento da obra, com o notebook do escritório trabalhando.
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AppCelular } from './AppCelular'
 import { criarApiCelularFixture } from './api'
@@ -89,7 +89,8 @@ test('acompanhar a obra e pausar pelo celular', async () => {
   const api = criarApiCelularFixture()
   render(<AppCelular api={api} intervalo={20} />)
   await userEvent.click(await screen.findByRole('button', { name: /Agenda da Barbearia/ }))
-  expect(screen.getByText('62%')).toBeInTheDocument()
+  // Luiz, 26/11/2026: o número do celular com 2 casas, igual ao notebook (62,00%).
+  expect(screen.getByText('62,00%')).toBeInTheDocument()
   // M08b: o prédio desenhado com os números da obra (etapa 4 de 7 = 3 andares prontos, o 4º em obra)
   const predio = screen.getByRole('img', { name: 'O prédio: 3 de 7 andares prontos, o 4º em obra' })
   expect(predio.getAttribute('src')).toMatch(/^data:image\/svg\+xml/)
@@ -165,4 +166,17 @@ test('Foto para a Ajuda: tira a foto e ela vai para a Ajuda do Atlas no computad
   await userEvent.upload(entrada, arq)
   expect(await screen.findByText(/A foto foi para a Ajuda do Atlas no computador/, {}, { timeout: 5000 })).toBeInTheDocument()
   expect(api.pedidos.at(-1)).toEqual(expect.objectContaining({ tipo: 'foto_ajuda', obra_id: 'ajuda' }))
+})
+
+// Luiz, 26/11/2026: "assim que o usuário abrir o app, já pega a atualização do avanço; fechou e abriu, atualiza de novo".
+test('abrir o app (ou voltar para ele) busca o andamento na hora, sem esperar a próxima conferência', async () => {
+  const api = criarApiCelularFixture()
+  const obras = vi.spyOn(api, 'obras')
+  render(<AppCelular api={api} intervalo={600_000} />)
+  await screen.findByRole('button', { name: /Agenda da Barbearia/ })
+  const antes = obras.mock.calls.length
+  expect(antes).toBeGreaterThanOrEqual(1)
+  Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' })
+  document.dispatchEvent(new Event('visibilitychange'))
+  await waitFor(() => expect(obras.mock.calls.length).toBeGreaterThan(antes))
 })
