@@ -8,7 +8,7 @@ import type { Guia } from './guias-site'
 import type { ContaLoja, PonteLojas } from './ponte-lojas'
 import type { DestinoSite } from './ponte-publicar'
 import type { EstadoDominio, PonteDominio } from './ponte-dominio'
-import { PASSOS_NO_AR, explicarErro, type AntesDoNoAr, type EstadoNoAr, type PonteNoAr, type SituacaoNomeNoAr } from './ponte-no-ar'
+import { CORRIGIVEIS_NO_AR, PASSOS_NO_AR, explicarErro, type AntesDoNoAr, type EstadoNoAr, type PonteNoAr, type SituacaoNomeNoAr } from './ponte-no-ar'
 import './colocar-no-ar.css'
 
 interface Props {
@@ -280,9 +280,20 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
               <b className="at-noar__tit at-noar__tit--m">{explicarErro(estado.erro.motivo).frase}</b>
               <span className="at-noar__txt">{explicarErro(estado.erro.motivo).fazer}</span>
               <span className="at-noar__codigo">código: {estado.erro.motivo}</span>
+              {estado.erro.detalhe && (
+                <details className="at-noar__detalhe">
+                  <summary>Ver o erro técnico</summary>
+                  <code>{estado.erro.detalhe}</code>
+                </details>
+              )}
               <Passos estado={estado} />
               {explicarErro(estado.erro.motivo).conta && onLigarContas && <button type="button" className="at-noar__sec" onClick={onLigarContas}>Religar a conta</button>}
-              <button type="button" className="at-noar__prim" onClick={() => void colocar(estado.nome ?? nome)}>Tentar de novo →</button>
+              {CORRIGIVEIS_NO_AR.includes(estado.erro.motivo)
+                ? <>
+                    <button type="button" className="at-noar__prim" onClick={() => void corrigir()}>Corrigir e continuar →</button>
+                    <button type="button" className="at-noar__sec" onClick={() => void colocar(estado.nome ?? nome)}>Tentar de novo</button>
+                  </>
+                : <button type="button" className="at-noar__prim" onClick={() => void colocar(estado.nome ?? nome)}>Tentar de novo →</button>}
               {onAjuda && <button type="button" className="at-noar__sec" onClick={() => onAjuda({ onde: 'colocar no ar', erro: estado.erro?.motivo })}>Falar com o Atlas</button>}
             </section>
           )}

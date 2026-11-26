@@ -203,3 +203,14 @@ test('erro num passo: o que houve no título e o que fazer logo abaixo', async (
   expect(await screen.findByText('A sua conta grátis do Supabase já tem 2 bancos ativos, que é o limite do plano grátis.')).toBeInTheDocument()
   expect(screen.getByText(/pause ou apague um projeto que você não usa/)).toBeInTheDocument()
 })
+
+test('erro que é defeito da obra (tabelas do banco): botão "Corrigir e continuar" manda para a linha, e o erro técnico fica à mão', async () => {
+  const user = userEvent.setup()
+  const erro: EstadoNoAr = { fase: 'erro', nome: 'ponto', passos: [{ id: 'vistoria', estado: 'feito' }, { id: 'banco', estado: 'erro' }, { id: 'publicar', estado: 'falta' }, { id: 'github', estado: 'falta' }, { id: 'teste', estado: 'falta' }, { id: 'celular', estado: 'falta' }], achados: [], endereco: null, erro: { passo: 'banco', motivo: 'supabase-migrations', detalhe: 'ERROR: relation "public.funcionarios" does not exist (SQLSTATE 42P01)' }, avisos: [] }
+  let corrigiu = 0
+  montar({ ...criarNoArFixture(), estado: async () => (corrigiu ? { ...erro, fase: 'corrigindo', erro: null } : erro), corrigir: async () => { corrigiu++; return { ...erro, fase: 'corrigindo', erro: null } } })
+  await user.click(await screen.findByText('Ver o erro técnico'))
+  expect(screen.getByText(/relation "public\.funcionarios" does not exist/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Corrigir e continuar →' }))
+  expect(corrigiu).toBe(1)
+})

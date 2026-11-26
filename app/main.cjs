@@ -165,7 +165,7 @@ const noAr = criarNoAr({
   sondar: (url) => sondarSite(url),
   perguntar: (pasta, pedido) => disparo.perguntar(pasta, pedido, { permitirGit: true, tipo: 'vistoria' }),
   linhaRodando: (pasta) => construcao.linha.rodando(pasta),
-  corrigir: async (pasta, achados) => { await garantirObra(String(pasta)); return posobra.executar(pasta, { tipo: 'quebrou', texto: `Antes de abrir ao público, a vistoria final pediu: ${achados.join(' ')}` }, { entendi: 'Você quer abrir o sistema ao público com tudo seguro. Vou:', passos: achados, minutos: 20 }) },
+  corrigir: async (pasta, achados) => { await garantirObra(String(pasta)); return posobra.executar(pasta, { tipo: 'quebrou', texto: `Antes de abrir ao público, falta corrigir: ${achados.join(' ')}` }, { entendi: 'Você quer abrir o sistema ao público com tudo seguro. Vou:', passos: achados, minutos: 20 }) },
 })
 
 // Domínio próprio (M57): liga na Vercel do cliente e vigia a troca no Registro.br; avisa no celular quando abre com cadeado.

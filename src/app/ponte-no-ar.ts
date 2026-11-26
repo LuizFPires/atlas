@@ -15,7 +15,8 @@ export interface EstadoNoAr {
   achados: string[]
   /** https://<nome>.vercel.app — só quando está mesmo no ar. */
   endereco: string | null
-  erro: { passo: IdPassoNoAr; motivo: string } | null
+  /** `detalhe`: resumo técnico do erro (sem segredos), quando a ferramenta disse algo útil. */
+  erro: { passo: IdPassoNoAr; motivo: string; detalhe?: string } | null
   avisos: string[]
 }
 
@@ -42,6 +43,9 @@ export const PASSOS_NO_AR: { id: IdPassoNoAr; titulo: string; sub: string }[] = 
 ]
 
 /** O que dizer quando um passo deu erro: o que houve + o que fazer, do tradutor único (explicar-trava.ts). */
+/** Erros que são defeito da obra: a linha corrige pelo "Corrigir e continuar" (app/adaptadores/no-ar.cjs, CORRIGIVEIS). */
+export const CORRIGIVEIS_NO_AR = ['supabase-migrations', 'supabase-funcoes', 'vercel-build']
+
 export function explicarErro(motivo: string): { frase: string; fazer: string; conta?: 'supabase' | 'vercel' | 'github' } {
   const x = explicarTrava(motivo)
   return { frase: x.houve, fazer: x.fazer, ...(x.conta ? { conta: x.conta } : {}) }

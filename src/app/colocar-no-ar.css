@@ -100,3 +100,7 @@
 .at-noar__codigo { font: 500 11px var(--font-mono); letter-spacing: .04em; color: var(--mute2, var(--mute)); }
 /* Antes do clique: o que pode travar a publicação (conta do Supabase, limite grátis de 2 bancos). */
 .at-noar__antes { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--aviso); background: color-mix(in srgb, var(--aviso) 8%, transparent); font-size: 14px; line-height: 1.5; color: var(--text); }
+/* Erro técnico (resumo sem segredos) à mão, fechado por padrão. */
+.at-noar__detalhe { font-size: 13px; color: var(--mute2, var(--mute)); }
+.at-noar__detalhe summary { cursor: pointer; }
+.at-noar__detalhe code { display: block; margin-top: 6px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--card-b); font: 500 12px var(--font-mono); white-space: pre-wrap; word-break: break-word; }
