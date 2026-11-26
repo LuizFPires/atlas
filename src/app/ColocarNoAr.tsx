@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { predioSvg } from '../celular/predio'
 import { motivoDoTravamento } from './motivo-travou'
+import { explicarTrava } from './explicar-trava'
 import { caminhoQr, enderecoDoSistema, linkWhatsapp, matrizQr, recadoEquipe } from './entrega-dados'
 import { DominioProprio } from './DominioProprio'
 import { Lojas } from './Lojas'
@@ -252,6 +253,9 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
             <section className="at-noar__card at-noar__card--cheio">
               <span className="at-noar__rot at-noar__rot--lime"><span className="at-noar__pisca" aria-hidden="true" />{fase === 'corrigindo' ? 'CORRIGINDO ANTES DE ABRIR AS PORTAS' : 'COLOCANDO NO AR · O ATLAS FAZ SOZINHO'}</span>
               <b className="at-noar__tit at-noar__tit--m">{fase === 'corrigindo' ? 'O Atlas está corrigindo pela linha da obra. Quando terminar, ele confere de novo e continua sozinho.' : 'Pode deixar o Atlas trabalhando. Ele avisa no celular quando estiver pronto.'}</b>
+              {estado?.esperandoCota && (
+                <span className="at-noar__txt" role="status">{`${explicarTrava('claude-cota').houve} ${explicarTrava('claude-cota').fazer}`}</span>
+              )}
               <Passos estado={estado} />
             </section>
           )}

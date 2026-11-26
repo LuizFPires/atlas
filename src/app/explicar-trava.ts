@@ -24,6 +24,7 @@ const INTERNET: Explicacao = {
 
 /** Códigos que só aparecem se o próprio Atlas mandou algo errado (validação interna). Explicação: defeito do Atlas. */
 export const CODIGOS_INTERNOS = [
+  'args-invalidos', 'caminho-fora-da-raiz', 'cofre-chave-invalida', 'origem-com-link', 'url-invalida',
   'arquivo-invalido', 'caminho-invalido', 'caminho-inseguro', 'campo-inexistente', 'caso-invalido', 'chave-invalida', 'como-invalido',
   'conta-invalida', 'corpo-invalido', 'destino-invalido', 'endereco-invalido', 'entendimento-invalido', 'entrada-invalida', 'estilo-invalido',
   'estilos-invalidos', 'gateway-invalido', 'grupo-invalido', 'guia-invalido', 'host-nao-permitido', 'ip-nao-publico', 'kit-invalido',
@@ -42,6 +43,10 @@ const EXPLICACOES: Record<string, Explicacao> = {
   'claude-nao-logado': { houve: 'O Claude não está conectado neste computador.', fazer: 'Abra a tela Claude no menu, entre com a sua conta do Claude e tente de novo.' },
   'claude-nao-instalado': { houve: 'O Claude ainda não está instalado neste computador.', fazer: 'Abra a tela Claude no menu: o Atlas instala e conecta para você.' },
   'claude-falhou': { houve: 'O Claude não conseguiu terminar esse pedido.', fazer: 'Tente de novo. Se a sua cota do plano acabou, o Atlas pausa e retoma sozinho quando ela renovar.' },
+  'claude-cota': { houve: 'A cota do seu plano do Claude acabou por agora.', fazer: 'Não precisa fazer nada: deixe o Atlas aberto e ele continua sozinho de onde parou quando a cota renovar. A Ajuda do Atlas também usa o Claude, então ela volta junto.' },
+  'claude-indisponivel': { houve: 'O Claude fechou antes de responder.', fazer: 'Tente de novo. Se repetir, abra a tela Claude no menu e confira se ele está conectado.' },
+  'claude-timeout': { houve: 'O Claude demorou demais para responder e o Atlas parou de esperar.', fazer: 'Tente de novo. Se a internet estiver lenta, espere ela melhorar e tente outra vez.' },
+  'claude-saida-grande': { houve: 'A resposta do Claude veio grande demais para o Atlas ler com segurança.', fazer: 'Tente de novo. Se repetir, peça uma parte de cada vez.' },
   'cota-nao-renovou': { houve: 'A cota do seu plano do Claude ainda não renovou.', fazer: 'Nada a fazer: o Atlas confere sozinho e retoma quando renovar.' },
   'nao-sei': { houve: 'O Claude não conseguiu entender essa parte com segurança.', fazer: 'Conte com outras palavras ou mande mais um exemplo.' },
 
@@ -59,6 +64,10 @@ const EXPLICACOES: Record<string, Explicacao> = {
   'obra-com-config-suspeita': { houve: 'Apareceu na pasta da obra um arquivo de configuração que o Atlas não criou, e por segurança ele não mexe na obra.', fazer: 'Toque em Falar com o Atlas: ele mostra qual arquivo é e como tirar.' },
   'obra-concluida': { houve: 'Esta obra já está concluída.', fazer: 'Para mudar algo, use Pedir mudança na obra.' },
   'nada-para-corrigir': { houve: 'A vistoria já não tem pontos para corrigir.', fazer: 'Toque em Colocar no ar de novo.' },
+  'obra-embargada': { houve: 'Esta obra foi pausada pela regra de uso do Atlas.', fazer: 'Leia o aviso na tela da obra; se achar que foi engano, conte por lá.' },
+  'uso-recusado': { houve: 'Este pedido foi recusado pela regra de uso do Atlas.', fazer: 'Leia o aviso na tela da obra; se achar que foi engano, conte por lá.' },
+  'cofre-indisponivel': { houve: 'O cofre do computador, onde o Atlas guarda as chaves das suas contas, não está disponível agora.', fazer: 'Feche e abra o Atlas. Se repetir, reinicie o computador e entre com a sua conta de usuário (não como convidado).' },
+  'plan-nao-gravado': { houve: 'O Atlas não conseguiu gravar o plano da obra na pasta dela.', fazer: 'Confira se há espaço no disco e se a pasta Atlas\\Obras não está aberta em outro programa. Depois toque em Tentar de novo.' },
   'politica-bloqueado': { houve: 'Este pedido foi parado pela regra de uso do Atlas.', fazer: 'Leia o aviso na tela da obra; se achar que foi engano, conte por lá.' },
   'pedido-vazio': { houve: 'O pedido chegou vazio.', fazer: 'Conte o que você quer mudar e mande de novo.' },
   'texto-vazio': { houve: 'Não chegou nenhum texto.', fazer: 'Escreva ou fale o que você quer e mande de novo.' },

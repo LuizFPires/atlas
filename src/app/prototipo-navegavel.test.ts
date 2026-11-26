@@ -9,10 +9,20 @@ test('botão para uma tela que ainda não foi desenhada leva a um aviso (em vez 
   const doc = montarNavegavel(telas, 'inicio')!
   expect(doc).toContain('<section id="tela-falta"')
   expect(doc).toContain('Esta parte ainda não foi desenhada')
-  expect(doc).toContain('href="#tela-falta">Exportar')
-  expect(doc).toContain('href="#tela-falta">Nada')
-  expect(doc).toContain('href="#tela-falta">fora')
-  expect(doc).toContain('href="#tela-agenda">Agenda')
+  expect(doc).toContain('href="about:srcdoc#tela-falta">Exportar')
+  expect(doc).toContain('href="about:srcdoc#tela-falta">Nada')
+  expect(doc).toContain('href="about:srcdoc#tela-falta">fora')
+  expect(doc).toContain('href="about:srcdoc#tela-agenda">Agenda')
+})
+
+// Achado em 26/11/2026 (conferência do vídeo do Dudu): o documento sempre abre num iframe srcdoc. Lá dentro, "#tela-x" é resolvido
+// contra o endereço do app (não do iframe), e o Chromium/Electron carregava o app dentro da prévia em vez de trocar de tela.
+// "about:srcdoc#tela-x" é o mesmo documento: só troca a âncora, com ou sem script.
+test('todo link entre telas aponta para o próprio documento (about:srcdoc), nunca para o endereço do app', () => {
+  const doc = montarNavegavel(telas, 'inicio')!
+  const hrefs = [...doc.matchAll(/href="([^"]*)"/g)].map((m) => m[1])
+  expect(hrefs.length).toBeGreaterThan(0)
+  for (const h of hrefs) expect(h).toMatch(/^about:srcdoc#tela-[a-z0-9-]+$/)
 })
 
 test('"Onde dá para tocar?": bolinha piscando só no que leva a uma tela que existe, dentro de cada tela', () => {
@@ -20,7 +30,7 @@ test('"Onde dá para tocar?": bolinha piscando só no que leva a uma tela que ex
   const com = montarNavegavel(telas, 'inicio', { realce: true })!
   expect(sem).not.toContain('@keyframes at-toque')
   expect(com.match(/@keyframes at-toque/g)?.length).toBe(2) // um <style> em cada tela (o CSS não atravessa o shadow root)
-  expect(com).toContain(':not([href="#tela-falta"])::after') // o que ainda não foi desenhado fica sem bolinha
+  expect(com).toContain(':not([href$="#tela-falta"])::after') // o que ainda não foi desenhado fica sem bolinha
 })
 
 // Luiz, 24/11/2026: o protótipo cresce além de 40 telas e "não pode travar, em hipótese alguma". Antes, o navegável parava em ~1 MB

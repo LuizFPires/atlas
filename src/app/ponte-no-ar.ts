@@ -18,6 +18,8 @@ export interface EstadoNoAr {
   /** `detalhe`: resumo técnico do erro (sem segredos), quando a ferramenta disse algo útil. */
   erro: { passo: IdPassoNoAr; motivo: string; detalhe?: string } | null
   avisos: string[]
+  /** A cota do plano do Claude acabou: a obra espera renovar sozinha e continua de onde parou (não é erro). */
+  esperandoCota?: boolean
 }
 
 export interface PonteNoAr {

@@ -340,3 +340,36 @@ test('a Vercel não conseguiu montar o sistema (erro de build): vira "vercel-bui
   await n._esperar('ponto')
   assert.equal(n.estado('ponto').fase, 'noar')
 })
+
+// Achado em 26/11/2026 (Guilherme sem cota do Claude): a vistoria lançava 'claude-cota' e a tela dizia "defeito do Atlas".
+// Agora a obra espera a cota renovar sozinha (mostrando que está esperando) e continua de onde parou.
+test('cota do Claude acabou na vistoria: espera sozinho (mostra na tela) e continua quando renova', async () => {
+  const { raiz } = obra({ supabase: false })
+  let vezes = 0
+  let vistoDuranteEspera = null
+  const { d } = deps({
+    perguntar: async () => { vezes++; if (vezes <= 2) throw new Error('claude-cota'); return APROVADO },
+    esperar: async () => { if (vistoDuranteEspera === null) vistoDuranteEspera = n.estado('ponto') },
+  })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(vistoDuranteEspera.esperandoCota, true)
+  assert.equal(vistoDuranteEspera.fase, 'rodando')
+  const e = n.estado('ponto')
+  assert.equal(e.fase, 'noar')
+  assert.equal(e.esperandoCota, false)
+  assert.equal(vezes, 3)
+})
+
+test('cota que não renova nunca: depois do prazo vira erro explicado (claude-cota), não fica girando para sempre', async () => {
+  const { raiz } = obra({ supabase: false })
+  const { d } = deps({ perguntar: async () => { throw new Error('claude-cota') } })
+  const n = criarNoAr({ raiz, ...d, esperasCota: 3 })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  const e = n.estado('ponto')
+  assert.equal(e.fase, 'erro')
+  assert.equal(e.erro.motivo, 'claude-cota')
+  assert.equal(e.esperandoCota, false)
+})

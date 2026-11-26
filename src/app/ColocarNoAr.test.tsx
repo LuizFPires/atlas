@@ -214,3 +214,19 @@ test('erro que é defeito da obra (tabelas do banco): botão "Corrigir e continu
   await user.click(screen.getByRole('button', { name: 'Corrigir e continuar →' }))
   expect(corrigiu).toBe(1)
 })
+
+// Achado em 26/11/2026 (Guilherme sem cota do Claude): a tela dizia "defeito do Atlas". Agora diz o que houve e que continua sozinho.
+test('cota do Claude acabou durante a publicação: a tela diz que está esperando a cota e que continua sozinho', async () => {
+  const passos: EstadoNoAr['passos'] = [{ id: 'vistoria', estado: 'agora' }, { id: 'banco', estado: 'falta' }, { id: 'publicar', estado: 'falta' }, { id: 'github', estado: 'falta' }, { id: 'teste', estado: 'falta' }, { id: 'celular', estado: 'falta' }]
+  const esperando: EstadoNoAr = { fase: 'rodando', nome: 'ponto', passos, achados: [], endereco: null, erro: null, avisos: [], esperandoCota: true }
+  montar({ ...criarNoArFixture(), estado: async () => esperando })
+  expect(await screen.findByText(/A cota do seu plano do Claude acabou por agora/)).toBeInTheDocument()
+  expect(screen.getByText(/continua sozinho de onde parou quando a cota renovar/)).toBeInTheDocument()
+})
+
+test('cota do Claude que não renovou no prazo: erro explicado (não "defeito do Atlas")', async () => {
+  const erro: EstadoNoAr = { fase: 'erro', nome: 'ponto', passos: [{ id: 'vistoria', estado: 'erro' }, { id: 'banco', estado: 'falta' }, { id: 'publicar', estado: 'falta' }, { id: 'github', estado: 'falta' }, { id: 'teste', estado: 'falta' }, { id: 'celular', estado: 'falta' }], achados: [], endereco: null, erro: { passo: 'vistoria', motivo: 'claude-cota' }, avisos: [] }
+  montar({ ...criarNoArFixture(), estado: async () => erro })
+  expect(await screen.findByText('A cota do seu plano do Claude acabou por agora.')).toBeInTheDocument()
+  expect(screen.queryByText(/defeito do Atlas/)).not.toBeInTheDocument()
+})

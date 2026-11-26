@@ -71,7 +71,8 @@ test('"Usar o sistema" abre em tela cheia, passa de tela pelas setas e números,
   expect(play).toHaveTextContent('Tela 2 de 4 · Agenda do dia')
   await user.click(within(play).getByRole('button', { name: 'Ir para a tela 4' }))
   expect(play).toHaveTextContent('Tela 4 de 4 · Início')
-  expect(within(play).getByTitle(/Tela Início no celular/).getAttribute('sandbox')).toBe('')
+  // Só o script do Atlas (nonce) roda, para contar a tela aberta; as telas continuam sem script (CSP).
+  expect(within(play).getByTitle(/Tela Início no celular/).getAttribute('sandbox')).toBe('allow-scripts')
   fireEvent.keyDown(document, { key: 'Escape' })
   expect(screen.queryByRole('dialog', { name: 'Usando o sistema' })).toBeNull()
 })

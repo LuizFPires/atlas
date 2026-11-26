@@ -6,10 +6,16 @@ import { expect, test } from 'vitest'
 import { explicarTrava, temExplicacao, textoDaTrava } from './explicar-trava'
 
 function codigosLancados(): string[] {
+  // Todo .cjs do app (main, preload, seguro e adaptadores), menos os testes.
   const dir = path.join(__dirname, '..', '..', 'app')
-  const arquivos = [path.join(dir, 'main.cjs'), ...fs.readdirSync(path.join(dir, 'adaptadores')).filter((f) => f.endsWith('.cjs') && !f.endsWith('.teste.cjs')).map((f) => path.join(dir, 'adaptadores', f))]
+  const todos = (d: string): string[] => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (e.name === 'node_modules' ? [] : todos(path.join(d, e.name))) : e.name.endsWith('.cjs') && !e.name.endsWith('.teste.cjs') ? [path.join(d, e.name)] : []))
   const achados = new Set<string>()
-  for (const a of arquivos) for (const m of fs.readFileSync(a, 'utf8').matchAll(/new Error\(['`]([a-z][a-z0-9-]*)['`]/g)) achados.add(m[1])
+  for (const a of todos(dir)) {
+    const txt = fs.readFileSync(a, 'utf8')
+    for (const m of txt.matchAll(/new Error\(['`]([a-z][a-z0-9-]*)['`]/g)) achados.add(m[1])
+    // Código escolhido na hora (new Error(cond ? 'a' : 'b')): achado em 26/11/2026, 'claude-cota' passava sem explicação.
+    for (const m of txt.matchAll(/new Error\(([^'`)][^\n]*)/g)) for (const c of m[1].matchAll(/\?\s*'([a-z][a-z0-9]*(?:-[a-z0-9]+)+)'|:\s*'([a-z][a-z0-9]*(?:-[a-z0-9]+)+)'/g)) achados.add(c[1] ?? c[2])
+  }
   return [...achados].sort()
 }
 
