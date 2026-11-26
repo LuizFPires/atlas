@@ -62,3 +62,19 @@ test('continuar religa a linha e retoma pela cota só quando renovada', async ()
   assert.equal(religadas(), 2)
   await assert.rejects(retomar.continuar({ pasta: '../fora' }), /obra-invalida/)
 })
+
+test('paradas: todas as obras paradas, a mais recente primeiro (obraEmAndamento é a primeira delas)', async () => {
+  const { raiz, construcao, retomar } = montar()
+  assert.deepEqual(await retomar.paradas(), [])
+  for (const p of ['velha', 'nova']) {
+    fs.mkdirSync(path.join(raiz, p)); await construcao.iniciar(p, p === 'velha' ? 'Velha' : 'Nova', 'automatico', ETAPAS)
+    construcao.encerrar()
+    await new Promise((r) => setImmediate(r))
+  }
+  const antes = new Date(Date.now() - 3600_000)
+  fs.utimesSync(path.join(raiz, 'velha', 'PLAN.md'), antes, antes)
+  try { fs.utimesSync(path.join(raiz, 'velha', '.atlas', 'linha.json'), antes, antes) } catch { /* sem linha.json */ }
+  const l = await retomar.paradas()
+  assert.deepEqual(l.map((o) => o.pasta), ['nova', 'velha'])
+  assert.equal((await retomar.obraEmAndamento()).pasta, 'nova')
+})

@@ -14,3 +14,7 @@
 .at-rt__nota { margin: 0; font-size: 14px; color: var(--mute2); }
 .at-rt__rodape { font-size: 14px; color: var(--mute2); text-align: center; }
 @media (max-width: 760px) { .at-rt__card { grid-template-columns: 1fr; } .at-rt__cena { width: 100%; height: 220px; } }
+/* M37: várias obras paradas */
+.at-rt__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.at-rt__lista li { display: flex; justify-content: space-between; gap: 12px; }
+.at-rt__lista span { font-family: var(--font-mono); color: var(--mute); }

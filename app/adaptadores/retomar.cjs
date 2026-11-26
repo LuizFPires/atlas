@@ -30,10 +30,11 @@ const mtime = (caminho) => { try { return fs.statSync(caminho).mtimeMs } catch {
 /** `deps`: { raiz, painel (real), cota? (PonteCota), construcao (para saber se a linha roda agora) } */
 function criarRetomar({ raiz, painel, cota, construcao, fila = null }) {
   return {
-    async obraEmAndamento() {
+    /** Todas as obras paradas (M37: "Continuar todas" no F12), a mais recente primeiro. */
+    async paradas() {
       let nomes
-      try { nomes = fs.readdirSync(raiz, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.isSymbolicLink() && NOME_PASTA.test(d.name)).map((d) => d.name) } catch { return null }
-      let melhor = null
+      try { nomes = fs.readdirSync(raiz, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.isSymbolicLink() && NOME_PASTA.test(d.name)).map((d) => d.name) } catch { return [] }
+      const achadas = []
       for (const pasta of nomes) {
         try {
           if (construcao.linha.rodando(pasta)) continue
@@ -43,19 +44,23 @@ function criarRetomar({ raiz, painel, cota, construcao, fila = null }) {
           const p = lerPlanoDoTexto(texto)
           if (!p.milestones.length || !(p.pct < 100)) continue
           const quando = Math.max(mtime(caminhoSeguro(raiz, pasta, '.atlas', 'linha.json')), mtime(caminhoSeguro(raiz, pasta, 'PLAN.md')))
-          if (melhor && melhor.quando >= quando) continue
           const prox = p.milestones.find((m) => m.n === p.proximo)
-          melhor = {
+          achadas.push({
             quando,
             obra: {
               nome: nomeDoPlan(texto, pasta), pasta, pct: Math.round(p.pct),
               etapa: prox ? { n: prox.n, nome: comoDado(prox.titulo, 80).join(' ').slice(0, 60) || 'Etapa' } : null,
               paradaEm: quando ? new Date(quando).toISOString() : null,
             },
-          }
+          })
         } catch { /* pasta estranha: ignora */ }
       }
-      return melhor ? melhor.obra : null
+      return achadas.sort((x, y) => y.quando - x.quando).slice(0, 50).map((a) => a.obra)
+    },
+
+    async obraEmAndamento() {
+      const l = await this.paradas()
+      return l[0] || null
     },
 
     async continuar(obra) {

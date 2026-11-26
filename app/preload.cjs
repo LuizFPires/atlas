@@ -68,6 +68,7 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
   },
   retomar: {
     obraEmAndamento: () => chamar('atlas:retomar:andamento'),
+    paradas: () => chamar('atlas:retomar:paradas'),
     continuar: (obra) => chamar('atlas:retomar:continuar', String((obra && obra.pasta) ?? '')),
   },
   painel: {

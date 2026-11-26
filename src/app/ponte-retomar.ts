@@ -23,6 +23,8 @@ export interface ObraParada {
 export interface PonteRetomar {
   /** A obra em andamento que ficou parada (a mais recente), ou null. É o que decide a tela inicial (F12 em vez de F05). */
   obraEmAndamento(): Promise<ObraParada | null>
+  /** M37: todas as obras paradas, a mais recente primeiro (o F12 oferece "Continuar todas"). */
+  paradas?(): Promise<ObraParada[]>
   /** "Continuar obra": religa a linha de produção do ponto em que parou. UM clique; sem perguntas. */
   continuar(obra: Pick<ObraParada, 'pasta'>): Promise<void>
 }

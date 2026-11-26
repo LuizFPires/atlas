@@ -172,3 +172,22 @@ test('Canteiro com fila: o selo NA FILA, a faixa "1 trabalhando, 1 na fila" e mu
   await user.click(within(dialogo).getByRole('button', { name: 'Começar ao mesmo tempo →' }))
   expect(mudarVez).toHaveBeenCalledWith('estoque', 'juntas')
 })
+
+test('Obras concluídas: o cartão mostra o endereço e o dia em que ficou pronta', async () => {
+  const comEnd = { ...ponte, situacao: async (p: string) => (p === 'barbearia-do-ze' ? { ...SITUACOES[p], noAr: { endereco: 'barbeariadoze.app.br', quando: '2026-10-28T15:00:00.000Z' } } : SITUACOES[p]) } as unknown as PonteObras
+  render(<Canteiro modo="concluidas" obras={comEnd} painel={painel} onAbrir={() => {}} onNova={() => {}} />)
+  const [c] = await screen.findAllByRole('article')
+  expect(within(c).getByText('barbeariadoze.app.br')).toBeInTheDocument()
+  expect(within(c).getByText('Concluída em 28/10')).toBeInTheDocument()
+})
+
+test('retrato do canteiro: com o mouse em cima a obra fica ao vivo; ao sair, volta a ficar parada', async () => {
+  const vivo = { ...painel, enderecoCanteiro: (p: string) => (p === 'meu-ponto' ? 'http://127.0.0.1:4321/' : null) }
+  render(<Canteiro modo="canteiro" obras={ponte} painel={vivo} onAbrir={() => {}} onNova={() => {}} />)
+  const cartao = await screen.findByRole('article', { name: /Meu ponto/ })
+  expect(screen.getByText('Passe o mouse num cartão para ver a obra ao vivo')).toBeInTheDocument()
+  expect(cartao.querySelector('iframe')).toBeNull()
+  await userEvent.hover(cartao)
+  expect(cartao.querySelector('iframe')).not.toBeNull()
+  expect(within(cartao).getByText('AO VIVO')).toBeInTheDocument()
+})

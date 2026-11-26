@@ -5,6 +5,7 @@
 //  - "✓" do protótipo é o ícone SVG de traço "check" (nunca emoji/caractere); o play do botão é o SVG "play";
 //  - "Continuar obra" religa a linha pelas portas (PontePainel/PonteCota) e leva ao painel (F09), no lugar do link estático do protótipo;
 //  - sem a hora da parada, o título diz "ficou parada quando o computador foi desligado" (o protótipo sempre tem a hora);
+//  - M37 (K1Canteiro, 23/11/2026): com mais de uma obra parada, o título diz quantas, lista as obras e o botão vira "Continuar todas";
 //  - se religar falhar, um recado calmo aparece e o botão deixa tentar de novo (o protótipo não desenha).
 import f12 from '../../prototipo/F12Retomar.dc.html?raw'
 import fonte from './Retomar.tsx?raw'

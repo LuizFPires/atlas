@@ -54,6 +54,7 @@
 .at-ct__barra i { display: block; height: 100%; border-radius: 3px; background: var(--lime); }
 .at-ct__cartao--falta .at-ct__barra i { background: var(--ambar); }
 .at-ct__linha { font-size: 14px; line-height: 1.45; color: var(--mute); }
+.at-ct__end { font-family: var(--font-mono); font-size: 13px; color: var(--lime-txt, var(--lime)); overflow-wrap: anywhere; }
 .at-ct__acao { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; font: 600 14px var(--font-text); color: var(--lime-txt, var(--lime)); }
 .at-ct__cartao--falta .at-ct__acao { color: var(--ambar); }
 @media (prefers-reduced-motion: reduce) { .at-ct__cartao { transition: none; } .at-ct__cartao:hover { transform: none; } }
@@ -99,3 +100,11 @@
 .at-ct__fila-txt span { font-size: 13px; line-height: 1.45; color: var(--mute); }
 .at-ct__fila-erro { color: #FF8478 !important; }
 .at-ct__fila-btn { flex: none; }
+/* M37: retrato do canteiro — parado, ganha vida com o mouse, guarda o retrato ao sair */
+.at-ct__retrato { position: absolute; inset: 0; display: block; }
+.at-ct__retrato img, .at-ct__retrato-vivo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border: 0; display: block; }
+.at-ct__retrato-vivo { pointer-events: none; background: var(--card2); }
+.at-ct__aovivo { position: absolute; right: 10px; top: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; background: rgba(20, 22, 25, 0.78); color: #EDEFEA; font: 600 11px var(--font-mono); letter-spacing: 0.08em; }
+.at-ct__aovivo .at-ct__ponto { background: var(--lime); }
+.at-ct__dica { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 12px; font: 600 12px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--mute); }
+.at-ct__dica .at-ct__ponto { background: var(--lime); }
