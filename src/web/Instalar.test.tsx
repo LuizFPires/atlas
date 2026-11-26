@@ -165,3 +165,12 @@ test('Mac sem o arquivo publicado ainda: recado honesto e o caminho do Windows �
   expect(screen.queryByRole('button', { name: /Baixar o Atlas para Mac/ })).toBeNull()
   expect(screen.getByRole('button', { name: /Baixar para Windows/ })).toBeInTheDocument()
 })
+
+// ---- M31: a página de instalação em inglês (o link do e-mail em inglês traz ?idioma=en) -----------------------------------
+test('em inglês: Windows reconhecido, botão de baixar e aviso da tela azul em inglês, sem português', async () => {
+  const { container } = render(<Instalar api={comInstalador()} token={T} idioma="en" sistemaInicial="windows" />)
+  expect(await screen.findByRole('heading', { name: 'Your access is ready!' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Download Atlas for Windows/ })).toBeInTheDocument()
+  expect(screen.getByRole('note', { name: 'Windows notice' })).toHaveTextContent('Windows protected your PC')
+  expect(container.textContent).not.toMatch(/[ãõçáéíóúâêô]/)
+})

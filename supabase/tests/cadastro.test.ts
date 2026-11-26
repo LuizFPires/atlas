@@ -205,3 +205,15 @@ describe('POST /cadastro (http)', () => {
     expect((await post({ ...c, cadastro: undefined }, {})).status).toBe(503)
   })
 })
+
+describe('cadastro de quem comprou em dólar (M31)', () => {
+  it('licença em inglês: o e-mail de acesso sai em inglês; em português, sem idioma', async () => {
+    const pt = pronto()
+    await cadastrar(pt.deps, pedido)
+    expect(pt.enviados[0].dados.idioma).toBeUndefined()
+    const en = pronto()
+    await en.m.store.definirIdiomaLicenca(en.m.store.licencas[0].id, 'en')
+    await cadastrar(en.deps, pedido)
+    expect(en.enviados[0].dados.idioma).toBe('en')
+  })
+})

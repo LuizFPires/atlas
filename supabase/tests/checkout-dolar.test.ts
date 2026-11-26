@@ -30,6 +30,8 @@ describe('checkout em dólar (M31)', () => {
     expect(f.get('locale')).toBe('en')
     expect(f.get('metadata[atlas_mercado]')).toBe('us')
     expect(f.get('line_items[0][price_data][product_data][name]')).toBe('Atlas — setup')
+    expect(f.get('success_url')).toBe('https://loja.atlas.test/en/compra/sucesso?session_id={CHECKOUT_SESSION_ID}')
+    expect(f.get('cancel_url')).toBe('https://loja.atlas.test/en/compra/cancelada')
   })
   it('app pronto: US$ 2.400', async () => {
     const m = montarPag()
@@ -85,5 +87,22 @@ describe('mensalidade segue o idioma da licença (M31)', () => {
     const f = corpoDe(m.chamadas[1])
     expect(f.get('line_items[0][price_data][currency]')).toBe('usd')
     expect(f.get('line_items[0][price_data][unit_amount]')).toBe('7000')
+  })
+})
+
+describe('e-mail de acesso em inglês (M31)', () => {
+  it('montarBoasVindas com idioma en: assunto, botão e avisos em inglês, sem português', async () => {
+    const { montarBoasVindas } = await import('../functions/_shared/emails.ts')
+    const m = montarBoasVindas({ nome: 'John Smith', empresa: 'Joe Barber', ramo: 'barber shop', link_instalacao: 'https://atlas-ia.app.br/instalar?t=abc&idioma=en', expira_em: new Date('2026-11-28T15:00:00Z'), idioma: 'en' })
+    expect(m.assunto).toBe('John Smith, your Atlas is here')
+    expect(m.html).toContain('<html lang="en-US">')
+    expect(m.html).toContain('Install Atlas on this computer')
+    expect(m.texto).toContain('Windows will ask you to confirm')
+    expect(m.texto + m.html).not.toMatch(/[ãõçáéíóúâêô]/)
+  })
+  it('sem idioma continua igual (português)', async () => {
+    const { montarBoasVindas } = await import('../functions/_shared/emails.ts')
+    const m = montarBoasVindas({ nome: 'Ana', empresa: '', ramo: '', link_instalacao: 'https://atlas-ia.app.br/instalar?t=abc', expira_em: new Date('2026-11-28T15:00:00Z') })
+    expect(m.assunto).toBe('Ana, o seu Atlas chegou')
   })
 })

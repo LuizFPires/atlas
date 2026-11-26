@@ -10,6 +10,8 @@ export interface DadosBoasVindas {
   /** Endereço completo de instalação, com o token de uso único (~48 h). */
   link_instalacao: string
   expira_em: Date
+  /** M31: licença em inglês (compra em dólar). Ausente = português. */
+  idioma?: 'pt' | 'en'
 }
 
 export interface EmailMontado { assunto: string; texto: string; html: string }
@@ -73,9 +75,9 @@ export const ICONES = {
 const DEFESA_ESCURO = `:root{color-scheme:only light;supported-color-schemes:only light}`
 
 /** Moldura comum: cartão branco (tema do protótipo), faixa escura no topo com a marca ATLAS em lime. Tabelas porque e-mail não entende flex. */
-export function moldura(o: { titulo: string; subtitulo: string; corpo: string; preheader: string }): string {
+export function moldura(o: { titulo: string; subtitulo: string; corpo: string; preheader: string; lang?: string }): string {
   return `<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>${esc(o.titulo)}</title><style>${DEFESA_ESCURO}</style></head>
+<html lang="${o.lang ?? 'pt-BR'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>${esc(o.titulo)}</title><style>${DEFESA_ESCURO}</style></head>
 <body style="margin:0;padding:0;background:${COR.fundo};font-family:${FONTE}">
 <u></u><div class="corpo" style="background:${COR.fundo}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(o.preheader)}</div>
@@ -134,6 +136,7 @@ export const rodape = (t: string) => `<p style="margin:0;font-size:13px;line-hei
 export const AJUDA = 'Travou em algum passo? Dentro do Atlas tem a Ajuda do Atlas, que vê o que aconteceu e te guia.'
 
 export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
+  if (d.idioma === 'en') return montarBoasVindasEn(d)
   const nomeTexto = neutro(d.nome, 60)
   const empresa = neutro(d.empresa, 120)
   const ramo = neutro(d.ramo)
@@ -174,6 +177,73 @@ export function montarBoasVindas(d: DadosBoasVindas): EmailMontado {
       ...avisoWindowsTexto(),
       '',
       AJUDA,
+    ].join('\n'),
+    html,
+  }
+}
+
+// M31: o mesmo e-mail em inglês (compra em dólar). Horário no fuso de Nova York, escrito por extenso.
+const quandoEn = (d: Date) => d.toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })
+export const AVISO_WINDOWS_EN = {
+  titulo: 'Windows will ask you to confirm',
+  linhas: [
+    'When you open the installer, a blue screen says "Windows protected your PC". It shows up because Atlas is a new program that Windows doesn’t know yet.',
+    '1. Click "More info".',
+    '2. Click "Run anyway".',
+  ],
+}
+export const AVISO_CLAUDE_EN = {
+  titulo: 'Atlas only works with a Claude subscription',
+  linhas: [
+    'Claude is the crew that builds your software. Its subscription is paid directly to Anthropic, separate from Atlas.',
+    'The bigger the plan, the faster the project moves.',
+    'Don’t have one yet? Create the account and subscribe on the Claude website. Atlas walks you through connecting it.',
+  ],
+}
+export const AJUDA_EN = 'Stuck on a step? Inside Atlas there’s the Atlas Help, which sees what happened and walks you through it.'
+
+function montarBoasVindasEn(d: DadosBoasVindas): EmailMontado {
+  const nomeTexto = neutro(d.nome, 60)
+  const empresa = neutro(d.empresa, 120)
+  const ramo = neutro(d.ramo)
+  const negocio = empresa && ramo ? `${empresa} (${ramo})` : empresa || ramo
+  const ate = quandoEn(d.expira_em)
+  const link = linkSeguro(d.link_instalacao)
+  const primeiroNome = nomeTexto.split(' ')[0] || ''
+  const titulo = primeiroNome ? `${primeiroNome}, your Atlas license is ready.` : 'Your Atlas license is ready.'
+  const html = moldura({
+    lang: 'en-US',
+    titulo,
+    subtitulo: `From now on you build your business software without coding.${negocio ? ` I’ve already noted your business: ${negocio}.` : ''}`,
+    preheader: 'Open this email on the computer where you’ll work and click the button.',
+    corpo: [
+      p('Open this email <b>on the computer where you’ll work</b> and click the button. It takes about 10 minutes.'),
+      link ? botao(link, 'Install Atlas on this computer') : '',
+      caixa('What happens next', ['1. The installer asks for a code that arrives at this email.', '2. You connect your Claude account.', '3. Atlas helps you open the accounts your software will use.']),
+      caixa(AVISO_CLAUDE_EN.titulo, AVISO_CLAUDE_EN.linhas),
+      caixa(AVISO_WINDOWS_EN.titulo, AVISO_WINDOWS_EN.linhas),
+      destaque('microfone', `<b style="color:${COR.tinta}">You won’t need to type.</b> In Atlas, everything can be spoken. Just tap the microphone and talk like you’re chatting with a friend over dinner.`),
+      rodape(`The button works once and is valid until ${esc(ate)} (48 hours). Opened it on your phone? Tap "Send to my computer".`),
+      `<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:${COR.claro}">${esc(AJUDA_EN)}</p>`,
+    ].join(''),
+  })
+  return {
+    assunto: soLetras(d.nome) ? `${soLetras(d.nome)}, your Atlas is here` : 'Your Atlas is here',
+    texto: [
+      `Hi, ${nomeTexto}! Welcome to Atlas.`,
+      '',
+      `${negocio ? `I’ve already noted your business: ${negocio}. ` : ''}Now you just need to install Atlas on the computer where you’ll build.`,
+      '',
+      'Open this email on that computer and click the button (or the link below):',
+      d.link_instalacao,
+      '',
+      `The link works for one installation and expires ${ate}. If you open it on your phone, just open it again on the computer.`,
+      '',
+      `${AVISO_CLAUDE_EN.titulo}.`, ...AVISO_CLAUDE_EN.linhas,
+      '',
+      `${AVISO_WINDOWS_EN.titulo}:`, ...AVISO_WINDOWS_EN.linhas,
+      '',
+      AJUDA_EN,
     ].join('\n'),
     html,
   }

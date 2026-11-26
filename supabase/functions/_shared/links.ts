@@ -33,3 +33,9 @@ export async function validarLink(d: Deps, token: string) {
 export async function consumirLinkOuFalha(d: Deps, id: string) {
   if (!(await d.store.consumirLink(id, d.agora()))) throw new ErroRegra('link_usado', 'Esse link já foi usado. Peça outro.', 410)
 }
+
+/** M31: o idioma da licença do cliente, pronto para ir junto do e-mail de acesso ({} = português). */
+export async function idiomaDoCliente(d: Deps, clienteId: string): Promise<{ idioma?: 'en' }> {
+  const lic = await d.store.licencaDoCliente(clienteId)
+  return lic && (await d.store.idiomaDaLicenca(lic.id)) === 'en' ? { idioma: 'en' } : {}
+}

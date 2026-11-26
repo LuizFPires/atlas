@@ -68,6 +68,9 @@ export default function App() {
   if (caminho.startsWith('/app')) return <Aplicativo />
   // A Stripe devolve o comprador em /compra/sucesso; /comecar é o endereço público do cadastro.
   if (caminho === '/comecar' || caminho === '/compra/sucesso') return <Cadastro onEnviar={enviarCadastro} />
+  // M31: quem comprou em dólar volta para o cadastro em inglês (e quem desistiu, para a página em inglês).
+  if (caminho === '/en/compra/sucesso' || caminho === '/en/start') return <Cadastro idioma="en" onEnviar={enviarCadastro} />
+  if (caminho === '/en/compra/cancelada') return <PaginaVendas idioma="en" />
   // Compra feita de dentro do Atlas instalado: a Stripe devolve aqui (sem cadastro de novo).
   if (caminho === '/compra/pelo-app') return <CompraPeloApp />
   if (caminho === '/compra/pelo-app/cancelada') return <CompraPeloApp cancelada />
