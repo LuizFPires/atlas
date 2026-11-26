@@ -250,3 +250,21 @@ test('API do Supabase: limite de 2 projetos grátis vira um motivo próprio (o c
   }
   await assert.rejects(pedirApiSupabase('POST', '/v1/projects', {}, 't', { enviar: async () => ({ status: 400, corpo: '{"message":"bad"}' }) }), /^Error: supabase-400$/)
 })
+
+test('conferirAntes: avisa ANTES de começar quanto banco a conta do Supabase já tem (limite grátis = 2)', async () => {
+  const { raiz } = obra()
+  const ativos = [{ status: 'ACTIVE_HEALTHY' }, { status: 'COMING_UP' }, { status: 'INACTIVE' }]
+  const { d } = deps({ apiSupabase: async (m, c) => (c === '/v1/projects' ? ativos : null) })
+  const n = criarNoAr({ raiz, ...d })
+  assert.deepEqual(await n.conferirAntes('ponto'), { precisaBanco: true, bancoNovo: true, contaLigada: true, bancosAtivos: 2 })
+  // sem pasta supabase: não precisa de banco
+  const semBanco = obra({ supabase: false })
+  assert.deepEqual(await criarNoAr({ raiz: semBanco.raiz, ...d }).conferirAntes('ponto'), { precisaBanco: false, bancoNovo: false, contaLigada: true, bancosAtivos: null })
+  // conta não ligada: diz isso, sem chamar a API
+  const { d: d2, chamadas } = deps({ cofre: cofreMem({}) })
+  assert.deepEqual(await criarNoAr({ raiz, ...d2 }).conferirAntes('ponto'), { precisaBanco: true, bancoNovo: true, contaLigada: false, bancosAtivos: null })
+  assert.equal(chamadas.api.length, 0)
+  // API fora: não trava nada, só não sabe contar
+  const { d: d3 } = deps({ apiSupabase: async () => { throw new Error('supabase-500') } })
+  assert.equal((await criarNoAr({ raiz, ...d3 }).conferirAntes('ponto')).bancosAtivos, null)
+})

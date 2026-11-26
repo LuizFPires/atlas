@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Botao, Icone } from '../ui'
 import type { PonteNavegador, Retangulo } from './ponte-navegador'
 import type { PonteTravas } from './ponte-travas'
@@ -58,7 +59,7 @@ export function FichaTrava({ pasta, trava, ponte, navegador, onLigarContas, agor
 
   const deixarPublico = async () => {
     setAviso('')
-    try { await ponte.deixarPublico(pasta); setPublico(true); setConfirmar(false) } catch { setAviso('Não consegui mudar agora. O Atlas continua conferindo aqui, sem custo.') }
+    try { await ponte.deixarPublico(pasta); setPublico(true); setConfirmar(false) } catch (e) { setAviso(textoDaTrava(e, 'Não consegui mudar. O Atlas continua conferindo aqui, sem custo.')) }
   }
 
   if (recolhida) {

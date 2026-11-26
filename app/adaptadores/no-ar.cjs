@@ -288,6 +288,26 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       return { fase: 'parado', nome: reg.nome || null, passos: PASSOS.map((id) => ({ id, estado: 'falta' })), achados: [], endereco: null, erro: null, avisos: [] }
     },
     /** A vistoria achou pontos: manda pela linha da obra e recomeça sozinho quando a linha terminar (a tela chama de novo). */
+    /**
+     * Antes de colocar no ar (o Atlas é autoexplicativo, 26/11/2026): a obra precisa de banco? Vai criar um novo? A conta do
+     * Supabase está ligada? Quantos bancos ATIVOS ela já tem (a conta grátis aceita 2)? Nunca trava: se a API não responde,
+     * bancosAtivos fica null e a tela só não mostra a contagem.
+     */
+    async conferirAntes(pasta) {
+      pasta = String(pasta)
+      let token = null
+      try { token = await cofre.ler(CHAVE_SUPABASE) } catch { token = null }
+      const contaLigada = Boolean(token)
+      if (!fs.existsSync(path.join(cwdDe(pasta), 'supabase'))) return { precisaBanco: false, bancoNovo: false, contaLigada, bancosAtivos: null }
+      const bancoNovo = !lerRegistro(pasta).ref
+      if (!contaLigada || !bancoNovo) return { precisaBanco: true, bancoNovo, contaLigada, bancosAtivos: null }
+      let bancosAtivos = null
+      try {
+        const lista = await apiSupabase('GET', '/v1/projects', null, token)
+        if (Array.isArray(lista)) bancosAtivos = lista.filter((p) => p && typeof p.status === 'string' && !/INACTIVE|PAUS|REMOVED|GOING_DOWN|FAILED/.test(p.status)).length
+      } catch { bancosAtivos = null }
+      return { precisaBanco: true, bancoNovo, contaLigada, bancosAtivos }
+    },
     async corrigir(pasta) {
       pasta = String(pasta)
       const e = jobs.get(pasta)

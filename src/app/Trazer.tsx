@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Botao, CampoFalado, Icone } from '../ui'
 import { linkCurto } from './estilo-dados'
 import { normalizarLinkPrototipo, type PonteImportar, type Recebido, type ZipEscolhido } from './ponte-importar'
@@ -29,7 +30,7 @@ const recadoDoErro = (e: unknown) => {
     case 'zip-vazio': return 'Esse .zip está vazio. Peça para a outra IA mandar de novo.'
     case 'ja-recebido': return 'Essa obra já tem um protótipo guardado. Use outro nome de obra.'
     case 'indisponivel': return 'A importação ainda não está ligada neste computador. Quando estiver, este botão passa a funcionar; por enquanto, não há nada que você precise refazer.'
-    default: return 'Não consegui receber esse arquivo agora. Tente de novo em instantes.'
+    default: return textoDaTrava(e, 'Não consegui receber esse arquivo.')
   }
 }
 

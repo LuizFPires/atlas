@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Botao, Icone, Microfone, useVoz } from '../ui'
 import { BloqueioPolitica } from './BloqueioPolitica'
 import type { PonteArquivos } from './ponte-arquivos'
@@ -28,7 +29,7 @@ const RECADO: Record<string, string> = {
   'nao-e-planilha': 'Não consegui abrir esse arquivo como planilha. Confira se ele abre no Excel e tente de novo.',
   'tipo-nao-aceito': 'Esse tipo de arquivo não é planilha. Use Excel (.xlsx, .xlsm) ou .csv.',
 }
-const recado = (e: unknown) => RECADO[e instanceof Error ? e.message : ''] ?? 'Não consegui ler a planilha agora. Tente de novo em instantes.'
+const recado = (e: unknown) => RECADO[e instanceof Error ? e.message : ''] ?? textoDaTrava(e, 'Não consegui ler a planilha.')
 
 /** "compras-2026.xlsx" → "Compras 2026" (nome provisório; o nome de verdade vem no batismo). */
 export const nomeDaPlanilha = (arquivo: string) => {
@@ -79,7 +80,7 @@ export function ComecarPlanilha({ planilha, arquivos, criarObra, onVoltar, onCon
     if (!obra) return
     setErro('')
     setFase('entendendo')
-    try { setEnt(await planilha.entender(obra.pasta)); setFase('entendi') } catch { setFase('lendo'); setErro('O Claude não conseguiu ler agora. Tente de novo em instantes; a planilha já está lida.') }
+    try { setEnt(await planilha.entender(obra.pasta)); setFase('entendi') } catch (e) { setFase('lendo'); setErro(textoDaTrava(e, 'O Claude não conseguiu entender a planilha (ela já está lida).')) }
   }
 
   const enviarFala = async () => {
@@ -95,7 +96,7 @@ export function ComecarPlanilha({ planilha, arquivos, criarObra, onVoltar, onCon
     try {
       await planilha.levarDados(obra.pasta, levar)
       await onConcluir({ ...obra, relato: await planilha.relato(obra.pasta) })
-    } catch { setErro('Não consegui seguir agora. Tente de novo.') }
+    } catch (e) { setErro(textoDaTrava(e, 'Não consegui seguir.')) }
   }
 
   const tudoBate = visao && visao.contas.conferidas > 0 && visao.contas.divergem === 0

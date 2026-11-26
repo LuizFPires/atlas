@@ -97,3 +97,5 @@
 .at-noar__destravar { display: flex; flex-wrap: wrap; gap: 10px; }
 /* O código técnico do passo que parou, pequeno: é o que o Atlas usa para saber exatamente o que houve. */
 .at-noar__codigo { font: 500 11px var(--font-mono); letter-spacing: .04em; color: var(--mute2, var(--mute)); }
+/* Antes do clique: o que pode travar a publicação (conta do Supabase, limite grátis de 2 bancos). */
+.at-noar__antes { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--warn); font-size: 14px; line-height: 1.5; color: var(--text); }

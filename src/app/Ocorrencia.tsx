@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Botao, Icone } from '../ui'
 import type { AvisoEnviado, Ocorrencia as DadosOcorrencia, PonteOcorrencias } from './ponte-ocorrencia'
 import './ocorrencia.css'
@@ -17,7 +18,7 @@ interface Props {
 const recado = (e: unknown) =>
   e instanceof Error && e.message === 'indisponivel'
     ? 'Quem acompanha as paradas da obra ainda não está ligado neste computador. Quando estiver, o passo a passo aparece aqui; você não precisa refazer nada.'
-    : 'Não consegui fazer isso agora. Tente de novo em instantes.'
+    : textoDaTrava(e, 'Não consegui fazer isso.')
 
 /**
  * F11: ocorrência. É o ÚNICO tipo de parada que exige o cliente (nota u11). Passo a passo com prints e aviso no celular e no e-mail.

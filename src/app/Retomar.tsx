@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { ehMac } from './plataforma'
 import { Botao, Icone } from '../ui'
 import canteiroImagem from '../assets/canteiro-3d.jpg'
@@ -27,7 +28,7 @@ interface Props {
  */
 export function Retomar({ obra, outras = [], nome, retomar, onContinuou, onAgoraNao, agora = () => new Date() }: Props) {
   const [ligando, setLigando] = useState(false)
-  const [falhou, setFalhou] = useState(false)
+  const [falhou, setFalhou] = useState('')
   const quando = quandoParou(obra.paradaEm, agora())
   const varias = outras.length > 0
   const etapa = obra.etapa ? `M${obra.etapa.n} ${textoDaObra(obra.etapa.nome, 60)}` : null
@@ -35,12 +36,12 @@ export function Retomar({ obra, outras = [], nome, retomar, onContinuou, onAgora
   const continuar = async () => {
     if (ligando) return
     setLigando(true)
-    setFalhou(false)
+    setFalhou('')
     try {
       for (const o of [obra, ...outras]) await retomar.continuar(o)
       onContinuou(obra)
-    } catch {
-      setFalhou(true)
+    } catch (e) {
+      setFalhou(textoDaTrava(e, 'Não consegui religar a obra.'))
       setLigando(false)
     }
   }
@@ -65,7 +66,7 @@ export function Retomar({ obra, outras = [], nome, retomar, onContinuou, onAgora
             <Icone nome="play" tamanho={18} />
             {ligando ? (varias ? 'Religando as obras…' : 'Religando a obra…') : (varias ? 'Continuar todas' : 'Continuar obra')}
           </Botao>
-          {falhou && <p className="at-rt__nota" role="status">Não consegui religar agora. Sem pressa: toque em Continuar obra de novo, ou chame a Ajuda do Atlas.</p>}
+          {falhou && <p className="at-rt__nota" role="status">{falhou}</p>}
           <button type="button" className="at-rt__link" onClick={onAgoraNao}>Agora não</button>
         </div>
       </div>

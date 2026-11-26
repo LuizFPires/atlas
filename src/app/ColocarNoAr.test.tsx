@@ -100,8 +100,8 @@ test('domínio próprio (M57): abre ao lado do prédio e, no ar, o QR e o WhatsA
 test('"Corrigir e continuar" falhou: diz o motivo de verdade, não um "tente de novo" genérico', async () => {
   const casos: [string, RegExp][] = [
     ['sem-licenca', /licença/i],
-    ['plan-invalido', /plano da obra/i],
-    ['obra-com-config-suspeita', /arquivo estranho/i],
+    ['plan-invalido', /plano de construção da obra/i],
+    ['obra-com-config-suspeita', /arquivo de configuração que o Atlas não criou/i],
     ['kit-indisponivel', /servidor do Atlas não entregou/i],
   ]
   for (const [codigo, texto] of casos) {
@@ -169,4 +169,24 @@ test('erro num passo mostra o código técnico pequeno, para o Atlas saber exata
   const erro: EstadoNoAr = { fase: 'erro', nome: 'ponto', passos: [{ id: 'vistoria', estado: 'feito' }, { id: 'banco', estado: 'erro' }, { id: 'publicar', estado: 'falta' }, { id: 'github', estado: 'falta' }, { id: 'teste', estado: 'falta' }, { id: 'celular', estado: 'falta' }], achados: [], endereco: null, erro: { passo: 'banco', motivo: 'supabase-migrations' }, avisos: [] }
   montar({ ...criarNoArFixture(), estado: async () => erro })
   expect(await screen.findByText('código: supabase-migrations')).toBeInTheDocument()
+})
+
+test('antes de colocar no ar: a conta do Supabase já tem 2 bancos ativos → avisa na tela o limite grátis e o que fazer, antes de travar', async () => {
+  montar({ ...criarNoArFixture(), conferirAntes: async () => ({ precisaBanco: true, bancoNovo: true, contaLigada: true, bancosAtivos: 2 }) })
+  const aviso = await screen.findByRole('alert')
+  expect(aviso).toHaveTextContent(/já tem 2 bancos ativos/)
+  expect(aviso).toHaveTextContent(/conta grátis.*limite é 2/)
+  expect(aviso).toHaveTextContent(/pause ou apague um projeto/)
+})
+
+test('antes de colocar no ar: conta do Supabase não ligada → diz e oferece religar; com folga → mostra quantos bancos usa', async () => {
+  const user = userEvent.setup()
+  const ligar = vi.fn()
+  const { unmount } = montar({ ...criarNoArFixture(), conferirAntes: async () => ({ precisaBanco: true, bancoNovo: true, contaLigada: false, bancosAtivos: null }) }, { onLigarContas: ligar })
+  expect(await screen.findByText(/precisa de um banco de dados na sua conta do Supabase, e ela não está ligada/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Ligar a conta do Supabase' }))
+  expect(ligar).toHaveBeenCalled()
+  unmount()
+  montar({ ...criarNoArFixture(), conferirAntes: async () => ({ precisaBanco: true, bancoNovo: true, contaLigada: true, bancosAtivos: 1 }) })
+  expect(await screen.findByText(/Você usa 1 de 2 bancos da conta grátis do Supabase/)).toBeInTheDocument()
 })

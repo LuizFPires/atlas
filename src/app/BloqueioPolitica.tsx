@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { CampoFalado } from '../ui'
 import { NAO_PODE, PODE, type PontePolitica } from './ponte-politica'
 import './bloqueio-politica.css'
@@ -25,11 +26,12 @@ export function BloqueioPolitica({ modo, sinais = [], obra, politica, onVoltar }
   const [explicar, setExplicar] = useState(false)
   const [texto, setTexto] = useState('')
   const [enviado, setEnviado] = useState<'nao' | 'enviando' | 'sim' | 'erro'>('nao')
+  const [motivoErro, setMotivoErro] = useState('')
 
   const enviar = async () => {
     if (!texto.trim()) return
     setEnviado('enviando')
-    try { await politica.analise(obra, texto.trim()); setEnviado('sim') } catch { setEnviado('erro') }
+    try { await politica.analise(obra, texto.trim()); setEnviado('sim') } catch (e) { setMotivoErro(textoDaTrava(e, 'Não consegui enviar.')); setEnviado('erro') }
   }
 
   if (explicar) {
@@ -43,7 +45,7 @@ export function BloqueioPolitica({ modo, sinais = [], obra, politica, onVoltar }
           <>
             <CampoFalado rotulo="Para que serve o seu sistema" valor={texto} onChange={setTexto} placeholder="Toque no microfone ou escreva…" />
             <button type="button" className="at-pol__prim" disabled={!texto.trim() || enviado === 'enviando'} onClick={() => void enviar()}>Enviar para análise →</button>
-            {enviado === 'erro' && <p className="at-pol__nota" role="alert">Não consegui enviar agora. Confira a internet e tente de novo.</p>}
+            {enviado === 'erro' && <p className="at-pol__nota" role="alert">{motivoErro}</p>}
           </>
         )}
         <button type="button" className="at-pol__sec" onClick={() => setExplicar(false)}>Voltar</button>

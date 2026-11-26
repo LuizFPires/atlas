@@ -5,6 +5,7 @@
 // "Mandar para o Atlas fazer", que vira uma versão nova do protótipo. O HTML da tela continua só no iframe com sandbox vazio: o ponto
 // é medido no quadro de fora (nunca dentro da tela).
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Icone, Microfone, useVoz } from '../ui'
 import { CelularPreview, ComputadorPreview } from './Prototipo'
 import { aparelhoDaTela, type SugestaoMarcacao, type TelaDesenhada } from './ponte-prototipo'
@@ -135,9 +136,9 @@ export function UsarSistema({ obraNome, telas, inicial, onFechar, onPedirMudanca
       setMarcas((ms) => ms.filter((m) => m.fase !== 'guardada'))
       setEd(null)
       setAviso(`${n === 1 ? 'O ajuste foi feito' : `Os ${n} ajustes foram feitos`}. As bolinhas novas já estão na tela.`)
-    } catch {
+    } catch (e) {
       setAviso('')
-      setFalha('Não consegui fazer agora. Suas marcações continuam guardadas: é só mandar de novo.')
+      setFalha(textoDaTrava(e, 'Não consegui fazer os ajustes. Suas marcações continuam guardadas.'))
     } finally {
       setTrabalhando(false)
     }

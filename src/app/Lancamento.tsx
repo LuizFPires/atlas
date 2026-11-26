@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { guiaAsaas, guiaStripe, type Guia } from './guias-site'
 import { PaginaVendas } from './PaginaVendas'
 import type { NumerosVendas, PonteVendas } from './ponte-vendas'
@@ -29,7 +30,7 @@ export function Lancamento({ obra, lancamento, onGuia, onVoltar, vendas }: Props
   }, [lancamento, obra.pasta])
   const fazer = async (f: () => Promise<EstadoLancamento>) => {
     setAviso('')
-    try { setE(await f()) } catch (x) { setAviso((x as Error).message === 'obra-fora-do-ar' ? 'Primeiro o sistema precisa estar no ar.' : 'Não deu certo agora. Tente de novo em instantes.') }
+    try { setE(await f()) } catch (x) { setAviso((x as Error).message === 'obra-fora-do-ar' ? 'Primeiro o sistema precisa estar no ar.' : textoDaTrava(x, 'Não deu certo.')) }
   }
   const nome = obra.nome.toLocaleUpperCase('pt-BR')
 

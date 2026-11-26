@@ -74,7 +74,7 @@ test('o navegador não abriu a página (endereço recusado): avisa, sem dizer qu
   const { onPagamentoAberto } = montar(undefined, vi.fn(async () => { throw new Error('host-nao-permitido') }))
   await aceitar()
   await ir()
-  expect(await screen.findByRole('alert')).toHaveTextContent('Não consegui abrir a página de pagamento. Tente de novo em instantes.')
+  expect(await screen.findByRole('alert')).toHaveTextContent(/^Não consegui abrir a página de pagamento\. Isso é um defeito do Atlas.*Falar com o Atlas.*\(código: host-nao-permitido\)$/)
   expect(onPagamentoAberto).not.toHaveBeenCalled()
   expect(screen.queryByRole('status')).toBeNull()
 })

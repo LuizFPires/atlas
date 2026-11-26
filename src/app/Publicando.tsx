@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Botao, CampoFalado, Icone } from '../ui'
 import type { PedidoAjudaPasso } from './ajuda-passo'
 import { CartaoPasso, PreviaSite } from './GuiaConta'
@@ -90,10 +91,10 @@ export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, 
         : { estado: 'erro', texto: 'Essa parte ainda não está ligada neste computador. Ainda não publiquei de verdade, então não vou dizer que deu certo.' })
     } else if (autoId === 'publicar') {
       poe({ estado: 'rodando', texto: 'O Atlas está colocando o sistema no ar…' })
-      publicar.publicarNoAr(slug).then((r) => { if (vivo) { setEndereco(r.endereco); setNoAr(r.endereco) } fim({ estado: 'ok', texto: `No ar: ${r.endereco}` }) }, () => erro('Não consegui colocar no ar agora. Nada se perdeu: tente de novo.'))
+      publicar.publicarNoAr(slug).then((r) => { if (vivo) { setEndereco(r.endereco); setNoAr(r.endereco) } fim({ estado: 'ok', texto: `No ar: ${r.endereco}` }) }, (x) => erro(textoDaTrava(x, 'Não consegui colocar no ar. Nada se perdeu.')))
     } else if (autoId === 'cartaz') {
       poe({ estado: 'rodando', texto: 'O Atlas está criando o cartaz…' })
-      publicar.gerarCartaz(endereco, obra.pasta).then((r) => fim({ estado: 'ok', texto: `Cartaz pronto na pasta da obra: ${r.arquivo}` }), () => erro('Não consegui criar o cartaz agora. Tente de novo.'))
+      publicar.gerarCartaz(endereco, obra.pasta).then((r) => fim({ estado: 'ok', texto: `Cartaz pronto na pasta da obra: ${r.arquivo}` }), (x) => erro(textoDaTrava(x, 'Não consegui criar o cartaz.')))
     } else if (autoId === 'nome') {
       poe({ estado: 'rodando', texto: `O Atlas está conferindo se ${dominio} está livre…` })
       publicar.nomeLivre(dominio).catch((): SituacaoNome => 'incerto').then((s) => {
@@ -109,7 +110,7 @@ export function Publicando({ obra, selecao, publicar, onConcluir, onPedirAjuda, 
         if (!bons.length || bons.length < r.length) return erro('A Vercel devolveu uma linha que não parece certa, então não vou mostrar para você copiar. Tente de novo.')
         if (vivo) setDns(bons)
         fim({ estado: 'ok', texto: 'Linhas prontas para copiar.' })
-      }, () => erro('Não consegui ler o que a Vercel pede agora. Tente de novo.'))
+      }, (x) => erro(textoDaTrava(x, 'Não consegui ler o que a Vercel pede.')))
     } else if (autoId === 'espera') {
       poe({ estado: 'rodando', texto: 'Conferindo a cada 5 minutos se a internet já reconheceu o seu endereço…' })
       const conferir = async () => {

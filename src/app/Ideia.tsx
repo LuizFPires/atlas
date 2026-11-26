@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Botao, CampoFalado, Icone, Microfone, useVoz } from '../ui'
 import { TOPICOS, type Conferencia, type IdTopico, type PonteIdeia } from './ponte-ideia'
 import { BloqueioPolitica } from './BloqueioPolitica'
@@ -85,8 +86,8 @@ export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2
   const concluir = async (texto: string, titulo: string, vender: boolean | undefined = paraVender) => {
     setErro('')
     const relatoFinal = vender ? `${texto}\n\n${BLOCO_VENDA}` : texto
-    try { await onConcluir({ relato: relatoFinal, titulo, ...(vender !== undefined ? { paraVender: vender } : {}) }); apagar() } catch {
-      setErro('Não consegui criar a pasta da obra agora. O que você contou está guardado: tente de novo em instantes.')
+    try { await onConcluir({ relato: relatoFinal, titulo, ...(vender !== undefined ? { paraVender: vender } : {}) }); apagar() } catch (e) {
+      setErro(textoDaTrava(e, 'Não consegui criar a pasta da obra. O que você contou está guardado.'))
       setEtapa('contar')
     }
   }

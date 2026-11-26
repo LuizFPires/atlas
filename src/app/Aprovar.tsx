@@ -1,4 +1,5 @@
 import { mensagemPolitica } from './ponte-politica'
+import { textoDaTrava } from './explicar-trava'
 import { useEffect, useState } from 'react'
 import { palavras } from './plataforma'
 import { Botao, Icone, Trabalhando } from '../ui'
@@ -44,7 +45,7 @@ export const recadoDoErroAprovar = (e: unknown) => {
     default: {
       // Luiz, 23/11/2026: "erro na hora de começar uma obra" sem pista nenhuma. Um código curto (sem caminho nem dado) diz o que foi.
       const m = e instanceof Error ? /^([A-Za-z][\w-]{1,30})/.exec(e.message)?.[1] : undefined
-      return `Não consegui começar a obra agora. Tente de novo em instantes.${m ? ` (código: ${m})` : ''}`
+      return textoDaTrava(m ?? '', 'Não consegui começar a obra.')
     }
   }
 }

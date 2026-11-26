@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { palavras } from './plataforma'
 import { Botao, Icone } from '../ui'
 import type { PonteNavegador, Retangulo } from './ponte-navegador'
@@ -115,7 +116,7 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
       else setAvisoChave(r.motivo === 'formato'
         ? 'Essa não parece a chave. A chave do Supabase começa com sbp_ e tem 44 letras e números. Copie de novo pelo botão de copiar do site.'
         : 'O Supabase não aceitou esta chave. Gere outra no site (Generate new token) e cole de novo.')
-    } catch { setAvisoChave('Não consegui conferir a chave agora. Confira a internet e tente de novo.') } finally { setTestando(false) }
+    } catch (e) { setAvisoChave(textoDaTrava(e, 'Não consegui conferir a chave.')) } finally { setTestando(false) }
   }
 
   const feitas = LINHAS.filter((l) => linhas[l.id].estado === 'ligado').length

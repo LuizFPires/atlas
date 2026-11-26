@@ -1,6 +1,7 @@
 // Compra de dentro do Atlas instalado (teste grátis ou cortesia): mesmas regras do site (preço, parcelas, aceite dos termos),
 // com o e-mail da ativação fixo. O pagamento abre no navegador do cliente, na página da Stripe; o Atlas nunca vê dado de cartão.
 import { useEffect, useRef, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Icone } from '../ui'
 import type { ResultadoCompra } from '../web/compra'
 import { Markdown } from '../web/Markdown'
@@ -51,7 +52,7 @@ export function ComprarAtlas({ aberto, email, onFechar, iniciar, abrirPagamento,
     try {
       const r = await iniciar({ email, parcelas, versaoTermos: VERSAO_TERMOS, origem: 'app' })
       if (!r.ok) { setErro(r.mensagem); return }
-      try { await abrirPagamento(r.url) } catch { setErro(MSG_NAO_ABRIU); return }
+      try { await abrirPagamento(r.url) } catch (e) { setErro(textoDaTrava(e, MSG_NAO_ABRIU.replace(' Tente de novo em instantes.', ''))); return }
       setAbriu(true)
       onPagamentoAberto()
     } finally { enviando.current = false; setIndo(false) }

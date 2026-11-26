@@ -1,3 +1,4 @@
+import { textoDaTrava } from './explicar-trava'
 // Ponte do domínio próprio (M57; prototipo/caminho-novo/PB6Dominio e PB7DominioOk). O adaptador real é app/adaptadores/dominio.cjs.
 
 export type IdPassoDominio = 'ligado' | 'troca' | 'internet' | 'cadeado'
@@ -46,7 +47,7 @@ export function explicarErroDominio(motivo: string): string {
   if (motivo === 'vercel-dominio') return 'A Vercel não aceitou ligar este domínio. Às vezes ele já está ligado em outra conta da Vercel.'
   if (motivo === 'vercel-dns') return 'A Vercel ligou o domínio, mas não devolveu o que colar no Registro.br. Dá para tentar de novo em instantes.'
   if (motivo === 'dominio-invalido') return 'Esse domínio não parece do Registro.br. Escreva assim: suaempresa.com.br'
-  return 'Algo não saiu como esperado. Dá para tentar de novo.'
+  return textoDaTrava(motivo, 'Não consegui ligar o domínio.')
 }
 
 const vazio = (): EstadoDominio => ({ fase: 'nenhum', dominio: null, modo: null, servidores: [], registros: [], passos: PASSOS_DOMINIO.map((p) => ({ id: p.id, estado: 'falta' })), endereco: null })

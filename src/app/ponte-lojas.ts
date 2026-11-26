@@ -1,3 +1,4 @@
+import { textoDaTrava } from './explicar-trava'
 // Ponte das lojas (M59; prototipo/caminho-novo/PB8Lojas, PB9LojasOk, PB13Testadores). O adaptador real é app/adaptadores/lojas.cjs.
 // Chaves (Expo e App Store Connect) vão direto para o cofre do computador; a tela nunca vê o arquivo da chave.
 
@@ -42,7 +43,7 @@ export function explicarErroLojas(motivo: string): string {
   if (motivo === 'eas-build') return 'A montagem na nuvem (Expo) não terminou. Toque em "Tentar de novo"; se continuar, fale com o Atlas.'
   if (motivo === 'eas-submit-ios') return 'A versão de iPhone ficou pronta, mas a Apple não aceitou o envio. Confira a chave da App Store Connect.'
   if (motivo === 'sem-app') return 'A versão de app não ficou pronta na obra. Toque em "Tentar de novo".'
-  return 'Não deu certo agora. Tente de novo em instantes.'
+  return textoDaTrava(motivo, 'Não deu certo agora.')
 }
 
 const vazio = (): EstadoLojas => ({ caminho: null, contas: { apple: false, google: false, expo: false, duns: false }, chaveAsc: false, convite: null, noAr: true, pacote: 'br.com.pontoampla.app', envio: { fase: 'nada', ios: 'nada', android: 'nada', aab: false, erro: null } })
