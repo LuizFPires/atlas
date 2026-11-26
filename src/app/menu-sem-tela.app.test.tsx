@@ -12,6 +12,7 @@ const api = { pedirCodigo: async () => ({ ok: true as const }), confirmar: async
 test.each([
   ['Canteiro de obras', /Nenhuma obra no canteiro ainda/],
   ['Obras concluídas', /Nenhuma obra pronta ainda/],
+  ['Lançamentos', /Nenhuma obra à venda ainda/],
   ['Nova obra', /Comece a sua primeira obra/],
 ])('menu "%s" sem obra tem uma tela própria, nunca cai no "Bem-vindo"', async (item, texto) => {
   render(<TemaProvider><AppDesktop ponte={ponte()} api={api} /></TemaProvider>)
