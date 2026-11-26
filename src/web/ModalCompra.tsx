@@ -3,6 +3,7 @@ import { CampoFalado, Icone } from '../ui'
 import { CHAVE_EMAIL_COMPRA } from './Cadastro'
 import { prateleira } from './conteudo'
 import { iniciarCompra, juntarFalaEmail } from './compra'
+import { mascaraDocumento } from './documento'
 import { opcoesParcelas, planoDoTipo, reais, rotuloParcela } from './parcelas'
 import { DOCS_LEGAIS, VERSAO_TERMOS } from './textos-legais'
 import { TEXTOS_VENDAS } from './textos-vendas'
@@ -12,6 +13,7 @@ import type { Idioma } from '../i18n/idioma'
 export function ModalCompra({ aberto, onFechar, segmento, abrirPagamento = (url) => window.location.assign(url), idioma = 'pt' }: { aberto: boolean; onFechar: () => void; segmento?: string; abrirPagamento?: (url: string) => void; idioma?: Idioma }) {
   const en = idioma === 'en'
   const [email, setEmail] = useState('')
+  const [documento, setDocumento] = useState('')
   const [parcelas, setParcelas] = useState(1)
   const [erro, setErro] = useState('')
   const [indo, setIndo] = useState(false)
@@ -34,7 +36,7 @@ export function ModalCompra({ aberto, onFechar, segmento, abrirPagamento = (url)
     setErro('')
     if (!aceito) { setErro(en ? 'To continue, check that you have read and accept the Privacy Policy and the Terms of Use.' : 'Para continuar, marque que você leu e aceita a Política de Privacidade e os Termos de Uso.'); return }
     setIndo(true)
-    const r = await iniciarCompra(email, undefined, undefined, VERSAO_TERMOS, en ? 1 : parcelas, segmento, undefined, en ? 'us' : undefined)
+    const r = await iniciarCompra(email, undefined, undefined, VERSAO_TERMOS, en ? 1 : parcelas, segmento, undefined, en ? 'us' : undefined, en ? undefined : documento)
     if (r.ok) {
       try { localStorage.setItem(CHAVE_EMAIL_COMPRA, email.trim().toLowerCase()) } catch { /* sem armazenamento: o e-mail é pedido de novo */ }
       abrirPagamento(r.url)
@@ -73,6 +75,7 @@ export function ModalCompra({ aberto, onFechar, segmento, abrirPagamento = (url)
         <p>{segmento ? 'Coloque o e-mail que você mais usa: é nele que chega o acesso ao seu app. Em seguida' : 'Coloque o e-mail que você abre no computador onde vai construir. Em seguida'} você paga com Pix ou cartão, em uma página segura.</p>
         <form onSubmit={ir} noValidate>
           <CampoFalado rotulo="Qual o seu e-mail?" type="email" autoComplete="email" valor={email} onChange={setEmail} placeholder="voce@suaempresa.com.br" juntar={juntarFalaEmail} />
+          <CampoFalado rotulo="CPF ou CNPJ de quem compra" valor={documento} onChange={(v) => setDocumento(mascaraDocumento(v))} placeholder="000.000.000-00" juntar={(a, f) => mascaraDocumento(`${a} ${f}`)} ajuda="Vai na nota da compra. O preço em real é para quem tem documento brasileiro; de fora do Brasil, a compra é pela página em inglês, em dólar." />
           <label className="v-parcelas">
             <span>Em quantas vezes? <small>(no cartão)</small></span>
             <select value={parcelas} onChange={(e) => setParcelas(Number(e.target.value))}>

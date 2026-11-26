@@ -2,14 +2,15 @@
 // com o e-mail da ativação fixo. O pagamento abre no navegador do cliente, na página da Stripe; o Atlas nunca vê dado de cartão.
 import { useEffect, useRef, useState } from 'react'
 import { textoDaTrava } from './explicar-trava'
-import { Icone } from '../ui'
+import { CampoFalado, Icone } from '../ui'
+import { mascaraDocumento } from '../web/documento'
 import type { ResultadoCompra } from '../web/compra'
 import { Markdown } from '../web/Markdown'
 import { opcoesParcelas, planoDoTipo, reais, rotuloParcela } from '../web/parcelas'
 import { DOCS_LEGAIS, VERSAO_TERMOS } from '../web/textos-legais'
 import '../web/web.css'
 
-export interface PedidoCompraNoApp { email: string; parcelas: number; versaoTermos: string; origem: 'app' }
+export interface PedidoCompraNoApp { email: string; parcelas: number; versaoTermos: string; origem: 'app'; documento: string }
 
 type Props = {
   aberto: boolean
@@ -27,6 +28,7 @@ const MSG_NAO_ABRIU = 'Não consegui abrir a página de pagamento. Tente de novo
 
 export function ComprarAtlas({ aberto, email, onFechar, iniciar, abrirPagamento, onPagamentoAberto }: Props) {
   const [parcelas, setParcelas] = useState(1)
+  const [documento, setDocumento] = useState('')
   const [aceito, setAceito] = useState(false)
   const [indo, setIndo] = useState(false)
   const [erro, setErro] = useState('')
@@ -50,7 +52,7 @@ export function ComprarAtlas({ aberto, email, onFechar, iniciar, abrirPagamento,
     enviando.current = true
     setErro(''); setIndo(true)
     try {
-      const r = await iniciar({ email, parcelas, versaoTermos: VERSAO_TERMOS, origem: 'app' })
+      const r = await iniciar({ email, parcelas, versaoTermos: VERSAO_TERMOS, origem: 'app', documento })
       if (!r.ok) { setErro(r.mensagem); return }
       try { await abrirPagamento(r.url) } catch (e) { setErro(textoDaTrava(e, MSG_NAO_ABRIU.replace(' Tente de novo em instantes.', ''))); return }
       setAbriu(true)
@@ -65,6 +67,7 @@ export function ComprarAtlas({ aberto, email, onFechar, iniciar, abrirPagamento,
         <p>Você continua de onde está: as suas obras e este computador seguem iguais. O pagamento é feito com Pix ou cartão, em uma página segura que abre no seu navegador.</p>
         <p>A compra vale para <b>{email}</b>, o e-mail deste Atlas.</p>
         <form onSubmit={ir} noValidate>
+          <CampoFalado rotulo="CPF ou CNPJ de quem compra" valor={documento} onChange={(v) => setDocumento(mascaraDocumento(v))} placeholder="000.000.000-00" juntar={(a, f) => mascaraDocumento(`${a} ${f}`)} ajuda="Vai na nota da compra. O preço em real é para quem tem documento brasileiro." />
           <label className="v-parcelas">
             <span>Em quantas vezes? <small>(no cartão)</small></span>
             <select value={parcelas} onChange={(e) => setParcelas(Number(e.target.value))}>

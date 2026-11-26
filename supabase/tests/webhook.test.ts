@@ -181,7 +181,7 @@ describe('prova da compra (session_id) para o cadastro', () => {
   it('o checkout registra a sessão pendente e o webhook de pagamento a marca como paga', async () => {
     const m = montarPag()
     const { criarCheckout } = await import('../functions/_shared/pagamento/checkout.ts')
-    const r = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'Bia@Padaria.com', aceite_termos_versao: '1.0' })
+    const r = await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'Bia@Padaria.com', aceite_termos_versao: '1.0', documento: '52998224725' })
     expect(r).toEqual({ url: expect.any(String) })
     const sid = m.store.sessoes[0].sessao_id
     expect(m.store.sessoes).toEqual([{ conta_gateway_id: CONTA, sessao_id: sid, email: 'bia@padaria.com', paga: false }])

@@ -2,6 +2,7 @@
 // Implantação: pagamento único, Pix + cartão. Mensalidade: assinatura recorrente (cartão; a Stripe
 // ainda não cobra Pix em modo assinatura). O dinheiro cai direto na conta do cliente.
 import { ErroRegra } from '../tipos.ts'
+import { documentoBR } from '../documento.ts'
 import { type DepsPagamento, type Mercado, mercadoDe, PRECOS_USD, planoDoTipo, SEGMENTOS_PRATELEIRA, type SegmentoPrateleira, VALOR_MENSALIDADE } from './config.ts'
 
 /** A página de pagamento da Stripe com a cara do Atlas (tokens do tema escuro A; Geist não está na lista da Stripe, Inter é a mais próxima). */
@@ -35,6 +36,8 @@ export interface PedidoCheckout {
   origem?: 'app'
   /** M31: 'us' = compra em dólar (página em inglês). Ausente ou desconhecido = Brasil, em real. */
   mercado?: Mercado
+  /** M31 ("real só com CPF"): em real, CPF ou CNPJ de quem compra (vai para a nota). Em dólar, ignorado. */
+  documento?: string
 }
 
 /** URLs de retorno montadas no servidor a partir da origem https cadastrada na conta. A requisição não influencia. */
@@ -64,7 +67,13 @@ export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promis
       meta.atlas_segmento = p.segmento as SegmentoPrateleira
     }
     const email = (p.email ?? '').trim().toLowerCase()
-    if (!EMAIL_RE.test(email)) throw new ErroRegra('email_invalido', 'Confira o e-mail: use o mesmo e-mail que você usou no pagamento.')
+    if (!EMAIL_RE.test(email)) throw new ErroRegra('email_invalido', 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br. É nele que chega o acesso ao Atlas.')
+    // M31 ("real só com CPF", Luiz, 26/11/2026): o preço em real é só para quem tem documento brasileiro.
+    if (mercado === 'br') {
+      const doc = documentoBR(p.documento)
+      if (!doc) throw new ErroRegra('documento_obrigatorio', 'Para pagar em real, informe o CPF ou o CNPJ de quem compra (ele vai na nota da compra). Quem não tem documento brasileiro compra pela página em inglês, em dólar.', 400)
+      meta.atlas_documento = doc.digitos
+    }
     const versao = typeof p.aceite_termos_versao === 'string' ? p.aceite_termos_versao.trim() : ''
     if (!VERSAO_RE.test(versao)) throw new ErroRegra('aceite_obrigatorio', 'Para continuar, marque que você leu e aceita a Política de Privacidade e os Termos de Uso.', 400)
     // Fail-closed: se o aceite não ficou registrado, o pagamento nem é aberto.

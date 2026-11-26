@@ -20,7 +20,7 @@ const sessao = (extra: Record<string, unknown> = {}) => ({
 describe('checkout da prateleira (M32)', () => {
   it('à vista: R$ 7.300, Pix + cartão, metadata com tipo e segmento', async () => {
     const m = montarPag()
-    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'prateleira', segmento: 'barbearia', email: 'Caio@Barba.com', aceite_termos_versao: '1.0' })
+    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'prateleira', segmento: 'barbearia', email: 'Caio@Barba.com', aceite_termos_versao: '1.0', documento: '52998224725' })
     const f = corpoDe(m.chamadas[0])
     expect(f.get('line_items[0][price_data][unit_amount]')).toBe('730000')
     expect(f.get('payment_method_types[1]')).toBe('pix')
@@ -31,7 +31,7 @@ describe('checkout da prateleira (M32)', () => {
   })
   it('parcelado com juros (6x): total do PMT e só cartão', async () => {
     const m = montarPag()
-    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'prateleira', segmento: 'academia', parcelas: 6, email: 'a@b.co', aceite_termos_versao: '1.0' })
+    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'prateleira', segmento: 'academia', parcelas: 6, email: 'a@b.co', aceite_termos_versao: '1.0', documento: '52998224725' })
     const f = corpoDe(m.chamadas[0])
     expect(f.get('line_items[0][price_data][unit_amount]')).toBe(String(Math.round(planoPrateleira(6).total * 100)))
     expect(f.get('payment_method_types[1]')).toBeNull()
@@ -39,7 +39,7 @@ describe('checkout da prateleira (M32)', () => {
   it('segmento inválido ou ausente é recusado antes de abrir o pagamento', async () => {
     const m = montarPag()
     for (const segmento of [undefined, '', 'padaria']) {
-      await expect(criarCheckout(m.deps, { conta_id: CONTA, tipo: 'prateleira', segmento, email: 'a@b.co', aceite_termos_versao: '1.0' })).rejects.toMatchObject({ codigo: 'segmento_invalido' })
+      await expect(criarCheckout(m.deps, { conta_id: CONTA, tipo: 'prateleira', segmento, email: 'a@b.co', aceite_termos_versao: '1.0', documento: '52998224725' })).rejects.toMatchObject({ codigo: 'segmento_invalido' })
     }
     expect(m.chamadas).toHaveLength(0)
   })
