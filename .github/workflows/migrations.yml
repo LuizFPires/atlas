@@ -1,0 +1,71 @@
+# Migrations do banco no ar sozinhas (pedido do Luiz, 26/11/2026: "queria que você mesmo resolvesse as migrations").
+# Antes, cada migration nova tinha de ser aplicada à mão no painel do Supabase. Agora, todo merge na main que traz uma
+# migration nova aplica no banco de produção, pela API de gestão do Supabase, com o MESMO segredo da publicação da função
+# (SUPABASE_ACCESS_TOKEN). Nunca em arquivo.
+#
+# Regras:
+# - Só aplica as migrations a partir da 0031 (as anteriores já estavam no banco, aplicadas pelo Luiz).
+# - Cada uma roda uma vez: a tabela atlas_migracoes guarda o que já foi aplicado. Mesmo assim, toda migration nova deve ser
+#   escrita para poder rodar de novo sem estrago (if not exists / drop ... if exists).
+# - Se uma falhar, para ali (as seguintes não rodam) e o passo fica vermelho.
+name: Migrations (Supabase) no ar
+
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/migrations/**', '.github/workflows/migrations.yml']
+  workflow_dispatch:
+
+concurrency: { group: migrations-supabase, cancel-in-progress: false }
+
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    env:
+      PROJETO: jwnrzcyudurdrxhjfdua
+      A_PARTIR_DE: '0031'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar as migrations novas
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::warning::Falta o segredo SUPABASE_ACCESS_TOKEN: as migrations NÃO foram aplicadas."
+            exit 0
+          fi
+          sql() {
+            jq -n --arg q "$1" '{query: $q}' | curl -sS -m 120 --fail-with-body -X POST \
+              "https://api.supabase.com/v1/projects/$PROJETO/database/query" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @-
+          }
+          sql "create table if not exists atlas_migracoes (nome text primary key, aplicada_em timestamptz not null default now());
+               alter table atlas_migracoes enable row level security;
+               revoke all on atlas_migracoes from public, anon, authenticated;" > /dev/null
+          for arq in $(ls supabase/migrations/*.sql | sort); do
+            nome=$(basename "$arq" .sql)
+            num=${nome%%_*}
+            [ "$num" \< "$A_PARTIR_DE" ] && continue
+            ja=$(sql "select count(*)::int as n from atlas_migracoes where nome = '$nome'" | jq -r '.[0].n')
+            if [ "$ja" != "0" ]; then echo "já aplicada: $nome"; continue; fi
+            echo "aplicando: $nome"
+            sql "$(cat "$arq")" > /dev/null || { echo "::error::A migration $nome falhou. As seguintes não foram aplicadas."; exit 1; }
+            sql "insert into atlas_migracoes (nome) values ('$nome') on conflict do nothing" > /dev/null
+            echo "ok: $nome"
+          done
+      - name: Conferir no banco
+        if: env.TEM == 'sim'
+        env:
+          TEM: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && 'sim' || 'nao' }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          r=$(jq -n --arg q "select
+                (select count(*) from information_schema.tables where table_name in ('politica_eventos','politica_obras','lojas_convites','lojas_testadores'))::int as tabelas,
+                (select count(*) from information_schema.columns where table_name = 'licencas' and column_name = 'idioma')::int as idioma,
+                (select count(*) from atlas_migracoes)::int as aplicadas" '{query: $q}' \
+            | curl -sS -m 60 --fail-with-body -X POST "https://api.supabase.com/v1/projects/$PROJETO/database/query" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @-)
+          echo "$r"
+          echo "$r" | jq -e '.[0].tabelas == 4 and .[0].idioma == 1' > /dev/null || { echo "::error::O banco não ficou como esperado."; exit 1; }
