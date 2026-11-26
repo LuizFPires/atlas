@@ -39,6 +39,8 @@ interface Props {
   onGuiaLojas?: (guia: Guia, conta?: ContaLoja) => void
   lojasAberto?: boolean
   abrirSiteLojas?: (destino: DestinoSite) => Promise<void>
+  /** M60: "Quer vender o [app] para outras empresas?" (opcional; sem tocar, nada muda). */
+  onVender?: () => void
 }
 
 type Tela = 'pronta' | 'endereco'
@@ -50,7 +52,7 @@ const ICONE_OK = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
  * O endereço já vem escolhido e as contas são as ligadas no começo da obra: o cliente só aperta "Colocar no ar".
  * Daí em diante o Atlas faz sozinho (vistoria, banco, publicação, GitHub, teste) e a tela só acompanha.
  */
-export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro, onGuiaRegistro, dominioAberto = false, lojas, onGuiaLojas, lojasAberto = false, abrirSiteLojas }: Props) {
+export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro, onGuiaRegistro, dominioAberto = false, lojas, onGuiaLojas, lojasAberto = false, abrirSiteLojas, onVender }: Props) {
   const [vendoDominio, setVendoDominio] = useState(dominioAberto)
   const [vendoLojas, setVendoLojas] = useState(lojasAberto)
   const [enderecoDominio, setEnderecoDominio] = useState<string | null>(null)
@@ -245,11 +247,12 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
                 {estado?.avisos.map((a) => <span key={a} className="at-noar__nota">{a}</span>)}
                 <span className="at-noar__nota">Daqui pra frente, toda mudança que você pedir no pós-obra entra no ar sozinha, depois dos testes.</span>
               </section>
-              {(onDominio || dominio || onLojas || lojas) && (
+              {(onDominio || dominio || onLojas || lojas || onVender) && (
                 <section className="at-noar__card at-noar__card--calmo">
                   <span className="at-noar__rot">PRÓXIMOS PASSOS · SÓ SE VOCÊ QUISER</span>
                   {(dominio || onDominio) && <button type="button" className="at-noar__prox" onClick={() => (dominio ? setVendoDominio(true) : onDominio?.(link))}><span><b>{enderecoDominio ? 'Meu domínio' : 'Usar meu domínio'}</b><span className="at-noar__mudo">{enderecoDominio ? enderecoDominio.replace(/^https:\/\//, '') : `${nomeMostrado}.com.br no lugar do .vercel.app`}</span></span><span className="at-noar__verde">→</span></button>}
                   {(onLojas || (lojas && onGuiaLojas)) && <button type="button" className="at-noar__prox" onClick={() => (lojas && onGuiaLojas ? setVendoLojas(true) : onLojas?.(link))}><span><b>Colocar na App Store e no Google Play</b><span className="at-noar__mudo">o {obra.nome} aparece nas lojas, com ícone e página</span></span><span className="at-noar__verde">→</span></button>}
+                  {onVender && <button type="button" className="at-noar__prox" onClick={onVender}><span><b>Quer vender o {obra.nome} para outras empresas?</b><span className="at-noar__mudo">opcional: página de vendas, cobrança na sua conta e o seu painel de dono</span></span><span className="at-noar__verde">→</span></button>}
                 </section>
               )}
             </>

@@ -656,12 +656,12 @@ Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1
 peso: 2
 spec: S16
 tela: prototipo/caminho-novo/LC1Lancamento.dc.html
-- [ ] Item "Lançamentos" no menu lateral: só as obras que o cliente decidiu vender
-- [ ] Na obra no ar: "Quer vender o [app] para outras empresas?" (opcional; sem clicar, nada muda)
-- [ ] Começar: o que o Incorporador e o Síndico fazem e os preços sugeridos pelo Atlas (grátis, mensal, anual)
-- [ ] Stripe ou Asaas lado a lado, com a favor e contra de cada um; o cliente escolhe e o Atlas liga a conta dele (guia clique por clique)
-- [ ] Novos agentes no kit: Incorporador (página de vendas, preços, cobrança, cadastro depois de pagar) e Síndico (painel do dono)
-Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Decisões do Luiz em 25/11/2026: agentes "Incorporador" e "Síndico" ("Eu gostei do incorporador e do síndico"); Lançamento é opcional, no menu lateral e começa de dentro de cada obra ("muitas vezes ele pode querer fazer um produto para uso interno"); gateway à escolha do cliente entre Stripe e Asaas com prós e contras claros. Motivo da escolha: conta Stripe brasileira não tem Pix na mensalidade (Pix Automático) nem parcelamento no cartão. Dinheiro sempre na conta do cliente.
+- [x] Item "Lançamentos" no menu lateral: só as obras que o cliente decidiu vender
+- [x] Na obra no ar: "Quer vender o [app] para outras empresas?" (opcional; sem clicar, nada muda)
+- [x] Começar: o que o Incorporador e o Síndico fazem e os preços sugeridos pelo Atlas (grátis, mensal, anual)
+- [x] Stripe ou Asaas lado a lado, com a favor e contra de cada um; o cliente escolhe e o Atlas liga a conta dele (guia clique por clique)
+- [x] Novos agentes no kit: Incorporador (página de vendas, preços, cobrança, cadastro depois de pagar) e Síndico (painel do dono)
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Decisões do Luiz em 25/11/2026: agentes "Incorporador" e "Síndico" ("Eu gostei do incorporador e do síndico"); Lançamento é opcional, no menu lateral e começa de dentro de cada obra ("muitas vezes ele pode querer fazer um produto para uso interno"); gateway à escolha do cliente entre Stripe e Asaas com prós e contras claros. Motivo da escolha: conta Stripe brasileira não tem Pix na mensalidade (Pix Automático) nem parcelamento no cartão. Dinheiro sempre na conta do cliente. Andamento (25/11/2026): menu "Lançamentos" (só as obras que o cliente começou a vender), "Quer vender o [app] para outras empresas?" na obra no ar, a tela Começar (Incorporador, Síndico e preços sugeridos: Grátis, Mensal R$ 49, Anual R$ 470), Stripe x Asaas lado a lado com o passo a passo da conta (o do M58) e os agentes incorporador e sindico no kit. A escolha fica em .atlas/lancamento.json, sem chave nenhuma; as chaves do gateway vão para as variáveis do servidor do sistema do cliente (M61/M62). Os números da lista (clientes pagando, entrou este mês) aparecem com o painel do Síndico (M62).
 
 ## Milestone 61 — Página de vendas: protótipo com marcações antes de publicar
 peso: 2

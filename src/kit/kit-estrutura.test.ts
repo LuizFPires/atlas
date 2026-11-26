@@ -20,7 +20,7 @@ function frontmatter(t: string): Record<string, string> {
   return o
 }
 
-const AGENTES = ['corretor', 'designer', 'desempenho', 'despachante', 'escritor', 'implantador', 'implementador', 'plantonista', 'qa', 'revisor', 'seguranca', 'vistoriador']
+const AGENTES = ['corretor', 'designer', 'desempenho', 'despachante', 'escritor', 'implantador', 'implementador', 'incorporador', 'plantonista', 'qa', 'revisor', 'seguranca', 'sindico', 'vistoriador']
 const SKILLS = ['adotar', 'briefing', 'canteiro', 'construir', 'documentar', 'entregar', 'linha', 'prototipo', 'stop-recomendado', 'login-usuarios', 'notificacoes', 'pagamento-cliente', 'lgpd-basico']
 
 test.each(AGENTES)('agente %s mantém nome e descrição (gatilho)', (a) => {

@@ -73,3 +73,15 @@ test('lojas (M59): pergunta, passo a passo da Apple e a conta fica marcada ao te
   await userEvent.click(screen.getByRole('button', { name: 'Pronto, paguei →' }))
   expect(await screen.findByLabelText('Conta da Apple (App Store): pronta')).toBeInTheDocument()
 })
+
+test('lançamento (M60): da obra no ar para "Lançamentos", começar, escolher o Asaas e a obra aparece na lista', { timeout: 20000 }, async () => {
+  await ate(criarNoArFixture({ passoMs: 5 }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
+  await userEvent.click(await screen.findByRole('button', { name: /Quer vender o .* para outras empresas/ }, { timeout: 6000 }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Começar o lançamento →' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Escolher o Asaas →' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Já criei a conta' }))
+  expect(await screen.findByText(/PRONTO PARA A PÁGINA DE VENDAS/)).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('link', { name: 'Lançamentos' }))
+  expect(await screen.findByText('MONTANDO O STAND')).toBeInTheDocument()
+})

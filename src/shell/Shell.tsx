@@ -4,7 +4,7 @@ import { useTema } from '../tema/tema'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import './shell.css'
 
-export type IdTela = 'obras' | 'canteiro' | 'concluidas' | 'prototipo' | 'obra' | 'cronograma' | 'posobra' | 'retomar' | 'ajuda'
+export type IdTela = 'obras' | 'canteiro' | 'concluidas' | 'lancamentos' | 'prototipo' | 'obra' | 'cronograma' | 'posobra' | 'retomar' | 'ajuda'
 
 /** Menu (Milestone 37, aprovado pelo Luiz em 23/11/2026): tudo de uma obra mora dentro dela. Protótipo, Obra, Pós-obra e Como
  *  retomar saíram do menu: são telas DENTRO da obra (o menu acende "Canteiro de obras" enquanto elas estão abertas). */
@@ -12,6 +12,8 @@ export const ITENS_MENU: { id: Exclude<IdTela, 'ajuda'>; nome: string; icone: No
   { id: 'obras', nome: 'Nova obra', icone: 'mais' },
   { id: 'canteiro', nome: 'Canteiro de obras', icone: 'obra' },
   { id: 'concluidas', nome: 'Obras concluídas', icone: 'check' },
+  // M60 (Luiz, 25/11/2026): só as obras que o cliente decidiu vender (opcional).
+  { id: 'lancamentos', nome: 'Lançamentos', icone: 'moeda' },
 ]
 
 /** Menu recolhido por padrão (Luiz, 24/11/2026); a escolha da pessoa fica guardada neste computador. */

@@ -189,6 +189,9 @@ const lojas = criarLojas({
   avisar: (titulo, texto) => avisoCelular.avisar(titulo, texto),
 })
 
+// Lançamento (M60): opcional, começa de dentro da obra no ar; só guarda as escolhas (gateway do cliente), nunca chave.
+const lancamento = require('./adaptadores/lancamento.cjs').criarLancamento({ raiz: obras.raiz() })
+
 if (!app.requestSingleInstanceLock()) app.quit()
 
 // O cliente clicou em "Liberar o Atlas neste computador" na página do e-mail com o app já aberto: o Windows tenta abrir outro
@@ -391,6 +394,11 @@ handle('atlas:noar:livre', (nome, pasta) => noAr.nomeLivre(String(nome), pasta =
 handle('atlas:noar:iniciar', async (pasta, nome) => { await garantirFerramentas(); return noAr.iniciar(String(pasta), String(nome)) })
 handle('atlas:noar:estado', (pasta) => noAr.estado(String(pasta)))
 handle('atlas:noar:corrigir', (pasta) => noAr.corrigir(String(pasta)))
+handle('atlas:lancamento:estado', (pasta) => lancamento.estado(String(pasta)))
+handle('atlas:lancamento:comecar', (pasta) => lancamento.comecar(String(pasta)))
+handle('atlas:lancamento:gateway', (pasta, g) => lancamento.escolherGateway(String(pasta), String(g)))
+handle('atlas:lancamento:contaPronta', (pasta) => lancamento.contaPronta(String(pasta)))
+handle('atlas:lancamento:listar', () => lancamento.listar())
 handle('atlas:lojas:estado', (pasta) => lojas.estado(String(pasta)))
 handle('atlas:lojas:escolher', (pasta, c) => lojas.escolher(String(pasta), String(c)))
 handle('atlas:lojas:marcar', (pasta, conta, sim) => lojas.marcarConta(String(pasta), String(conta), sim === true))

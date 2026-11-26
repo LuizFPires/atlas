@@ -227,6 +227,14 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     estado: (pasta) => chamar('atlas:noar:estado', String(pasta)),
     corrigir: (pasta) => chamar('atlas:noar:corrigir', String(pasta)),
   },
+  lancamento: {
+    // Lançamento (M60): só pasta e a escolha do gateway; nada de chave passa por aqui.
+    estado: (pasta) => chamar('atlas:lancamento:estado', String(pasta)),
+    comecar: (pasta) => chamar('atlas:lancamento:comecar', String(pasta)),
+    escolherGateway: (pasta, g) => chamar('atlas:lancamento:gateway', String(pasta), String(g)),
+    contaPronta: (pasta) => chamar('atlas:lancamento:contaPronta', String(pasta)),
+    listar: () => chamar('atlas:lancamento:listar'),
+  },
   lojas: {
     // Lojas (M59): só pasta, nomes e textos curtos; as chaves vão do processo principal direto ao cofre.
     estado: (pasta) => chamar('atlas:lojas:estado', String(pasta)),

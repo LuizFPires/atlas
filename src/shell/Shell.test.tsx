@@ -6,7 +6,7 @@ import { TemaProvider } from '../tema/tema'
 test('mostra itens, marca o ativo e tem um botão só: Falar com o Atlas', async () => {
   const onNavegar = vi.fn(), onFalar = vi.fn()
   render(<Shell ativo="obras" onNavegar={onNavegar} onFalar={onFalar} />)
-  expect(screen.getAllByRole('link').map((l) => l.textContent?.trim())).toEqual(['Nova obra', 'Canteiro de obras', 'Obras concluídas'])
+  expect(screen.getAllByRole('link').map((l) => l.textContent?.trim())).toEqual(['Nova obra', 'Canteiro de obras', 'Obras concluídas', 'Lançamentos'])
   expect(screen.getByRole('link', { name: 'Nova obra' })).toHaveAttribute('aria-current', 'page')
   await userEvent.click(screen.getByRole('button', { name: /Falar com o Atlas/ }))
   expect(onFalar).toHaveBeenCalled()
@@ -102,7 +102,7 @@ describe('menu recolhível', () => {
     const { container, unmount } = render(<Shell ativo="obras" onNavegar={() => {}} onFalar={() => {}} />)
     const lateral = container.querySelector('.at-lateral')!
     expect(lateral).toHaveClass('at-lateral--recolhida')
-    expect(container.querySelectorAll('.at-item svg')).toHaveLength(3)
+    expect(container.querySelectorAll('.at-item svg')).toHaveLength(4)
     expect(screen.getByRole('link', { name: 'Canteiro de obras' })).toHaveAttribute('title', 'Canteiro de obras')
     await userEvent.click(screen.getByRole('button', { name: 'Abrir o menu' }))
     expect(lateral).not.toHaveClass('at-lateral--recolhida')

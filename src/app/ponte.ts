@@ -21,6 +21,7 @@ import type { PonteCasosAdmin } from './ponte-ajuda-casos'
 import type { PontePublicar } from './ponte-publicar'
 import type { PonteDominio } from './ponte-dominio'
 import type { PonteLojas } from './ponte-lojas'
+import type { PonteLancamento } from './ponte-lancamento'
 import type { PonteNoAr } from './ponte-no-ar'
 import type { PontePolitica } from './ponte-politica'
 import type { PonteKit } from '../kit/entrega-kit'
@@ -88,6 +89,8 @@ export interface PonteDesktop {
   dominio?: PonteDominio
   /** Lojas (M59). */
   lojas?: PonteLojas
+  /** Lançamento (M60). */
+  lancamento?: PonteLancamento
   /** M65: o Atlas não constrói outro Atlas (politica.cjs). */
   politica?: PontePolitica
   /** Kit por obra (entrega-kit.ts): o processo principal guarda numa pasta temporária do app, fora da obra. */

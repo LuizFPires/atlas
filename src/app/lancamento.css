@@ -1,0 +1,17 @@
+/* M60 — Lançamento (prototipo/caminho-novo/LC1Lancamento) */
+.at-lanc { flex: 1; min-width: 0; min-height: 0; box-sizing: border-box; padding: 24px 36px 28px; display: flex; flex-direction: column; gap: 16px; overflow: auto; color: var(--text); font-family: var(--font-text); }
+.at-lanc__topo { display: flex; flex-direction: column; gap: 4px; }
+.at-lanc__topo h1 { margin: 0; font: 700 28px/1.2 var(--font-text); }
+.at-lanc__card { max-width: 640px; }
+.at-lanc__dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.at-lanc__dupla > div { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 14px; background: var(--card2, var(--card)); font-size: 14px; line-height: 1.5; color: var(--mute); }
+.at-lanc__dupla b { color: var(--text); font-size: 16px; }
+.at-lanc__planos { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.at-lanc__planos li { display: flex; justify-content: space-between; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--card-b); font-size: 15px; }
+.at-lanc__planos b { font-family: var(--font-mono); }
+.at-lanc__receb { display: flex; flex-direction: column; gap: 12px; }
+.at-lanc__gateways { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.at-lanc__gw ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.45; }
+.at-lanc__contra { color: var(--mute); }
+.at-lanc__lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.at-lanc__item { text-align: left; cursor: pointer; color: var(--text); font: inherit; }
