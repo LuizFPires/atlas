@@ -528,7 +528,7 @@ function Desligado({ visto, onVoltar }: { visto: string | null; onVoltar: () => 
         <span className="cel-rotulo">Para voltar a andar</span>
         <ol className="cel-lista">
           <li><span className="cel-num">1</span>Ligue o notebook do escritório</li>
-          <li><span className="cel-num">2</span>O Atlas abre sozinho com o Windows</li>
+          <li><span className="cel-num">2</span>Abra o Atlas pelo ícone</li>
           <li><span className="cel-num">3</span>Pronto: a bolinha fica verde aqui</li>
         </ol>
         <p className="cel-sub" style={{ lineHeight: 1.5 }}>Dica: no notebook, deixe a energia em “nunca suspender” enquanto houver obra.</p>

@@ -1,4 +1,4 @@
-// Fidelidade com o protótipo F12Retomar (nota u12: ao ligar o computador o Atlas abre sozinho nesta tela; um botão só; retomar em até 2 cliques).
+// Fidelidade com o protótipo F12Retomar (nota u12: ao abrir o Atlas pelo ícone com obra parada, ele abre nesta tela; um botão só; retomar em até 2 cliques).
 // Diferenças conscientes:
 //  - o nome do cliente, a obra, o progresso, a etapa e a hora em que parou vêm da PonteRetomar (dado, escapado); o protótipo traz o exemplo do Zé;
 //  - "BOM DIA" muda com a hora (BOA TARDE / BOA NOITE); o protótipo mostra só o da manhã;
@@ -17,7 +17,7 @@ test('F12: os textos fixos da tela estão no protótipo e na tela do app', () =>
     'Nada se perdeu. Ela continua exatamente dali.',
     'Continuar obra',
     'Agora não',
-    'O Atlas abre sozinho quando você liga o computador. Para desligar isso: Configurações → Abrir com o Windows.',
+    'Enquanto o Atlas estiver fechado, a obra espera. Ela continua quando você abre o Atlas pelo ícone e toca em Continuar.',
     'Canteiro 3D da obra, parado onde ficou',
   ]) {
     expect(p12).toContain(t)

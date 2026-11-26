@@ -618,9 +618,9 @@ function abrir() {
   // Sem o menu padrão do Electron (File, Edit, View, Window): o cliente é leigo e o app tem o próprio menu lateral.
   // No Mac (M46) o menu fica, mínimo: sem ele Cmd+C, Cmd+V, Cmd+Q e Cmd+W param de funcionar.
   Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'windowMenu' }]) : null)
-  // Abre junto com o Windows (ao ligar o computador). Com obra em andamento, a tela inicial é Retomar (F12): a regra está em
-  // src/app/tela.ts (telaInicial). Para desligar: Configurações → Abrir com o Windows (a tela F12 avisa o cliente).
-  app.setLoginItemSettings({ openAtLogin: true })
+  // Decisão do Luiz (26/11/2026): o Atlas NÃO abre junto com o Windows/Mac; abre só quando o cliente clica no ícone. O false
+  // também desfaz o registro das versões anteriores (que abriam sozinhas). Com obra em andamento, a tela inicial é Retomar (F12).
+  app.setLoginItemSettings({ openAtLogin: false })
   // Microfone liberado só para o próprio app (tudo pode ser falado).
   // Só a página do próprio app (file:// dentro de dist-app) recebe o microfone; iframes/outras origens não.
   const origemDoApp = require('node:url').pathToFileURL(path.join(__dirname, '..', 'dist-app') + path.sep).href

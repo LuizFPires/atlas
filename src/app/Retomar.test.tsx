@@ -86,7 +86,7 @@ test('mostra quando parou, a obra, o progresso e o aviso do auto-início', () =>
   expect(screen.getByText('BOM DIA, ZÉ')).toBeInTheDocument()
   expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Sua obra parou ontem às 22h14, quando o computador foi desligado.')
   expect(screen.getByText(/Agenda da Barbearia do Zé/).parentElement).toHaveTextContent('62% · M5 Confirmação por WhatsApp')
-  expect(screen.getByText(/Para desligar isso: Configurações → Abrir com o Windows\./)).toBeInTheDocument()
+  expect(screen.getByText(/Ela continua quando você abre o Atlas pelo ícone/)).toBeInTheDocument()
 })
 
 test('duas obras paradas: o aviso diz quantas, lista as duas e "Continuar todas" religa cada uma', async () => {
