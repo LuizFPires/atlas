@@ -310,7 +310,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const iniciarCompraPeloApp = useCallback((p: PedidoCompraNoApp): Promise<ResultadoCompra> => {
     if (iniciarCompraNoApp) return iniciarCompraNoApp(p)
     const cfg = configCompra()
-    return iniciarCompra(p.email, cfg, cfg && ponte.servidor ? fetchPelaPonte(ponte.servidor, cfg.api) : undefined, p.versaoTermos, p.parcelas, undefined, p.origem)
+    return iniciarCompra(p.email, cfg, cfg && ponte.servidor ? fetchPelaPonte(ponte.servidor, cfg.api) : undefined, p.versaoTermos, p.parcelas, undefined, p.origem, undefined, p.documento)
   }, [iniciarCompraNoApp, ponte])
   const abrirPagamento = useCallback(async (url: string) => {
     if (ponte.pagamento) return ponte.pagamento.abrir(url)

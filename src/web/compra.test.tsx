@@ -10,15 +10,15 @@ const resp = (status: number, corpo: unknown) => Promise.resolve(new Response(JS
 describe('compra', () => {
   test('chama o checkout de implantação do M3 e devolve a URL do gateway', async () => {
     const f = vi.fn(() => resp(200, { url: 'https://checkout.stripe.com/c/pay/cs_1' }))
-    const r = await iniciarCompra(' Ana@Loja.com ', cfg, f as unknown as typeof fetch, '1.0')
+    const r = await iniciarCompra(' Ana@Loja.com ', cfg, f as unknown as typeof fetch, '1.0', 1, undefined, undefined, undefined, '529.982.247-25')
     expect(r).toEqual({ ok: true, url: 'https://checkout.stripe.com/c/pay/cs_1' })
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe('https://api.atlas.test/functions/v1/pagamento/checkout')
-    expect(JSON.parse(init.body as string)).toEqual({ conta_id: 'conta-1', tipo: 'implantacao', email: 'ana@loja.com', parcelas: 1, aceite_termos: true, versao_termos: '1.0' })
+    expect(JSON.parse(init.body as string)).toEqual({ conta_id: 'conta-1', tipo: 'implantacao', email: 'ana@loja.com', parcelas: 1, aceite_termos: true, versao_termos: '1.0', documento: '52998224725' })
   })
   test('app pronto: manda tipo prateleira e o segmento ao checkout', async () => {
     const f = vi.fn(() => resp(200, { url: 'https://checkout.stripe.com/c/pay/cs_2' }))
-    await iniciarCompra('ana@loja.com', cfg, f as unknown as typeof fetch, '1.0', 4, 'barbearia')
+    await iniciarCompra('ana@loja.com', cfg, f as unknown as typeof fetch, '1.0', 4, 'barbearia', undefined, undefined, '52998224725')
     const [, init] = f.mock.calls[0] as unknown as [string, RequestInit]
     expect(JSON.parse(init.body as string)).toMatchObject({ tipo: 'prateleira', segmento: 'barbearia', parcelas: 4 })
   })
@@ -33,9 +33,9 @@ describe('compra', () => {
     expect((await iniciarCompra('ana', cfg, f, '1.0')).ok).toBe(false)
     expect((await iniciarCompra('ana@loja.com', null, f, '1.0')).ok).toBe(false)
     expect(f).not.toHaveBeenCalled()
-    const erro = await iniciarCompra('ana@loja.com', cfg, (() => resp(429, { mensagem: 'Muitas tentativas. Espere uns minutos.' })) as unknown as typeof fetch, '1.0')
+    const erro = await iniciarCompra('ana@loja.com', cfg, (() => resp(429, { mensagem: 'Muitas tentativas. Espere uns minutos.' })) as unknown as typeof fetch, '1.0', 1, undefined, undefined, undefined, '52998224725')
     expect(erro).toEqual({ ok: false, mensagem: 'Muitas tentativas. Espere uns minutos.' })
-    expect((await iniciarCompra('ana@loja.com', cfg, (() => resp(200, { url: 'http://x.test' })) as unknown as typeof fetch, '1.0')).ok).toBe(false)
+    expect((await iniciarCompra('ana@loja.com', cfg, (() => resp(200, { url: 'http://x.test' })) as unknown as typeof fetch, '1.0', 1, undefined, undefined, undefined, '52998224725')).ok).toBe(false)
   })
   test('o modal avisa quando o e-mail está errado', async () => {
     render(<ModalCompra aberto onFechar={() => {}} abrirPagamento={() => {}} />)
@@ -43,6 +43,28 @@ describe('compra', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: /Li e aceito/ }))
     await userEvent.click(screen.getByRole('button', { name: /Ir para o pagamento/ }))
     expect(await screen.findByRole('alert')).toHaveTextContent(/Confira o e-mail/)
+  })
+})
+
+describe('real só com CPF (M31)', () => {
+  test('sem CPF/CNPJ válido a compra em real nem sai do navegador, e a tela explica', async () => {
+    const f = vi.fn()
+    for (const d of [undefined, '', '529.982.247-24']) {
+      const r = await iniciarCompra('ana@loja.com', cfg, f as unknown as typeof fetch, '1.0', 1, undefined, undefined, undefined, d)
+      expect(r).toEqual({ ok: false, mensagem: expect.stringMatching(/CPF ou o CNPJ.*em dólar/) })
+    }
+    expect(f).not.toHaveBeenCalled()
+  })
+  test('em dólar não pede documento', async () => {
+    const f = vi.fn(() => resp(200, { url: 'https://checkout.stripe.com/c/pay/cs_3' }))
+    expect((await iniciarCompra('ana@loja.com', cfg, f as unknown as typeof fetch, '1.0', 1, undefined, undefined, 'us')).ok).toBe(true)
+  })
+  test('o modal em real tem o campo CPF ou CNPJ, com a pontuação automática e o aviso de quem não tem documento', async () => {
+    render(<ModalCompra aberto onFechar={() => {}} abrirPagamento={() => {}} />)
+    const campo = screen.getByLabelText(/CPF ou CNPJ de quem compra/)
+    await userEvent.type(campo, '11222333000181')
+    expect(campo).toHaveValue('11.222.333/0001-81')
+    expect(screen.getByText(/de fora do Brasil, a compra é pela página em inglês, em dólar/)).toBeInTheDocument()
   })
 })
 
@@ -78,8 +100,8 @@ describe('medição', () => {
 test('compra feita de dentro do app manda a origem "app"; pelo site não manda origem', async () => {
   const f = vi.fn(async () => new Response(JSON.stringify({ url: 'https://checkout.stripe.com/x' }), { status: 200 }))
   const cfg = { api: 'https://x.test', contaId: 'c1' }
-  await iniciarCompra('ana@loja.com', cfg, f as unknown as typeof fetch, '1.0', 2, undefined, 'app')
-  await iniciarCompra('ana@loja.com', cfg, f as unknown as typeof fetch, '1.0', 2)
+  await iniciarCompra('ana@loja.com', cfg, f as unknown as typeof fetch, '1.0', 2, undefined, 'app', undefined, '52998224725')
+  await iniciarCompra('ana@loja.com', cfg, f as unknown as typeof fetch, '1.0', 2, undefined, undefined, undefined, '52998224725')
   const corpos = (f.mock.calls as unknown as [string, RequestInit][]).map((c) => JSON.parse(c[1].body as string))
   expect(corpos[0]).toMatchObject({ origem: 'app', tipo: 'implantacao', parcelas: 2 })
   expect('origem' in corpos[1]).toBe(false)

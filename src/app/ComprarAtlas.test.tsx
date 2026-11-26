@@ -20,7 +20,9 @@ test('mostra o preço do site e o e-mail da ativação, que não pode ser trocad
   expect(screen.getByRole('dialog', { name: 'Ficar com o Atlas' })).toBeInTheDocument()
   expect(screen.getByText(/À vista: R\$\s4\.800,00\..*R\$ 200\/mês/)).toBeInTheDocument()
   expect(screen.getByText(EMAIL)).toBeInTheDocument()
-  expect(screen.queryByRole('textbox')).toBeNull()
+  // O e-mail não é campo: só o CPF/CNPJ ("real só com CPF", M31).
+  expect(screen.getAllByRole('textbox')).toHaveLength(1)
+  expect(screen.getByLabelText(/CPF ou CNPJ de quem compra/)).toBeInTheDocument()
 })
 
 test('sem aceitar os termos não vai ao pagamento', async () => {
@@ -39,10 +41,12 @@ test('dá para ler a Política de Privacidade e os Termos de Uso sem sair do app
 
 test('com aceite: pede o pagamento com o e-mail fixo, as parcelas escolhidas, a versão dos termos e a origem "app", e abre a Stripe', async () => {
   const { iniciar, abrirPagamento, onPagamentoAberto } = montar()
+  await userEvent.type(screen.getByLabelText(/CPF ou CNPJ/), '52998224725')
+  expect(screen.getByLabelText(/CPF ou CNPJ/)).toHaveValue('529.982.247-25')
   await userEvent.selectOptions(screen.getByRole('combobox'), '3')
   await aceitar()
   await ir()
-  expect(iniciar).toHaveBeenCalledWith({ email: EMAIL, parcelas: 3, versaoTermos: VERSAO_TERMOS, origem: 'app' })
+  expect(iniciar).toHaveBeenCalledWith({ email: EMAIL, parcelas: 3, versaoTermos: VERSAO_TERMOS, origem: 'app', documento: '529.982.247-25' })
   expect(abrirPagamento).toHaveBeenCalledWith(URL_PAGAMENTO)
   expect(onPagamentoAberto).toHaveBeenCalledTimes(1)
   expect(await screen.findByRole('status')).toHaveTextContent('Abri a página de pagamento no seu navegador. Quando você pagar, eu aviso aqui.')

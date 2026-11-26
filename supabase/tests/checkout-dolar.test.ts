@@ -20,7 +20,7 @@ const sessaoUs = (extra: Record<string, unknown> = {}) => ({
 describe('checkout em dólar (M31)', () => {
   it('implantação: US$ 1.700, só cartão, sem parcelas, página da Stripe em inglês', async () => {
     const m = montarPag()
-    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'john@shop.com', aceite_termos_versao: '1.2', parcelas: 6, mercado: 'us' })
+    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'john@shop.com', aceite_termos_versao: '1.2', documento: '52998224725', parcelas: 6, mercado: 'us' })
     const f = corpoDe(m.chamadas[0])
     expect(f.get('line_items[0][price_data][currency]')).toBe('usd')
     expect(f.get('line_items[0][price_data][unit_amount]')).toBe('170000')
@@ -35,12 +35,12 @@ describe('checkout em dólar (M31)', () => {
   })
   it('app pronto: US$ 2.400', async () => {
     const m = montarPag()
-    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'prateleira', segmento: 'academia', email: 'a@b.co', aceite_termos_versao: '1.2', mercado: 'us' })
+    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'prateleira', segmento: 'academia', email: 'a@b.co', aceite_termos_versao: '1.2', documento: '52998224725', mercado: 'us' })
     expect(corpoDe(m.chamadas[0]).get('line_items[0][price_data][unit_amount]')).toBe('240000')
   })
   it('sem mercado (ou desconhecido) continua em real, como sempre', async () => {
     const m = montarPag()
-    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co', aceite_termos_versao: '1.2', mercado: 'xx' as 'us' })
+    await criarCheckout(m.deps, { conta_id: CONTA, tipo: 'implantacao', email: 'a@b.co', aceite_termos_versao: '1.2', documento: '52998224725', mercado: 'xx' as 'us' })
     const f = corpoDe(m.chamadas[0])
     expect(f.get('line_items[0][price_data][currency]')).toBe('brl')
     expect(f.get('line_items[0][price_data][unit_amount]')).toBe('480000')
