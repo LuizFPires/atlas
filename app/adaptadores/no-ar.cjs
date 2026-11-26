@@ -111,7 +111,7 @@ function resumoDoErro(saida) {
   return (importantes.length ? importantes : limpas.slice(-4)).join(' · ').slice(0, 600)
 }
 
-function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, perguntar, corrigir, linhaRodando = () => false, esperar = (ms) => new Promise((r) => setTimeout(r, ms)), agora = () => new Date(), gerarSenha = () => crypto.randomBytes(24).toString('base64url'), esperaBancoMs = 10_000, tentativasBanco = 60 }) {
+function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, perguntar, corrigir, linhaRodando = () => false, esperar = (ms) => new Promise((r) => setTimeout(r, ms)), agora = () => new Date(), gerarSenha = () => crypto.randomBytes(24).toString('base64url'), esperaBancoMs = 10_000, tentativasBanco = 60, esperaCotaMs = 10 * 60_000, esperasCota = 7 * 24 * 6 }) {
   const jobs = new Map() // pasta -> estado vivo
 
   const arquivoRegistro = (pasta) => caminhoSeguro(raiz, String(pasta), '.atlas', 'no-ar.json')
@@ -129,8 +129,8 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
   const gravarRegistro = (pasta, r) => { pastaAtlas(raiz, String(pasta)); gravarAtomico(arquivoRegistro(pasta), JSON.stringify({ versao: 1, ...r }) + '\n') }
   const cwdDe = (pasta) => pastaDaObra(raiz, String(pasta))
 
-  const novoEstado = (nome) => ({ fase: 'rodando', nome, passos: Object.fromEntries(PASSOS.map((p) => [p, 'falta'])), achados: [], endereco: null, erro: null, avisos: [] })
-  const publico = (e) => e && ({ fase: e.fase, nome: e.nome, passos: PASSOS.map((id) => ({ id, estado: e.passos[id] })), achados: [...e.achados], endereco: e.endereco, erro: e.erro, avisos: [...e.avisos] })
+  const novoEstado = (nome) => ({ fase: 'rodando', nome, passos: Object.fromEntries(PASSOS.map((p) => [p, 'falta'])), achados: [], endereco: null, erro: null, avisos: [], esperandoCota: false })
+  const publico = (e) => e && ({ fase: e.fase, nome: e.nome, passos: PASSOS.map((id) => ({ id, estado: e.passos[id] })), achados: [...e.achados], endereco: e.endereco, erro: e.erro, avisos: [...e.avisos], esperandoCota: e.esperandoCota === true })
 
   async function nomeLivre(nome, pasta = null) {
     if (!nomeValido(nome)) return 'invalido'
@@ -251,12 +251,28 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     return false
   }
 
+  /** A vistoria usa o Claude. Cota acabou ('claude-cota'): não é erro, a obra espera renovar sozinha (a tela mostra que está
+   *  esperando) e continua de onde parou. Depois de ~7 dias tentando, vira erro explicado com "Tentar de novo". */
+  async function vistoriaEsperandoCota(pasta, e) {
+    for (let i = 0; ; i++) {
+      try {
+        const texto = await perguntar(pasta, PEDIDO_VISTORIA)
+        e.esperandoCota = false
+        return texto
+      } catch (err) {
+        if (!(err && err.message === 'claude-cota') || i >= esperasCota) { e.esperandoCota = false; throw err }
+        e.esperandoCota = true
+        await esperar(esperaCotaMs)
+      }
+    }
+  }
+
   async function rodar(pasta, e, { pularVistoria = false } = {}) {
     const marca = (p, s) => { e.passos[p] = s }
     try {
       if (!pularVistoria) {
         marca('vistoria', 'agora')
-        const laudo = laudoDoTexto(await perguntar(pasta, PEDIDO_VISTORIA))
+        const laudo = laudoDoTexto(await vistoriaEsperandoCota(pasta, e))
         if (laudo.laudo === 'reprovado') { marca('vistoria', 'atencao'); e.achados = laudo.achados; e.fase = 'vistoria'; return }
       }
       marca('vistoria', 'feito')
