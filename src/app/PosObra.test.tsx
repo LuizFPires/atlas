@@ -198,3 +198,18 @@ test('sem pedidos anteriores: o histórico mostra um vazio calmo, do mesmo taman
   const lado = screen.getByRole('complementary', { name: 'Pedidos anteriores' })
   expect(await within(lado).findByText('Nenhum pedido ainda.')).toBeInTheDocument()
 })
+
+test('"Pode fazer" travou: diz o motivo e o cliente destrava pelo app (tentar de novo ou pedir ao Atlas)', async () => {
+  const base = criarPosObraFixture()
+  let falhar = true
+  const ajudas: { onde: string; erro?: string }[] = []
+  const posobra = { ...base, executar: async (...a: Parameters<typeof base.executar>) => { if (falhar) throw new Error('obra-com-config-suspeita'); return base.executar(...a) } }
+  const { user } = montar({ posobra, onAjuda: (c) => ajudas.push(c) })
+  await pedirEAprovar(user)
+  expect(await screen.findByText(/arquivo estranho/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Pedir ao Atlas para destravar' }))
+  expect(ajudas).toEqual([{ onde: 'o pedido de mudança da obra', erro: 'obra-com-config-suspeita' }])
+  falhar = false
+  await user.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+  expect(await screen.findByText(/Combinado! Comecei/)).toBeInTheDocument()
+})

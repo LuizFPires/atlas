@@ -1,4 +1,5 @@
 import { mensagemPolitica } from './ponte-politica'
+import { motivoDoTravamento } from './motivo-travou'
 import { textoAvanco } from './avanco'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Botao, Icone } from '../ui'
@@ -60,7 +61,7 @@ export const recadoDoErroPainel = (e: unknown) => {
   switch (e instanceof Error ? e.message : '') {
     case 'ja-rodando': return 'Outra obra está trabalhando agora neste computador. Escolha se esta espera na fila, trabalha junto ou vai primeiro.'
     case 'indisponivel': return 'Quem acompanha a obra ainda não está ligado neste computador. Quando estiver, esta tela passa a mostrar a obra de verdade; você não precisa refazer nada.'
-    default: return 'Não consegui fazer isso agora. Tente de novo em instantes.'
+    default: { const c = e instanceof Error ? e.message : ''; return motivoDoTravamento(c, 'Continuar', 'Não consegui fazer isso agora. Tente de novo em instantes.') }
   }
 }
 
@@ -190,6 +191,7 @@ export function Painel({ obra, abas, onCanteiro, filaObras, plano = 'pro', paine
       </div>
 
       {erro && <p className="at-pn__erro" role="alert">{erro}</p>}
+      {erro && onPedirAjuda && <button type="button" className="at-pn__destravar" onClick={onPedirAjuda}>Pedir ao Atlas para destravar</button>}
       {!estado && !erro && <p role="status">O Atlas está olhando a obra…</p>}
 
       {estado?.trava && travas && !concluida && <FichaTrava key={`${estado.trava.tipo}-${estado.trava.id}`} pasta={obra.pasta} trava={estado.trava} ponte={travas} navegador={navegador} onLigarContas={onLigarContas} />}
