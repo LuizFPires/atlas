@@ -11,6 +11,15 @@ const fixture: CarregarKit = async () => [
 const email = 'ana@loja.com'
 
 describe('/entregar-kit', () => {
+  it('migration da política (0031) ainda não aplicada: o kit sai mesmo assim (bug de 26/11/2026, kit-indisponivel em toda obra)', async () => {
+    const m = montar()
+    await m.ativar()
+    m.store.situacoesPolitica = async () => { throw new Error("banco (listar): PGRST205 Could not find the table 'public.politica_obras' in the schema cache") }
+    const r = await entregarKit(m.deps, fixture, { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: 'ponto' })
+    expect(r.arquivos.length).toBe(3)
+    m.store.situacoesPolitica = async () => { throw new Error('banco (listar): 57014 timeout') }
+    await expect(entregarKit(m.deps, fixture, { email, computador_hash: H1, token_dispositivo: TOKEN, obra_id: 'ponto' })).rejects.toThrow(/57014/)
+  })
   it('marca todos os arquivos, registra a entrega e proíbe cache', async () => {
     const m = montar()
     await m.ativar()
