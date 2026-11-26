@@ -35,6 +35,7 @@ jobs:
             echo "::warning::Falta o segredo SUPABASE_ACCESS_TOKEN: as migrations NÃO foram aplicadas."
             exit 0
           fi
+          exec 3>&1
           # Mostra o erro do Supabase como anotação (dá para ler no PR sem abrir o log). Nunca imprime o segredo.
           sql() {
             local saida codigo
@@ -43,7 +44,7 @@ jobs:
               "https://api.supabase.com/v1/projects/$PROJETO/database/query" \
               -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @-)
             if [ "${codigo:0:1}" != "2" ]; then
-              echo "::error::Supabase respondeu HTTP $codigo: $(head -c 400 "$saida" | tr '\n' ' ')"
+              echo "::error::Supabase respondeu HTTP $codigo: $(head -c 400 "$saida" | tr '\n' ' ')" >&3
               return 1
             fi
             cat "$saida"
