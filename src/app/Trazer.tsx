@@ -41,6 +41,9 @@ export function TrazerPrototipo({ obras, importar, onVoltar, onConcluir }: Props
   const [nome, setNome] = useState('')
   const [zip, setZip] = useState<ZipEscolhido | null>(null)
   const [recebido, setRecebido] = useState<Recebido | null>(null)
+  // .zip escolhido e conferido antes de a obra ter nome: fica esperando o nome para ser guardado.
+  const [pendente, setPendente] = useState(false)
+  const [avisoZip, setAvisoZip] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [linkTxt, setLinkTxt] = useState('')
   const [link, setLink] = useState<string | null>(null)
@@ -57,22 +60,45 @@ export function TrazerPrototipo({ obras, importar, onVoltar, onConcluir }: Props
     }
   }
 
+  // Guarda o .zip já conferido dentro da pasta da obra (só cria a pasta quando há nome e o pacote passou).
+  const guardar = async (z: ZipEscolhido) => {
+    const { pasta } = await obras.criarSubpasta(nome.trim())
+    const r = await importar.receber(pasta, z.token)
+    setRecebido(r)
+    setPendente(false)
+    setAvisoZip('')
+    return r
+  }
+
+  // Luiz (26/11/2026): o botão abre o arquivo a qualquer hora. Sem nome ainda, o Atlas confere o .zip e espera o nome.
   const escolherZip = async () => {
-    if (!nome.trim()) { setErro('Primeiro dê um nome para a obra. Pode ser o nome do seu sistema.'); return }
     setErro('')
     setOcupado(true)
     try {
       const z = await importar.escolherZip()
       if (!z) return
       setZip(z)
+      setRecebido(null)
       await importar.validar(z.token) // só cria a pasta da obra se o pacote passar
-      const { pasta } = await obras.criarSubpasta(nome.trim())
-      setRecebido(await importar.receber(pasta, z.token))
+      if (nome.trim()) await guardar(z)
+      else { setPendente(true); setAvisoZip('Arquivo conferido. Agora escreva o nome da obra e toque em "Abrir no Atlas e ajustar".') }
     } catch (e) {
       setZip(null)
       setRecebido(null)
+      setPendente(false)
+      setAvisoZip('')
       setErro(recadoDoErro(e))
     } finally { setOcupado(false) }
+  }
+
+  const seguir = async () => {
+    if (!recebido && pendente && zip) {
+      if (!nome.trim()) { setErro('Escreva o nome da obra primeiro. Pode ser o nome do seu sistema.'); return }
+      setErro('')
+      setOcupado(true)
+      try { await guardar(zip) } catch (e) { setErro(recadoDoErro(e)); return } finally { setOcupado(false) }
+    }
+    if (onConcluir) onConcluir(); else onVoltar()
   }
 
   const conferencia = recebido ? conferirPacote(recebido, link) : []
@@ -114,7 +140,7 @@ export function TrazerPrototipo({ obras, importar, onVoltar, onConcluir }: Props
               <Icone nome="caixa" tamanho={22} />
               <span className="at-trazer__caixa-txt">
                 <b>{zip?.nome ?? 'prototipo-atlas.zip'}</b>
-                <span>{ocupado ? 'Conferindo com cuidado…' : recebido && zip ? `recebido · ${MB(zip.tamanho)}` : 'Escolher o arquivo .zip'}</span>
+                <span>{ocupado ? 'Conferindo com cuidado…' : recebido && zip ? `recebido · ${MB(zip.tamanho)}` : pendente && zip ? `conferido · falta o nome da obra` : 'Escolher o arquivo .zip'}</span>
               </span>
             </button>
             <div className={`at-trazer__caixa ${link ? '' : 'at-trazer__caixa--vazia'}`}>
@@ -129,12 +155,13 @@ export function TrazerPrototipo({ obras, importar, onVoltar, onConcluir }: Props
             <CampoFalado rotulo="Link do protótipo" obs="(o endereço que a IA te mandou)" valor={linkTxt} onChange={setLinkTxt} placeholder="agenda-ze.lovable.app" />
             <Botao type="submit" variante="secundario">Anotar link</Botao>
           </form>
+          {avisoZip && !erro && <p className="at-trazer__aviso" role="status">{avisoZip}</p>}
           {erro && <p className="at-nova__erro" role="alert">{erro}</p>}
         </section>
 
         <div className="at-trazer__rodape">
           <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
-          <Botao disabled={!recebido} onClick={() => onConcluir ? onConcluir() : onVoltar()}>Abrir no Atlas e ajustar →</Botao>
+          <Botao disabled={ocupado || !(recebido || (pendente && nome.trim()))} onClick={() => { void seguir() }}>Abrir no Atlas e ajustar →</Botao>
         </div>
       </div>
 
