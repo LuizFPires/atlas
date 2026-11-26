@@ -92,3 +92,6 @@
 .at-lojas__campo input { flex: 1; min-width: 0; height: 40px; border-radius: 10px; border: 1px solid var(--card-b); background: var(--bg, #16181b); color: var(--text); padding: 0 12px; font: 500 14px var(--font-mono); }
 .at-lojas__campo button { height: 40px; padding: 0 12px; border-radius: 10px; border: 0; cursor: pointer; background: var(--lime); color: var(--on-lime); font: 700 13px var(--font-text); white-space: nowrap; }
 .at-lojas__zap { margin-top: 8px; height: 46px; font-size: 15px; }
+
+/* Destravar pelo app: botões lado a lado quando a correção da vistoria não sai. */
+.at-noar__destravar { display: flex; flex-wrap: wrap; gap: 10px; }

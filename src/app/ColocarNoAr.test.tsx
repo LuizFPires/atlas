@@ -99,7 +99,6 @@ test('domínio próprio (M57): abre ao lado do prédio e, no ar, o QR e o WhatsA
 
 test('"Corrigir e continuar" falhou: diz o motivo de verdade, não um "tente de novo" genérico', async () => {
   const casos: [string, RegExp][] = [
-    ['ja-rodando', /outra obra está trabalhando/i],
     ['sem-licenca', /licença/i],
     ['plan-invalido', /plano da obra/i],
     ['obra-com-config-suspeita', /arquivo estranho/i],
@@ -114,4 +113,42 @@ test('"Corrigir e continuar" falhou: diz o motivo de verdade, não um "tente de 
     expect(screen.queryByText(/Tente de novo em instantes/)).not.toBeInTheDocument()
     unmount()
   }
+})
+
+test('correção travou porque outra obra está trabalhando: espera a vez e corrige sozinho, sem novo clique', async () => {
+  const user = userEvent.setup()
+  const base = criarNoArFixture({ passoMs: 5, reprovar: true })
+  let tentativas = 0
+  montar({ ...base, corrigir: async (p) => { tentativas++; if (tentativas < 3) throw new Error('ja-rodando'); return base.corrigir(p) } })
+  await user.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
+  await user.click(await screen.findByRole('button', { name: 'Corrigir e continuar →' }))
+  expect(await screen.findByText(/Assim que ela terminar, o Atlas corrige sozinho/)).toBeInTheDocument()
+  await waitFor(() => expect(screen.getByText('ESTÁ NO AR · ENTREGA DAS CHAVES')).toBeInTheDocument(), { timeout: 3000 })
+  expect(tentativas).toBe(3)
+})
+
+test('correção travou de outro jeito: o cliente destrava pelo app (tentar de novo ou pedir ao Atlas), sem esperar versão nova', async () => {
+  const user = userEvent.setup()
+  const base = criarNoArFixture({ passoMs: 5, reprovar: true })
+  const ajudas: { onde: string; erro?: string }[] = []
+  let falhar = true
+  montar({ ...base, corrigir: async (p) => { if (falhar) throw new Error('claude-falhou'); return base.corrigir(p) } }, { onAjuda: (c) => ajudas.push(c) })
+  await user.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
+  await user.click(await screen.findByRole('button', { name: 'Corrigir e continuar →' }))
+  await user.click(await screen.findByRole('button', { name: 'Pedir ao Atlas para destravar' }))
+  expect(ajudas).toEqual([{ onde: 'a correção que a vistoria pediu antes de publicar', erro: 'claude-falhou' }])
+  falhar = false
+  await user.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+  await waitFor(() => expect(screen.getByText('ESTÁ NO AR · ENTREGA DAS CHAVES')).toBeInTheDocument(), { timeout: 3000 })
+})
+
+test('"Colocar no ar" travou no começo: motivo real e "Pedir ao Atlas para destravar"', async () => {
+  const user = userEvent.setup()
+  const base = criarNoArFixture({ passoMs: 5 })
+  const ajudas: { onde: string; erro?: string }[] = []
+  montar({ ...base, iniciar: async () => { throw new Error('sem-licenca') } }, { onAjuda: (c) => ajudas.push(c) })
+  await user.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
+  expect(await screen.findByText(/licença deste computador/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Pedir ao Atlas para destravar' }))
+  expect(ajudas).toEqual([{ onde: 'o começo da publicação', erro: 'sem-licenca' }])
 })

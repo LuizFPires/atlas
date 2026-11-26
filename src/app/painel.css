@@ -232,3 +232,5 @@
 .at-pn__balao-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .at-pn__balao-txt span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .at-pn__balao--canto .at-pn__btn { flex: none; height: 38px; padding: 0 14px; font-size: 13px; border-radius: 10px; }
+/* Destravar pelo app: o avanço que travou vira conversa com o Atlas, sem depender de ninguém. */
+.at-pn__destravar { align-self: flex-start; height: 40px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--card-b); background: var(--card); color: var(--text); font: 600 14px var(--font-text); cursor: pointer; }

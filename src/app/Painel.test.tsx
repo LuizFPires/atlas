@@ -327,3 +327,12 @@ test('continuar com outra obra trabalhando: oferece fila, ao mesmo tempo ou esta
   await user.click(within(dialogo).getByRole('button', { name: 'Colocar na fila →' }))
   expect(filaObras.naFila).toEqual([{ pasta: 'agenda', depoisDe: 'ponto' }])
 })
+
+test('avanço da obra travou: diz o motivo de verdade e oferece "Pedir ao Atlas para destravar" no próprio app', async () => {
+  const fx = criarPainelFixture({ agora })
+  const ajuda = vi.fn()
+  const { user } = montar('automatico', { painel: { ...fx, ler: async () => { throw new Error('kit-faltando') } }, onPedirAjuda: ajuda })
+  expect(await screen.findByText(/O kit de construção não chegou/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Pedir ao Atlas para destravar' }))
+  expect(ajuda).toHaveBeenCalledTimes(1)
+})

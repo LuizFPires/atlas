@@ -1,4 +1,5 @@
 import { BloqueioPolitica } from './BloqueioPolitica'
+import { motivoDoTravamento } from './motivo-travou'
 import { politicaIndisponivel, type PontePolitica, type ResultadoPolitica } from './ponte-politica'
 import { useEffect, useRef, useState } from 'react'
 import { Icone, Microfone, useVoz } from '../ui'
@@ -17,6 +18,8 @@ interface Props {
   onAcompanhar?: () => void
   /** M65: análise quando o pedido é bloqueado pela política. */
   politica?: PontePolitica
+  /** Destravar pelo app: abre o Falar com o Atlas com o motivo de o pedido não ter saído. */
+  onAjuda?: (contexto: { onde: string; erro?: string }) => void
 }
 
 const ROTULO_STATUS: Record<StatusPedido, string> = { 'no-ar': 'No ar', 'para-conferir': 'Para conferir', 'em-andamento': 'Em andamento' }
@@ -25,12 +28,13 @@ const ROTULO_STATUS: Record<StatusPedido, string> = { 'no-ar': 'No ar', 'para-co
  * F14: pós-obra. O cliente conta, com as palavras dele, o que quer mudar (falando, escrevendo ou mandando um print).
  * Tudo o que ele diz é DADO para o Claude (o adaptador delimita); o print é só uma imagem guardada na pasta da obra.
  */
-export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politica = politicaIndisponivel }: Props) {
+export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politica = politicaIndisponivel, onAjuda }: Props) {
   const [bloqueio, setBloqueio] = useState<ResultadoPolitica | null>(null)
   const [tipo, setTipo] = useState<TipoPedido>('mudar')
   const [texto, setTexto] = useState('')
   const [prints, setPrints] = useState<string[]>([])
   const [erro, setErro] = useState('')
+  const [travou, setTravou] = useState<string | null>(null) // código do último "Pode fazer" que não saiu
   // O plano carrega o SNAPSHOT do pedido que foi explicado: "Pode fazer" executa exatamente isso.
   const [explicado, setExplicado] = useState<{ plano: PlanoPosObra; pedido: PedidoPosObra } | null>(null)
   const plano = explicado?.plano ?? null
@@ -94,6 +98,7 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politi
     if (!explicado || rodando) return
     setRodando(true)
     setErro('')
+    setTravou(null)
     setRecadoLic('')
     try {
       const r = await executarComLicenca(licenca, posobra, obra.pasta, explicado.pedido, explicado.plano)
@@ -104,7 +109,11 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politi
       setHistorico(await posobra.historico(obra.pasta).catch(() => historico))
     } catch (x) {
       if (x instanceof SemLicencaError) setRecadoLic(recadoLicenca(x.motivo))
-      else setErro('Não consegui começar agora. Nada foi mexido no seu sistema. Tente de novo em instantes.')
+      else {
+        const codigo = x instanceof Error ? x.message : ''
+        setTravou(codigo)
+        setErro(motivoDoTravamento(codigo, 'Pode fazer', 'Não consegui começar agora. Nada foi mexido no seu sistema. Tente de novo em instantes.'))
+      }
     } finally { setRodando(false) }
   }
 
@@ -147,6 +156,12 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politi
           </div>
         </div>
         {erro && <p className="at-pos__erro" role="alert">{erro}</p>}
+        {erro && travou !== null && plano && (
+          <div className="at-pos__destravar">
+            <button type="button" className="at-pos__sec" disabled={rodando} onClick={() => void aprovar()}>Tentar de novo</button>
+            {onAjuda && <button type="button" className="at-pos__sec" onClick={() => onAjuda({ onde: 'o pedido de mudança da obra', erro: travou || 'sem-codigo' })}>Pedir ao Atlas para destravar</button>}
+          </div>
+        )}
         {recadoLic && <p className="at-pos__licenca" role="status">{recadoLic}</p>}
         {feito && (
           <p className="at-pos__licenca" role="status">
