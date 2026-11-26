@@ -33,6 +33,7 @@
    <span style="position:absolute;left:18px;bottom:16px;font:600 13px 'Geist Mono',monospace;color:#EDEFEA;background:rgba(10,12,14,.75);padding:6px 10px;border-radius:8px">2:00</span>
   </div>
   <div style="display:flex;align-items:center;gap:16px"><a class="acao" href="F00bCadastro.dc.html" style="background:{{t.lime}};color:{{t.onLime}}">Quero construir o meu →</a><a class="acao" href="#" style="border:1px solid {{t.cardB}};color:{{t.text}};font-weight:600">Ver o que dá para construir</a></div>
+  <div aria-label="Funciona em" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">FUNCIONA EM</span><span style="display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:999px;border:1px solid {{t.cardB}};color:{{t.text}};font-size:14px;font-weight:600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Windows</span><span style="display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:999px;border:1px solid {{t.cardB}};color:{{t.text}};font-size:14px;font-weight:600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>Mac</span><span style="font-size:14px;color:{{t.mute}}">· em português e em inglês</span></div>
  </section>
 
  <section style="padding:0 96px 72px;display:flex;flex-direction:column;gap:22px">
@@ -182,7 +183,7 @@ class Component extends DCLogic {
       naoEh: [
         { txt: 'Você quer que alguém faça tudo sem você participar.' },
         { txt: 'Precisa de um sistema pronto amanhã, sem tempo para o projeto.' },
-        { txt: 'Não tem um computador com Windows para deixar ligado durante a obra.' },
+        { txt: 'Não tem um computador (Windows ou Mac) para deixar ligado durante a obra.' },
         { txt: 'Procura um site institucional simples, só de vitrine.' },
         { txt: 'Não quer assinar o Claude, que é a força de trabalho da obra.' }
       ],
@@ -192,7 +193,7 @@ class Component extends DCLogic {
         { p: 'O computador precisa ficar ligado?', r: 'Sim, durante a obra. Ele é o canteiro. Você acompanha tudo pelo celular.' },
         { p: 'O sistema é meu?', r: 'Sim. O código fica na sua conta e continua seu mesmo se um dia você parar de usar o Atlas.' },
         { p: 'E se eu quiser mudar algo depois?', r: 'Você pede com as suas palavras. O Atlas mostra o que vai mudar e só publica quando você aprovar.' },
-        { p: 'Funciona no meu computador?', r: 'Funciona em computadores com Windows 10 ou 11 e internet. O instalador confere tudo para você.' }
+        { p: 'Funciona no meu computador?', r: 'Funciona no Windows 10 ou 11 e no Mac, com internet. O instalador confere tudo para você.' }
       ] };
   }
 }
