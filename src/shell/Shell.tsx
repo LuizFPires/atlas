@@ -4,7 +4,7 @@ import { useTema } from '../tema/tema'
 import { Monograma, NomeAtlas } from '../marca/Marca'
 import './shell.css'
 
-export type IdTela = 'obras' | 'canteiro' | 'concluidas' | 'lancamentos' | 'prototipo' | 'obra' | 'cronograma' | 'posobra' | 'retomar' | 'ajuda'
+export type IdTela = 'obras' | 'canteiro' | 'concluidas' | 'lancamentos' | 'prototipo' | 'obra' | 'cronograma' | 'desempenho' | 'posobra' | 'retomar' | 'ajuda'
 
 /** Menu (Milestone 37, aprovado pelo Luiz em 23/11/2026): tudo de uma obra mora dentro dela. Protótipo, Obra, Pós-obra e Como
  *  retomar saíram do menu: são telas DENTRO da obra (o menu acende "Canteiro de obras" enquanto elas estão abertas). */
@@ -23,7 +23,7 @@ const lerAberto = () => { try { return localStorage.getItem(CHAVE_MENU) === '1' 
 const diasCurto = (titulo: string) => { const m = /(\d+)\s*dia/.exec(titulo); return m ? `${m[1]}d` : '!' }
 
 /** Qual item do menu acende: as telas de dentro da obra acendem o Canteiro. */
-export const itemDoMenu = (t: IdTela): IdTela => (t === 'prototipo' || t === 'obra' || t === 'cronograma' || t === 'posobra' || t === 'retomar' ? 'canteiro' : t)
+export const itemDoMenu = (t: IdTela): IdTela => (t === 'prototipo' || t === 'obra' || t === 'cronograma' || t === 'desempenho' || t === 'posobra' || t === 'retomar' ? 'canteiro' : t)
 
 /** Cartão da licença na lateral. 'ativa' = a linha de sempre; 'contando'/'vencida' = teste grátis ou cortesia com prazo. */
 export type LicencaNoMenu =

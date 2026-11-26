@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Obra: desempenho</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@keyframes cpisca{0%,100%{opacity:1}50%{opacity:.35}}
+.c-pisca{animation:cpisca 1.2s infinite}
+@media (prefers-reduced-motion: reduce){.c-pisca{animation:none}}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:{{t.bg}};color:{{t.text}};font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="canteiro" tema="{{tema}}" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:22px 36px 26px;display:flex;flex-direction:column;gap:16px">
+
+  <div style="display:flex;align-items:center;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:6px">
+    <a href="K1Canteiro.dc.html" style="display:flex;align-items:center;gap:6px;font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>CANTEIRO DE OBRAS</a>
+    <div style="display:flex;align-items:center;gap:12px"><h1 style="margin:0;font-size:28px">Orçamento de obra</h1><span style="display:flex;align-items:center;gap:7px;height:28px;padding:0 11px;border-radius:999px;background:{{t.soft}};border:1px solid {{t.lime}};color:{{t.limeTxt}};font:600 11px 'Geist Mono',monospace;letter-spacing:.08em"><span class="c-pisca" style="width:7px;height:7px;border-radius:4px;background:{{t.lime}}"></span>TRABALHANDO · 9,09%</span></div>
+   </div>
+   <nav aria-label="Partes da obra" style="margin-left:auto;display:flex;gap:4px;padding:5px;border-radius:14px;background:{{t.card}};border:1px solid {{t.cardB}}">
+    <a href="O1Trabalhando.dc.html" style="height:40px;padding:0 16px;display:flex;align-items:center;border-radius:10px;color:{{t.mute}};font:600 14px 'Geist',sans-serif">Construção</a>
+    <a href="O6Cronograma.dc.html" style="height:40px;padding:0 16px;display:flex;align-items:center;border-radius:10px;color:{{t.mute}};font:600 14px 'Geist',sans-serif">Cronograma</a>
+    <span aria-current="page" style="height:40px;padding:0 16px;display:flex;align-items:center;border-radius:10px;background:{{t.lime}};color:{{t.onLime}};font:700 14px 'Geist',sans-serif">Desempenho</span>
+    <a href="P4Quadro.dc.html" style="height:40px;padding:0 16px;display:flex;align-items:center;border-radius:10px;color:{{t.mute}};font:600 14px 'Geist',sans-serif">Protótipo</a>
+    <a href="D1Ajuda.dc.html" style="height:40px;padding:0 16px;display:flex;align-items:center;border-radius:10px;color:{{t.mute}};font:600 14px 'Geist',sans-serif">Pedir mudança</a>
+   </nav>
+  </div>
+
+  <!-- Números grandes (aprovado pelo Luiz em 26/11/2026: término, consumo, ritmo de gasto, pausas previstas e plano) -->
+  <section aria-label="Resumo do desempenho" style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;gap:12px">
+   <div style="padding:16px 20px;border-radius:18px;background:{{t.soft}};border:1px solid {{t.lime}}">
+    <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.limeTxt}}">TÉRMINO PROJETADO</span>
+    <div style="margin-top:6px;font:700 28px 'Geist',sans-serif;letter-spacing:-.01em">Sex, 27/11 · ~09h</div>
+    <span style="font-size:13px;line-height:1.5;color:{{t.mute}}">≈ 6h30 de trabalho + 2 pausas da cota do plano Pro (≈ 5h esperando). Conta feita se só esta obra trabalhar.</span>
+   </div>
+   <sc-for list="{{cartoes}}" as="c" hint-placeholder-count="4">
+    <div style="padding:16px 20px;border-radius:18px;background:{{t.card}};border:1px solid {{c.borda}}">
+     <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:{{t.mute2}}">{{c.rotulo}}</span>
+     <div style="margin-top:6px;font:700 22px 'Geist Mono',monospace;color:{{c.cor}}">{{c.valor}}</div>
+     <span style="font-size:13px;color:{{t.mute}}">{{c.nota}}</span>
+    </div>
+   </sc-for>
+  </section>
+
+  <!-- Curva S do consumo -->
+  <section aria-label="Curva S do consumo" style="flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:16px 20px;border-radius:20px;background:{{t.card}};border:1px solid {{t.cardB}}">
+   <div style="display:flex;align-items:center;gap:18px">
+    <h2 style="margin:0;font-size:18px">Curva S do consumo</h2>
+    <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:{{t.mute}}"><span style="width:22px;height:8px;border-radius:4px;border:1.5px dashed {{t.mute2}}"></span>Previsto</span>
+    <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:{{t.mute}}"><span style="width:22px;height:8px;border-radius:4px;background:{{t.lime}}"></span>Realizado</span>
+    <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:{{t.mute}}"><span style="width:22px;height:8px;border-radius:4px;background:{{t.proj}}"></span>Projetado</span>
+    <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:{{t.mute}}"><span style="width:22px;height:8px;border-radius:4px;background:{{t.pausa}}"></span>Pausa da cota</span>
+   </div>
+   <svg viewBox="0 0 1000 300" style="width:100%;flex:1;min-height:0" role="img" aria-label="Curva S do consumo: previsto, realizado e projetado">
+    <g stroke="{{t.line}}"><path d="M48 16H992M48 79H992M48 142H992M48 205H992M48 268H992"/></g>
+    <g font-family="Geist Mono,monospace" font-size="12" fill="{{t.mute2}}"><text x="40" y="20" text-anchor="end">100%</text><text x="40" y="146" text-anchor="end">50%</text><text x="40" y="272" text-anchor="end">0%</text><text x="48" y="292">19h</text><text x="250" y="292">22h</text><text x="452" y="292">01h</text><text x="654" y="292">04h</text><text x="856" y="292">07h</text></g>
+    <rect x="345" y="16" width="90" height="252" fill="{{t.pausa}}"/><rect x="622" y="16" width="100" height="252" fill="{{t.pausa}}"/>
+    <path d="M48 268 C220 262,380 210,520 140 S800 26,990 16" fill="none" stroke="{{t.mute2}}" stroke-width="2" stroke-dasharray="8 6"/>
+    <path d="M48 268 C90 260,120 248,160 232" fill="none" stroke="{{t.lime}}" stroke-width="4" stroke-linecap="round"/>
+    <path d="M160 232 C240 205,310 182,345 168 L435 168 C500 140,580 110,622 96 L722 96 C800 60,860 32,935 16" fill="none" stroke="{{t.proj}}" stroke-width="3"/>
+    <line x1="160" y1="16" x2="160" y2="268" stroke="{{t.lime}}" stroke-dasharray="3 4"/><text x="166" y="260" font-family="Geist Mono,monospace" font-size="12" fill="{{t.limeTxt}}">agora</text>
+    <circle cx="935" cy="16" r="6" fill="{{t.lime}}"/>
+   </svg>
+   <p style="margin:0;font-size:13px;line-height:1.5;color:{{t.mute}}">Refeito a cada 5 min pelo ritmo real da obra. Se outra obra trabalhar junto, a cota é dividida e o término vai mais longe. O plano Pro e o Max também têm um limite por semana, que pode causar uma pausa mais longa. Antes da 1ª etapa entregue e da 1ª pausa, o orçamento e o tamanho da cota são estimativa (a Anthropic não publica quanto cabe em cada janela de 5 h).</p>
+  </section>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["escuro","claro"],"default":"escuro"},"$preview":{"width":1440,"height":900}}'>
+const T = {
+  escuro: { bg: '#141619', card: '#1E2125', cardB: '#2C3036', text: '#EDEFEA', mute: '#B4BBB2', mute2: '#8E968C', lime: '#C6F135', limeTxt: '#C6F135', onLime: '#141619', soft: 'rgba(198,241,53,.10)', line: '#2A2E33', amb: '#F2B33D', ambTxt: '#F2B33D', proj: 'rgba(198,241,53,.45)', pausa: 'rgba(242,179,61,.16)' },
+  claro: { bg: '#F2F3EE', card: '#FFFFFF', cardB: '#DADDD3', text: '#1B1E22', mute: '#5F665C', mute2: '#6B7268', lime: '#B6E22E', limeTxt: '#4E6B00', onLime: '#1B1E22', soft: 'rgba(182,226,46,.18)', line: '#E6E8E1', amb: '#D99A1E', ambTxt: '#8A5A00', proj: 'rgba(182,226,46,.55)', pausa: 'rgba(217,154,30,.16)' }
+};
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.props.tema ?? 'escuro'; const t = T[tema] || T.escuro;
+    const cartoes = [
+      { rotulo: 'CONSUMO', valor: '14,20%', nota: 'previsto até agora: 12,00%', cor: t.text, borda: t.cardB },
+      { rotulo: 'RITMO DE GASTO', valor: '+18%', nota: 'gastando mais que o previsto', cor: t.ambTxt, borda: t.amb },
+      { rotulo: 'PAUSAS PREVISTAS', valor: '2', nota: 'a próxima ~22h40', cor: t.text, borda: t.cardB },
+      { rotulo: 'PLANO', valor: 'Pro', nota: 'uma janela de uso a cada 5 h', cor: t.text, borda: t.cardB }
+    ];
+    return { tema, t, cartoes };
+  }
+}
+</script>
+</body>
+</html>

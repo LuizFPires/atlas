@@ -131,6 +131,27 @@ export function situacaoDaObra(modo: ModoObra, e: Pick<EstadoObra, 'pct' | 'para
   return 'andando'
 }
 
+/** Aba Desempenho (26/11/2026): a curva S do consumo do plano do Claude. Valores em % do orçamento da obra; datas em ISO. */
+export interface PontoCurva { t: string; v: number }
+export interface Desempenho {
+  /** true até a 1ª etapa entregue: o orçamento ainda é estimativa pelo tamanho do plano. */
+  estimativaInicial: boolean
+  realizadoPct: number
+  previstoAgoraPct: number
+  fisicoPct: number
+  /** Gasto em relação ao que o físico andou: 0,18 = 18% a mais que o previsto; null sem medida. */
+  ritmo: number | null
+  plano: 'pro' | 'max' | 'ultra'
+  /** Cota da janela de 5 h (em unidades de consumo); null no Ultra (sem janela de 5 h). */
+  cota: number | null
+  /** true depois da 1ª pausa de cota: a cota foi medida neste computador. */
+  cotaAprendida: boolean
+  terminoProjetado: string
+  previstoFim: string
+  pausasPrevistas: { inicio: string; fim: string }[]
+  serie: { previsto: PontoCurva[]; realizado: PontoCurva[]; projetado: PontoCurva[] }
+}
+
 export interface PontePainel {
   /** Lê o andamento da obra (PLAN.md da pasta, prazo, quem trabalha). */
   ler(pasta: string): Promise<EstadoObra>
@@ -153,6 +174,8 @@ export interface PontePainel {
   diario?(pasta: string): Promise<LinhaDiario[]>
   /** M41: o cronograma da obra. */
   cronograma?(pasta: string): Promise<Cronograma>
+  /** Aba Desempenho: curva S do consumo, ritmo de gasto, pausas previstas e término projetado. */
+  desempenho?(pasta: string): Promise<Desempenho>
   /** A linha parou perguntando como seguir: o cliente escolhe uma das opções (pelo rótulo). */
   decidir?(pasta: string, rotulo: string): Promise<void>
 }
@@ -298,6 +321,23 @@ export function criarPainelFixture(opcoes: { plan?: string; agora?: () => Date; 
       }
     },
     async diario() { return f.diarioDeExemplo.slice() },
+    async desempenho() {
+      // Exemplo (o mesmo do protótipo aprovado): 19h41, 14,2% gasto, 2 pausas da cota até ~09h do dia seguinte.
+      const H = 3600_000
+      const t0 = Date.parse('2026-11-26T22:00:00.000Z')
+      const i = (h: number) => new Date(t0 + h * H).toISOString()
+      const s = (n: number, f: (k: number) => number) => Array.from({ length: n + 1 }, (_, k) => ({ t: i((14 * k) / n), v: Math.round(f(k / n) * 10000) / 100 }))
+      return {
+        estimativaInicial: false, realizadoPct: 14.2, previstoAgoraPct: 12, fisicoPct: 12.03, ritmo: 0.18, plano: 'pro' as const, cota: 15, cotaAprendida: true,
+        terminoProjetado: i(14), previstoFim: i(14),
+        pausasPrevistas: [{ inicio: i(3.66), fim: i(5) }, { inicio: i(8.5), fim: i(10) }],
+        serie: {
+          previsto: s(40, (u) => u * u * (3 - 2 * u)),
+          realizado: [{ t: i(0), v: 0 }, { t: i(0.35), v: 6 }, { t: i(0.68), v: 14.2 }],
+          projetado: [{ t: i(0.68), v: 14.2 }, { t: i(3.66), v: 40 }, { t: i(5), v: 40 }, { t: i(8.5), v: 75 }, { t: i(10), v: 75 }, { t: i(14), v: 100 }],
+        },
+      }
+    },
     async cronograma() {
       const H = 3600_000
       const t0 = Date.parse('2026-11-24T12:00:00.000Z')

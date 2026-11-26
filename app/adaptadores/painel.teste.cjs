@@ -228,6 +228,30 @@ test('painel: cronograma da obra com previsto, real, esperado e as pausas de cot
   assert.ok(v.pausas[0].fim)
 })
 
+// Aba Desempenho (Luiz, 26/11/2026): curva S do consumo, ritmo de gasto, pausas previstas pela cota e o plano.
+test('painel: desempenho lê o consumo da obra, as pausas de cota do diário e o plano, e guarda o orçamento na 1ª entrega', async () => {
+  const { criarDiario } = require('./diario.cjs')
+  const { registrarConsumo } = require('./retrato-obra.cjs')
+  const diario = criarDiario()
+  const { raiz, c, painel } = montar({ diario, plano: () => 'pro' })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  const dir = path.join(raiz, 'obra')
+  await painel.cronograma('obra')
+  registrarConsumo(dir, { inicio: new Date().toISOString(), fim: new Date(Date.now() + 1000).toISOString(), custoUsd: 2, duracaoMs: 60_000 })
+  const d = await painel.desempenho('obra')
+  assert.equal(d.plano, 'pro')
+  assert.equal(d.estimativaInicial, true)
+  assert.ok(d.realizadoPct > 0)
+  assert.ok(Date.parse(d.terminoProjetado) > Date.now())
+  assert.ok(Array.isArray(d.serie.previsto) && d.serie.previsto.length > 2)
+  assert.equal(fs.existsSync(path.join(dir, '.atlas', 'desempenho.json')), false) // nada entregue ainda: orçamento não fixado
+})
+
+test('painel: desempenho sem plano de construção avisa (sem-plano)', async () => {
+  const { painel } = montar({ plano: () => 'pro' })
+  await assert.rejects(painel.desempenho('obra'), /sem-plano/)
+})
+
 // Guilherme (24/11): escolher como seguir. Só vale uma das opções que a linha deu; a escolha vai para a linha e para o diário.
 test('decidir: religa a linha com a opção escolhida (só uma das opções oferecidas)', async () => {
   const { criarDiario } = require('./diario.cjs')
@@ -245,4 +269,22 @@ test('decidir: religa a linha com a opção escolhida (só uma das opções ofer
   assert.deepEqual(religadas, [['obra', { decisao: 'Corrigir e revisar de novo' }]])
   assert.deepEqual(zeradas, ['obra'])
   assert.ok(diario.ler(path.join(raiz, 'obra')).some((e) => /Você escolheu: Corrigir e revisar de novo/.test(e.texto)))
+})
+
+test('painel: desempenho fixa o orçamento quando a 1ª etapa é entregue e depois usa o guardado', async () => {
+  const { registrarConsumo } = require('./retrato-obra.cjs')
+  const { raiz, c, painel } = montar({ plano: () => 'max' })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  const dir = path.join(raiz, 'obra')
+  await painel.cronograma('obra')
+  registrarConsumo(dir, { fim: new Date(Date.now() + 1000).toISOString(), custoUsd: 3, duracaoMs: 60_000 })
+  marcar(raiz, 1)
+  const d = await painel.desempenho('obra')
+  assert.equal(d.estimativaInicial, false)
+  const guardado = JSON.parse(fs.readFileSync(path.join(dir, '.atlas', 'desempenho.json'), 'utf8'))
+  assert.ok(guardado.orcamento > 0)
+  registrarConsumo(dir, { fim: new Date(Date.now() + 2000).toISOString(), custoUsd: 30, duracaoMs: 60_000 })
+  const depois = await painel.desempenho('obra')
+  assert.equal(depois.orcamento, guardado.orcamento) // não muda mais
+  assert.equal(depois.plano, 'max')
 })

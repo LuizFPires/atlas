@@ -34,6 +34,7 @@ const { pastaDaObra, pastaAtlas, gravarAtomico, lerJson, lerTexto } = require('.
 const { comoDado } = require('./plan-md.cjs')
 const { ehModoObra, gravarRecomendadoGlobal } = require('./modo.cjs')
 const { criarCronograma } = require('./cronograma.cjs')
+const { calcularDesempenho } = require('./desempenho.cjs')
 
 const RE_MS = /^##\s+(?:Milestone\s+|M)(\d+)\s*[—–:-]\s*(.+?)\s*$/i
 const RE_ENDERECO = /^http:\/\/127\.0\.0\.1:\d{2,5}(\/[A-Za-z0-9._~\-/?=&%]*)?$/ // igual a enderecoCanteiroSeguro (ponte-painel.ts)
@@ -163,7 +164,7 @@ function kitDirDoApp({ empacotado, recursos }) {
  * `porta` (teste): fixa a porta; padrão = porta livre aleatória a cada subida. `subir` (teste): substitui o spawn do canteiro
  * (sem nonce: o servidor falso do teste não o conhece). Padrão de kitDir (hooks/ e canteiro/): a pasta .claude do app (ATLAS_KIT_DIR).
  */
-function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir, contarCommits, vigia = null, diario = null, cronograma = null, fila = null }) {
+function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLAS_KIT_DIR || path.join(__dirname, '..', '..', '.claude'), porta = null, home, agora = () => new Date(), subir, contarCommits, vigia = null, diario = null, cronograma = null, fila = null, plano = () => null }) {
   const hooks = path.join(kitDir, 'hooks')
   const canteiroDir = path.join(kitDir, 'canteiro')
   const linha = construcao.linha
@@ -305,6 +306,27 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
       const qtd = p.milestones.length
       const previstoMs = Math.max(1, Math.ceil(qtd / 4)) * 24 * 3600_000 // previsaoPorEtapas (plano Pro): o que o Atlas prometeu no começo
       return crono.atualizar(cwd, p.milestones.map((m) => ({ n: m.n, titulo: nomeCurto(m.titulo), peso: m.peso, status: m.status, pct: m.pct })), { previstoMs, terminoMs, pausas: pausasDoDiario(diario ? diario.ler(cwd, 500) : []) })
+    },
+
+    /** Aba Desempenho (26/11/2026): curva S do consumo, ritmo de gasto, pausas previstas pela cota e término projetado.
+     *  O orçamento fica fixado em .atlas/desempenho.json quando a 1ª etapa é entregue. */
+    async desempenho(pasta) {
+      const cwd = pastaDaObra(raiz, pasta)
+      const p = planoDa(cwd)
+      if (!p) throw new Error('sem-plano')
+      const crono = await this.cronograma(pasta)
+      const arq = path.join(cwd, '.atlas', 'desempenho.json')
+      const guardado = lerJson(arq)
+      // retrato-obra.cjs importa este arquivo: o require fica aqui dentro para não fechar um ciclo na carga.
+      const d = calcularDesempenho({
+        inicio: crono.inicio, previstoFim: crono.previstoFim,
+        etapas: p.milestones.map((m) => ({ n: m.n, peso: m.peso, status: m.status, pct: m.pct })),
+        consumo: require('./retrato-obra.cjs').lerConsumo(cwd), pausas: crono.pausas, plano: plano(), agora: agora(),
+        orcamentoGuardado: guardado && guardado.versao === 1 ? guardado.orcamento : null,
+      })
+      if (d.fixarOrcamento) { try { gravarAtomico(arq, JSON.stringify({ versao: 1, orcamento: d.fixarOrcamento, em: agora().toISOString() })) } catch { /* fica para a próxima leitura */ } }
+      delete d.fixarOrcamento
+      return d
     },
 
     /** M41: o diário completo da obra (gaveta "Ver o diário completo"). */

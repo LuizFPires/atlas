@@ -1,0 +1,36 @@
+/* Aba Desempenho (O7). Só tokens do Atlas; âmbar = pausa da cota e gasto acima do previsto. */
+.at-de { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.at-de__vazio { padding: 24px; border-radius: 18px; background: var(--card); border: 1px dashed var(--card-b); color: var(--mute); font-size: 15px; line-height: 1.5; }
+.at-de__resumo { display: grid; grid-template-columns: 1.6fr repeat(4, minmax(0, 1fr)); gap: 12px; }
+.at-de__card { display: flex; flex-direction: column; gap: 6px; padding: 16px 20px; border-radius: 18px; background: var(--card); border: 1px solid var(--card-b); min-width: 0; }
+.at-de__card--destaque { background: var(--soft); border-color: var(--lime); }
+.at-de__card--ambar { border-color: #F2B33D; }
+.at-de__rot { font: 600 11px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2, var(--mute)); }
+.at-de__card--destaque .at-de__rot { color: var(--lime-txt, var(--lime)); }
+.at-de__grande { font: 700 28px var(--font-text); letter-spacing: -0.01em; }
+.at-de__num { font: 700 22px var(--font-mono); }
+.at-de__num--ambar { color: #F2B33D; }
+.at-de__num--lime { color: var(--lime-txt, var(--lime)); }
+:root[data-theme='claro'] .at-de__num--ambar { color: #8A5A00; }
+.at-de__nota { font-size: 13px; line-height: 1.5; color: var(--mute); margin: 0; }
+.at-de__aviso { margin: 0; padding: 10px 14px; border-radius: 12px; border: 1px solid #F2B33D; font-size: 13px; line-height: 1.5; color: var(--text); }
+.at-de__grafico { display: flex; flex-direction: column; gap: 10px; padding: 16px 20px; border-radius: 20px; background: var(--card); border: 1px solid var(--card-b); min-width: 0; }
+.at-de__legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; font-size: 13px; color: var(--mute); }
+.at-de__legenda b { font-size: 17px; color: var(--text); margin-right: 6px; }
+.at-de__legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.at-de__lg { width: 22px; height: 8px; border-radius: 4px; display: inline-block; }
+.at-de__lg--previsto { border: 1.5px dashed var(--mute); box-sizing: border-box; }
+.at-de__lg--real { background: var(--lime); }
+.at-de__lg--proj { background: color-mix(in srgb, var(--lime) 45%, transparent); }
+.at-de__lg--pausa { background: color-mix(in srgb, #F2B33D 45%, transparent); }
+.at-de__svg { width: 100%; height: auto; display: block; }
+.at-de__grade { stroke: var(--card-b); stroke-width: 1; }
+.at-de__eixo { font: 500 12px var(--font-mono); fill: var(--mute2, var(--mute)); }
+.at-de__pausa { fill: color-mix(in srgb, #F2B33D 16%, transparent); }
+.at-de__previsto { fill: none; stroke: var(--mute); stroke-width: 2; stroke-dasharray: 8 6; }
+.at-de__real { fill: none; stroke: var(--lime); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+.at-de__proj { fill: none; stroke: color-mix(in srgb, var(--lime) 50%, transparent); stroke-width: 3; stroke-linejoin: round; }
+.at-de__agora { stroke: var(--lime); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.at-de__agora-txt { font: 600 12px var(--font-mono); fill: var(--lime-txt, var(--lime)); }
+.at-de__fim { fill: var(--lime); }
+@media (max-width: 1200px) { .at-de__resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); } .at-de__card--destaque { grid-column: 1 / -1; } }
