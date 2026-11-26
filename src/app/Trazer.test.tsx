@@ -64,10 +64,26 @@ test('link perigoso ou com senha é recusado', async () => {
   }
 })
 
-test('pede o nome da obra antes de abrir o arquivo', async () => {
-  const { user } = montar()
+// Luiz, 26/11/2026: "botão não está funcionando para carregar o arquivo do computador" (sem o nome, o botão só dava um aviso e não
+// abria nada). Agora escolhe o .zip a qualquer hora; o Atlas confere e guarda na obra quando o nome estiver escrito.
+test('escolher o .zip antes do nome: abre e confere o arquivo, e guarda na obra quando o nome vier', async () => {
+  const user = userEvent.setup()
+  const obras = criarObrasFixture()
+  const importar = criarImportarFixture()
+  const onConcluir = vi.fn()
+  render(<TemaProvider><TrazerPrototipo obras={obras} importar={importar} onVoltar={() => {}} onConcluir={onConcluir} /></TemaProvider>)
   await user.click(screen.getByRole('button', { name: /prototipo-atlas.zip: escolher arquivo/ }))
-  expect(screen.getByRole('alert')).toHaveTextContent('dê um nome para a obra')
+  expect(await screen.findByText(/conferido · falta o nome da obra/)).toBeInTheDocument()
+  expect(screen.getByRole('status')).toHaveTextContent('Arquivo conferido. Agora escreva o nome da obra')
+  expect(obras.criadas).toEqual([])
+  const seguir = screen.getByRole('button', { name: 'Abrir no Atlas e ajustar →' })
+  expect(seguir).toBeDisabled()
+  await user.type(screen.getByLabelText(/Nome da obra/), 'Agenda do Zé')
+  expect(seguir).toBeEnabled()
+  await user.click(seguir)
+  expect(await screen.findByText(/recebido · 2,3 MB/)).toBeInTheDocument()
+  expect(obras.criadas).toContain('agenda-do-ze')
+  expect(onConcluir).toHaveBeenCalled()
 })
 
 test('um .zip com programa dentro é recusado com recado calmo e nada fica "recebido"', async () => {
