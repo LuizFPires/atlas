@@ -153,3 +153,20 @@ test('"Colocar no ar" travou no começo: motivo real e "Pedir ao Atlas para dest
   await user.click(screen.getByRole('button', { name: 'Pedir ao Atlas para destravar' }))
   expect(ajudas).toEqual([{ onde: 'o começo da publicação', erro: 'sem-licenca' }])
 })
+
+test('banco parou: cada motivo do Supabase vira a frase certa e o código aparece (26/11/2026, Ponto: "não terminou de preparar" escondia a causa)', () => {
+  expect(explicarErro('supabase-limite-gratis').frase).toMatch(/2 bancos/)
+  expect(explicarErro('supabase-401').conta).toBe('supabase')
+  expect(explicarErro('supabase-403').conta).toBe('supabase')
+  expect(explicarErro('supabase-migrations').frase).toMatch(/tabelas/)
+  expect(explicarErro('supabase-link').frase).toMatch(/conectar/)
+  expect(explicarErro('supabase-funcoes').frase).toMatch(/funções/)
+  expect(explicarErro('supabase-demorou').frase).toMatch(/demor/)
+  expect(explicarErro('supabase-429').frase).toMatch(/minuto/)
+})
+
+test('erro num passo mostra o código técnico pequeno, para o Atlas saber exatamente o que houve', async () => {
+  const erro: EstadoNoAr = { fase: 'erro', nome: 'ponto', passos: [{ id: 'vistoria', estado: 'feito' }, { id: 'banco', estado: 'erro' }, { id: 'publicar', estado: 'falta' }, { id: 'github', estado: 'falta' }, { id: 'teste', estado: 'falta' }, { id: 'celular', estado: 'falta' }], achados: [], endereco: null, erro: { passo: 'banco', motivo: 'supabase-migrations' }, avisos: [] }
+  montar({ ...criarNoArFixture(), estado: async () => erro })
+  expect(await screen.findByText('código: supabase-migrations')).toBeInTheDocument()
+})

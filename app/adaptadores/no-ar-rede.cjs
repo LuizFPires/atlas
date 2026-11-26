@@ -39,7 +39,11 @@ async function pedirApiSupabase(metodo, caminho, corpo, token, { enviar = pedir 
   if (typeof caminho !== 'string' || !/^\/v1\/[a-z0-9/_-]+$/.test(caminho) || caminho.includes('..')) throw new Error('caminho-invalido')
   if (typeof token !== 'string' || !token) throw new Error('sem-token')
   const r = await enviar({ host: HOST_API, metodo, caminho, corpo, cabecalhos: { Accept: 'application/json', Authorization: `Bearer ${token}` } })
-  if (r.status < 200 || r.status >= 300) throw new Error(`supabase-${r.status}`)
+  if (r.status < 200 || r.status >= 300) {
+    // Conta grátis com 2 projetos ativos (limite do Supabase): motivo próprio, para a tela dizer o que fazer (26/11/2026).
+    if ((r.status === 400 || r.status === 402) && /maximum limits?.{0,80}free projects?|free project limit/i.test(String(r.corpo || '').slice(0, 2000))) throw new Error('supabase-limite-gratis')
+    throw new Error(`supabase-${r.status}`)
+  }
   try { return JSON.parse(r.corpo || 'null') } catch { throw new Error('supabase-resposta') }
 }
 

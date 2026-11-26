@@ -40,6 +40,15 @@ export const PASSOS_NO_AR: { id: IdPassoNoAr; titulo: string; sub: string }[] = 
 export function explicarErro(motivo: string): { frase: string; conta?: 'supabase' | 'vercel' | 'github' } {
   if (motivo === 'sem-conta-supabase') return { frase: 'A sua conta do Supabase não está ligada a este computador.', conta: 'supabase' }
   if (motivo.startsWith('vercel-')) return { frase: 'A Vercel não aceitou a publicação agora. Pode ser a conta desligada deste computador ou o site da Vercel fora do ar.', conta: 'vercel' }
+  // Cada motivo do Supabase com a sua frase (26/11/2026: uma frase só escondia a causa do Ponto).
+  if (motivo === 'supabase-limite-gratis') return { frase: 'A sua conta grátis do Supabase já tem 2 bancos ativos, que é o limite. Pause ou apague um projeto antigo no site do Supabase (ou mude para o plano pago) e toque em Tentar de novo.' }
+  if (motivo === 'supabase-401' || motivo === 'supabase-403') return { frase: 'O Supabase não aceitou a ligação com a sua conta (ela pode ter vencido). Religue a conta e tente de novo.', conta: 'supabase' }
+  if (motivo === 'supabase-429') return { frase: 'O Supabase pediu uma pausa (muitos pedidos seguidos). Espere um minuto e tente de novo.' }
+  if (motivo === 'supabase-migrations') return { frase: 'O banco foi criado, mas as tabelas do sistema não subiram. Fale com o Atlas para ele corrigir pela linha da obra.' }
+  if (motivo === 'supabase-link') return { frase: 'Não consegui conectar a obra ao banco novo no Supabase. Tente de novo em alguns minutos; se repetir, fale com o Atlas.' }
+  if (motivo === 'supabase-funcoes') return { frase: 'O banco e as tabelas estão prontos, mas as funções do servidor não subiram. Fale com o Atlas para ele corrigir pela linha da obra.' }
+  if (motivo === 'supabase-demorou') return { frase: 'O Supabase está demorando para preparar o banco novo. Isso às vezes leva mais de 10 minutos; toque em Tentar de novo daqui a pouco.' }
+  if (motivo === 'supabase-sem-organizacao') return { frase: 'A sua conta do Supabase ainda não tem uma organização. Crie uma no site do Supabase e tente de novo.' }
   if (motivo.startsWith('supabase-')) return { frase: 'O Supabase não terminou de preparar o banco. Às vezes ele demora; dá para tentar de novo.' }
   if (motivo === 'teste-falhou') return { frase: 'O sistema foi publicado, mas não respondeu no teste. O Atlas não diz que está no ar sem conferir.' }
   if (motivo === 'ferramentas-indisponiveis') return { frase: 'Faltam as ferramentas da Vercel e do Supabase neste computador, e não consegui instalar agora.' }

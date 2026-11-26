@@ -95,3 +95,5 @@
 
 /* Destravar pelo app: botões lado a lado quando a correção da vistoria não sai. */
 .at-noar__destravar { display: flex; flex-wrap: wrap; gap: 10px; }
+/* O código técnico do passo que parou, pequeno: é o que o Atlas usa para saber exatamente o que houve. */
+.at-noar__codigo { font: 500 11px var(--font-mono); letter-spacing: .04em; color: var(--mute2, var(--mute)); }
