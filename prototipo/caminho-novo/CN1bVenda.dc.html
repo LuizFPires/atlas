@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Caminho novo · 1b Para vender ou para usar?</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}</style>
+</helmet>
+<div style="width:1440px;height:900px;background:#141619;color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obras" tema="escuro" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;align-items:center;justify-content:center">
+  <section style="width:640px;display:flex;flex-direction:column;gap:16px;padding:28px;border-radius:20px;background:#1E2125;border:1px solid #2C3036">
+   <span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">NOVA OBRA · 1 · A IDEIA · UMA CONFIRMAÇÃO</span>
+   <h1 style="margin:0;font-size:26px;line-height:1.25">{{frase}}</h1>
+   <p style="margin:0;font-size:15px;line-height:1.55;color:#B4BBB2">{{porque}}</p>
+   <div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:#191B1E">
+    <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135">{{rotulo}}</span>
+    <sc-for list="{{muda}}" as="m" hint-placeholder-count="4"><span style="font-size:14px;color:#EDEFEA">✓ {{m}}</span></sc-for>
+   </div>
+   <div style="display:flex;gap:10px">
+    <button onClick="{{sim}}" style="height:52px;padding:0 22px;border-radius:12px;border:none;background:#C6F135;color:#141619;font:700 16px 'Geist',sans-serif;cursor:pointer">{{btnSim}}</button>
+    <button onClick="{{nao}}" style="height:52px;padding:0 18px;border-radius:12px;border:1px solid #2C3036;background:transparent;color:#EDEFEA;font:600 15px 'Geist',sans-serif;cursor:pointer">{{btnNao}}</button>
+   </div>
+   <span style="font-size:13px;color:#8E968C">Dá para mudar depois. Se um sistema de uso interno virar venda, o Atlas faz uma obra de adaptação (leva mais tempo).</span>
+  </section>
+ </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"vender":{"editor":"boolean","default":true},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { vender: p && p.vender !== undefined ? !!p.vender : true }; }
+  renderVals() {
+    const v = this.state.vender;
+    return {
+      frase: v ? 'Pelo que você contou, é para vender a outras empresas. Certo?' : 'Pelo que você contou, é para usar na sua empresa. Certo?',
+      porque: v ? 'Você falou em "clientes que vão assinar" e em "cada empresa com os seus funcionários". Isso muda como o sistema é construído desde o começo.' : 'Você falou da sua equipe e das suas obras. O Atlas constrói para uma empresa só, mais simples e mais rápido.',
+      rotulo: v ? 'PARA VENDER, O ATLAS JÁ CONSTRÓI COM' : 'PARA USO INTERNO',
+      muda: v ? ['Os dados de cada empresa separados desde o começo', 'Cadastro sozinho para quem assinar', 'Planos e limites (grátis, mensal, anual)', 'Termos e privacidade (LGPD) para o público'] : ['Uma empresa só: a sua', 'Login para a sua equipe', 'Sem página de vendas nem planos'],
+      btnSim: v ? 'Sim, é para vender' : 'Sim, é só para a minha empresa',
+      btnNao: v ? 'Não, é só para a minha empresa' : 'Não, é para vender',
+      sim: () => {}, nao: () => this.setState({ vender: !v })
+    };
+  }
+}
+</script>
+</body>
+</html>

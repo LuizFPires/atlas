@@ -43,3 +43,15 @@ describe('lançamento (M60, LC1)', () => {
     expect(abrir).toHaveBeenCalledWith('ponto')
   })
 })
+
+describe('uso interno que vira venda (M64)', () => {
+  it('avisa da obra de adaptação (leva mais tempo) e só começa adaptando', async () => {
+    const l = criarLancamentoFixture({ usoInterno: ['ponto'] })
+    const comecar = vi.spyOn(l, 'comecar')
+    render(<Lancamento obra={obra} lancamento={l} onGuia={() => {}} />)
+    expect(await screen.findByText(/OBRA DE ADAPTAÇÃO · LEVA MAIS TEMPO/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Adaptar e começar o lançamento →' }))
+    expect(comecar).toHaveBeenCalledWith('ponto', true)
+    expect(await screen.findByText(/A obra de adaptação foi para a linha/)).toBeInTheDocument()
+  })
+})

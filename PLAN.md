@@ -695,10 +695,10 @@ Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1
 peso: 2
 spec: S14
 tela: prototipo/caminho-novo/CN1Ideia.dc.html
-- [ ] O Atlas deduz pela ideia se o sistema é para uso interno ou para vender e confirma numa linha ("Pelo que você contou, é para vender a outras empresas. Certo?")
-- [ ] Para vender: dados separados por empresa desde o começo, cadastro sozinho, planos e limites, termos e privacidade (LGPD) para o público
-- [ ] Uso interno que depois vira venda: obra de adaptação, com aviso antes de que leva mais tempo
-Notas: DECISÃO do Luiz (25/11/2026, "se houver algum benefício na criação do produto, a gente vai manter, porque aí vai mudar a forma de ser construído"). A linha de confirmação ainda não está desenhada no CN1Ideia: precisa de um ajuste de protótipo aprovado antes de implementar.
+- [x] O Atlas deduz pela ideia se o sistema é para uso interno ou para vender e confirma numa linha ("Pelo que você contou, é para vender a outras empresas. Certo?")
+- [x] Para vender: dados separados por empresa desde o começo, cadastro sozinho, planos e limites, termos e privacidade (LGPD) para o público
+- [x] Uso interno que depois vira venda: obra de adaptação, com aviso antes de que leva mais tempo
+Notas: DECISÃO do Luiz (25/11/2026, "se houver algum benefício na criação do produto, a gente vai manter, porque aí vai mudar a forma de ser construído"). A linha de confirmação ainda não está desenhada no CN1Ideia: precisa de um ajuste de protótipo aprovado antes de implementar. DECISÃO (25/11/2026, Luiz: "seguisse no modo automático ... implemente todos os milestones restantes"): o ajuste foi feito no protótipo (prototipo/caminho-novo/CN1bVenda.dc.html, "Para vender ou para usar?") e implementado no mesmo passo, sem uma rodada de aprovação separada — conferir no próximo olhar do Luiz. Andamento: o Claude da ideia diz se parece para vender (com o porquê); a tela confirma numa linha; para vender, o relato da obra ganha o bloco "Para vender a outras empresas" (dados por empresa, cadastro, planos, LGPD), que o protótipo e os documentos já leem; no Lançamento, obra de uso interno mostra o aviso da obra de adaptação (leva mais tempo) e só começa pedindo a adaptação à linha.
 
 ## Milestone 65 — O Atlas não constrói outro Atlas
 peso: 2

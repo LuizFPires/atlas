@@ -25,7 +25,8 @@ interface Props {
   ideia: PonteIdeia
   onVoltar: () => void
   /** relato (com as respostas do que faltou) e o título curto sugerido ('' se o Claude não respondeu). */
-  onConcluir: (r: { relato: string; titulo: string }) => void | Promise<void>
+  /** paraVender (M64): o cliente confirmou se é para vender a outras empresas (ausente = o Atlas não soube dizer). */
+  onConcluir: (r: { relato: string; titulo: string; paraVender?: boolean }) => void | Promise<void>
   /** Voltou do estilo para cá: mostra de novo o que já tinha contado. */
   relatoInicial?: string
   /** Pausa sem digitar/falar antes de conferir o roteiro (teste usa pouco). */
@@ -41,11 +42,16 @@ interface Props {
  * ideia livremente, falando. O roteiro à esquerda é só um guia: a cada pausa o Claude (rápido) diz quais tópicos já foram
  * respondidos e a bolinha fica verde. No fim, o Atlas pergunta só o que faltou.
  */
+/** M64: o que muda na construção quando é para vender (vai no relato: o protótipo e os documentos já nascem assim). */
+export const ITENS_VENDA = ['Os dados de cada empresa separados desde o começo', 'Cadastro sozinho para quem assinar', 'Planos e limites (grátis, mensal, anual)', 'Termos e privacidade (LGPD) para o público']
+export const MARCA_VENDA = '## Para vender a outras empresas'
+const BLOCO_VENDA = [`${MARCA_VENDA} (confirmado pelo cliente)`, '- Os dados de cada empresa separados desde o começo (várias empresas no mesmo sistema, cada uma vê só o que é dela).', '- Cadastro sozinho para quem assinar (a empresa e o dono nascem com o pagamento ou no plano grátis).', '- Planos e limites (grátis, mensal, anual).', '- Termos de uso e política de privacidade (LGPD) para o público.'].join('\n')
+
 export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2500, onPlanilha, politica = politicaIndisponivel }: Props) {
   const [rascunho, setRascunho] = useState<Rascunho>(() => { const r = lerRascunho(); return relatoInicial && !r.relato ? { ...r, relato: relatoInicial } : r })
   const [erro, setErro] = useState('')
   const [cobertos, setCobertos] = useState<Partial<Record<IdTopico, string>>>({})
-  const [etapa, setEtapa] = useState<'contar' | 'conferindo' | 'faltou' | 'politica'>('contar')
+  const [etapa, setEtapa] = useState<'contar' | 'conferindo' | 'faltou' | 'politica' | 'venda'>('contar')
   const [sinaisPolitica, setSinaisPolitica] = useState<string[]>([])
   const [faltou, setFaltou] = useState<{ itens: Conferencia['faltam']; titulo: string }>({ itens: [], titulo: '' })
   const [respostas, setRespostas] = useState<string[]>([])
@@ -74,9 +80,12 @@ export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2
   const pronto = palavras(relato) >= MIN_PALAVRAS
 
   // Só apaga o rascunho quando a obra foi criada de verdade (falhou: avisa e nada se perde).
-  const concluir = async (texto: string, titulo: string) => {
+  const [venda, setVenda] = useState<{ paraVender: boolean; motivo: string; conf: Conferencia } | null>(null)
+  const [paraVender, setParaVender] = useState<boolean | undefined>(undefined)
+  const concluir = async (texto: string, titulo: string, vender: boolean | undefined = paraVender) => {
     setErro('')
-    try { await onConcluir({ relato: texto, titulo }); apagar() } catch {
+    const relatoFinal = vender ? `${texto}\n\n${BLOCO_VENDA}` : texto
+    try { await onConcluir({ relato: relatoFinal, titulo, ...(vender !== undefined ? { paraVender: vender } : {}) }); apagar() } catch {
       setErro('Não consegui criar a pasta da obra agora. O que você contou está guardado: tente de novo em instantes.')
       setEtapa('contar')
     }
@@ -89,7 +98,13 @@ export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2
     const titulo = c?.titulo ?? ''
     // M65: o Atlas não constrói outro Atlas — a ideia não vira obra.
     if (c?.politica?.bloqueia) { setSinaisPolitica(c.politica.sinais); setEtapa('politica'); return }
-    if (!c || c.faltam.length === 0) { await concluir(relato, titulo); return }
+    // M64: o Atlas deduziu se é para vender: confirma numa linha antes de seguir.
+    if (c?.venda) { setVenda({ ...c.venda, conf: c }); setEtapa('venda'); return }
+    await seguirDepoisDaVenda(c, titulo, undefined)
+  }
+  const seguirDepoisDaVenda = async (c: Conferencia | null, titulo: string, vender: boolean | undefined) => {
+    setParaVender(vender)
+    if (!c || c.faltam.length === 0) { await concluir(relato, titulo, vender); return }
     setFaltou({ itens: c.faltam, titulo })
     setRespostas(c.faltam.map(() => ''))
     setEtapa('faltou')
@@ -104,6 +119,30 @@ export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2
     return (
       <div className="at-ideia at-ideia--faltou">
         <BloqueioPolitica modo="ideia" sinais={sinaisPolitica} obra="nova-obra" politica={politica} onVoltar={() => { mudar({ relato: '' }); setCobertos({}); setEtapa('contar') }} />
+      </div>
+    )
+  }
+
+  if (etapa === 'venda' && venda) {
+    const escolher = (v: boolean) => { const c = venda.conf; void seguirDepoisDaVenda(c, c.titulo ?? '', v) }
+    return (
+      <div className="at-ideia at-ideia--faltou">
+        <section className="at-ideia__cartao">
+          <div className="at-ideia__cab">
+            <span className="at-ideia__rotulo">NOVA OBRA · 1 · A IDEIA · UMA CONFIRMAÇÃO</span>
+            <h1>{venda.paraVender ? 'Pelo que você contou, é para vender a outras empresas. Certo?' : 'Pelo que você contou, é para usar na sua empresa. Certo?'}</h1>
+            {venda.motivo && <p>{venda.motivo}</p>}
+          </div>
+          <div className="at-ideia__falta">
+            <span className="at-ideia__rotulo at-ideia__rotulo--lime">{venda.paraVender ? 'PARA VENDER, O ATLAS JÁ CONSTRÓI COM' : 'PARA USO INTERNO'}</span>
+            <ul className="at-ideia__venda">{(venda.paraVender ? ITENS_VENDA : ['Uma empresa só: a sua', 'Login para a sua equipe', 'Sem página de vendas nem planos']).map((t) => <li key={t}>✓ {t}</li>)}</ul>
+          </div>
+          <div className="at-ideia__acoes">
+            <Botao onClick={() => escolher(venda.paraVender)}>{venda.paraVender ? 'Sim, é para vender' : 'Sim, é só para a minha empresa'}</Botao>
+            <Botao variante="secundario" onClick={() => escolher(!venda.paraVender)}>{venda.paraVender ? 'Não, é só para a minha empresa' : 'Não, é para vender'}</Botao>
+          </div>
+          <p className="at-ideia__porque">Dá para mudar depois. Se um sistema de uso interno virar venda, o Atlas faz uma obra de adaptação (leva mais tempo).</p>
+        </section>
       </div>
     )
   }

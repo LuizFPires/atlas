@@ -241,7 +241,7 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
   lancamento: {
     // Lançamento (M60): só pasta e a escolha do gateway; nada de chave passa por aqui.
     estado: (pasta) => chamar('atlas:lancamento:estado', String(pasta)),
-    comecar: (pasta) => chamar('atlas:lancamento:comecar', String(pasta)),
+    comecar: (pasta, adaptar) => chamar('atlas:lancamento:comecar', String(pasta), adaptar === true),
     escolherGateway: (pasta, g) => chamar('atlas:lancamento:gateway', String(pasta), String(g)),
     contaPronta: (pasta) => chamar('atlas:lancamento:contaPronta', String(pasta)),
     listar: () => chamar('atlas:lancamento:listar'),

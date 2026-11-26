@@ -52,11 +52,18 @@ export function Lancamento({ obra, lancamento, onGuia, onVoltar, vendas }: Props
           </div>
           <span className="at-noar__rot">PREÇOS QUE O ATLAS SUGERE · DÁ PARA MUDAR DEPOIS</span>
           <ul className="at-lanc__planos">{e.planos.map((p) => <li key={p.nome}><span>{p.nome} · {p.limite}</span><b>{p.preco}</b></li>)}</ul>
-          <button type="button" className="at-noar__prim" onClick={() => void fazer(() => lancamento.comecar(obra.pasta))}>Começar o lançamento →</button>
+          {!e.paraVender && (
+            <div className="at-noar__card at-noar__card--ambar">
+              <span className="at-noar__rot at-noar__rot--ambar">ANTES: UMA OBRA DE ADAPTAÇÃO · LEVA MAIS TEMPO</span>
+              <span className="at-noar__txt">O {obra.nome} foi feito para usar na sua empresa. Para vender, o Atlas primeiro adapta: cada empresa com os seus dados separados, cadastro sozinho, planos e termos (LGPD). Os seus dados de hoje continuam, como a sua empresa.</span>
+            </div>
+          )}
+          <button type="button" className="at-noar__prim" onClick={() => void fazer(() => lancamento.comecar(obra.pasta, !e.paraVender))}>{e.paraVender ? 'Começar o lançamento →' : 'Adaptar e começar o lançamento →'}</button>
           <span className="at-noar__nota">O dinheiro cai na sua conta, no seu CPF ou CNPJ. O Atlas nunca toca nele. Quer só usar na sua empresa? É só não começar: nada muda.</span>
         </section>
       )}
 
+      {e?.adaptacao === 'pedida' && e.fase !== 'comecar' && <p className="at-noar__nota">A obra de adaptação foi para a linha do {obra.nome}: o Atlas adapta enquanto você escolhe onde o dinheiro cai.</p>}
       {e?.fase === 'recebimento' && (
         <section className="at-lanc__receb" aria-label="Onde o dinheiro das vendas vai cair">
           <span className="at-noar__rot">ONDE O DINHEIRO DAS VENDAS VAI CAIR · VOCÊ ESCOLHE</span>

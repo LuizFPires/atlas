@@ -190,7 +190,11 @@ const lojas = criarLojas({
 })
 
 // Lançamento (M60): opcional, começa de dentro da obra no ar; só guarda as escolhas (gateway do cliente), nunca chave.
-const lancamento = require('./adaptadores/lancamento.cjs').criarLancamento({ raiz: obras.raiz() })
+const lancamento = require('./adaptadores/lancamento.cjs').criarLancamento({
+  raiz: obras.raiz(),
+  // M64: uso interno que vira venda: a obra de adaptação vai para a linha da obra.
+  pedirConstrucao: async (pasta, texto) => { await garantirObra(String(pasta)); return posobra.executar(String(pasta), { tipo: 'mudar', texto }, { entendi: 'Você quer vender o sistema a outras empresas. Antes, vou adaptar:', passos: ['Separar os dados de cada empresa', 'Cadastro sozinho, planos e limites', 'Termos e privacidade (LGPD)'], minutos: 120 }) },
+})
 // Página de vendas (M61): protótipo com marcações (Claude só leitor); a chave do gateway vai direto à Vercel do cliente.
 const paginaVendas = require('./adaptadores/pagina-vendas.cjs').criarPaginaVendas({
   raiz: obras.raiz(), cofre,
@@ -419,7 +423,7 @@ handle('atlas:noar:iniciar', async (pasta, nome) => { await garantirFerramentas(
 handle('atlas:noar:estado', (pasta) => noAr.estado(String(pasta)))
 handle('atlas:noar:corrigir', (pasta) => noAr.corrigir(String(pasta)))
 handle('atlas:lancamento:estado', (pasta) => lancamento.estado(String(pasta)))
-handle('atlas:lancamento:comecar', (pasta) => lancamento.comecar(String(pasta)))
+handle('atlas:lancamento:comecar', (pasta, adaptar) => lancamento.comecar(String(pasta), { adaptar: adaptar === true }))
 handle('atlas:lancamento:gateway', (pasta, g) => lancamento.escolherGateway(String(pasta), String(g)))
 handle('atlas:lancamento:contaPronta', (pasta) => lancamento.contaPronta(String(pasta)))
 handle('atlas:lancamento:listar', () => lancamento.listar())

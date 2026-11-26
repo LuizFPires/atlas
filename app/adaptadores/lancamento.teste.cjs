@@ -11,6 +11,9 @@ function raizCom(...obras) {
   for (const o of obras) {
     fs.mkdirSync(path.join(raiz, o, '.atlas'), { recursive: true })
     fs.writeFileSync(path.join(raiz, o, '.atlas', 'no-ar.json'), JSON.stringify({ versao: 1, nome: `${o}ampla`, endereco: `https://${o}ampla.vercel.app` }))
+    // Por padrão, obras feitas para vender (a ideia confirmou); o teste do M64 reescreve a de uso interno.
+    fs.mkdirSync(path.join(raiz, o, 'prototipo'), { recursive: true })
+    fs.writeFileSync(path.join(raiz, o, 'prototipo', 'relato.md'), `${o}\n\n## Para vender a outras empresas (confirmado pelo cliente)`)
   }
   return raiz
 }
@@ -54,4 +57,24 @@ test('o cliente escolhe Stripe ou Asaas, liga a conta dele e pode trocar antes d
   assert.equal(e.contaPronta, true)
   assert.equal((await l.listar())[0].fase, 'pagina')
   assert.doesNotMatch(fs.readFileSync(path.join(raiz, 'ponto', '.atlas', 'lancamento.json'), 'utf8'), /sk_|secret|token/i)
+})
+
+// M64: obra feita para vender já nasce pronta; a de uso interno passa antes por uma obra de adaptação (com aviso).
+test('obra para vender (marcada na ideia): começa direto; uso interno: avisa e só começa pedindo a adaptação à linha', async () => {
+  const raiz = raizCom('ponto', 'estoque')
+  fs.mkdirSync(path.join(raiz, 'ponto', 'prototipo'), { recursive: true })
+  fs.writeFileSync(path.join(raiz, 'estoque', 'prototipo', 'relato.md'), 'controle do estoque da minha loja')
+  const pedidos = []
+  const l = criarLancamento({ raiz, pedirConstrucao: async (pasta, texto) => { pedidos.push({ pasta, texto }) } })
+  assert.equal((await l.estado('ponto')).paraVender, true)
+  assert.equal((await l.comecar('ponto')).comecado, true)
+  assert.equal(pedidos.length, 0)
+  assert.equal((await l.estado('estoque')).paraVender, false)
+  await assert.rejects(l.comecar('estoque'), /precisa-adaptar/)
+  const e = await l.comecar('estoque', { adaptar: true })
+  assert.equal(e.comecado, true)
+  assert.equal(e.adaptacao, 'pedida')
+  assert.equal(pedidos[0].pasta, 'estoque')
+  assert.match(pedidos[0].texto, /várias empresas/)
+  assert.match(pedidos[0].texto, /dados de hoje/)
 })

@@ -60,3 +60,14 @@ test('no fim, sugere um título curto para a obra (vira o nome da pasta; o nome 
   assert.equal((await i2.conferir('x', { fim: true })).titulo, '')
   assert.equal((await i2.conferir('x')).titulo, undefined, 'só no fim')
 })
+
+// M64 (Luiz, 25/11/2026): o Atlas deduz pela ideia se é para vender e confirma numa linha.
+test('no fim, diz se o sistema parece para vender a outras empresas (com o porquê); sem resposta = não sabe', async () => {
+  let r = await montar({ cobertos: [], faltam: [], titulo: 'Ponto', venda: { paraVender: true, motivo: 'Falou em empresas que vão assinar.' } }).ideia.conferir('x', { fim: true })
+  assert.deepEqual(r.venda, { paraVender: true, motivo: 'Falou em empresas que vão assinar.' })
+  r = await montar({ cobertos: [], faltam: [], titulo: 'Ponto' }).ideia.conferir('x', { fim: true })
+  assert.equal(r.venda, null)
+  const { chamadas, ideia } = montar({ cobertos: [], faltam: [] })
+  await ideia.conferir('x', { fim: true })
+  assert.match(String(chamadas[0].o.entrada), /"venda"/)
+})
