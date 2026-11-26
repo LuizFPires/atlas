@@ -5,6 +5,7 @@ import { DominioProprio } from './DominioProprio'
 import { Lojas } from './Lojas'
 import type { Guia } from './guias-site'
 import type { ContaLoja, PonteLojas } from './ponte-lojas'
+import type { DestinoSite } from './ponte-publicar'
 import type { EstadoDominio, PonteDominio } from './ponte-dominio'
 import { PASSOS_NO_AR, explicarErro, type EstadoNoAr, type PonteNoAr, type SituacaoNomeNoAr } from './ponte-no-ar'
 import './colocar-no-ar.css'
@@ -37,6 +38,7 @@ interface Props {
   lojas?: PonteLojas
   onGuiaLojas?: (guia: Guia, conta?: ContaLoja) => void
   lojasAberto?: boolean
+  abrirSiteLojas?: (destino: DestinoSite) => Promise<void>
 }
 
 type Tela = 'pronta' | 'endereco'
@@ -48,7 +50,7 @@ const ICONE_OK = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
  * O endereço já vem escolhido e as contas são as ligadas no começo da obra: o cliente só aperta "Colocar no ar".
  * Daí em diante o Atlas faz sozinho (vistoria, banco, publicação, GitHub, teste) e a tela só acompanha.
  */
-export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro, onGuiaRegistro, dominioAberto = false, lojas, onGuiaLojas, lojasAberto = false }: Props) {
+export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro, onGuiaRegistro, dominioAberto = false, lojas, onGuiaLojas, lojasAberto = false, abrirSiteLojas }: Props) {
   const [vendoDominio, setVendoDominio] = useState(dominioAberto)
   const [vendoLojas, setVendoLojas] = useState(lojasAberto)
   const [enderecoDominio, setEnderecoDominio] = useState<string | null>(null)
@@ -224,7 +226,7 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
             <DominioProprio pasta={obra.pasta} dominio={dominio} sugestao={estado?.nome ?? nome} abrirRegistro={abrirRegistro ?? (async () => {})} onNoAr={setEnderecoDominio} onVoltar={() => setVendoDominio(false)} onAjuda={onAjuda} onAbrirGuia={onGuiaRegistro} intervaloMs={Math.max(intervaloMs, 30)} />
           )}
           {noArAgora && vendoLojas && lojas && onGuiaLojas && (
-            <Lojas pasta={obra.pasta} appNome={obra.nome} lojas={lojas} onGuia={onGuiaLojas} dominio={enderecoDominio ? enderecoDominio.replace(/^https:\/\//, '') : null} onVoltar={() => setVendoLojas(false)} />
+            <Lojas pasta={obra.pasta} appNome={obra.nome} lojas={lojas} onGuia={onGuiaLojas} dominio={enderecoDominio ? enderecoDominio.replace(/^https:\/\//, '') : null} onVoltar={() => setVendoLojas(false)} abrirSite={abrirSiteLojas} />
           )}
           {noArAgora && !vendoDominio && !vendoLojas && (
             <>

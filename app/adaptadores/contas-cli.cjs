@@ -10,7 +10,7 @@
 //    uma chave no site e cola aqui; o Atlas testa com o próprio Supabase e só então guarda no COFRE (DPAPI). Nunca vai a arquivo,
 //    log nem linha de comando: chega à linha de produção pelo ambiente (SUPABASE_ACCESS_TOKEN).
 //
-// FERRAMENTAS: o gh vem do instalador. Vercel e Supabase são instaladas pelo Atlas na pasta dele (<userData>\ferramentas), com
+// FERRAMENTAS: o gh vem do instalador. Vercel, Supabase e a EAS da Expo (lojas, M59) são instaladas pelo Atlas na pasta dele (<userData>\ferramentas), com
 // versão fixa, sem `-g`; a linha as recebe no PATH (o `npx` continua proibido para o Claude).
 //
 // COMO TESTAR: `node --test app/adaptadores/contas-cli.teste.cjs`. No Windows: Obra nova → … → As contas → Ligar: o código aparece,
@@ -55,7 +55,7 @@ function iniciarProcesso(cmd, args, { env, onTexto, onFim }) {
     parar: () => { try { p.kill() } catch { /* já saiu */ } },
   }
 }
-const VERSOES = { vercel: '66', supabase: '3' }
+const VERSOES = { vercel: '66', supabase: '3', eas: '27' }
 const RE_CODIGO = /\b([A-Z0-9]{4}-[A-Z0-9]{4})\b/
 const ENDERECO_FIXO = { github: 'https://github.com/login/device', hosp: 'https://vercel.com/device' }
 const ENDERECO_OK = {
@@ -104,6 +104,7 @@ function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = inic
   const viaNode = (script) => ({ cmd: execPath, pre: [path.join(pastaFerr, 'node_modules', ...script)], env: { ELECTRON_RUN_AS_NODE: '1' } })
   const vercel = () => viaNode(['vercel', 'dist', 'vc.js'])
   const supabase = () => viaNode(['supabase', 'dist', 'supabase.js'])
+  const easCli = () => viaNode(['eas-cli', 'bin', 'run'])
   const ferramentaDe = (conta) => (conta === 'github' ? gh() : vercel())
 
   const rodarCom = async (f, args, extra = {}, timeoutMs = 20_000, opcoes = {}) => {
@@ -117,10 +118,10 @@ function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = inic
     async instalarFerramentas() {
       fs.mkdirSync(pastaFerr, { recursive: true })
       const npm = plataforma === 'win32' ? 'npm.cmd' : 'npm'
-      const r = await rodarCom({ cmd: npm, pre: [], env: {} }, ['install', '--prefix', pastaFerr, '--no-audit', '--no-fund', `vercel@${VERSOES.vercel}`, `supabase@${VERSOES.supabase}`], {}, 300_000)
+      const r = await rodarCom({ cmd: npm, pre: [], env: {} }, ['install', '--prefix', pastaFerr, '--no-audit', '--no-fund', `vercel@${VERSOES.vercel}`, `supabase@${VERSOES.supabase}`, `eas-cli@${VERSOES.eas}`], {}, 300_000)
       return r.codigo === 0
     },
-    ferramentasProntas: () => existe(path.join(pastaFerr, 'node_modules', 'vercel', 'dist', 'vc.js')) && existe(path.join(pastaFerr, 'node_modules', 'supabase', 'dist', 'supabase.js')),
+    ferramentasProntas: () => existe(path.join(pastaFerr, 'node_modules', 'vercel', 'dist', 'vc.js')) && existe(path.join(pastaFerr, 'node_modules', 'supabase', 'dist', 'supabase.js')) && existe(path.join(pastaFerr, 'node_modules', 'eas-cli', 'bin', 'run')),
 
     estado: (conta) => estados[conta] || 'pendente',
 
@@ -203,9 +204,9 @@ function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = inic
 
     /** "Colocar no ar" (no-ar.cjs): roda a CLI da Vercel ou do Supabase do cliente na pasta da obra. Segredo só por `env`/`entrada`. */
     async rodarFerramenta(nome, args, { cwd, env: extra = {}, entrada = null, timeoutMs = 120_000 } = {}) {
-      if (nome !== 'vercel' && nome !== 'supabase') return { codigo: 1, saida: '' }
+      if (nome !== 'vercel' && nome !== 'supabase' && nome !== 'eas') return { codigo: 1, saida: '' }
       if (!Array.isArray(args) || !args.every((a) => typeof a === 'string')) return { codigo: 1, saida: '' }
-      const f = nome === 'vercel' ? vercel() : supabase()
+      const f = nome === 'vercel' ? vercel() : nome === 'eas' ? easCli() : supabase()
       return rodarCom(f, args, nome === 'vercel' ? { CI: '1', ...extra } : extra, timeoutMs, { cwd, entrada })
     },
 

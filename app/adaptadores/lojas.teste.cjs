@@ -82,3 +82,92 @@ test('convite dos testadores: só grupo do Google; pede ao servidor com o opt-in
   const t = await l.testadores('ponto')
   assert.equal(t.pessoas, 9)
 })
+
+// ---- M59 parte 2: montar a versão de app e mandar para os testes das lojas ----------------------------------------------------
+const ASC = { keyId: 'ABC123DEF4', issuerId: '69a6de70-03db-47e3-e053-5b8c7c11a4d1', teamId: 'A1B2C3D4E5', p8: P8 }
+
+function comEnvio(over = {}) {
+  const base = deps()
+  const eas = []
+  const pedidos = []
+  let rodando = false
+  const status = { ios: 'IN_PROGRESS', android: 'IN_PROGRESS' }
+  const d = {
+    ...base.d,
+    pedirConstrucao: async (pasta, texto) => { pedidos.push(texto); rodando = true; fs.mkdirSync(path.join(base.d.raiz, pasta, 'apps', 'mobile'), { recursive: true }); fs.writeFileSync(path.join(base.d.raiz, pasta, 'apps', 'mobile', 'app.json'), '{}'); fs.writeFileSync(path.join(base.d.raiz, pasta, 'apps', 'mobile', 'eas.json'), '{}'); rodando = false },
+    linhaRodando: () => rodando,
+    eas: async (args, o) => {
+      const p8 = o.env.EXPO_ASC_API_KEY_PATH ? fs.readFileSync(o.env.EXPO_ASC_API_KEY_PATH, 'utf8') : null
+      eas.push({ args, cwd: o.cwd, env: { ...o.env }, p8 })
+      if (args[0] === 'build') return { codigo: 0, saida: JSON.stringify([{ id: 'b-ios', platform: 'IOS' }, { id: 'b-and', platform: 'ANDROID' }]) }
+      if (args[0] === 'build:view') {
+        const ios = args[1] === 'b-ios'
+        const st = ios ? status.ios : status.android
+        if (st === 'IN_PROGRESS') status[ios ? 'ios' : 'android'] = 'FINISHED'
+        return { codigo: 0, saida: JSON.stringify({ id: args[1], status: st, artifacts: { buildUrl: ios ? 'https://expo.dev/artifacts/eas/x.ipa' : 'https://expo.dev/artifacts/eas/abc.aab' } }) }
+      }
+      if (args[0] === 'submit') return { codigo: 0, saida: '' }
+      return { codigo: 1, saida: '' }
+    },
+    esperar: async () => {},
+    avisar: async () => {},
+    ...over,
+  }
+  return { ...base, d, eas, pedidos }
+}
+
+test('montar sem a conta da Expo: não começa (o Atlas diz o que falta)', async () => {
+  const { d } = comEnvio()
+  await assert.rejects(criarLojas(d).montar('ponto'), /falta-expo/)
+})
+
+test('montar: pede a versão de app à linha, monta na nuvem, manda o iPhone ao TestFlight e deixa o 1º envio do Google com o cliente', async () => {
+  const { d, eas, pedidos, cofre } = comEnvio()
+  const l = criarLojas(d)
+  await l.guardarTokenExpo('E'.repeat(40))
+  await l.escolher('ponto', 'pessoa')
+  await l.guardarChaveAsc('ponto', ASC)
+  await l.montar('ponto')
+  await l._esperar('ponto')
+  assert.match(pedidos[0], /corretor/)
+  assert.match(pedidos[0], /NÃO rode o build/)
+  const build = eas.find((c) => c.args[0] === 'build')
+  assert.deepEqual(build.args, ['build', '--platform', 'all', '--profile', 'production', '--non-interactive', '--no-wait', '--json'])
+  assert.equal(build.cwd, path.join(d.raiz, 'ponto', 'apps', 'mobile'))
+  assert.equal(build.env.EXPO_TOKEN, 'E'.repeat(40))
+  assert.equal(build.env.EXPO_APPLE_TEAM_ID, 'A1B2C3D4E5')
+  assert.equal(build.env.EXPO_APPLE_TEAM_TYPE, 'INDIVIDUAL')
+  assert.match(build.p8, /BEGIN PRIVATE KEY/)
+  assert.ok(!fs.existsSync(build.env.EXPO_ASC_API_KEY_PATH), 'a chave temporária é apagada')
+  assert.ok(!build.env.EXPO_ASC_API_KEY_PATH.startsWith(d.raiz), 'a chave nunca vai para a pasta da obra')
+  assert.deepEqual(eas.find((c) => c.args[0] === 'submit').args, ['submit', '--platform', 'ios', '--id', 'b-ios', '--non-interactive'])
+  const e = await l.estado('ponto')
+  assert.equal(e.envio.fase, 'google-primeiro')
+  assert.equal(e.envio.ios, 'testflight')
+  assert.equal(e.envio.aab, true)
+  assert.doesNotMatch(fs.readFileSync(path.join(d.raiz, 'ponto', '.atlas', 'lojas.json'), 'utf8'), /PRIVATE|EEEE/)
+  void cofre
+})
+
+test('build que falhou na nuvem = erro honesto, com o passo', async () => {
+  const { d } = comEnvio({ eas: async (args) => (args[0] === 'build' ? { codigo: 1, saida: 'Error: credentials' } : { codigo: 0, saida: '' }) })
+  const l = criarLojas(d)
+  await l.guardarTokenExpo('E'.repeat(40))
+  await l.montar('ponto')
+  await l._esperar('ponto')
+  const e = await l.estado('ponto')
+  assert.equal(e.envio.fase, 'erro')
+  assert.equal(e.envio.erro, 'eas-build')
+})
+
+test('o 1º envio do Google é do cliente; marcado, a versão fica no teste das duas lojas', async () => {
+  const { d } = comEnvio()
+  const l = criarLojas(d)
+  await l.guardarTokenExpo('E'.repeat(40))
+  await l.guardarChaveAsc('ponto', ASC)
+  await l.montar('ponto')
+  await l._esperar('ponto')
+  assert.equal(await l.linkAab('ponto'), 'https://expo.dev/artifacts/eas/abc.aab')
+  await l.googleEnviado('ponto')
+  assert.equal((await l.estado('ponto')).envio.fase, 'teste')
+})
