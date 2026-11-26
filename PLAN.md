@@ -635,11 +635,11 @@ Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1
 peso: 3
 spec: S18
 tela: prototipo/caminho-novo/PB10GuiaRegistro.dc.html
-- [ ] Guia de passos com o site de verdade aberto dentro do Atlas: uma frase por passo, o botão certo piscando, tradução de cada palavra técnica e botões "Copiar"
-- [ ] O Atlas olha a página e passa ao próximo passo sozinho quando vê que deu certo
-- [ ] Guias prontos: Registro.br (7 passos), conta da Apple pelo iPhone (6), conta do Google Play (6), conta do Stripe e conta do Asaas
+- [x] Guia de passos com o site de verdade aberto dentro do Atlas: uma frase por passo, o botão certo piscando, tradução de cada palavra técnica e botões "Copiar"
+- [x] O Atlas olha a página e passa ao próximo passo sozinho quando vê que deu certo
+- [x] Guias prontos: Registro.br (7 passos), conta da Apple pelo iPhone (6), conta do Google Play (6), conta do Stripe e conta do Asaas
 - [ ] "Falar com o Atlas" em todo passo: já sabe a tela e o passo; aceita voz, texto, print e foto do celular; responde o que fazer (ex.: "Pesquisa recusada")
-Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Pedido do Luiz (25/11/2026, "explicar como se o usuário tivesse 5 anos ... clique por clique" e "pelo Fale com o Atlas ... mandar o print, o Atlas ler e responder ... 100% cercado"). Os nomes dos botões de cada site são conferidos no site real na implementação (os sites mudam). O Atlas nunca digita senha, código ou cartão.
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Pedido do Luiz (25/11/2026, "explicar como se o usuário tivesse 5 anos ... clique por clique" e "pelo Fale com o Atlas ... mandar o print, o Atlas ler e responder ... 100% cercado"). Os nomes dos botões de cada site são conferidos no site real na implementação (os sites mudam). O Atlas nunca digita senha, código ou cartão. Andamento (25/11/2026): Registro.br, Stripe e Asaas abrem dentro do Atlas (o navegador isolado das contas); o passo anda sozinho pelo endereço da página e volta se o site pedir login de novo; o último passo do Registro.br fecha sozinho quando o Atlas vê a troca. Google abre no navegador do computador (o Google bloqueia login dentro de outros apps) e Apple é no iPhone (QR do app Apple Developer). "Falar com o Atlas" leva o passo, o botão certo, os problemas comuns do site (ex.: "Pesquisa recusada") e o print do próprio site. Hoje só o Registro.br está ligado a uma tela (domínio próprio); Apple e Google entram no M59 e Stripe e Asaas no M60. Falta: foto tirada no celular direto para a Ajuda (hoje: print, imagem do computador, voz e texto) e conferir os nomes dos botões nos sites reais.
 
 ## Milestone 59 — Lojas: App Store e Google Play
 peso: 3

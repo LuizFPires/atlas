@@ -94,3 +94,35 @@ test('ligar as contas: abre o endereço que o Atlas recebeu da CLI só se for de
   await assert.rejects(nav.abrirEndereco('https://vercel.com/device', { x: -1 }), /posicao-invalida/)
   assert.equal(views[0].carregados.length, 1)
 })
+
+// M58: guias com o site de verdade ao lado (Registro.br, Stripe, Asaas). Google e Apple não abrem aqui dentro.
+test('guias: o endereço inicial é fixo e só abre o site do guia', () => {
+  const { GUIAS_SITE } = require('./navegador.cjs')
+  assert.deepEqual(Object.keys(GUIAS_SITE).sort(), ['asaas', 'registro', 'stripe'])
+  for (const u of Object.values(GUIAS_SITE)) assert.equal(urlPermitida(u), true, u)
+  assert.equal(urlPermitida('https://registro.br/painel/'), true)
+  assert.equal(urlPermitida('https://www.asaas.com/onboarding/createAccount'), true)
+  assert.equal(urlPermitida('https://registro.br.evil.com/'), false)
+  assert.equal(urlPermitida('https://play.google.com/console'), false)
+})
+
+test('abrirGuia: carrega o site do guia e avisa cada página com o guia (para o passo andar sozinho)', async () => {
+  const { nav, views, avisos } = falso()
+  await nav.abrirGuia('registro', { x: 1, y: 2, width: 300, height: 400 })
+  assert.equal(views[0].carregados[0], 'https://registro.br/painel/')
+  await new Promise((r) => setImmediate(r))
+  views[0].emitir('did-navigate-in-page', {}, 'https://registro.br/painel/dominios/pontoampla.com.br')
+  await new Promise((r) => setImmediate(r))
+  assert.deepEqual(avisos.at(-1), { guia: 'registro', url: 'https://registro.br/painel/dominios/pontoampla.com.br', pronta: false })
+  await assert.rejects(nav.abrirGuia('google', { x: 1, y: 2, width: 3, height: 4 }), /guia-invalido/)
+})
+
+test('capturar: só a página que está à mostra; escondida ou fechada = null', async () => {
+  const { nav, views } = falso()
+  assert.equal(await nav.capturar(), null)
+  await nav.abrirGuia('stripe', { x: 1, y: 2, width: 300, height: 400 })
+  views[0].capturar = async () => Buffer.from('png')
+  assert.equal(String(await nav.capturar()), 'png')
+  nav.mostrar(false)
+  assert.equal(await nav.capturar(), null)
+})

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { predioSvg } from '../celular/predio'
 import { caminhoQr, enderecoDoSistema, linkWhatsapp, matrizQr, recadoEquipe } from './entrega-dados'
 import { DominioProprio } from './DominioProprio'
-import type { PonteDominio } from './ponte-dominio'
+import type { EstadoDominio, PonteDominio } from './ponte-dominio'
 import { PASSOS_NO_AR, explicarErro, type EstadoNoAr, type PonteNoAr, type SituacaoNomeNoAr } from './ponte-no-ar'
 import './colocar-no-ar.css'
 
@@ -26,6 +26,10 @@ interface Props {
   /** Domínio próprio (M57): com a ponte, "Usar meu domínio" abre aqui mesmo, ao lado do prédio. */
   dominio?: PonteDominio
   abrirRegistro?: () => Promise<void>
+  /** M58: o passo a passo do Registro.br com o site ao lado. */
+  onGuiaRegistro?: (estado: EstadoDominio) => void
+  /** Volta do passo a passo direto no domínio próprio. */
+  dominioAberto?: boolean
 }
 
 type Tela = 'pronta' | 'endereco'
@@ -37,8 +41,8 @@ const ICONE_OK = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
  * O endereço já vem escolhido e as contas são as ligadas no começo da obra: o cliente só aperta "Colocar no ar".
  * Daí em diante o Atlas faz sozinho (vistoria, banco, publicação, GitHub, teste) e a tela só acompanha.
  */
-export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro }: Props) {
-  const [vendoDominio, setVendoDominio] = useState(false)
+export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro, onGuiaRegistro, dominioAberto = false }: Props) {
+  const [vendoDominio, setVendoDominio] = useState(dominioAberto)
   const [enderecoDominio, setEnderecoDominio] = useState<string | null>(null)
   useEffect(() => {
     if (!dominio) return
@@ -209,7 +213,7 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
           )}
 
           {noArAgora && vendoDominio && dominio && (
-            <DominioProprio pasta={obra.pasta} dominio={dominio} sugestao={estado?.nome ?? nome} abrirRegistro={abrirRegistro ?? (async () => {})} onNoAr={setEnderecoDominio} onVoltar={() => setVendoDominio(false)} onAjuda={onAjuda} intervaloMs={Math.max(intervaloMs, 30)} />
+            <DominioProprio pasta={obra.pasta} dominio={dominio} sugestao={estado?.nome ?? nome} abrirRegistro={abrirRegistro ?? (async () => {})} onNoAr={setEnderecoDominio} onVoltar={() => setVendoDominio(false)} onAjuda={onAjuda} onAbrirGuia={onGuiaRegistro} intervaloMs={Math.max(intervaloMs, 30)} />
           )}
           {noArAgora && !vendoDominio && (
             <>

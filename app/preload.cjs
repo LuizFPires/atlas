@@ -100,9 +100,12 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     voltar: () => chamar('atlas:navegador:voltar'),
     recarregar: () => chamar('atlas:navegador:recarregar'),
     fora: (conta) => chamar('atlas:navegador:fora', String(conta)),
+    // M58: guias com o site ao lado; só o NOME do guia (o endereço é fixo no processo principal).
+    abrirGuia: (guia, b) => chamar('atlas:navegador:guia', String(guia), { x: Number(b?.x), y: Number(b?.y), width: Number(b?.width), height: Number(b?.height) }),
+    foraGuia: (guia) => chamar('atlas:navegador:guiaFora', String(guia)),
     fechar: () => chamar('atlas:navegador:fechar'),
     aoMudarPagina: (f) => {
-      const ouvir = (_e, d) => { if (typeof f === 'function' && d && typeof d === 'object') f({ conta: String(d.conta), url: String(d.url), pronta: d.pronta === true }) }
+      const ouvir = (_e, d) => { if (typeof f === 'function' && d && typeof d === 'object') f({ ...(typeof d.guia === 'string' ? { guia: d.guia } : { conta: String(d.conta) }), url: String(d.url), pronta: d.pronta === true }) }
       ipcRenderer.on('atlas:navegador:pagina', ouvir)
       return () => ipcRenderer.removeListener('atlas:navegador:pagina', ouvir)
     },
