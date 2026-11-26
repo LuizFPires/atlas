@@ -34,6 +34,12 @@ describe('/status-obras/publicar — autenticação', () => {
     expect((await publicar(pedido([obra()], { licenca_id: 'l2' }))).status).toBe(200)
     expect(m.store.statusObras.map((s) => s.licenca_id)).toEqual(['l1'])
   })
+  it('aceita o andamento com 2 casas decimais (igual ao notebook) e arredonda o que vier a mais', async () => {
+    const { m, publicar, pedido } = await preparar()
+    expect((await publicar(pedido([obra({ percentual: 2.72 }), obra({ id: 'o2', percentual: 50.555, ativa_agora: false })]))).status).toBe(200)
+    expect(m.store.statusObras.find((s) => s.obra_id === 'o1')!.percentual).toBe(2.72)
+    expect(m.store.statusObras.find((s) => s.obra_id === 'o2')!.percentual).toBe(50.56)
+  })
   it('limita a frequência por licença, com folga para o notebook mandar o andamento a cada 30 s (mais as pausas)', async () => {
     const { publicar, pedido } = await preparar()
     const status: number[] = []
@@ -47,7 +53,7 @@ describe('/status-obras/publicar — validação, sanitização e substituição
   it('recusa estado, percentual e formato inválidos (nada parcial)', async () => {
     const { m, publicar, pedido } = await preparar()
     for (const ruim of [
-      [obra({ estado: 'explodindo' })], [obra({ percentual: 101 })], [obra({ percentual: -1 })], [obra({ percentual: 50.5 })],
+      [obra({ estado: 'explodindo' })], [obra({ percentual: 101 })], [obra({ percentual: -1 })], [obra({ percentual: Number.NaN })],
       [obra({ nome: '   ' })], [obra({ id: '../etc' })], [obra(), obra()], [obra(), obra({ id: 'o2', percentual: 'x' })], 'texto',
       Array.from({ length: 21 }, (_, i) => obra({ id: `o${i}` })),
     ]) expect((await publicar(pedido(ruim))).status).toBe(400)

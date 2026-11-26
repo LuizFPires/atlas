@@ -35,6 +35,11 @@ export function limparTexto(v: unknown, max: number): string {
 }
 
 const invalido = () => new ErroRegra('status_invalido', 'Status das obras inválido.', 400)
+/** Andamento de 0 a 100 com até 2 casas (igual ao notebook: 2,72%). Mais casas são arredondadas. */
+const percentual = (v: unknown): number => {
+  if (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > 100) throw invalido()
+  return Math.round(v * 100) / 100
+}
 const inteiro = (v: unknown, min: number, max: number): number => {
   if (typeof v !== 'number' || !Number.isInteger(v) || v < min || v > max) throw invalido()
   return v
@@ -64,7 +69,7 @@ export function validarObras(entrada: unknown, agora: Date): StatusObraLinha[] {
       etapa_atual_numero: inteiro(e.numero, 0, 1000),
       etapa_atual_rotulo: limparTexto(e.rotulo, 80),
       total_etapas: inteiro(o.total_etapas, 0, 1000),
-      percentual: inteiro(o.percentual, 0, 100),
+      percentual: percentual(o.percentual),
       estado: o.estado as EstadoObra,
       ativa_agora: ativa,
       ultima_noticia: limparTexto(o.ultima_noticia, 280),

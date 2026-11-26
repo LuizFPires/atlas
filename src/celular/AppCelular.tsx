@@ -9,6 +9,7 @@ import { Monograma } from '../marca/Marca'
 import canteiro from '../assets/canteiro-3d.jpg'
 import type { ObraStatus } from '../web/obras-status'
 import type { ApiCelular, EstadoCelular, PedidoResumo, Projeto, Visual } from './api'
+import { textoAvanco } from '../app/avanco'
 import { ambienteDoNavegador, ligarAvisos, situacaoDosAvisos, type SituacaoAvisos } from './avisos'
 import { semFaceId, type FaceId } from './faceid'
 import { predioSvg } from './predio'
@@ -198,7 +199,7 @@ function Obras({ api, estado, obras, nome, onNova, onAbrirObra, onAbrirProjeto, 
               <span className={`cel-selo ${o.selo.classe}`}>{o.selo.texto}</span>
             </span>
             <span className="cel-barra" aria-hidden="true"><span style={{ width: `${o.pct}%` }} /></span>
-            <span className="cel-sub" style={{ justifyContent: 'space-between' }}><span>{o.quando}</span><span style={{ fontFamily: "'Geist Mono', monospace", color: 'var(--text)' }}>{o.pct}%</span></span>
+            <span className="cel-sub" style={{ justifyContent: 'space-between' }}><span>{o.quando}</span><span style={{ fontFamily: "'Geist Mono', monospace", color: 'var(--text)' }}>{textoAvanco(o.pct)}%</span></span>
           </button>
         ))}
         {lista[aba].length === 0 && <div className="cel-vazio">{vazios[aba]}</div>}
@@ -500,7 +501,7 @@ function ObraTela({ obra, projeto, pedido, onVoltar, onPausar, onContinuar }: { 
       <div className="cel-corpo cel-obra">
         <section className="cel-predio" aria-label="O prédio da obra">
           <img src={predioUrl} alt={`O prédio: ${prontos} de ${total} andares prontos${obra && obra.estado !== 'pronta' ? `, o ${prontos + 1}º em obra` : ''}`} />
-          <div className="cel-predio-pct"><span>{pct}%</span><small>{total ? `ANDARES · ${prontos} DE ${total} ${prontos === 1 ? 'PRONTO' : 'PRONTOS'}` : 'PREPARANDO O CANTEIRO'}</small></div>
+          <div className="cel-predio-pct"><span>{textoAvanco(pct)}%</span><small>{total ? `ANDARES · ${prontos} DE ${total} ${prontos === 1 ? 'PRONTO' : 'PRONTOS'}` : 'PREPARANDO O CANTEIRO'}</small></div>
         </section>
         {obra && (obra.estado === 'aguardando_aprovacao' || /Precisa de você/.test(obra.ultima_noticia)) && (
           <div className="cel-cartao cel-cartao--aviso">
@@ -619,7 +620,12 @@ export function AppCelular({ api, intervalo = 4000, faceId = semFaceId }: { api:
     void (async () => { await atualizar() })()
     void api.nome().then((n) => { if (viva.current) setNome(n) }, () => {})
     const t = setInterval(() => void atualizar(), intervalo)
-    return () => { viva.current = false; clearInterval(t) }
+    // Luiz, 26/11/2026: abriu o app (ou voltou para ele depois de fechar), busca o andamento na hora.
+    const voltou = () => { if (document.visibilityState !== 'hidden') void atualizar() }
+    document.addEventListener('visibilitychange', voltou)
+    window.addEventListener('pageshow', voltou)
+    window.addEventListener('focus', voltou)
+    return () => { viva.current = false; clearInterval(t); document.removeEventListener('visibilitychange', voltou); window.removeEventListener('pageshow', voltou); window.removeEventListener('focus', voltou) }
   }, [logado, api, atualizar, intervalo])
 
   const pedir = async (tipo: Parameters<ApiCelular['pedir']>[0], id: string | null, dados: object = {}) => {

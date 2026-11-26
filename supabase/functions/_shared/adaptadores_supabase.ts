@@ -54,7 +54,7 @@
 //   trocasDa                   SELECT trocas_computador (licenca_id,de_hash,para_hash,feita_em,por_admin) WHERE licenca_id
 //   inserirEntrega             INSERT entregas_kit
 //   inserirOcorrencia          INSERT ocorrencias_admin (cliente_id,tipo,descricao,autor,resolvida,criada_em)
-//   substituirStatusObras / statusObrasDaLicenca   RPC substituir_status_obras (0022) / SELECT status_obras WHERE licenca_id
+//   substituirStatusObras / statusObrasDaLicenca   RPC substituir_status_obras (0022; 2 casas no 0035) / SELECT status_obras WHERE licenca_id
 //   salvarPersonalizacao / personalizacaoDaLicenca   UPSERT / SELECT personalizacao_app (0024) por licenca_id
 //   contaGateway               SELECT contas_gateway (id,conta_stripe_id,segredo_ref,modo,base_retorno) WHERE id  [só a referência do segredo]
 //   registrarEventoGateway     INSERT eventos_gateway; violação de PK (23505) = já visto = false
@@ -325,11 +325,16 @@ export function criarStoreSupabase() {
 
     // ── status das obras (M30, relay) ──
     async substituirStatusObras(licencaId: string, obras: any[], agora: Date) {
-      await rpc('substituir_status_obras', { p_licenca: licencaId, p_obras: obras.map((o) => ({ ...o, ultima_noticia_em: iso(o.ultima_noticia_em) })), p_agora: iso(agora) })
+      const enviar = (lista: any[]) => rpc('substituir_status_obras', { p_licenca: licencaId, p_obras: lista.map((o) => ({ ...o, ultima_noticia_em: iso(o.ultima_noticia_em) })), p_agora: iso(agora) })
+      try { await enviar(obras) } catch (e) {
+        // Enquanto a migration 0035 (2 casas) não estiver no banco, a coluna é inteira: manda arredondado em vez de falhar.
+        if (!/22P02/.test(String((e as Error)?.message))) throw e
+        await enviar(obras.map((o) => ({ ...o, percentual: Math.floor(o.percentual) })))
+      }
     },
     async statusObrasDaLicenca(licencaId: string) {
       const linhas = await ler(() => t('status_obras').select('obra_id,nome,segmento,etapa_atual_numero,etapa_atual_rotulo,total_etapas,percentual,estado,ativa_agora,ultima_noticia,ultima_noticia_em').eq('licenca_id', licencaId).order('obra_id'), 100)
-      return linhas.map((r: any) => ({ ...r, segmento: r.segmento ?? null, ultima_noticia_em: new Date(r.ultima_noticia_em) }))
+      return linhas.map((r: any) => ({ ...r, percentual: Number(r.percentual), segmento: r.segmento ?? null, ultima_noticia_em: new Date(r.ultima_noticia_em) }))
     },
 
     // ── personalização do app pronto (M32 b) ──
