@@ -612,6 +612,14 @@ function Cortesia({ api, aoMudar }: { api: AdminApi; aoMudar?: () => void }) {
   // E-mail que não saiu: guarda para quem reenviar e a data, para o aviso de atenção.
   const [falhou, setFalhou] = useState<{ email: string; ate: string } | null>(null)
   const [enviando, setEnviando] = useState(false)
+  // O mesmo link do e-mail, para copiar e mandar pelo WhatsApp (o e-mail pode cair no spam; Luiz, 26/11/2026).
+  const [link, setLink] = useState<string | null>(null)
+  const [copiado, setCopiado] = useState<'nao' | 'sim' | 'falhou'>('nao')
+  const mostrarLink = (l: string | null | undefined) => { setLink(typeof l === 'string' && /^https:\/\//.test(l) ? l : null); setCopiado('nao') }
+  const copiar = async () => {
+    if (!link) return
+    try { await navigator.clipboard.writeText(link); setCopiado('sim') } catch { setCopiado('falhou') }
+  }
   const hoje = new Date()
   const reenviar = async () => {
     if (!falhou || enviando) return
@@ -620,15 +628,17 @@ function Cortesia({ api, aoMudar }: { api: AdminApi; aoMudar?: () => void }) {
     try {
       const r = await api.reenviarCortesia(falhou.email)
       if (!r.ok) { setErro(r.mensagem); return }
+      mostrarLink(r.link)
       if (r.email_enviado) { setFalhou(null); setMsg(`E-mail reenviado para ${falhou.email}. A cortesia vale até ${falhou.ate}.`) }
       else setErro('O e-mail ainda não saiu. Confira a chave de e-mail do servidor e tente de novo.')
     } finally { setEnviando(false) }
   }
   const confirmar = async (ev: React.FormEvent) => {
-    ev.preventDefault(); setErro(''); setMsg(''); setFalhou(null)
+    ev.preventDefault(); setErro(''); setMsg(''); setFalhou(null); setLink(null)
     if (!cortesia.data) { setErro('Escolha até quando a cortesia vale.'); return }
     const r = await api.liberarCortesia(cortesia.email, fimDoDiaBrasilia(cortesia.data))
     if (!r.ok) { setErro(r.mensagem); return } // erro honesto: nada foi liberado
+    mostrarLink(r.link)
     const para = cortesia.email.trim().toLowerCase()
     const base = `${r.nova ? 'Cortesia liberada' : 'Cortesia renovada'} para ${para} até ${dia(r.validade_em)}.`
     if (r.email_enviado) setMsg(`${base} Avisamos a pessoa por e-mail com o link pra instalar. Avise a pessoa: se não achar, olhar nas abas Promoções e Atualizações do Gmail e no spam.`)
@@ -651,6 +661,16 @@ function Cortesia({ api, aoMudar }: { api: AdminApi; aoMudar?: () => void }) {
           <div role="status" className="ad-linha">
             <p className="ad-aviso-msg" style={{ borderColor: 'var(--aviso)' }}>Cortesia liberada para {falhou.email} até {falhou.ate}, mas o e-mail não saiu — confira a chave de e-mail do servidor.</p>
             <button type="button" className="ad-botao ad-botao--aviso" onClick={reenviar} disabled={enviando}>{enviando ? 'Enviando…' : 'Reenviar e-mail'}</button>
+          </div>
+        )}
+        {link && (
+          <div className="ad-link-cortesia">
+            <span className="ad-mute2">Link para instalar (mande pelo WhatsApp se o e-mail não chegar). Ele funciona uma vez; se você gerar outro, só o mais novo vale.</span>
+            <code className="ad-link-texto">{link}</code>
+            <div className="ad-linha">
+              <button type="button" className="ad-botao" onClick={() => void copiar()}>{copiado === 'sim' ? 'Link copiado ✓' : 'Copiar link'}</button>
+            </div>
+            {copiado === 'falhou' && <p role="alert" className="ad-erro">Não consegui copiar sozinho (o navegador bloqueou). Selecione o link acima e copie com Ctrl+C.</p>}
           </div>
         )}
         {erro && <p role="alert" className="ad-erro">{erro}</p>}

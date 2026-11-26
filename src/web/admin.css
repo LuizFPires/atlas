@@ -183,3 +183,7 @@ button.ad-rank-linha:focus-visible { outline: 2px solid var(--lime); outline-off
 .ad-st { white-space: nowrap; }
 .ad-sit { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
 .ad-sit small { font-size: 12px; white-space: nowrap; }
+
+/* Link da cortesia para copiar (o e-mail pode cair no spam). */
+.ad-link-cortesia { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+.ad-link-texto { display: block; padding: 10px 12px; border-radius: 10px; background: var(--card2, rgba(255,255,255,.04)); border: 1px solid var(--card-b); font: 500 12px var(--font-mono); word-break: break-all; user-select: all; }
