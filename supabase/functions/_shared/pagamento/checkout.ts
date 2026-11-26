@@ -43,7 +43,8 @@ export interface PedidoCheckout {
 /** URLs de retorno montadas no servidor a partir da origem https cadastrada na conta. A requisição não influencia. */
 function urlsDeRetorno(base: string | null | undefined, origem?: 'app', mercado: Mercado = 'br') {
   let u: URL | null
-  try { u = base ? new URL(base) : null } catch { u = null }
+  // Endereço provisório da Vercel (*.vercel.app) nunca aparece para quem paga: volta para o domínio próprio (26/11/2026).
+  try { u = base ? new URL(/^https:\/\/[^/]+\.vercel\.app(\/|$)/i.test(base) ? 'https://atlas-ia.app.br' : base) : null } catch { u = null }
   if (!u || u.protocol !== 'https:' || u.username || u.password || u.origin === 'null') {
     throw new ErroRegra('retorno_nao_configurado', 'As vendas estão fechadas por um ajuste do nosso lado. Nada foi cobrado. Tente de novo mais tarde.', 503)
   }
