@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import { TemaProvider } from '../tema/tema'
 import { PaginaLegal } from './Legal'
 import { Markdown } from './Markdown'
-import { idLegalDoCaminho } from './textos-legais'
+import { DOCS_LEGAIS, DOCS_LEGAIS_EN, idiomaLegalDoCaminho, idLegalDoCaminho } from './textos-legais'
 import { Vendas } from './Vendas'
 
 test('as rotas /privacidade, /termos e /licenca existem; outras não', () => {
@@ -38,4 +38,37 @@ test('o Markdown nunca vira HTML: tags e scripts aparecem como texto', () => {
   expect(container.querySelector('img')).toBeNull()
   expect(container.textContent).toContain('<script>alert(1)</script>')
   expect(container.querySelector('strong')?.textContent).toBe('forte')
+})
+
+describe('textos legais em inglês (M31)', () => {
+  test('rotas /en/terms, /en/license e /en/privacy existem e mostram o texto em inglês, com o aviso de tradução', () => {
+    expect(idLegalDoCaminho('/en/terms')).toBe('termos')
+    expect(idLegalDoCaminho('/en/license')).toBe('licenca')
+    expect(idLegalDoCaminho('/en/privacy')).toBe('privacidade')
+    expect(idiomaLegalDoCaminho('/en/privacy')).toBe('en')
+    expect(idiomaLegalDoCaminho('/privacidade')).toBe('pt')
+    render(<TemaProvider><PaginaLegal id="privacidade" idioma="en" /></TemaProvider>)
+    expect(screen.getByRole('heading', { level: 1, name: 'Atlas Privacy Policy' })).toBeInTheDocument()
+    expect(document.body.textContent).toContain('the Portuguese original prevails')
+    expect(document.body.textContent).toContain('30.484.256/0001-82')
+    expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/en')
+  })
+
+  test('o rodapé em inglês leva aos textos em inglês, sem "(in Portuguese)"', () => {
+    render(<TemaProvider><Vendas idioma="en" onComprar={() => {}} /></TemaProvider>)
+    const rodape = screen.getByRole('contentinfo')
+    expect(within(rodape).getByRole('link', { name: 'Terms of use' })).toHaveAttribute('href', '/en/terms')
+    expect(within(rodape).getByRole('link', { name: 'Software license' })).toHaveAttribute('href', '/en/license')
+    expect(within(rodape).getByRole('link', { name: 'Privacy' })).toHaveAttribute('href', '/en/privacy')
+    expect(rodape.textContent).not.toContain('in Portuguese')
+  })
+
+  test('mesma versão e mesmas seções nos dois idiomas (a tradução não pode ficar para trás)', () => {
+    for (const id of ['termos', 'licenca', 'privacidade'] as const) {
+      const pt = DOCS_LEGAIS[id].md, en = DOCS_LEGAIS_EN[id].md
+      const versao = (t: string) => /(Versão|Version) (\d+\.\d+)/.exec(t)?.[2]
+      expect(versao(en)).toBe(versao(pt))
+      expect((en.match(/^## /gm) ?? []).length).toBe((pt.match(/^## /gm) ?? []).length)
+    }
+  })
 })

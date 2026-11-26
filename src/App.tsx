@@ -19,7 +19,7 @@ import { CompraPeloApp } from './web/CompraPeloApp'
 import { criarAdminApi } from './web/admin-api'
 import { criarAdminFixture } from './web/admin-fixture'
 import { PaginaLegal } from './web/Legal'
-import { idLegalDoCaminho } from './web/textos-legais'
+import { idiomaLegalDoCaminho, idLegalDoCaminho } from './web/textos-legais'
 import { criarFaceIdNavegador } from './celular/faceid'
 import { AppDesktop, noAppDesktop } from './app/AppDesktop'
 import { AppCelular } from './celular/AppCelular'
@@ -100,7 +100,7 @@ export default function App() {
   if (caminho === '/modelo/academia' && modoFixture()) return <Suspense fallback={null}><AppAcademia /></Suspense>
   // Textos legais públicos: privacidade, termos e licença do software.
   const legal = idLegalDoCaminho(caminho)
-  if (legal) return <PaginaLegal id={legal} />
+  if (legal) return <PaginaLegal id={legal} idioma={idiomaLegalDoCaminho(caminho)} />
   // M31: /en, o domínio de fora (use-atlas-ai.com) ou a bandeirinha guardada abrem a página em inglês.
   if (caminho === '/' || caminho === '/en') {
     // Veio pela bandeirinha do outro domínio (?idioma=pt|en): guarda a escolha aqui também.

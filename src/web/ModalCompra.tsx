@@ -5,7 +5,7 @@ import { prateleira } from './conteudo'
 import { iniciarCompra, juntarFalaEmail } from './compra'
 import { mascaraDocumento } from './documento'
 import { opcoesParcelas, planoDoTipo, reais, rotuloParcela } from './parcelas'
-import { DOCS_LEGAIS, VERSAO_TERMOS } from './textos-legais'
+import { DOCS_LEGAIS, DOCS_LEGAIS_EN, VERSAO_TERMOS } from './textos-legais'
 import { TEXTOS_VENDAS } from './textos-vendas'
 import type { Idioma } from '../i18n/idioma'
 
@@ -57,7 +57,7 @@ export function ModalCompra({ aberto, onFechar, segmento, abrirPagamento = (url)
             <p className="v-parcelas-nota">{segmento ? TEXTOS_VENDAS.en.precoPronto.avista : TEXTOS_VENDAS.en.preco.valorImplantacao}, one payment. The {TEXTOS_VENDAS.en.preco.valorMensal}/month plan is billed separately, starting in month 2.</p>
             <label className="v-consent">
               <input type="checkbox" checked={aceito} onChange={(e) => setAceito(e.target.checked)} />
-              <span>I have read and accept the <a href={DOCS_LEGAIS.privacidade.caminho} target="_blank" rel="noopener noreferrer" hrefLang="pt-BR">Privacy Policy</a> and the <a href={DOCS_LEGAIS.termos.caminho} target="_blank" rel="noopener noreferrer" hrefLang="pt-BR">Terms of Use</a> (in Portuguese for now).</span>
+              <span>I have read and accept the <a href={DOCS_LEGAIS_EN.privacidade.caminho} target="_blank" rel="noopener noreferrer">Privacy Policy</a> and the <a href={DOCS_LEGAIS_EN.termos.caminho} target="_blank" rel="noopener noreferrer">Terms of Use</a>.</span>
             </label>
             {erro && <p role="alert" className="v-erro">{erro}</p>}
             <button type="submit" className="v-acao" disabled={indo || !aceito}>{indo ? 'Opening the payment page…' : <>Go to payment <Icone nome="seta" /></>}</button>
