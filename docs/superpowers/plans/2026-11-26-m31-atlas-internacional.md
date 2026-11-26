@@ -36,14 +36,15 @@ supabase/tests), Stripe, Vercel (vercel.json).
 
 ### Task 1: Protótipo (o Luiz aprova antes de qualquer código de tela)
 
+Decisão do Luiz (26/11/2026): o idioma é escolhido na página de vendas e na compra e não muda mais depois; o app não tem troca de idioma.
+
 **Files:**
 - Create: `prototipo/F00VendasEN.dc.html` (cópia do F00 com todos os textos em inglês, escritos para americano, e o preço US$)
 - Modify: `prototipo/F00Vendas.dc.html` (bandeirinhas Brasil / EUA no topo, à direita do menu)
-- Create: `prototipo/caminho-novo/I1Idioma.dc.html` (no app: "Idioma" nas configurações, com Português e English)
 
 - [ ] Escrever o F00VendasEN com o mesmo layout e todas as seções. Tom: "a friend at a restaurant table", frases curtas.
 - [ ] Bandeirinhas: SVG de traço (nunca emoji), a ativa com borda lime, `aria-label` "Português (Brasil)" e "English (US)".
-- [ ] Publicar as 3 telas para o Luiz ver (artifact) e esperar o "aprovado". Registrar a aprovação nas Notas do M31.
+- [ ] Publicar as 2 telas para o Luiz ver (artifact) e esperar o "aprovado". Registrar a aprovação nas Notas do M31.
 - [ ] Commit: `M31: protótipo da página em inglês, bandeirinhas e idioma no app`.
 
 **Pergunta para o Luiz junto do protótipo:** a vitrine "Comece pronto" (apps prontos, R$ 7.300) aparece em inglês? Com
@@ -108,8 +109,7 @@ qual preço? Até ele decidir, ela fica fora do /en.
 
 ### Tasks 6–8 (cada uma ganha o seu plano detalhado quando chegar a vez)
 
-- **Task 6 — App e instaladores em inglês:** dicionário por área das ~70 telas, "Idioma" nas configurações (I1),
-  idioma vindo da licença na ativação; instaladores Windows (NSIS, `language` 1033) e Mac (DMG) em inglês; a página
+- **Task 6 — App e instaladores em inglês:** dicionário por área das ~70 telas, idioma vindo da licença na ativação e fixo para sempre (sem troca dentro do app; decisão do Luiz, 26/11/2026); instaladores Windows (NSIS, `language` 1033) e Mac (DMG) em inglês; a página
   /instalar entrega o certo por sistema e idioma. Teste: varredura que acusa texto em português fora do dicionário.
 - **Task 7 — Linha de produção em inglês:** o servidor entrega o kit no idioma da licença (`entregarKit` recebe
   `idioma`); canteiro, Ajuda e e-mails da obra em inglês. Teste ponta a ponta com uma obra pequena.

@@ -17,7 +17,9 @@ tudo em inglês e em dólar, do site até a obra pronta, sem achar que caiu num 
    - A **bandeirinha** no topo troca de um endereço para o outro e o site lembra a escolha. A escolha da pessoa vale mais
      que a localização.
 3. **O idioma segue a pessoa depois da compra.** A licença guarda o idioma. O instalador, o app, os e-mails, a Ajuda e
-   a linha de produção (agentes, briefing, PLAN, canteiro) saem nesse idioma. Nas configurações do app dá para trocar.
+   a linha de produção (agentes, briefing, PLAN, canteiro) saem nesse idioma.
+   Depois da compra o idioma não muda mais (decisão do Luiz, 26/11/2026, 05:51): quem comprou em inglês usa o Atlas
+   em inglês para sempre; não há troca de idioma dentro do app.
 4. **Preço próprio em dólar:** US$ 1.700 de implantação + US$ 70/mês. Não é conversão de câmbio.
 5. **Real só com CPF.** A bandeira troca o idioma, mas a moeda é decidida no pagamento: em real só com CPF (Pix ou cartão
    brasileiro); sem CPF, em dólar. Um brasileiro que mora fora pode usar em inglês e pagar em real com o CPF dele.
@@ -54,7 +56,6 @@ desde já, antes da compra do .com, e ajuda o Google a mostrar a versão certa p
 
 **Licença e app.** A licença ganha o campo `idioma` (`pt` | `en`), gravado na compra. O instalador e o app lêem esse
 campo na ativação. Vale para Windows e Mac: o instalador do Windows e o do Mac saem em duas versões cada (português e inglês), e a página do link (que já reconhece Mac ou Windows, M47) entrega a certa para o sistema e o idioma da pessoa.
-O app tem "Idioma" nas configurações.
 
 **Linha de produção.** As instruções dos agentes já vêm do servidor a cada obra (não ficam no computador do cliente).
 O servidor passa a entregar a versão no idioma da licença. O briefing, o PLAN, o canteiro e as mensagens da obra saem
@@ -63,11 +64,10 @@ diferente.
 
 ## Ordem (cada parte é testável sozinha)
 
-1. **Protótipo primeiro** (regra do projeto): página de vendas em inglês, a bandeirinha, e o "Idioma" nas configurações
-   do app. Você aprova antes do código.
+1. **Protótipo primeiro** (regra do projeto): página de vendas em inglês e a bandeirinha. Você aprova antes do código.
 2. Camada de idioma + página de vendas em inglês (/en), bandeira, regra da primeira visita.
 3. Pagamento em dólar com a regra do CPF; e-mails da compra em inglês; licença guarda o idioma.
-4. Instalador em inglês e o app inteiro em inglês (a parte maior: ~70 telas), com a troca nas configurações.
+4. Instalador em inglês e o app inteiro em inglês (a parte maior: ~70 telas).
 5. Linha de produção em inglês (agentes, canteiro, Ajuda).
 6. Textos legais de fora (termos e privacidade) e a ligação do .com quando ele existir.
 
