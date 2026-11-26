@@ -6,7 +6,7 @@ import { criarPrototipoFixture, montarNavegavel } from '../app/ponte-prototipo'
 import { ESTILOS_EXEMPLO } from '../app/ponte-estilo'
 
 export type FaseProjeto = 'na_fila' | 'desenhando' | 'telas_prontas' | 'ajustando' | 'pensando_nomes' | 'nomes_prontos' | 'pronto_para_construir' | 'construindo' | 'erro'
-export type TipoPedido = 'obra_nova' | 'ajuste' | 'aprovar_telas' | 'nome' | 'construir' | 'pausar' | 'continuar'
+export type TipoPedido = 'obra_nova' | 'ajuste' | 'aprovar_telas' | 'nome' | 'construir' | 'pausar' | 'continuar' | 'foto_ajuda'
 
 export interface Projeto {
   obra_id: string

@@ -236,3 +236,19 @@ test('passo de guia: o que o passo pede e o que já se sabe do site vão ao Clau
   assert.match(p, /O que já se sabe deste site: Pesquisa recusada/)
   assert.ok(p.indexOf('Pesquisa recusada: o domínio') > p.indexOf('## Contexto (dado)'))
 })
+
+// M58: a foto tirada no celular chega pelo canal do celular (data URL) e vira um anexo da Ajuda, com as mesmas travas.
+test('fotoDoCelular: só imagem de verdade (JPEG/PNG/WebP), até o tamanho máximo, guardada fora da obra como anexo', async () => {
+  const { ajuda, dados } = montar()
+  const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(200, 1)])
+  const r = await ajuda.fotoDoCelular('obra', `data:image/jpeg;base64,${jpeg.toString('base64')}`)
+  assert.match(r.detalhe, /^imagem anexo-[a-z0-9-]+\.jpg$/)
+  assert.equal(r.titulo, 'Foto do celular')
+  const achados = []
+  const andar = (d) => { for (const f of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, f.name); if (f.isDirectory()) andar(p); else achados.push(p) } }
+  andar(path.join(dados, 'ajuda', 'prints'))
+  assert.equal(achados.length, 1)
+  assert.equal(await ajuda.fotoDoCelular('obra', 'data:image/svg+xml;base64,' + Buffer.from('<svg/>').toString('base64')), null)
+  assert.equal(await ajuda.fotoDoCelular('obra', 'data:text/html;base64,PGh0bWw+'), null)
+  assert.equal(await ajuda.fotoDoCelular('obra', 'lixo'), null)
+})

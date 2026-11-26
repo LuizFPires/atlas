@@ -157,3 +157,12 @@ describe('bug 24/11 (Guilherme): resposta sobre a obra não pode virar a frase-p
       expect(normalizarResposta({ texto: f }).texto, f).toBe(RECADO_SEM_HUMANO)
   })
 })
+
+// M58: a foto tirada no celular aparece na conversa (o celular manda pelo app do Atlas no celular).
+test('a Ajuda ensina a mandar a foto pelo celular e mostra a foto quando ela chega', async () => {
+  const ajuda = criarAjudaFixture()
+  const { rerender } = render(<Ajuda ajuda={ajuda} contexto={{ origem: 'menu' }} onFechar={() => {}} />)
+  expect(screen.getByText(/Foto pelo celular/)).toBeInTheDocument()
+  rerender(<Ajuda ajuda={ajuda} contexto={{ origem: 'menu' }} onFechar={() => {}} fotoCelular={{ url: 'foto-do-celular', titulo: 'Foto do celular', detalhe: 'imagem anexo-ab12.jpg' }} />)
+  expect(await screen.findByText('Foto do celular')).toBeInTheDocument()
+})

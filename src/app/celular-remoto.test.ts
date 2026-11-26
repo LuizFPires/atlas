@@ -129,3 +129,15 @@ test('status das obras: publica um resumo de cada obra com PLAN (sem caminho nem
   expect(o.percentual).toBeGreaterThanOrEqual(0)
   expect(JSON.stringify(o)).not.toMatch(/Users|\\\\|Obras/)
 })
+
+// M58: a foto do celular para a Ajuda: o notebook baixa a foto e entrega à Ajuda; o pedido responde "feito".
+test('foto_ajuda: baixa a foto e entrega à Ajuda do notebook', async () => {
+  const { ex, respostas, pontes } = montar([[pedido({ tipo: 'foto_ajuda', obra_id: 'ajuda', dados: { referencia: 'b'.repeat(32) } })]])
+  const recebidas: string[] = []
+  ;(pontes as { aoFotoAjuda?: (d: string) => void }).aoFotoAjuda = (d) => { recebidas.push(d) }
+  await ex.batida()
+  await ex.ocioso()
+  await new Promise((r) => setTimeout(r, 20))
+  expect(recebidas).toEqual([JPG])
+  expect(respostas.at(-1)).toEqual(expect.objectContaining({ estado: 'feito' }))
+})

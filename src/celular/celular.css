@@ -127,3 +127,8 @@
 .cel-obra-agora b { font-size: 17px; line-height: 1.3; }
 .cel-obra-noticia { display: flex; gap: 10px; font-size: 14px; line-height: 1.4; color: var(--mute); }
 .cel-obra-noticia time { font: 500 13px 'Geist Mono', monospace; color: var(--mute2); flex: none; }
+
+/* M58 — foto para a Ajuda */
+.cel-menu__foto { position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.cel-menu__foto input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.cel-menu__aviso { flex-basis: 100%; margin: 6px 0 0; font-size: 13px; color: #B4BBB2; }

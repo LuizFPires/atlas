@@ -17,7 +17,7 @@ import type { PonteObras } from './ponte-obras'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { ObraStatus } from '../web/obras-status'
 
-export type TipoPedido = 'obra_nova' | 'ajuste' | 'aprovar_telas' | 'nome' | 'construir' | 'pausar' | 'continuar'
+export type TipoPedido = 'obra_nova' | 'ajuste' | 'aprovar_telas' | 'nome' | 'construir' | 'pausar' | 'continuar' | 'foto_ajuda'
 export type FaseProjeto = 'na_fila' | 'desenhando' | 'telas_prontas' | 'ajustando' | 'pensando_nomes' | 'nomes_prontos' | 'pronto_para_construir' | 'construindo' | 'erro'
 
 export interface PedidoRemoto { id: string; tipo: TipoPedido; obra_id: string; dados: Record<string, unknown>; criado_em: string }
@@ -58,11 +58,13 @@ export interface PontesRemoto {
   modos: PonteModoObra
   painel: PontePainel
   arquivos: PonteArquivos
+  /** M58: a foto que o celular mandou para a Ajuda do Atlas (data URL). */
+  aoFotoAjuda?: (dataUrl: string) => Promise<void> | void
 }
 
 const OCUPADO: Record<TipoPedido, string> = {
   obra_nova: 'Desenhando as telas', ajuste: 'Ajustando as telas', aprovar_telas: 'Pensando nos nomes', nome: 'Guardando o nome',
-  construir: 'Preparando a obra', pausar: 'Pausando a obra', continuar: 'Continuando a obra',
+  construir: 'Preparando a obra', pausar: 'Pausando a obra', continuar: 'Continuando a obra', foto_ajuda: 'Levando a foto para a Ajuda',
 }
 const NAO_CONHECE = 'Essa obra não está neste notebook. Abra o Atlas no computador onde ela foi criada.'
 
@@ -198,6 +200,7 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
       }
       case 'pausar': { const o = ligada(ped.obra_id); await p.painel.pausar(o.pasta); return publicarStatus() }
       case 'continuar': { const o = ligada(ped.obra_id); await p.painel.continuar(o.pasta); return publicarStatus() }
+      case 'foto_ajuda': { const d = await canal.referencia(String(ped.dados.referencia ?? '')); await p.aoFotoAjuda?.(d); return }
     }
   }
 

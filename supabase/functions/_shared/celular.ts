@@ -9,7 +9,7 @@ import { type ArmazemPrototipos, guardarTelasDoProjeto } from './prototipo-link.
 import { ErroRegra, type Deps } from './tipos.ts'
 import { motivoDaLicenca, verificar } from './verificar.ts'
 
-export const TIPOS_PEDIDO = ['obra_nova', 'ajuste', 'aprovar_telas', 'nome', 'construir', 'pausar', 'continuar'] as const
+export const TIPOS_PEDIDO = ['obra_nova', 'ajuste', 'aprovar_telas', 'nome', 'construir', 'pausar', 'continuar', 'foto_ajuda'] as const
 export type TipoPedido = (typeof TIPOS_PEDIDO)[number]
 export const FASES = ['na_fila', 'desenhando', 'telas_prontas', 'ajustando', 'pensando_nomes', 'nomes_prontos', 'pronto_para_construir', 'construindo', 'erro'] as const
 export type FaseProjeto = (typeof FASES)[number]
@@ -118,6 +118,12 @@ async function validarDados(canal: CanalCelular, licencaId: string, tipo: TipoPe
     case 'construir':
       if (dados.modo !== 'auto' && dados.modo !== 'passo') throw invalido()
       return { modo: dados.modo }
+    // M58: foto tirada no celular para a Ajuda do Atlas (a foto já subiu como referência; só o id vai no pedido).
+    case 'foto_ajuda': {
+      const r = dados.referencia
+      if (typeof r !== 'string' || !ID_RE.test(r) || !(await canal.referenciaExiste(licencaId, r))) throw invalido()
+      return { referencia: r }
+    }
     default: return {}
   }
 }

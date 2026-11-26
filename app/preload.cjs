@@ -199,6 +199,7 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     abrirPagina: (id) => chamar('atlas:ajuda:pagina', String(id)),
     tirarPrint: (pasta) => chamar('atlas:ajuda:print', pasta ? String(pasta) : undefined),
     anexarImagem: (pasta) => chamar('atlas:ajuda:anexar', pasta ? String(pasta) : undefined),
+    fotoDoCelular: (pasta, dataUrl) => chamar('atlas:ajuda:fotoCelular', pasta ? String(pasta) : undefined, String(dataUrl ?? '')),
   },
   casos: {
     enviar: (caso) => chamar('atlas:casos:enviar', JSON.parse(JSON.stringify(caso ?? {}))),

@@ -117,6 +117,8 @@ export interface PonteAjuda {
   tirarPrint(pasta?: string): Promise<PrintAjuda | null>
   /** "Anexar imagem": o cliente escolhe uma imagem (só imagem; SVG recusado). null = desistiu. */
   anexarImagem(pasta?: string): Promise<PrintAjuda | null>
+  /** M58: a foto tirada no celular (data URL do canal do celular) vira anexo da Ajuda. null = recusada. */
+  fotoDoCelular?(pasta: string | undefined, dataUrl: string): Promise<PrintAjuda | null>
 }
 
 const nomeDoPrint = (p: PrintAjuda) => [textoDaObra(p.titulo, 100), textoDaObra(p.url, 120), textoDaObra(p.detalhe, 300)].filter(Boolean).join(' | ')

@@ -1,6 +1,6 @@
 # Termos de Uso do Atlas
 
-**Versão 1.1 · 22 de novembro de 2026**
+**Versão 1.2 · 25 de novembro de 2026**
 
 Estes Termos regulam a contratação e o uso do Atlas, oferecido por **PL Participações LTDA**, CNPJ 30.484.256/0001-82, com sede na Avenida Guaratã, 1885, Sala 12, Calafate, Belo Horizonte/MG, CEP 30411-516 ("PL Participações LTDA", "nós"), pelo site **atlas-ia.app.br**. Quem contrata o Atlas é chamado aqui de "Cliente" ou "você".
 
@@ -95,7 +95,10 @@ Ao concluir a compra ou usar o Atlas, você declara que leu e concorda com estes
 - (a) criar sistemas ilegais, fraudulentos, que violem direitos de terceiros ou que coletem dados sem base legal;
 - (b) violar as políticas de uso da Anthropic ou de outros fornecedores;
 - (c) copiar, revender, distribuir ou repassar o Atlas, conforme a Licença de Uso;
-- (d) tentar burlar a validação de licença.
+- (d) tentar burlar a validação de licença;
+- (e) criar um sistema que constrói sistemas, isto é, que recebe ideias, protótipos ou pedidos, monta um plano de construção e põe agentes de inteligência artificial para construir software para terceiros — o que concorre com o próprio Atlas. Chatbots, aplicativos ou sites que usam inteligência artificial continuam permitidos.
+
+9.1. Quando um pedido parece com o item (e), o Atlas não o executa e mostra o que pode e o que não pode, com a opção "Acha que é engano? Explique". Se o pedido se repetir na mesma obra, essa obra fica embargada (só ela; as outras obras seguem normalmente e é possível começar obras novas) até a análise da nossa equipe, que pode liberar a obra, manter o embargo ou, se a tentativa continuar, recusar o uso do Atlas pela licença, nos termos da cláusula 4. A decisão é sempre da equipe, nunca automática.
 
 O descumprimento pode levar à suspensão da licença, sem prejuízo das medidas legais.
 

@@ -290,6 +290,21 @@ function criarAjuda({ raiz, dadosApp, disparo, shell, dialog = null, janela = ()
       registrar(nome, dest)
       return retorno(nome, 'Imagem anexada', 'imagem-anexada')
     },
+
+    /** M58: a foto tirada no celular (data URL que o canal do celular baixou). Mesmas travas do anexo. null = recusada. */
+    async fotoDoCelular(pasta, dataUrl) {
+      const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''))
+      if (!m || m[2].length * 0.75 > MAX_IMAGEM) return null
+      const buf = Buffer.from(m[2], 'base64')
+      const tipo = tipoDaImagem(buf)
+      if (!tipo) return null
+      let dest
+      try { dest = pastaDePrints(pasta) } catch { return null }
+      const nome = nomeNovo('anexo', tipo)
+      try { fs.writeFileSync(path.join(dest.dir, nome), buf, { flag: 'wx' }) } catch { return null }
+      registrar(nome, dest)
+      return retorno(nome, 'Foto do celular', 'foto-do-celular')
+    },
   }
 }
 

@@ -245,10 +245,15 @@ function Ideia({ relato, setRelato, onVoltar, onContinuar }: { relato: string; s
 const AMOSTRAS = ['#10233B', '#1F6F5C', '#C6F135', '#E8C27A', '#E36B3C', '#B4314C', '#6C4AB6', '#F4F1EA']
 
 /** Reduz a foto no próprio celular (até 1600 px, JPEG) antes de mandar: chega rápido e cabe no limite de 2 MB. */
-async function reduzirFoto(arquivo: File): Promise<string> {
+async function reduzirFoto(arquivo: File, esperaMs = 8000): Promise<string> {
   const url = URL.createObjectURL(arquivo)
   try {
-    const img = await new Promise<HTMLImageElement>((ok, erro) => { const i = new Image(); i.onload = () => ok(i); i.onerror = erro; i.src = url })
+    const img = await new Promise<HTMLImageElement | null>((ok) => { const i = new Image(); const t = setTimeout(() => ok(null), esperaMs); i.onload = () => { clearTimeout(t); ok(i) }; i.onerror = () => { clearTimeout(t); ok(null) }; i.src = url })
+    // Não deu para abrir a imagem aqui: manda a original, se couber no limite (2 MB).
+    if (!img) {
+      if (arquivo.size > 2_000_000) throw new Error('Essa foto é grande demais. Tente outra.')
+      return await new Promise<string>((ok, erro) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => erro(new Error('Essa foto não foi. Tente outra.')); r.readAsDataURL(arquivo) })
+    }
     const escala = Math.min(1, 1600 / Math.max(img.width, img.height))
     const c = document.createElement('canvas')
     c.width = Math.round(img.width * escala); c.height = Math.round(img.height * escala)
@@ -614,11 +619,24 @@ export function AppCelular({ api, intervalo = 4000, faceId = semFaceId }: { api:
   const projeto = (obraId && estado?.projetos.find((p) => p.obra_id === obraId)) || null
   const ligado = estado?.computador.ligado ?? false
   const irObras = () => { setTela('obras'); setObraId(null) }
+  // M58: a foto vai para a Ajuda do Atlas no computador (o notebook baixa e mostra na conversa).
+  const [avisoFoto, setAvisoFoto] = useState('')
+  const fotoAjuda = async (f: File | undefined) => {
+    if (!f) return
+    setAvisoFoto('Mandando a foto…')
+    try {
+      const id = await api.foto(await reduzirFoto(f, 2500))
+      await api.pedir('foto_ajuda', 'ajuda', { referencia: id })
+      setAvisoFoto('A foto foi para a Ajuda do Atlas no computador. Ela aparece lá quando o computador estiver ligado.')
+    } catch (e) { setAvisoFoto((e as Error).message || 'Essa foto não foi. Tente outra.') }
+  }
   const menu = (
     <nav className="cel-menu" aria-label="Menu">
       <button type="button" aria-current={tela === 'obras' ? 'page' : undefined} onClick={irObras}><Icone nome="obra" />Obras</button>
       <button type="button" onClick={() => { setRelato(''); setVisual({ modo: 'sugere', observacao: '', cores: [], referencias: [], previas: [] }); setTela('ideia') }}><Icone nome="microfone" />Nova obra</button>
+      <label className="cel-menu__foto"><Icone nome="imagem" />Foto para a Ajuda<input type="file" accept="image/*" capture="environment" aria-label="Foto para a Ajuda do Atlas" onChange={(e) => void fotoAjuda(e.target.files?.[0])} /></label>
       <button type="button" onClick={() => { api.sair(); faceId.desligar(); setTela('entrar') }}><Icone nome="x" />Sair</button>
+      {avisoFoto && <p className="cel-menu__aviso" role="status">{avisoFoto}</p>}
     </nav>
   )
 
