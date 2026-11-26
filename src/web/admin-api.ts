@@ -2,6 +2,7 @@
 // mas QUEM é admin é decidido no servidor (JWT validado + lista ATLAS_ADMIN_EMAILS): esconder o link aqui não protege nada.
 // A sessão fica só nesta aba e em chave própria (a do portal do cliente nunca abre o painel).
 import type { Regiao } from './mapa-brasil'
+import { semMensagem } from './sem-mensagem'
 import { configPortal, type ConfigPortal, type Resp } from './portal-api'
 
 export type Situacao = 'em_dia' | 'atrasada' | 'pausada' | 'cancelada' | 'ativando'
@@ -148,7 +149,7 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
       const r = await f(`${cfg.api}${rota}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(corpo) })
       const c = (await r.json().catch(() => ({}))) as Record<string, unknown> & { mensagem?: string }
       if (r.status === 401 || r.status === 403) { token = ''; guardar(''); return { ok: false, mensagem: c.mensagem ?? 'Entre de novo.' } }
-      if (!r.ok) return { ok: false, mensagem: c.mensagem ?? 'Não deu certo agora. Tente de novo em instantes.' }
+      if (!r.ok) return { ok: false, mensagem: c.mensagem ?? semMensagem(r.status) }
       return { ok: true, ...(c as T) }
     } catch { return { ok: false, mensagem: MSG_REDE } }
   }
@@ -191,7 +192,7 @@ export function criarAdminApi(cfg: ConfigPortal | null = configPortal(), f: type
         const r = await f(`${cfg.authUrl}/user`, { method: 'PUT', headers: { 'Content-Type': 'application/json', apikey: cfg.anonKey, Authorization: `Bearer ${tokenRecuperacao}` }, body: JSON.stringify({ password: senha }) })
         if (r.status === 401 || r.status === 403) return { ok: false, mensagem: MSG_LINK_VENCIDO }
         if (r.status === 422) return { ok: false, mensagem: 'Essa senha não foi aceita. Escolha uma diferente da anterior e mais difícil de adivinhar.' }
-        if (!r.ok) return { ok: false, mensagem: 'Não deu certo agora. Tente de novo em instantes.' }
+        if (!r.ok) return { ok: false, mensagem: semMensagem(r.status) }
         return { ok: true }
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },

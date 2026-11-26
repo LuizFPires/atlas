@@ -45,14 +45,14 @@ export function criarStripeApi(chaveSecreta: string, fetchFn: FetchFn, base = 'h
     const dados = (await r.json().catch(() => ({}))) as Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
     if (r.status >= 400) {
       const codigo = dados?.error?.code as string | undefined
-      throw Object.assign(new ErroRegra('gateway_erro', 'O pagamento não respondeu agora. Tente de novo em instantes.', 502), { stripe: codigo })
+      throw Object.assign(new ErroRegra('gateway_erro', 'O sistema de pagamento não respondeu agora. Tente de novo em alguns minutos; se já aparecer uma cobrança no cartão, não pague de novo e use a Ajuda do Atlas.', 502), { stripe: codigo })
     }
     return dados
   }
   return {
     async criarCheckout(p, idem) {
       const s = await chamar('POST', '/v1/checkout/sessions', p, idem, VERSAO_CHECKOUT)
-      if (typeof s.id !== 'string' || typeof s.url !== 'string') throw new ErroRegra('gateway_erro', 'Resposta inesperada do pagamento.', 502)
+      if (typeof s.id !== 'string' || typeof s.url !== 'string') throw new ErroRegra('gateway_erro', 'O sistema de pagamento respondeu de um jeito inesperado. Tente de novo em alguns minutos; se já aparecer uma cobrança no cartão, não pague de novo e use a Ajuda do Atlas.', 502)
       return { id: s.id, url: s.url }
     },
     async cancelarAssinatura(subId, imediato) {
@@ -70,7 +70,7 @@ export function criarStripeApi(chaveSecreta: string, fetchFn: FetchFn, base = 'h
     },
     async criarPortalCobranca(clienteRef, urlRetorno) {
       const s = await chamar('POST', '/v1/billing_portal/sessions', { customer: clienteRef, return_url: urlRetorno })
-      if (typeof s.url !== 'string' || !s.url.startsWith('https://')) throw new ErroRegra('gateway_erro', 'Resposta inesperada do pagamento.', 502)
+      if (typeof s.url !== 'string' || !s.url.startsWith('https://')) throw new ErroRegra('gateway_erro', 'O sistema de pagamento respondeu de um jeito inesperado. Tente de novo em alguns minutos; se já aparecer uma cobrança no cartão, não pague de novo e use a Ajuda do Atlas.', 502)
       return s.url
     },
     async reembolsar(pi, idem) {

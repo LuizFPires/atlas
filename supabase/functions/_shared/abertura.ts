@@ -53,7 +53,7 @@ export async function baixarInstalador(d: DepsCadastro, a: { token: string; sist
 export async function reenviarParaComputador(d: DepsCadastro, a: { token: string }): Promise<{ ok: true }> {
   const antigo = await validarLink(d, a.token)
   const cliente = await d.store.clientePorId(antigo.cliente_id)
-  if (!cliente) throw new ErroRegra('link_invalido', 'Esse link não existe.', 404)
+  if (!cliente) throw new ErroRegra('link_invalido', 'Esse link não existe (pode ter sido copiado pela metade). Abra de novo pelo botão do e-mail ou peça um link novo.', 404)
   if (!(await d.store.tentarEvento(`reenvio:cliente:${cliente.id}`, 3, 60 * 60_000, d.agora()))) {
     throw new ErroRegra('muitas_solicitacoes', 'Você já pediu o acesso algumas vezes. Espere uns minutos e olhe o seu e-mail.', 429)
   }
@@ -62,7 +62,7 @@ export async function reenviarParaComputador(d: DepsCadastro, a: { token: string
   try {
     await d.enviarBoasVindas(cliente.email_compra, { nome: cliente.nome_tratamento, empresa: cliente.empresa ?? '', ramo: cliente.ramo ?? '', token, expira_em, ...(await idiomaDoCliente(d, cliente.id)) })
   } catch {
-    throw new ErroRegra('email_nao_enviado', 'Não deu para enviar o e-mail agora. O seu link continua valendo: tente de novo em instantes.', 502)
+    throw new ErroRegra('email_nao_enviado', 'O serviço de e-mail não respondeu agora. O seu link continua valendo: tente de novo em alguns minutos.', 502)
   }
   await d.store.trocarLinks(registro, d.agora()) // atômico: fecha os abertos e grava o novo; só um link vale por vez
   return { ok: true }

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Botao, CampoFalado } from '../../ui'
 import { formatarData, hojeLocal, numeroDoTexto, type Aluno, type Exercicio, type Medida, type PortaDados } from './dados'
 
-const ERRO_PORTA = 'Não deu pra carregar/salvar agora. Tente de novo.'
+const ERRO_PORTA = 'Não deu pra carregar/salvar agora: a internet ou o servidor do app não respondeu. Confira a conexão e tente de novo.'
 const soNumero = (a: string, f: string) => (a + f).replace(/[^\d,.]/g, '')
 const kg = (v: number | null, un: string) => (v === null ? '—' : `${String(v).replace('.', ',')} ${un}`)
 

@@ -13,8 +13,8 @@ export async function validarInstancia(
   d: Deps,
   a: { email: unknown; computador_hash: unknown; token_dispositivo: string; /** UF do acesso (derivada na borda; nunca o IP). Só alimenta o Radar. */ uf?: string | null },
 ): Promise<VereditoInstancia> {
-  const negado = () => new ErroRegra('nao_autorizado', 'Não foi possível confirmar esta instalação.', 403)
-  if (typeof a.computador_hash !== 'string' || !HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
+  const negado = () => new ErroRegra('nao_autorizado', 'Não foi possível confirmar esta instalação: a licença não foi reconhecida. Confira a sua assinatura no portal do Atlas.', 403)
+  if (typeof a.computador_hash !== 'string' || !HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'O Atlas deste computador mandou uma identificação que o servidor não reconhece. Atualize o Atlas e tente de novo.')
   if (typeof a.email !== 'string' || !a.token_dispositivo) throw negado()
   const cliente = await d.store.clientePorEmail(a.email.trim().toLowerCase())
   const lic = cliente && !cliente.excluido_em ? await d.store.licencaDoCliente(cliente.id) : null
@@ -24,7 +24,7 @@ export async function validarInstancia(
   // Quem não tem o token do dispositivo da licença não é nem "outra instância": é intruso.
   if (!iguais(await sha256(a.token_dispositivo), ativa.token_hash)) throw negado()
   if (!(await d.store.tentarEvento(`instancia:${lic.id}`, 120, 60 * 60_000, d.agora()))) {
-    throw new ErroRegra('muitas_solicitacoes', 'Muitas conferências seguidas. Tente de novo mais tarde.', 429)
+    throw new ErroRegra('muitas_solicitacoes', 'Muitas conferências seguidas. Espere uns 10 minutos e tente de novo.', 429)
   }
   // Mesma matriz do /verificar (M2): pausada, atrasada sem carência, cortesia vencida, cancelada etc. negam.
   if (motivoDaLicenca(lic, d.agora()) !== 'ok') return { ok: false, motivo: 'licenca_invalida' }

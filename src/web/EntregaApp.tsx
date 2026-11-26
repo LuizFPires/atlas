@@ -35,7 +35,7 @@ export function EntregaApp({ porta }: { porta: PortaEntrega }) {
           <>
             <h1>Não deu para mostrar o seu app agora.</h1>
             <p role="alert" className="v-erro">{e.mensagem}</p>
-            <p className="c-lead">Nada se perdeu: o que você escolheu está guardado. Tente de novo em instantes ou peça ajuda à Ajuda do Atlas.</p>
+            <p className="c-lead">Nada se perdeu: o que você escolheu está guardado. Recarregue a página daqui a alguns minutos; se continuar, use a Ajuda do Atlas.</p>
           </>
         )}
         {e?.estado === 'pronto' && (

@@ -41,7 +41,7 @@ export async function adminLogado(d: DepsAdmin, jwt: string): Promise<Identidade
   if (!d.emailsAdmin.some((a) => a === email)) {
     // Quem tenta e não é admin (inclusive cliente logado no portal) gasta um balde pequeno: barra sondagem.
     if (!(await d.store.tentarEvento(`admin:negado:${id.auth_user_id}`, 5, 15 * 60_000, d.agora()))) {
-      throw new ErroRegra('muitas_solicitacoes', 'Muitas tentativas. Espere um pouco.', 429)
+      throw new ErroRegra('muitas_solicitacoes', 'Muitas tentativas. Espere uns 10 minutos e tente de novo.', 429)
     }
     throw semAcesso()
   }
@@ -290,12 +290,12 @@ const limparMotivo = (m: unknown) => (typeof m === 'string' ? [...m].map((ch) =>
  */
 export async function liberarTrocaUrgente(d: DepsAdmin, jwt: string, a: { licenca_id: unknown; motivo: unknown }) {
   const adm = await adminLogado(d, jwt)
-  if (typeof a.licenca_id !== 'string' || !ID_RE.test(a.licenca_id)) throw new ErroRegra('licenca_invalida', 'Licença inválida.', 400)
+  if (typeof a.licenca_id !== 'string' || !ID_RE.test(a.licenca_id)) throw new ErroRegra('licenca_invalida', 'A licença não foi reconhecida. Confira a sua assinatura no portal do Atlas e tente de novo.', 400)
   const motivo = limparMotivo(a.motivo)
   if (motivo.length < 5 || motivo.length > 300) throw new ErroRegra('motivo_invalido', 'Conte o motivo em poucas palavras (de 5 a 300 letras).', 400)
   const lic = await d.store.licencaPorId(a.licenca_id)
-  if (!lic) throw new ErroRegra('sem_licenca', 'Licença não encontrada.', 404)
-  if (lic.status === 'cancelada') throw new ErroRegra('licenca_cancelada', 'Essa licença está cancelada.', 409)
+  if (!lic) throw new ErroRegra('sem_licenca', 'Não achamos essa licença. Confira se é o mesmo e-mail da compra.', 404)
+  if (lic.status === 'cancelada') throw new ErroRegra('licenca_cancelada', 'Essa licença está cancelada. Para usar o Atlas de novo, faça uma nova assinatura.', 409)
   if (lic.troca_liberada_em) return { ok: true, ja_liberada: true }
   if (!(await d.store.atualizarLicencaSe(lic.id, { troca_liberada_em: d.agora() }, { status_diferente: 'cancelada' }))) {
     throw new ErroRegra('troca_conflito', 'A licença mudou agora há pouco. Abra o painel de novo.', 409)
@@ -316,7 +316,7 @@ export async function verEntregas(d: DepsAdmin, jwt: string, a: { licenca_id?: u
   const marca = typeof a.marca === 'string' ? a.marca.trim() : ''
   const licId = typeof a.licenca_id === 'string' ? a.licenca_id.trim() : ''
   if (marca && !/^[\w.:-]{8,128}$/.test(marca)) throw new ErroRegra('marca_invalida', 'Essa marca não parece uma marca d\'água do Atlas.', 400)
-  if (licId && !ID_RE.test(licId)) throw new ErroRegra('licenca_invalida', 'Licença inválida.', 400)
+  if (licId && !ID_RE.test(licId)) throw new ErroRegra('licenca_invalida', 'A licença não foi reconhecida. Confira a sua assinatura no portal do Atlas e tente de novo.', 400)
   const lista = marca ? await d.store.entregasPorMarca(marca) : licId ? await d.store.entregasDaLicenca(licId, 200) : await d.store.entregasRecentes(100)
   const [clientes, licencas] = await Promise.all([d.store.listarClientes(), d.store.listarLicencas()])
   const cli = new Map(clientes.map((c) => [c.id, c]))

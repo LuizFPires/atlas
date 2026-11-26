@@ -1,5 +1,6 @@
 // Degustação (teste grátis): cliente da API pública. Sem segredo, sem pagamento. O servidor valida tudo de novo.
 import { configCompra, type ConfigCompra, EMAIL_RE } from './compra'
+import { semMensagem } from './sem-mensagem'
 
 export interface EstadoDegustacao { ativa: boolean; dias: number }
 export type ResultadoPedido = { ok: true } | { ok: false; mensagem: string }
@@ -39,7 +40,7 @@ export function criarDegustacaoApi(cfg: Pick<ConfigCompra, 'api'> | null = confi
       if (!cfg) return { ok: false, mensagem: 'O teste grátis ainda não está aberto por aqui. Volte daqui a pouco.' }
       try {
         const { r, c } = await post('/degustacao/pedir', { email: e })
-        return r.ok ? { ok: true } : { ok: false, mensagem: c.mensagem ?? 'Não deu certo agora. Tente de novo em instantes.' }
+        return r.ok ? { ok: true } : { ok: false, mensagem: c.mensagem ?? semMensagem(r.status) }
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },
     async confirmar(token) {
@@ -47,7 +48,7 @@ export function criarDegustacaoApi(cfg: Pick<ConfigCompra, 'api'> | null = confi
       try {
         const { r, c } = await post('/degustacao/confirmar', { token })
         if (r.ok && typeof c.link_token === 'string') return { ok: true, dias: typeof c.dias === 'number' ? c.dias : 5, linkToken: c.link_token }
-        return { ok: false, mensagem: c.mensagem ?? 'Não deu certo agora. Tente de novo em instantes.' }
+        return { ok: false, mensagem: c.mensagem ?? semMensagem(r.status) }
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },
   }

@@ -4,7 +4,7 @@ import { Botao } from '../../ui'
 import { formatarPreco, totalDasLinhas, type PortaDados, type Produto, type Venda } from './dados'
 import type { PortaCupom } from './cupom'
 
-const ERRO_PORTA = 'Não deu pra carregar/salvar agora. Tente de novo.'
+const ERRO_PORTA = 'Não deu pra carregar/salvar agora: a internet ou o servidor do app não respondeu. Confira a conexão e tente de novo.'
 
 export function Vender({ dados, cupom }: { dados: PortaDados; cupom?: PortaCupom }) {
   const [produtos, setProdutos] = useState<Produto[]>([])

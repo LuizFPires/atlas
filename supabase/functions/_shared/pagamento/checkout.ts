@@ -15,7 +15,7 @@ async function apiDaConta(d: DepsPagamento, contaId: string) {
   const conta = await d.store.contaGateway(contaId)
   if (!conta) throw new ErroRegra('conta_desconhecida', 'Conta de pagamento não encontrada.', 404)
   const sk = await d.segredos.chaveSecreta(conta.segredo_ref)
-  if (!sk) throw new ErroRegra('gateway_nao_configurado', 'O pagamento ainda não está configurado.', 503)
+  if (!sk) throw new ErroRegra('gateway_nao_configurado', 'As vendas estão fechadas por um ajuste do nosso lado. Nada foi cobrado. Tente de novo mais tarde.', 503)
   return { conta, api: d.stripe(sk) }
 }
 
@@ -42,7 +42,7 @@ function urlsDeRetorno(base: string | null | undefined, origem?: 'app', mercado:
   let u: URL | null
   try { u = base ? new URL(base) : null } catch { u = null }
   if (!u || u.protocol !== 'https:' || u.username || u.password || u.origin === 'null') {
-    throw new ErroRegra('retorno_nao_configurado', 'O endereço de retorno do pagamento ainda não está configurado.', 503)
+    throw new ErroRegra('retorno_nao_configurado', 'As vendas estão fechadas por um ajuste do nosso lado. Nada foi cobrado. Tente de novo mais tarde.', 503)
   }
   // Compra de dentro do app: o cliente já tem o Atlas instalado e ativado; a licença vira paga pelo webhook, sem cadastro de novo.
   if (origem === 'app') return { success_url: `${u.origin}/compra/pelo-app`, cancel_url: `${u.origin}/compra/pelo-app/cancelada` }
@@ -64,7 +64,7 @@ export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promis
       meta.atlas_segmento = p.segmento as SegmentoPrateleira
     }
     const email = (p.email ?? '').trim().toLowerCase()
-    if (!EMAIL_RE.test(email)) throw new ErroRegra('email_invalido', 'Confira o e-mail da compra.')
+    if (!EMAIL_RE.test(email)) throw new ErroRegra('email_invalido', 'Confira o e-mail: use o mesmo e-mail que você usou no pagamento.')
     const versao = typeof p.aceite_termos_versao === 'string' ? p.aceite_termos_versao.trim() : ''
     if (!VERSAO_RE.test(versao)) throw new ErroRegra('aceite_obrigatorio', 'Para continuar, marque que você leu e aceita a Política de Privacidade e os Termos de Uso.', 400)
     // Fail-closed: se o aceite não ficou registrado, o pagamento nem é aberto.
@@ -109,7 +109,7 @@ export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promis
 
   // mensalidade: só para licença existente da MESMA conta (cliente Stripe já criado na implantação)
   const lic = p.licenca_id ? await d.store.licencaPorId(p.licenca_id) : null
-  if (!lic || lic.conta_gateway_id !== conta.id || lic.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Licença não encontrada.', 404)
+  if (!lic || lic.conta_gateway_id !== conta.id || lic.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Não achamos essa licença. Confira se é o mesmo e-mail da compra.', 404)
   if (lic.gateway_assinatura_ref && !lic.mensalidade_encerra_em) throw new ErroRegra('assinatura_existente', 'A mensalidade já está ativa.', 409)
   const emDolar = (await d.store.idiomaDaLicenca(lic.id)) === 'en'
   const s = await api.criarCheckout(

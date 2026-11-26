@@ -90,7 +90,7 @@ async function licencaDoCelular(d: DepsPortal, jwt: string) {
 
 async function licencaDoComputador(d: Deps, a: { email: unknown; computador_hash: unknown; token_dispositivo: string }) {
   const v = await verificar(d, { email: typeof a.email === 'string' ? a.email : '', computador_hash: typeof a.computador_hash === 'string' ? a.computador_hash : '', token_dispositivo: a.token_dispositivo })
-  if (!v.pode_construir || !v.licenca_id) throw new ErroRegra('nao_autorizado', 'Não foi possível confirmar este computador.', 403)
+  if (!v.pode_construir || !v.licenca_id) throw new ErroRegra('nao_autorizado', 'A licença não foi reconhecida neste computador (ela vale para um computador ativo por vez). Confira no portal do Atlas qual computador está ativo.', 403)
   return v.licenca_id
 }
 
@@ -193,7 +193,7 @@ export async function responderPedido(d: Deps, canal: CanalCelular | undefined, 
   const lic = await licencaDoComputador(d, a)
   if (typeof a.pedido_id !== 'string' || !ID_RE.test(a.pedido_id) || (a.estado !== 'feito' && a.estado !== 'erro')) throw invalido()
   const ok = await canal.responder(lic, a.pedido_id, a.estado, limparTexto(a.mensagem, 280))
-  if (!ok) throw new ErroRegra('pedido_nao_encontrado', 'Pedido não encontrado.', 404)
+  if (!ok) throw new ErroRegra('pedido_nao_encontrado', 'Esse pedido não existe mais (ele pode já ter sido feito). Atualize a tela.', 404)
   return { ok: true }
 }
 
@@ -224,7 +224,7 @@ export async function publicarProjeto(d: Deps, canal: CanalCelular | undefined, 
   if (!canal) throw indisponivel()
   const lic = await licencaDoComputador(d, a)
   const base = validarProjeto(a.obra_id, a.projeto)
-  if (!(await d.store.tentarEvento(`celular-projeto:${lic}`, 600, 60 * 60_000, d.agora()))) throw new ErroRegra('muitas_solicitacoes', 'Muitas atualizações seguidas.', 429)
+  if (!(await d.store.tentarEvento(`celular-projeto:${lic}`, 600, 60 * 60_000, d.agora()))) throw new ErroRegra('muitas_solicitacoes', 'Muitas atualizações seguidas. Espere uns 10 minutos e tente de novo.', 429)
   const anterior = (await canal.projetos(lic)).find((p) => p.obra_id === base.obra_id)
   let telas_token = anterior?.telas_token ?? null
   if (a.documento !== undefined && a.documento !== null && a.documento !== '') {

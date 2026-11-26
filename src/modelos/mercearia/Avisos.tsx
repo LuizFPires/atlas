@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { formatarData, ymd, type PortaDados, type Produto } from './dados'
 import { calcularAvisos, DIAS_AVISO_VALIDADE, ESTOQUE_MINIMO } from './regrasAvisos'
 
-const ERRO_PORTA = 'Não deu pra carregar agora. Tente de novo.'
+const ERRO_PORTA = 'Não deu pra carregar agora: a internet ou o servidor do app não respondeu. Confira a conexão e tente de novo.'
 
 function quando(dias: number): string {
   if (dias < 0) return dias === -1 ? 'venceu ontem' : `venceu há ${-dias} dias`

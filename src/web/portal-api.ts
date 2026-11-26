@@ -2,6 +2,7 @@
 // independente do login do Claude. O navegador só guarda o token de sessão desta aba (nunca segredo de pagamento).
 // Todas as chamadas ao servidor vão com esse token: o servidor descobre o dono por ele, nunca por id enviado daqui.
 import { configCompra } from './compra'
+import { semMensagem } from './sem-mensagem'
 import type { ObraStatus } from './obras-status'
 import type { Personalizacao, PersonalizacaoLida } from './personalizacao'
 
@@ -161,7 +162,7 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
       if (r.status === 401 && longa && await renovar()) r = await chamar() // acesso vencido: renova uma vez e tenta de novo
       const c = (await r.json().catch(() => ({}))) as Record<string, unknown> & { mensagem?: string }
       if (r.status === 401) { if (lembrar && !lerSaida()) gravarSaida(`servidor-401 ${rota}`); guardar(''); return { ok: false, mensagem: c.mensagem ?? 'Entre de novo na sua conta.' } }
-      if (!r.ok) return { ok: false, mensagem: c.mensagem ?? 'Não deu certo agora. Tente de novo em instantes.' }
+      if (!r.ok) return { ok: false, mensagem: c.mensagem ?? semMensagem(r.status) }
       return { ok: true, ...(c as T) }
     } catch { return { ok: false, mensagem: MSG_REDE } }
   }
@@ -177,7 +178,7 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
         const r = await f(`${cfg.api}/portal/entrar/codigo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: e }) })
         if (r.status === 429) return { ok: false, mensagem: 'Você pediu códigos demais. Espere uns minutos e tente de novo.' }
         // Resposta neutra: não revelamos se esse e-mail é de um cliente.
-        return r.ok ? { ok: true } : { ok: false, mensagem: 'Não deu para mandar o código agora. Tente de novo em instantes.' }
+        return r.ok ? { ok: true } : { ok: false, mensagem: semMensagem(r.status) }
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },
     async entrar(email, codigo) {
@@ -205,7 +206,7 @@ export function criarPortalApi(cfg: ConfigPortal | null = configPortal(), f: typ
     },
     async formaPagamento() {
       const r = await servidor<{ url: string }>('/portal/forma-pagamento')
-      return r.ok && !String(r.url).startsWith('https://') ? { ok: false, mensagem: 'O endereço do pagamento veio estranho. Tente de novo.' } : r
+      return r.ok && !String(r.url).startsWith('https://') ? { ok: false, mensagem: 'O sistema de pagamento devolveu um endereço que o Atlas não reconhece, e por segurança ele não abriu. Tente de novo em alguns minutos; se continuar, use a Ajuda do Atlas.' } : r
     },
     pedirCodigoTroca: () => servidor<{ enviado_para: string }>('/portal/trocar/solicitar-codigo'),
     desativarComputador: (codigo) => servidor<{ enviado_para: string; proxima_troca_em: string }>('/portal/trocar/desativar', { codigo: codigo.replace(/\s+/g, '') }),

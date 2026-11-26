@@ -71,7 +71,7 @@ export async function cadastrar(d: DepsCadastro, p: PedidoCadastro): Promise<Res
   const cidade = uf && cidadeBruta ? cidadeBruta : null
   if (!nome) throw new ErroRegra('nome_obrigatorio', 'Diga como o Atlas vai te chamar.')
   if (!ramo) throw new ErroRegra('ramo_obrigatorio', 'Conte, com as suas palavras, o que a sua empresa faz.')
-  if (digitado && !EMAIL_RE.test(digitado)) throw new ErroRegra('email_invalido', 'Confira o e-mail.')
+  if (digitado && !EMAIL_RE.test(digitado)) throw new ErroRegra('email_invalido', 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.')
   if ([nome, empresa, ramo].some(suspeito)) {
     throw new ErroRegra('texto_invalido', 'Escreva só com palavras, sem e-mail, endereço de site ou muitos números.')
   }
@@ -95,7 +95,7 @@ export async function cadastrar(d: DepsCadastro, p: PedidoCadastro): Promise<Res
     await d.store.invalidarLinks(cliente.id, d.agora())
     await d.store.reabrirCadastro(cliente.id) // o e-mail não saiu: deixa tentar de novo
     if (e instanceof ErroRegra) throw e
-    throw new ErroRegra('email_nao_enviado', 'Não deu para enviar o e-mail agora. Tente de novo em instantes.', 502)
+    throw new ErroRegra('email_nao_enviado', 'O serviço de e-mail não respondeu agora. Tente de novo em alguns minutos.', 502)
   }
   return { ok: true, enviado_para: mascarar(destino), email_diferente: !!digitado && digitado !== destino.toLowerCase(), segmento: pagamentos.find((x) => x.status === 'pago' && x.segmento)?.segmento ?? null }
 }

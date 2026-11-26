@@ -72,11 +72,11 @@ export async function entregarKit(
 ) {
   if (!/^[\w.-]{1,80}$/.test(a.obra_id)) throw new ErroRegra('obra_invalida', 'Identificação da obra inválida.')
   const v = await verificar(d, a)
-  if (!v.pode_construir || !v.licenca_id) throw new ErroRegra('negado', 'Não foi possível liberar o kit.', 403)
+  if (!v.pode_construir || !v.licenca_id) throw new ErroRegra('negado', 'A licença não foi reconhecida, então as instruções de construção não foram liberadas. Confira a sua assinatura no portal do Atlas.', 403)
   // M65: obra embargada (ou uso recusado) não recebe o kit — sem kit a linha de produção não roda. O servidor é a fonte da verdade.
   const politica = situacaoDaObra(await semTabelaEhVazio(() => d.store.situacoesPolitica(v.licenca_id!)), a.obra_id)
   if (politica === 'recusada') throw new ErroRegra('uso_recusado', 'O uso do Atlas foi encerrado pelos termos de uso.', 403)
-  if (politica === 'embargada') throw new ErroRegra('obra_embargada', 'Esta obra está embargada enquanto a equipe do Atlas analisa.', 423)
+  if (politica === 'embargada') throw new ErroRegra('obra_embargada', 'Esta obra está parada enquanto a equipe do Atlas analisa o uso. A resposta chega em até 1 dia útil, por e-mail e no Atlas.', 423)
   const cliente = await d.store.clientePorEmail(a.email.trim().toLowerCase())
   const marca = await marcaDagua(d, v.licenca_id)
   const nome = cliente?.nome_tratamento ?? 'cliente'

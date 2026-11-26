@@ -7,7 +7,7 @@ const formatarDia = (d: string) => d.split('-').reverse().join('/')
 export const formatarTelefone = (t: string) =>
   t.length === 11 ? `(${t.slice(0, 2)}) ${t.slice(2, 7)}-${t.slice(7)}` : t.length === 10 ? `(${t.slice(0, 2)}) ${t.slice(2, 6)}-${t.slice(6)}` : t
 
-const ERRO_PORTA = 'Não deu pra carregar/salvar agora. Tente de novo.'
+const ERRO_PORTA = 'Não deu pra carregar/salvar agora: a internet ou o servidor do app não respondeu. Confira a conexão e tente de novo.'
 
 export function Clientes({ dados }: { dados: PortaDados }) {
   const [clientes, setClientes] = useState<Cliente[]>([])

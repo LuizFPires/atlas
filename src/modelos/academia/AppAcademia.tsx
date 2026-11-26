@@ -36,7 +36,7 @@ export function AppAcademia({ personalizacao = PERSONALIZACAO_EXEMPLO, licenca =
     let vivo = true
     g.conferir().then((v) => { if (vivo) setVeredito(v) }).catch(() => {
       // Falha inesperada do guardião: fecha (não libera por erro).
-      if (vivo) setVeredito({ estado: 'bloqueado', mensagem: 'Não conseguimos confirmar a licença deste app agora. Tente de novo em instantes.' })
+      if (vivo) setVeredito({ estado: 'bloqueado', mensagem: 'Não conseguimos confirmar a licença deste app agora: a internet ou o servidor não respondeu. Confira a conexão e tente de novo em alguns minutos.' })
     })
     return () => { vivo = false }
   }, [g])

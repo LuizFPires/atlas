@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Botao, CampoFalado } from '../../ui'
 import type { Aluno, PortaDados, Resp } from './dados'
 
-const ERRO_PORTA = 'Não deu pra carregar/salvar agora. Tente de novo.'
+const ERRO_PORTA = 'Não deu pra carregar/salvar agora: a internet ou o servidor do app não respondeu. Confira a conexão e tente de novo.'
 
 interface Props { dados: PortaDados; escolhido: string | null; onEscolher: (id: string | null) => void; onIrTreino?: () => void }
 

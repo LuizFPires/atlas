@@ -48,7 +48,7 @@ export async function salvarPersonalizacaoDoPortal(d: DepsPortal, jwt: string, c
   const segmento = await segmentoDaLicenca(d, licenca.id)
   if (!segmento) throw new ErroRegra('sem_app_pronto', 'Essa conta não tem um app pronto para personalizar.', 403)
   if (!(await d.store.tentarEvento(`personalizacao:${licenca.id}`, 30, 60 * 60_000, d.agora()))) {
-    throw new ErroRegra('muitas_solicitacoes', 'Muitas alterações seguidas. Tente de novo mais tarde.', 429)
+    throw new ErroRegra('muitas_solicitacoes', 'Muitas alterações seguidas. Espere uns 10 minutos e tente de novo.', 429)
   }
   const p = validarPersonalizacao(corpo)
   await d.store.salvarPersonalizacao(licenca.id, p, d.agora())

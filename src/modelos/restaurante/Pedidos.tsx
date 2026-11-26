@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Botao, CampoFalado } from '../../ui'
 import { ROTULO_STATUS, STATUS, formatarPreco, totalDoPedido, type ItemCardapio, type Pedido, type PortaDados, type Resp, type StatusPedido } from './dados'
 
-const ERRO_PORTA = 'Não deu pra carregar/salvar agora. Tente de novo.'
+const ERRO_PORTA = 'Não deu pra carregar/salvar agora: a internet ou o servidor do app não respondeu. Confira a conexão e tente de novo.'
 const PROXIMO: Partial<Record<StatusPedido, { para: StatusPedido; rotulo: string }>> = {
   aberto: { para: 'na_cozinha', rotulo: 'Mandar para a cozinha' },
   pronto: { para: 'entregue', rotulo: 'Marcar entregue' },
