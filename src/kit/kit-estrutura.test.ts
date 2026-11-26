@@ -104,3 +104,24 @@ describe('revisores de segurança e desempenho', () => {
     }
   })
 })
+
+// M63 (Luiz, 25/11/2026): "colocar um paisagismo no entorno ali do prédio ... e aí agora é venda ... fica mais lúdico". Sempre em 3D.
+describe('canteiro 3D no fim da obra: jardim e stand de vendas', () => {
+  const ler = (a: string) => fs.readFileSync(`${raiz}/canteiro/${a}`, 'utf8')
+  test('o servidor do canteiro conta à cena a fase do lançamento (nada, obra, pronto)', () => {
+    const srv = ler('server.cjs')
+    expect(srv).toMatch(/function faseLancamento\(/)
+    expect(srv).toMatch(/lancamento: faseLancamento\(RAIZ\)/)
+    for (const a of ['incorporador', 'sindico']) expect(srv).toMatch(new RegExp(`PAPEIS = \\[[^\\]]*'${a}'`))
+  })
+  test('a cena tem o jardim (só com o prédio pronto) e o stand (obra → pronto, com a placa Vendas)', () => {
+    const cena = ler('cena3d.js')
+    expect(cena).toMatch(/const jardim = new THREE\.Group\(\)/)
+    expect(cena).toMatch(/jardim\.visible = pctVisto >= 99\.9/)
+    expect(cena).toMatch(/const stand = new THREE\.Group\(\)/)
+    expect(cena).toMatch(/standObra\.visible = faseLanc === 'obra'/)
+    expect(cena).toMatch(/standPronto\.visible = faseLanc === 'pronto'/)
+    expect(cena).toMatch(/'VENDAS'/)
+    for (const a of ['incorporador', 'sindico']) expect(cena).toMatch(new RegExp(`\\n  ${a}: +\\{ nome:`))
+  })
+})

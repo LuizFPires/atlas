@@ -687,9 +687,9 @@ Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1
 peso: 1
 spec: S15
 tela: prototipo/caminho-novo/LC3Construindo.dc.html
-- [ ] Obra a 100%: o canteiro 3D ganha jardim e árvores em volta do prédio pronto
-- [ ] Lançamento em construção: o stand de vendas sobe ao lado (grua e contorno), com o Incorporador e o Síndico trabalhando; stand pronto com a placa "Vendas"
-Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Pedido do Luiz (25/11/2026, "colocar um paisagismo no entorno ali do prédio ... e aí agora é venda ... fica mais lúdico"). DIVERGÊNCIA consciente: o protótipo desenha a cena em 2D; no app é o canteiro 3D (regra do CLAUDE.md).
+- [x] Obra a 100%: o canteiro 3D ganha jardim e árvores em volta do prédio pronto
+- [x] Lançamento em construção: o stand de vendas sobe ao lado (grua e contorno), com o Incorporador e o Síndico trabalhando; stand pronto com a placa "Vendas"
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Pedido do Luiz (25/11/2026, "colocar um paisagismo no entorno ali do prédio ... e aí agora é venda ... fica mais lúdico"). DIVERGÊNCIA consciente: o protótipo desenha a cena em 2D; no app é o canteiro 3D (regra do CLAUDE.md). Andamento (25/11/2026): na cena 3D do kit, prédio a 100% ganha gramado, calçada, árvores, arbustos e flores e a grua grande vai embora; com o lançamento começado o stand sobe ao lado (base, pilares, contorno lima e uma grua pequena girando) com o Incorporador e o Síndico trabalhando; com as vendas abertas, o stand de vidro com a placa "VENDAS". O servidor do canteiro lê a fase de .atlas/lancamento.json e .atlas/vendas.json.
 
 ## Milestone 64 — Obra para vender nasce pronta para vender
 peso: 2

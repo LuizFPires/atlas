@@ -16,7 +16,7 @@ const { calcularPrazo } = require('../hooks/prazo.cjs');
 const PORTA = Number(process.argv[2] || process.env.CANTEIRO_PORTA || 4747);
 const NONCE = process.env.CANTEIRO_NONCE || '';
 const ATIVO_MS = 30000;
-const PAPEIS = ['coordenador', 'designer', 'escritor', 'revisor', 'implementador', 'qa', 'seguranca', 'desempenho', 'despachante', 'plantonista', 'vistoriador', 'implantador', 'corretor'];
+const PAPEIS = ['coordenador', 'designer', 'escritor', 'revisor', 'implementador', 'qa', 'seguranca', 'desempenho', 'despachante', 'plantonista', 'vistoriador', 'implantador', 'corretor', 'incorporador', 'sindico'];
 const ESQUECER_MS = 30 * 24 * 3600 * 1000; // obra sem movimento há 30 dias sai da carteira (volta sozinha no próximo evento)
 
 // o projeto de onde o painel foi ligado entra na carteira
@@ -34,6 +34,17 @@ function ultimosEventos(dir, max = 400) {
   fs.readSync(fd, buf, 0, ler, st.size - ler);
   fs.closeSync(fd);
   return buf.toString('utf8').split('\n').slice(-max).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+}
+
+// M63: fase do lançamento da obra (o Atlas grava .atlas/lancamento.json e .atlas/vendas.json): 'nada' | 'obra' | 'pronto'.
+function faseLancamento(RAIZ) {
+  try {
+    const l = JSON.parse(fs.readFileSync(path.join(RAIZ, '.atlas', 'lancamento.json'), 'utf8'));
+    if (!l || l.comecado !== true) return 'nada';
+    let v = null;
+    try { v = JSON.parse(fs.readFileSync(path.join(RAIZ, '.atlas', 'vendas.json'), 'utf8')); } catch { v = null; }
+    return v && v.fase === 'aberta' ? 'pronto' : 'obra';
+  } catch { return 'nada'; }
 }
 
 function estado(RAIZ) {
@@ -85,7 +96,7 @@ function estado(RAIZ) {
   const ultimo = eventos.length ? eventos[eventos.length - 1].ts : 0;
   let prazo = null;
   try { prazo = calcularPrazo(RAIZ, agora); } catch {}
-  return { nome, raiz: RAIZ, etapa, plano, roteiro: lerRoteiro(RAIZ), ocorrencias, agentes, feed, ultimo, agora, prazo };
+  return { nome, raiz: RAIZ, etapa, plano, roteiro: lerRoteiro(RAIZ), ocorrencias, agentes, feed, ultimo, agora, prazo, lancamento: faseLancamento(RAIZ) };
 }
 
 function carteira() {
