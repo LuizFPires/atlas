@@ -103,7 +103,8 @@ const vigia = criarVigia({ diario, diagnosticar: (pasta) => diagnostico.diagnost
   // Desistiu de religar sozinho: avisa NA HORA, mesmo com o Atlas minimizado (o painel também mostra o alerta com o motivo).
   aoPrecisar: (pasta, motivo) => { avisarNoCelular('parou', pasta, motivo); try { if (Notification.isSupported()) new Notification({ title: 'A obra parou', body: `${motivo} Abra o Atlas: ele mostra o que aconteceu e o que fazer.` }).show() } catch { /* aviso extra */ } } })
 const { criarCronograma } = require('./adaptadores/cronograma.cjs')
-const painel = criarPainel({ fila: filaObras, vigia, diario, cronograma: criarCronograma(), raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
+const { permissaoDoApp } = require('./permissoes.cjs')
+const painel = criarPainel({ fila: filaObras, vigia, diario, cronograma: criarCronograma(), plano: () => planoClaude, raiz: obras.raiz(), modos, construcao, shell, kitDir: process.env.ATLAS_KIT_DIR || kitDirDoApp({ empacotado: app.isPackaged, recursos: process.resourcesPath }) })
 // Cota (F10): detecta o limite do Claude e a renovação (teste barato) e retoma sozinha; o Retomar usa o mesmo adaptador.
 const cota = criarCota({ recursos: recursosClaude, raiz: obras.raiz(), construcao, painel, claudeEstado: estadoClaude, dadosApp: app.getPath('userData'), garantirKit: (pasta) => garantirObra(String(pasta)) })
 // Ocorrências (F11): livro do kit da obra (docs\ocorrencias.json). A chave colada vai SÓ ao cofre (DPAPI). Canais de aviso: pendência (ver ocorrencias.cjs).
@@ -333,6 +334,7 @@ ipcMain.on('atlas:painel:endereco', (e, pasta) => { e.returnValue = confiavel(e)
 handle('atlas:painel:teste', (pasta) => painel.abrirTeste(String(pasta)))
 handle('atlas:painel:diario', (pasta) => painel.diario(String(pasta)))
 handle('atlas:painel:cronograma', (pasta) => painel.cronograma(String(pasta)))
+handle('atlas:painel:desempenho', (pasta) => painel.desempenho(String(pasta)))
 handle('atlas:painel:decidir', async (pasta, rotulo) => { await garantirObra(String(pasta)); return painel.decidir(String(pasta), String(rotulo ?? '').slice(0, 80)) })
 
 // Retomar (F12): obra em andamento ao abrir o app e "Continuar obra".
@@ -625,8 +627,8 @@ function abrir() {
   // Só a página do próprio app (file:// dentro de dist-app) recebe o microfone; iframes/outras origens não.
   const origemDoApp = require('node:url').pathToFileURL(path.join(__dirname, '..', 'dist-app') + path.sep).href
   const doApp = (url) => typeof url === 'string' && url.startsWith(origemDoApp)
-  session.defaultSession.setPermissionRequestHandler((wc, permissao, ok, detalhes) => ok(permissao === 'media' && doApp(wc.getURL()) && doApp((detalhes && detalhes.requestingUrl) || wc.getURL())))
-  session.defaultSession.setPermissionCheckHandler((wc, permissao, origem) => permissao === 'media' && doApp((wc && wc.getURL()) || '') && String(origem).startsWith('file://'))
+  session.defaultSession.setPermissionRequestHandler((wc, permissao, ok, detalhes) => ok(permissaoDoApp(permissao) && doApp(wc.getURL()) && doApp((detalhes && detalhes.requestingUrl) || wc.getURL())))
+  session.defaultSession.setPermissionCheckHandler((wc, permissao, origem) => permissaoDoApp(permissao) && doApp((wc && wc.getURL()) || '') && String(origem).startsWith('file://'))
   const janela = new BrowserWindow({
     width: 1100, height: 780, backgroundColor: '#141619', title: 'Atlas', icon: path.join(__dirname, 'icone.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true },

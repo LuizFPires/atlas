@@ -15,7 +15,7 @@ const crypto = require('node:crypto')
 const { lerTexto, lerJson, gravarAtomico } = require('./obra-fs.cjs')
 const { lerPlanoDoTexto } = require('./painel.cjs')
 
-const MAX_CONSUMO = 200
+const MAX_CONSUMO = 3000 // a aba Desempenho desenha a obra inteira (cada linha tem ~300 letras)
 /** Texto que vem de arquivo escrito pelo Claude: uma linha só, curta, sem marcação nem sinal de comando. */
 const dado = (v, max = 120) => String(v ?? '').replace(/[\r\n\t]+/g, ' ').replace(/#{2,}/g, '').replace(/[`$<>|;{}\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, max)
 
@@ -107,19 +107,23 @@ function consumoDoResultado(j) {
 
 const arqConsumo = (cwd) => path.join(cwd, '.atlas', 'consumo.jsonl')
 function lerConsumo(cwd) {
-  const t = lerTexto(arqConsumo(cwd), 2_000_000)
+  const t = lerTexto(arqConsumo(cwd), MAX_CONSUMO * 2000)
   if (!t) return []
   const out = []
   for (const l of t.split('\n')) { if (!l.trim()) continue; try { out.push(JSON.parse(l)) } catch { /* linha quebrada */ } }
   return out
 }
-/** Um turno a mais no registro (guarda os últimos 200). */
+/** Um turno a mais no registro (acrescenta no fim; quando passa do limite, guarda só os últimos MAX_CONSUMO). */
 function registrarConsumo(cwd, item) {
   try {
     fs.mkdirSync(path.join(cwd, '.atlas'), { recursive: true })
-    const todos = [...lerConsumo(cwd), item].slice(-MAX_CONSUMO)
-    gravarAtomico(arqConsumo(cwd), todos.map((x) => JSON.stringify(x)).join('\n') + '\n')
+    const arq = arqConsumo(cwd)
+    fs.appendFileSync(arq, JSON.stringify(item) + '\n')
+    if (fs.statSync(arq).size > MAX_CONSUMO * 400) {
+      const todos = lerConsumo(cwd).slice(-MAX_CONSUMO)
+      gravarAtomico(arq, todos.map((x) => JSON.stringify(x)).join('\n') + '\n')
+    }
   } catch { /* registro é extra */ }
 }
 
-module.exports = { retratoDaObra, marcaDeAvanco, consumoDoResultado, registrarConsumo, lerConsumo, lerGit }
+module.exports = { retratoDaObra, marcaDeAvanco, consumoDoResultado, registrarConsumo, lerConsumo, lerGit, MAX_CONSUMO }

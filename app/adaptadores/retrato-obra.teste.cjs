@@ -66,7 +66,15 @@ test('consumo: lê os números do resultado do Claude e guarda por turno, sem te
   assert.equal(consumoDoResultado({ type: 'assistant' }), null)
   const d = obra()
   for (let i = 0; i < 205; i++) registrarConsumo(d, { inicio: 'a', fim: 'b', motivo: 'concluiu', ...r })
+  assert.equal(lerConsumo(d).length, 205)
+  // A aba Desempenho desenha a obra inteira: guarda até MAX_CONSUMO turnos (antes eram 200) e corta só os mais velhos.
+  const { MAX_CONSUMO } = require('./retrato-obra.cjs')
+  assert.ok(MAX_CONSUMO >= 3000)
+  const gordo = { inicio: 'a', fim: 'b', motivo: 'x'.repeat(500), ...r }
+  fs.writeFileSync(path.join(d, '.atlas', 'consumo.jsonl'), Array.from({ length: MAX_CONSUMO + 50 }, () => JSON.stringify(gordo)).join('\n') + '\n')
+  registrarConsumo(d, { inicio: 'a', fim: 'b', motivo: 'ultimo', ...r })
   const linhas = lerConsumo(d)
-  assert.equal(linhas.length, 200)
+  assert.ok(linhas.length <= MAX_CONSUMO)
+  assert.equal(linhas[linhas.length - 1].motivo, 'ultimo')
   assert.doesNotMatch(fs.readFileSync(path.join(d, '.atlas', 'consumo.jsonl'), 'utf8'), /segredo/)
 })

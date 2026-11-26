@@ -82,6 +82,7 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     abrirTeste: (pasta) => chamar('atlas:painel:teste', String(pasta)),
     diario: (pasta) => chamar('atlas:painel:diario', String(pasta)),
     cronograma: (pasta) => chamar('atlas:painel:cronograma', String(pasta)),
+    desempenho: (pasta) => chamar('atlas:painel:desempenho', String(pasta)),
     decidir: (pasta, rotulo) => chamar('atlas:painel:decidir', String(pasta), String(rotulo)),
   },
   estilo: {
