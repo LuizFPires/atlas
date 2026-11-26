@@ -17,6 +17,8 @@ const PAPEIS = {
   vistoriador:   { nome: 'Vistoriador',           capacete: 0xe8e2d0, colete: 0x6b5d2e },
   implantador:   { nome: 'Implantador',           capacete: 0xffd36b, colete: 0x2c4a6b },
   corretor:      { nome: 'Corretor',              capacete: 0xff6fa8, colete: 0x4a2440 },
+  incorporador:  { nome: 'Incorporador',          capacete: 0xc6f135, colete: 0x24301a },
+  sindico:       { nome: 'Síndico',               capacete: 0x8fd3ff, colete: 0x1f3550 },
 };
 const VERBO = { Read: 'lendo', Edit: 'construindo', MultiEdit: 'construindo', Write: 'construindo', Bash: 'rodando', Grep: 'procurando', Glob: 'procurando', Task: 'chamando equipe', Agent: 'chamando equipe', WebSearch: 'pesquisando', WebFetch: 'pesquisando' };
 
@@ -35,6 +37,8 @@ const PENSA = {
   vistoriador: ['revisando o checklist do habite-se'],
   implantador: ['conferindo os servidores'],
   corretor: ['preparando o anúncio da loja'],
+  incorporador: ['pensando nos preços', 'desenhando a página de vendas'],
+  sindico: ['organizando a portaria', 'conferindo quem pagou'],
 };
 // Quando a obra espera algo de fora (CI do GitHub) ou o dono, a cena mostra isso em vez de parecer parada.
 function esperaDe(E) {
@@ -64,6 +68,8 @@ const LUGAR = {
   vistoriador:   { ativo: [2, 6.5],     parado: [-22.5, 16] },
   implantador:   { ativo: [-24, -18.5], parado: [-22, 13.5] },
   corretor:      { ativo: [1, 25.2],    parado: [-13, 13] },
+  incorporador:  { ativo: [18.6, 24.6], parado: [-12.5, 10.8] },
+  sindico:       { ativo: [23.4, 24.6], parado: [-11, 12.2] },
 };
 
 export function iniciar(palco, obterEstado) {
@@ -360,6 +366,52 @@ export function iniciar(palco, obterEstado) {
     fogosT = 0; fogos.visible = true;
   };
 
+  // ---------- M63: jardim (prédio pronto) e stand de vendas (lançamento) ----------
+  const jardim = new THREE.Group(); cena.add(jardim);
+  const gramado = new THREE.Mesh(new THREE.PlaneGeometry(54, 48), mat.grama);
+  gramado.rotation.x = -Math.PI / 2; gramado.position.set(-1, .02, 2); gramado.receiveShadow = true; jardim.add(gramado);
+  const calcada = caixa(PRED.w + 6, .08, PRED.d + 6, mat.concretoClaro, PRED.x, .05, PRED.z, false); jardim.add(calcada);
+  const folha = M(0x4f9a3e, { roughness: .8 }), folha2 = M(0x6fb24a, { roughness: .8 }), tronco = M(0x7a5a3a);
+  const arvore = (x, z, s = 1) => {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    const t = cilindro(.22 * s, 2.4 * s, tronco, 7); t.position.y = 1.2 * s; g.add(t);
+    const c1 = new THREE.Mesh(new THREE.SphereGeometry(1.5 * s, 10, 8), folha); c1.position.y = 3.1 * s; c1.castShadow = true; g.add(c1);
+    const c2 = new THREE.Mesh(new THREE.SphereGeometry(1.1 * s, 10, 8), folha2); c2.position.set(.6 * s, 3.9 * s, .3 * s); c2.castShadow = true; g.add(c2);
+    jardim.add(g);
+  };
+  const arbusto = (x, z) => { const b = new THREE.Mesh(new THREE.SphereGeometry(.7, 8, 6), folha2); b.position.set(x, .45, z); b.scale.y = .7; b.castShadow = true; jardim.add(b); };
+  for (const [x, z, s] of [[-9, -10, 1.1], [-9, 6, 1], [-9, 14, 1.2], [14, -6, 1], [14, 9, 1.1], [-2, 14, .9], [7, 14, 1], [-24, 4, 1.3], [-24, -4, 1.1], [22, -18, 1.2], [-24, -18, 1], [10, -19, 1.1]]) arvore(x, z, s);
+  for (let x = PRED.x - PRED.w / 2; x <= PRED.x + PRED.w / 2; x += 2.3) { arbusto(x, PRED.z + PRED.d / 2 + 2.4); arbusto(x, PRED.z - PRED.d / 2 - 2.4); }
+  for (const [x, z] of [[-6, 20], [-3, 21], [4, 21], [8, 20]]) { const fl = new THREE.Mesh(new THREE.SphereGeometry(.35, 6, 5), M(0xf2b430)); fl.position.set(x, .3, z); jardim.add(fl); }
+  jardim.visible = false;
+
+  // stand de vendas: em obra (contorno, andaime e uma grua pequena) e pronto (vidro e a placa "Vendas")
+  const STAND = { x: 21, z: 20, w: 7, d: 4.4, h: 3.4 };
+  const stand = new THREE.Group(); stand.position.set(STAND.x, 0, STAND.z); cena.add(stand);
+  const standObra = new THREE.Group(); stand.add(standObra);
+  standObra.add(caixa(STAND.w + .6, .25, STAND.d + .6, mat.concreto, 0, .12, 0));
+  for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) standObra.add(caixa(.25, STAND.h, .25, mat.concretoClaro, x * STAND.w / 2, STAND.h / 2, z * STAND.d / 2));
+  const contorno = M(0xc6f135, { emissive: 0x2a3a12 });
+  for (const z of [-1, 1]) standObra.add(caixa(STAND.w, .08, .08, contorno, 0, STAND.h, z * STAND.d / 2, false));
+  for (const x of [-1, 1]) standObra.add(caixa(.08, .08, STAND.d, contorno, x * STAND.w / 2, STAND.h, 0, false));
+  const gruaP = new THREE.Group(); gruaP.position.set(STAND.w / 2 + 1.6, 0, -STAND.d / 2 - 1); standObra.add(gruaP);
+  gruaP.add(caixa(.4, 7, .4, mat.amarelo, 0, 3.5, 0));
+  const braco = new THREE.Group(); braco.position.y = 7; gruaP.add(braco);
+  braco.add(caixa(7, .3, .3, mat.amarelo, -2.6, 0, 0)); braco.add(caixa(1, .6, .6, mat.concreto, 1, 0, 0));
+  const pronto = new THREE.Group(); stand.add(pronto);
+  pronto.add(caixa(STAND.w + .6, .25, STAND.d + .6, mat.concretoClaro, 0, .12, 0));
+  pronto.add(caixa(STAND.w, STAND.h, STAND.d, M(0x9fc3e6, { roughness: .1, metalness: .25, transparent: true, opacity: .75 }), 0, STAND.h / 2 + .25, 0));
+  pronto.add(caixa(STAND.w + .8, .3, STAND.d + .8, mat.branco, 0, STAND.h + .4, 0));
+  const telaPlaca = document.createElement('canvas'); telaPlaca.width = 256; telaPlaca.height = 64;
+  const ctx = telaPlaca.getContext('2d');
+  if (ctx) { ctx.fillStyle = '#c6f135'; ctx.fillRect(0, 0, 256, 64); ctx.fillStyle = '#141619'; ctx.font = 'bold 40px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('VENDAS', 128, 34); }
+  const texPlaca = new THREE.CanvasTexture(telaPlaca); texPlaca.colorSpace = THREE.SRGBColorSpace;
+  const placaVendas = caixa(4, 1, .12, new THREE.MeshStandardMaterial({ map: texPlaca, emissive: 0xffffff, emissiveMap: texPlaca, emissiveIntensity: .25 }), 0, STAND.h + 1.2, STAND.d / 2 + .1, false);
+  pronto.add(placaVendas);
+  for (const x of [-2.2, 2.2]) { const v = new THREE.Mesh(new THREE.SphereGeometry(.55, 8, 6), folha2); v.position.set(x, .6, STAND.d / 2 + 1.2); pronto.add(v); }
+  const standPronto = pronto;
+  stand.visible = false;
+
   // ---------- dia e noite ----------
   const horaFixa = Number(new URLSearchParams(location.search).get('hora'));
   // Atlas (M43, Luiz 24/11/2026): no app, os balões técnicos ("rodando gh run list…") somem; o Atlas mostra um balão só, em português simples.
@@ -438,6 +490,14 @@ export function iniciar(palco, obterEstado) {
     andaime.visible = pctVisto > 0 && pctVisto < 100;
     andaime.position.y = Math.max(0, emObra - 1) * PRED.h;
     cobertura.visible = pctVisto >= 99.9; cobertura.position.y = .4 + PRED.pav * PRED.h;
+    // M63: prédio pronto ganha o jardim; o lançamento faz o stand subir ao lado (obra → pronto com a placa "Vendas").
+    jardim.visible = pctVisto >= 99.9;
+    grua.visible = pctVisto < 99.9; // prédio pronto: a grua grande vai embora (como no celular, M56)
+    const faseLanc = E.lancamento === 'obra' || E.lancamento === 'pronto' ? E.lancamento : 'nada';
+    stand.visible = faseLanc !== 'nada';
+    standObra.visible = faseLanc === 'obra';
+    standPronto.visible = faseLanc === 'pronto';
+    if (faseLanc === 'obra') braco.rotation.y = Math.sin(t / 2600) * .8;
     bandeira.rotation.y = Math.sin(t / 400) * .25;
     const topo = topoObra(pctVisto);
 
