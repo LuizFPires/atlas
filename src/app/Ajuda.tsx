@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Icone, Microfone, StatusVoz, useVoz } from '../ui'
 import { textoDaObra } from './ponte-cota'
 import { montarCaso, type MotivoCaso, type PonteCasosAdmin } from './ponte-ajuda-casos'
@@ -83,9 +84,9 @@ export function Ajuda({ toqueVoz = 0, ajuda, casos, contexto, nome, onFechar, fo
       await casos.enviar(montarCaso({ ...contexto, print: prints[prints.length - 1] ?? contexto.print ?? null }, turnos, motivo))
       caso.current = 'enviado'
       if (avisar) setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: 'Anotei o seu caso, com o print e o passo onde você parou, para o Atlas estudar o que aconteceu. Você pode me contar de outro jeito ou mandar outro print a qualquer hora.' }])
-    } catch {
+    } catch (e) {
       caso.current = 'nao'
-      if (avisar) setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: 'Não consegui anotar o seu caso agora. Sem pressa: você pode me contar de outro jeito ou mandar outro print, que eu continuo aqui com você.' }])
+      if (avisar) setMsgs((m) => [...m, { id: proximo.current++, de: 'atlas', texto: `${textoDaTrava(e, 'Não consegui anotar o seu caso.')} Enquanto isso, pode me contar de outro jeito ou mandar outro print, que eu continuo aqui com você.` }])
     }
   }
 
@@ -109,14 +110,14 @@ export function Ajuda({ toqueVoz = 0, ajuda, casos, contexto, nome, onFechar, fo
         if (r.naoResolvido) void anotarCaso('sem-saida', turnos, true)
         else if (vezes >= 2) void anotarCaso('ainda-nao-deu', turnos, true)
       }
-    } catch {
-      if (id === reqId.current) setAviso('Não consegui responder agora. Nada se perdeu: tente de novo em instantes.')
+    } catch (e) {
+      if (id === reqId.current) setAviso(textoDaTrava(e, 'Não consegui responder.'))
     } finally { if (id === reqId.current) setOcupado(false) }
   }
 
   const abrirPagina = async (id: unknown) => {
     if (!ehPaginaId(id)) return
-    try { await ajuda.abrirPagina(id) } catch { setAviso('Não consegui abrir a página agora. Tente de novo em instantes.') }
+    try { await ajuda.abrirPagina(id) } catch (e) { setAviso(textoDaTrava(e, 'Não consegui abrir a página.')) }
   }
   const deuCerto = () => {
     setFechado(true)

@@ -1,4 +1,5 @@
 import { useContext, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Botao, CampoFalado, Icone, useVoz } from '../ui'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EntradaEstilo, EstiloProposto, PonteEstilo } from './ponte-estilo'
@@ -28,7 +29,7 @@ const recado = (e: unknown, aceita: string, maior: string) => {
   const m = e instanceof Error ? e.message : ''
   if (m === 'tipo-nao-aceito') return `Esse tipo de arquivo eu não consigo ler. Pode ser ${aceita}.`
   if (m === 'grande-demais') return `Esse arquivo é grande demais. Tente ${maior}, de até 20 MB.`
-  return 'Não consegui pegar esse arquivo agora. Tente de novo em instantes.'
+  return textoDaTrava(e, 'Não consegui pegar esse arquivo.')
 }
 const recadoPrint = (e: unknown) => recado(e, 'PNG, JPG ou WEBP', 'um print menor')
 const recadoUpload = (e: unknown) => recado(e, 'PNG, JPG, WEBP, PDF ou o design-system.md', 'um menor')
@@ -105,7 +106,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir, onAvancar
       setEscolhido(p[0]?.id ?? '')
     } catch (e) {
       const codigo = e instanceof Error ? e.message : ''
-      setErro(codigo === 'claude-nao-logado' || codigo === 'claude-nao-instalado' ? SEM_CLAUDE : 'Não consegui montar os estilos agora. Suas referências continuam aqui; tente de novo em instantes.')
+      setErro(codigo === 'claude-nao-logado' || codigo === 'claude-nao-instalado' ? SEM_CLAUDE : textoDaTrava(e, 'Não consegui montar os estilos. Suas referências continuam aqui.'))
     }
     finally { setOcupado('') }
   }
@@ -118,7 +119,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir, onAvancar
     try {
       const { caminho } = await estilo.materializar(obra.pasta, { tipo: 'estilo', estilo: e, entrada: entrada() })
       setGuardado({ estilo: e, caminho })
-    } catch { setErro('Não consegui guardar o estilo na pasta da obra agora. Sua escolha continua aqui; tente de novo em instantes.') }
+    } catch (x) { setErro(textoDaTrava(x, 'Não consegui guardar o estilo na pasta da obra. Sua escolha continua aqui.')) }
     finally { setOcupado('') }
   }
 
@@ -153,7 +154,7 @@ export function Estilo({ obra, arquivos, estilo, onVoltar, onConcluir, onAvancar
         identidade: { arquivos: todosArquivos.filter((n) => n !== prontoDS), cores: [paleta.length ? `Cores da marca: ${paleta.join(', ')}` : '', coresTxt.trim(), figmaOk ?? ''].filter(Boolean).join(String.fromCharCode(10)), prontoDS: prontoDS || undefined },
       })
       setGuardado({ estilo: null, caminho })
-    } catch { setErro('Não consegui guardar o design system na pasta da obra agora. O que você mandou continua aqui; tente de novo em instantes.') }
+    } catch (x) { setErro(textoDaTrava(x, 'Não consegui guardar o design system na pasta da obra. O que você mandou continua aqui.')) }
     finally { setOcupado('') }
   }
 

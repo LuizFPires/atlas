@@ -1,4 +1,5 @@
 import { textoAvanco } from './avanco'
+import { textoDaTrava } from './explicar-trava'
 import { palavras } from './plataforma'
 import { useEffect, useMemo, useState } from 'react'
 import { Icone } from '../ui'
@@ -111,7 +112,7 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova, constr
       setLidas((l) => (l ?? []).filter((x) => x.pasta !== o.pasta))
       setExcluindo(null)
     } catch (e) {
-      setErroExcluir(e instanceof Error && e.message === 'obra-concluida' ? 'Obra concluída não pode ser excluída.' : 'Não consegui excluir agora. Feche a pasta da obra se ela estiver aberta e tente de novo.')
+      setErroExcluir(e instanceof Error && e.message === 'obra-concluida' ? 'Obra concluída não pode ser excluída.' : textoDaTrava(e, 'Não consegui excluir. Feche a pasta da obra se ela estiver aberta.'))
     } finally { setOcupado(false) }
   }
 
@@ -261,7 +262,7 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova, constr
             onEscolher={(c: ComoComecar) => {
               if (c === 'fila') { setMudando(false); return }
               setOcupado(true)
-              construcao.mudarVez!(espera.pasta, c).then(() => { setMudando(false); setVersao((v) => v + 1) }, () => { setMudando(false); setErroFila('Não consegui mudar a ordem agora. Tente de novo em instantes.') }).finally(() => setOcupado(false))
+              construcao.mudarVez!(espera.pasta, c).then(() => { setMudando(false); setVersao((v) => v + 1) }, (e) => { setMudando(false); setErroFila(textoDaTrava(e, 'Não consegui mudar a ordem.')) }).finally(() => setOcupado(false))
             }} />
         )
       })()}

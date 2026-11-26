@@ -1,3 +1,4 @@
+import { textoDaTrava } from './explicar-trava'
 // Ponte da página de vendas (M61; prototipo/caminho-novo/LC4Pagina). O adaptador real é app/adaptadores/pagina-vendas.cjs.
 export type FaseVendas = 'nada' | 'pronta' | 'aprovada' | 'construindo' | 'testando' | 'teste-ok' | 'teste-falhou' | 'abrindo' | 'aberta' | 'erro'
 export interface EstadoVendas { fase: FaseVendas; versao: number; html: string; resumo: string; etapas: string[]; erro: string | null; painel: 'nada' | 'construindo' | 'pronto' | 'erro'; painelUrl: string | null }
@@ -25,7 +26,7 @@ export function explicarErroVendas(m: string): string {
   if (m === 'vercel-variaveis' || m === 'vercel-deploy') return 'A Vercel não aceitou agora. Confira se a conta da Vercel continua ligada e tente de novo.'
   if (m === 'teste-nao-passou') return 'Antes de abrir, a compra de teste precisa dar certo.'
   if (m === 'obra-fora-do-ar') return 'Primeiro o sistema precisa estar no ar.'
-  return 'Não deu certo agora. Tente de novo em instantes.'
+  return textoDaTrava(m, 'Não deu certo agora.')
 }
 
 const PAGINA_EXEMPLO = '<!doctype html><html><body style="font-family:sans-serif;margin:0"><header style="padding:24px;background:#1F5FAD;color:#fff"><h1>O ponto da sua equipe no celular</h1><p>Sem papel e sem relógio na parede.</p><a href="#precos" style="color:#fff">Testar grátis 14 dias</a></header><section id="precos" style="padding:24px"><h2>Preços</h2><p>Grátis · Mensal R$ 49 · Anual R$ 470</p></section></body></html>'

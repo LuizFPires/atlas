@@ -103,6 +103,18 @@
      </section>
     </sc-if>
 
+    <sc-if value="{{tBancoCheio}}" hint-placeholder-val="{{ false }}">
+     <!-- Autoexplicativo (26/11/2026): ANTES do clique, o Atlas confere a conta do Supabase e avisa o limite grátis de 2 bancos. -->
+     <section style="display:flex;flex-direction:column;gap:12px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #C6F432">
+      <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F432">A OBRA FICOU PRONTA</span>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:12px;border:1px solid #F2B84B;font-size:14px;line-height:1.5;color:#F4F6F2">
+       <span>A sua conta do Supabase já tem 2 bancos ativos. Na conta grátis o limite é 2, e o Supabase vai recusar o banco novo deste sistema.</span>
+       <span>Antes de colocar no ar: entre em supabase.com/dashboard, pause ou apague um projeto que você não usa (ou mude para o plano pago) e volte aqui.</span>
+      </div>
+      <span style="font-size:13px;color:#8A9088">Com folga: "Você usa 1 de 2 bancos da conta grátis do Supabase; este sistema vai usar mais 1." Sem a conta ligada: aviso + "Ligar a conta do Supabase".</span>
+     </section>
+    </sc-if>
+
     <sc-if value="{{tTravou}}" hint-placeholder-val="{{ false }}">
      <!-- Destravar pelo app (26/11/2026): a correção que não sai mostra o motivo e as saídas, sem depender de versão nova. -->
      <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #F2B84B">
@@ -295,7 +307,7 @@ class Component extends DCLogic {
     return {
       predio: 'data:image/svg+xml;utf8,' + encodeURIComponent(predioSvg({ andares: 12, prontos: 12, altura: 560 })),
       predioAlt: 'O prédio pronto: 12 de 12 andares, com a bandeira no topo',
-      tPronta: tela === 'pronta', tEndereco: tela === 'endereco', tPublicando: tela === 'publicando', tVistoria: tela === 'vistoria', tTravou: tela === 'travou', noAr, noArSelo: noAr || tela.startsWith('dominio') || tela.startsWith('lojas') || tela === 'testadores', tDominio: tela === 'dominio', tDominioOk: tela === 'dominiook', tLojas: tela === 'lojas', tLojasOk: tela === 'lojasok', tTestadores: tela === 'testadores',
+      tPronta: tela === 'pronta', tEndereco: tela === 'endereco', tPublicando: tela === 'publicando', tVistoria: tela === 'vistoria', tTravou: tela === 'travou', tBancoCheio: tela === 'banco-cheio', noAr, noArSelo: noAr || tela.startsWith('dominio') || tela.startsWith('lojas') || tela === 'testadores', tDominio: tela === 'dominio', tDominioOk: tela === 'dominiook', tLojas: tela === 'lojas', tLojasOk: tela === 'lojasok', tTestadores: tela === 'testadores',
       selo: (noAr || tela.startsWith('dominio') || tela.startsWith('lojas') || tela === 'testadores') ? 'NO AR' : tela === 'pronta' ? 'PRONTA PARA PUBLICAR' : 'PUBLICANDO', seloCor: noAr || tela === 'pronta' || tela.startsWith('dominio') || tela.startsWith('lojas') || tela === 'testadores' ? '#C6F135' : '#F2B84B',
       passos, contas, nomes, ns, passosDom, lojas, passosLoja
     };

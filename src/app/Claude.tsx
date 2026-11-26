@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Botao, Icone } from '../ui'
 import { LateralPassos } from './Ativacao'
 import { explicarPlano, mostrarConviteMax, NOME_PLANO, TEXTO_CONVITE_MAX } from './claude-plano'
@@ -75,7 +76,7 @@ export function Claude({ claude, onContinuar, onPedirAjuda, sondagemMs = 15000, 
     try {
       const e = await claude.renovarConexao()
       if (!aplicar(e)) setNovidade(`Ainda vejo o plano ${e.plano ? NOME_PLANO[e.plano] : 'sem identificação'}. A troca pode levar um minutinho para aparecer. O Atlas continua olhando sozinho.`)
-    } catch { setNovidade('Não consegui conferir agora. Tente de novo daqui a pouco.') } finally { setConferindo(false) }
+    } catch (e) { setNovidade(textoDaTrava(e, 'Não consegui conferir se há novidade.')) } finally { setConferindo(false) }
   }
 
   // Abre a autorização do Claude Code e passa a conferir sozinho até a conexão aparecer.

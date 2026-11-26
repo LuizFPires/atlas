@@ -332,7 +332,7 @@ test('avanço da obra travou: diz o motivo de verdade e oferece "Pedir ao Atlas 
   const fx = criarPainelFixture({ agora })
   const ajuda = vi.fn()
   const { user } = montar('automatico', { painel: { ...fx, ler: async () => { throw new Error('kit-faltando') } }, onPedirAjuda: ajuda })
-  expect(await screen.findByText(/O kit de construção não chegou/)).toBeInTheDocument()
+  expect(await screen.findByText(/instruções de construção do Atlas não chegaram/)).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Pedir ao Atlas para destravar' }))
   expect(ajuda).toHaveBeenCalledTimes(1)
 })

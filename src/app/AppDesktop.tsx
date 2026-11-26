@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { detalheExplicado } from './explicar-trava'
 import { StatusVoz } from '../ui'
 import { Shell, type IdTela } from '../shell/Shell'
 import { ImagemAssinatura } from '../marca/Marca'
@@ -158,9 +159,10 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteCasos = useMemo<PonteCasosAdmin>(() => casos ?? (modoFixture() ? criarCasosFixture() : (ponte.casos ?? casosIndisponivel)), [casos, ponte])
   // "Falar com o Atlas" do menu com a Ajuda já aberta: liga/desliga o microfone dela, sem recriar o painel (recriar cancelava a
   // gravação e recomeçava: a fala nunca era escrita; Luiz, 24/11/2026).
-  const abrirAjuda = (contexto: ContextoAjuda) => setPainelAjuda((a) => (a && contexto.origem === 'menu' && contexto.ouvir
+  // O código da trava chega à Ajuda já explicado (explicar-trava.ts): ela sabe o que houve e o que o cliente faz.
+  const abrirAjuda = (bruto: ContextoAjuda) => { const contexto: ContextoAjuda = bruto.erro ? { ...bruto, erro: { ...bruto.erro, detalhe: detalheExplicado(bruto.erro.detalhe) } } : bruto; setPainelAjuda((a) => (a && contexto.origem === 'menu' && contexto.ouvir
     ? { ...a, toque: (a.toque ?? 0) + 1 }
-    : { contexto: { obra: obraAtual?.nome, pasta: obraAtual?.pasta, ...contexto }, n: (a?.n ?? 0) + 1 }))
+    : { contexto: { obra: obraAtual?.nome, pasta: obraAtual?.pasta, ...contexto }, n: (a?.n ?? 0) + 1 })) }
   const pedirAjudaPasso = (p: PedidoAjudaPasso) => abrirAjuda(contextoDoPasso(p))
 
   const pontePlanilha = useMemo<PontePlanilha | null>(() => (modoFixture() ? criarPlanilhaFixture() : (ponte.planilha ?? null)), [ponte])

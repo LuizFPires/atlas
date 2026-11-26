@@ -1,4 +1,5 @@
 import { BloqueioPolitica } from './BloqueioPolitica'
+import { textoDaTrava } from './explicar-trava'
 import { motivoDoTravamento } from './motivo-travou'
 import { politicaIndisponivel, type PontePolitica, type ResultadoPolitica } from './ponte-politica'
 import { useEffect, useRef, useState } from 'react'
@@ -68,7 +69,7 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politi
     } catch (x) {
       setErro(x instanceof Error && x.message === 'tipo-nao-aceito'
         ? 'Esse arquivo eu não consigo olhar. Mande um print em PNG, JPG ou WEBP, ou conte com palavras.'
-        : 'Não consegui pegar essa imagem agora. Tente de novo ou conte com palavras.')
+        : textoDaTrava(x, 'Não consegui pegar essa imagem (você pode contar com palavras).'))
     }
   }
 
@@ -89,7 +90,7 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politi
       setPlano()
       setErro(x instanceof Error && x.message === 'pedido-vazio'
         ? 'Conte o que você quer mudar, com as suas palavras, ou mande um print.'
-        : 'Não consegui entender o pedido agora. Tente de novo em instantes ou conte de outro jeito.')
+        : textoDaTrava(x, 'Não consegui entender o pedido (você pode contar de outro jeito).'))
     } finally { if (id === reqId.current) setEntendendo(false) }
   }
 
@@ -112,7 +113,7 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politi
       else {
         const codigo = x instanceof Error ? x.message : ''
         setTravou(codigo)
-        setErro(motivoDoTravamento(codigo, 'Pode fazer', 'Não consegui começar agora. Nada foi mexido no seu sistema. Tente de novo em instantes.'))
+        setErro(motivoDoTravamento(codigo, 'Não consegui começar. Nada foi mexido no seu sistema.'))
       }
     } finally { setRodando(false) }
   }

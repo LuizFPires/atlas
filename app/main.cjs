@@ -424,6 +424,7 @@ handle('atlas:noar:livre', (nome, pasta) => noAr.nomeLivre(String(nome), pasta =
 handle('atlas:noar:iniciar', async (pasta, nome) => { await garantirFerramentas(); return noAr.iniciar(String(pasta), String(nome)) })
 handle('atlas:noar:estado', (pasta) => noAr.estado(String(pasta)))
 handle('atlas:noar:corrigir', (pasta) => noAr.corrigir(String(pasta)))
+handle('atlas:noar:conferirAntes', (pasta) => noAr.conferirAntes(String(pasta)))
 handle('atlas:lancamento:estado', (pasta) => lancamento.estado(String(pasta)))
 handle('atlas:lancamento:comecar', (pasta, adaptar) => lancamento.comecar(String(pasta), { adaptar: adaptar === true }))
 handle('atlas:lancamento:gateway', (pasta, g) => lancamento.escolherGateway(String(pasta), String(g)))

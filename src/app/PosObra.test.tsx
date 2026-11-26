@@ -206,7 +206,7 @@ test('"Pode fazer" travou: diz o motivo e o cliente destrava pelo app (tentar de
   const posobra = { ...base, executar: async (...a: Parameters<typeof base.executar>) => { if (falhar) throw new Error('obra-com-config-suspeita'); return base.executar(...a) } }
   const { user } = montar({ posobra, onAjuda: (c) => ajudas.push(c) })
   await pedirEAprovar(user)
-  expect(await screen.findByText(/arquivo estranho/)).toBeInTheDocument()
+  expect(await screen.findByText(/arquivo de configuração que o Atlas não criou/)).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Pedir ao Atlas para destravar' }))
   expect(ajudas).toEqual([{ onde: 'o pedido de mudança da obra', erro: 'obra-com-config-suspeita' }])
   falhar = false

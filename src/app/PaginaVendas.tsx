@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { CampoFalado } from '../ui'
 import { guiaChaveGateway, type Guia } from './guias-site'
 import { montarSrcDoc } from './ponte-prototipo'
@@ -184,7 +185,7 @@ export function PaginaVendas({ obra, gateway, vendas, onGuia, intervaloMs = 15_0
                     <span><small>NO PLANO GRÁTIS</small><b>{numeros.gratis}</b></span>
                   </div>
                 ) : <span className="at-noar__txt">Os números aparecem assim que o seu sistema responder.</span>}
-                <button type="button" className="at-noar__prim" onClick={() => void vendas.abrirPainel(obra.pasta).catch(() => setAviso('Não consegui abrir o painel agora.'))}>Abrir o meu painel de dono →</button>
+                <button type="button" className="at-noar__prim" onClick={() => void vendas.abrirPainel(obra.pasta).catch((e) => setAviso(textoDaTrava(e, 'Não consegui abrir o painel.')))}>Abrir o meu painel de dono →</button>
                 <span className="at-noar__nota">Lá você cobra, oferece plano, libera acesso grátis e muda os preços. Também falando: "libera o plano grátis para a Padaria Sol até março".</span>
               </>
             )}

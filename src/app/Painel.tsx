@@ -61,7 +61,7 @@ export const recadoDoErroPainel = (e: unknown) => {
   switch (e instanceof Error ? e.message : '') {
     case 'ja-rodando': return 'Outra obra está trabalhando agora neste computador. Escolha se esta espera na fila, trabalha junto ou vai primeiro.'
     case 'indisponivel': return 'Quem acompanha a obra ainda não está ligado neste computador. Quando estiver, esta tela passa a mostrar a obra de verdade; você não precisa refazer nada.'
-    default: { const c = e instanceof Error ? e.message : ''; return motivoDoTravamento(c, 'Continuar', 'Não consegui fazer isso agora. Tente de novo em instantes.') }
+    default: { const c = e instanceof Error ? e.message : ''; return motivoDoTravamento(c, 'Não consegui fazer isso agora.') }
   }
 }
 

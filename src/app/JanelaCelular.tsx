@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import QRCode from 'qrcode'
 import { Botao, Icone } from '../ui'
 import './janela-celular.css'
@@ -19,7 +20,7 @@ const recado = (e: unknown) => {
     case 'muitos-links': return 'Você gerou muitos links agora há pouco. Espere alguns minutos e tente de novo.'
     case 'sem-conexao': return 'Sem internet agora. Assim que voltar, tente de novo.'
     case 'grande-para-celular': return 'O protótipo ficou grande demais para abrir de uma vez no celular. No computador ele continua inteiro, com todas as telas.'
-    default: return 'Não consegui gerar o link agora. Tente de novo em instantes.'
+    default: return textoDaTrava(e, 'Não consegui gerar o link.')
   }
 }
 

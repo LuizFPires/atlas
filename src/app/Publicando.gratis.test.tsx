@@ -27,7 +27,7 @@ test('se publicar falhar, avisa com calma, não libera o passo e deixa tentar de
   const { pub } = montar({ gratis: true })
   pub.simular.falharPublicacao(true)
   await clicar('Continuar →'); await clicar('Fiz isso →')
-  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/Não consegui colocar no ar agora/))
+  await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/Não consegui colocar no ar\. Nada se perdeu\./))
   expect(screen.getByRole('button', { name: 'Continuar →' })).toBeDisabled()
   pub.simular.falharPublicacao(false)
   await clicar('Tentar de novo')

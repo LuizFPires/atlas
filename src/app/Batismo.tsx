@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Botao, CampoFalado, Icone, Microfone, Trabalhando, useVoz } from '../ui'
 import { type PonteArquivos } from './ponte-arquivos'
 import type { ObraDoEstilo } from './Estilo'
@@ -26,7 +27,7 @@ export const recadoDoErroBatismo = (e: unknown) => {
     case 'tipo-nao-aceito': return 'Esse tipo de arquivo não serve como logomarca. Mande PNG, JPG, WebP ou PDF (SVG não, porque pode esconder programas).'
     case 'grande-demais': return 'Esse arquivo é grande demais (o limite é 20 MB). Mande uma versão menor.'
     case 'nome-invalido': return 'Esse nome está curto demais ou tem símbolos que não dá para usar. Escreva ou fale de novo.'
-    default: return 'Não consegui fazer isso agora. Tente de novo em instantes.'
+    default: return textoDaTrava(e, 'Não consegui fazer isso agora.')
   }
 }
 

@@ -72,10 +72,10 @@ test('"Agora não" vai a Minhas obras sem religar nada', async () => {
 test('se religar falhar, a tela fica, avisa com calma e deixa tentar de novo', async () => {
   const onContinuou = vi.fn()
   let vez = 0
-  const retomar: PonteRetomar = { obraEmAndamento: async () => parada, continuar: async () => { if (vez++ === 0) throw new Error('x') } }
+  const retomar: PonteRetomar = { obraEmAndamento: async () => parada, continuar: async () => { if (vez++ === 0) throw new Error('kit-indisponivel') } }
   render(<TemaProvider><Retomar obra={parada} retomar={retomar} onContinuou={onContinuou} onAgoraNao={() => {}} /></TemaProvider>)
   await userEvent.click(screen.getByRole('button', { name: 'Continuar obra' }))
-  expect(await screen.findByRole('status')).toHaveTextContent(/Sem pressa/)
+  expect(await screen.findByRole('status')).toHaveTextContent(/Não consegui religar a obra\. O servidor do Atlas não entregou.*Tente de novo em alguns minutos.*código: kit-indisponivel/)
   expect(onContinuou).not.toHaveBeenCalled()
   await userEvent.click(screen.getByRole('button', { name: 'Continuar obra' }))
   await waitFor(() => expect(onContinuou).toHaveBeenCalledTimes(1))

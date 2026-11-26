@@ -8,7 +8,7 @@ import type { Guia } from './guias-site'
 import type { ContaLoja, PonteLojas } from './ponte-lojas'
 import type { DestinoSite } from './ponte-publicar'
 import type { EstadoDominio, PonteDominio } from './ponte-dominio'
-import { PASSOS_NO_AR, explicarErro, type EstadoNoAr, type PonteNoAr, type SituacaoNomeNoAr } from './ponte-no-ar'
+import { PASSOS_NO_AR, explicarErro, type AntesDoNoAr, type EstadoNoAr, type PonteNoAr, type SituacaoNomeNoAr } from './ponte-no-ar'
 import './colocar-no-ar.css'
 
 interface Props {
@@ -56,7 +56,7 @@ const ICONE_OK = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
 /** Por que a correção da vistoria não saiu, em português. */
 export function motivoDaCorrecao(codigo: string): string {
   if (codigo === 'nada-para-corrigir') return 'A vistoria já não tem pontos para corrigir. Toque em Colocar no ar de novo.'
-  return motivoDoTravamento(codigo, 'Corrigir e continuar', 'Não consegui mandar as correções agora. Tente de novo em instantes.')
+  return motivoDoTravamento(codigo, 'Não consegui mandar as correções.')
 }
 
 export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro, onGuiaRegistro, dominioAberto = false, lojas, onGuiaLojas, lojasAberto = false, abrirSiteLojas, onVender }: Props) {
@@ -83,12 +83,18 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
     try { const e = await noAr.estado(obra.pasta); if (vivo.current) setEstado(e) } catch { /* tenta de novo na próxima */ }
   }, [noAr, obra.pasta])
 
+  // O Atlas é autoexplicativo (26/11/2026): antes do clique, avisa o que pode travar (conta do Supabase e o limite grátis de 2 bancos).
+  const [antes, setAntes] = useState<AntesDoNoAr | null>(null)
   useEffect(() => {
     vivo.current = true
     void noAr.estado(obra.pasta).then((e) => { if (vivo.current) setEstado(e) }, () => {})
     void noAr.sugerir(obra.pasta, obra.nome, extra).then((s) => { if (!vivo.current) return; setLivres(s.livres); if (s.nome) { setNome(s.nome); setDigitado(s.nome) } }, () => {})
+    void noAr.conferirAntes?.(obra.pasta).then((a) => { if (vivo.current) setAntes(a) }, () => {})
     return () => { vivo.current = false }
   }, [noAr, obra.pasta, obra.nome, extra])
+
+  const bancoCheio = Boolean(antes?.precisaBanco && antes.bancoNovo && antes.contaLigada && antes.bancosAtivos !== null && antes.bancosAtivos >= 2)
+  const semSupabase = Boolean(antes?.precisaBanco && !antes.contaLigada)
 
   // Deu erro de verdade: a Ajuda do Atlas abre sozinha, já sabendo onde parou (uma vez por erro).
   const avisado = useRef('')
@@ -120,7 +126,7 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
     setTravouInicio(null)
     try { setEstado(await noAr.iniciar(obra.pasta, n)); setTela('pronta') } catch (e) {
       const m = e instanceof Error ? e.message : ''
-      setAviso(m === 'nome-ocupado' ? 'Esse nome acabou de ser usado por outra pessoa. Escolha outro.' : m === 'ja-rodando' ? 'O Atlas já está colocando no ar.' : motivoDoTravamento(m, 'Colocar no ar', 'Não consegui começar agora. Tente de novo em instantes.'))
+      setAviso(m === 'nome-ocupado' ? 'Esse nome acabou de ser usado por outra pessoa. Escolha outro.' : m === 'ja-rodando' ? 'O Atlas já está colocando no ar.' : motivoDoTravamento(m, 'Não consegui começar a publicação.'))
       if (m !== 'nome-ocupado' && m !== 'ja-rodando') setTravouInicio(m || 'sem-codigo')
       if (m === 'nome-ocupado') setTela('endereco')
     }
@@ -190,6 +196,21 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
                   <span><span>Quanto custa</span><b>R$ 0 (planos grátis)</b></span>
                   <span><span>O que você faz</span><b>só este clique</b></span>
                 </div>
+                {semSupabase && (
+                  <div className="at-noar__antes" role="alert">
+                    <span>Este sistema precisa de um banco de dados na sua conta do Supabase, e ela não está ligada a este computador. Sem ela, a publicação para no passo do banco.</span>
+                    {onLigarContas && <button type="button" className="at-noar__sec" onClick={onLigarContas}>Ligar a conta do Supabase</button>}
+                  </div>
+                )}
+                {bancoCheio && (
+                  <div className="at-noar__antes" role="alert">
+                    <span>A sua conta do Supabase já tem {antes?.bancosAtivos} bancos ativos. Na conta grátis o limite é 2, e o Supabase vai recusar o banco novo deste sistema.</span>
+                    <span>Antes de colocar no ar: entre em supabase.com/dashboard, pause ou apague um projeto que você não usa (ou mude para o plano pago) e volte aqui.</span>
+                  </div>
+                )}
+                {antes?.precisaBanco && antes.bancoNovo && antes.contaLigada && antes.bancosAtivos !== null && antes.bancosAtivos < 2 && (
+                  <span className="at-noar__nota">Você usa {antes.bancosAtivos} de 2 bancos da conta grátis do Supabase; este sistema vai usar mais 1.</span>
+                )}
                 <button type="button" className="at-noar__prim" disabled={!nome || noAr.indisponivel} onClick={() => void colocar(nome)}>Colocar no ar →</button>
                 {noAr.indisponivel && <span className="at-noar__nota" role="status">Esta parte ainda não está ligada neste computador. O Atlas não finge que publicou.</span>}
                 <span className="at-noar__nota">Daqui pra frente o Atlas faz tudo sozinho: vistoria, banco de dados, publicação e teste. Se algo der errado, ele corrige antes de abrir as portas.</span>

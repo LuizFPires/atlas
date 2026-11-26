@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { textoDaTrava } from './explicar-trava'
 import { Botao, Icone, Microfone, Trabalhando, useVoz } from '../ui'
 import { andamentoDoDesenho } from './andamento-telas'
 import { Pintor } from './Pintor'
@@ -36,7 +37,7 @@ export const recadoDoErroProto = (e: unknown) => {
   switch (e instanceof Error ? e.message : '') {
     case 'indisponivel': return 'O Claude que desenha as telas ainda não está ligado neste computador. Quando estiver, esta tela passa a funcionar; por enquanto, não há nada que você precise refazer.'
     case 'pedido-vazio': return 'Escreva ou fale o que você quer mudar.'
-    default: return 'Não consegui fazer isso agora. Tente de novo em instantes.'
+    default: return textoDaTrava(e, 'Não consegui fazer isso agora.')
   }
 }
 
@@ -275,7 +276,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
       const g = await arquivos.guardar(obra.pasta, 'estilo/referencias', a.token)
       setPrints((l) => [...l, g.nome])
       setErro('')
-    } catch { setErro('Não consegui pegar essa imagem agora. Tente de novo ou descreva com palavras.') }
+    } catch (e) { setErro(textoDaTrava(e, 'Não consegui pegar essa imagem (você pode descrever com palavras).')) }
   }
 
   const enviar = async () => {
