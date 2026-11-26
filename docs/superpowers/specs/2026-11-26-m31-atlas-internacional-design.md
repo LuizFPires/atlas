@@ -21,6 +21,7 @@ tudo em inglês e em dólar, do site até a obra pronta, sem achar que caiu num 
    Depois da compra o idioma não muda mais (decisão do Luiz, 26/11/2026, 05:51): quem comprou em inglês usa o Atlas
    em inglês para sempre; não há troca de idioma dentro do app.
 4. **Preço próprio em dólar:** US$ 1.700 de implantação + US$ 70/mês. Não é conversão de câmbio.
+   App pronto da vitrine ("Comece pronto"): US$ 2.400 (decisão do Luiz, 26/11/2026), com a mesma mensalidade de US$ 70.
 5. **Real só com CPF.** A bandeira troca o idioma, mas a moeda é decidida no pagamento: em real só com CPF (Pix ou cartão
    brasileiro); sem CPF, em dólar. Um brasileiro que mora fora pode usar em inglês e pagar em real com o CPF dele.
 

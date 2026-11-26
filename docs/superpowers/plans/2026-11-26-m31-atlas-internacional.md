@@ -16,7 +16,7 @@ supabase/tests), Stripe, Vercel (vercel.json).
 
 ## Global Constraints
 
-- Preço em dólar: US$ 1.700 de implantação (uma vez) + US$ 70/mês. Em real continua R$ 4.800 + R$ 200/mês.
+- Preço em dólar: US$ 1.700 de implantação (uma vez) + US$ 70/mês; app pronto US$ 2.400 + US$ 70/mês. Em real continua R$ 4.800 (app pronto R$ 7.300) + R$ 200/mês.
 - Real só com CPF. Sem CPF, a cobrança é em dólar.
 - A bandeirinha vale mais que a localização; a escolha fica guardada no cookie `atlas_idioma` (`pt` | `en`).
 - Nada muda para quem está no Brasil: os testes atuais em português continuam passando sem alteração.
@@ -47,8 +47,7 @@ Decisão do Luiz (26/11/2026): o idioma é escolhido na página de vendas e na c
 - [ ] Publicar as 2 telas para o Luiz ver (artifact) e esperar o "aprovado". Registrar a aprovação nas Notas do M31.
 - [ ] Commit: `M31: protótipo da página em inglês, bandeirinhas e idioma no app`.
 
-**Pergunta para o Luiz junto do protótipo:** a vitrine "Comece pronto" (apps prontos, R$ 7.300) aparece em inglês? Com
-qual preço? Até ele decidir, ela fica fora do /en.
+**Vitrine "Comece pronto" em inglês:** entra, com o app pronto a US$ 2.400 + US$ 70/mês (decisão do Luiz, 26/11/2026).
 
 ### Task 2: Camada de idioma
 
