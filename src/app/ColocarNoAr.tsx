@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { predioSvg } from '../celular/predio'
+import { motivoDoTravamento } from './motivo-travou'
 import { caminhoQr, enderecoDoSistema, linkWhatsapp, matrizQr, recadoEquipe } from './entrega-dados'
 import { DominioProprio } from './DominioProprio'
 import { Lojas } from './Lojas'
@@ -52,18 +53,10 @@ const ICONE_OK = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
  * O endereço já vem escolhido e as contas são as ligadas no começo da obra: o cliente só aperta "Colocar no ar".
  * Daí em diante o Atlas faz sozinho (vistoria, banco, publicação, GitHub, teste) e a tela só acompanha.
  */
-/** Por que a correção da vistoria não saiu, em português (bug do Ponto, 26/11/2026: antes era sempre "tente de novo"). */
+/** Por que a correção da vistoria não saiu, em português. */
 export function motivoDaCorrecao(codigo: string): string {
-  switch (codigo) {
-    case 'ja-rodando': return 'Outra obra está trabalhando agora neste computador. Quando ela terminar, toque em Corrigir e continuar de novo.'
-    case 'sem-licenca': return 'O servidor não reconheceu a licença deste computador. Confira a internet e a assinatura em Conta e tente de novo.'
-    case 'plan-invalido': case 'obra-sem-plano': return 'Não consegui acrescentar a correção ao plano da obra (o arquivo PLAN.md sumiu ou está danificado). Peça ajuda ao Atlas.'
-    case 'obra-com-config-suspeita': return 'Apareceu um arquivo estranho de configuração na pasta da obra, e por segurança o Atlas não mexe nela. Peça ajuda ao Atlas.'
-    case 'kit-faltando': return 'O kit de construção não chegou a este computador. Confira a internet e tente de novo.'
-    case 'nada-para-corrigir': return 'A vistoria já não tem pontos para corrigir. Toque em Colocar no ar de novo.'
-    case 'claude-nao-logado': case 'claude-nao-instalado': return 'O Claude não está conectado neste computador. Entre de novo na tela Claude e tente outra vez.'
-    default: return `Não consegui mandar as correções agora. Tente de novo em instantes.${codigo ? ` (código: ${codigo.slice(0, 40)})` : ''}`
-  }
+  if (codigo === 'nada-para-corrigir') return 'A vistoria já não tem pontos para corrigir. Toque em Colocar no ar de novo.'
+  return motivoDoTravamento(codigo, 'Corrigir e continuar', 'Não consegui mandar as correções agora. Tente de novo em instantes.')
 }
 
 export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro, onGuiaRegistro, dominioAberto = false, lojas, onGuiaLojas, lojasAberto = false, abrirSiteLojas, onVender }: Props) {
@@ -121,19 +114,43 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
     return () => clearTimeout(t)
   }, [tela, digitado, noAr, obra.pasta])
 
+  const [travouInicio, setTravouInicio] = useState<string | null>(null)
   const colocar = async (n: string) => {
     setAviso('')
+    setTravouInicio(null)
     try { setEstado(await noAr.iniciar(obra.pasta, n)); setTela('pronta') } catch (e) {
       const m = e instanceof Error ? e.message : ''
-      setAviso(m === 'nome-ocupado' ? 'Esse nome acabou de ser usado por outra pessoa. Escolha outro.' : m === 'ja-rodando' ? 'O Atlas já está colocando no ar.' : 'Não consegui começar agora. Tente de novo em instantes ou fale com o Atlas.')
+      setAviso(m === 'nome-ocupado' ? 'Esse nome acabou de ser usado por outra pessoa. Escolha outro.' : m === 'ja-rodando' ? 'O Atlas já está colocando no ar.' : motivoDoTravamento(m, 'Colocar no ar', 'Não consegui começar agora. Tente de novo em instantes.'))
+      if (m !== 'nome-ocupado' && m !== 'ja-rodando') setTravouInicio(m || 'sem-codigo')
       if (m === 'nome-ocupado') setTela('endereco')
     }
   }
 
+  // Destravar pelo app (26/11/2026): a correção que não sai nunca deixa o cliente preso esperando uma versão nova.
+  // Outra obra ocupando a linha: o Atlas espera a vez e tenta sozinho. Outro motivo: "Tentar de novo" e "Pedir ao Atlas para destravar".
+  const [travou, setTravou] = useState<string | null>(null)
+  const [esperandoVez, setEsperandoVez] = useState(false)
+  const [vez, setVez] = useState(0) // cada tentativa na fila reagenda a próxima
   const corrigir = async () => {
     setAviso('')
-    try { setEstado(await noAr.corrigir(obra.pasta)) } catch (e) { setAviso(motivoDaCorrecao(e instanceof Error ? e.message : '')) }
+    try {
+      const novo = await noAr.corrigir(obra.pasta)
+      if (!vivo.current) return
+      setTravou(null); setEsperandoVez(false); setEstado(novo)
+    } catch (e) {
+      if (!vivo.current) return
+      const codigo = e instanceof Error ? e.message : ''
+      if (codigo === 'ja-rodando') { setTravou(null); setEsperandoVez(true); setVez((v) => v + 1); return }
+      setEsperandoVez(false); setTravou(codigo); setAviso(motivoDaCorrecao(codigo))
+    }
   }
+  const corrigirDeNovo = useRef(corrigir)
+  useEffect(() => { corrigirDeNovo.current = corrigir })
+  useEffect(() => {
+    if (!esperandoVez) return
+    const t = setTimeout(() => { void corrigirDeNovo.current() }, intervaloMs * 5)
+    return () => clearTimeout(t)
+  }, [esperandoVez, vez, intervaloMs])
 
   const fase = estado?.fase ?? 'parado'
   const noArAgora = fase === 'noar'
@@ -224,7 +241,15 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
               <b className="at-noar__tit at-noar__tit--m">Antes de abrir as portas, o Atlas vai acertar isto:</b>
               <ul className="at-noar__achados">{estado.achados.map((a) => <li key={a}>{a}</li>)}</ul>
               <span className="at-noar__txt">O Atlas corrige pela mesma linha da obra, testa de novo e continua a publicação sozinho.</span>
-              <button type="button" className="at-noar__prim" onClick={() => void corrigir()}>Corrigir e continuar →</button>
+              {esperandoVez
+                ? <span className="at-noar__txt" role="status">Outra obra está trabalhando agora neste computador. Assim que ela terminar, o Atlas corrige sozinho; pode deixar esta tela aberta.</span>
+                : <button type="button" className="at-noar__prim" onClick={() => void corrigir()}>Corrigir e continuar →</button>}
+              {travou !== null && (
+                <div className="at-noar__destravar">
+                  <button type="button" className="at-noar__sec" onClick={() => void corrigir()}>Tentar de novo</button>
+                  {onAjuda && <button type="button" className="at-noar__sec" onClick={() => onAjuda({ onde: 'a correção que a vistoria pediu antes de publicar', erro: travou || 'sem-codigo' })}>Pedir ao Atlas para destravar</button>}
+                </div>
+              )}
             </section>
           )}
 
@@ -273,6 +298,7 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
             </>
           )}
           {aviso && <p className="at-noar__nota" role="alert">{aviso}</p>}
+          {travouInicio !== null && onAjuda && <button type="button" className="at-noar__sec" onClick={() => onAjuda({ onde: 'o começo da publicação', erro: travouInicio })}>Pedir ao Atlas para destravar</button>}
         </aside>
       </div>
     </main>
