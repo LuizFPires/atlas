@@ -52,6 +52,20 @@ const ICONE_OK = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
  * O endereço já vem escolhido e as contas são as ligadas no começo da obra: o cliente só aperta "Colocar no ar".
  * Daí em diante o Atlas faz sozinho (vistoria, banco, publicação, GitHub, teste) e a tela só acompanha.
  */
+/** Por que a correção da vistoria não saiu, em português (bug do Ponto, 26/11/2026: antes era sempre "tente de novo"). */
+export function motivoDaCorrecao(codigo: string): string {
+  switch (codigo) {
+    case 'ja-rodando': return 'Outra obra está trabalhando agora neste computador. Quando ela terminar, toque em Corrigir e continuar de novo.'
+    case 'sem-licenca': return 'O servidor não reconheceu a licença deste computador. Confira a internet e a assinatura em Conta e tente de novo.'
+    case 'plan-invalido': case 'obra-sem-plano': return 'Não consegui acrescentar a correção ao plano da obra (o arquivo PLAN.md sumiu ou está danificado). Peça ajuda ao Atlas.'
+    case 'obra-com-config-suspeita': return 'Apareceu um arquivo estranho de configuração na pasta da obra, e por segurança o Atlas não mexe nela. Peça ajuda ao Atlas.'
+    case 'kit-faltando': return 'O kit de construção não chegou a este computador. Confira a internet e tente de novo.'
+    case 'nada-para-corrigir': return 'A vistoria já não tem pontos para corrigir. Toque em Colocar no ar de novo.'
+    case 'claude-nao-logado': case 'claude-nao-instalado': return 'O Claude não está conectado neste computador. Entre de novo na tela Claude e tente outra vez.'
+    default: return `Não consegui mandar as correções agora. Tente de novo em instantes.${codigo ? ` (código: ${codigo.slice(0, 40)})` : ''}`
+  }
+}
+
 export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro, onGuiaRegistro, dominioAberto = false, lojas, onGuiaLojas, lojasAberto = false, abrirSiteLojas, onVender }: Props) {
   const [vendoDominio, setVendoDominio] = useState(dominioAberto)
   const [vendoLojas, setVendoLojas] = useState(lojasAberto)
@@ -117,7 +131,8 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
   }
 
   const corrigir = async () => {
-    try { setEstado(await noAr.corrigir(obra.pasta)) } catch { setAviso('Não consegui mandar as correções agora. Tente de novo em instantes.') }
+    setAviso('')
+    try { setEstado(await noAr.corrigir(obra.pasta)) } catch (e) { setAviso(motivoDaCorrecao(e instanceof Error ? e.message : '')) }
   }
 
   const fase = estado?.fase ?? 'parado'

@@ -98,6 +98,23 @@ test('executar: linha ocupada, PLAN ausente/inválido e plano/pedido ruins não 
   assert.equal(d.eventos.religar, 0)
 })
 
+test('executar: PLAN que a linha mexeu fora do formato estrito (obra pronta) ainda recebe o pedido (bug do Ponto, 26/11/2026)', async () => {
+  const m = montar()
+  // Durante a obra, a linha acrescentou um milestone sem "tela:" e com peso 5: o validador estrito recusava e o
+  // "Corrigir e continuar" da vistoria caía em "Não consegui mandar as correções agora".
+  fs.appendFileSync(path.join(m.raiz, 'obra', 'PLAN.md'), '\n## Milestone 2 — Correções da revisão\npeso: 5\nspec: regras.md\n- [x] Corrigir o login\nNotas: feito\n')
+  assert.equal(validarPlanObra(plan(m.raiz)).ok, false)
+  const r = await m.p.executar('obra', PEDIDO, PLANO)
+  assert.equal(r.id, 'p001')
+  assert.match(plan(m.raiz), /^## Milestone 3 — Pós-obra p001$/m)
+  assert.equal(m.eventos.religar, 1)
+  // Numeração pulada pela linha (1, 4): o pedido vira o 5, sem travar.
+  const n = montar()
+  fs.appendFileSync(path.join(n.raiz, 'obra', 'PLAN.md'), '\n## Milestone 4 — Ajustes\npeso: 1\nspec: regras.md\ntela: \n- [x] Ajustar\nNotas:\n')
+  await n.p.executar('obra', PEDIDO, PLANO)
+  assert.match(plan(n.raiz), /^## Milestone 5 — Pós-obra p001$/m)
+})
+
 test('executar: se religar falhar, o PLAN volta como estava', async () => {
   const m = montar()
   const antes = plan(m.raiz)
