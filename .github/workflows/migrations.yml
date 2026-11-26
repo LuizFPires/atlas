@@ -35,11 +35,20 @@ jobs:
             echo "::warning::Falta o segredo SUPABASE_ACCESS_TOKEN: as migrations NÃO foram aplicadas."
             exit 0
           fi
+          # Mostra o erro do Supabase como anotação (dá para ler no PR sem abrir o log). Nunca imprime o segredo.
           sql() {
-            jq -n --arg q "$1" '{query: $q}' | curl -sS -m 120 --fail-with-body -X POST \
+            local saida codigo
+            saida=$(mktemp)
+            codigo=$(jq -n --arg q "$1" '{query: $q}' | curl -sS -m 120 -o "$saida" -w '%{http_code}' -X POST \
               "https://api.supabase.com/v1/projects/$PROJETO/database/query" \
-              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @-
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @-)
+            if [ "${codigo:0:1}" != "2" ]; then
+              echo "::error::Supabase respondeu HTTP $codigo: $(head -c 400 "$saida" | tr '\n' ' ')"
+              return 1
+            fi
+            cat "$saida"
           }
+          sql "select 1 as ok" > /dev/null || { echo "::error::Sem acesso ao banco pela API de gestão (veja o erro acima)."; exit 1; }
           sql "create table if not exists atlas_migracoes (nome text primary key, aplicada_em timestamptz not null default now());
                alter table atlas_migracoes enable row level security;
                revoke all on atlas_migracoes from public, anon, authenticated;" > /dev/null
