@@ -102,6 +102,7 @@ test('"Corrigir e continuar" falhou: diz o motivo de verdade, não um "tente de 
     ['sem-licenca', /licença/i],
     ['plan-invalido', /plano da obra/i],
     ['obra-com-config-suspeita', /arquivo estranho/i],
+    ['kit-indisponivel', /servidor do Atlas não entregou/i],
   ]
   for (const [codigo, texto] of casos) {
     const user = userEvent.setup()

@@ -8,6 +8,7 @@
 //    (licença inteira, obra '*'). Nada é decidido sozinho além do embargo da obra.
 // O texto do cliente é DADO: cortado, limpo de segredo (limparDescricao) e só guardado.
 import { adminLogado, type DepsAdmin } from './admin.ts'
+import { semTabelaEhVazio } from './tabela-ausente.ts'
 import { limparDescricao } from './ajuda-caso.ts'
 import { iguais, sha256 } from './cripto.ts'
 import { type Deps, ErroRegra, HASH_RE, type OndePolitica, type SituacaoPolitica } from './tipos.ts'
@@ -49,14 +50,14 @@ export async function registrarPolitica(d: Deps, a: Auth & { obra_id: unknown; o
   if (!(await d.store.tentarEvento(`politica:${lic.id}`, 30, 3600_000, d.agora()))) throw new ErroRegra('muitas_solicitacoes', 'Muitos pedidos seguidos. Tente de novo mais tarde.', 429)
   const agora = d.agora()
   await d.store.registrarEventoPolitica({ licenca_id: lic.id, obra_id: a.obra_id, onde: a.onde as OndePolitica, texto, criado_em: agora })
-  const situacoes = await d.store.situacoesPolitica(lic.id)
+  const situacoes = await semTabelaEhVazio(() => d.store.situacoesPolitica(lic.id))
   const atual = situacoes.find((s) => s.obra_id === a.obra_id)
   const desde = atual && atual.situacao === 'liberada' ? new Date(atual.desde.getTime() + 1) : new Date(0)
   const bloqueios = (await d.store.eventosPoliticaDaObra(lic.id, a.obra_id, desde)).filter((e) => e.onde !== 'engano').length
   if (bloqueios >= BLOQUEIOS_PARA_EMBARGO && situacaoDaObra(situacoes, a.obra_id) === 'livre') {
     await d.store.definirSituacaoPolitica({ licenca_id: lic.id, obra_id: a.obra_id, situacao: 'embargada', desde: agora, decidido_por: null })
   }
-  return { situacao: situacaoDaObra(await d.store.situacoesPolitica(lic.id), a.obra_id) }
+  return { situacao: situacaoDaObra(await semTabelaEhVazio(() => d.store.situacoesPolitica(lic.id)), a.obra_id) }
 }
 
 export async function pedirAnalise(d: Deps, a: Auth & { obra_id: unknown; texto: unknown }) {
@@ -72,7 +73,7 @@ export async function pedirAnalise(d: Deps, a: Auth & { obra_id: unknown; texto:
 export async function situacaoPolitica(d: Deps, a: Auth & { obra_id: unknown }) {
   if (typeof a.obra_id !== 'string' || !OBRA_RE.test(a.obra_id)) throw new ErroRegra('obra_invalida', 'Identificação da obra inválida.')
   const { lic } = await licencaDoDispositivo(d, a)
-  return { situacao: situacaoDaObra(await d.store.situacoesPolitica(lic.id), a.obra_id) }
+  return { situacao: situacaoDaObra(await semTabelaEhVazio(() => d.store.situacoesPolitica(lic.id)), a.obra_id) }
 }
 
 // ── Painel do Luiz ───────────────────────────────────────────────────────────────────────────────────────────────────────────
