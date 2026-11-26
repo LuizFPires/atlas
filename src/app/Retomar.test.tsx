@@ -88,3 +88,16 @@ test('mostra quando parou, a obra, o progresso e o aviso do auto-início', () =>
   expect(screen.getByText(/Agenda da Barbearia do Zé/).parentElement).toHaveTextContent('62% · M5 Confirmação por WhatsApp')
   expect(screen.getByText(/Para desligar isso: Configurações → Abrir com o Windows\./)).toBeInTheDocument()
 })
+
+test('duas obras paradas: o aviso diz quantas, lista as duas e "Continuar todas" religa cada uma', async () => {
+  const outra = { nome: 'Estoque da Loja', pasta: 'estoque-da-loja', pct: 41, etapa: null, paradaEm: parada.paradaEm }
+  const painel = criarPainelFixture()
+  const base = criarRetomarFixture(parada, { painel })
+  const retomar: PonteRetomar = { ...base, paradas: async () => [parada, outra] }
+  abrir(retomar, ativado(), painel)
+  expect(await screen.findByRole('heading', { name: /Suas 2 obras pararam/ })).toBeInTheDocument()
+  expect(screen.getByText('Estoque da Loja')).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar todas' }))
+  await waitFor(() => expect(base.chamadas).toEqual(expect.arrayContaining([`continuar:${parada.pasta}`, `continuar:${outra.pasta}`])))
+  expect(await screen.findByRole('heading', { level: 1, name: parada.nome })).toBeInTheDocument()
+})

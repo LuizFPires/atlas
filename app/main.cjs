@@ -337,6 +337,7 @@ handle('atlas:painel:decidir', async (pasta, rotulo) => { await garantirObra(Str
 
 // Retomar (F12): obra em andamento ao abrir o app e "Continuar obra".
 handle('atlas:retomar:andamento', () => retomar.obraEmAndamento())
+handle('atlas:retomar:paradas', () => retomar.paradas())
 handle('atlas:retomar:continuar', async (pasta) => { await garantirObra(String(pasta)); return retomar.continuar({ pasta: String(pasta) }) })
 
 // Cota do plano (F10): ler o estado, retomar quando o Claude voltou a responder. A vigia retoma sozinha (sem clique) as obras paradas por cota.

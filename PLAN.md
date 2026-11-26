@@ -405,11 +405,11 @@ tela: prototipo/caminho-novo/K1Canteiro.dc.html
 - [x] Protótipo aprovado e registrado (prototipo/caminho-novo K1Canteiro, K2Concluidas, K3Obra; menu novo no Shell)
 - [x] Menu só com Nova obra, Canteiro de obras e Obras concluídas (Protótipo, Obra, Pós-obra e Como retomar saem do menu)
 - [x] Canteiro: um cartão por obra (inacabada com selo âmbar e próximo passo; trabalhando; parada com Continuar; esperando o Claude), busca e filtro
-- [ ] Retrato do canteiro: cena parada, ganha vida com o mouse e guarda o retrato de quando o mouse sai
-- [ ] Obras concluídas: selo No ar, endereço; obra com mudança volta ao Canteiro enquanto constrói
-- [ ] Obra aberta: as 6 etapas com "Ver ou mudar", construção ao vivo, "Quer mudar alguma coisa?" e pós-obra
-- [ ] Obra parada: aviso no cartão e dentro da obra; ao ligar o computador continua abrindo o aviso (F12) com um botão que religa todas
-Notas: DECISÃO do Luiz (23/11/2026, "o protótipo devia estar dentro de uma obra"; "canteiro de obras ... vários cards ... com o cenáriozinho 3D"; "obras concluídas para tirar essas obras do canteiro"; Como retomar "também deveria ir para dentro de obra"), aprovada em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. Diverge de F05 (Minhas obras) e do menu de 5 itens.
+- [x] Retrato do canteiro: cena parada, ganha vida com o mouse e guarda o retrato de quando o mouse sai
+- [x] Obras concluídas: selo No ar, endereço; obra com mudança volta ao Canteiro enquanto constrói
+- [x] Obra aberta: as 6 etapas com "Ver ou mudar", construção ao vivo, "Quer mudar alguma coisa?" e pós-obra
+- [x] Obra parada: aviso no cartão e dentro da obra; ao ligar o computador continua abrindo o aviso (F12) com um botão que religa todas
+Notas: DECISÃO do Luiz (23/11/2026, "o protótipo devia estar dentro de uma obra"; "canteiro de obras ... vários cards ... com o cenáriozinho 3D"; "obras concluídas para tirar essas obras do canteiro"; Como retomar "também deveria ir para dentro de obra"), aprovada em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. Diverge de F05 (Minhas obras) e do menu de 5 itens. Andamento (26/11/2026): o cartão mostra o retrato da cena (guardado neste computador); com o mouse em cima a cena real do kit fica AO VIVO e, ao sair, a cena manda o retrato (JPEG, só para quem a embute). Obras concluídas mostram o endereço (o domínio próprio quando já está no ar) e "Concluída em dd/mm"; um pedido do pós-obra põe itens novos no PLAN, então a obra volta ao Canteiro enquanto constrói. Obra parada: selo PARADA no cartão (um clique religa), "ninguém trabalhando" dentro da obra e, ao ligar o computador, o F12 lista todas as paradas com "Continuar todas". DIVERGÊNCIA consciente: a obra aberta segue o palco aprovado depois (M43/M50): as 6 etapas com "Ver ou mudar" ficam na faixa de etapas até a construção começar; depois, ver ou mudar é pelas abas Protótipo e Pedir mudança (o pós-obra), e a construção ao vivo é o prédio no centro.
 
 ## Milestone 38 — Caminho completo do primeiro uso: da instalação ao software no ar
 peso: 5

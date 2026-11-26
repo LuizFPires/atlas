@@ -48,3 +48,18 @@ test('excluir obra (Luiz, 23/11/2026): só em andamento; para a construção e m
   await assert.rejects(o.excluir('../fora'), /./)
   await assert.rejects(o.excluir('nao-existe'), /obra-inexistente/)
 })
+
+test('situação: obra no ar traz o endereço e o dia (o domínio próprio no ar vence o .vercel.app)', async () => {
+  const { raiz, o } = montar()
+  const escrever = (pasta, arq, obj) => { const c = path.join(raiz, pasta, '.atlas', arq); fs.mkdirSync(path.dirname(c), { recursive: true }); fs.writeFileSync(c, JSON.stringify(obj)) }
+  fs.mkdirSync(path.join(raiz, 'sem'))
+  assert.equal((await o.situacao('sem')).noAr, undefined)
+  escrever('padaria', 'no-ar.json', { nome: 'padaria', endereco: 'padaria-sol.vercel.app', quando: '2026-10-28T12:00:00.000Z' })
+  assert.deepEqual((await o.situacao('padaria')).noAr, { endereco: 'padaria-sol.vercel.app', quando: '2026-10-28T12:00:00.000Z' })
+  escrever('padaria', 'dominio.json', { dominio: 'padariasol.app.br', fase: 'esperando' })
+  assert.equal((await o.situacao('padaria')).noAr.endereco, 'padaria-sol.vercel.app')
+  escrever('padaria', 'dominio.json', { dominio: 'padariasol.app.br', fase: 'noar' })
+  assert.equal((await o.situacao('padaria')).noAr.endereco, 'padariasol.app.br')
+  escrever('lixo', 'no-ar.json', { endereco: '<script>' })
+  assert.equal((await o.situacao('lixo')).noAr, undefined)
+})

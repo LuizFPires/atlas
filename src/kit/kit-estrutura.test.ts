@@ -125,3 +125,14 @@ describe('canteiro 3D no fim da obra: jardim e stand de vendas', () => {
     for (const a of ['incorporador', 'sindico']) expect(cena).toMatch(new RegExp(`\\n  ${a}: +\\{ nome:`))
   })
 })
+
+// M37 (Luiz, 23/11/2026): o retrato do canteiro — a cena ganha vida com o mouse e guarda o retrato de quando o mouse sai.
+describe('canteiro 3D: retrato para o cartão do Canteiro de obras', () => {
+  test('a cena responde só a quem a embute com um retrato JPEG desenhado na hora', () => {
+    const cena = fs.readFileSync(`${raiz}/canteiro/cena3d.js`, 'utf8')
+    expect(cena).toMatch(/ev\.source !== window\.parent/)
+    expect(cena).toMatch(/ev\.data\.tipo !== 'atlas:retrato'/)
+    expect(cena).toMatch(/renderer\.render\(cena, camera\);\s*\n\s*const imagem = renderer\.domElement\.toDataURL\('image\/jpeg'/)
+    expect(cena).toMatch(/removeEventListener\('message', aoPedirRetrato\)/)
+  })
+})

@@ -4,7 +4,7 @@
 // construção = PLAN.md (o % vem do painel).
 import { textoAvanco } from './avanco'
 
-export type SituacaoObra = { estilo: boolean; prototipo: boolean; marca: boolean; plano: boolean }
+export type SituacaoObra = { estilo: boolean; prototipo: boolean; marca: boolean; plano: boolean; noAr?: { endereco: string; quando: string | null } }
 export type EtapaObra = 'estilo' | 'batismo' | 'telas' | 'aprovar' | 'obra'
 export type FaseObra = { etapa: EtapaObra; concluida: boolean; rotulo: string; pct?: number }
 

@@ -126,6 +126,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const [computador, setComputador] = useState('')
   const [dono, setDono] = useState('')
   const [paradaF12, setParadaF12] = useState<ObraParada | null>(null)
+  const [outrasF12, setOutrasF12] = useState<ObraParada[]>([])
   // Dentro de Minhas obras: lista (F05), nova obra (F06) ou trazer protótipo (F06c, do M15).
   const [fluxo, setFluxo] = useState<'lista' | 'ideia' | 'planilha' | 'trazer' | 'estilo' | 'telas' | 'batismo' | 'contas' | 'aprovar' | 'publicar' | 'publicando' | 'entrega' | 'guia'>('lista')
   const [obraAtual, setObraAtual] = useState<ObraDoEstilo | null>(null)
@@ -337,7 +338,10 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
       // Ativado: confere se há obra em andamento (ligou o computador no meio da obra => Retomar, F12). Falha ao conferir => Minhas obras.
       let parada: ObraParada | null = null
       if (ativ !== null) parada = await ponteRetomar.obraEmAndamento().catch(() => null)
+      // M37: com mais de uma obra parada, o F12 oferece "Continuar todas".
+      const todas = parada && ponteRetomar.paradas ? await ponteRetomar.paradas().catch(() => [] as ObraParada[]) : []
       if (!vivo) return
+      setOutrasF12(parada ? todas.filter((o) => o.pasta !== parada.pasta) : [])
       // O instalador reabre com --tela=F02 também depois de uma atualização: já ativado, ignora e abre normal (Obras ou Retomar).
       const argv = ativ !== null ? ponte.argv.filter((x) => x !== `--tela=${TELA_ATIVACAO}`) : ponte.argv
       const inicial = telaInicial(argv, ativ !== null, parada !== null)
@@ -378,6 +382,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     return com(
       <Retomar
         obra={paradaF12}
+        outras={outrasF12}
         nome={dono || undefined}
         retomar={ponteRetomar}
         onContinuou={(o) => { setObraAtual({ nome: o.nome, pasta: o.pasta }); setFluxo('lista'); setAtivo('obra'); setTela('F05') }}
@@ -422,7 +427,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'obras' && fluxo === 'contas' && ligandoContas && ponteLigar) conteudo = <LigarContas ponte={ponteLigar} navegador={modoFixture() ? undefined : ponte.navegador} onVoltar={() => setLigandoContas(false)} onContinuar={() => { setLigandoContas(false); setFluxo('aprovar') }} />
   else if (ativo === 'obras' && fluxo === 'contas') conteudo = <Contas contas={ponteContas} navegador={modoFixture() ? undefined : ponte.navegador} onContinuar={() => { if (ponteLigar) setLigandoContas(true); else setFluxo('aprovar') }} onPedirAjuda={pedirAjudaPasso} />
   else if (ativo === 'retomar') conteudo = paradaF12
-    ? <Retomar obra={paradaF12} nome={dono || undefined} retomar={ponteRetomar} onContinuou={(o) => { setObraAtual({ nome: o.nome, pasta: o.pasta }); setFluxo('lista'); setAtivo('obra') }} onAgoraNao={() => setAtivo('obras')} />
+    ? <Retomar obra={paradaF12} outras={outrasF12} nome={dono || undefined} retomar={ponteRetomar} onContinuou={(o) => { setObraAtual({ nome: o.nome, pasta: o.pasta }); setFluxo('lista'); setAtivo('obra') }} onAgoraNao={() => setAtivo('obras')} />
     : <SemObra rotulo="COMO RETOMAR" titulo="Nenhuma obra parada agora." texto="Se o computador desligar ou a cota do Claude acabar, a obra para no ponto em que estava. Quando você ligar o computador, o Atlas abre sozinho aqui, com um botão só: Continuar obra." onIrObras={() => setAtivo('obras')} />
   else if (ativo === 'prototipo' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setAtivo('obras')} onConcluir={() => { setAtivo('obras'); setFluxo('batismo') }} />
   else if (ativo === 'prototipo' || ativo === 'obra') conteudo = <SemObra rotulo={ativo === 'prototipo' ? 'PROTÓTIPO' : 'OBRA'} titulo="Escolha uma obra primeiro." texto="Escolha uma obra em Minhas obras (ou comece a primeira). Depois é aqui que você vê as telas dela e acompanha a construção." onIrObras={() => setAtivo('obras')} />

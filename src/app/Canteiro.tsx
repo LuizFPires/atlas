@@ -2,9 +2,9 @@ import { textoAvanco } from './avanco'
 import { palavras } from './plataforma'
 import { useEffect, useMemo, useState } from 'react'
 import { Icone } from '../ui'
-import canteiroImagem from '../assets/canteiro-3d.jpg'
 import type { PonteObras } from './ponte-obras'
-import { faseDaObra, nomeDaPasta, type EtapaObra, type FaseObra } from './fase-obra'
+import { RetratoCanteiro } from './RetratoCanteiro'
+import { faseDaObra, nomeDaPasta, type EtapaObra, type FaseObra, type SituacaoObra } from './fase-obra'
 import type { ObraParaContinuar } from './Obras'
 import type { ParadaReal, QuemTrabalha } from './ponte-painel'
 import { quandoParou, type PonteRetomar } from './ponte-retomar'
@@ -51,7 +51,7 @@ function PlacaDeObra({ nome, parou }: { nome: string; parou: string }) {
 type LeituraPainel = { pct: number; parada?: ParadaReal | null; pausadaPorVoce?: boolean; agora?: QuemTrabalha[]; trava?: TravaObra | null; naFila?: { depoisDe: string; nome: string } | null }
 /** Situação de uma obra em construção, para o selo e a linha do cartão. */
 type Vivo = { selo: string; linha: string; acao: string; tom: 'lime' | 'cinza' | 'ambar'; religar?: boolean; volta?: string; travaVoce?: boolean; travaResumo?: string; travaLinha?: string }
-type Lida = { pasta: string; nome: string; fase: FaseObra; vivo?: Vivo }
+type Lida = { pasta: string; nome: string; fase: FaseObra; vivo?: Vivo; noAr?: SituacaoObra['noAr'] }
 
 function vivoDa(l: LeituraPainel | null, parouEm: string | null | undefined): Vivo | undefined {
   if (!l) return undefined
@@ -80,7 +80,7 @@ interface Props {
   modo: 'canteiro' | 'concluidas'
   obras: PonteObras
   /** O andamento das obras em construção (painel da obra): %, parada, pausa e quem trabalha agora. */
-  painel?: { ler(pasta: string): Promise<LeituraPainel> }
+  painel?: { ler(pasta: string): Promise<LeituraPainel>; enderecoCanteiro?(pasta: string): string | null }
   /** A obra que parou com o computador desligado: o cartão dela religa com um clique. */
   retomar?: PonteRetomar
   onAbrir: (o: ObraParaContinuar) => void
@@ -127,7 +127,7 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova, constr
         const leitura = s.plano && painel ? await painel.ler(pasta).catch(() => null) : null
         const fase = faseDaObra(s, leitura ? leitura.pct : null)
         const vivo = fase.etapa === 'obra' && !fase.concluida ? vivoDa(leitura, parada?.pasta === pasta ? parada.paradaEm : undefined) : undefined
-        out.push({ pasta, nome: nomeDaPasta(pasta), fase, vivo })
+        out.push({ pasta, nome: nomeDaPasta(pasta), fase, vivo, noAr: s.noAr })
       }
       const f = modo === 'canteiro' && construcao?.fila ? await construcao.fila().catch(() => null) : null
       if (!vivo) return
@@ -179,6 +179,9 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova, constr
           ))}
         </div>
       )}
+      {modo === 'canteiro' && painel?.enderecoCanteiro && mostradas.some((o) => o.fase.etapa === 'obra' && !o.fase.concluida) && (
+        <p className="at-ct__dica"><span className="at-ct__ponto" aria-hidden="true" />Passe o mouse num cartão para ver a obra ao vivo</p>
+      )}
       {modo === 'concluidas' && daqui.length > 0 && (
         <p className="at-ct__nota">Quer mudar alguma coisa numa obra pronta? Abra e converse com o Atlas. Enquanto ele constrói a mudança, a obra volta para o Canteiro; quando termina, volta para cá.</p>
       )}
@@ -218,7 +221,7 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova, constr
       })()}
 
       <div className="at-ct__cartoes">
-        {mostradas.map((o) => <Cartao key={o.pasta} o={o} onAbrir={() => { void abrir(o) }} onExcluir={modo === 'canteiro' && obras.excluir && !o.fase.concluida ? () => { setErroExcluir(''); setExcluindo(o) } : undefined} />)}
+        {mostradas.map((o) => <Cartao key={o.pasta} o={o} enderecoDe={!o.fase.concluida && o.fase.etapa === 'obra' && painel?.enderecoCanteiro ? () => painel.enderecoCanteiro?.(o.pasta) ?? null : undefined} onAbrir={() => { void abrir(o) }} onExcluir={modo === 'canteiro' && obras.excluir && !o.fase.concluida ? () => { setErroExcluir(''); setExcluindo(o) } : undefined} />)}
       </div>
 
       {avisoTravas && (() => {
@@ -281,7 +284,10 @@ export function Canteiro({ modo, obras, painel, retomar, onAbrir, onNova, constr
   )
 }
 
-function Cartao({ o, onAbrir, onExcluir }: { o: Lida; onAbrir: () => void; onExcluir?: () => void }) {
+const diaDe = (iso: string | null): string | null => { if (!iso) return null; const d = new Date(iso); return Number.isNaN(d.getTime()) ? null : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' }) }
+
+function Cartao({ o, enderecoDe, onAbrir, onExcluir }: { o: Lida; enderecoDe?: () => string | null; onAbrir: () => void; onExcluir?: () => void }) {
+  const [emCima, setEmCima] = useState(false)
   const { fase } = o
   const inacabada = fase.etapa !== 'obra'
   const passo = inacabada ? PASSO[fase.etapa as Exclude<EtapaObra, 'obra'>] : null
@@ -290,18 +296,20 @@ function Cartao({ o, onAbrir, onExcluir }: { o: Lida; onAbrir: () => void; onExc
   const linha = fase.concluida ? 'Pronta. Abra para ver o endereço ou pedir uma mudança.' : passo ? 'O canteiro ainda não começou. Termine as etapas e o Atlas constrói sozinho.' : vivo?.linha ?? fase.rotulo
   const acao = passo ? `Próximo: ${passo.proximo}` : vivo?.acao ?? 'Abrir a obra'
   return (
-    <article className={`at-ct__cartao${inacabada ? ' at-ct__cartao--falta' : ''}${fase.concluida ? ' at-ct__cartao--pronta' : ''}${vivo ? ` at-ct__cartao--${vivo.tom}` : ''}`} aria-label={`${o.nome}: ${fase.concluida ? 'no ar' : passo ? `falta terminar, etapa ${passo.n} de 6` : `${(vivo?.selo ?? 'em construção').toLocaleLowerCase('pt-BR')}${fase.pct !== undefined ? `, ${textoAvanco(fase.pct)}%` : ''}`}`}>
+    <article onMouseEnter={() => setEmCima(true)} onMouseLeave={() => setEmCima(false)} onFocus={() => setEmCima(true)} onBlur={() => setEmCima(false)} className={`at-ct__cartao${inacabada ? ' at-ct__cartao--falta' : ''}${fase.concluida ? ' at-ct__cartao--pronta' : ''}${vivo ? ` at-ct__cartao--${vivo.tom}` : ''}`} aria-label={`${o.nome}: ${fase.concluida ? 'no ar' : passo ? `falta terminar, etapa ${passo.n} de 6` : `${(vivo?.selo ?? 'em construção').toLocaleLowerCase('pt-BR')}${fase.pct !== undefined ? `, ${textoAvanco(fase.pct)}%` : ''}`}`}>
       <button type="button" className="at-ct__abrir" onClick={onAbrir}>
         <span className="at-ct__cena">
           {inacabada
             ? <PlacaDeObra nome={o.nome} parou={passo ? passo.parou : 'no começo'} />
-            : <img src={canteiroImagem} alt="" />}
+            : <RetratoCanteiro pasta={o.pasta} endereco={enderecoDe ? enderecoDe() : null} vivo={emCima} />}
           <span className="at-ct__selo"><span className="at-ct__ponto" aria-hidden="true" />{selo}</span>
         </span>
         <span className="at-ct__corpo">
           <span className="at-ct__nome-linha"><b className="at-ct__nome" title={o.pasta}>{o.nome}</b>{!inacabada && !fase.concluida && fase.pct !== undefined && <span className="at-ct__pct">{textoAvanco(fase.pct)}%</span>}</span>
           {!fase.concluida && <span className="at-ct__barra" aria-hidden="true"><i style={{ width: `${inacabada ? ((passo!.n - 1) / 6) * 100 : (fase.pct ?? 0)}%` }} /></span>}
-          <span className="at-ct__linha">{linha}</span>
+          {fase.concluida && o.noAr
+            ? <><span className="at-ct__end">{o.noAr.endereco}</span>{diaDe(o.noAr.quando) && <span className="at-ct__linha">Concluída em {diaDe(o.noAr.quando)}</span>}</>
+            : <span className="at-ct__linha">{linha}</span>}
           {vivo?.volta && !passo && !fase.concluida && <span className="at-ct__volta">{vivo.volta}</span>}
           <span className="at-ct__acao">{acao}<Icone nome="seta" tamanho={16} /></span>
         </span>

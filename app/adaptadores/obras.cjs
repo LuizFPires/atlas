@@ -55,12 +55,20 @@ function criarObras({ raiz = raizPadrao(), shell, pararLinha } = {}) {
       if (!fs.lstatSync(dir).isDirectory()) throw new Error('obra-inexistente')
       const nomes = (...p) => { try { return fs.readdirSync(caminhoSeguro(raiz, String(pasta), ...p)) } catch { return [] } }
       const existe = (...p) => { try { return fs.lstatSync(caminhoSeguro(raiz, String(pasta), ...p)).isFile() } catch { return false } }
-      return {
+      const s = {
         estilo: nomes().some((n) => /^design-system(-\d+)?\.md$/i.test(n)),
         prototipo: nomes('prototipo', 'versoes').length > 0,
         marca: nomes('marca').some((n) => /^marca(-\d+)?\.md$/i.test(n)),
         plano: existe('PLAN.md'),
       }
+      // Obras concluídas (M37): o endereço e o dia em que entrou no ar. O domínio próprio só conta quando já está no ar (M57).
+      const json = (arq) => { try { return JSON.parse(fs.readFileSync(caminhoSeguro(raiz, String(pasta), '.atlas', arq), 'utf8')) } catch { return null } }
+      const host = (v) => (typeof v === 'string' && /^[a-z0-9.-]{3,253}$/i.test(v) ? v.toLowerCase() : null)
+      const reg = json('no-ar.json')
+      const dom = json('dominio.json')
+      const endereco = (dom && dom.fase === 'noar' && host(dom.dominio)) || (reg && host(reg.endereco))
+      if (endereco) s.noAr = { endereco, quando: reg && typeof reg.quando === 'string' && !Number.isNaN(Date.parse(reg.quando)) ? reg.quando : null }
+      return s
     },
     /** Excluir obra (Luiz, 23/11/2026): só obra em andamento, NUNCA concluída (PLAN.md com tudo marcado). Para a construção e
      *  manda a pasta para a Lixeira do Windows (o Atlas não desfaz; a Lixeira é a última rede de segurança). */

@@ -633,8 +633,21 @@ export function iniciar(palco, obterEstado) {
   ultimoToque = performance.now() - 20000;
   requestAnimationFrame(quadro);
 
+  // Atlas (M37, Luiz em 23/11/2026): o cartão do Canteiro de obras guarda o retrato da cena quando o mouse sai. Só quem embute a
+  // cena (a janela de cima) pede; a resposta é um JPEG desenhado na hora, nada da obra além da imagem.
+  function aoPedirRetrato(ev) {
+    if (window.parent === window || ev.source !== window.parent) return;
+    if (!ev.data || ev.data.tipo !== 'atlas:retrato') return;
+    try {
+      renderer.render(cena, camera);
+      const imagem = renderer.domElement.toDataURL('image/jpeg', 0.72);
+      window.parent.postMessage({ tipo: 'atlas:retrato', imagem }, '*');
+    } catch { /* sem retrato: o cartão fica com o anterior */ }
+  }
+  window.addEventListener('message', aoPedirRetrato);
+
   return {
-    parar() { rodando = false; ro.disconnect(); renderer.dispose(); renderer.domElement.remove(); Object.values(pessoas).forEach(p => p.balao.remove()); },
+    parar() { rodando = false; window.removeEventListener('message', aoPedirRetrato); ro.disconnect(); renderer.dispose(); renderer.domElement.remove(); Object.values(pessoas).forEach(p => p.balao.remove()); },
     nome: PAPEIS,
   };
 }
