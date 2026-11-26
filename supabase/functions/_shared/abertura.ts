@@ -2,7 +2,7 @@
 // Abriu no celular? Mostra "abra no computador onde você vai construir" e oferece reenviar o acesso por e-mail.
 // Abrir NÃO consome o link: quem consome é a ativação confirmada (M2), então olhar no celular não queima o link.
 import { type DepsCadastro } from './cadastro.ts'
-import { prepararLink, validarLink } from './links.ts'
+import { prepararLink, validarLink, idiomaDoCliente } from './links.ts'
 import { ErroRegra } from './tipos.ts'
 
 const CELULAR_RE = /android|iphone|ipad|ipod|mobile|windows phone|opera mini|silk|kindle/i
@@ -60,7 +60,7 @@ export async function reenviarParaComputador(d: DepsCadastro, a: { token: string
   // Gera o link novo SEM gravar; o antigo só deixa de valer depois que o e-mail saiu. Se o envio falhar, nada muda.
   const { token, expira_em, registro } = await prepararLink(d, cliente.email_compra)
   try {
-    await d.enviarBoasVindas(cliente.email_compra, { nome: cliente.nome_tratamento, empresa: cliente.empresa ?? '', ramo: cliente.ramo ?? '', token, expira_em })
+    await d.enviarBoasVindas(cliente.email_compra, { nome: cliente.nome_tratamento, empresa: cliente.empresa ?? '', ramo: cliente.ramo ?? '', token, expira_em, ...(await idiomaDoCliente(d, cliente.id)) })
   } catch {
     throw new ErroRegra('email_nao_enviado', 'Não deu para enviar o e-mail agora. O seu link continua valendo: tente de novo em instantes.', 502)
   }

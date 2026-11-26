@@ -4,7 +4,7 @@
 // O portal também nunca devolve token_hash, refs do gateway (cus_/sub_/pi_/in_), conta do gateway nem hash do computador.
 import { consumirCodigo, solicitarCodigo } from './ativacao.ts'
 import type { DepsCadastro } from './cadastro.ts'
-import { prepararLink } from './links.ts'
+import { prepararLink, idiomaDoCliente } from './links.ts'
 import { cancelarCompra, cancelarMensalidade } from './pagamento/cancelamento.ts'
 import { type DepsPagamento, PRAZO_ARREPENDIMENTO_MS, VALOR_MENSALIDADE } from './pagamento/config.ts'
 import { type Cliente, ErroRegra, type Licenca, type StatusLicenca, type StatusPagamento, type TipoPagamento } from './tipos.ts'
@@ -168,7 +168,7 @@ function erroLimite(proxima: Date) {
 async function enviarNovoAcesso(d: DepsPortal, cliente: Cliente) {
   const { token, expira_em, registro } = await prepararLink(d, cliente.email_compra)
   try {
-    await d.enviarBoasVindas(cliente.email_compra, { nome: cliente.nome_tratamento, empresa: cliente.empresa ?? '', ramo: cliente.ramo ?? '', token, expira_em })
+    await d.enviarBoasVindas(cliente.email_compra, { nome: cliente.nome_tratamento, empresa: cliente.empresa ?? '', ramo: cliente.ramo ?? '', token, expira_em, ...(await idiomaDoCliente(d, cliente.id)) })
   } catch {
     throw new ErroRegra('email_nao_enviado', 'Não deu para enviar o e-mail agora. Use "Enviar o acesso de novo" daqui a pouco.', 502)
   }

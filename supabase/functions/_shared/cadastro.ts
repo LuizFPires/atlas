@@ -17,7 +17,7 @@ export function suspeito(v: string): boolean {
   return /@|https?:|www\.|\/\/|[a-z0-9-]+\.(com|net|org|app|io|ly|me|co|br|info|xyz|site|link|top)\b/i.test(v) || (v.match(/\d/g)?.length ?? 0) >= 6
 }
 
-export interface BoasVindas { nome: string; empresa: string; ramo: string; token: string; expira_em: Date }
+export interface BoasVindas { nome: string; empresa: string; ramo: string; token: string; expira_em: Date; /** M31: licença em inglês. Ausente = português. */ idioma?: 'pt' | 'en' }
 
 export interface DepsCadastro extends Deps {
   /** Envia o e-mail de boas-vindas. Fixture/testes: grava. Produção: adaptador de e-mail (etapa /entregar). */
@@ -89,7 +89,8 @@ export async function cadastrar(d: DepsCadastro, p: PedidoCadastro): Promise<Res
   try {
     await d.store.invalidarLinks(cliente.id, d.agora()) // um reenvio nunca deixa links antigos valendo
     const { token, expira_em } = await gerarLink(d, destino)
-    await d.enviarBoasVindas(destino, { nome, empresa, ramo, token, expira_em })
+    const idioma = await d.store.idiomaDaLicenca(lic.id)
+    await d.enviarBoasVindas(destino, { nome, empresa, ramo, token, expira_em, ...(idioma === 'en' ? { idioma } : {}) })
   } catch (e) {
     await d.store.invalidarLinks(cliente.id, d.agora())
     await d.store.reabrirCadastro(cliente.id) // o e-mail não saiu: deixa tentar de novo

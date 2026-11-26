@@ -138,3 +138,27 @@ test('cidade que não existe: avisa com gentileza e não deixa enviar sem escolh
   expect(await screen.findByRole('alert')).toHaveTextContent(/escolha a sua cidade na lista/i)
   expect(onEnviar).not.toHaveBeenCalled()
 })
+
+// ---- M31: cadastro em inglês (compra em dólar) ----------------------------------------------------------------------------
+describe('cadastro em inglês (M31)', () => {
+  const montarEn = (onEnviar = vi.fn(async () => ({ ok: true, enviado_para: 'j***@shop.com' }) as const)) => {
+    const r = render(<TemaProvider><Cadastro idioma="en" onEnviar={onEnviar} temProva /></TemaProvider>)
+    return { onEnviar, ...r }
+  }
+  test('4 perguntas (sem cidade do Brasil), compra em dólar e nenhum texto em português', () => {
+    const { container } = montarEn()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Welcome to Atlas! Just 4 quick answers.')
+    expect(screen.getAllByRole('button', { name: 'Speak' })).toHaveLength(4)
+    expect(screen.getByText('$1,700')).toBeInTheDocument()
+    expect((container.textContent ?? '').replace(/PL Participações LTDA/g, '')).not.toMatch(/[ãõçáéíóúâêô]|R\$/)
+  })
+  test('envia sem cidade e mostra o recado de sucesso em inglês', async () => {
+    const { onEnviar } = montarEn()
+    await userEvent.type(screen.getByLabelText(/What should Atlas call you/), 'John')
+    await userEvent.type(screen.getByLabelText(/What does your business do/), 'Barber shop')
+    await userEvent.type(screen.getByLabelText(/What’s your email/), 'john@shop.com')
+    await userEvent.click(screen.getByRole('button', { name: /Email me my access/ }))
+    await waitFor(() => expect(onEnviar).toHaveBeenCalledWith(expect.objectContaining({ nome: 'John', cidade: '', uf: '' })))
+    expect(await screen.findByRole('heading', { name: 'Done, John! Check your email.' })).toBeInTheDocument()
+  })
+})

@@ -38,7 +38,7 @@ export interface PedidoCheckout {
 }
 
 /** URLs de retorno montadas no servidor a partir da origem https cadastrada na conta. A requisição não influencia. */
-function urlsDeRetorno(base: string | null | undefined, origem?: 'app') {
+function urlsDeRetorno(base: string | null | undefined, origem?: 'app', mercado: Mercado = 'br') {
   let u: URL | null
   try { u = base ? new URL(base) : null } catch { u = null }
   if (!u || u.protocol !== 'https:' || u.username || u.password || u.origin === 'null') {
@@ -46,14 +46,16 @@ function urlsDeRetorno(base: string | null | undefined, origem?: 'app') {
   }
   // Compra de dentro do app: o cliente já tem o Atlas instalado e ativado; a licença vira paga pelo webhook, sem cadastro de novo.
   if (origem === 'app') return { success_url: `${u.origin}/compra/pelo-app`, cancel_url: `${u.origin}/compra/pelo-app/cancelada` }
-  return { success_url: `${u.origin}/compra/sucesso?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${u.origin}/compra/cancelada` }
+  // M31: quem comprou em dólar volta para o cadastro em inglês.
+  const en = mercado === 'us' ? '/en' : ''
+  return { success_url: `${u.origin}${en}/compra/sucesso?session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${u.origin}${en}/compra/cancelada` }
 }
 
 export async function criarCheckout(d: DepsPagamento, p: PedidoCheckout): Promise<{ url: string }> {
   const { conta, api } = await apiDaConta(d, p.conta_id)
   const meta: Record<string, string> = { atlas_conta: conta.id, atlas_tipo: p.tipo }
   const mercado = mercadoDe(p.mercado)
-  const base = { ...urlsDeRetorno(conta.base_retorno, p.tipo === 'implantacao' ? p.origem : undefined), locale: mercado === 'us' ? 'en' : 'pt-BR', branding_settings: MARCA_CHECKOUT }
+  const base = { ...urlsDeRetorno(conta.base_retorno, p.tipo === 'implantacao' ? p.origem : undefined, mercado), locale: mercado === 'us' ? 'en' : 'pt-BR', branding_settings: MARCA_CHECKOUT }
   if (mercado === 'us') meta.atlas_mercado = 'us'
 
   if (p.tipo === 'implantacao' || p.tipo === 'prateleira') {

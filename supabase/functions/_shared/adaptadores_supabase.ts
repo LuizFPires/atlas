@@ -571,9 +571,11 @@ export async function enviarAvisoAtraso(email: string, aviso: { n: 1 | 2 | 3; pa
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }
 
-export async function enviarBoasVindas(email: string, d: { nome: string; empresa: string; ramo: string; token: string; expira_em: Date }) {
+export async function enviarBoasVindas(email: string, d: { nome: string; empresa: string; ramo: string; token: string; expira_em: Date; idioma?: 'pt' | 'en' }) {
   const base = Deno.env.get('ATLAS_INSTALAR_URL') ?? 'https://atlas-ia.app.br/instalar'
-  const m = montarBoasVindas({ nome: d.nome, empresa: d.empresa, ramo: d.ramo, expira_em: d.expira_em, link_instalacao: `${base}?t=${encodeURIComponent(d.token)}` })
+  // M31: licença em inglês abre a página de instalação em inglês.
+  const link = `${base}?t=${encodeURIComponent(d.token)}${d.idioma === 'en' ? '&idioma=en' : ''}`
+  const m = montarBoasVindas({ nome: d.nome, empresa: d.empresa, ramo: d.ramo, expira_em: d.expira_em, link_instalacao: link, idioma: d.idioma })
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }
 
