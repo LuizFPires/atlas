@@ -373,7 +373,7 @@ export interface ConfigDegustacao { ativa: boolean; dias: number }
 export interface Deps {
   store: Store
   agora: () => Date
-  enviarCodigoPorEmail: (email: string, codigo: string) => Promise<void>
+  enviarCodigoPorEmail: (email: string, codigo: string, idioma?: 'pt' | 'en') => Promise<void>
   /** HMAC do servidor (hash de códigos, marca d'água). Vem do ambiente, nunca de arquivo. */
   segredo: string
   /** Chave privada Ed25519 que assina o /verificar (env ATLAS_SIGN_SK). */

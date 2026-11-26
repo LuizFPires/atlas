@@ -3,6 +3,8 @@ import { StatusVoz } from '../ui'
 import { Shell, type IdTela } from '../shell/Shell'
 import { ImagemAssinatura } from '../marca/Marca'
 import { Ativacao } from './Ativacao'
+import { idiomaAntesDeAtivar, ProvedorIdioma } from '../i18n/app'
+import type { Idioma } from '../i18n/idioma'
 import { Claude } from './Claude'
 import type { PedidoAjudaPasso } from './ajuda-passo'
 import { Ajuda } from './Ajuda'
@@ -274,12 +276,21 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
 
   const prepararMac = usePrepararMac(ponte)
   const tokenLink = useTokenDoLink(ponte)
+  // M31: o idioma do app. Antes de ativar, português (ou o da licença, assim que o link do e-mail é conferido); depois, o da licença (fixo).
+  const [idioma, setIdioma] = useState<Idioma>(() => idiomaAntesDeAtivar())
   const ativacao = useMemo<AtivacaoApi>(
     () => {
-      if (api) return api
-      if (modoFixture()) return criarAtivacaoFixture(ponte)
-      const url = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/[/]+$/, '')
-      return criarAtivacaoApi(ponte, url ? { api: url, linkToken: tokenLink } : null, url && ponte.servidor ? fetchPelaPonte(ponte.servidor, url) : undefined)
+      const base = api ?? (modoFixture() ? criarAtivacaoFixture(ponte) : (() => {
+        const url = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/[/]+$/, '')
+        return criarAtivacaoApi(ponte, url ? { api: url, linkToken: tokenLink } : null, url && ponte.servidor ? fetchPelaPonte(ponte.servidor, url) : undefined)
+      })())
+      // M31: pelo link do e-mail o servidor já diz o idioma da licença (a tela do código sai no idioma certo); na confirmação, de vez.
+      const peloLink = base.pedirCodigoPeloLink
+      return {
+        ...base,
+        ...(peloLink ? { pedirCodigoPeloLink: async () => { const r = await peloLink(); if (r.ok && r.idioma) setIdioma(r.idioma); return r } } : {}),
+        confirmar: async (email, codigo) => { const r = await base.confirmar(email, codigo); if (r.ok && r.idioma) setIdioma(r.idioma); return r },
+      }
     },
     [api, ponte, tokenLink],
   )
@@ -335,6 +346,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
       if (!vivo) return
       setComputador(desc)
       setDono(ativ?.nome ?? '')
+      // Ativado antes do M31 (sem idioma guardado) = português.
+      if (ativ) setIdioma(ativ.idioma ?? 'pt')
       // Ativado: confere se há obra em andamento (ligou o computador no meio da obra => Retomar, F12). Falha ao conferir => Minhas obras.
       let parada: ObraParada | null = null
       if (ativ !== null) parada = await ponteRetomar.obraEmAndamento().catch(() => null)
@@ -366,7 +379,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const painelDeAjuda = painelAjuda ? <Ajuda key={painelAjuda.n} toqueVoz={painelAjuda.toque ?? 0} ajuda={ponteAjuda} casos={ponteCasos} contexto={painelAjuda.contexto} nome={dono.split(' ')[0] || undefined} fotoCelular={fotoCelular} onFechar={() => { setPainelAjuda(null); setFotoCelular(null) }} /> : null
   // Pagou: o cartão já virou "Licença ativa" e a tela de compra some sozinha.
   const compra = emailCompra && !licencaNoApp.pagou ? <ComprarAtlas aberto email={emailCompra} onFechar={() => setEmailCompra(null)} iniciar={iniciarCompraPeloApp} abrirPagamento={abrirPagamento} onPagamentoAberto={licencaNoApp.esperarPagamento} /> : null
-  const com = (n: ReactNode) => <ContextoConectarClaude.Provider value={conectarClaude}><ContextoPlano.Provider value={planoNoMenu}><ContextoModelo.Provider value={modeloNoMenu}><ContextoLicenca.Provider value={contextoLicenca}>{n}{painelDeAjuda}{compra}{painelDeAjuda ? null : <StatusVoz />}</ContextoLicenca.Provider></ContextoModelo.Provider></ContextoPlano.Provider></ContextoConectarClaude.Provider>
+  const com = (n: ReactNode) => <ProvedorIdioma value={idioma}><ContextoConectarClaude.Provider value={conectarClaude}><ContextoPlano.Provider value={planoNoMenu}><ContextoModelo.Provider value={modeloNoMenu}><ContextoLicenca.Provider value={contextoLicenca}>{n}{painelDeAjuda}{compra}{painelDeAjuda ? null : <StatusVoz />}</ContextoLicenca.Provider></ContextoModelo.Provider></ContextoPlano.Provider></ContextoConectarClaude.Provider></ProvedorIdioma>
   // Cortesia/teste vencido: nada funciona, nenhum menu, nenhuma Ajuda. Só o aviso e a compra (que fecha sozinha ao pagar).
   if (licencaNoApp.encerrado && tela !== TELA_ATIVACAO) {
     return <>{<AcessoEncerrado encerrado={licencaNoApp.encerrado} onComprar={abrirCompra} />}{compra}</>

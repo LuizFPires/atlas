@@ -2,9 +2,10 @@
 import { AJUDA, botao, caixa, destaque, esc, linkSeguro, moldura, MONO, COR, neutro, p, quando, rodape, type EmailMontado } from './emails.ts'
 
 /** Código de 6 dígitos (ativação do M2). Só aceita dígitos: nada mais entra no e-mail. */
-export function montarCodigoAtivacao(d: { nome?: string; codigo: string; validade_min?: number; finalidade?: 'ativacao' | 'troca' | 'entrada' }): EmailMontado {
+export function montarCodigoAtivacao(d: { nome?: string; codigo: string; validade_min?: number; finalidade?: 'ativacao' | 'troca' | 'entrada'; idioma?: 'pt' | 'en' }): EmailMontado {
   const codigo = d.codigo.replace(/\D/g, '').slice(0, 8)
   if (!codigo) throw new Error('codigo_vazio: o código de ativação precisa ter dígitos.')
+  if (d.idioma === 'en') return codigoEn({ ...d, codigo })
   const min = d.validade_min ?? 10
   const troca = d.finalidade === 'troca'
   const entrada = d.finalidade === 'entrada'
@@ -31,6 +32,32 @@ export function montarCodigoAtivacao(d: { nome?: string; codigo: string; validad
       AJUDA,
     ].join('\n'),
     html: moldura({ titulo, subtitulo: 'É rapidinho: digite o código e pronto.', preheader: `Seu código: ${codigo}`, corpo }),
+  }
+}
+
+// M31: o mesmo e-mail do código em inglês (licença comprada em dólar).
+function codigoEn(d: { nome?: string; codigo: string; validade_min?: number; finalidade?: 'ativacao' | 'troca' | 'entrada' }): EmailMontado {
+  const { codigo } = d
+  const min = d.validade_min ?? 10
+  const troca = d.finalidade === 'troca'
+  const entrada = d.finalidade === 'entrada'
+  const onde = entrada ? 'to the Atlas sign-in screen (on your phone or in your account)' : 'to the installer'
+  const nome = neutro(d.nome ?? '', 60).split(' ')[0]
+  const titulo = entrada ? 'Your code to sign in to Atlas' : troca ? 'Your code to switch computers' : 'Your code to install Atlas'
+  const quem = nome ? `${nome}, g` : 'G'
+  const ajuda = 'Stuck on a step? Inside Atlas there’s the Atlas Help, which sees what happened and walks you through it.'
+  const corpo = [
+    p(`${esc(quem)}o back ${esc(onde)} and type this code${troca ? ' to move Atlas to the new computer' : ''}:`),
+    `<div style="margin:0 0 22px;background:${COR.caixa};border-radius:12px;padding:20px;text-align:center;font-family:${MONO};font-size:36px;letter-spacing:.3em;font-weight:500;color:${COR.tinta}">${esc(codigo)}</div>`,
+    destaque('relogio', `It’s valid for <b style="color:${COR.tinta}">${min} minutes</b> and only once. Expired? Just ask for another ${entrada ? 'on the same screen' : 'in the installer'}.`),
+    destaque('microfone', `<b style="color:${COR.tinta}">You can say the code.</b> In Atlas, everything can be spoken: tap the microphone and read the numbers out loud.`),
+    rodape('Didn’t ask for this code? Ignore this email: no one can get in without it. Never share the code with anyone.'),
+    `<p style="margin:14px 0 0;font-size:13px;line-height:1.5;color:${COR.claro}">${esc(ajuda)}</p>`,
+  ].join('')
+  return {
+    assunto: `${codigo} is your Atlas code`,
+    texto: [`${nome ? `${nome}, y` : 'Y'}our Atlas code is: ${codigo}`, '', `Go back ${onde} and type this code. It’s valid for ${min} minutes and only once.`, 'Didn’t ask for it? Ignore this email. Never share the code with anyone.', '', ajuda].join('\n'),
+    html: moldura({ lang: 'en-US', titulo, subtitulo: 'Quick: type the code and you’re done.', preheader: `Your code: ${codigo}`, corpo }),
   }
 }
 

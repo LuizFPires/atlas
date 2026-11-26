@@ -50,7 +50,8 @@ async function emitirCodigo(d: Deps, cliente: { id: string; email_compra: string
     },
     d.agora(),
   )
-  await d.enviarCodigoPorEmail(cliente.email_compra, c)
+  // M31: licença em inglês recebe o código em inglês.
+  await d.enviarCodigoPorEmail(cliente.email_compra, c, await d.store.idiomaDaLicenca(lic.id))
 }
 
 /** "ana@loja.com" -> "a***@loja.com": o suficiente para a pessoa reconhecer o próprio e-mail, sem expô-lo inteiro. */
@@ -72,7 +73,10 @@ export async function solicitarCodigoPeloLink(d: Deps, token: string, ip = 'desc
   const cliente = await d.store.clientePorId(link.cliente_id)
   if (!cliente) throw new ErroRegra('link_invalido', 'Esse link não existe.', 404)
   await emitirCodigo(d, cliente, 'ativacao')
-  return { ok: true, email_mascarado: mascararEmail(cliente.email_compra) }
+  // M31: o app ainda não ativado passa a falar o idioma da licença já na tela do código.
+  const lic = await d.store.licencaDoCliente(cliente.id)
+  const idioma = lic ? await d.store.idiomaDaLicenca(lic.id) : 'pt'
+  return { ok: true, email_mascarado: mascararEmail(cliente.email_compra), idioma }
 }
 
 /** Confere e consome o código (usado também pela troca de computador). Tudo por UPDATE atômico no store. */
@@ -124,5 +128,7 @@ export async function confirmarAtivacao(d: Deps, a: { email: string; codigo: str
     if (dispositivo && !(await d.store.registrarDispositivoTeste(dispositivo, lic.id, d.agora()))) throw new ErroRegra('ja_testou_neste_computador', MSG_JA_TESTOU, 409)
     await d.store.inserirAtivacao(lic.id, a.computador_hash, d.agora(), tokenHash)
   }
-  return { licenca_id: lic.id, nome_tratamento: cliente.nome_tratamento, email: cliente.email_compra, token_dispositivo }
+  // M31: o app passa a falar o idioma da licença (decidido na compra, fixo depois).
+  const idioma = await d.store.idiomaDaLicenca(lic.id)
+  return { licenca_id: lic.id, nome_tratamento: cliente.nome_tratamento, email: cliente.email_compra, token_dispositivo, idioma }
 }

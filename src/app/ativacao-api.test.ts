@@ -29,7 +29,7 @@ test('confirmar registra o computador (hash) e guarda o token SÓ no cofre', asy
   const f = vi.fn(async () => resp({ licenca_id: 'l1', nome_tratamento: 'Zé', token_dispositivo: 'segredo-do-dispositivo' }))
   const { api, cofre } = montar(f as never)
   localStorage.clear(); sessionStorage.clear()
-  expect(await api.confirmar('ze@x.com.br', '482 071')).toEqual({ ok: true, nome: 'Zé' })
+  expect(await api.confirmar('ze@x.com.br', '482 071')).toEqual({ ok: true, nome: 'Zé', idioma: 'pt' })
   const corpo = JSON.parse((f.mock.calls[0] as unknown as [string, { body: string }])[1].body)
   expect(corpo).toEqual({ email: 'ze@x.com.br', codigo: '482071', token: 'link-123', computador_hash: HASH })
   expect(await jaAtivado(cofre)).toBe(true)
@@ -93,7 +93,17 @@ test('pelo link: sem token não existe; link vencido vira recado', async () => {
 test('pelo link: confirma sem e-mail e guarda o e-mail que o servidor devolve', async () => {
   const f = vi.fn(async () => resp({ licenca_id: 'l1', nome_tratamento: 'Zé', email: 'appbomdia@gmail.com', token_dispositivo: 'seg' }))
   const { api, cofre } = montar(f as never)
-  expect(await api.confirmar('', '482071')).toEqual({ ok: true, nome: 'Zé' })
+  expect(await api.confirmar('', '482071')).toEqual({ ok: true, nome: 'Zé', idioma: 'pt' })
   expect(JSON.parse((f.mock.calls[0] as unknown as [string, { body: string }])[1].body)).toMatchObject({ email: '', token: 'link-123' })
   expect((await lerAtivacao(cofre))?.email).toBe('appbomdia@gmail.com')
+})
+
+test('M31: a ativação traz o idioma da licença e ele fica guardado junto da ativação', async () => {
+  const { criarAtivacaoApi, lerAtivacao } = await import('./ativacao-api')
+  const guardado = new Map<string, string>()
+  const ponte = { cofre: { guardar: async (k: string, v: string) => { guardado.set(k, v) }, ler: async (k: string) => guardado.get(k) ?? null, apagar: async (k: string) => { guardado.delete(k) } }, hashComputador: async () => 'a'.repeat(64) }
+  const f = vi.fn(async () => new Response(JSON.stringify({ token_dispositivo: 'tok', nome_tratamento: 'John', email: 'john@shop.com', idioma: 'en' }), { status: 200 }))
+  const api = criarAtivacaoApi(ponte as never, { api: 'https://api.test', linkToken: 'L'.repeat(40) }, f as unknown as typeof fetch)
+  expect(await api.confirmar('', '482071')).toEqual({ ok: true, nome: 'John', idioma: 'en' })
+  expect((await lerAtivacao(ponte.cofre as never))?.idioma).toBe('en')
 })

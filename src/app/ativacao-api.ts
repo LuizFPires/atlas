@@ -3,15 +3,16 @@
 // localStorage ou log. Nas chamadas seguintes ele viaja apenas no cabeçalho X-Atlas-Dispositivo.
 import { EMAIL_RE, configCompra } from '../web/compra'
 import type { Cofre, PonteDesktop } from './ponte'
+import type { Idioma } from '../i18n/idioma'
 
 export type Resp<T = object> = ({ ok: true } & T) | { ok: false; mensagem: string }
 
 export interface AtivacaoApi {
   pedirCodigo(email: string): Promise<Resp>
   /** Confirma o código, registra este computador e guarda o token no cofre. */
-  confirmar(email: string, codigo: string): Promise<Resp<{ nome: string }>>
+  confirmar(email: string, codigo: string): Promise<Resp<{ nome: string; idioma?: Idioma }>>
   /** Só existe quando o app abriu pelo link do e-mail: o servidor manda o código para o e-mail do link. */
-  pedirCodigoPeloLink?(): Promise<Resp<{ emailMascarado: string }>>
+  pedirCodigoPeloLink?(): Promise<Resp<{ emailMascarado: string; idioma?: Idioma }>>
 }
 
 export const CHAVE_COFRE = 'atlas/dispositivo'
@@ -19,14 +20,14 @@ const MSG_REDE = 'Sem internet no momento. Confira a conexão e tente de novo.'
 const MSG_OFF = 'A ativação ainda não está aberta por aqui. Volte daqui a pouco.'
 
 /** O que fica no cofre: o token (segredo) e quem é o dono. */
-interface Guardado { token: string; email: string; nome: string }
+interface Guardado { token: string; email: string; nome: string; /** M31: idioma da licença (não é segredo; fica junto). */ idioma?: Idioma }
 
 export async function lerAtivacao(cofre: Cofre): Promise<Guardado | null> {
   const bruto = await cofre.ler(CHAVE_COFRE)
   if (!bruto) return null
   try {
     const g = JSON.parse(bruto) as Partial<Guardado>
-    return typeof g.token === 'string' && g.token ? { token: g.token, email: g.email ?? '', nome: g.nome ?? '' } : null
+    return typeof g.token === 'string' && g.token ? { token: g.token, email: g.email ?? '', nome: g.nome ?? '', ...(g.idioma === 'en' || g.idioma === 'pt' ? { idioma: g.idioma } : {}) } : null
   } catch { return null }
 }
 
@@ -59,7 +60,7 @@ export function criarAtivacaoApi(
     async pedirCodigoPeloLink() {
       try {
         const { r, d } = await post('/ativar/solicitar-codigo-link', { token: cfg.linkToken })
-        if (r.ok && typeof d.email_mascarado === 'string') return { ok: true, emailMascarado: d.email_mascarado }
+        if (r.ok && typeof d.email_mascarado === 'string') return { ok: true, emailMascarado: d.email_mascarado, ...(d.idioma === 'en' ? { idioma: 'en' as const } : {}) }
         return { ok: false, mensagem: d.mensagem ?? 'Não deu para mandar o código agora. Digite o seu e-mail.' }
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },
@@ -89,8 +90,9 @@ export function criarAtivacaoApi(
         }
         const nome = typeof d.nome_tratamento === 'string' ? d.nome_tratamento : ''
         const dono = typeof d.email === 'string' && d.email ? d.email.toLowerCase() : e
-        await ponte.cofre.guardar(CHAVE_COFRE, JSON.stringify({ token: d.token_dispositivo, email: dono, nome } satisfies Guardado))
-        return { ok: true, nome }
+        const idioma: Idioma = d.idioma === 'en' ? 'en' : 'pt'
+        await ponte.cofre.guardar(CHAVE_COFRE, JSON.stringify({ token: d.token_dispositivo, email: dono, nome, idioma } satisfies Guardado))
+        return { ok: true, nome, idioma }
       } catch { return { ok: false, mensagem: MSG_REDE } }
     },
   }

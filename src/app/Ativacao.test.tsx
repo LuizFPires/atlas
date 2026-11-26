@@ -134,3 +134,19 @@ test('Mac: tudo pronto, segue para conectar o Claude', async () => {
   await userEvent.click(screen.getByRole('button', { name: /Continuar/ }))
   expect(onContinuar).toHaveBeenCalled()
 })
+
+// ---- M31: ativação em inglês (licença comprada em dólar / computador em inglês) ------------------------------------------
+describe('ativação em inglês (M31)', () => {
+  test('tela do e-mail e passos da lateral em inglês, sem português', async () => {
+    const { ProvedorIdioma } = await import('../i18n/app')
+    const api = { pedirCodigo: vi.fn(async () => ({ ok: true as const })), confirmar: vi.fn(async () => ({ ok: true as const, nome: 'John' })) }
+    const { container } = render(<ProvedorIdioma value="en"><Ativacao api={api} computador="JOHN-PC · Windows 11" onContinuar={() => {}} /></ProvedorIdioma>)
+    expect(screen.getByRole('heading', { name: 'Let’s activate your Atlas' })).toBeInTheDocument()
+    expect(screen.getByText('Connect Claude')).toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/[ãõçáéíóúâêô]/)
+  })
+  test('o código falado em inglês vira números', async () => {
+    const { falaParaCodigo } = await import('./Ativacao')
+    expect(falaParaCodigo('four eight two oh seven one')).toBe('482071')
+  })
+})
