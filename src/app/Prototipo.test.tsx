@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { Prototipo } from './Prototipo'
@@ -28,7 +28,9 @@ test('desenha as telas no estilo escolhido e mostra o rótulo do projeto', async
   expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Marcar horário', 'Agenda do dia', 'Confirmação', 'Início'])
 })
 
-test('o preview é um iframe com sandbox VAZIO (sem scripts, sem mesma origem) e CSP; nada de HTML no DOM do app', async () => {
+// M35 (P1Computador, 26/11/2026): a prévia grande roda SÓ o script do Atlas (nonce sorteado) para contar a tela aberta; o HTML das
+// telas continua sem script (a CSP barra), sem mesma origem e sem formulários.
+test('o preview é um iframe com sandbox só de scripts (sem mesma origem) e CSP com nonce; nada de HTML no DOM do app', async () => {
   const p = criarPrototipoFixture()
   const mal = await p.desenhar('x', '<img src=x onerror=alert(1)>', { ...ESTILOS_EXEMPLO[0], destaque: 'red;}</style><script>alert(1)</script>' })
   expect(mal.versoes[0].telas[0].html).not.toContain('<script')
@@ -36,8 +38,9 @@ test('o preview é um iframe com sandbox VAZIO (sem scripts, sem mesma origem) e
   await montar()
   const frame = await screen.findByTitle(/Tela Marcar horário no celular/)
   expect(frame.tagName).toBe('IFRAME')
-  expect(frame.getAttribute('sandbox')).toBe('')
+  expect(frame.getAttribute('sandbox')).toBe('allow-scripts')
   expect(frame.getAttribute('srcdoc')).toContain("default-src 'none'")
+  expect(frame.getAttribute('srcdoc')).toMatch(/script-src 'nonce-[A-Za-z0-9]{16,64}'/)
   // O texto da tela está só dentro do iframe, nunca no DOM do app.
   expect(screen.queryByText('Escolha o barbeiro')).not.toBeInTheDocument()
 })
@@ -393,7 +396,7 @@ describe('celular ou computador (sistemas web e sites)', () => {
     const tela = screen.getByTitle(/Tela Agenda do dia no computador/)
     expect(tela.style.width).toBe('1280px')
     expect(tela.style.height).toBe('800px')
-    expect(tela.getAttribute('sandbox')).toBe('')
+    expect(tela.getAttribute('sandbox')).toBe('allow-scripts') // M35: só o script do Atlas (nonce); as telas seguem sem script
   })
 })
 
@@ -492,4 +495,27 @@ test('a tela no celular não mostra barra de rolagem ', async () => {
   expect(um).toContain('::-webkit-scrollbar{display:none')
   const nav = montarNavegavel([{ id: 'a', nome: 'A', html: '<main>a</main>' } as never], 'a')!
   expect(nav).toContain('scrollbar-width:none')
+})
+
+describe('Voltar e caminho acima da prévia (M35, P1Computador)', () => {
+  test('a prévia conta a tela aberta: aparece o caminho; Voltar pede à prévia a tela anterior', async () => {
+    const { user } = await montar()
+    const frame = await screen.findByTitle(/Tela Marcar horário no celular/) as HTMLIFrameElement
+    const voltar = screen.getByRole('button', { name: 'Voltar à tela anterior' })
+    expect(voltar).toBeDisabled()
+    expect(within(screen.getByRole('navigation', { name: 'Caminho' })).getByText('Marcar horário')).toBeInTheDocument()
+    const pedidos: unknown[] = []
+    frame.contentWindow!.postMessage = ((m: unknown) => { pedidos.push(m) }) as typeof window.postMessage
+    const avisar = (id: string, source: MessageEventSource | null = frame.contentWindow) => act(() => { window.dispatchEvent(new MessageEvent('message', { data: { tipo: 'atlas:tela', id }, source })) })
+    avisar('agenda', window) // de outra janela: ignorado
+    expect(voltar).toBeDisabled()
+    avisar('agenda')
+    expect(screen.getByRole('navigation', { name: 'Caminho' })).toHaveTextContent('Marcar horário›Agenda do dia')
+    expect(voltar).toBeEnabled()
+    await user.click(voltar)
+    expect(pedidos).toEqual([{ tipo: 'atlas:ir', id: 'agendar' }])
+    avisar('agendar')
+    expect(screen.getByRole('navigation', { name: 'Caminho' })).toHaveTextContent(/^Marcar horário$/)
+    expect(voltar).toBeDisabled()
+  })
 })

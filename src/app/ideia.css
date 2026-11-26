@@ -2,6 +2,7 @@
 .at-ideia { display: flex; flex-direction: column; gap: 18px; min-height: calc(100vh - 64px); }
 .at-ideia__topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .at-ideia__topo h1 { margin: 4px 0 0; font-size: 26px; }
+.at-ideia__sub { display: block; margin-top: 4px; font-size: 14px; color: var(--mute); }
 .at-ideia__rotulo { font: 500 12px var(--font-mono); letter-spacing: .12em; color: var(--mute2); }
 .at-ideia__rotulo--lime { color: var(--lime-txt); }
 .at-ideia__grade { flex: 1; display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 24px; min-height: 0; }

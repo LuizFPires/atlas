@@ -31,9 +31,9 @@ export function Vendas({ onComprar, onComprarPronto, extra, degustacaoApi }: { o
       </header>
 
       <section className="v-hero">
-        <span className="v-selo">SISTEMAS SOB MEDIDA, FEITOS PELA IA</span>
+        <span className="v-selo">APLICATIVOS, SISTEMAS E SITES, FEITOS PELA IA</span>
         <h1>O sistema que a sua empresa precisa, do seu jeito. Sem saber programar.</h1>
-        <p>Você conta o que precisa, como se falasse com um amigo. O Atlas desenha, constrói e entrega o sistema pronto, para usar no celular e no computador.</p>
+        <p>Você conta o que precisa, como se falasse com um amigo. O Atlas desenha, constrói e entrega pronto: aplicativo, sistema ou site, para usar no celular e no computador.</p>
         <div className="v-video">
           {VIDEO_URL ? (
             <iframe src={VIDEO_URL} title="O Atlas em 2 minutos" allow="fullscreen; picture-in-picture" loading="lazy" />

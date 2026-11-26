@@ -382,10 +382,10 @@ tela: prototipo/caminho-novo/P1Computador.dc.html
 - [x] Protótipo aprovado e registrado (prototipo/caminho-novo P1Computador, P2Dicas, P3Versoes)
 - [x] Cada tela do mapa diz onde é usada (celular ou computador); o Claude desenha no tamanho certo (390 px ou 1280 px)
 - [x] Chave Celular · Computador no protótipo, com a contagem de telas; o computador aparece numa janela de navegador reduzida para caber
-- [ ] Voltar, caminho (Início › Equipe) e "Onde dá para tocar?" acima da prévia (o "Onde dá para tocar?" já está)
-- [ ] Voz: texto aparece enquanto a pessoa fala (modelo pequeno e rápido) e o modelo bom corrige ao parar
-- [ ] Página de vendas e primeiro passo dizem: aplicativo, sistema ou site
-Notas: DECISÃO do Luiz (23/11/2026, "o Atlas é para resolver tanto aplicativos mobile quanto web"; "a transcrição tem que estar bem rápida, sem delay"), protótipo aprovado ("Tudo aprovado!") em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. Antes o protótipo só desenhava celular (390 px).
+- [x] Voltar, caminho (Início › Equipe) e "Onde dá para tocar?" acima da prévia (o "Onde dá para tocar?" já está)
+- [x] Voz: texto aparece enquanto a pessoa fala (modelo pequeno e rápido) e o modelo bom corrige ao parar
+- [x] Página de vendas e primeiro passo dizem: aplicativo, sistema ou site
+Notas: DECISÃO do Luiz (23/11/2026, "o Atlas é para resolver tanto aplicativos mobile quanto web"; "a transcrição tem que estar bem rápida, sem delay"), protótipo aprovado ("Tudo aprovado!") em https://claude.ai/artifact/LWFM7FU7MWBHDHZfBjiBmG. Antes o protótipo só desenhava celular (390 px). Andamento (26/11/2026): a voz já escrevia o rascunho ao vivo com o Whisper pequeno e corrigia com o bom ao parar (PR #119). Acima da prévia: Voltar e o caminho (as últimas 3 telas abertas). DECISÃO técnica (Claude, 26/11/2026): para saber qual tela está aberta, a prévia grande roda só o script do Atlas, com nonce sorteado (sandbox "allow-scripts", sem mesma origem; a CSP barra qualquer script das telas); miniaturas, comparar versões e o link do celular continuam sem script nenhum. Página de vendas (F00) e primeiro passo (CN1) dizem "aplicativo, sistema ou site" (protótipos atualizados junto).
 
 ## Milestone 36 — Dicas do Atlas e 3 versões de uma tela (pós-protótipo)
 peso: 4

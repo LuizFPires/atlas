@@ -178,6 +178,7 @@ export function Ideia({ ideia, onVoltar, onConcluir, relatoInicial, esperaMs = 2
         <div>
           <span className="at-ideia__rotulo">NOVA OBRA · PRIMEIRO PASSO</span>
           <h1>Conte a sua ideia para o Atlas</h1>
+          <span className="at-ideia__sub">Aplicativo, sistema ou site: o Atlas faz os três.</span>
         </div>
         <div className="at-ideia__topo-acoes">
           {onPlanilha && <Botao variante="secundario" onClick={onPlanilha}>Tenho uma planilha →</Botao>}
