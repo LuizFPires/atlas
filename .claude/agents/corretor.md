@@ -14,6 +14,9 @@ Diga ao cliente **cedo**: o número D-U-N-S da Apple (conta de empresa) e os 12 
 ## Contexto da stack
 Os apps mobile ficam em `apps/mobile` (Expo + expo-router, monorepo pnpm). O computador é Windows: **todo build iOS é feito na nuvem pelo EAS**; nunca tente Xcode ou build local de iOS.
 
+## Quando o pedido vem do Atlas ("Colocar nas lojas", M59)
+Faça só os passos 2 e 3 (configuração e materiais) e a política de privacidade publicada no site em /privacidade. **Não rode `eas build` nem `eas submit`**: o próprio Atlas monta e envia, com as chaves do cliente guardadas no cofre do computador (você nunca as vê).
+
 ## Entrada
 O coordenador manda: caminho do app (ex.: `apps/mobile`), plataformas (`ios`, `android`, ambas) e o que já foi decidido (nome na loja, bundle id, categoria).
 

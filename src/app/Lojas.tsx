@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { linkWhatsapp } from './entrega-dados'
-import { guiaApple, guiaChaveAsc, guiaDuns, guiaExpo, guiaGoogle, guiaGrupoGoogle, type Guia } from './guias-site'
+import { guiaApple, guiaChaveAsc, guiaDuns, guiaExpo, guiaGoogle, guiaGooglePrimeiro, guiaGrupoGoogle, guiaProducaoGoogle, type Guia } from './guias-site'
+import type { DestinoSite } from './ponte-publicar'
 import { explicarErroLojas, type CaminhoLojas, type ContaLoja, type EstadoLojas, type PonteLojas, type Testadores } from './ponte-lojas'
 
 interface Props {
@@ -12,7 +13,20 @@ interface Props {
   /** Domínio próprio no ar (empresa precisa de site e e-mail no domínio). */
   dominio?: string | null
   onVoltar?: () => void
+  /** Abre um site oficial no navegador do computador (App Store Connect, Google Play Console). */
+  abrirSite?: (destino: DestinoSite) => Promise<void>
   intervaloMs?: number
+}
+
+function textoEnvio(e: EstadoLojas): string {
+  const f = e.envio.fase
+  if (f === 'preparando') return 'A linha da obra está montando a versão de app (mesmas telas, ícone, textos e privacidade).'
+  if (f === 'montando') return 'Montando na nuvem da Expo. Leva uns 20 a 40 minutos; pode fechar o Atlas.'
+  if (f === 'enviando') return 'Mandando a versão de iPhone para o TestFlight.'
+  if (f === 'google-primeiro') return `${e.envio.ios === 'testflight' ? 'O iPhone já está no TestFlight. ' : ''}Falta o 1º envio ao Google (regra do Google, uma vez só): baixe o arquivo e siga o passo a passo.`
+  if (f === 'teste') return e.envio.ios === 'testflight' ? 'No TestFlight e no teste fechado do Google.' : 'No teste fechado do Google. O iPhone entra quando a chave da Apple estiver guardada.'
+  if (f === 'erro') return explicarErroLojas(e.envio.erro ?? '')
+  return e.contas.expo ? 'Com as contas prontas, o Atlas monta ícone, textos, fotos, política de privacidade e a versão de app, e manda para os testes.' : 'Primeiro a conta da Expo: é nela que o Atlas monta a versão de app.'
 }
 
 const ICONE_OK = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>
@@ -21,12 +35,13 @@ const ICONE_OK = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" str
  * Colocar nas lojas (M59; prototipo/caminho-novo/PB8Lojas e PB13Testadores). Uma pergunta antes (em nome de quem), depois a lista
  * do que falta, cada item com o seu passo a passo. O Atlas nunca cria conta, nunca paga e nunca aperta "Enviar para revisão".
  */
-export function Lojas({ pasta, appNome, lojas, onGuia, dominio = null, onVoltar, intervaloMs = 60_000 }: Props) {
+export function Lojas({ pasta, appNome, lojas, onGuia, dominio = null, onVoltar, abrirSite, intervaloMs = 60_000 }: Props) {
   const [e, setE] = useState<EstadoLojas | null>(null)
   const [escolha, setEscolha] = useState<CaminhoLojas>('pessoa')
   const [mudando, setMudando] = useState(false)
   const [tokenExpo, setTokenExpo] = useState('')
   const [issuer, setIssuer] = useState('')
+  const [team, setTeam] = useState('')
   const [grupo, setGrupo] = useState('')
   const [teste, setTeste] = useState<Testadores | null>(null)
   const [aviso, setAviso] = useState('')
@@ -38,6 +53,12 @@ export function Lojas({ pasta, appNome, lojas, onGuia, dominio = null, onVoltar,
   }, [lojas, pasta])
 
   const comConvite = !!e?.convite && e.caminho === 'pessoa'
+  const andando = !!e && ['preparando', 'montando', 'enviando'].includes(e.envio.fase)
+  useEffect(() => {
+    if (!andando) return
+    const t = setInterval(() => { void lojas.estado(pasta).then(setE, () => {}) }, Math.min(intervaloMs, 15_000))
+    return () => clearInterval(t)
+  }, [andando, lojas, pasta, intervaloMs])
   useEffect(() => {
     if (!comConvite) return
     let vivo = true
@@ -115,7 +136,10 @@ export function Lojas({ pasta, appNome, lojas, onGuia, dominio = null, onVoltar,
             {guiaBotao('Chave da App Store Connect', guiaChaveAsc())}
             <span className="at-lojas__campo">
               <input aria-label="Issuer ID" placeholder="cole aqui o Issuer ID" value={issuer} onChange={(x) => setIssuer(x.target.value)} autoComplete="off" spellCheck={false} />
-              <button type="button" onClick={() => void tentar(() => lojas.escolherChaveAsc(pasta, issuer))}>Escolher o arquivo da chave</button>
+            </span>
+            <span className="at-lojas__campo">
+              <input aria-label="Team ID" placeholder="Team ID (10 letras e números)" value={team} onChange={(x) => setTeam(x.target.value)} autoComplete="off" spellCheck={false} />
+              <button type="button" onClick={() => void tentar(() => lojas.escolherChaveAsc(pasta, issuer, team))}>Escolher o arquivo da chave</button>
             </span>
           </>
         ) : undefined)}
@@ -133,8 +157,30 @@ export function Lojas({ pasta, appNome, lojas, onGuia, dominio = null, onVoltar,
             {zap && <a className="at-noar__prim at-lojas__zap" href={zap} target="_blank" rel="noopener noreferrer">Mandar o convite pelo WhatsApp</a>}
           </>
         ))}
-        {item('app', 'Versão de app e envio às lojas', false, 'Quando as contas estiverem prontas, o Atlas monta ícone, textos, fotos das telas, política de privacidade e a versão de app, e manda para o TestFlight e para o teste do Google.')}
+        {item('app', 'Versão de app e envio aos testes das lojas', e.envio.fase === 'teste', textoEnvio(e), (
+          <>
+            {e.contas.expo && (e.envio.fase === 'nada' || e.envio.fase === 'erro') && (
+              <button type="button" className="at-noar__prim at-lojas__zap" onClick={() => void tentar(() => lojas.montar(pasta))}>{e.envio.fase === 'erro' ? 'Tentar de novo →' : 'Montar a versão de app e mandar →'}</button>
+            )}
+            {e.envio.fase === 'google-primeiro' && (
+              <>
+                <button type="button" className="at-noar__prim at-lojas__zap" onClick={() => void tentar(() => lojas.baixarAab(pasta))}>Baixar o arquivo do app (.aab)</button>
+                {guiaBotao('1º envio ao Google', guiaGooglePrimeiro({ appNome }))}
+                <button type="button" className="at-lojas__guia" onClick={() => void tentar(() => lojas.googleEnviado(pasta))}>Já fiz o 1º envio</button>
+              </>
+            )}
+          </>
+        ))}
+        {!empresa && teste?.completo && item('producao', 'Dia 14: pedir para abrir a todos', false, 'As respostas do pedido já estão prontas para copiar.', guiaBotao('Pedir a produção ao Google', guiaProducaoGoogle({ appNome, pessoas: teste.pessoas })))}
       </ol>
+      {e.envio.fase === 'teste' && (
+        <div className="at-dom__conferiu">
+          <span className="at-noar__rot at-noar__rot--lime">PRONTO PARA AS LOJAS · FALTA SÓ O SEU ENVIO</span>
+          <span className="at-noar__txt">O {appNome} já está no teste {e.envio.ios === 'testflight' ? 'das duas lojas' : 'do Google'}. Instale no seu celular e confira. Gostou? Em cada loja, aperte "Enviar para revisão". A revisão leva de 1 a 3 dias e o Atlas avisa quando aprovar.</span>
+          {abrirSite && e.envio.ios === 'testflight' && <button type="button" className="at-noar__sec" onClick={() => void abrirSite('app-store-connect')}>Abrir a App Store Connect</button>}
+          {abrirSite && <button type="button" className="at-noar__sec" onClick={() => void abrirSite('google-play-console')}>Abrir o Google Play Console</button>}
+        </div>
+      )}
       <span className="at-noar__nota">O "Enviar para revisão" de cada loja é sempre seu: é você quem publica em seu nome.</span>
       <button type="button" className="at-noar__sec" onClick={() => setMudando(true)}>Trocar: {empresa ? 'no meu nome' : 'no nome da empresa'}</button>
       {onVoltar && <button type="button" className="at-noar__sec" onClick={onVoltar}>Voltar</button>}

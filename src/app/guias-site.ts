@@ -5,7 +5,7 @@
 import type { IdGuiaSite } from './ponte-navegador'
 import type { DestinoSite } from './ponte-publicar'
 
-export type IdGuia = 'registro' | 'apple' | 'google' | 'stripe' | 'asaas' | 'expo' | 'asc' | 'grupo' | 'duns'
+export type IdGuia = 'registro' | 'apple' | 'google' | 'stripe' | 'asaas' | 'expo' | 'asc' | 'grupo' | 'duns' | 'google-primeiro' | 'google-producao'
 
 export interface PassoGuia {
   texto: string
@@ -189,6 +189,37 @@ export function guiaDuns(): Guia {
     ],
     fimTexto: 'Pronto, pedi',
     saber: 'Pesquisa D-U-N-S da Apple (developer.apple.com/enroll/duns-lookup); grátis; até 30 dias; os dados precisam bater com o CNPJ. A organização também precisa de e-mail no domínio da empresa e site no ar nesse domínio para a inscrição da Apple.',
+  }
+}
+
+export function guiaGooglePrimeiro({ appNome }: { appNome: string }): Guia {
+  return {
+    id: 'google-primeiro', nome: 'Google Play Console', rotulo: 'GOOGLE PLAY · O 1º ENVIO (REGRA DO GOOGLE, UMA VEZ SÓ)', onde: 'fora', fora: 'google-play-console', legenda: 'O Google Play Console abre no seu navegador. Siga daqui:',
+    passos: [
+      { texto: `Clique em Criar app. Nome: ${appNome.slice(0, 30)}. Idioma: Português (Brasil). Marque App e Gratuito, aceite as declarações e clique em Criar app.`, botao: 'Criar app' },
+      { texto: 'No painel, faça as tarefas de "Configurar o app": política de privacidade, acesso, anúncios, classificação, público-alvo e segurança dos dados.', botao: 'Configurar o app', dica: 'As respostas estão prontas no arquivo apps/mobile/store/privacidade.md da obra. O endereço da política é o seu site + /privacidade.' },
+      { texto: 'No menu, abra Testar e lançar → Teste → Teste fechado. Na faixa que já existe (Alpha), clique em Gerenciar faixa e depois em Criar nova versão.', botao: 'Criar nova versão', traducao: 'Faixa = uma fila de versões. Teste fechado = só quem está no grupo vê o app.' },
+      { texto: 'Toque em "Baixar o arquivo do app" aqui no Atlas. Depois arraste o arquivo .aab para a área Pacotes de apps no Google.', botao: 'Enviar', dica: 'O arquivo vem pronto da Expo. É só arrastar.' },
+      { texto: 'Clique em Próxima, depois em Salvar e em Iniciar lançamento para Teste fechado.', botao: 'Iniciar lançamento', traducao: 'Lançamento aqui é só para os testadores, não para o público.' },
+      { texto: 'Na aba Testadores da mesma faixa, escolha Grupos do Google e cole o e-mail do grupo (…@googlegroups.com). Salve.', botao: 'Testadores' },
+    ],
+    fimTexto: 'Pronto, enviei',
+    saber: 'Primeiro envio de app novo no Google Play é manual (o Google não aceita o 1º pela API). Teste fechado na faixa Alpha; testadores por Grupo do Google. O .aab vem do build da Expo (EAS). Erros comuns: "Você precisa fazer upload de um APK ou Android App Bundle" (arraste o .aab), "pacote já usado" (o identificador do app já existe em outra conta), tarefas de "Configurar o app" pendentes impedem o lançamento.',
+  }
+}
+
+export function guiaProducaoGoogle({ appNome, pessoas }: { appNome: string; pessoas: number }): Guia {
+  const app = appNome.slice(0, 30)
+  return {
+    id: 'google-producao', nome: 'Google Play Console', rotulo: 'GOOGLE PLAY · DIA 14: PEDIR PARA ABRIR A TODOS', onde: 'fora', fora: 'google-play-console', legenda: 'O pedido abre no seu navegador. As respostas já estão prontas para copiar:',
+    passos: [
+      { texto: 'No painel do app, clique em Solicitar acesso à produção.', botao: 'Solicitar acesso à produção', traducao: 'Produção = o app aberto para todo mundo na loja.' },
+      { texto: 'Na pergunta sobre como foi o teste, cole a resposta pronta.', botao: 'Próxima', copiar: [{ campo: 'Sobre o teste', valor: `${pessoas} pessoas usaram o ${app} por 14 dias seguidos no teste fechado, em celulares Android diferentes. Elas usaram as funções principais do dia a dia e nos contaram o que acharam.` }] },
+      { texto: 'Na pergunta sobre o que mudou depois do teste, cole a resposta pronta.', botao: 'Próxima', copiar: [{ campo: 'O que mudou', valor: `Corrigimos o que os testadores apontaram e deixamos as telas mais simples. Cada mudança passou por testes automáticos antes de ir para a nova versão do ${app}.` }] },
+      { texto: 'Na pergunta sobre por que o app está pronto, cole a resposta pronta e clique em Enviar.', botao: 'Enviar', copiar: [{ campo: 'Por que está pronto', valor: `O ${app} já é usado de verdade pela equipe, funciona nos celulares testados e não teve falhas graves nos 14 dias de teste.` }], dica: 'O Google responde em até 7 dias. Aprovado, você aperta "Enviar para revisão" na faixa de produção: esse clique é seu.' },
+    ],
+    fimTexto: 'Pronto, pedi',
+    saber: 'Contas pessoais novas: depois de 12 testadores por 14 dias seguidos, o botão "Solicitar acesso à produção" aparece no painel; o Google faz perguntas sobre o teste, o feedback e a prontidão; resposta em até 7 dias.',
   }
 }
 

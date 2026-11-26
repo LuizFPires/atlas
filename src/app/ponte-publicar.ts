@@ -7,7 +7,7 @@
 //  - nenhum segredo (token da Vercel, senha) vai para arquivo.
 
 /** Sites que o Atlas sabe abrir. A URL é fixa aqui dentro; o guia só escolhe o NOME do destino. */
-export type DestinoSite = 'registro' | 'vercel' | 'apple-inscricao' | 'app-store-connect' | 'testflight' | 'google-console' | 'apple-duns' | 'asc-chaves' | 'expo-token' | 'google-grupos'
+export type DestinoSite = 'registro' | 'vercel' | 'apple-inscricao' | 'app-store-connect' | 'testflight' | 'google-console' | 'apple-duns' | 'asc-chaves' | 'expo-token' | 'google-grupos' | 'google-play-console'
 
 export const SITES_OFICIAIS: Record<DestinoSite, string> = {
   registro: 'https://registro.br/',
@@ -20,6 +20,7 @@ export const SITES_OFICIAIS: Record<DestinoSite, string> = {
   'asc-chaves': 'https://appstoreconnect.apple.com/access/integrations/api',
   'expo-token': 'https://expo.dev/settings/access-tokens',
   'google-grupos': 'https://groups.google.com/my-groups',
+  'google-play-console': 'https://play.google.com/console',
 }
 
 /** Hosts oficiais (a lista fechada que o adaptador real aceita). */

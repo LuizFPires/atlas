@@ -4,7 +4,7 @@ import { Lojas } from './Lojas'
 import { criarLojasFixture } from './ponte-lojas'
 
 const montar = (extra: Partial<Parameters<typeof Lojas>[0]> = {}) => {
-  const lojas = criarLojasFixture()
+  const lojas = extra.lojas ?? criarLojasFixture({ passoMs: 5 })
   const onGuia = vi.fn()
   render(<Lojas pasta="ponto" appNome="Ponto" lojas={lojas} onGuia={onGuia} intervaloMs={20} {...extra} />)
   return { lojas, onGuia }
@@ -62,3 +62,31 @@ describe('lojas (M59, PB8/PB9/PB13)', () => {
     expect(await screen.findByText(/de 12 pessoas já entraram/)).toBeInTheDocument()
   })
 })
+
+describe('lojas, parte 2: montar, enviar e o pronto (PB9)', () => {
+  it('sem a conta da Expo o botão de montar não aparece; com ela, monta, manda e pede o 1º envio ao Google', async () => {
+    const lojas = criarLojasFixture({ passoMs: 5 })
+    const { onGuia } = montar({ lojas })
+    await userEvent.click(await screen.findByRole('button', { name: 'Seguir →' }))
+    expect(screen.queryByRole('button', { name: /Montar a versão de app/ })).toBeNull()
+    await userEvent.type(screen.getByRole('textbox', { name: 'Chave da Expo' }), 'A'.repeat(40))
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar a chave da Expo' }))
+    await userEvent.click(await screen.findByRole('button', { name: /Montar a versão de app/ }))
+    expect(await screen.findByRole('button', { name: /Baixar o arquivo do app/ }, { timeout: 3000 })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Passo a passo: 1º envio ao Google' }))
+    expect(onGuia).toHaveBeenCalledWith(expect.objectContaining({ id: 'google-primeiro' }), undefined)
+    await userEvent.click(screen.getByRole('button', { name: 'Já fiz o 1º envio' }))
+    expect(await screen.findByText(/FALTA SÓ O SEU ENVIO/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Enviar para revisão/).length).toBeGreaterThan(0)
+  })
+
+  it('a chave da Apple pede o Issuer ID e o Team ID', async () => {
+    const lojas = criarLojasFixture({ passoMs: 5 })
+    await lojas.marcarConta('ponto', 'apple', true)
+    montar({ lojas })
+    await userEvent.click(await screen.findByRole('button', { name: 'Seguir →' }))
+    expect(await screen.findByRole('textbox', { name: 'Issuer ID' })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Team ID' })).toBeInTheDocument()
+  })
+})
+
