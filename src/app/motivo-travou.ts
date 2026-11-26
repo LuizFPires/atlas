@@ -8,6 +8,7 @@ export function motivoDoTravamento(codigo: string, acao: string, geral: string):
     case 'sem-licenca': return 'O servidor não reconheceu a licença deste computador. Confira a internet e a assinatura em Conta e tente de novo.'
     case 'plan-invalido': case 'obra-sem-plano': return 'Não consegui acrescentar isto ao plano da obra (o arquivo PLAN.md sumiu ou está danificado). Peça ao Atlas para destravar.'
     case 'obra-com-config-suspeita': return 'Apareceu um arquivo estranho de configuração na pasta da obra, e por segurança o Atlas não mexe nela. Peça ao Atlas para destravar.'
+    case 'kit-indisponivel': return 'O servidor do Atlas não entregou as instruções da obra agora. Nada se perdeu: tente de novo em alguns minutos.'
     case 'kit-faltando': return 'O kit de construção não chegou a este computador. Confira a internet e tente de novo.'
     case 'claude-nao-logado': case 'claude-nao-instalado': return 'O Claude não está conectado neste computador. Entre de novo na tela Claude e tente outra vez.'
     default: return `${geral}${codigo ? ` (código: ${codigo.slice(0, 40)})` : ''}`
