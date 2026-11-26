@@ -43,6 +43,8 @@ export interface Licenca {
   validade_em?: Date | null
   /** Quando o cancelamento foi pedido/ocorreu (0027). Nulo = nunca ou antes da migration. Alimenta "Cancelamentos no mês" do painel. */
   cancelada_em?: Date | null
+  /** M31 (0034): idioma da licença, decidido na compra e fixo depois. Ausente = 'pt'. */
+  idioma?: 'pt' | 'en'
 }
 export interface Ativacao {
   id: string
@@ -238,6 +240,10 @@ export interface Store {
   licencaPorGateway(contaId: string, ref: { cliente?: string | null; assinatura?: string | null }): Promise<Licenca | null>
   /** Cria cliente+licença da compra paga; se o e-mail já tem licença, devolve a existente (idempotente). */
   criarCompra(c: NovaCompra): Promise<{ licenca: Licenca; nova: boolean }>
+  /** M31: grava o idioma da licença (só na compra em dólar). */
+  definirIdiomaLicenca(licencaId: string, idioma: 'pt' | 'en'): Promise<void>
+  /** M31: idioma da licença ('pt' quando não houver). */
+  idiomaDaLicenca(licencaId: string): Promise<'pt' | 'en'>
   /** Upsert atômico por (conta_gateway_id, gateway_ref), condicional a status <> 'estornado' (estorno nunca é sobrescrito).
    *  Devolve o status anterior lido na própria operação (null = não existia; 'estornado' = nada foi aplicado). */
   gravarPagamento(p: Pagamento): Promise<StatusPagamento | null>

@@ -4,13 +4,15 @@ import { Markdown } from './Markdown'
 import './web.css'
 
 /** Links para os textos legais (rodapé, compra e cadastro). Em formulários abrem em outra aba para não perder o que foi digitado. */
-export function LinksLegais({ novaAba = false }: { novaAba?: boolean }) {
+export function LinksLegais({ novaAba = false, idioma = 'pt' }: { novaAba?: boolean; idioma?: 'pt' | 'en' }) {
   const alvo = novaAba ? { target: '_blank', rel: 'noopener noreferrer' } : {}
+  // M31: os textos legais em inglês ainda dependem do advogado; até lá, o link diz que o texto está em português.
+  const en = idioma === 'en'
   return (
     <>
-      <a href={DOCS_LEGAIS.termos.caminho} {...alvo}>Termos de uso</a>
-      <a href={DOCS_LEGAIS.licenca.caminho} {...alvo}>Licença do software</a>
-      <a href={DOCS_LEGAIS.privacidade.caminho} {...alvo}>Privacidade</a>
+      <a href={DOCS_LEGAIS.termos.caminho} {...alvo} hrefLang="pt-BR">{en ? 'Terms of use (in Portuguese)' : 'Termos de uso'}</a>
+      <a href={DOCS_LEGAIS.licenca.caminho} {...alvo} hrefLang="pt-BR">{en ? 'Software license (in Portuguese)' : 'Licença do software'}</a>
+      <a href={DOCS_LEGAIS.privacidade.caminho} {...alvo} hrefLang="pt-BR">{en ? 'Privacy (in Portuguese)' : 'Privacidade'}</a>
     </>
   )
 }

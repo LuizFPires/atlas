@@ -36,7 +36,7 @@ export function falaParaEmail(t: string): string {
  * Microfone de um campo de texto. A cada frase final chama `aoFalar(texto)`; o campo junta ao que já estava
  * escrito e o cliente pode editar à vontade (transcrição editável).
  */
-function useVozDoNavegador(aoFalar: (texto: string) => void) {
+function useVozDoNavegador(aoFalar: (texto: string) => void, lang = 'pt-BR') {
   const [gravando, setGravando] = useState(false)
   const rec = useRef<Reconhecedor | null>(null)
   const querOuvir = useRef(false)
@@ -56,7 +56,7 @@ function useVozDoNavegador(aoFalar: (texto: string) => void) {
     const F = fabrica()
     if (!F) { parar(); return }
     const r = new F()
-    r.lang = 'pt-BR'
+    r.lang = lang
     r.continuous = true
     r.interimResults = false
     r.onresult = (e) => {
@@ -72,7 +72,7 @@ function useVozDoNavegador(aoFalar: (texto: string) => void) {
     }
     rec.current = r
     try { r.start() } catch { parar() }
-  }, [parar])
+  }, [parar, lang])
   useEffect(() => { religar.current = ligar }, [ligar])
 
   const alternar = useCallback(() => {
@@ -174,9 +174,10 @@ function useVozWhisper(aoFalar: (texto: string) => void) {
 }
 
 /** Microfone de um campo de texto: o Atlas instalado usa o Whisper no computador; o site usa a voz do navegador. */
-export function useVoz(aoFalar: (texto: string) => void) {
+/** M31: `lang` = idioma da voz do navegador (o site em inglês ouve em inglês). O Whisper do Atlas instalado segue em português. */
+export function useVoz(aoFalar: (texto: string) => void, lang = 'pt-BR') {
   const whisper = noAtlasInstalado() || (fabrica() === null && gravacaoSuportada())
-  const doNavegador = useVozDoNavegador(aoFalar)
+  const doNavegador = useVozDoNavegador(aoFalar, lang)
   const local = useVozWhisper(aoFalar)
   return whisper ? local : doNavegador
 }

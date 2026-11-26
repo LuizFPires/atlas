@@ -71,3 +71,41 @@ test('seção dos agentes: o mestre de obras coordena especialistas de mesa limp
   expect(within(sec).getByRole('note', { name: 'Como fizemos a conta' })).toHaveTextContent('conta simplificada')
   for (const g of ['Um método pronto, no automático', 'A sua cota do Claude rende mais']) expect(within(sec).getByText(g)).toBeInTheDocument()
 })
+
+// ---- M31: página em inglês (F00VendasEN), bandeirinhas e Windows · Mac ---------------------------------------------------
+describe('página em inglês (M31)', () => {
+  const montarEn = () => render(<TemaProvider><Vendas onComprar={vi.fn()} idioma="en" /></TemaProvider>)
+
+  test('título, preço em dólar e app pronto a $2,400', () => {
+    montarEn()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('No coding required.')
+    expect(screen.getByText('$1,700')).toBeInTheDocument()
+    expect(screen.getAllByText('$2,400').length).toBe(4)
+    expect(screen.getByRole('heading', { name: 'If you can explain it, you can build it.' })).toBeInTheDocument()
+  })
+
+  test('nenhum texto do português aparece na página em inglês', () => {
+    const { container } = montarEn()
+    // O nome da empresa (PL Participações LTDA) é nome próprio: fica como é.
+    const texto = (container.textContent ?? '').replace('PL Participações LTDA', '')
+    for (const pt of ['Quero', 'Você', 'Preço', 'Dúvidas', 'obra', 'português simples', 'Pix', 'R$']) expect(texto).not.toContain(pt)
+    expect(texto).not.toMatch(/[ãõçáéíóúâêô]/)
+  })
+
+  test('bandeirinhas no topo, com o inglês marcado; Windows e Mac logo abaixo dos botões', () => {
+    montarEn()
+    expect(screen.getByRole('link', { name: 'English (US)' })).toHaveAttribute('aria-current', 'true')
+    expect(screen.getByRole('link', { name: 'Português (Brasil)' })).toHaveAttribute('aria-current', 'false')
+    const plat = screen.getByLabelText('Works on Windows, Mac')
+    expect(plat).toHaveTextContent('Windows')
+    expect(plat).toHaveTextContent('Mac')
+    expect(screen.getByRole('img', { name: 'In English and Portuguese' })).toBeInTheDocument()
+  })
+})
+
+test('português: bandeira do Brasil marcada, Windows e Mac (nada de "só Windows")', () => {
+  montar()
+  expect(screen.getByRole('link', { name: 'Português (Brasil)' })).toHaveAttribute('aria-current', 'true')
+  expect(screen.getByLabelText('Funciona em Windows, Mac')).toBeInTheDocument()
+  expect(screen.getByText(/no Windows 10 ou 11 e no Mac/)).toBeInTheDocument()
+})

@@ -380,3 +380,11 @@
 .v-inst { display: flex; flex-direction: column; gap: 14px; }
 .v-inst__selo { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 17px; background: rgba(198, 241, 53, 0.1); border: 1px solid var(--lime); color: var(--text); font: 600 14px var(--font-text); }
 .v-inst__outro { align-self: flex-start; padding: 0; border: none; background: none; color: var(--lime-txt, var(--lime)); font: 500 14px var(--font-text); text-decoration: underline; cursor: pointer; }
+/* M31: bandeirinhas do idioma e "Funciona em Windows · Mac" */
+.v-bandeiras { display: flex; gap: 6px; margin-left: auto; }
+.v-bandeiras + .v-acao { margin-left: 0; }
+.v-bandeira { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border-radius: 10px; box-sizing: border-box; text-decoration: none; font: 600 12px var(--font-mono); letter-spacing: 0.06em; border: 1px solid var(--card-b); color: var(--mute); }
+.v-bandeira--ativa { border: 1.5px solid var(--lime); background: var(--lime-soft, rgba(198, 241, 53, 0.1)); color: var(--text); }
+.v-plataformas { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.v-plataforma { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--card-b); color: var(--text); font-size: 14px; font-weight: 600; }
+.v-plataformas-idiomas { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--card-b); }

@@ -29,6 +29,7 @@
 //   licencaPorGateway          SELECT licencas WHERE conta_gateway_id AND (gateway_assinatura_ref | gateway_cliente_ref)
 //   licencasAtrasadas / licencasEncerramentoVencido   SELECT licencas WHERE status='atrasada' / status<>'cancelada' AND mensalidade_encerra_em<=agora
 //   criarCompra                RPC criar_compra (0010)
+//   definirIdiomaLicenca       UPDATE licencas SET idioma WHERE id (0034)
 //   criarCortesia              RPC criar_cortesia (0013)
 //   configDegustacao           SELECT config_degustacao (ativa,dias) WHERE id=1 (0016)
 //   definirConfigDegustacao    UPDATE config_degustacao SET ativa,dias,atualizada_em,atualizada_por WHERE id=1
@@ -145,6 +146,7 @@ const licenca = (r: any) => r && {
   comprada_em: dt(r.comprada_em), avisos_atraso: r.avisos_atraso ?? 0, conta_gateway_id: r.conta_gateway_id ?? null,
   gateway_cliente_ref: r.gateway_cliente_ref ?? null, gateway_assinatura_ref: r.gateway_assinatura_ref ?? null, mensalidade_encerra_em: dt(r.mensalidade_encerra_em),
   tipo: r.tipo === 'cortesia' ? 'cortesia' : 'paga', origem: r.origem === 'degustacao' ? 'degustacao' : null, validade_em: dt(r.validade_em), cancelada_em: dt(r.cancelada_em),
+  ...(r.idioma === 'en' ? { idioma: 'en' as const } : {}),
 }
 const ativacao = (r: any) => r && { id: r.id, licenca_id: r.licenca_id, computador_hash: r.computador_hash, token_hash: r.token_hash ?? null, ativo: r.ativo, ativado_em: new Date(r.ativado_em), desativado_em: dt(r.desativado_em) }
 const pagamento = (r: any) => r && { licenca_id: r.licenca_id, conta_gateway_id: r.conta_gateway_id ?? '', tipo: r.tipo, valor: Number(r.valor), status: r.status, gateway_ref: r.gateway_ref ?? '', gateway_pi: r.gateway_pi ?? null, pago_em: dt(r.pago_em), segmento: r.segmento ?? null }
@@ -254,6 +256,13 @@ export function criarStoreSupabase() {
     async criarCompra(c: any) {
       const r = await rpc('criar_compra', { p_email: c.email, p_nome: c.nome, p_valor: c.valor, p_conta: c.conta_gateway_id, p_cliente_ref: c.gateway_cliente_ref, p_agora: iso(c.agora) })
       return { licenca: licenca(r.licenca), nova: !!r.nova }
+    },
+
+    async definirIdiomaLicenca(id: string, idioma: 'pt' | 'en') { ok(await t('licencas').update({ idioma }).eq('id', id), 'definirIdiomaLicenca') },
+    // Lida à parte (fora do C_LICENCA) para as funções não quebrarem antes da migration 0034 ser aplicada: sem a coluna = 'pt'.
+    async idiomaDaLicenca(id: string) {
+      const r = await t('licencas').select('idioma').eq('id', id).maybeSingle()
+      return r.error || r.data?.idioma !== 'en' ? 'pt' as const : 'en' as const
     },
 
     // ── links ──

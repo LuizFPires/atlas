@@ -32,6 +32,13 @@ export const planoPrateleira = (parcelas: number): PlanoParcelado => planoParcel
 /** Preço do tipo de produto + parcelas. Usado pelo checkout e pela trava do webhook. */
 export const planoDoTipo = (tipo: TipoProduto, parcelas: number): PlanoParcelado => (tipo === 'prateleira' ? planoPrateleira(parcelas) : planoImplantacao(parcelas))
 export const valorBaseDoTipo = (tipo: TipoProduto): number => (tipo === 'prateleira' ? VALOR_PRATELEIRA : VALOR_IMPLANTACAO)
+/** M31 (Luiz, 26/11/2026): fora do Brasil, preço próprio em dólar (não é câmbio). Só cartão, à vista. */
+export type Mercado = 'br' | 'us'
+export const mercadoDe = (v: unknown): Mercado => (v === 'us' ? 'us' : 'br')
+export const PRECOS_USD = { implantacao: 1700, prateleira: 2400, mensalidade: 70 } as const
+export const moedaDo = (m: Mercado): 'brl' | 'usd' => (m === 'us' ? 'usd' : 'brl')
+/** Preço-base do produto no mercado (em reais ou dólares). */
+export const valorBaseNoMercado = (tipo: TipoProduto, m: Mercado): number => (m === 'us' ? PRECOS_USD[tipo] : valorBaseDoTipo(tipo))
 /** Carência do atraso (Smart Retries da Stripe + 3 avisos) antes de pausar o pipeline. */
 export const CARENCIA_ATRASO_MS = 7 * 24 * 3600_000
 /** Dias (a partir do início do atraso) em que saem os avisos 1, 2 e 3. */
