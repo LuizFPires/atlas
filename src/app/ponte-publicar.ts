@@ -7,7 +7,7 @@
 //  - nenhum segredo (token da Vercel, senha) vai para arquivo.
 
 /** Sites que o Atlas sabe abrir. A URL é fixa aqui dentro; o guia só escolhe o NOME do destino. */
-export type DestinoSite = 'registro' | 'vercel' | 'apple-inscricao' | 'app-store-connect' | 'testflight' | 'google-console' | 'apple-duns' | 'asc-chaves' | 'expo-token' | 'google-grupos' | 'google-play-console'
+export type DestinoSite = 'registro' | 'vercel' | 'apple-inscricao' | 'app-store-connect' | 'testflight' | 'google-console' | 'apple-duns' | 'asc-chaves' | 'expo-token' | 'google-grupos' | 'google-play-console' | 'stripe-chaves-teste' | 'stripe-chaves' | 'asaas-sandbox' | 'asaas-conta'
 
 export const SITES_OFICIAIS: Record<DestinoSite, string> = {
   registro: 'https://registro.br/',
@@ -21,10 +21,14 @@ export const SITES_OFICIAIS: Record<DestinoSite, string> = {
   'expo-token': 'https://expo.dev/settings/access-tokens',
   'google-grupos': 'https://groups.google.com/my-groups',
   'google-play-console': 'https://play.google.com/console',
+  'stripe-chaves-teste': 'https://dashboard.stripe.com/test/apikeys',
+  'stripe-chaves': 'https://dashboard.stripe.com/apikeys',
+  'asaas-sandbox': 'https://sandbox.asaas.com/',
+  'asaas-conta': 'https://www.asaas.com/',
 }
 
 /** Hosts oficiais (a lista fechada que o adaptador real aceita). */
-export const HOSTS_OFICIAIS: readonly string[] = ['registro.br', 'vercel.com', 'developer.apple.com', 'appstoreconnect.apple.com', 'testflight.apple.com', 'play.google.com', 'expo.dev', 'groups.google.com']
+export const HOSTS_OFICIAIS: readonly string[] = ['registro.br', 'vercel.com', 'developer.apple.com', 'appstoreconnect.apple.com', 'testflight.apple.com', 'play.google.com', 'expo.dev', 'groups.google.com', 'stripe.com', 'asaas.com']
 
 /** A URL é https e o host é exatamente um dos oficiais (ou subdomínio direto dele). Recusa tudo o mais. */
 export function enderecoOficial(url: string): boolean {

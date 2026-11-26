@@ -1,0 +1,12 @@
+/* M61 — página de vendas com marcações (prototipo/caminho-novo/LC4Pagina) */
+.at-pv { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 20px; min-height: 0; }
+.at-pv__quadro { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.at-pv__selo { margin-left: 8px; padding: 3px 8px; border-radius: 6px; background: var(--lime); color: var(--on-lime); font: 600 10px var(--font-mono); letter-spacing: 0.1em; }
+.at-pv__rolagem { height: 70vh; overflow: auto; border-radius: 16px; border: 1px solid var(--card-b); background: #fff; }
+.at-pv__area { position: relative; width: 100%; }
+.at-pv__area iframe { display: block; width: 100%; border: 0; background: #fff; }
+.at-pv__camada { position: absolute; inset: 0; width: 100%; padding: 0; border: 0; background: transparent; cursor: crosshair; }
+.at-pv__pino { position: absolute; width: 26px; height: 26px; border-radius: 13px; display: flex; align-items: center; justify-content: center; background: var(--lime); color: var(--on-lime); font: 700 13px var(--font-text); box-shadow: 0 2px 8px rgba(0,0,0,.35); pointer-events: none; }
+.at-pv__lado { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.at-pv__marca { display: flex; flex-direction: column; gap: 4px; }
+.at-pv__etapas { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }

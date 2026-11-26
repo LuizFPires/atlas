@@ -227,6 +227,14 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     estado: (pasta) => chamar('atlas:noar:estado', String(pasta)),
     corrigir: (pasta) => chamar('atlas:noar:corrigir', String(pasta)),
   },
+  vendas: {
+    // Página de vendas (M61): a chave do gateway passa só daqui ao processo principal, que a põe direto na Vercel do cliente.
+    estado: (pasta) => chamar('atlas:vendas:estado', String(pasta)),
+    desenhar: (pasta, nome) => chamar('atlas:vendas:desenhar', String(pasta), String(nome ?? '')),
+    ajustar: (pasta, marcacoes) => chamar('atlas:vendas:ajustar', String(pasta), Array.isArray(marcacoes) ? marcacoes.map((m) => ({ x: Number(m?.x), y: Number(m?.y), texto: String(m?.texto ?? '') })) : []),
+    aprovar: (pasta, chave) => chamar('atlas:vendas:aprovar', String(pasta), String(chave ?? '')),
+    abrir: (pasta, chave) => chamar('atlas:vendas:abrir', String(pasta), String(chave ?? '')),
+  },
   lancamento: {
     // Lançamento (M60): só pasta e a escolha do gateway; nada de chave passa por aqui.
     estado: (pasta) => chamar('atlas:lancamento:estado', String(pasta)),

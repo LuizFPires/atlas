@@ -46,8 +46,12 @@ const SITES_OFICIAIS = Object.freeze({
   'expo-token': 'https://expo.dev/settings/access-tokens',
   'google-grupos': 'https://groups.google.com/my-groups',
   'google-play-console': 'https://play.google.com/console',
+  'stripe-chaves-teste': 'https://dashboard.stripe.com/test/apikeys',
+  'stripe-chaves': 'https://dashboard.stripe.com/apikeys',
+  'asaas-sandbox': 'https://sandbox.asaas.com/',
+  'asaas-conta': 'https://www.asaas.com/',
 })
-const HOSTS_OFICIAIS = Object.freeze(['registro.br', 'vercel.com', 'developer.apple.com', 'appstoreconnect.apple.com', 'testflight.apple.com', 'play.google.com', 'expo.dev', 'groups.google.com'])
+const HOSTS_OFICIAIS = Object.freeze(['registro.br', 'vercel.com', 'developer.apple.com', 'appstoreconnect.apple.com', 'testflight.apple.com', 'play.google.com', 'expo.dev', 'groups.google.com', 'stripe.com', 'asaas.com'])
 
 function enderecoOficial(url) {
   try {

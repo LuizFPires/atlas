@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { guiaAsaas, guiaStripe, type Guia } from './guias-site'
+import { PaginaVendas } from './PaginaVendas'
+import type { PonteVendas } from './ponte-vendas'
 import { GATEWAYS, type EstadoLancamento, type ItemLancamento, type PonteLancamento } from './ponte-lancamento'
 import './colocar-no-ar.css'
 import './lancamento.css'
@@ -10,12 +12,14 @@ interface Props {
   /** Passo a passo da conta do gateway (site ao lado). */
   onGuia: (g: Guia) => void
   onVoltar?: () => void
+  /** M61: a página de vendas (protótipo com marcações). */
+  vendas?: PonteVendas
 }
 
 const ROTULO_FASE: Record<ItemLancamento['fase'], string> = { comecar: 'COMEÇANDO', recebimento: 'ESCOLHENDO ONDE O DINHEIRO CAI', pagina: 'MONTANDO O STAND' }
 
 /** Lançamento de uma obra (M60; prototipo/caminho-novo/LC1Lancamento, telas comecar e recebimento). Opcional: sem começar, nada muda. */
-export function Lancamento({ obra, lancamento, onGuia, onVoltar }: Props) {
+export function Lancamento({ obra, lancamento, onGuia, onVoltar, vendas }: Props) {
   const [e, setE] = useState<EstadoLancamento | null>(null)
   const [aviso, setAviso] = useState('')
   useEffect(() => {
@@ -87,9 +91,10 @@ export function Lancamento({ obra, lancamento, onGuia, onVoltar }: Props) {
           <span className="at-noar__rot at-noar__rot--lime">PRONTO PARA A PÁGINA DE VENDAS</span>
           <b className="at-noar__tit at-noar__tit--m">A conta do {e.gateway === 'stripe' ? 'Stripe' : 'Asaas'} está ligada. O dinheiro das vendas cai nela.</b>
           <span className="at-noar__txt">O próximo passo é do Incorporador: ele monta a página de vendas com as cores e as letras do {obra.nome}, e você confere antes de publicar.</span>
-          <button type="button" className="at-noar__sec" onClick={() => void fazer(() => lancamento.escolherGateway(obra.pasta, e.gateway === 'stripe' ? 'asaas' : 'stripe'))}>Trocar para o {e.gateway === 'stripe' ? 'Asaas' : 'Stripe'}</button>
+          {!vendas && <button type="button" className="at-noar__sec" onClick={() => void fazer(() => lancamento.escolherGateway(obra.pasta, e.gateway === 'stripe' ? 'asaas' : 'stripe'))}>Trocar para o {e.gateway === 'stripe' ? 'Asaas' : 'Stripe'}</button>}
         </section>
       )}
+      {e?.fase === 'pagina' && vendas && e.gateway && <PaginaVendas obra={obra} gateway={e.gateway} vendas={vendas} onGuia={onGuia} />}
       {aviso && <p className="at-noar__nota" role="alert">{aviso}</p>}
     </main>
   )
