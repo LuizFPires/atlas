@@ -208,6 +208,47 @@ describe('cortesia — e-mail com link de instalação', () => {
   })
 })
 
+describe('cortesia — link para copiar (mandar pelo WhatsApp se o e-mail cair no spam)', () => {
+  async function comLink(falha = false) {
+    const m = await comDoisClientes()
+    m.sessoes.set(JWT_LUIZ, { auth_user_id: 'auth-luiz', email: 'luiz@atlas.com' })
+    const enviados: { token: string }[] = []
+    const admin = {
+      ...m.deps,
+      emailsAdmin: lerEmailsAdmin('luiz@atlas.com'),
+      linkInstalar: (token: string) => `https://atlas.test/instalar?t=${encodeURIComponent(token)}`,
+      enviarCortesia: async (_e: string, d: { token: string }) => { if (falha) throw new Error('smtp fora do ar'); enviados.push(d) },
+    }
+    const em = (dias: number) => new Date(m.deps.agora().getTime() + dias * DIA).toISOString()
+    const ch = (rota: string, corpo: object) => chamar(m.ctx({ admin }), rota, JWT_LUIZ, corpo)
+    return { ...m, enviados, em, ch }
+  }
+
+  it('liberar e reenviar devolvem ao gestor o MESMO link que foi no e-mail (o mais novo, que é o que vale)', async () => {
+    const a = await comLink()
+    const j = await (await a.ch('/admin/cortesia', { email: 'dudu@gmail.com', validade_em: a.em(10) })).json()
+    expect(j.link).toBe(`https://atlas.test/instalar?t=${encodeURIComponent(a.enviados[0].token)}`)
+    const r = await (await a.ch('/admin/cortesia/reenviar', { email: 'dudu@gmail.com' })).json()
+    expect(r.link).toBe(`https://atlas.test/instalar?t=${encodeURIComponent(a.enviados[1].token)}`)
+  })
+
+  it('e-mail fora do ar: o link vem mesmo assim (o gestor manda por outro caminho)', async () => {
+    const a = await comLink(true)
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const j = await (await a.ch('/admin/cortesia', { email: 'dudu@gmail.com', validade_em: a.em(10) })).json()
+    log.mockRestore()
+    expect(j.email_enviado).toBe(false)
+    expect(j.link).toMatch(/^https:\/\/atlas\.test\/instalar\?t=.{20,}/)
+  })
+
+  it('estender em silêncio não gera link nem devolve link', async () => {
+    const a = await comLink()
+    await a.ch('/admin/cortesia', { email: 'dudu@gmail.com', validade_em: a.em(10) })
+    const j = await (await a.ch('/admin/cortesia', { email: 'dudu@gmail.com', validade_em: a.em(20), silencioso: true })).json()
+    expect(j.link ?? null).toBeNull()
+  })
+})
+
 describe('cortesia — texto do e-mail', () => {
   it('destaca a validade em dd/mm/aaaa e avisa que acaba sozinho; traz o link', () => {
     const m = montarCortesia({ validade_em: new Date('2026-12-05T20:00:00Z'), link: 'https://x.test/instalar?t=abc', link_expira_em: new Date('2026-11-23T12:00:00Z') })
