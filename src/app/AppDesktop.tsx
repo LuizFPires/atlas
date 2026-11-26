@@ -7,7 +7,7 @@ import { Claude } from './Claude'
 import type { PedidoAjudaPasso } from './ajuda-passo'
 import { Ajuda } from './Ajuda'
 import { NovaVersao } from './NovaVersao'
-import { ajudaIndisponivel, contextoDoPasso, criarAjudaFixture, type ContextoAjuda, type PonteAjuda } from './ponte-ajuda'
+import { ajudaIndisponivel, contextoDoPasso, criarAjudaFixture, type ContextoAjuda, type PonteAjuda, type PrintAjuda } from './ponte-ajuda'
 import { casosIndisponivel, criarCasosFixture, type PonteCasosAdmin } from './ponte-ajuda-casos'
 import { Celular } from './Celular'
 import { Contas } from './Contas'
@@ -120,6 +120,9 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const [instalando, setInstalando] = useState(false)
   // A Ajuda do Atlas (F17) é um painel lateral por cima de qualquer tela; `n` renova a conversa a cada abertura.
   const [painelAjuda, setPainelAjuda] = useState<{ contexto: ContextoAjuda; n: number; toque?: number } | null>(null)
+  const [fotoCelular, setFotoCelular] = useState<PrintAjuda | null>(null)
+  const pastaDaAjuda = useRef<string | undefined>(undefined)
+  useEffect(() => { pastaDaAjuda.current = painelAjuda?.contexto.pasta })
   const [computador, setComputador] = useState('')
   const [dono, setDono] = useState('')
   const [paradaF12, setParadaF12] = useState<ObraParada | null>(null)
@@ -312,9 +315,17 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     const url = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/[/]+$/, '')
     if (!remotoLigado || !url || !ponte.servidor) return
     const canal = criarCanalRemotoApi(ponte, url, fetchPelaPonte(ponte.servidor, url))
-    const ex = criarExecutorRemoto({ obras: ponteObras, prototipo: pontePrototipo, estilo: ponteEstilo, batismo: ponteBatismo, construcao: pontesModo.construcao, modos: pontesModo.modos, painel: pontePainel, arquivos: ponteArquivos }, canal, criarMemoriaRemotoLocal())
+    // M58: a foto que o celular mandou para a Ajuda: vira anexo e aparece na Ajuda (abre a Ajuda se estiver fechada).
+    const aoFotoAjuda = async (dataUrl: string) => {
+      const pasta = pastaDaAjuda.current
+      const foto = await ponteAjuda.fotoDoCelular?.(pasta, dataUrl).catch(() => null)
+      if (!foto) return
+      setFotoCelular(foto)
+      setPainelAjuda((a) => a ?? { contexto: { origem: 'menu', ...(pasta ? { pasta } : {}) }, n: Date.now() })
+    }
+    const ex = criarExecutorRemoto({ obras: ponteObras, prototipo: pontePrototipo, estilo: ponteEstilo, batismo: ponteBatismo, construcao: pontesModo.construcao, modos: pontesModo.modos, painel: pontePainel, arquivos: ponteArquivos, aoFotoAjuda }, canal, criarMemoriaRemotoLocal())
     return ligarCelularRemoto(ex)
-  }, [remotoLigado, ponte, ponteObras, pontePrototipo, ponteEstilo, ponteBatismo, pontesModo, pontePainel, ponteArquivos])
+  }, [remotoLigado, ponte, ponteObras, pontePrototipo, ponteEstilo, ponteBatismo, pontesModo, pontePainel, ponteArquivos, ponteAjuda])
 
   useEffect(() => {
     let vivo = true
@@ -348,7 +359,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     if (o.etapa === 'obra') { setFluxo('lista'); setAtivo('obra'); return }
     setFluxo(o.etapa)
   }
-  const painelDeAjuda = painelAjuda ? <Ajuda key={painelAjuda.n} toqueVoz={painelAjuda.toque ?? 0} ajuda={ponteAjuda} casos={ponteCasos} contexto={painelAjuda.contexto} nome={dono.split(' ')[0] || undefined} onFechar={() => setPainelAjuda(null)} /> : null
+  const painelDeAjuda = painelAjuda ? <Ajuda key={painelAjuda.n} toqueVoz={painelAjuda.toque ?? 0} ajuda={ponteAjuda} casos={ponteCasos} contexto={painelAjuda.contexto} nome={dono.split(' ')[0] || undefined} fotoCelular={fotoCelular} onFechar={() => { setPainelAjuda(null); setFotoCelular(null) }} /> : null
   // Pagou: o cartão já virou "Licença ativa" e a tela de compra some sozinha.
   const compra = emailCompra && !licencaNoApp.pagou ? <ComprarAtlas aberto email={emailCompra} onFechar={() => setEmailCompra(null)} iniciar={iniciarCompraPeloApp} abrirPagamento={abrirPagamento} onPagamentoAberto={licencaNoApp.esperarPagamento} /> : null
   const com = (n: ReactNode) => <ContextoConectarClaude.Provider value={conectarClaude}><ContextoPlano.Provider value={planoNoMenu}><ContextoModelo.Provider value={modeloNoMenu}><ContextoLicenca.Provider value={contextoLicenca}>{n}{painelDeAjuda}{compra}{painelDeAjuda ? null : <StatusVoz />}</ContextoLicenca.Provider></ContextoModelo.Provider></ContextoPlano.Provider></ContextoConectarClaude.Provider>
@@ -389,7 +400,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'obra' && obraAtual && religandoConta && ponteLigar) conteudo = <LigarContas ponte={ponteLigar} navegador={modoFixture() ? undefined : ponte.navegador} onVoltar={() => setReligandoConta(false)} onContinuar={() => setReligandoConta(false)} rotuloContinuar="Tudo ligado · Voltar à obra →" />
   else if (ativo === 'obra' && obraAtual) conteudo = <Painel filaObras={pontesModo.construcao} plano={planoNoMenu?.valor.toLocaleLowerCase('pt-BR').startsWith('max') ? 'max' : 'pro'} obra={obraAtual} abas={<AbasDaObra so="abas" nome={obraAtual.nome} atual="obra" onIr={(p) => setAtivo(p)} onCanteiro={() => setAtivo('canteiro')} />} onCanteiro={() => setAtivo('canteiro')} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => abrirAjuda({ origem: 'menu' })} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => { setGuiaAberto(null); setFluxo('publicar') }} travas={ponteTravas} navegador={modoFixture() ? undefined : ponte.navegador} onLigarContas={ponteLigar ? () => setReligandoConta(true) : undefined} onVerCronograma={() => setAtivo('cronograma')} />
   else if (ativo === 'obras' && fluxo === 'aprovar' && obraAtual) conteudo = <Aprovar obra={obraAtual} construcao={pontesModo.construcao} claude={ponteClaude} modos={pontesModo.modos} onVoltar={() => setFluxo('contas')} onComecou={() => { setFluxo('lista'); setAtivo('obra') }} tampa={modoFixture() ? undefined : ponte.tampa} />
-  else if (ativo === 'obras' && fluxo === 'planilha' && pontePlanilha) conteudo = <ComecarPlanilha planilha={pontePlanilha} arquivos={ponteArquivos} criarObra={(nome) => ponteObras.criarSubpasta(nome)} onVoltar={() => setFluxo('ideia')} onConcluir={({ pasta, nome, relato }) => {
+  else if (ativo === 'obras' && fluxo === 'planilha' && pontePlanilha) conteudo = <ComecarPlanilha politica={pontePolitica} planilha={pontePlanilha} arquivos={ponteArquivos} criarObra={(nome) => ponteObras.criarSubpasta(nome)} onVoltar={() => setFluxo('ideia')} onConcluir={({ pasta, nome, relato }) => {
     // A obra nasceu da planilha: segue o caminho (visual, nome, protótipo) com o relato que veio dela.
     setObraAtual({ nome, pasta })
     setRelatoDaObra(relato)

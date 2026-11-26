@@ -4,7 +4,7 @@ import { cabecalhoDispositivo, lerAtivacao } from './ativacao-api'
 import type { CanalRemoto, PedidoRemoto, TipoPedido } from './celular-remoto'
 import type { PonteDesktop } from './ponte'
 
-const TIPOS: TipoPedido[] = ['obra_nova', 'ajuste', 'aprovar_telas', 'nome', 'construir', 'pausar', 'continuar']
+const TIPOS: TipoPedido[] = ['obra_nova', 'ajuste', 'aprovar_telas', 'nome', 'construir', 'pausar', 'continuar', 'foto_ajuda']
 
 function pedidoValido(x: unknown): x is PedidoRemoto {
   if (!x || typeof x !== 'object') return false

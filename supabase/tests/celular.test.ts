@@ -154,3 +154,21 @@ describe('fotos de referência', () => {
     expect(r.status).toBe(400)
   })
 })
+
+// M58: "Falar com o Atlas" aceita a foto tirada no celular: o celular sobe a foto e deixa um pedido para a Ajuda do notebook.
+describe('foto do celular para a Ajuda do Atlas', () => {
+  it('a foto sobe, o pedido foto_ajuda chega ao notebook com a referência, e o notebook baixa a imagem', async () => {
+    const { pc, cel } = await preparar()
+    const { id: ref } = await (await cel('/portal/celular/referencia', { imagem: PNG })).json()
+    const r = await cel('/portal/celular/pedido', { tipo: 'foto_ajuda', obra_id: 'ajuda', dados: { referencia: ref } })
+    expect(r.status).toBe(200)
+    const s = await (await pc('/celular/sinal', { ocupado: null })).json()
+    expect(s.pedidos).toEqual([expect.objectContaining({ tipo: 'foto_ajuda', obra_id: 'ajuda', dados: { referencia: ref } })])
+    expect((await (await pc('/celular/referencia', { id: ref })).json()).imagem).toBe(PNG)
+  })
+  it('sem foto de verdade, recusa', async () => {
+    const { cel } = await preparar()
+    expect((await cel('/portal/celular/pedido', { tipo: 'foto_ajuda', obra_id: 'ajuda', dados: { referencia: 'naoexiste' } })).status).toBe(400)
+    expect((await cel('/portal/celular/pedido', { tipo: 'foto_ajuda', obra_id: 'ajuda', dados: {} })).status).toBe(400)
+  })
+})

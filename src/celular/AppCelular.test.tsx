@@ -143,3 +143,15 @@ test('"Entrar com o código do e-mail" sai e desliga o Face ID deste aparelho', 
   expect(face.desligar).toHaveBeenCalled()
   expect(screen.getByLabelText('E-mail da sua compra')).toBeInTheDocument()
 })
+
+// M58: "Falar com o Atlas" aceita a foto tirada no celular (ex.: a tela do computador com o erro).
+test('Foto para a Ajuda: tira a foto e ela vai para a Ajuda do Atlas no computador', async () => {
+  const api = criarApiCelularFixture()
+  render(<AppCelular api={api} intervalo={20} />)
+  await screen.findByRole('heading', { name: 'Minhas obras' })
+  const entrada = screen.getByLabelText('Foto para a Ajuda do Atlas')
+  const arq = new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3])], 'tela.jpg', { type: 'image/jpeg' })
+  await userEvent.upload(entrada, arq)
+  expect(await screen.findByText(/A foto foi para a Ajuda do Atlas no computador/, {}, { timeout: 5000 })).toBeInTheDocument()
+  expect(api.pedidos.at(-1)).toEqual(expect.objectContaining({ tipo: 'foto_ajuda', obra_id: 'ajuda' }))
+})

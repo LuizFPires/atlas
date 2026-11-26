@@ -18,6 +18,8 @@ export type Entendimento = {
   perguntas: { pergunta: string; porque: string }[]
   mudancas: string[]
   aparelho: { celular: string; computador: string }
+  /** M65: o porteiro barrou (sistema que constrói sistemas). situacao = o que o servidor decidiu. */
+  politica?: { bloqueia: boolean; sinais: string[]; situacao?: 'livre' | 'embargada' | 'recusada' }
 }
 
 export interface PontePlanilha {

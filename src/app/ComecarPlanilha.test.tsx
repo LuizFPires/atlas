@@ -39,3 +39,16 @@ test('o mesmo botão de voz responde, acrescenta e muda; o Atlas mostra o que mu
   expect(levar).toHaveBeenCalledWith('compras-2026', true)
   expect(onConcluir).toHaveBeenCalledWith(expect.objectContaining({ pasta: 'compras-2026', nome: 'Compras 2026' }))
 })
+
+// M65: o porteiro olha também a planilha importada.
+test('planilha de um "sistema que constrói sistemas": o Atlas barra, mostra o que pode e o que não pode e "Acha que é engano?"', async () => {
+  const planilha = criarPlanilhaFixture()
+  vi.spyOn(planilha, 'entender').mockResolvedValue({ resumo: '', entidades: [], relacoes: [], regras: [], relatorios: [], perguntas: [], mudancas: [], aparelho: { celular: '', computador: '' }, politica: { bloqueia: true, sinais: ['aba "agentes que constroem apps"'], situacao: 'livre' } })
+  const onConcluir = vi.fn()
+  render(<TemaProvider><ComecarPlanilha planilha={planilha} arquivos={criarArquivosFixture()} criarObra={async () => ({ pasta: 'compras-2026' })} onVoltar={() => {}} onConcluir={onConcluir} revelarMs={0} /></TemaProvider>)
+  await userEvent.click(screen.getByRole('button', { name: 'Escolher no computador' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Ver o que entendi →' }))
+  expect(await screen.findByText(/agentes que constroem apps/)).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Acha que é engano/ })).toBeInTheDocument()
+  expect(onConcluir).not.toHaveBeenCalled()
+})

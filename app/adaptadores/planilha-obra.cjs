@@ -10,6 +10,7 @@ const fs = require('node:fs')
 const { caminhoSeguro } = require('../seguro.cjs')
 const { pastaDaObra, gravarAtomico, lerJson, lerTexto } = require('./obra-fs.cjs')
 const { REGRA_CONTEUDO_CLIENTE, blocoDoCliente, umaLinha, extrairJson, garantirSubpasta } = require('./projeto-comum.cjs')
+const { REGRA_POLITICA, politicaDoJson } = require('./politica.cjs')
 const { raioX, resumoParaClaude } = require('./planilha.cjs')
 
 const NOME_OK = /^[a-z0-9][a-z0-9-]{0,80}\.(xlsx|xlsm|xls|csv)$/
@@ -57,7 +58,7 @@ function entendimentoDoJson(j) {
   }
 }
 
-const FORMATO = 'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"resumo":"1 ou 2 frases: o que a planilha controla","entidades":[{"nome":"Pedidos de compra","quantos":412,"campos":"nº, data, obra, fornecedor, status, total"}],"relacoes":["Cada pedido tem vários itens e um fornecedor"],"regras":["Total do item = quantidade × preço"],"relatorios":["Gasto do mês por obra e categoria"],"perguntas":[{"pergunta":"...?","porque":"..."}],"mudancas":["Novo: ...","Entendi: ..."],"aparelho":{"celular":"o que faz sentido no celular","computador":"o que faz sentido no computador"}}'
+const FORMATO = 'Responda SOMENTE com um objeto JSON, sem texto antes nem depois: {"resumo":"1 ou 2 frases: o que a planilha controla","entidades":[{"nome":"Pedidos de compra","quantos":412,"campos":"nº, data, obra, fornecedor, status, total"}],"relacoes":["Cada pedido tem vários itens e um fornecedor"],"regras":["Total do item = quantidade × preço"],"relatorios":["Gasto do mês por obra e categoria"],"perguntas":[{"pergunta":"...?","porque":"..."}],"mudancas":["Novo: ...","Entendi: ..."],"aparelho":{"celular":"o que faz sentido no celular","computador":"o que faz sentido no computador"},"politica":{"bloqueia":false,"sinais":[]}}'
 
 function pedidoEntender(atual, fala) {
   return [
@@ -72,13 +73,16 @@ function pedidoEntender(atual, fala) {
       'O CLIENTE FALOU (respondendo às perguntas OU pedindo acréscimos e mudanças: os dois valem). Atualize o entendimento com isso: responda o que ele esclareceu (tire a pergunta respondida), acrescente o que ele pediu e corrija o que ele corrigiu. Em "mudancas", liste em frases curtas o que mudou, começando por "Entendi:" (esclarecimento), "Novo:" (acréscimo) ou "Mudou:" (correção). O que ele pediu vale mesmo que não esteja na planilha.',
       ...blocoDoCliente(fala, '(vazio)'),
     ] : ['', 'Primeira leitura: "mudancas" fica vazio.']),
+    // M65: o porteiro olha a planilha inteira e o que o cliente falou (pega quem tenta em partes).
+    REGRA_POLITICA,
+    'Se bloquear, diga em "politica" até 4 "sinais" curtos (o que na planilha ou na fala mostra isso).',
     'Você não grava nada e não roda comandos.',
     FORMATO,
   ].join('\n')
 }
 
 /** deps: { raiz, disparo } */
-function criarPlanilhaObra({ raiz, disparo }) {
+function criarPlanilhaObra({ raiz, disparo, politica = null }) {
   const arq = (pasta, nome) => caminhoSeguro(raiz, pasta, 'planilha', nome)
   const self = {
     async ler(pasta, nome) {
@@ -96,6 +100,11 @@ function criarPlanilhaObra({ raiz, disparo }) {
       const texto = typeof fala === 'string' ? fala.trim().slice(0, 8000) : ''
       const atual = lerJson(arq(pasta, 'entendimento.json'))
       const bruto = extrairJson(await disparo.perguntar(pasta, pedidoEntender(atual, texto), { timeoutMs: 300_000, maxSaida: 400_000 }), 'objeto')
+      const pol = politicaDoJson(bruto)
+      if (pol.bloqueia) {
+        const situacao = politica ? await politica.registrar(pasta, 'planilha', texto || '(planilha importada)') : null
+        return { resumo: '', entidades: [], relacoes: [], regras: [], relatorios: [], perguntas: [], mudancas: [], aparelho: { celular: '', computador: '' }, politica: { ...pol, situacao: situacao || 'livre' } }
+      }
       const e = entendimentoDoJson(bruto)
       if (!texto) e.mudancas = []
       gravarAtomico(arq(pasta, 'entendimento.json'), JSON.stringify(e))

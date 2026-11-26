@@ -15,6 +15,8 @@ interface Props {
   onFechar: () => void
   /** Muda a cada toque no "Falar com o Atlas" do menu com a Ajuda já aberta: liga/desliga o microfone daqui (não recria o painel). */
   toqueVoz?: number
+  /** M58: a foto que chegou do celular (pelo app do Atlas no celular). Cada foto nova entra na conversa. */
+  fotoCelular?: PrintAjuda | null
 }
 
 type Mensagem =
@@ -38,8 +40,10 @@ function QuadroPrint({ print }: { print: PrintAjuda }) {
  * F17: a Ajuda do Atlas (prototipo/F17Ajuda), painel lateral de 520 px. Todo o suporte é o próprio Atlas.
  * A conversa vai pela porta `PonteAjuda` (o Claude por baixo); o que o cliente falou, escreveu ou mostrou é DADO.
  */
-export function Ajuda({ toqueVoz = 0, ajuda, casos, contexto, nome, onFechar }: Props) {
+export function Ajuda({ toqueVoz = 0, ajuda, casos, contexto, nome, onFechar, fotoCelular = null }: Props) {
   const [prints, setPrints] = useState<PrintAjuda[]>(contexto.print ? [contexto.print] : [])
+  const [ultimaFoto, setUltimaFoto] = useState<PrintAjuda | null>(null)
+  if (fotoCelular && fotoCelular !== ultimaFoto) { setUltimaFoto(fotoCelular); setPrints((l) => [...l, fotoCelular]) }
   const [msgs, setMsgs] = useState<Mensagem[]>([])
   const [texto, setTexto] = useState('')
   const [falado, setFalado] = useState(false)
@@ -200,6 +204,7 @@ export function Ajuda({ toqueVoz = 0, ajuda, casos, contexto, nome, onFechar }: 
         <div className="at-ajuda-p__chips">
           <button type="button" className="at-ajuda-p__chip" onClick={() => void tirar()}><Icone nome="imagem" tamanho={15} /> Tirar print da tela</button>
           <button type="button" className="at-ajuda-p__chip" onClick={() => void anexar()}><Icone nome="clipe" tamanho={15} /> Anexar imagem</button>
+          <span className="at-ajuda-p__dica-cel" title="No app do Atlas no celular, toque em “Foto para a Ajuda” e tire a foto da tela: ela aparece aqui sozinha."><Icone nome="celular" tamanho={15} /> Foto pelo celular: no Atlas do celular, “Foto para a Ajuda”</span>
         </div>
         <form className="at-ajuda-p__linha" onSubmit={(e) => { e.preventDefault(); void enviar(texto, falado) }}>
           <Microfone gravando={gravando} onAlternar={alternar} className="at-ajuda-p__mic" />

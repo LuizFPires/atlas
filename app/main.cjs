@@ -119,7 +119,7 @@ const disparo = criarDisparo({ recursos: recursosClaude, modelo: () => modelo.ar
 const disparoLeve = criarDisparo({ recursos: recursosClaude, modelo: () => modelo.argsDaLinha(planoClaude), raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: estadoClaude })
 // Roteiro da ideia (caminho novo, 23/11/2026): conferência rápida a cada pausa, sempre com o modelo mais rápido (não o da obra).
 // Começar por uma planilha (X1–X3): raio-X aqui no computador; "o que entendi" pelo Claude lendo planilha/raio-x.md da obra.
-const planilhaObra = criarPlanilhaObra({ raiz: obras.raiz(), disparo })
+const planilhaObra = criarPlanilhaObra({ raiz: obras.raiz(), disparo, politica: { registrar: async (pasta, onde, texto) => { const s = await politica.registrar(pasta, onde, texto); if (s === 'embargada' || s === 'recusada') embargar(pasta); return s } } })
 const ideia = require('./adaptadores/ideia.cjs').criarIdeia({ disparo: criarDisparo({ recursos: recursosClaude, modelo: () => ['--model', 'claude-haiku-5-5'], raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() }) })
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo: disparoLeve })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
@@ -406,6 +406,7 @@ handle('atlas:ajuda:conversar', (contexto, historico, mensagem) => ajuda.convers
 handle('atlas:ajuda:pagina', (id) => ajuda.abrirPagina(String(id)))
 handle('atlas:ajuda:print', (pasta) => ajuda.tirarPrint(pasta ? String(pasta) : undefined))
 handle('atlas:ajuda:anexar', (pasta) => ajuda.anexarImagem(pasta ? String(pasta) : undefined))
+handle('atlas:ajuda:fotoCelular', (pasta, dataUrl) => ajuda.fotoDoCelular(pasta ? String(pasta) : undefined, String(dataUrl ?? '').slice(0, 4_000_000)))
 handle('atlas:casos:enviar', (caso) => casos.enviar(caso))
 
 // Publicação: só o NOME do destino vai ao processo principal; a URL é fixa lá dentro.

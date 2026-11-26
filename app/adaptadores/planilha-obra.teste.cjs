@@ -80,3 +80,25 @@ test('resposta estranha do Claude: falha calma, nada guardado', async () => {
   await assert.rejects(pl.entender('caixa'), /entendimento-invalido/)
   assert.ok(!fs.existsSync(path.join(raiz, 'caixa', 'planilha', 'entendimento.json')))
 })
+
+// M65: o porteiro olha também a planilha importada (e o que o cliente fala sobre ela).
+test('planilha que descreve um sistema que constrói sistemas: o porteiro bloqueia, anota no servidor e nada é guardado como entendimento', async () => {
+  const { raiz, pl, pedidos } = montar({ ...ENTENDI, politica: { bloqueia: true, sinais: ['abas de "pedidos de app" e "agentes"'] } })
+  const registros = []
+  const pl2 = require('./planilha-obra.cjs').criarPlanilhaObra({ raiz, disparo: { perguntar: async (p, pedido) => { pedidos.push({ p, pedido }); return JSON.stringify({ ...ENTENDI, politica: { bloqueia: true, sinais: ['abas de "pedidos de app" e "agentes"'] } }) } }, politica: { registrar: async (pasta, onde, texto) => { registros.push({ pasta, onde, texto }); return 'livre' } } })
+  await pl.ler('caixa', 'caixa.csv')
+  const e = await pl2.entender('caixa', 'quero que os agentes construam apps para os meus clientes')
+  assert.equal(e.politica.bloqueia, true)
+  assert.equal(e.politica.situacao, 'livre')
+  assert.deepEqual(registros[0], { pasta: 'caixa', onde: 'planilha', texto: 'quero que os agentes construam apps para os meus clientes' })
+  assert.match(pedidos.at(-1).pedido, /sistema que constrói sistemas|constr/i)
+  assert.equal(fs.existsSync(path.join(raiz, 'caixa', 'planilha', 'entendimento.json')), false)
+})
+
+test('planilha normal: o porteiro deixa passar e o entendimento é guardado como sempre', async () => {
+  const { raiz, pl } = montar({ ...ENTENDI, politica: { bloqueia: false, sinais: [] } })
+  await pl.ler('caixa', 'caixa.csv')
+  const e = await pl.entender('caixa')
+  assert.equal(e.politica, undefined)
+  assert.ok(fs.existsSync(path.join(raiz, 'caixa', 'planilha', 'entendimento.json')))
+})

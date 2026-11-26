@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Botao, Icone, Microfone, useVoz } from '../ui'
+import { BloqueioPolitica } from './BloqueioPolitica'
 import type { PonteArquivos } from './ponte-arquivos'
+import { politicaIndisponivel, type PontePolitica } from './ponte-politica'
 import type { Entendimento, PontePlanilha, VisaoPlanilha } from './ponte-planilha'
 import './comecar-planilha.css'
 
@@ -14,6 +16,8 @@ interface Props {
   onConcluir: (r: { pasta: string; nome: string; relato: string }) => void | Promise<void>
   /** Intervalo entre uma aba e outra aparecer na leitura (teste usa 0). */
   revelarMs?: number
+  /** M65: "Acha que é engano? Explique" quando o porteiro barra a planilha. */
+  politica?: PontePolitica
 }
 
 type Fase = 'escolher' | 'lendo' | 'entendendo' | 'entendi'
@@ -37,7 +41,7 @@ export const nomeDaPlanilha = (arquivo: string) => {
  * Atlas lê tudo aqui no computador (raio-X), confere as contas com o Excel e conta o que entendeu. O mesmo botão de voz responde
  * as dúvidas e pede acréscimos e mudanças (pedido do Luiz). Depois segue o caminho normal: visual, nome, protótipo.
  */
-export function ComecarPlanilha({ planilha, arquivos, criarObra, onVoltar, onConcluir, revelarMs = 700 }: Props) {
+export function ComecarPlanilha({ planilha, arquivos, criarObra, onVoltar, onConcluir, revelarMs = 700, politica = politicaIndisponivel }: Props) {
   const [fase, setFase] = useState<Fase>('escolher')
   const [obra, setObra] = useState<{ pasta: string; nome: string } | null>(null)
   const [visao, setVisao] = useState<VisaoPlanilha | null>(null)
@@ -95,6 +99,16 @@ export function ComecarPlanilha({ planilha, arquivos, criarObra, onVoltar, onCon
   }
 
   const tudoBate = visao && visao.contas.conferidas > 0 && visao.contas.divergem === 0
+
+  // M65: o porteiro barrou a planilha (ou o que o cliente falou sobre ela): a obra não segue por aqui.
+  if (ent?.politica?.bloqueia && obra) {
+    const s = ent.politica.situacao
+    return (
+      <div className="at-pl">
+        <BloqueioPolitica modo={s === 'embargada' || s === 'recusada' ? 'embargada' : 'pedido'} sinais={ent.politica.sinais} obra={obra.pasta} politica={politica} onVoltar={onVoltar} />
+      </div>
+    )
+  }
 
   return (
     <div className="at-pl">
