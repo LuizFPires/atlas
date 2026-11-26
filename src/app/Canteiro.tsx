@@ -20,30 +20,30 @@ import './canteiro.css'
 // Obras concluídas. Cada cartão abre a obra na etapa em que ela está.
 
 /** Número da etapa no caminho de 6 (ideia, visual, nome, protótipo, contas, começar) e o próximo passo, para obra inacabada. */
-const PASSO: Record<Exclude<EtapaObra, 'obra'>, { n: number; proximo: string; parou: string }> = {
-  estilo: { n: 2, proximo: 'escolher o visual', parou: 'no visual' },
-  batismo: { n: 3, proximo: 'escolher o nome', parou: 'no nome' },
-  telas: { n: 4, proximo: 'conferir o protótipo', parou: 'no protótipo' },
-  aprovar: { n: 5, proximo: 'abrir as contas', parou: 'nas contas' },
+const PASSO: Record<Exclude<EtapaObra, 'obra'>, { n: number; proximo: string }> = {
+  estilo: { n: 2, proximo: 'escolher o visual' },
+  batismo: { n: 3, proximo: 'escolher o nome' },
+  telas: { n: 4, proximo: 'conferir o protótipo' },
+  aprovar: { n: 5, proximo: 'abrir as contas' },
 }
 
-/** Capa da obra que falta terminar (Luiz, 24/11/2026): o lote com tapume e a placa de obra "EM BREVE", o nome e onde paramos. */
-function PlacaDeObra({ nome, parou }: { nome: string; parou: string }) {
-  const curto = nome.length > 20 ? `${nome.slice(0, 19).trimEnd()}…` : nome
+/** Capa da obra que falta terminar (Luiz, 26/11/2026, opção A): o lote com tapume, dois cones e a placa "EM CONSTRUÇÃO". Sem o
+ *  nome: na placa ele era cortado e repetia o título do cartão. A placa fica no meio e embaixo, longe do selo e da lixeira. */
+function PlacaDeObra() {
   return (
-    <svg className="at-ct__placa" viewBox="0 0 400 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <svg className="at-ct__placa" viewBox="0 0 400 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
       <rect className="at-ct__ceu" width="400" height="150" />
-      <circle className="at-ct__lua" cx="352" cy="30" r="11" />
-      <path className="at-ct__terra" d="M0 120 H400 V150 H0 Z" />
-      <path className="at-ct__terra-linha" d="M0 120 H400" />
-      <g className="at-ct__tapume"><rect x="-6" y="92" width="64" height="28" /><rect x="62" y="92" width="64" height="28" /><rect x="130" y="92" width="40" height="28" /></g>
-      <path className="at-ct__faixa" d="M-6 106 H170" />
-      <path className="at-ct__poste" d="M214 104 V120 M330 104 V120" />
-      <rect className="at-ct__placa-fundo" x="196" y="40" width="152" height="66" rx="5" />
-      <text className="at-ct__placa-rot" x="272" y="58" textAnchor="middle">EM BREVE</text>
-      <text className="at-ct__placa-nome" x="272" y="78" textAnchor="middle">{curto}</text>
-      <text className="at-ct__placa-onde" x="272" y="96" textAnchor="middle">({`paramos ${parou}`})</text>
-      <path className="at-ct__cone" d="M372 120 L379 98 L386 120 Z" /><path className="at-ct__cone-faixa" d="M375 111 H383" />
+      <circle className="at-ct__lua" cx="356" cy="58" r="10" />
+      <path className="at-ct__terra" d="M0 122 H400 V150 H0 Z" />
+      <path className="at-ct__terra-linha" d="M0 122 H400" />
+      <g className="at-ct__tapume"><rect x="-6" y="96" width="60" height="26" /><rect x="58" y="96" width="60" height="26" /></g>
+      <path className="at-ct__faixa" d="M-6 109 H118" />
+      <path className="at-ct__poste" d="M178 104 V122 M262 104 V122" />
+      <rect className="at-ct__placa-fundo" x="160" y="60" width="120" height="46" rx="5" />
+      <text className="at-ct__placa-txt" x="220" y="80" textAnchor="middle">EM</text>
+      <text className="at-ct__placa-txt" x="220" y="96" textAnchor="middle">CONSTRUÇÃO</text>
+      <path className="at-ct__cone" d="M128 122 L138 88 L148 122 Z" /><path className="at-ct__cone-faixa" d="M132 110 H144 M135 99 H141" /><rect className="at-ct__cone" x="124" y="120" width="28" height="4" />
+      <path className="at-ct__cone" d="M300 122 L307 99 L314 122 Z" /><path className="at-ct__cone-faixa" d="M303 113 H311" />
     </svg>
   )
 }
@@ -301,7 +301,7 @@ function Cartao({ o, enderecoDe, onAbrir, onExcluir }: { o: Lida; enderecoDe?: (
       <button type="button" className="at-ct__abrir" onClick={onAbrir}>
         <span className="at-ct__cena">
           {inacabada
-            ? <PlacaDeObra nome={o.nome} parou={passo ? passo.parou : 'no começo'} />
+            ? <PlacaDeObra />
             : <RetratoCanteiro pasta={o.pasta} endereco={enderecoDe ? enderecoDe() : null} vivo={emCima} />}
           <span className="at-ct__selo"><span className="at-ct__ponto" aria-hidden="true" />{selo}</span>
         </span>
