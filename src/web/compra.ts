@@ -7,7 +7,7 @@ export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** Junta a fala ao e-mail que já está no campo. Se o cliente fala um e-mail inteiro ("arroba"), ele substitui o antigo. */
 export function juntarFalaEmail(atual: string, falado: string): string {
-  if (atual.includes('@') && (/arroba/i.test(falado) || falado.includes('@'))) return falaParaEmail(falado)
+  if (atual.includes('@') && (/\b(arroba|at)\b/i.test(falado) || falado.includes('@'))) return falaParaEmail(falado)
   return falaParaEmail(`${atual} ${falado}`)
 }
 

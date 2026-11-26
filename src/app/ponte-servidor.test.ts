@@ -41,7 +41,7 @@ test('ativação de ponta a ponta pela ponte: pede o código e guarda o token no
   }
   const api = criarAtivacaoApi({ cofre, hashComputador: async () => 'a'.repeat(64) }, { api: API, linkToken: 'link-1' }, fetchPelaPonte(servidor, API))
   expect(await api.pedirCodigo('ana@loja.com')).toEqual({ ok: true })
-  expect(await api.confirmar('ana@loja.com', '123456')).toEqual({ ok: true, nome: 'Ana' })
+  expect(await api.confirmar('ana@loja.com', '123456')).toEqual({ ok: true, nome: 'Ana', idioma: 'pt' })
   expect(rotas).toEqual(['/ativar/solicitar-codigo', '/ativar/confirmar'])
   expect(JSON.parse(guardado.get('atlas/dispositivo')!)).toMatchObject({ token: 'tok-9' })
 })

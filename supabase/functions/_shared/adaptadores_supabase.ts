@@ -534,8 +534,8 @@ let enviador: EnviadorEmail = enviadorResend
 /** Troca o provedor de e-mail (ex.: outro serviço) sem mexer no resto. */
 export function definirEnviadorEmail(e: EnviadorEmail) { enviador = e }
 
-export async function enviarCodigo(email: string, codigo: string) {
-  const m = montarCodigoAtivacao({ codigo })
+export async function enviarCodigo(email: string, codigo: string, idioma?: 'pt' | 'en') {
+  const m = montarCodigoAtivacao({ codigo, idioma })
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }
 

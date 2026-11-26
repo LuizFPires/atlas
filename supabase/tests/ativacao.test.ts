@@ -62,7 +62,7 @@ describe('código automático pelo link do e-mail', () => {
     const m = montar()
     const { token } = await gerarLink(m.deps, 'ana@loja.com')
     const r = await solicitarCodigoPeloLink(m.deps, token, '1.2.3.4')
-    expect(r).toEqual({ ok: true, email_mascarado: 'a***@loja.com' })
+    expect(r).toEqual({ ok: true, email_mascarado: 'a***@loja.com', idioma: 'pt' })
     expect(m.emails).toHaveLength(1)
     expect(m.emails[0]).toMatch(/^\d{6}$/)
   })
@@ -97,5 +97,29 @@ describe('código automático pelo link do e-mail', () => {
     expect(mascararEmail('ana@loja.com')).toBe('a***@loja.com')
     expect(mascararEmail('appbomdia@gmail.com')).toBe('a***@gmail.com')
     expect(mascararEmail('x@y.com')).toBe('x***@y.com')
+  })
+})
+
+describe('ativação de licença em inglês (M31)', () => {
+  it('pelo link: o código vai em inglês, a resposta traz o idioma e a confirmação também', async () => {
+    const m = montar()
+    await m.store.definirIdiomaLicenca('l1', 'en')
+    const idiomas: Array<string | undefined> = []
+    m.deps.enviarCodigoPorEmail = async (_e, c, idioma) => { m.emails.push(c); idiomas.push(idioma) }
+    const { token } = await gerarLink(m.deps, 'ana@loja.com')
+    expect(await solicitarCodigoPeloLink(m.deps, token)).toMatchObject({ ok: true, idioma: 'en' })
+    expect(idiomas).toEqual(['en'])
+    const r = await confirmarAtivacao(m.deps, { email: '', codigo: m.emails[0], token, computador_hash: H1 })
+    expect(r.idioma).toBe('en')
+  })
+  it('licença sem idioma: português', async () => {
+    const { deps, token, codigo } = await preparar()
+    expect((await confirmarAtivacao(deps, { email: 'ana@loja.com', codigo, token, computador_hash: H1 })).idioma).toBe('pt')
+  })
+  it('o e-mail do código em inglês não tem português', async () => {
+    const { montarCodigoAtivacao } = await import('../functions/_shared/emails-avisos.ts')
+    const m = montarCodigoAtivacao({ codigo: '482071', idioma: 'en' })
+    expect(m.assunto).toBe('482071 is your Atlas code')
+    expect(m.texto + m.html).not.toMatch(/[ãõçáéíóúâêô]/)
   })
 })

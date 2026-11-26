@@ -27,8 +27,8 @@ function fabrica(): Fabrica | null {
 export function falaParaEmail(t: string): string {
   return t
     .toLowerCase()
-    .replace(/\s+arroba\s+/g, '@')
-    .replace(/\s+ponto\s+/g, '.')
+    .replace(/\s+(arroba|at)\s+/g, '@') // M31: em inglês, "at" e "dot"
+    .replace(/\s+(ponto|dot)\s+/g, '.')
     .replace(/\s+/g, '')
 }
 
