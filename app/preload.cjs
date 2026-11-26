@@ -227,6 +227,16 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     estado: (pasta) => chamar('atlas:noar:estado', String(pasta)),
     corrigir: (pasta) => chamar('atlas:noar:corrigir', String(pasta)),
   },
+  lojas: {
+    // Lojas (M59): só pasta, nomes e textos curtos; as chaves vão do processo principal direto ao cofre.
+    estado: (pasta) => chamar('atlas:lojas:estado', String(pasta)),
+    escolher: (pasta, c) => chamar('atlas:lojas:escolher', String(pasta), String(c)),
+    marcarConta: (pasta, conta, sim) => chamar('atlas:lojas:marcar', String(pasta), String(conta), sim === true),
+    guardarTokenExpo: (t) => chamar('atlas:lojas:tokenExpo', String(t ?? '')),
+    escolherChaveAsc: (pasta, issuer) => chamar('atlas:lojas:chaveAsc', String(pasta), String(issuer ?? '')),
+    criarConvite: (pasta, nome, grupo) => chamar('atlas:lojas:convite', String(pasta), String(nome ?? ''), String(grupo ?? '')),
+    testadores: (pasta) => chamar('atlas:lojas:testadores', String(pasta)),
+  },
   dominio: {
     // Domínio próprio (M57): só pasta e domínio; tudo é revalidado no processo principal.
     conferir: (pasta, d) => chamar('atlas:dominio:conferir', String(pasta), String(d)),

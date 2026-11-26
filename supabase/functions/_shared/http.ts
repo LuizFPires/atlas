@@ -23,6 +23,7 @@ import { processarAtrasos } from './pagamento/atraso.ts'
 import { processarWebhook } from './pagamento/webhook.ts'
 import { lerPersonalizacao, salvarPersonalizacaoDoPortal } from './personalizacao.ts'
 import { cadastrar, type DepsCadastro } from './cadastro.ts'
+import { criarConviteTeste, entrarNoTeste, situacaoTestadores, verConviteTeste } from './lojas.ts'
 import { decidirPolitica, painelPolitica, pedirAnalise, registrarPolitica, situacaoPolitica } from './politica.ts'
 import { adicionarDominio, auditarDegustacao, configDegustacaoAdmin, confirmarDegustacao, listarDominios, removerDominio, type DepsDegustacao, estadoDegustacao, pedirDegustacao } from './degustacao.ts'
 import { adminLogado, fluxoCaixa, liberarCortesia, listarCortesias, type DepsAdmin, euAdmin, liberarTrocaUrgente, mapa, painel, reenviarCortesia, resolverOcorrencia, verCadastros, verEntregas } from './admin.ts'
@@ -314,6 +315,19 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
         return json(await pedirAnalise(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obra_id: (b as Record<string, unknown>).obra_id, texto: (b as Record<string, unknown>).texto }))
       case '/politica/situacao':
         return json(await situacaoPolitica(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obra_id: (b as Record<string, unknown>).obra_id }))
+      // M59: os 12 testadores do Google (convite do cliente; página pública do testador; contagem).
+      case '/lojas/convite': {
+        const o = b as Record<string, unknown>
+        const r = await criarConviteTeste(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obra_id: o.obra_id, app_nome: o.app_nome, grupo_url: o.grupo_url, optin_url: o.optin_url })
+        const origem = (ctx.origemWeb ?? '').split(',').map((x) => x.trim()).find((x) => /^https:\/\/[a-z0-9.-]+(:\d+)?$/i.test(x))
+        return json({ ...r, link: origem ? `${origem}/teste/${r.codigo}` : null })
+      }
+      case '/lojas/convite/ver':
+        return json(await verConviteTeste(ctx.deps, { codigo: s('codigo') }), 200, { 'Cache-Control': 'no-store' })
+      case '/lojas/teste/entrar':
+        return json(await entrarNoTeste(ctx.deps, { codigo: s('codigo'), nome: s('nome'), ip: ipDe(req) }))
+      case '/lojas/testadores':
+        return json(await situacaoTestadores(ctx.deps, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obra_id: (b as Record<string, unknown>).obra_id }), 200, { 'Cache-Control': 'no-store' })
       case '/entregar-kit': {
         const r = await entregarKit(ctx.deps, ctx.carregarKit, { email: s('email'), computador_hash: s('computador_hash'), token_dispositivo: dispositivo, obra_id: s('obra_id') })
         const { cabecalhos, ...corpo } = r

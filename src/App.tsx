@@ -1,4 +1,5 @@
 import { VerPrototipo } from './web/VerPrototipo'
+import { ConviteTeste } from './web/ConviteTeste'
 import { lazy, Suspense, useState } from 'react'
 import { Vendas } from './web/Vendas'
 import { ModalCompra } from './web/ModalCompra'
@@ -78,6 +79,9 @@ export default function App() {
   // Link provisório do protótipo para o celular (7 dias): o token é a prova; o HTML só aparece em iframe sandbox.
   const proto = /^\/p\/([A-Za-z0-9_-]{40,64})$/.exec(caminho)
   if (proto) return <VerPrototipo token={proto[1]} />
+  // Convite dos testadores do Google (M59): público, o código é a prova; só conta quem tocou "Já instalei".
+  const teste = /^\/teste\/([a-z0-9]{10,40})$/.exec(caminho)
+  if (teste) return <ConviteTeste codigo={teste[1]} />
   // Painel do administrador: o link existe para todos, mas só o servidor decide quem entra (JWT + allowlist).
   if (caminho === '/admin') return <Admin api={adminApi} />
   // Demonstração do app-modelo da barbearia (M32 d1): só em modo fixture (desenvolvimento ou VITE_FIXTURE=1). Em produção a rota não existe.

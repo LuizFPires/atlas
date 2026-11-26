@@ -343,9 +343,17 @@ export interface Store {
   situacoesPoliticaAbertas(): Promise<SituacaoPolitica[]>
   /** UPSERT politica_obras (licenca_id, obra_id). */
   definirSituacaoPolitica(s: SituacaoPolitica): Promise<void>
+  /** M59: convite dos testadores do Google (um por obra) e quem entrou pela página do Atlas. */
+  salvarConviteTeste(c: ConviteTeste): Promise<void>
+  conviteTestePorCodigo(codigo: string): Promise<ConviteTeste | null>
+  conviteTesteDaObra(licencaId: string, obraId: string): Promise<ConviteTeste | null>
+  registrarTestador(t: Testador): Promise<void>
+  testadoresDoConvite(codigo: string): Promise<Testador[]>
 }
 
 export type OndePolitica = 'ideia' | 'prototipo' | 'planilha' | 'posobra' | 'codigo' | 'engano'
+export interface ConviteTeste { codigo: string; licenca_id: string; obra_id: string; app_nome: string; grupo_url: string; optin_url: string; criado_em: Date }
+export interface Testador { codigo: string; nome: string; entrou_em: Date }
 export interface EventoPolitica { licenca_id: string; obra_id: string; onde: OndePolitica; texto: string; criado_em: Date }
 export interface SituacaoPolitica { licenca_id: string; obra_id: string; situacao: 'embargada' | 'liberada' | 'mantida' | 'recusada'; desde: Date; decidido_por: string | null }
 

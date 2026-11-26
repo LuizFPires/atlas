@@ -3,7 +3,7 @@
 import type { AssinaturaPush, CanalPush } from './push.ts'
 import { dominioRegistravel, LIMIARES_AUDITORIA, PROVEDORES_COMUNS, protegeProvedor } from './auditoria.ts'
 import type { CanalCelular, Pedido, ProjetoCelular, Referencia } from './celular.ts'
-import type { Ativacao, BarradaTeste, EventoRadar, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, Personalizacao, StatusObraLinha, StatusPagamento, Store, Troca, TrocaAtomica, EventoPolitica, SituacaoPolitica } from './tipos.ts'
+import type { Ativacao, BarradaTeste, EventoRadar, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, Personalizacao, StatusObraLinha, StatusPagamento, Store, Troca, TrocaAtomica, EventoPolitica, SituacaoPolitica, ConviteTeste, Testador } from './tipos.ts'
 
 export class StoreMemoria implements Store {
   clientes: Cliente[] = []
@@ -314,6 +314,13 @@ export class StoreMemoria implements Store {
   }
   async baixasRadar() { return [...this.baixasDoRadar].map(([sinal_id, b]) => ({ sinal_id, resolvida_em: b.em })) }
   async baixarSinalRadar(id: string, por: string, quando: Date) { this.baixasDoRadar.set(id, { por, em: quando }) }
+  convitesTeste: ConviteTeste[] = []
+  testadores: Testador[] = []
+  async salvarConviteTeste(c: ConviteTeste) { this.convitesTeste = this.convitesTeste.filter((x) => x.codigo !== c.codigo); this.convitesTeste.push({ ...c }) }
+  async conviteTestePorCodigo(codigo: string) { const c = this.convitesTeste.find((x) => x.codigo === codigo); return c ? { ...c } : null }
+  async conviteTesteDaObra(licencaId: string, obraId: string) { const c = this.convitesTeste.find((x) => x.licenca_id === licencaId && x.obra_id === obraId); return c ? { ...c } : null }
+  async registrarTestador(t: Testador) { this.testadores.push({ ...t }) }
+  async testadoresDoConvite(codigo: string) { return this.testadores.filter((t) => t.codigo === codigo).map((t) => ({ ...t })) }
   eventosDaPolitica: EventoPolitica[] = []
   situacoesDaPolitica: SituacaoPolitica[] = []
   async registrarEventoPolitica(e: EventoPolitica) { this.eventosDaPolitica.push({ ...e }) }

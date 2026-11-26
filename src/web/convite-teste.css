@@ -1,0 +1,15 @@
+/* /teste/<código>: convite dos testadores do Google (no celular). */
+.ct { min-height: 100vh; box-sizing: border-box; max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; display: flex; flex-direction: column; gap: 16px; background: #141619; color: #EDEFEA; font-family: var(--font-text, system-ui, sans-serif); }
+.ct h1 { margin: 0; font-size: 26px; line-height: 1.2; }
+.ct__sub, .ct__nota { margin: 0; font-size: 15px; line-height: 1.5; color: #B4BBB2; }
+.ct__nota { font-size: 13px; color: #8E968C; }
+.ct__passos { margin: 0; padding: 0 0 0 22px; display: flex; flex-direction: column; gap: 14px; }
+.ct__passos li { display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.45; }
+.ct__passos span { color: #B4BBB2; }
+.ct__btn { align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 20px; border-radius: 12px; border: 1px solid #2C3036; background: #1E2125; color: #EDEFEA; font: 600 16px var(--font-text, system-ui, sans-serif); text-decoration: none; cursor: pointer; }
+.ct__btn--prim { background: #C6F135; color: #141619; border: 0; }
+.ct__fim { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; background: #1E2125; }
+.ct__rot { font-size: 15px; }
+.ct__fim input { height: 48px; border-radius: 10px; border: 1px solid #2C3036; background: #16181B; color: #EDEFEA; padding: 0 14px; font-size: 16px; }
+.ct__ok { margin: 0; padding: 16px; border-radius: 16px; background: #1F2A12; border: 1px solid #C6F135; font-size: 16px; line-height: 1.5; }
+.ct__aviso { margin: 0; color: #F2B84B; }

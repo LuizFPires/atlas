@@ -179,6 +179,10 @@ const dominio = criarDominio({
   avisar: (titulo, texto) => avisoCelular.avisar(titulo, texto),
 })
 
+// Lojas (M59): em nome de quem, contas criadas, chaves (só no cofre) e os testadores do Google pela página de convite do Atlas.
+const { criarLojas } = require('./adaptadores/lojas.cjs')
+const lojas = criarLojas({ raiz: obras.raiz(), cofre, hashComputador: async () => hash() })
+
 if (!app.requestSingleInstanceLock()) app.quit()
 
 // O cliente clicou em "Liberar o Atlas neste computador" na página do e-mail com o app já aberto: o Windows tenta abrir outro
@@ -381,6 +385,23 @@ handle('atlas:noar:livre', (nome, pasta) => noAr.nomeLivre(String(nome), pasta =
 handle('atlas:noar:iniciar', async (pasta, nome) => { await garantirFerramentas(); return noAr.iniciar(String(pasta), String(nome)) })
 handle('atlas:noar:estado', (pasta) => noAr.estado(String(pasta)))
 handle('atlas:noar:corrigir', (pasta) => noAr.corrigir(String(pasta)))
+handle('atlas:lojas:estado', (pasta) => lojas.estado(String(pasta)))
+handle('atlas:lojas:escolher', (pasta, c) => lojas.escolher(String(pasta), String(c)))
+handle('atlas:lojas:marcar', (pasta, conta, sim) => lojas.marcarConta(String(pasta), String(conta), sim === true))
+handle('atlas:lojas:tokenExpo', (t) => lojas.guardarTokenExpo(String(t ?? '')))
+// A chave da App Store Connect: o arquivo é escolhido AQUI (diálogo do computador) e vai direto ao cofre; a tela nunca vê o conteúdo.
+handle('atlas:lojas:chaveAsc', async (pasta, issuer) => {
+  const r = await dialog.showOpenDialog(janelaPrincipal, { title: 'Escolha o arquivo da chave (AuthKey_….p8)', properties: ['openFile'], filters: [{ name: 'Chave da App Store Connect', extensions: ['p8'] }] })
+  if (r.canceled || !r.filePaths[0]) throw new Error('cancelado')
+  const arq = r.filePaths[0]
+  const m = /^AuthKey_([A-Z0-9]{8,12})\.p8$/.exec(path.basename(arq))
+  const fs = require('node:fs')
+  const st = fs.lstatSync(arq)
+  if (!m || st.isSymbolicLink() || !st.isFile() || st.size > 5000) throw new Error('arquivo-invalido')
+  return lojas.guardarChaveAsc(String(pasta), { keyId: m[1], issuerId: String(issuer ?? ''), p8: fs.readFileSync(arq, 'utf8') })
+})
+handle('atlas:lojas:convite', (pasta, nome, grupo) => lojas.criarConvite(String(pasta), String(nome ?? ''), String(grupo ?? '')))
+handle('atlas:lojas:testadores', (pasta) => lojas.testadores(String(pasta)))
 handle('atlas:dominio:conferir', (pasta, d) => dominio.conferir(String(pasta), String(d)))
 handle('atlas:dominio:ligar', async (pasta, d) => { await garantirFerramentas(); return dominio.ligar(String(pasta), String(d)) })
 handle('atlas:dominio:estado', (pasta) => dominio.estado(String(pasta)))
