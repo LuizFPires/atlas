@@ -242,3 +242,11 @@ test('rede: sondar só endereço .vercel.app', async () => {
   await assert.rejects(sondarSite('https://ponto.vercel.app.mal.com/', { enviar }), /site-invalido/)
   await assert.rejects(sondarSite('http://ponto.vercel.app/', { enviar }), /site-invalido/)
 })
+
+test('API do Supabase: limite de 2 projetos grátis vira um motivo próprio (o cliente sabe o que fazer)', async () => {
+  const corpo = JSON.stringify({ message: 'The following organization members have reached their maximum limits for the number of active free projects within organizations where they are an administrator or owner: guilherme (2 project limit).' })
+  for (const status of [400, 402]) {
+    await assert.rejects(pedirApiSupabase('POST', '/v1/projects', { name: 'ponto' }, 't', { enviar: async () => ({ status, corpo }) }), /^Error: supabase-limite-gratis$/)
+  }
+  await assert.rejects(pedirApiSupabase('POST', '/v1/projects', {}, 't', { enviar: async () => ({ status: 400, corpo: '{"message":"bad"}' }) }), /^Error: supabase-400$/)
+})

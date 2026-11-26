@@ -257,6 +257,7 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
             <section className="at-noar__card at-noar__card--ambar">
               <span className="at-noar__rot at-noar__rot--ambar">PAROU NO PASSO: {(PASSOS_NO_AR.find((p) => p.id === estado.erro?.passo)?.titulo ?? '').toUpperCase()}</span>
               <b className="at-noar__tit at-noar__tit--m">{explicarErro(estado.erro.motivo).frase}</b>
+              <span className="at-noar__codigo">código: {estado.erro.motivo}</span>
               <Passos estado={estado} />
               {explicarErro(estado.erro.motivo).conta && onLigarContas && <button type="button" className="at-noar__sec" onClick={onLigarContas}>Religar a conta</button>}
               <button type="button" className="at-noar__prim" onClick={() => void colocar(estado.nome ?? nome)}>Tentar de novo →</button>
