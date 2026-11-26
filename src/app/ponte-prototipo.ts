@@ -129,7 +129,18 @@ export const MAX_NAVEGAVEL = 40_000_000
 /** Teto do que sobe para o celular (servidor: prototipo-link.ts MAX_DOCUMENTO). Maior que isso, o celular mostra só a lista. */
 export const MAX_DOC_CELULAR = 10_000_000
 
-export function montarNavegavel(telas: TelaDesenhada[], inicial: string, o: { realce?: boolean } = {}): string | null {
+/** Sandbox da prévia que avisa a tela aberta (M35): só scripts, sem mesma origem; a CSP só deixa rodar o NOSSO script (nonce). */
+export const SANDBOX_NAVEGAVEL = 'allow-scripts'
+
+/** Script do Atlas (nunca o das telas): conta qual tela está aberta e, a pedido de quem embute, volta a uma tela que existe. */
+const AVISO_TELA = (nonce: string, ids: string[], abre: string) =>
+  `<script nonce="${nonce}">(function(){var ids=${JSON.stringify(ids)},abre=${JSON.stringify(abre)};` +
+  `function d(){var h=location.hash.slice(6);parent.postMessage({tipo:'atlas:tela',id:h==='falta'?'falta':(ids.indexOf(h)>=0?h:abre)},'*')}` +
+  `addEventListener('hashchange',d);addEventListener('message',function(e){if(e.source!==parent)return;var m=e.data;` +
+  `if(m&&m.tipo==='atlas:ir'&&typeof m.id==='string'&&ids.indexOf(m.id)>=0)location.hash='tela-'+m.id});d()})()</script>`
+
+export function montarNavegavel(telas: TelaDesenhada[], inicial: string, o: { realce?: boolean; avisar?: string } = {}): string | null {
+  if (o.avisar !== undefined && !/^[A-Za-z0-9]{16,64}$/.test(o.avisar)) throw new Error('nonce-invalido')
   const total = telas.reduce((n, t) => n + t.html.length, 0)
   if (total > MAX_NAVEGAVEL || telas.length === 0) return null
   const ids = telas.map((t) => t.id).filter((id) => /^[a-z0-9][a-z0-9-]*$/.test(id))
@@ -139,7 +150,9 @@ export function montarNavegavel(telas: TelaDesenhada[], inicial: string, o: { re
     .filter((t) => ids.includes(t.id))
     .map((t) => `<section id="tela-${t.id}"><template shadowrootmode="open">${o.realce ? REALCE : ''}${soLinksInternos(t.html, new Set(ids))}</template></section>`)
     .join('') + TELA_FALTA(abre)
-  return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${SEM_BARRA}${estilo}${secoes}`
+  const csp = o.avisar ? `${CSP}; script-src 'nonce-${o.avisar}'` : CSP
+  const aviso = o.avisar ? AVISO_TELA(o.avisar, ids, abre) : ''
+  return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${csp}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${aviso}${SEM_BARRA}${estilo}${secoes}`
 }
 
 // ---- Versões na pasta da obra ---------------------------------------------------------------------------------------------

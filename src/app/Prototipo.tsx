@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { Botao, Icone, Microfone, Trabalhando, useVoz } from '../ui'
 import { andamentoDoDesenho } from './andamento-telas'
 import { Pintor } from './Pintor'
@@ -12,7 +12,7 @@ import { dicasDaTela } from './dicas-do-atlas'
 import { conferirTelas, pedidoDaConferencia } from './conferencia-telas'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { EstiloProposto } from './ponte-estilo'
-import { aparelhoDaTela, MAX_DOC_CELULAR, montarNavegavel, montarSrcDoc, SANDBOX_PREVIEW, type Aparelho, type EstadoProto, type PontePrototipo, type ProgressoProto, type TelaDesenhada, type VersaoDaTela } from './ponte-prototipo'
+import { aparelhoDaTela, MAX_DOC_CELULAR, montarNavegavel, montarSrcDoc, SANDBOX_NAVEGAVEL, SANDBOX_PREVIEW, type Aparelho, type EstadoProto, type PontePrototipo, type ProgressoProto, type TelaDesenhada, type VersaoDaTela } from './ponte-prototipo'
 import type { ObraDoEstilo } from './Estilo'
 import './prototipo.css'
 
@@ -48,13 +48,38 @@ export function escalaDoCelular(largura: number, altura: number): number {
   return Math.min(1, largura / LARGURA_CELULAR, altura / ALTURA_CELULAR)
 }
 
+/** M35 (P1Computador): a prévia conta qual tela está aberta (só o script do Atlas, com nonce) e volta a uma tela a pedido. */
+export type AvisoDaTela = { nonce: string; onTela: (id: string) => void; irPara: { id: string; n: number } | null }
+function useAvisoDaTela(quadro: RefObject<HTMLIFrameElement | null>, aviso?: AvisoDaTela) {
+  const onTela = aviso?.onTela
+  useEffect(() => {
+    if (!onTela) return
+    const ouvir = (ev: MessageEvent) => {
+      const janela = quadro.current?.contentWindow
+      if (!janela || ev.source !== janela) return
+      const d = ev.data as { tipo?: unknown; id?: unknown } | null
+      if (d && d.tipo === 'atlas:tela' && typeof d.id === 'string' && /^[a-z0-9][a-z0-9-]{0,80}$/.test(d.id)) onTela(d.id)
+    }
+    window.addEventListener('message', ouvir)
+    return () => window.removeEventListener('message', ouvir)
+  }, [quadro, onTela])
+  const ir = aviso?.irPara
+  useEffect(() => {
+    if (!ir) return
+    try { quadro.current?.contentWindow?.postMessage({ tipo: 'atlas:ir', id: ir.id }, '*') } catch { /* a prévia não respondeu */ }
+  }, [quadro, ir])
+}
+
 /** Preview do celular: o HTML (gerado/importado, NÃO confiável) só vive dentro de um iframe com sandbox vazio. Nunca no DOM do app.
  *  O iframe tem SEMPRE o tamanho de um telefone de verdade (390 × 844) e é reduzido para caber: a tela fica igual à do celular,
  *  sem rolagem de lado nem texto quebrando diferente (antes ele tinha a largura da moldura, ~220 px num notebook). */
-export function CelularPreview({ html, titulo, telas, inicial, realce = false }: { html: string; titulo: string; telas?: TelaDesenhada[]; inicial?: string; realce?: boolean }) {
+export function CelularPreview({ html, titulo, telas, inicial, realce = false, aviso }: { html: string; titulo: string; telas?: TelaDesenhada[]; inicial?: string; realce?: boolean; aviso?: AvisoDaTela }) {
   // Com todas as telas: protótipo NAVEGÁVEL (tocar num botão leva à outra tela). Sem elas: só esta tela.
   // Memo: com muitas telas o documento é grande; não remonta a cada render, só quando as telas ou a tela inicial mudam.
-  const doc = useMemo(() => (telas && inicial ? montarNavegavel(telas, inicial, { realce }) : montarSrcDoc(html)), [telas, inicial, realce, html])
+  const nonce = aviso?.nonce
+  const doc = useMemo(() => (telas && inicial ? montarNavegavel(telas, inicial, { realce, avisar: nonce }) : montarSrcDoc(html)), [telas, inicial, realce, html, nonce])
+  const quadro = useRef<HTMLIFrameElement>(null)
+  useAvisoDaTela(quadro, telas && inicial ? aviso : undefined)
   const vidro = useRef<HTMLDivElement>(null)
   const [escala, setEscala] = useState(1)
   useEffect(() => {
@@ -71,7 +96,7 @@ export function CelularPreview({ html, titulo, telas, inicial, realce = false }:
       <div className="at-proto__vidro" ref={vidro}>
         {doc === null
           ? <div className="at-proto__seguro" role="img" aria-label="Tela grande demais para mostrar">Esta tela é grande demais para eu mostrar aqui com segurança. O Claude vai deixá-la mais leve.</div>
-          : <iframe className="at-proto__tela" title={titulo} sandbox={SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer"
+          : <iframe ref={quadro} className="at-proto__tela" title={titulo} sandbox={nonce && telas && inicial ? SANDBOX_NAVEGAVEL : SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer"
               style={{ width: `${LARGURA_CELULAR}px`, height: `${ALTURA_CELULAR}px`, transform: `scale(${escala})` }} />}
       </div>
     </div>
@@ -80,8 +105,11 @@ export function CelularPreview({ html, titulo, telas, inicial, realce = false }:
 
 
 /** Prévia no computador: janela de navegador com a tela em 1280 × 800, reduzida para caber inteira (nunca rola de lado). */
-export function ComputadorPreview({ telas, inicial, titulo, realce = false }: { telas: TelaDesenhada[]; inicial: string; titulo: string; realce?: boolean }) {
-  const doc = useMemo(() => montarNavegavel(telas, inicial, { realce }), [telas, inicial, realce])
+export function ComputadorPreview({ telas, inicial, titulo, realce = false, aviso }: { telas: TelaDesenhada[]; inicial: string; titulo: string; realce?: boolean; aviso?: AvisoDaTela }) {
+  const nonce = aviso?.nonce
+  const doc = useMemo(() => montarNavegavel(telas, inicial, { realce, avisar: nonce }), [telas, inicial, realce, nonce])
+  const quadro = useRef<HTMLIFrameElement>(null)
+  useAvisoDaTela(quadro, aviso)
   const vidro = useRef<HTMLDivElement>(null)
   const [escala, setEscala] = useState(1)
   useEffect(() => {
@@ -99,7 +127,7 @@ export function ComputadorPreview({ telas, inicial, titulo, realce = false }: { 
       <div className="at-proto__vidro at-proto__vidro--computador" ref={vidro}>
         {doc === null
           ? <div className="at-proto__seguro" role="img" aria-label="Tela grande demais para mostrar">Esta tela é grande demais para eu mostrar aqui com segurança. O Claude vai deixá-la mais leve.</div>
-          : <iframe className="at-proto__tela" title={titulo} sandbox={SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer"
+          : <iframe ref={quadro} className="at-proto__tela" title={titulo} sandbox={nonce ? SANDBOX_NAVEGAVEL : SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer"
               style={{ width: `${LARGURA_COMPUTADOR}px`, height: `${ALTURA_COMPUTADOR}px`, transform: `scale(${escala})` }} />}
       </div>
     </div>
@@ -125,6 +153,11 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
   const [marcada, setMarcada] = useState<string | null>(null)
   const [playEm, setPlayEm] = useState<string | null>(null)
   const [realce, setRealce] = useState(false)
+  // M35: Voltar e caminho acima da prévia. O nonce é sorteado uma vez por tela aberta; o caminho recomeça ao trocar de tela ou aparelho.
+  const [nonce] = useState(() => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join(''))
+  const [caminho, setCaminho] = useState<{ de: string; ids: string[] }>({ de: '', ids: [] })
+  const [irParaTela, setIrParaTela] = useState<{ id: string; n: number } | null>(null)
+  const voltando = useRef(false)
   const [semDicas, setSemDicas] = useState(false)
   const [comparando, setComparando] = useState<string | null>(null)
   const [celular, setCelular] = useState(false)
@@ -304,6 +337,18 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
   const aparelho = tela ? aparelhoDaTela(tela) : 'celular'
   const doAparelho = (a: Aparelho) => versao?.telas.filter((t) => aparelhoDaTela(t) === a) ?? []
   const telasAqui = doAparelho(aparelho)
+  const deCaminho = tela ? `${aparelho}:${tela.id}` : ''
+  const idsCaminho = caminho.de === deCaminho && caminho.ids.length ? caminho.ids : tela ? [tela.id] : []
+  const telaId = tela?.id
+  const aoMudarTela = (id: string) => {
+    setCaminho((c) => {
+      const ids = c.de === deCaminho && c.ids.length ? c.ids : telaId ? [telaId] : []
+      if (voltando.current) { voltando.current = false; const i = ids.lastIndexOf(id); return { de: deCaminho, ids: i >= 0 ? ids.slice(0, i + 1) : [...ids, id] } }
+      return { de: deCaminho, ids: ids[ids.length - 1] === id ? ids : [...ids, id].slice(-20) }
+    })
+  }
+  const aviso: AvisoDaTela = { nonce, onTela: aoMudarTela, irPara: irParaTela }
+  const nomeNoCaminho = (id: string) => (id === 'falta' ? 'Ainda não desenhada' : telasAqui.find((t) => t.id === id)?.nome ?? id)
   const temOsDois = doAparelho('celular').length > 0 && doAparelho('computador').length > 0
 
   const barra = (inicio: boolean) => (
@@ -440,11 +485,18 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
             )
           })()}
           <div className="at-proto__ferramentas">
+            <button type="button" className="at-proto__voltar" aria-label="Voltar à tela anterior" disabled={idsCaminho.length < 2}
+              onClick={() => { if (idsCaminho.length < 2) return; voltando.current = true; setIrParaTela((p) => ({ id: idsCaminho[idsCaminho.length - 2], n: (p?.n ?? 0) + 1 })) }}><Icone nome="seta-esquerda" tamanho={16} /></button>
+            <nav className="at-proto__caminho" aria-label="Caminho">
+              {idsCaminho.slice(-3).map((id, i, l) => (
+                <span key={`${id}-${i}`}>{i > 0 && <span className="at-proto__caminho-sep" aria-hidden="true">›</span>}{i === l.length - 1 ? <b>{nomeNoCaminho(id)}</b> : nomeNoCaminho(id)}</span>
+              ))}
+            </nav>
             <button type="button" aria-pressed={realce} className={`at-proto__ferr ${realce ? 'at-proto__ferr--on' : ''}`} onClick={() => setRealce((r) => !r)}><Icone nome="alvo" tamanho={16} />Onde dá para tocar?</button>
           </div>
           {aparelho === 'computador'
-            ? <ComputadorPreview telas={telasAqui} inicial={tela.id} realce={realce} titulo={`Tela ${tela.nome} no computador (dá para clicar e navegar)`} />
-            : <CelularPreview html={tela.html} telas={telasAqui} inicial={tela.id} realce={realce} titulo={`Tela ${tela.nome} no celular (dá para tocar e navegar)`} />}
+            ? <ComputadorPreview telas={telasAqui} inicial={tela.id} realce={realce} aviso={aviso} titulo={`Tela ${tela.nome} no computador (dá para clicar e navegar)`} />
+            : <CelularPreview html={tela.html} telas={telasAqui} inicial={tela.id} realce={realce} aviso={aviso} titulo={`Tela ${tela.nome} no celular (dá para tocar e navegar)`} />}
           {!semDicas && (
             <DicaDoAtlas key={tela.id} dicas={dicasDaTela(tela, versao.telas)} onDispensar={() => setSemDicas(true)}
               onUsar={(d) => { if (d.tipo === 'versoes' && prototipo.versoesDaTela) { setComparando(tela.id); return } setPedido(d.pedido); requestAnimationFrame(() => { const c = document.getElementById('pedido') as HTMLTextAreaElement | null; c?.focus(); c?.setSelectionRange(c.value.length, c.value.length) }) }} />

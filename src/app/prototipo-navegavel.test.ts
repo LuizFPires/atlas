@@ -33,3 +33,28 @@ test('protótipo grande (120 telas de 30 KB) continua navegável', async () => {
   expect(doc!).toContain('id="tela-t119"')
   expect(MAX_NAVEGAVEL).toBeGreaterThanOrEqual(30_000_000)
 })
+
+// M35 (P1Computador): "Voltar" e o caminho (Início › Equipe) acima da prévia. O documento só conta ao Atlas qual tela está aberta;
+// o script é o NOSSO, com nonce sorteado a cada montagem: o HTML das telas continua sem poder rodar script nenhum.
+describe('prévia que avisa a tela aberta (Voltar e caminho)', () => {
+  test('sem aviso: nada de script, CSP igual', () => {
+    const doc = montarNavegavel(telas, 'inicio')!
+    expect(doc).not.toContain('<script')
+    expect(doc).not.toContain('script-src')
+  })
+  test('com aviso: um script só, com o nonce, antes das telas; a CSP só libera esse nonce', () => {
+    const doc = montarNavegavel(telas, 'inicio', { avisar: 'abcDEF0123456789xyz' })!
+    expect(doc).toContain("script-src 'nonce-abcDEF0123456789xyz'")
+    expect(doc.match(/<script/g)?.length).toBe(1)
+    expect(doc.indexOf('<script nonce="abcDEF0123456789xyz">')).toBeLessThan(doc.indexOf('<section'))
+    expect(doc).toContain("tipo:'atlas:tela'")
+    expect(doc).toContain('["inicio","agenda"]')
+  })
+  test('script das telas continua bloqueado: nonce inválido é recusado e o HTML da tela não ganha o nonce', () => {
+    expect(() => montarNavegavel(telas, 'inicio', { avisar: 'x"><script>' })).toThrow('nonce-invalido')
+    const mal = [{ id: 'inicio', nome: 'Início', html: '<script>alert(1)</script>' }]
+    const doc = montarNavegavel(mal, 'inicio', { avisar: 'abcDEF0123456789xyz' })!
+    expect(doc).toContain('<script>alert(1)</script>') // sem nonce: a CSP barra
+    expect(doc.match(/nonce="/g)?.length).toBe(1)
+  })
+})

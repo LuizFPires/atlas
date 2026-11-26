@@ -124,3 +124,8 @@ test('o cliente corrige: "Não, é só para a minha empresa" vira uso interno, s
   expect(onConcluir).toHaveBeenCalledWith(expect.objectContaining({ paraVender: false }))
   expect(onConcluir.mock.calls[0][0].relato).not.toMatch(/Para vender a outras empresas/)
 })
+
+test('o primeiro passo diz que o Atlas faz aplicativo, sistema ou site (M35)', () => {
+  montar({ conferir: vi.fn(async () => ({ cobertos: [], faltam: [] })) })
+  expect(screen.getByText('Aplicativo, sistema ou site: o Atlas faz os três.')).toBeInTheDocument()
+})
