@@ -10,3 +10,7 @@
 .at-pv__lado { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .at-pv__marca { display: flex; flex-direction: column; gap: 4px; }
 .at-pv__etapas { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.at-pv__kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.at-pv__kpis span { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 12px; background: var(--card2, var(--card)); }
+.at-pv__kpis small { font: 600 10px var(--font-mono); letter-spacing: 0.1em; color: var(--mute); }
+.at-pv__kpis b { font: 700 24px var(--font-text); }

@@ -1,6 +1,8 @@
 // Ponte da página de vendas (M61; prototipo/caminho-novo/LC4Pagina). O adaptador real é app/adaptadores/pagina-vendas.cjs.
 export type FaseVendas = 'nada' | 'pronta' | 'aprovada' | 'construindo' | 'testando' | 'teste-ok' | 'teste-falhou' | 'abrindo' | 'aberta' | 'erro'
-export interface EstadoVendas { fase: FaseVendas; versao: number; html: string; resumo: string; etapas: string[]; erro: string | null }
+export interface EstadoVendas { fase: FaseVendas; versao: number; html: string; resumo: string; etapas: string[]; erro: string | null; painel: 'nada' | 'construindo' | 'pronto' | 'erro'; painelUrl: string | null }
+/** Números do topo do painel do dono (M62). `mes` em centavos. */
+export interface NumerosVendas { pagando: number; mes: number; atrasados: number; gratis: number }
 export interface Marcacao { x: number; y: number; texto: string }
 
 export interface PonteVendas {
@@ -11,6 +13,11 @@ export interface PonteVendas {
   /** A chave de TESTE do gateway vai direto para a Vercel do cliente; a tela não guarda. */
   aprovar(pasta: string, chaveTeste: string): Promise<EstadoVendas>
   abrir(pasta: string, chaveReal: string): Promise<EstadoVendas>
+  /** M62: o Síndico monta o painel do dono no sistema do cliente. */
+  montarPainel(pasta: string): Promise<EstadoVendas>
+  /** Números do topo, lidos do sistema do cliente. null = ainda não dá para saber. */
+  numeros(pasta: string): Promise<NumerosVendas | null>
+  abrirPainel(pasta: string): Promise<void>
 }
 
 export function explicarErroVendas(m: string): string {
@@ -25,7 +32,7 @@ const PAGINA_EXEMPLO = '<!doctype html><html><body style="font-family:sans-serif
 
 export function criarVendasFixture({ passoMs = 600 }: { passoMs?: number } = {}): PonteVendas {
   const m = new Map<string, EstadoVendas>()
-  const de = (p: string) => { if (!m.has(p)) m.set(p, { fase: 'nada', versao: 0, html: '', resumo: '', etapas: [], erro: null }); return m.get(p) as EstadoVendas }
+  const de = (p: string) => { if (!m.has(p)) m.set(p, { fase: 'nada', versao: 0, html: '', resumo: '', etapas: [], erro: null, painel: 'nada', painelUrl: null }); return m.get(p) as EstadoVendas }
   return {
     async estado(p) { return structuredClone(de(p)) },
     async desenhar(p) { Object.assign(de(p), { fase: 'pronta', versao: 1, html: PAGINA_EXEMPLO, resumo: 'Versão 1, com as cores do app.' }); return structuredClone(de(p)) },
@@ -37,14 +44,25 @@ export function criarVendasFixture({ passoMs = 600 }: { passoMs?: number } = {})
       return structuredClone(e)
     },
     async abrir(p, chave) { if (!/^(sk_live_|\$aact_prod_)/.test(chave.trim())) throw new Error('chave-invalida'); de(p).fase = 'aberta'; return structuredClone(de(p)) },
+    async montarPainel(p) {
+      const e = de(p); if (e.fase !== 'aberta') throw new Error('vendas-fechadas')
+      e.painel = 'construindo'
+      void (async () => { await new Promise((r) => setTimeout(r, passoMs)); Object.assign(e, { painel: 'pronto', painelUrl: 'https://pontoampla.vercel.app/dono' }) })()
+      return structuredClone(e)
+    },
+    async numeros(p) { return de(p).painel === 'pronto' ? { pagando: 38, mes: 186200, atrasados: 3, gratis: 21 } : null },
+    async abrirPainel() {},
   }
 }
 
 export const vendasIndisponivel: PonteVendas = {
   indisponivel: true,
-  async estado() { return { fase: 'nada', versao: 0, html: '', resumo: '', etapas: [], erro: null } },
+  async estado() { return { fase: 'nada', versao: 0, html: '', resumo: '', etapas: [], erro: null, painel: 'nada', painelUrl: null } },
   async desenhar() { throw new Error('indisponivel') },
   async ajustar() { throw new Error('indisponivel') },
   async aprovar() { throw new Error('indisponivel') },
   async abrir() { throw new Error('indisponivel') },
+  async montarPainel() { throw new Error('indisponivel') },
+  async numeros() { return null },
+  async abrirPainel() { throw new Error('indisponivel') },
 }

@@ -234,6 +234,9 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     ajustar: (pasta, marcacoes) => chamar('atlas:vendas:ajustar', String(pasta), Array.isArray(marcacoes) ? marcacoes.map((m) => ({ x: Number(m?.x), y: Number(m?.y), texto: String(m?.texto ?? '') })) : []),
     aprovar: (pasta, chave) => chamar('atlas:vendas:aprovar', String(pasta), String(chave ?? '')),
     abrir: (pasta, chave) => chamar('atlas:vendas:abrir', String(pasta), String(chave ?? '')),
+    montarPainel: (pasta) => chamar('atlas:vendas:painel', String(pasta)),
+    numeros: (pasta) => chamar('atlas:vendas:numeros', String(pasta)),
+    abrirPainel: (pasta) => chamar('atlas:vendas:abrirPainel', String(pasta)),
   },
   lancamento: {
     // Lançamento (M60): só pasta e a escolha do gateway; nada de chave passa por aqui.

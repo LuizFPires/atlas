@@ -44,3 +44,22 @@ describe('página de vendas (M61, LC4)', () => {
     expect(await screen.findByText(/AS VENDAS ESTÃO ABERTAS/)).toBeInTheDocument()
   })
 })
+
+describe('o painel do Síndico (M62, LC5)', () => {
+  it('vendas abertas: monta o painel do dono e mostra os números do topo, lidos do sistema do cliente', async () => {
+    const vendas = criarVendasFixture({ passoMs: 5 })
+    await vendas.desenhar('ponto', 'Ponto')
+    await vendas.aprovar('ponto', 'sk_test_' + 'x'.repeat(30))
+    await new Promise((r) => setTimeout(r, 30))
+    await vendas.abrir('ponto', 'sk_live_' + 'x'.repeat(30))
+    const abrir = vi.spyOn(vendas, 'abrirPainel')
+    render(<PaginaVendas obra={obra} gateway="stripe" vendas={vendas} onGuia={() => {}} intervaloMs={10} />)
+    await userEvent.click(await screen.findByRole('button', { name: /Montar o meu painel de dono/ }))
+    const numeros = await screen.findByRole('group', { name: 'Números do painel do dono' }, { timeout: 3000 })
+    expect(numeros).toHaveTextContent('38')
+    expect(numeros).toHaveTextContent('R$ 1.862')
+    expect(numeros).toHaveTextContent('3')
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir o meu painel de dono →' }))
+    expect(abrir).toHaveBeenCalledWith('ponto')
+  })
+})

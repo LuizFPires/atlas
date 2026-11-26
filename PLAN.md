@@ -676,12 +676,12 @@ Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1
 peso: 3
 spec: S16
 tela: prototipo/caminho-novo/LC5Sindico.dc.html
-- [ ] Números do topo: clientes pagando, quanto entra por mês, atrasados, no plano grátis
-- [ ] Lista de clientes com filtros (todos, em dia, atrasados, grátis) e ações (abrir, cobrar, oferecer plano)
-- [ ] Preços e planos editáveis (grátis, mensal, anual e parcelamento conforme o gateway) e "Liberar acesso grátis" por empresa e prazo
-- [ ] Situação de cada cliente atualizada pelo aviso (webhook) do Stripe ou do Asaas, com assinatura conferida; atraso com tolerância e bloqueio automático
-- [ ] Tudo também por voz ("libera o plano grátis para a Padaria Sol até março")
-Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Fica no sistema do cliente (rota de dono), não no Atlas. Chaves do gateway só em variável do servidor do cliente.
+- [x] Números do topo: clientes pagando, quanto entra por mês, atrasados, no plano grátis
+- [x] Lista de clientes com filtros (todos, em dia, atrasados, grátis) e ações (abrir, cobrar, oferecer plano)
+- [x] Preços e planos editáveis (grátis, mensal, anual e parcelamento conforme o gateway) e "Liberar acesso grátis" por empresa e prazo
+- [x] Situação de cada cliente atualizada pelo aviso (webhook) do Stripe ou do Asaas, com assinatura conferida; atraso com tolerância e bloqueio automático
+- [x] Tudo também por voz ("libera o plano grátis para a Padaria Sol até março")
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Fica no sistema do cliente (rota de dono), não no Atlas. Chaves do gateway só em variável do servidor do cliente. Andamento (25/11/2026): com as vendas abertas, "Montar o meu painel de dono" pede ao agente sindico o painel /dono no sistema do cliente (números, lista com filtros e ações, preços e planos editáveis, liberar acesso grátis, webhook com assinatura conferida, tolerância e bloqueio automático, voz) e GET /api/vendas/resumo; o Atlas mostra os números do topo (também na lista de Lançamentos) e abre o painel. O código do Atlas para o resumo fica no cofre (não é chave de pagamento). Falta conferir numa obra real.
 
 ## Milestone 63 — O canteiro muda no fim: jardim em volta e stand de vendas
 peso: 1

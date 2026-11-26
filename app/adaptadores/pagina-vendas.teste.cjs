@@ -135,3 +135,46 @@ test('abrir: troca para a chave de verdade na Vercel e publica', async () => {
   assert.deepEqual(ult[1].args, ['deploy', '--prod', '--yes'])
   assert.equal((await p.estado('ponto')).fase, 'aberta')
 })
+
+// ---- M62: o painel do Síndico (no sistema do cliente) e os números para a lista de Lançamentos ----------------------------------
+function cofreMem() { const m = new Map(); return { ler: async (k) => m.get(k) ?? null, guardar: async (k, v) => { m.set(k, v) }, _m: m } }
+
+test('o código do Atlas para falar com o sistema do cliente fica só no cofre (não é chave de pagamento)', async () => {
+  const raiz = obra()
+  const cofre = cofreMem()
+  const { d } = deps(raiz, { cofre })
+  const p = criarPaginaVendas(d)
+  await p.desenhar('ponto', 'Ponto')
+  await p.aprovar('ponto', '$aact_hmlg_' + 'x'.repeat(30))
+  await p._esperar('ponto')
+  assert.equal(cofre._m.get('vendas/codigo/ponto'), 'T'.repeat(43))
+})
+
+test('montar o painel: só com as vendas abertas; pede ao Síndico e fica pronto quando o resumo responde', async () => {
+  const raiz = obra({ gateway: 'stripe' })
+  const cofre = cofreMem()
+  const resumos = []
+  const { d, chamadas } = deps(raiz, { cofre, resumo: async (url, token) => { resumos.push({ url, token }); return { pagando: 38, mes: 186200, atrasados: 3, gratis: 21 } } })
+  const p = criarPaginaVendas(d)
+  await p.desenhar('ponto', 'Ponto')
+  await assert.rejects(p.montarPainel('ponto'), /vendas-fechadas/)
+  await p.aprovar('ponto', 'sk_test_' + 'x'.repeat(30))
+  await p._esperar('ponto')
+  await p.abrir('ponto', 'sk_live_' + 'x'.repeat(30))
+  await p.montarPainel('ponto')
+  await p._esperar('ponto')
+  assert.match(chamadas.pedidos.at(-1), /sindico/)
+  assert.match(chamadas.pedidos.at(-1), /\/api\/vendas\/resumo/)
+  assert.match(chamadas.pedidos.at(-1), /tolerância/)
+  const e = await p.estado('ponto')
+  assert.equal(e.painel, 'pronto')
+  assert.equal(e.painelUrl, 'https://pontoampla.vercel.app/dono')
+  assert.deepEqual(await p.numeros('ponto'), { pagando: 38, mes: 186200, atrasados: 3, gratis: 21 })
+  assert.deepEqual(resumos.at(-1), { url: 'https://pontoampla.vercel.app/api/vendas/resumo', token: 'T'.repeat(43) })
+})
+
+test('números: sem painel ou sem resposta = null (nunca inventa)', async () => {
+  const raiz = obra()
+  const { d } = deps(raiz, { cofre: cofreMem(), resumo: async () => { throw new Error('fora') } })
+  assert.equal(await criarPaginaVendas(d).numeros('ponto'), null)
+})
