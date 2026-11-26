@@ -53,7 +53,7 @@ desde já, antes da compra do .com, e ajuda o Google a mostrar a versão certa p
 `br` (exige CPF; Pix ou cartão) ou `us` (sem CPF; cartão em dólar). Mantém a mesma trava de integridade de hoje.
 
 **Licença e app.** A licença ganha o campo `idioma` (`pt` | `en`), gravado na compra. O instalador e o app lêem esse
-campo na ativação. O instalador sai em duas versões (português e inglês), e o link de download já entrega a certa.
+campo na ativação. Vale para Windows e Mac: o instalador do Windows e o do Mac saem em duas versões cada (português e inglês), e a página do link (que já reconhece Mac ou Windows, M47) entrega a certa para o sistema e o idioma da pessoa.
 O app tem "Idioma" nas configurações.
 
 **Linha de produção.** As instruções dos agentes já vêm do servidor a cada obra (não ficam no computador do cliente).
