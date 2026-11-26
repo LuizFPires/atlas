@@ -96,3 +96,22 @@ test('domínio próprio (M57): abre ao lado do prédio e, no ar, o QR e o WhatsA
   await waitFor(() => expect(screen.getByRole('img', { name: /QR code/ })).toHaveAttribute('data-endereco', 'https://pontoampla.com.br'))
   expect(screen.getByRole('link', { name: 'Mandar pelo WhatsApp' }).getAttribute('href')).toMatch(/pontoampla\.com\.br/)
 })
+
+test('"Corrigir e continuar" falhou: diz o motivo de verdade, não um "tente de novo" genérico', async () => {
+  const casos: [string, RegExp][] = [
+    ['ja-rodando', /outra obra está trabalhando/i],
+    ['sem-licenca', /licença/i],
+    ['plan-invalido', /plano da obra/i],
+    ['obra-com-config-suspeita', /arquivo estranho/i],
+  ]
+  for (const [codigo, texto] of casos) {
+    const user = userEvent.setup()
+    const base = criarNoArFixture({ passoMs: 5, reprovar: true })
+    const { unmount } = montar({ ...base, corrigir: async () => { throw new Error(codigo) } })
+    await user.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
+    await user.click(await screen.findByRole('button', { name: 'Corrigir e continuar →' }))
+    expect(await screen.findByText(texto)).toBeInTheDocument()
+    expect(screen.queryByText(/Tente de novo em instantes/)).not.toBeInTheDocument()
+    unmount()
+  }
+})
