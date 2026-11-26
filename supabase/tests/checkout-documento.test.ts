@@ -37,3 +37,13 @@ describe('checkout em real exige CPF ou CNPJ', () => {
     expect(r.status).toBe(200)
   })
 })
+
+describe('retorno do pagamento no domínio próprio', () => {
+  it('base de retorno no endereço provisório da Vercel volta para atlas-ia.app.br', async () => {
+    const m = montarPag()
+    const conta = await m.deps.store.contaGateway(CONTA)
+    if (conta) conta.base_retorno = 'https://atlas-ia-plum.vercel.app'
+    await criarCheckout(m.deps, { ...base, documento: '52998224725' })
+    expect(corpoDe(m.chamadas[0]).get('success_url')).toBe('https://atlas-ia.app.br/compra/sucesso?session_id={CHECKOUT_SESSION_ID}')
+  })
+})

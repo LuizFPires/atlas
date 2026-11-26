@@ -90,6 +90,7 @@
 import type { CanalCelular, Pedido } from './celular.ts'
 import type { CanalPush, EnvioPush } from './push.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { urlPublica } from './url-publica.ts'
 import { montarBoasVindas, montarConfirmacaoDegustacao, montarCortesia, remetentePessoal } from './emails.ts'
 import { montarAvisoAtraso, montarCodigoAtivacao } from './emails-avisos.ts'
 import { ARQUIVO_ATUALIZACAO_MAC, ARQUIVO_MANIFESTO_MAC, criarFonteAtualizacaoStorage, criarLinkInstaladorStorage, lerConfigInstalador } from './instalador-storage.ts'
@@ -572,7 +573,7 @@ export async function enviarAvisoAtraso(email: string, aviso: { n: 1 | 2 | 3; pa
 }
 
 export async function enviarBoasVindas(email: string, d: { nome: string; empresa: string; ramo: string; token: string; expira_em: Date; idioma?: 'pt' | 'en' }) {
-  const base = Deno.env.get('ATLAS_INSTALAR_URL') ?? 'https://atlas-ia.app.br/instalar'
+  const base = urlPublica(Deno.env.get('ATLAS_INSTALAR_URL'), 'https://atlas-ia.app.br/instalar')
   // M31: licença em inglês abre a página de instalação em inglês.
   const link = `${base}?t=${encodeURIComponent(d.token)}${d.idioma === 'en' ? '&idioma=en' : ''}`
   const m = montarBoasVindas({ nome: d.nome, empresa: d.empresa, ramo: d.ramo, expira_em: d.expira_em, link_instalacao: link, idioma: d.idioma })
@@ -581,7 +582,7 @@ export async function enviarBoasVindas(email: string, d: { nome: string; empresa
 
 /** Endereço de instalação de um link de uso único (o mesmo no e-mail da cortesia e no "Copiar link" do painel). */
 export function linkInstalar(token: string): string {
-  const base = Deno.env.get('ATLAS_INSTALAR_URL') ?? 'https://atlas-ia.app.br/instalar'
+  const base = urlPublica(Deno.env.get('ATLAS_INSTALAR_URL'), 'https://atlas-ia.app.br/instalar')
   return `${base}?t=${encodeURIComponent(token)}`
 }
 
@@ -591,7 +592,7 @@ export async function enviarCortesia(email: string, d: { token: string; expira_e
 }
 
 export async function enviarConfirmacaoDegustacao(email: string, d: { token: string; expira_em: Date; dias: number }) {
-  const base = Deno.env.get('ATLAS_DEGUSTACAO_URL') ?? 'https://atlas-ia.app.br/degustacao'
+  const base = urlPublica(Deno.env.get('ATLAS_DEGUSTACAO_URL'), 'https://atlas-ia.app.br/degustacao')
   const m = montarConfirmacaoDegustacao({ dias: d.dias, expira_em: d.expira_em, link: `${base}?t=${encodeURIComponent(d.token)}` })
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }
