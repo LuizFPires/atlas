@@ -95,6 +95,22 @@ const PEDIDO_VISTORIA = [
  *  linhaRodando(pasta) -> boolean                                     (a correção ainda está na linha?)
  *  esperar(ms), agora(), gerarSenha()
  */
+// Saída das ferramentas do banco (Supabase CLI): o que é defeito da obra (SQL) e o que é conexão. Resumo sem segredos.
+const RE_SQL = /SQLSTATE|syntax error|does not exist|already exists|violates|ERROR:\s|at statement \d+/i
+const RE_CONEXAO = /connect|timeout|timed out|no route|network|unreachable|dial tcp|i\/o|ECONN|EAI_AGAIN|temporarily unavailable/i
+function erroDeSql(saida) { return RE_SQL.test(saida) && !/password authentication failed/i.test(saida) }
+function erroDeConexao(saida) { return RE_CONEXAO.test(saida) }
+/** As linhas que explicam o erro (ERROR, statement, hint), sem endereço de conexão, senha, chave ou token; no máximo 600 letras. */
+function resumoDoErro(saida) {
+  const limpas = String(saida)
+    .replace(/postgres(ql)?:\/\/\S+/gi, '[conexão]')
+    .replace(/\b(sbp_|sb_secret_|eyJ)[A-Za-z0-9._-]{10,}/g, '[chave]')
+    .replace(/(password|senha|pass)\s*[=:]\s*\S+/gi, '$1=[oculta]')
+    .split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+  const importantes = limpas.filter((l) => /error|erro|statement|hint|detail|failed|falhou/i.test(l))
+  return (importantes.length ? importantes : limpas.slice(-4)).join(' · ').slice(0, 600)
+}
+
 function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, perguntar, corrigir, linhaRodando = () => false, esperar = (ms) => new Promise((r) => setTimeout(r, ms)), agora = () => new Date(), gerarSenha = () => crypto.randomBytes(24).toString('base64url'), esperaBancoMs = 10_000, tentativasBanco = 60 }) {
   const jobs = new Map() // pasta -> estado vivo
 
@@ -128,6 +144,13 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     } catch { return 'incerto' }
   }
 
+  /** Defeitos da obra que a linha corrige (o texto vai como o pedido de correção). */
+  const CORRIGIVEIS = {
+    'supabase-migrations': (det) => `As tabelas do banco não subiram no Supabase de verdade (supabase/migrations). Corrija as migrations para que "supabase db push" rode limpo num banco novo, sem apagar dados.${det ? ` Erro do banco: ${det}` : ''}`,
+    'vercel-build': (det) => `O sistema não compila na Vercel ("npm run build" falhou). Corrija para que o build de produção passe limpo.${det ? ` Erro do build: ${det}` : ''}`,
+    'supabase-funcoes': (det) => `As funções do servidor (supabase/functions) não subiram no Supabase. Corrija para que "supabase functions deploy" funcione.${det ? ` Erro: ${det}` : ''}`,
+  }
+
   async function passoBanco(pasta, e) {
     const cwd = cwdDe(pasta)
     if (!fs.existsSync(path.join(cwd, 'supabase'))) return null // obra sem banco
@@ -158,17 +181,24 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     }
     const envBanco = { SUPABASE_ACCESS_TOKEN: token, ...(senha ? { SUPABASE_DB_PASSWORD: senha } : {}) }
     if (fs.existsSync(path.join(cwd, 'supabase', 'migrations'))) {
-      const l = await supabase(['link', '--project-ref', ref], { cwd, env: envBanco, timeoutMs: 120_000 })
-      if (l.codigo !== 0) throw Object.assign(new Error('supabase-link'), { passo: 'banco' })
-      const d = await supabase(['db', 'push', '--yes'], { cwd, env: envBanco, timeoutMs: 300_000 })
-      if (d.codigo !== 0) throw Object.assign(new Error('supabase-migrations'), { passo: 'banco' })
+      // Banco recém-criado às vezes ainda não aceita conexão: tenta de novo sozinho. Erro de SQL é defeito da obra: não adianta
+      // repetir; vai resumido (sem senha nem endereço de conexão) para a tela e, no "Corrigir e continuar", para a linha (26/11/2026).
+      for (let i = 0; ; i++) {
+        const l = await supabase(['link', '--project-ref', ref], { cwd, env: envBanco, timeoutMs: 120_000 })
+        const d = l.codigo === 0 ? await supabase(['db', 'push', '--yes'], { cwd, env: envBanco, timeoutMs: 300_000 }) : l
+        if (d.codigo === 0) break
+        const saida = String(d.saida || '')
+        if (erroDeSql(saida)) throw Object.assign(new Error('supabase-migrations'), { passo: 'banco', detalhe: resumoDoErro(saida) })
+        if (i >= 2) throw Object.assign(new Error(erroDeConexao(saida) ? 'supabase-conexao' : l.codigo !== 0 ? 'supabase-link' : 'supabase-migrations'), { passo: 'banco', detalhe: resumoDoErro(saida) })
+        await esperar(esperaBancoMs)
+      }
     }
     const pastaFn = path.join(cwd, 'supabase', 'functions')
     if (fs.existsSync(pastaFn)) {
       for (const f of fs.readdirSync(pastaFn, { withFileTypes: true })) {
         if (!f.isDirectory() || f.name.startsWith('_') || !/^[a-z0-9][a-z0-9_-]{0,60}$/i.test(f.name)) continue
         const r = await supabase(['functions', 'deploy', f.name, '--project-ref', ref], { cwd, env: envBanco, timeoutMs: 300_000 })
-        if (r.codigo !== 0) throw Object.assign(new Error('supabase-funcoes'), { passo: 'banco' })
+        if (r.codigo !== 0) throw Object.assign(new Error('supabase-funcoes'), { passo: 'banco', detalhe: resumoDoErro(String(r.saida || '')) })
       }
     }
     const chaves = await apiSupabase('GET', `/v1/projects/${ref}/api-keys`, null, token)
@@ -192,7 +222,12 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       if (nomes.url.length === 0) e.avisos.push('O sistema não diz onde lê o endereço do banco (.env.example). O Atlas publicou mesmo assim.')
     }
     const d = await vercel(['deploy', '--prod', '--yes'], { cwd, timeoutMs: 900_000 })
-    if (d.codigo !== 0) throw Object.assign(new Error('vercel-deploy'), { passo: 'publicar' })
+    if (d.codigo !== 0) {
+      // O sistema não compila na Vercel: é defeito da obra, a linha corrige ("Corrigir e continuar"). Outro erro: conta ou Vercel fora.
+      const saida = String(d.saida || '')
+      const build = /error TS\d+|Command ".*build.*" exited|Build failed|Module not found|SyntaxError|Failed to compile/i.test(saida)
+      throw Object.assign(new Error(build ? 'vercel-build' : 'vercel-deploy'), { passo: 'publicar', detalhe: resumoDoErro(saida) })
+    }
     return `https://${e.nome}.vercel.app`
   }
 
@@ -247,7 +282,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       const passo = err && err.passo && PASSOS.includes(err.passo) ? err.passo : PASSOS.find((p) => e.passos[p] === 'agora') || 'publicar'
       marca(passo, 'erro')
       e.fase = 'erro'
-      e.erro = { passo, motivo: String((err && err.message) || 'falhou').slice(0, 60) }
+      e.erro = { passo, motivo: String((err && err.message) || 'falhou').slice(0, 60), ...(err && typeof err.detalhe === 'string' && err.detalhe ? { detalhe: err.detalhe } : {}) }
     }
   }
 
@@ -311,8 +346,10 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     async corrigir(pasta) {
       pasta = String(pasta)
       const e = jobs.get(pasta)
-      if (!e || e.fase !== 'vistoria' || e.achados.length === 0) throw new Error('nada-para-corrigir')
-      await corrigir(pasta, e.achados)
+      // Corrige pela linha: os pontos da vistoria OU um erro que é defeito da obra (tabelas ou funções do banco que não subiram).
+      const doBanco = e && e.fase === 'erro' && e.erro && CORRIGIVEIS[e.erro.motivo] ? [CORRIGIVEIS[e.erro.motivo](e.erro.detalhe || '')] : null
+      if (!e || (!doBanco && (e.fase !== 'vistoria' || e.achados.length === 0))) throw new Error('nada-para-corrigir')
+      await corrigir(pasta, doBanco || e.achados)
       e.fase = 'corrigindo'
       e.achados = []
       // Quando a linha terminar a correção, recomeça sozinho pela vistoria (confere de novo antes de abrir as portas).

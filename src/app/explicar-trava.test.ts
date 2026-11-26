@@ -38,3 +38,20 @@ test('Falar com o Atlas recebe o código já explicado (e texto livre continua c
   expect(detalheExplicado('A tela ficou branca')).toBe('A tela ficou branca')
   expect(detalheExplicado(undefined)).toBeUndefined()
 })
+
+test('a Ajuda aberta por um erro já começa dizendo o que houve e o que fazer (nada de "me conta o que você estava fazendo")', async () => {
+  const { saudacaoAjuda } = await import('./ponte-ajuda')
+  const { detalheExplicado } = await import('./explicar-trava')
+  const s = saudacaoAjuda({ origem: 'erro', onde: 'colocar no ar', erro: { titulo: 'Colocar no ar', detalhe: detalheExplicado('supabase-migrations') } }, 'Ana')
+  expect(s).toMatch(/^Oi, Ana\. Vi que colocar no ar parou: o banco foi criado, mas as tabelas do sistema não subiram\. Toque em Corrigir e continuar/)
+  expect(s).not.toMatch(/Me conta o que você estava fazendo/)
+  // sem código conhecido, continua perguntando
+  expect(saudacaoAjuda({ origem: 'erro', onde: 'a obra' })).toMatch(/Me conta o que você estava fazendo/)
+})
+
+test('os novos motivos (conexão com o banco e build na Vercel) têm explicação', () => {
+  expect(explicarTrava('supabase-conexao').houve).toMatch(/banco/)
+  expect(explicarTrava('vercel-build').fazer).toMatch(/Corrigir e continuar/)
+  expect(explicarTrava('supabase-migrations').fazer).toMatch(/Corrigir e continuar/)
+  expect(explicarTrava('supabase-funcoes').fazer).toMatch(/Corrigir e continuar/)
+})

@@ -268,3 +268,75 @@ test('conferirAntes: avisa ANTES de começar quanto banco a conta do Supabase j�
   const { d: d3 } = deps({ apiSupabase: async () => { throw new Error('supabase-500') } })
   assert.equal((await criarNoAr({ raiz, ...d3 }).conferirAntes('ponto')).bancosAtivos, null)
 })
+
+const ERRO_SQL = 'Connecting to remote database...\nApplying migration 20261120_ponto.sql...\nERROR: relation "public.funcionarios" does not exist (SQLSTATE 42P01)\nAt statement 3: create policy "ver o proprio ponto" on public.marcacoes using (auth.uid() = funcionario_id)\npostgresql://postgres.abcdefghijklmnopqrst:senha-gerada-123@aws-0-sa-east-1.pooler.supabase.com:5432/postgres\n'
+
+test('tabelas não subiram (erro de SQL): o erro vem resumido, sem senha, e "corrigir" manda para a linha e depois publica sozinho (Ponto, 26/11/2026)', async () => {
+  const { raiz } = obra()
+  const corrigidos = []
+  let push = 0, rodando = 1
+  const { d } = deps({
+    supabase: async (args) => (args[0] === 'db' && push++ === 0 ? { codigo: 1, saida: ERRO_SQL } : { codigo: 0, saida: '' }),
+    corrigir: async (p, a) => { corrigidos.push([p, a]) },
+    linhaRodando: () => rodando-- > 0,
+  })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  const e = n.estado('ponto')
+  assert.equal(e.fase, 'erro')
+  assert.equal(e.erro.motivo, 'supabase-migrations')
+  assert.match(e.erro.detalhe, /relation "public\.funcionarios" does not exist/)
+  assert.doesNotMatch(e.erro.detalhe, /senha-gerada-123|postgresql:\/\//)
+  assert.equal(push, 1, 'erro de SQL não adianta repetir: não tenta de novo sozinho')
+  const c = await n.corrigir('ponto')
+  assert.equal(c.fase, 'corrigindo')
+  assert.equal(corrigidos.length, 1)
+  assert.match(corrigidos[0][1][0], /tabelas do banco.*supabase\/migrations/i)
+  assert.match(corrigidos[0][1][0], /relation "public\.funcionarios" does not exist/)
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').fase, 'noar', 'depois da correção, confere de novo e publica sozinho')
+})
+
+test('banco ainda não aceita conexão (projeto novo): tenta de novo sozinho antes de desistir', async () => {
+  const { raiz } = obra()
+  let push = 0
+  const { d } = deps({ supabase: async (args) => (args[0] === 'db' && push++ < 2 ? { codigo: 1, saida: 'failed to connect to postgres: dial tcp: i/o timeout' } : { codigo: 0, saida: '' }) })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').fase, 'noar')
+  assert.equal(push, 3)
+})
+
+test('conexão falha sempre: motivo próprio (supabase-conexao), sem achar que é defeito da obra', async () => {
+  const { raiz } = obra()
+  const { d } = deps({ supabase: async (args) => (args[0] === 'db' ? { codigo: 1, saida: 'failed to connect to postgres: dial tcp: i/o timeout' } : { codigo: 0, saida: '' }) })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').erro.motivo, 'supabase-conexao')
+  await assert.rejects(n.corrigir('ponto'), /nada-para-corrigir/)
+})
+
+test('a Vercel não conseguiu montar o sistema (erro de build): vira "vercel-build" com o resumo e a linha corrige', async () => {
+  const { raiz } = obra()
+  const corrigidos = []
+  let deploys = 0
+  const { d } = deps({
+    vercel: async (args) => (args[0] === 'deploy' && deploys++ === 0 ? { codigo: 1, saida: 'Building...\nsrc/App.tsx(12,3): error TS2304: Cannot find name \'Ponto\'.\nError: Command "npm run build" exited with 2\n' } : { codigo: 0, saida: '' }),
+    corrigir: async (p, a) => { corrigidos.push(a) },
+    linhaRodando: () => false,
+    sondar: async () => (deploys > 1 ? { status: 200, cabecalhos: {}, corpo: '<!doctype html><html></html>' } : { status: 404, cabecalhos: { 'x-vercel-error': 'DEPLOYMENT_NOT_FOUND' }, corpo: '' }),
+  })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  const e = n.estado('ponto')
+  assert.equal(e.erro.motivo, 'vercel-build')
+  assert.match(e.erro.detalhe, /error TS2304/)
+  await n.corrigir('ponto')
+  assert.match(corrigidos[0][0], /npm run build.*error TS2304/s)
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').fase, 'noar')
+})

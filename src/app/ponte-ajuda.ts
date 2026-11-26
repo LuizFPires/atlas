@@ -150,6 +150,10 @@ export function saudacaoAjuda(contexto: ContextoAjuda, nome?: string): string {
   const oi = nome ? `Oi, ${textoDaObra(nome, 40)}.` : 'Oi.'
   const print = contexto.print ? ' Já tirei um print da sua tela.' : ''
   const fim = ' Me conta o que você estava fazendo? Pode falar, escrever ou mandar outro print.'
+  // Erro com código conhecido (o detalhe já vem explicado, "codigo — o que houve. o que fazer."): a Ajuda começa pela
+  // explicação e pelo caminho, em vez de perguntar o que a pessoa fazia (26/11/2026).
+  const explicado = contexto.origem === 'erro' ? /^[a-z0-9-]+ — (.+)$/i.exec(contexto.erro?.detalhe ?? '')?.[1] : undefined
+  if (explicado) return `${oi} Vi que ${textoDaObra(contexto.onde, 60) || 'algo'} parou: ${explicado.charAt(0).toLowerCase()}${explicado.slice(1)}${print} Se quiser, me conta mais ou manda um print.`
   if (contexto.origem === 'erro') return `${oi} Vi que ${textoDaObra(contexto.onde, 60) || 'algo'} parou.${print}${fim}`
   if (contexto.origem === 'passo' && contexto.passo) return `${oi} Vi que você parou no passo ${contexto.passo.passo} de ${contexto.passo.totalPassos} do ${textoDaObra(contexto.passo.conta, 60)}.${print}${fim}`
   return `${oi} Estou aqui, a qualquer hora.${print} Me conta o que está acontecendo? Pode falar, escrever ou mandar um print.`
