@@ -265,20 +265,30 @@ export async function reenviarCortesia(d: DepsAdmin, jwt: string, a: { email: un
   return { ok: true, ...(await enviarEmailCortesia(d, email, lic.validade_em, cli.nome_tratamento ?? undefined)) }
 }
 
-/** Cortesias em vigor (tipo cortesia, ativa, dentro do prazo): só e-mail, nome e validade — o que o gestor precisa para estender. */
+/** Até quantos dias depois de vencer a cortesia ainda aparece na lista (para renovar e mandar um link novo). */
+export const CORTESIA_VENCIDA_VISIVEL_DIAS = 90
+
+/**
+ * Cortesias do gestor para a aba Cortesias: as em vigor (ativas e dentro do prazo) e as vencidas há até 90 dias (para renovar).
+ * Só e-mail, nome, validade e se venceu. Fora: licença paga, teste grátis (origem degustação) e cortesia cancelada antes do prazo.
+ */
 export async function listarCortesias(d: DepsAdmin, jwt: string) {
   await adminLogado(d, jwt)
   const agora = d.agora()
+  const limite = agora.getTime() - CORTESIA_VENCIDA_VISIVEL_DIAS * 24 * 3600_000
   const [clientes, licencas] = await Promise.all([d.store.listarClientes(), d.store.listarLicencas()])
   const porCliente = new Map(clientes.map((c) => [c.id, c]))
-  const cortesias: Array<{ email: string; nome: string; validade_em: string }> = []
+  const cortesias: Array<{ email: string; nome: string; validade_em: string; vencida: boolean }> = []
   for (const l of licencas) {
-    if (l.tipo !== 'cortesia' || l.status !== 'ativa' || cortesiaVencida(l, agora) || !l.validade_em) continue
+    if (l.tipo !== 'cortesia' || !l.validade_em || l.origem === 'degustacao') continue
+    const vencida = cortesiaVencida(l, agora)
+    if (vencida ? l.validade_em.getTime() < limite : l.status !== 'ativa') continue
     const c = porCliente.get(l.cliente_id)
     if (!c || c.excluido_em) continue
-    cortesias.push({ email: c.email_compra, nome: c.nome_tratamento, validade_em: l.validade_em.toISOString() })
+    cortesias.push({ email: c.email_compra, nome: c.nome_tratamento, validade_em: l.validade_em.toISOString(), vencida })
   }
-  cortesias.sort((a, b) => a.validade_em.localeCompare(b.validade_em) || a.email.localeCompare(b.email))
+  // Em vigor primeiro (a que vence antes no topo); depois as vencidas (a mais recente no topo).
+  cortesias.sort((a, b) => Number(a.vencida) - Number(b.vencida) || (a.vencida ? b.validade_em.localeCompare(a.validade_em) : a.validade_em.localeCompare(b.validade_em)) || a.email.localeCompare(b.email))
   return { cortesias }
 }
 

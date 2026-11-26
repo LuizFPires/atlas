@@ -23,7 +23,7 @@ export interface LinhaCliente {
   tipo?: 'paga' | 'cortesia'; validade_em?: string | null
 }
 export interface ItemAtencao { id: string; tipo: string; quem: string; oque: string; quando: string; licenca_id: string | null; dominio_sugerido?: string }
-export interface CortesiaAtiva { email: string; nome: string; validade_em: string }
+export interface CortesiaAtiva { email: string; nome: string; validade_em: string; /** Já passou do prazo (aparece até 90 dias depois, para renovar). */ vencida?: boolean }
 export interface DominioBloqueado { dominio: string; motivo: string; criado_em: string }
 export interface PainelAdmin { gerado_em: string; indicadores: IndicadoresAdmin; atencao: ItemAtencao[]; clientes: LinhaCliente[] }
 export interface LinhaEntrega { licenca_id: string; cliente: string; obra_id: string; marca_dagua: string; baixado_em: string }

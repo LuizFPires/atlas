@@ -589,18 +589,30 @@ function Atencao({ a, tipo, quando, detalhe, onBaixa, onLiberar, onBloquear }: {
   )
 }
 
-/** Aba "Ações": teste grátis, e-mails bloqueados e cortesia, cada um num cartão grande. */
+/** Aba "Ações": duas abas. Geral (teste grátis e e-mails bloqueados) e Cortesias (liberar e gerenciar). Luiz, 26/11/2026: a lista
+ *  de cortesias ficava embaixo dos cartões e ninguém achava; agora tem tela própria. */
 function Acoes({ api }: { api: AdminApi }) {
+  const [sub, setSub] = useState<'geral' | 'cortesias'>('geral')
   const [versao, setVersao] = useState(0) // sobe quando uma cortesia nova é liberada, pra lista recarregar
   return (
     <>
       <div className="ad-titulo"><h1>Ações</h1><span className="ad-mute">o que você liga, bloqueia ou libera na mão</span></div>
-      <div className="ad-acoes">
-        <TesteGratis api={api} />
-        <DominiosBloqueados api={api} />
-        <Cortesia api={api} aoMudar={() => setVersao((v) => v + 1)} />
-        <CortesiasAtivas api={api} versao={versao} />
+      <div className="ad-subabas" role="tablist" aria-label="Seções de Ações">
+        <button type="button" role="tab" aria-selected={sub === 'geral'} className={sub === 'geral' ? 'ad-subaba ad-subaba--on' : 'ad-subaba'} onClick={() => setSub('geral')}>Geral</button>
+        <button type="button" role="tab" aria-selected={sub === 'cortesias'} className={sub === 'cortesias' ? 'ad-subaba ad-subaba--on' : 'ad-subaba'} onClick={() => setSub('cortesias')}>Cortesias</button>
       </div>
+      {sub === 'geral' && (
+        <div className="ad-acoes ad-acoes--2">
+          <TesteGratis api={api} />
+          <DominiosBloqueados api={api} />
+        </div>
+      )}
+      {sub === 'cortesias' && (
+        <div className="ad-cortesias">
+          <Cortesia api={api} aoMudar={() => setVersao((v) => v + 1)} />
+          <GerenciarCortesias api={api} versao={versao} />
+        </div>
+      )}
     </>
   )
 }
@@ -1115,11 +1127,18 @@ function Mapa({ api }: { api: AdminApi }) {
   )
 }
 
-/** Cartão "Cortesias ativas": quem está de presente agora e um jeito de dar mais tempo (só estende; o acesso continua o mesmo). */
-function CortesiasAtivas({ api, versao }: { api: AdminApi; versao: number }) {
+/** Dias de calendário (Brasília) de hoje até o dia em que a cortesia termina: 0 = termina hoje. Igual ao que o editor mostra. */
+const diasEntre = (de: string, ate: string) => Math.round((new Date(`${ate}T12:00:00-03:00`).getTime() - new Date(`${de}T12:00:00-03:00`).getTime()) / DIA_MS)
+const diasAte = (iso: string) => diasEntre(dataEm(new Date(), 0), dataEm(new Date(iso), 0))
+
+/** Aba Cortesias: as em vigor e as vencidas (até 90 dias). Mudar o prazo (pôr ou tirar dias, ou escolher a data), gerar um link
+ *  novo para quem perdeu o e-mail e renovar a que venceu (renovar já manda o link novo). */
+function GerenciarCortesias({ api, versao }: { api: AdminApi; versao: number }) {
   const [lista, setLista] = useState<CortesiaAtiva[] | null>(null)
+  const [filtro, setFiltro] = useState<'vigor' | 'vencidas'>('vigor')
   const [erro, setErro] = useState('')
   const [msg, setMsg] = useState('')
+  const [link, setLink] = useState<string | null>(null)
   const recarregar = async () => {
     const r = await api.listarCortesias()
     if (!r.ok) { setErro(r.mensagem); return }
@@ -1130,56 +1149,130 @@ function CortesiasAtivas({ api, versao }: { api: AdminApi; versao: number }) {
     api.listarCortesias().then((r) => { if (!vivo) return; if (r.ok) { setErro(''); setLista(r.cortesias) } else setErro(r.mensagem) })
     return () => { vivo = false }
   }, [api, versao])
+  const emVigor = (lista ?? []).filter((c) => !c.vencida)
+  const vencidas = (lista ?? []).filter((c) => c.vencida)
+  const visiveis = filtro === 'vigor' ? emVigor : vencidas
+  const avisar = (m: string, l?: string | null) => { setMsg(m); setLink(l && /^https:\/\//.test(l) ? l : null) }
   return (
-    <section className="ad-card" aria-label="Cortesias ativas">
-      <span className="ad-rotulo">CORTESIAS ATIVAS</span>
-      <p className="ad-p">Quem está com acesso de presente agora. Dá pra dar mais tempo: a pessoa continua com o mesmo acesso, só por mais dias.</p>
+    <section className="ad-card" aria-label="Cortesias">
+      <span className="ad-rotulo">CORTESIAS</span>
+      <p className="ad-p">Quem está com acesso de presente. Dá para pôr ou tirar dias, escolher o dia em que termina, gerar um link novo para quem perdeu o e-mail e renovar quem já venceu.</p>
+      <div className="ad-subabas ad-subabas--peq" role="tablist" aria-label="Quais cortesias">
+        <button type="button" role="tab" aria-selected={filtro === 'vigor'} className={filtro === 'vigor' ? 'ad-subaba ad-subaba--on' : 'ad-subaba'} onClick={() => { setFiltro('vigor'); setMsg(''); setLink(null) }}>Em vigor {lista ? emVigor.length : ''}</button>
+        <button type="button" role="tab" aria-selected={filtro === 'vencidas'} className={filtro === 'vencidas' ? 'ad-subaba ad-subaba--on' : 'ad-subaba'} onClick={() => { setFiltro('vencidas'); setMsg(''); setLink(null) }}>Vencidas {lista ? vencidas.length : ''}</button>
+      </div>
       {msg && <p role="status" className="ad-aviso-msg">{msg}</p>}
+      {link && <LinkParaCopiar key={link} url={link} />}
       {erro && <p role="alert" className="ad-erro">{erro}</p>}
-      {lista && lista.length === 0 && <p className="ad-mute">Nenhuma cortesia ativa agora.</p>}
-      {lista && lista.map((c) => (
-        <LinhaCortesia key={c.email} api={api} c={c} aoEstender={async (ate) => { setMsg(`Cortesia renovada até ${ate}.`); await recarregar() }} aoErro={setErro} />
-      ))}
+      {lista === null && !erro && <p className="ad-mute">Carregando…</p>}
+      {lista && visiveis.length === 0 && <p className="ad-mute">{filtro === 'vigor' ? 'Nenhuma cortesia em vigor agora.' : 'Nenhuma cortesia vencida nos últimos 90 dias.'}</p>}
+      {visiveis.length > 0 && (
+        <div className="ad-cort-lista">
+          {visiveis.map((c) => (
+            <LinhaCortesia key={c.email} api={api} c={c} aoErro={setErro}
+              aoFeito={async (m, l) => { setErro(''); avisar(m, l); await recarregar() }} />
+          ))}
+        </div>
+      )}
     </section>
   )
 }
 
-function LinhaCortesia({ api, c, aoEstender, aoErro }: { api: AdminApi; c: CortesiaAtiva; aoEstender: (ate: string) => Promise<void>; aoErro: (m: string) => void }) {
+/** O link de instalação, com "Copiar link" (para mandar pelo WhatsApp se o e-mail cair no spam). */
+function LinkParaCopiar({ url }: { url: string }) {
+  const [copiado, setCopiado] = useState<'nao' | 'sim' | 'falhou'>('nao')
+  return (
+    <div className="ad-link-cortesia">
+      <span className="ad-mute2">Link para instalar (mande pelo WhatsApp se o e-mail não chegar). Ele funciona uma vez.</span>
+      <code className="ad-link-texto">{url}</code>
+      <div className="ad-linha">
+        <button type="button" className="ad-botao" onClick={async () => { try { await navigator.clipboard.writeText(url); setCopiado('sim') } catch { setCopiado('falhou') } }}>{copiado === 'sim' ? 'Link copiado ✓' : 'Copiar link'}</button>
+      </div>
+      {copiado === 'falhou' && <p role="alert" className="ad-erro">Não consegui copiar sozinho (o navegador bloqueou). Selecione o link acima e copie com Ctrl+C.</p>}
+    </div>
+  )
+}
+
+function LinhaCortesia({ api, c, aoFeito, aoErro }: { api: AdminApi; c: CortesiaAtiva; aoFeito: (msg: string, link?: string | null) => Promise<void>; aoErro: (m: string) => void }) {
   const hoje = new Date()
-  const amanha = dataEm(hoje, 1)
-  const atual = dataEm(new Date(c.validade_em), 0)
-  const min = atual > amanha ? atual : amanha // não dá pra encurtar o prazo que já vale
+  const min = dataEm(hoje, 0) // tirar dias: no mínimo até o fim de hoje
   const max = dataEm(hoje, TETO_DIAS)
-  const [data, setData] = useState(atual)
+  const atual = dataEm(new Date(c.validade_em), 0)
+  // Renovar a vencida: começa em 7 dias (dá para mudar); mudar prazo: começa na data atual.
+  const inicial = c.vencida ? dataEm(hoje, 7) : atual < min ? min : atual > max ? max : atual
+  const [aberto, setAberto] = useState(false)
+  const [data, setData] = useState(inicial)
   const [indo, setIndo] = useState(false)
-  const somar = (n: number) => {
-    const base = data || atual
-    const nova = new Date(new Date(`${base}T12:00:00-03:00`).getTime() + n * DIA_MS)
-    const iso = dataEm(nova, 0)
+  const n = diasAte(c.validade_em)
+  const somar = (d: number) => {
+    const base = data || inicial
+    const iso = dataEm(new Date(new Date(`${base}T12:00:00-03:00`).getTime() + d * DIA_MS), 0)
     setData(iso > max ? max : iso < min ? min : iso)
   }
   const valida = !!data && data >= min && data <= max
-  const estender = async () => {
+  const diasNovos = valida ? diasEntre(min, data) : null
+  const salvar = async () => {
     if (!valida || indo) return
     aoErro(''); setIndo(true)
     try {
-      const r = await api.estenderCortesia(c.email, fimDoDiaBrasilia(data))
+      if (c.vencida) {
+        const r = await api.liberarCortesia(c.email, fimDoDiaBrasilia(data))
+        if (!r.ok) { aoErro(r.mensagem); return }
+        setAberto(false)
+        await aoFeito(r.email_enviado
+          ? `Cortesia de ${c.email} renovada até ${dia(r.validade_em)}. Mandamos o link novo por e-mail.`
+          : `Cortesia de ${c.email} renovada até ${dia(r.validade_em)}, mas o e-mail não saiu. Mande o link abaixo pelo WhatsApp.`, r.link)
+      } else {
+        const r = await api.estenderCortesia(c.email, fimDoDiaBrasilia(data))
+        if (!r.ok) { aoErro(r.mensagem); return }
+        setAberto(false)
+        await aoFeito(`Prazo de ${c.email} mudado: termina em ${dia(r.validade_em)}.`)
+      }
+    } finally { setIndo(false) }
+  }
+  const novoLink = async () => {
+    if (indo) return
+    aoErro(''); setIndo(true)
+    try {
+      const r = await api.reenviarCortesia(c.email)
       if (!r.ok) { aoErro(r.mensagem); return }
-      await aoEstender(dia(r.validade_em).slice(0, 5))
+      await aoFeito(r.email_enviado ? `Link novo gerado e e-mail reenviado para ${c.email}.` : `Link novo gerado para ${c.email}, mas o e-mail não saiu. Mande o link abaixo pelo WhatsApp.`, r.link)
     } finally { setIndo(false) }
   }
   return (
-    <div className="ad-linha" style={{ flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-      <div style={{ flex: '1 1 200px' }}>
-        <strong>{c.email}</strong>
-        <span className="ad-mute2"> · vale até {dia(c.validade_em)}</span>
+    <div className={`ad-cort${aberto ? ' ad-cort--aberta' : ''}`}>
+      <div className="ad-cort-linha">
+        <div className="ad-cort-quem">
+          <strong>{c.email}</strong>
+          {c.nome && c.nome !== 'Convidado' && <span className="ad-mute2">{c.nome}</span>}
+        </div>
+        <span className={`ad-st ${c.vencida ? 'ad-st--erro' : n <= 3 ? 'ad-st--aviso' : 'ad-st--ok'}`}>
+          {c.vencida ? `venceu em ${dia(c.validade_em)}` : `até ${dia(c.validade_em)} · ${n <= 0 ? 'termina hoje' : n === 1 ? 'falta 1 dia' : `faltam ${n} dias`}`}
+        </span>
+        <div className="ad-cort-acoes">
+          <button type="button" className="ad-botao" aria-expanded={aberto} aria-label={`${c.vencida ? 'Renovar' : 'Mudar prazo de'} ${c.email}`} onClick={() => { setAberto(!aberto); setData(inicial) }}>{c.vencida ? 'Renovar' : 'Mudar prazo'}</button>
+          {!c.vencida && <button type="button" className="ad-botao" aria-label={`Novo link para ${c.email}`} onClick={() => void novoLink()} disabled={indo}>Novo link</button>}
+        </div>
       </div>
-      <label className="ad-campo-data">Estender prazo
-        <input type="date" value={data} min={min} max={max} onChange={(e) => setData(e.target.value)} />
-      </label>
-      <button type="button" className="ad-botao" onClick={() => somar(1)}>+1 dia</button>
-      <button type="button" className="ad-botao" onClick={() => somar(7)}>+7 dias</button>
-      <button type="button" className="ad-botao ad-botao--lime" onClick={estender} disabled={!valida || indo}>{indo ? 'Estendendo…' : 'Estender'}</button>
+      {aberto && (
+        <div className="ad-cort-editor">
+          <label className="ad-campo-data">Termina em
+            <input type="date" value={data} min={min} max={max} onChange={(e) => setData(e.target.value)} />
+          </label>
+          <div className="ad-cort-dias">
+            <button type="button" className="ad-botao" onClick={() => somar(-7)}>−7 dias</button>
+            <button type="button" className="ad-botao" onClick={() => somar(-1)}>−1 dia</button>
+            <button type="button" className="ad-botao" onClick={() => somar(1)}>+1 dia</button>
+            <button type="button" className="ad-botao" onClick={() => somar(7)}>+7 dias</button>
+            <button type="button" className="ad-botao" onClick={() => somar(30)}>+30 dias</button>
+          </div>
+          <span className="ad-mute2">{diasNovos === null ? 'Escolha uma data de hoje até 179 dias.' : diasNovos === 0 ? 'Vale até as 23:59 de hoje.' : `Vale até as 23:59 desse dia (${diasNovos} ${diasNovos === 1 ? 'dia' : 'dias'} a partir de hoje).`}</span>
+          <div className="ad-linha">
+            <button type="button" className="ad-botao ad-botao--lime" onClick={() => void salvar()} disabled={!valida || indo}>{indo ? 'Salvando…' : c.vencida ? 'Renovar e mandar o link' : 'Salvar prazo'}</button>
+            <button type="button" className="ad-botao" onClick={() => setAberto(false)}>Cancelar</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

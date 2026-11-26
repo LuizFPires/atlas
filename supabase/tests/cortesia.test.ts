@@ -82,20 +82,37 @@ describe('cortesia — liberar pelo painel', () => {
 describe('cortesia — listar e estender', () => {
   const listar = (a: Awaited<ReturnType<typeof montarAdmin>>, jwt = JWT_LUIZ) => chamar(a.ctx({ admin: a.admin }), '/admin/cortesias', jwt)
 
-  it('lista só as cortesias em vigor (exclui vencida, paga e cancelada) e só com e-mail, nome e validade', async () => {
+  it('lista as cortesias em vigor e as vencidas há até 90 dias (para renovar); exclui paga, cancelada antes do prazo e teste grátis', async () => {
     const a = await montarAdmin()
     await a.liberar({ email: 'vigor@x.com', validade_em: a.em(10), nome: 'Vigor' })
     await a.liberar({ email: 'vencida@x.com', validade_em: a.em(5) })
+    await a.liberar({ email: 'antiga@x.com', validade_em: a.em(5) })
     await a.liberar({ email: 'cancelada@x.com', validade_em: a.em(5) })
+    await a.liberar({ email: 'teste@x.com', validade_em: a.em(5) })
     const cli = (e: string) => a.store.clientes.find((c) => c.email_compra === e)!
     const lic = (e: string) => a.store.licencas.find((l) => l.cliente_id === cli(e).id)!
-    lic('vencida@x.com').validade_em = new Date(a.deps.agora().getTime() - 1000)
+    const agora = a.deps.agora().getTime()
+    lic('vencida@x.com').validade_em = new Date(agora - 3 * 86400_000)
+    lic('vencida@x.com').status = 'cancelada' // o /verificar marca a vencida como cancelada
+    lic('antiga@x.com').validade_em = new Date(agora - 91 * 86400_000)
     lic('cancelada@x.com').status = 'cancelada'
+    lic('teste@x.com').origem = 'degustacao'
     const r = await listar(a)
     expect(r.status).toBe(200)
     const corpo = await r.json()
-    expect(corpo.cortesias).toEqual([{ email: 'vigor@x.com', nome: 'Vigor', validade_em: a.em(10) }])
-    expect(Object.keys(corpo.cortesias[0]).sort()).toEqual(['email', 'nome', 'validade_em'])
+    expect(corpo.cortesias).toEqual([
+      { email: 'vigor@x.com', nome: 'Vigor', validade_em: a.em(10), vencida: false },
+      { email: 'vencida@x.com', nome: 'Convidado', validade_em: new Date(agora - 3 * 86400_000).toISOString(), vencida: true },
+    ])
+    expect(Object.keys(corpo.cortesias[0]).sort()).toEqual(['email', 'nome', 'validade_em', 'vencida'])
+  })
+
+  it('encurtar o prazo (data mais perto, ainda no futuro) vale; no passado não', async () => {
+    const a = await montarAdmin()
+    await a.liberar({ email: 'amigo@x.com', validade_em: a.em(30) })
+    expect((await a.liberar({ email: 'amigo@x.com', validade_em: a.em(3), silencioso: true })).status).toBe(200)
+    expect((await (await listar(a)).json()).cortesias).toEqual([expect.objectContaining({ email: 'amigo@x.com', validade_em: a.em(3) })])
+    expect((await a.liberar({ email: 'amigo@x.com', validade_em: new Date(a.deps.agora().getTime() - 1000).toISOString(), silencioso: true })).status).toBe(400)
   })
 
   it('não-admin recebe 403', async () => {
