@@ -5,7 +5,7 @@
 import type { IdGuiaSite } from './ponte-navegador'
 import type { DestinoSite } from './ponte-publicar'
 
-export type IdGuia = 'registro' | 'apple' | 'google' | 'stripe' | 'asaas'
+export type IdGuia = 'registro' | 'apple' | 'google' | 'stripe' | 'asaas' | 'expo' | 'asc' | 'grupo' | 'duns'
 
 export interface PassoGuia {
   texto: string
@@ -132,6 +132,63 @@ export function guiaAsaas(): Guia {
     ],
     fimTexto: 'Pronto, enviei',
     saber: 'Conta Asaas: Pix (inclusive Pix Automático), boleto e cartão com parcelamento. Para movimentar o saldo precisa ativar a conta e enviar documentos. Pessoa Jurídica precisa do CNPJ; MEI entra como Pessoa Jurídica. Código não chegou: conferir o celular informado e pedir de novo.',
+  }
+}
+
+// ---- M59: as 3 coisas a mais para o Atlas mandar o app sozinho, os testadores e o caminho da empresa ----------------------------
+export function guiaExpo(): Guia {
+  return {
+    id: 'expo', nome: 'Expo', rotulo: 'LOJAS · CONTA GRÁTIS NA EXPO (ONDE O APP É MONTADO)', onde: 'fora', fora: 'expo-token', legenda: 'O site da Expo abre no seu navegador. Siga daqui:',
+    passos: [
+      { texto: 'Clique em Sign up e crie a conta com o seu e-mail (ou entre com o GitHub, que você já tem).', botao: 'Sign up', traducao: 'Sign up = criar conta. A Expo é grátis no começo e é onde o Atlas monta a versão de app na nuvem.' },
+      { texto: 'Confirme o e-mail que a Expo mandou e volte para o site.', botao: 'Verify email', traducao: 'Verify = confirmar.' },
+      { texto: 'Na página Access tokens, clique em Create token. No nome, escreva Atlas e clique em Create.', botao: 'Create token', traducao: 'Token é uma chave que deixa o Atlas mandar o app para a nuvem em seu nome. Dá para apagar quando quiser.' },
+      { texto: 'Copie a chave que apareceu (ela só aparece uma vez) e cole aqui no Atlas, no campo "Chave da Expo".', botao: 'Copy', dica: 'A chave fica guardada só no cofre deste computador, nunca num arquivo.' },
+    ],
+    fimTexto: 'Pronto, colei',
+    saber: 'Conta Expo (expo.dev) grátis; o token de acesso fica em Account settings → Access tokens → Create token e só aparece uma vez (se perder, crie outro). Login com GitHub funciona. O token não é a senha.',
+  }
+}
+
+export function guiaChaveAsc(): Guia {
+  return {
+    id: 'asc', nome: 'App Store Connect', rotulo: 'LOJAS · A CHAVE DA APP STORE CONNECT', onde: 'fora', fora: 'asc-chaves', legenda: 'Depois que a Apple aprovar a sua conta. O site abre no seu navegador:',
+    passos: [
+      { texto: 'Entre com a sua Conta Apple. Você cai em Usuários e acesso → Integrações → App Store Connect API.', botao: 'Integrações', traducao: 'API é a porta que deixa o Atlas mandar o app para o TestFlight em seu nome.' },
+      { texto: 'Se aparecer, clique em Solicitar acesso e aceite. Depois clique no + (Gerar chave de API).', botao: '+', dica: 'Só aparece para quem é o dono da conta (Account Holder).' },
+      { texto: 'No nome, escreva Atlas. Em Acesso, escolha Admin. Clique em Gerar.', botao: 'Gerar', traducao: 'Admin é o acesso que deixa criar o app e mandar as versões.' },
+      { texto: 'Clique em Baixar chave de API. O arquivo AuthKey_….p8 vai para a pasta Downloads.', botao: 'Baixar chave de API', dica: 'A Apple deixa baixar só UMA vez. Se perder, gere outra.' },
+      { texto: 'Copie o Issuer ID (no alto da página) e cole aqui no Atlas. Depois toque em "Escolher o arquivo da chave" e escolha o AuthKey.', botao: 'Issuer ID', dica: 'A chave fica só no cofre deste computador, nunca num arquivo da obra.' },
+    ],
+    fimTexto: 'Pronto, guardei',
+    saber: 'App Store Connect → Usuários e acesso → Integrações → App Store Connect API → chaves da equipe; precisa ser o Account Holder; acesso Admin; o .p8 só baixa uma vez; o Issuer ID fica acima da lista; o Key ID está no nome do arquivo (AuthKey_KEYID.p8). Só aparece depois que a inscrição no Apple Developer Program foi aprovada.',
+  }
+}
+
+export function guiaGrupoGoogle({ appNome }: { appNome: string }): Guia {
+  return {
+    id: 'grupo', nome: 'Grupos do Google', rotulo: 'GOOGLE PLAY · O GRUPO DOS TESTADORES (UMA VEZ SÓ)', onde: 'fora', fora: 'google-grupos', legenda: 'O site dos Grupos do Google abre no seu navegador:',
+    passos: [
+      { texto: 'Clique em Criar grupo. No nome, escreva Testadores do ' + appNome.slice(0, 40) + '.', botao: 'Criar grupo', traducao: 'O grupo é a lista de quem pode testar o app antes de abrir para todos.' },
+      { texto: 'Em Quem pode pesquisar o grupo, escolha Qualquer pessoa na web. Em Quem pode participar, escolha Qualquer pessoa pode participar.', botao: 'Quem pode participar', dica: 'Assim cada amigo entra sozinho pelo convite, sem você aprovar um por um.' },
+      { texto: 'Clique em Criar grupo. Copie o endereço que aparece no alto (groups.google.com/g/…) e cole aqui no Atlas.', botao: 'Criar grupo', dica: 'O Atlas usa esse endereço no convite do WhatsApp.' },
+      { texto: 'No Google Play Console, em Teste fechado → Testadores, escolha Grupos do Google e cole o mesmo e-mail do grupo (…@googlegroups.com).', botao: 'Testadores', traducao: 'Teste fechado = o app só aparece para quem está no grupo.' },
+    ],
+    fimTexto: 'Pronto, colei',
+    saber: 'Teste fechado do Google Play com Grupo do Google como lista de testadores; o grupo precisa aceitar entrada livre ("Qualquer pessoa pode participar"); contas pessoais criadas depois de 13/11/2023 precisam de 12 testadores por 14 dias seguidos antes de pedir a produção. O e-mail do grupo é nome@googlegroups.com.',
+  }
+}
+
+export function guiaDuns(): Guia {
+  return {
+    id: 'duns', nome: 'D-U-N-S', rotulo: 'APP NO NOME DA EMPRESA · O NÚMERO D-U-N-S', onde: 'fora', fora: 'apple-duns', legenda: 'A página da Apple abre no seu navegador:',
+    passos: [
+      { texto: 'Entre com a sua Conta Apple e preencha os dados da empresa igualzinho ao CNPJ (nome, endereço e telefone).', botao: 'Continuar', traducao: 'D-U-N-S é um número grátis que prova que a empresa existe. A Apple e o Google pedem para app em nome de empresa.' },
+      { texto: 'Se a Apple achar a empresa, anote o número D-U-N-S. Se não achar, clique em Enviar para pedir um número novo.', botao: 'Enviar', dica: 'O pedido é grátis e pode levar até 30 dias. A D&B pode ligar ou mandar e-mail para confirmar.' },
+      { texto: 'Quando o número chegar, escreva aqui no Atlas. Ele avisa quando der para seguir com a conta da Apple e do Google.', botao: 'D-U-N-S Number' },
+    ],
+    fimTexto: 'Pronto, pedi',
+    saber: 'Pesquisa D-U-N-S da Apple (developer.apple.com/enroll/duns-lookup); grátis; até 30 dias; os dados precisam bater com o CNPJ. A organização também precisa de e-mail no domínio da empresa e site no ar nesse domínio para a inscrição da Apple.',
   }
 }
 

@@ -73,6 +73,7 @@
 //   ocorrenciasAbertas         SELECT ocorrencias_admin WHERE NOT resolvida ORDER BY criada_em DESC LIMIT n
 //   resolverOcorrencia         UPDATE ocorrencias_admin SET resolvida,resolvida_por,resolvida_em WHERE id AND NOT resolvida RETURNING id
 //   entregasRecentes/DaLicenca/PorMarca   SELECT entregas_kit (licenca_id,obra_id,marca_dagua,baixado_em) ORDER BY baixado_em DESC
+//   salvarConviteTeste / conviteTeste* / registrarTestador / testadoresDoConvite   lojas_convites e lojas_testadores (0032)
 //   registrarEventoPolitica / eventosPolitica* / situacoesPolitica* / definirSituacaoPolitica   politica_eventos e politica_obras (0031)
 //   registrarEventoRadar / eventosRadar / limparEventosRadar   INSERT / SELECT / DELETE radar_eventos (0028; nunca IP: só UF e dispositivo curto)
 //   barradasDeTeste            SELECT degustacoes_dispositivos (dispositivo_hmac,licenca_id,barradas,ultima_barrada_em) WHERE barradas>=n; só 8 chars do HMAC saem
@@ -151,6 +152,8 @@ const entrega = (r: any) => ({ licenca_id: r.licenca_id, obra_id: r.obra_id, mar
 const codigo = (r: any) => r && { id: r.id, cliente_id: r.cliente_id, finalidade: r.finalidade, codigo_hash: r.codigo_hash, tentativas: r.tentativas, expira_em: new Date(r.expira_em), usado_em: dt(r.usado_em) }
 const link = (r: any) => r && { id: r.id, cliente_id: r.cliente_id, token_hash: r.token_hash, expira_em: new Date(r.expira_em), usado_em: dt(r.usado_em) }
 const troca = (r: any) => ({ licenca_id: r.licenca_id, de_hash: r.de_hash, para_hash: r.para_hash ?? null, feita_em: new Date(r.feita_em), por_admin: r.por_admin })
+const conviteTeste = (r: any) => ({ codigo: r.codigo, licenca_id: r.licenca_id, obra_id: r.obra_id, app_nome: r.app_nome, grupo_url: r.grupo_url, optin_url: r.optin_url, criado_em: new Date(r.criado_em) })
+const C_CONVITE = 'codigo,licenca_id,obra_id,app_nome,grupo_url,optin_url,criado_em'
 const eventoPolitica = (r: any) => ({ licenca_id: r.licenca_id, obra_id: r.obra_id, onde: r.onde, texto: r.texto, criado_em: new Date(r.criado_em) })
 const situacaoPolitica = (r: any) => ({ licenca_id: r.licenca_id, obra_id: r.obra_id, situacao: r.situacao, desde: new Date(r.desde), decidido_por: r.decidido_por ?? null })
 const ocorrencia = (r: any) => ({ id: r.id, cliente_id: r.cliente_id, tipo: r.tipo, descricao: r.descricao, autor: r.autor ?? null, resolvida: r.resolvida, criada_em: new Date(r.criada_em), resolvida_por: r.resolvida_por ?? null, resolvida_em: dt(r.resolvida_em), chave: r.chave ?? null })
@@ -409,6 +412,11 @@ export function criarStoreSupabase() {
     async situacoesPolitica(licencaId: string) { return (await ler(() => t('politica_obras').select('licenca_id,obra_id,situacao,desde,decidido_por').eq('licenca_id', licencaId).order('obra_id'))).map(situacaoPolitica) },
     async situacoesPoliticaAbertas() { return (await ler(() => t('politica_obras').select('licenca_id,obra_id,situacao,desde,decidido_por').in('situacao', ['embargada', 'recusada']).order('desde', { ascending: false }).order('obra_id'))).map(situacaoPolitica) },
     async definirSituacaoPolitica(s: any) { ok(await t('politica_obras').upsert({ licenca_id: s.licenca_id, obra_id: s.obra_id, situacao: s.situacao, desde: iso(s.desde), decidido_por: s.decidido_por ?? null }, { onConflict: 'licenca_id,obra_id' }), 'definirSituacaoPolitica') },
+    async salvarConviteTeste(c: any) { ok(await t('lojas_convites').upsert({ codigo: c.codigo, licenca_id: c.licenca_id, obra_id: c.obra_id, app_nome: c.app_nome, grupo_url: c.grupo_url, optin_url: c.optin_url, criado_em: iso(c.criado_em) }, { onConflict: 'codigo' }), 'salvarConviteTeste') },
+    async conviteTestePorCodigo(codigo: string) { const l = await ler(() => t('lojas_convites').select(C_CONVITE).eq('codigo', codigo), 1); return l[0] ? conviteTeste(l[0]) : null },
+    async conviteTesteDaObra(licencaId: string, obraId: string) { const l = await ler(() => t('lojas_convites').select(C_CONVITE).eq('licenca_id', licencaId).eq('obra_id', obraId), 1); return l[0] ? conviteTeste(l[0]) : null },
+    async registrarTestador(x: any) { ok(await t('lojas_testadores').insert({ codigo: x.codigo, nome: x.nome, entrou_em: iso(x.entrou_em) }), 'registrarTestador') },
+    async testadoresDoConvite(codigo: string) { return (await ler(() => t('lojas_testadores').select('codigo,nome,entrou_em').eq('codigo', codigo).order('entrou_em').order('id'), 500)).map((r: any) => ({ codigo: r.codigo, nome: r.nome, entrou_em: new Date(r.entrou_em) })) },
     async entregasPorMarca(marca: string) { return (await ler(() => t('entregas_kit').select(C_ENTREGA).eq('marca_dagua', marca).order('baixado_em', { ascending: false }).order('id'))).map(entrega) },
   }
 }

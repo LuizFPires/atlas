@@ -41,8 +41,12 @@ const SITES_OFICIAIS = Object.freeze({
   'app-store-connect': 'https://appstoreconnect.apple.com/apps',
   testflight: 'https://testflight.apple.com/',
   'google-console': 'https://play.google.com/console/signup',
+  'apple-duns': 'https://developer.apple.com/enroll/duns-lookup/',
+  'asc-chaves': 'https://appstoreconnect.apple.com/access/integrations/api',
+  'expo-token': 'https://expo.dev/settings/access-tokens',
+  'google-grupos': 'https://groups.google.com/my-groups',
 })
-const HOSTS_OFICIAIS = Object.freeze(['registro.br', 'vercel.com', 'developer.apple.com', 'appstoreconnect.apple.com', 'testflight.apple.com', 'play.google.com'])
+const HOSTS_OFICIAIS = Object.freeze(['registro.br', 'vercel.com', 'developer.apple.com', 'appstoreconnect.apple.com', 'testflight.apple.com', 'play.google.com', 'expo.dev', 'groups.google.com'])
 
 function enderecoOficial(url) {
   try {

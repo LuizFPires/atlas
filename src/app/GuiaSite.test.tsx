@@ -89,3 +89,14 @@ describe('guias clique por clique (M58)', () => {
     expect(abrirFora).toHaveBeenCalledWith('google-console')
   })
 })
+
+describe('guias das lojas (M59)', () => {
+  it('Expo, chave da App Store Connect, grupo do Google e D-U-N-S abrem no navegador do computador, com o site certo', async () => {
+    const { guiaExpo, guiaChaveAsc, guiaGrupoGoogle, guiaDuns } = await import('./guias-site')
+    const guias = [guiaExpo(), guiaChaveAsc(), guiaGrupoGoogle({ appNome: 'Ponto' }), guiaDuns()]
+    expect(guias.map((g) => g.fora)).toEqual(['expo-token', 'asc-chaves', 'google-grupos', 'apple-duns'])
+    for (const g of guias) { expect(g.onde).toBe('fora'); expect(g.passos.length).toBeGreaterThanOrEqual(3); expect(g.saber.length).toBeGreaterThan(40) }
+    expect(guiaGrupoGoogle({ appNome: 'Ponto' }).passos.map((p) => p.texto).join(' ')).toMatch(/Qualquer pessoa na web/)
+    expect(guiaChaveAsc().passos.map((p) => p.texto).join(' ')).toMatch(/Admin/)
+  })
+})

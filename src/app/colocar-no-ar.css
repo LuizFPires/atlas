@@ -80,3 +80,15 @@
 .at-dom__copiar code { font: 500 15px var(--font-mono); overflow-wrap: anywhere; }
 .at-dom__tipo { font: 600 11px var(--font-mono); letter-spacing: 0.08em; color: var(--mute); white-space: nowrap; }
 .at-dom__btn { margin-left: auto; border: 0; background: none; cursor: pointer; font: 600 13px var(--font-text); color: var(--lime-txt, var(--lime)); }
+
+/* M59 — lojas (PB8/PB9/PB13) */
+.at-lojas__opcoes { display: flex; flex-direction: column; gap: 10px; }
+.at-lojas__op { display: flex; gap: 10px; padding: 14px; border-radius: 14px; border: 1px solid var(--card-b); background: var(--card2, var(--card)); cursor: pointer; }
+.at-lojas__op--on { border: 2px solid var(--lime); }
+.at-lojas__op > span { display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+.at-lojas__selo { align-self: flex-start; font: 600 10px var(--font-mono); letter-spacing: 0.1em; padding: 3px 8px; border-radius: 6px; background: var(--lime); color: var(--on-lime); }
+.at-lojas__guia { align-self: flex-start; margin-top: 6px; padding: 0; border: 0; background: none; cursor: pointer; font: 600 13px var(--font-text); color: var(--lime-txt, var(--lime)); }
+.at-lojas__campo { display: flex; gap: 8px; margin-top: 6px; }
+.at-lojas__campo input { flex: 1; min-width: 0; height: 40px; border-radius: 10px; border: 1px solid var(--card-b); background: var(--bg, #16181b); color: var(--text); padding: 0 12px; font: 500 14px var(--font-mono); }
+.at-lojas__campo button { height: 40px; padding: 0 12px; border-radius: 10px; border: 0; cursor: pointer; background: var(--lime); color: var(--on-lime); font: 700 13px var(--font-text); white-space: nowrap; }
+.at-lojas__zap { margin-top: 8px; height: 46px; font-size: 15px; }

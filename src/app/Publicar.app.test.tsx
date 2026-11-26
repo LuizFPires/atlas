@@ -61,3 +61,15 @@ test('domínio próprio → passo a passo do Registro.br com o servidor para cop
   await userEvent.click(screen.getByRole('button', { name: '← VOLTAR' }))
   expect(await screen.findByText(/A SUA PARTE/)).toBeInTheDocument()
 })
+
+test('lojas (M59): pergunta, passo a passo da Apple e a conta fica marcada ao terminar', { timeout: 20000 }, async () => {
+  await ate(criarNoArFixture({ passoMs: 5 }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
+  await userEvent.click(await screen.findByRole('button', { name: /App Store e no Google Play/ }, { timeout: 6000 }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Seguir →' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Passo a passo: Conta da Apple' }))
+  expect(await screen.findByText('PASSO 1 DE 6')).toBeInTheDocument()
+  for (let i = 0; i < 5; i++) await userEvent.click(screen.getByRole('button', { name: 'Fiz, próximo →' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Pronto, paguei →' }))
+  expect(await screen.findByLabelText('Conta da Apple (App Store): pronta')).toBeInTheDocument()
+})
