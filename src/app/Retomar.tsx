@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { textoDaTrava } from './explicar-trava'
-import { ehMac } from './plataforma'
 import { Botao, Icone } from '../ui'
 import canteiroImagem from '../assets/canteiro-3d.jpg'
 import { Monograma, NomeAtlas } from '../marca/Marca'
@@ -70,7 +69,7 @@ export function Retomar({ obra, outras = [], nome, retomar, onContinuou, onAgora
           <button type="button" className="at-rt__link" onClick={onAgoraNao}>Agora não</button>
         </div>
       </div>
-      <span className="at-rt__rodape">{ehMac() ? 'O Atlas abre sozinho quando você liga o computador. Para desligar isso: Ajustes do Sistema → Geral → Itens de Início.' : 'O Atlas abre sozinho quando você liga o computador. Para desligar isso: Configurações → Abrir com o Windows.'}</span>
+      <span className="at-rt__rodape">Enquanto o Atlas estiver fechado, a obra espera. Ela continua quando você abre o Atlas pelo ícone e toca em Continuar.</span>
     </div>
   )
 }

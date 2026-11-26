@@ -82,7 +82,7 @@ test('notebook desligado: o celular avisa, guarda o pedido e explica como voltar
   expect(within(aviso).getByText(/Desligado/)).toBeInTheDocument()
   await userEvent.click(aviso)
   expect(screen.getByRole('heading', { name: /está desligado/ })).toBeInTheDocument()
-  expect(screen.getByText(/O Atlas abre sozinho/)).toBeInTheDocument()
+  expect(screen.getByText(/Abra o Atlas pelo ícone/)).toBeInTheDocument()
 })
 
 test('acompanhar a obra e pausar pelo celular', async () => {

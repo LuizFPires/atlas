@@ -1,4 +1,4 @@
-// Porta de RETOMAR a obra (F12). Ao ligar o computador o Atlas abre sozinho (login item do Windows) e, se há obra em andamento,
+// Porta de RETOMAR a obra (F12). O Atlas NÃO abre sozinho com o computador (decisão de 26/11/2026): ao abrir pelo ícone, se há obra em andamento,
 // a tela inicial é esta (regra em tela.ts: `telaInicial`). Aqui moram: a detecção da obra em andamento, o "Continuar obra"
 // (religa a linha de produção por PontePainel/PonteCota) e os textos de tempo. O adaptador real (olhar a pasta das obras, o
 // PLAN.md e as paradas; religar a linha do ponto em que parou) é pendência de /entregar (app/PENDENTE-ENTREGAR.md, M21).
