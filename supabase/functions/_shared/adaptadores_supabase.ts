@@ -579,9 +579,14 @@ export async function enviarBoasVindas(email: string, d: { nome: string; empresa
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }
 
-export async function enviarCortesia(email: string, d: { token: string; expira_em: Date; validade_em: Date; nome?: string }) {
+/** Endereço de instalação de um link de uso único (o mesmo no e-mail da cortesia e no "Copiar link" do painel). */
+export function linkInstalar(token: string): string {
   const base = Deno.env.get('ATLAS_INSTALAR_URL') ?? 'https://atlas-ia.app.br/instalar'
-  const m = montarCortesia({ nome: d.nome, validade_em: d.validade_em, link_expira_em: d.expira_em, link: `${base}?t=${encodeURIComponent(d.token)}` })
+  return `${base}?t=${encodeURIComponent(token)}`
+}
+
+export async function enviarCortesia(email: string, d: { token: string; expira_em: Date; validade_em: Date; nome?: string }) {
+  const m = montarCortesia({ nome: d.nome, validade_em: d.validade_em, link_expira_em: d.expira_em, link: linkInstalar(d.token) })
   await enviador({ para: email, assunto: m.assunto, texto: m.texto, html: m.html })
 }
 

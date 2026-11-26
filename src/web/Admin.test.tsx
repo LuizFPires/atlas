@@ -509,6 +509,25 @@ describe('cortesia manual no painel', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Avise a pessoa: se não achar, olhar nas abas Promoções e Atualizações do Gmail e no spam.')
   })
 
+  it('mostra o link de instalação com "Copiar link" (para mandar pelo WhatsApp se o e-mail cair no spam)', async () => {
+    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
+    const LINK = 'https://atlas-ia.app.br/instalar?t=abc123def456ghi789jkl'
+    const { api } = ambiente((url) => (url.endsWith('/admin/cortesia') ? resp({ ok: true, nova: true, validade_em: '2026-11-28T02:59:59.000Z', email_enviado: false, link: LINK }) : undefined))
+    const escrever = vi.fn(async () => {})
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: escrever }, configurable: true })
+    montar(api)
+    await irParaAcoes()
+    const form = screen.getByRole('region', { name: 'Liberar cortesia' })
+    await userEvent.type(within(form).getByLabelText('E-mail da pessoa'), 'dudu@gmail.com')
+    await userEvent.type(within(form).getByLabelText('Vale até'), '2026-11-27')
+    await userEvent.click(within(form).getByRole('button', { name: 'Liberar cortesia' }))
+    expect(await within(form).findByText(LINK)).toBeInTheDocument()
+    expect(within(form).getByText(/funciona uma vez.*o mais novo/)).toBeInTheDocument()
+    await userEvent.click(within(form).getByRole('button', { name: 'Copiar link' }))
+    expect(escrever).toHaveBeenCalledWith(LINK)
+    expect(await within(form).findByRole('button', { name: 'Link copiado ✓' })).toBeInTheDocument()
+  })
+
   it('se o servidor recusar, mostra o erro e NÃO diz que liberou', async () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api } = ambiente((url) => (url.endsWith('/admin/cortesia') ? resp({ erro: 'ja_tem_licenca_paga', mensagem: 'Essa pessoa já tem uma licença paga. Não precisa de cortesia.' }, 409) : undefined))
