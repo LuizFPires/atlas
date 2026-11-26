@@ -84,3 +84,20 @@ test('compra feita de dentro do app manda a origem "app"; pelo site não manda o
   expect(corpos[0]).toMatchObject({ origem: 'app', tipo: 'implantacao', parcelas: 2 })
   expect('origem' in corpos[1]).toBe(false)
 })
+
+describe('compra em dólar (M31)', () => {
+  test('mercado us: manda "mercado: us" ao checkout e as mensagens saem em inglês', async () => {
+    const f = vi.fn(() => resp(200, { url: 'https://checkout.stripe.com/c/pay/cs_us' }))
+    await iniciarCompra('john@shop.com', cfg, f as unknown as typeof fetch, '1.2', 1, undefined, undefined, 'us')
+    const [, init] = f.mock.calls[0] as unknown as [string, RequestInit]
+    expect(JSON.parse(init.body as string)).toMatchObject({ tipo: 'implantacao', mercado: 'us', parcelas: 1 })
+    expect(await iniciarCompra('john', cfg, f as unknown as typeof fetch, '1.2', 1, undefined, undefined, 'us')).toEqual({ ok: false, mensagem: 'Check the email: it needs an @ and an ending, like .com.' })
+  })
+  test('modal em inglês: $1,700 à vista, sem parcelas, e nenhum texto em português', () => {
+    render(<ModalCompra idioma="en" aberto onFechar={() => {}} abrirPagamento={() => {}} />)
+    expect(screen.getByRole('heading', { name: 'Where should we send your access?' })).toBeInTheDocument()
+    expect(screen.getByText(/\$1,700, one payment/)).toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).toBeNull()
+    expect(screen.getByRole('dialog').textContent).not.toMatch(/[ãõçáéíóúâêô]|R\$|Pix/)
+  })
+})

@@ -1,6 +1,7 @@
 import { VerPrototipo } from './web/VerPrototipo'
 import { ConviteTeste } from './web/ConviteTeste'
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { guardarIdioma, idiomaDaPagina, lerCookieIdioma, type Idioma } from './i18n/idioma'
 import { Vendas } from './web/Vendas'
 import { ModalCompra } from './web/ModalCompra'
 import { Cadastro } from './web/Cadastro'
@@ -46,13 +47,15 @@ function Aplicativo() {
   return <AppCelular api={apiCelular} faceId={modoFixture() ? undefined : faceIdCelular} />
 }
 
-function PaginaVendas() {
+function PaginaVendas({ idioma = 'pt' }: { idioma?: Idioma }) {
   const [comprando, setComprando] = useState(false)
   const [segmento, setSegmento] = useState<string | undefined>()
+  // M31: a página em inglês (/en ou o domínio de fora) declara o idioma para o navegador e para o Google.
+  useEffect(() => { document.documentElement.lang = idioma === 'en' ? 'en-US' : 'pt-BR' }, [idioma])
   return (
     <>
-      <Vendas onComprar={() => { setSegmento(undefined); setComprando(true) }} onComprarPronto={(s) => { setSegmento(s); setComprando(true) }} />
-      <ModalCompra aberto={comprando} segmento={segmento} onFechar={() => setComprando(false)} />
+      <Vendas idioma={idioma} onComprar={() => { setSegmento(undefined); setComprando(true) }} onComprarPronto={(s) => { setSegmento(s); setComprando(true) }} />
+      <ModalCompra idioma={idioma} aberto={comprando} segmento={segmento} onFechar={() => setComprando(false)} />
     </>
   )
 }
@@ -95,5 +98,12 @@ export default function App() {
   // Textos legais públicos: privacidade, termos e licença do software.
   const legal = idLegalDoCaminho(caminho)
   if (legal) return <PaginaLegal id={legal} />
+  // M31: /en, o domínio de fora (use-atlas-ai.com) ou a bandeirinha guardada abrem a página em inglês.
+  if (caminho === '/' || caminho === '/en') {
+    // Veio pela bandeirinha do outro domínio (?idioma=pt|en): guarda a escolha aqui também.
+    const pedido = new URLSearchParams(window.location.search).get('idioma')
+    if (pedido === 'pt' || pedido === 'en') guardarIdioma(pedido)
+    return <PaginaVendas idioma={idiomaDaPagina({ caminho, host: window.location.hostname, cookie: lerCookieIdioma() })} />
+  }
   return <PaginaVendas />
 }

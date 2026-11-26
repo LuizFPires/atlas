@@ -1,6 +1,69 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/((?!assets/|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!assets/|.*\\.[a-zA-Z0-9]+$).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "(www\\.)?atlas-ia\\.app\\.br"
+        }
+      ],
+      "missing": [
+        {
+          "type": "cookie",
+          "key": "atlas_idioma"
+        },
+        {
+          "type": "query",
+          "key": "idioma"
+        },
+        {
+          "type": "header",
+          "key": "x-vercel-ip-country",
+          "value": "BR"
+        },
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*([Bb]ot|[Cc]rawl|[Ss]pider|[Ss]lurp|facebookexternalhit|[Pp]review).*"
+        }
+      ],
+      "destination": "https://www.use-atlas-ai.com/",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "(www\\.)?use-atlas-ai\\.com"
+        },
+        {
+          "type": "header",
+          "key": "x-vercel-ip-country",
+          "value": "BR"
+        }
+      ],
+      "missing": [
+        {
+          "type": "cookie",
+          "key": "atlas_idioma"
+        },
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*([Bb]ot|[Cc]rawl|[Ss]pider|[Ss]lurp|facebookexternalhit|[Pp]review).*"
+        }
+      ],
+      "destination": "https://atlas-ia.app.br/",
+      "permanent": false
+    }
   ]
 }

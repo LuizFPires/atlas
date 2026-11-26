@@ -190,6 +190,11 @@ export class StoreMemoria implements Store {
     this.licencas.push(licenca)
     return { licenca, nova: true }
   }
+  async idiomaDaLicenca(id: string) { return this.licencas.find((x) => x.id === id)?.idioma === 'en' ? 'en' as const : 'pt' as const }
+  async definirIdiomaLicenca(id: string, idioma: 'pt' | 'en') {
+    const l = this.licencas.find((x) => x.id === id)
+    if (l) l.idioma = idioma
+  }
   async criarCortesia(c: { email: string; nome: string; validade_em: Date; agora: Date }) {
     let cli = this.clientes.find((x) => x.email_compra === c.email)
     if (!cli) { cli = { id: this.id(), email_compra: c.email, nome_tratamento: c.nome }; this.clientes.push(cli) }

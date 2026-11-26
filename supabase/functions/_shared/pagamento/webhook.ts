@@ -4,7 +4,7 @@
 import type { Licenca, Pagamento, TipoPagamento } from '../tipos.ts'
 import { ErroRegra } from '../tipos.ts'
 import { verificarAssinaturaStripe } from './assinatura-stripe.ts'
-import { type DepsPagamento, MAX_PARCELAS, planoDoTipo, SEGMENTOS_PRATELEIRA, type TipoProduto, valorBaseDoTipo } from './config.ts'
+import { type DepsPagamento, MAX_PARCELAS, mercadoDe, moedaDo, planoDoTipo, SEGMENTOS_PRATELEIRA, type TipoProduto, valorBaseNoMercado } from './config.ts'
 import { marcarAtraso, sairDoAtraso } from './atraso.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,7 +85,9 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   // Qualquer outra (outro produto, valor menor, cupom, outra conta) é ignorada: nunca concede licença.
   if (s.payment_status !== 'paid' || (meta.atlas_tipo !== 'implantacao' && meta.atlas_tipo !== 'prateleira') || meta.atlas_conta !== contaId) return
   const tipoProduto: TipoProduto = meta.atlas_tipo
-  if (String(s.currency ?? '').toLowerCase() !== 'brl' || !(Number(s.amount_total) >= Math.round(valorBaseDoTipo(tipoProduto) * 100))) return
+  // M31: o mercado vem do metadata que NÓS gravamos; a moeda e o valor têm de bater com ele (dólar só com 'us', real só sem).
+  const mercado = mercadoDe(meta.atlas_mercado)
+  if (String(s.currency ?? '').toLowerCase() !== moedaDo(mercado) || !(Number(s.amount_total) >= Math.round(valorBaseNoMercado(tipoProduto, mercado) * 100))) return
   const email = str(s.customer_details?.email) ?? str(s.customer_email)
   const pi = idDe(s.payment_intent)
   if (!email || !pi) throw new ErroRegra('sessao_incompleta', 'Sessão sem e-mail ou pagamento.', 400)
@@ -96,7 +98,8 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   const parcelasUsadas = (sk && (await d.stripe(sk).parcelasDoPagamento(pi))) || 1
   // Acima do máximo permitido: recusa direto (não arredonda para o teto; fail-closed, sem subcobrança).
   if (parcelasUsadas > MAX_PARCELAS) return
-  if (Number(s.amount_total) < Math.round(planoDoTipo(tipoProduto, parcelasUsadas).total * 100)) return
+  // Em dólar é sempre à vista: qualquer parcelamento recusa (fail-closed). Em real, o valor cobre o plano das parcelas usadas.
+  if (mercado === 'us' ? parcelasUsadas !== 1 : Number(s.amount_total) < Math.round(planoDoTipo(tipoProduto, parcelasUsadas).total * 100)) return
   const valor = reais(s.amount_total)
   // Qual app pronto foi comprado (só prateleira, e só um segmento conhecido; senão nulo).
   const segmento = tipoProduto === 'prateleira' && (SEGMENTOS_PRATELEIRA as readonly string[]).includes(String(meta.atlas_segmento)) ? String(meta.atlas_segmento) : null
@@ -111,6 +114,8 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   })
   // Licença de outra conta (ou sem conta) para este e-mail: não grava nada nem mexe no estado dela.
   if (licenca.conta_gateway_id !== contaId) throw new ErroRegra('conta_divergente', 'Esse e-mail já tem licença em outra conta de pagamento.', 409)
+  // M31: o idioma nasce na compra e não muda mais (quem comprou em dólar usa o Atlas em inglês).
+  if (mercado === 'us' && licenca.idioma !== 'en') { await d.store.definirIdiomaLicenca(licenca.id, 'en'); licenca.idioma = 'en' }
   // gravarPagamento é atômico (upsert condicional: nunca sobrescreve 'estornado') e devolve o estado anterior.
   // A decisão de reativar usa SÓ esse resultado, não uma leitura prévia (um estorno concorrente não é desfeito).
   const prev = await d.store.gravarPagamento({ licenca_id: licenca.id, conta_gateway_id: contaId, tipo: 'implantacao', valor, status: 'pago', gateway_ref: pi, gateway_pi: pi, pago_em: agora, segmento })

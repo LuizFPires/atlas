@@ -77,7 +77,7 @@ export const ehParaVoce = [
 export const naoEhParaVoce = [
   'Você quer que alguém faça tudo sem você participar.',
   'Precisa de um sistema pronto amanhã, sem tempo para o projeto.',
-  'Não tem um computador com Windows para deixar ligado durante a obra.',
+  'Não tem um computador (Windows ou Mac) para deixar ligado durante a obra.',
   'Procura um site institucional simples, só de vitrine.',
   'Não quer assinar o Claude, que é a força de trabalho da obra.',
 ]
@@ -89,5 +89,5 @@ export const duvidas = [
   { p: 'O sistema é meu?', r: 'Sim. O código fica na sua conta e continua seu mesmo se um dia você parar de usar o Atlas.' },
   { p: 'Quando o meu sistema vai para o ar?', r: 'Você constrói e vê tudo em prévia desde o primeiro dia. A publicação com o seu endereço e nas lojas libera a partir do 8º dia da compra, quando termina o prazo de 7 dias para desistir.' },
   { p: 'E se eu quiser mudar algo depois?', r: 'Você pede com as suas palavras. O Atlas mostra o que vai mudar e só publica quando você aprovar.' },
-  { p: 'Funciona no meu computador?', r: 'Funciona em computadores com Windows 10 ou 11 e internet. O instalador confere tudo para você.' },
+  { p: 'Funciona no meu computador?', r: 'Funciona no Windows 10 ou 11 e no Mac, com internet. O instalador confere tudo para você.' },
 ]

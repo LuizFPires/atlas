@@ -54,6 +54,12 @@ const CAMINHOS = {
       <path d="M8 20h8M12 16v4" />
     </>
   ),
+  notebook: (
+    <>
+      <rect x="4" y="5" width="16" height="11" rx="1.5" />
+      <path d="M2 19h20" />
+    </>
+  ),
   pessoas: (
     <>
       <circle cx="9" cy="8" r="3.2" />

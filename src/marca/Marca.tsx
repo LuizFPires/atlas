@@ -14,6 +14,6 @@ export function NomeAtlas({ fundo = 'escuro', largura = 114, altura = 17 }: { fu
 }
 
 /** Imagem-assinatura: canteiro 3D com o prédio subindo (no app, a cena real do .claude/canteiro). */
-export function ImagemAssinatura({ className }: { className?: string }) {
-  return <img src={canteiro} alt="Canteiro 3D com o prédio subindo" className={className} style={{ maxWidth: '100%', borderRadius: 'var(--raio-cartao)' }} />
+export function ImagemAssinatura({ className, alt = 'Canteiro 3D com o prédio subindo' }: { className?: string; alt?: string }) {
+  return <img src={canteiro} alt={alt} className={className} style={{ maxWidth: '100%', borderRadius: 'var(--raio-cartao)' }} />
 }
