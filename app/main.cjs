@@ -191,6 +191,23 @@ const lojas = criarLojas({
 
 // Lançamento (M60): opcional, começa de dentro da obra no ar; só guarda as escolhas (gateway do cliente), nunca chave.
 const lancamento = require('./adaptadores/lancamento.cjs').criarLancamento({ raiz: obras.raiz() })
+// Página de vendas (M61): protótipo com marcações (Claude só leitor); a chave do gateway vai direto à Vercel do cliente.
+const paginaVendas = require('./adaptadores/pagina-vendas.cjs').criarPaginaVendas({
+  raiz: obras.raiz(),
+  perguntar: (pasta, pedido) => disparo.perguntar(String(pasta), pedido),
+  vercel: (args, o = {}) => contasCli.rodarFerramenta('vercel', args, o),
+  pedirConstrucao: async (pasta, texto) => { await garantirObra(String(pasta)); return posobra.executar(String(pasta), { tipo: 'mudar', texto }, { entendi: 'Você aprovou a página de vendas. Vou:', passos: ['Construir a página aprovada com o visual do app', 'Ligar a cobrança na sua conta, em modo de teste', 'Fazer uma compra de teste de ponta a ponta'], minutos: 90 }) },
+  linhaRodando: (pasta) => construcao.linha.rodando(String(pasta)),
+  // Compra de teste: SÓ o endereço do próprio site (vercel.app, conferido no adaptador), com o código do Atlas no cabeçalho.
+  testar: async (url, token) => {
+    if (!/^https:\/\/[a-z0-9-]+\.vercel\.app\/api\/vendas\/compra-teste$/.test(url)) throw new Error('endereco-invalido')
+    const r = await fetch(url, { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(180_000), headers: { 'x-atlas-teste': token, 'Content-Type': 'application/json' }, body: '{}' })
+    if (r.status === 404) return { ok: false, naoPronto: true }
+    let d = null
+    try { d = await r.json() } catch { d = null }
+    return { ok: !!(r.ok && d && d.ok === true), etapas: d && Array.isArray(d.etapas) ? d.etapas.map(String) : [], erro: d && typeof d.erro === 'string' ? d.erro : (r.ok ? undefined : `resposta ${r.status}`) }
+  },
+})
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -399,6 +416,11 @@ handle('atlas:lancamento:comecar', (pasta) => lancamento.comecar(String(pasta)))
 handle('atlas:lancamento:gateway', (pasta, g) => lancamento.escolherGateway(String(pasta), String(g)))
 handle('atlas:lancamento:contaPronta', (pasta) => lancamento.contaPronta(String(pasta)))
 handle('atlas:lancamento:listar', () => lancamento.listar())
+handle('atlas:vendas:estado', (pasta) => paginaVendas.estado(String(pasta)))
+handle('atlas:vendas:desenhar', (pasta, nome) => paginaVendas.desenhar(String(pasta), String(nome ?? '')))
+handle('atlas:vendas:ajustar', (pasta, marcacoes) => paginaVendas.ajustar(String(pasta), Array.isArray(marcacoes) ? marcacoes.slice(0, 20).map((m) => ({ x: Number(m && m.x), y: Number(m && m.y), texto: String((m && m.texto) ?? '') })) : []))
+handle('atlas:vendas:aprovar', async (pasta, chave) => { await garantirFerramentas(); return paginaVendas.aprovar(String(pasta), String(chave ?? '')) })
+handle('atlas:vendas:abrir', async (pasta, chave) => { await garantirFerramentas(); return paginaVendas.abrir(String(pasta), String(chave ?? '')) })
 handle('atlas:lojas:estado', (pasta) => lojas.estado(String(pasta)))
 handle('atlas:lojas:escolher', (pasta, c) => lojas.escolher(String(pasta), String(c)))
 handle('atlas:lojas:marcar', (pasta, conta, sim) => lojas.marcarConta(String(pasta), String(conta), sim === true))

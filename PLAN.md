@@ -667,10 +667,10 @@ Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1
 peso: 2
 spec: S14
 tela: prototipo/caminho-novo/LC4Pagina.dc.html
-- [ ] O Incorporador desenha a página de vendas com o design system do próprio app (cores, letras, botões)
-- [ ] Marcações iguais às do protótipo do app: tocar num ponto, falar ou escrever o ajuste, mandar e receber a versão seguinte
-- [ ] Só publica depois de "Aprovar e publicar"; antes de abrir, compra de teste sem dinheiro de verdade (pagou → conta criada → acesso no e-mail)
-Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Pedido do Luiz (25/11/2026, "mesmo padrão e critério que nós utilizamos na construção do aplicativo, inclusive aproveitando o design system").
+- [x] O Incorporador desenha a página de vendas com o design system do próprio app (cores, letras, botões)
+- [x] Marcações iguais às do protótipo do app: tocar num ponto, falar ou escrever o ajuste, mandar e receber a versão seguinte
+- [x] Só publica depois de "Aprovar e publicar"; antes de abrir, compra de teste sem dinheiro de verdade (pagou → conta criada → acesso no e-mail)
+Notas: DECISÃO do Luiz (25/11/2026, protótipos Publicar 1–14 e Lançamento 1–6 aprovados: "Excelente, tá tudo aprovado aí. Pode publicar do 1 ao 14 e do lançamento também, do 1 ao 6"). Pedido do Luiz (25/11/2026, "mesmo padrão e critério que nós utilizamos na construção do aplicativo, inclusive aproveitando o design system"). Andamento (25/11/2026): o Claude (só leitor) desenha a página com o design-system.md da obra; versões imutáveis em vendas/versoes; marcações por toque + voz/texto; "Aprovar e publicar" pede a chave de TESTE do gateway (passo a passo), que vai direto às variáveis da Vercel do cliente (nunca arquivo nem cofre) com um código do Atlas; o Incorporador constrói a rota /vendas e POST /api/vendas/compra-teste; o Atlas chama esse endereço e só deixa "Abrir as vendas" (chave de verdade + deploy) com a compra de teste ok. Falta conferir numa conta real do Stripe e do Asaas (sandbox).
 
 ## Milestone 62 — O painel do Síndico: o dono administra os clientes
 peso: 3

@@ -5,7 +5,7 @@
 import type { IdGuiaSite } from './ponte-navegador'
 import type { DestinoSite } from './ponte-publicar'
 
-export type IdGuia = 'registro' | 'apple' | 'google' | 'stripe' | 'asaas' | 'expo' | 'asc' | 'grupo' | 'duns' | 'google-primeiro' | 'google-producao'
+export type IdGuia = 'registro' | 'apple' | 'google' | 'stripe' | 'asaas' | 'expo' | 'asc' | 'grupo' | 'duns' | 'google-primeiro' | 'google-producao' | 'chave-stripe-teste' | 'chave-stripe-real' | 'chave-asaas-teste' | 'chave-asaas-real'
 
 export interface PassoGuia {
   texto: string
@@ -220,6 +220,34 @@ export function guiaProducaoGoogle({ appNome, pessoas }: { appNome: string; pess
     ],
     fimTexto: 'Pronto, pedi',
     saber: 'Contas pessoais novas: depois de 12 testadores por 14 dias seguidos, o botão "Solicitar acesso à produção" aparece no painel; o Google faz perguntas sobre o teste, o feedback e a prontidão; resposta em até 7 dias.',
+  }
+}
+
+// ---- M61: a chave do gateway (teste e de verdade). Vai direto para a Vercel do cliente; o Atlas não guarda. -----------------------
+export function guiaChaveGateway(gateway: 'stripe' | 'asaas', modo: 'teste' | 'real'): Guia {
+  const teste = modo === 'teste'
+  if (gateway === 'stripe') {
+    return {
+      id: teste ? 'chave-stripe-teste' : 'chave-stripe-real', nome: 'Stripe', rotulo: `STRIPE · A CHAVE ${teste ? 'DE TESTE' : 'DE VERDADE'}`, onde: 'fora', fora: teste ? 'stripe-chaves-teste' : 'stripe-chaves', legenda: 'O painel da Stripe abre no seu navegador:',
+      passos: [
+        { texto: `Entre na sua conta da Stripe. ${teste ? 'No alto, ligue "Ambiente de teste" (fica laranja).' : 'Confira que o "Ambiente de teste" está DESLIGADO.'}`, botao: teste ? 'Ambiente de teste' : 'Ambiente de teste (desligado)', traducao: 'No teste, nenhuma compra cobra dinheiro de verdade.' },
+        { texto: 'Você está em Desenvolvedores → Chaves de API. Em Chave secreta, clique em Revelar chave.', botao: 'Revelar chave', traducao: 'Chave secreta = a senha que deixa o seu sistema cobrar na sua conta. Nunca mande para ninguém.' },
+        { texto: `Copie a chave (começa com ${teste ? 'sk_test_' : 'sk_live_'}) e cole aqui no Atlas.`, botao: 'Copiar', dica: 'O Atlas põe a chave direto no servidor do SEU sistema (Vercel) e não guarda nenhuma cópia.' },
+      ],
+      fimTexto: 'Pronto, colei',
+      saber: 'Chaves da Stripe: Desenvolvedores → Chaves de API; chave secreta sk_test_ (modo de teste) ou sk_live_ (de verdade, só depois de a conta ser ativada). Chave restrita rk_ também serve se tiver permissão de cobranças e assinaturas.',
+    }
+  }
+  return {
+    id: teste ? 'chave-asaas-teste' : 'chave-asaas-real', nome: 'Asaas', rotulo: `ASAAS · A CHAVE ${teste ? 'DE TESTE (SANDBOX)' : 'DE VERDADE'}`, onde: 'fora', fora: teste ? 'asaas-sandbox' : 'asaas-conta', legenda: teste ? 'O Asaas de testes (sandbox) abre no seu navegador:' : 'O Asaas abre no seu navegador:',
+    passos: [
+      { texto: teste ? 'O Asaas de testes é separado: clique em Criar conta e faça um cadastro rápido (pode ser com os mesmos dados).' : 'Entre na sua conta do Asaas.', botao: teste ? 'Criar conta' : 'Entrar', traducao: teste ? 'Sandbox = um Asaas de mentirinha, para testar sem dinheiro de verdade.' : undefined },
+      { texto: 'No menu, abra Integrações (ou Minha conta → Integrações) e vá em Chave de API.', botao: 'Integrações', traducao: 'Chave de API = a senha que deixa o seu sistema cobrar na sua conta. Nunca mande para ninguém.' },
+      { texto: 'Clique em Gerar chave de API, confirme e copie a chave inteira (começa com $aact_).', botao: 'Gerar chave de API', dica: 'A chave aparece só uma vez. Se perder, gere outra.' },
+      { texto: 'Cole aqui no Atlas.', botao: 'Colar', dica: 'O Atlas põe a chave direto no servidor do SEU sistema (Vercel) e não guarda nenhuma cópia.' },
+    ],
+    fimTexto: 'Pronto, colei',
+    saber: `Chave de API do Asaas: Integrações → Chave de API → Gerar; aparece uma vez; ${teste ? 'no sandbox (sandbox.asaas.com, conta separada) começa com $aact_hmlg_' : 'na conta de verdade começa com $aact_prod_ e a conta precisa estar aprovada (documentos enviados)'}.`,
   }
 }
 
