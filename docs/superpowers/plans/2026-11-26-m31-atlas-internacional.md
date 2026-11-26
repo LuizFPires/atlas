@@ -4,7 +4,7 @@
 
 **Goal:** O Atlas vendido e usado em inglês e em dólar fora do Brasil, sem mudar nada para quem está no Brasil.
 
-**Architecture:** Um site com dois endereços: atlas-ia.app.br e /en, mais o .com quando ele existir. O idioma vem do endereço,
+**Architecture:** Um site com dois endereços: atlas-ia.app.br (e /en) e use-atlas-ai.com (comprado em 26/11/2026, já ligado na Vercel). O idioma vem do endereço,
 da localização na primeira visita e da bandeirinha (que vale mais). Os textos ficam num dicionário tipado `pt`/`en`. O
 checkout recebe o mercado (`br` com CPF, `us` em dólar). A licença guarda o idioma, e o app, o instalador e a linha de
 produção seguem esse idioma.
@@ -61,7 +61,7 @@ qual preço? Até ele decidir, ela fica fora do /en.
 - `dinheiro(valorCentavos: number, idioma: Idioma): string` → `R$ 4.800` / `US$ 1,700`
 - `type Dicionario<T> = { pt: T; en: T }`
 
-- [ ] Testes, escritos antes: o cookie `en` em atlas-ia.app.br/ → `en`; `/en` sem cookie → `en`; o host `useatlasia.com` → `en`;
+- [ ] Testes, escritos antes: o cookie `en` em atlas-ia.app.br/ → `en`; `/en` sem cookie → `en`; o host `www.use-atlas-ai.com` e `use-atlas-ai.com` → `en`;
   o cookie `pt` em /en → `pt`; `dinheiro(480000,'pt') === 'R$ 4.800'`; `dinheiro(170000,'en') === 'US$ 1,700'`.
 - [ ] Ver os testes falharem; implementar; ver passarem; commit.
 
@@ -114,7 +114,7 @@ qual preço? Até ele decidir, ela fica fora do /en.
 - **Task 7 — Linha de produção em inglês:** o servidor entrega o kit no idioma da licença (`entregarKit` recebe
   `idioma`); canteiro, Ajuda e e-mails da obra em inglês. Teste ponta a ponta com uma obra pequena.
 - **Task 8 — Legal e domínio:** termos e privacidade em inglês (rascunho para o advogado), `/en/terms` e `/en/privacy`;
-  ligar o .com quando o Luiz comprar (host → `en`).
+  o use-atlas-ai.com já está ligado; conferir o `hreflang` e o canônico com www.
 
 ### Ao fim de cada Task
 

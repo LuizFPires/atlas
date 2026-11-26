@@ -9,7 +9,7 @@ tudo em inglês e em dólar, do site até a obra pronta, sem achar que caiu num 
 
 ## Metas
 
-1. **Um site só, com dois endereços.** atlas-ia.app.br = português e real. Um .com (ainda a comprar) = inglês e dólar.
+1. **Um site só, com dois endereços.** atlas-ia.app.br = português e real. use-atlas-ai.com (comprado em 26/11/2026) = inglês e dólar.
    Mesmo código, mesma Vercel, mesmo servidor.
 2. **Cada pessoa cai na porta certa.**
    - O endereço digitado decide o idioma.
@@ -73,8 +73,8 @@ diferente.
 
 ## O que depende de você (não decido sozinho)
 
-- **Domínio .com:** o atlas-ia.com tem dono (até 08/2027). Livres na checagem de 26/11: useatlasia.com, myatlasia.com,
-  atlasiaapp.com. Confirmar na Vercel (aba Domains) antes de comprar.
+- **Domínio .com:** comprado e ligado na Vercel pelo Luiz em 26/11/2026: **use-atlas-ai.com** (o sem www manda para
+  www.use-atlas-ai.com). Qualquer acesso por esse domínio abre em inglês.
 - **Marca "Atlas" nos EUA:** existem muitas empresas "Atlas" de IA. Vale um advogado conferir antes de investir lá fora.
 - **Termos e privacidade em inglês:** fora do Brasil a LGPD não vale (GDPR na Europa, CCPA na Califórnia). Advogado.
 - **Impostos das vendas em dólar** (nota fiscal de exportação de serviço, impostos lá fora): contador.
