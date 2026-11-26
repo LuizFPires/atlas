@@ -8,7 +8,7 @@ import { useVoz } from '../ui/voz'
 import { Monograma } from '../marca/Marca'
 import canteiro from '../assets/canteiro-3d.jpg'
 import type { ObraStatus } from '../web/obras-status'
-import type { ApiCelular, EstadoCelular, Projeto, Visual } from './api'
+import type { ApiCelular, EstadoCelular, PedidoResumo, Projeto, Visual } from './api'
 import { ambienteDoNavegador, ligarAvisos, situacaoDosAvisos, type SituacaoAvisos } from './avisos'
 import { semFaceId, type FaceId } from './faceid'
 import { predioSvg } from './predio'
@@ -470,7 +470,17 @@ function AprovarTela({ projeto, ligado, onVoltar, onConstruir }: { projeto: Proj
 }
 
 // ── M08 Acompanhar a obra ──
-function ObraTela({ obra, projeto, onVoltar, onPausar, onContinuar }: { obra: ObraStatus | null; projeto: Projeto | null; onVoltar: () => void; onPausar: () => Promise<void>; onContinuar: () => Promise<void> }) {
+/** O que o celular diz do último "Pausar"/"Continuar" desta obra (achado em 26/11/2026: a pausa não chegava e ninguém sabia). */
+function avisoDoPedido(p: PedidoResumo | null, obra: ObraStatus | null): { texto: string; erro: boolean } | null {
+  if (!p) return null
+  const pausa = p.tipo === 'pausar'
+  if (p.estado === 'erro') return { texto: `O notebook não conseguiu ${pausa ? 'pausar' : 'continuar'}: ${p.mensagem || 'ele não disse o motivo.'} Se precisar, faça pelo Atlas no notebook.`, erro: true }
+  if (p.estado === 'feito') return (pausa ? obra?.estado === 'pausada' : obra?.estado !== 'pausada') ? null : { texto: `O notebook ${pausa ? 'pausou' : 'continuou'} a obra. Atualizando…`, erro: false }
+  return { texto: pausa ? 'Pedido de pausa enviado. O notebook para em até 1 minuto (ele precisa estar ligado e com o Atlas aberto).' : 'Pedido enviado. O notebook continua a obra em até 1 minuto (ele precisa estar ligado e com o Atlas aberto).', erro: false }
+}
+
+function ObraTela({ obra, projeto, pedido, onVoltar, onPausar, onContinuar }: { obra: ObraStatus | null; projeto: Projeto | null; pedido: PedidoResumo | null; onVoltar: () => void; onPausar: () => Promise<void>; onContinuar: () => Promise<void> }) {
+  const aviso = avisoDoPedido(pedido, obra)
   const [indo, setIndo] = useState(false)
   const pausada = obra?.estado === 'pausada'
   const nome = obra?.nome ?? projeto?.nome ?? 'Obra'
@@ -507,6 +517,7 @@ function ObraTela({ obra, projeto, onVoltar, onPausar, onContinuar }: { obra: Ob
         </div>
       </div>
       <footer className="cel-rodape">
+        {aviso && <p role={aviso.erro ? 'alert' : 'status'} className={`cel-sub${aviso.erro ? ' cel-erro' : ''}`} style={{ lineHeight: 1.45, margin: '0 0 8px' }}>{aviso.texto}</p>}
         {pausada
           ? <button type="button" className="cel-botao" disabled={indo || !obra} onClick={() => agir(onContinuar)}>Continuar a obra</button>
           : <button type="button" className="cel-botao cel-botao--sec" disabled={indo || !obra || obra.estado === 'pronta'} onClick={() => agir(onPausar)}>Pausar</button>}
@@ -656,7 +667,10 @@ export function AppCelular({ api, intervalo = 4000, faceId = semFaceId }: { api:
   if (tela === 'desligado') return <Desligado visto={estado?.computador.visto_em ?? null} onVoltar={irObras} />
   if ((tela === 'obra' || (tela === 'projeto' && projeto?.fase === 'construindo')) && obraId) {
     const obra = obras.find((o) => o.id === obraId) ?? null
-    return <ObraTela obra={obra} projeto={projeto} onVoltar={irObras} onPausar={async () => { await pedir('pausar', obraId) }} onContinuar={async () => { await pedir('continuar', obraId) }} />
+    // O mais novo (o servidor manda do mais novo para o mais velho; pela data, para não depender da ordem).
+    const pedidoDaObra = (estado?.pedidos ?? []).filter((p) => p.obra_id === obraId && (p.tipo === 'pausar' || p.tipo === 'continuar'))
+      .sort((a, b) => b.criado_em.localeCompare(a.criado_em) || b.id.localeCompare(a.id))[0] ?? null
+    return <ObraTela obra={obra} projeto={projeto} pedido={pedidoDaObra} onVoltar={irObras} onPausar={async () => { await pedir('pausar', obraId) }} onContinuar={async () => { await pedir('continuar', obraId) }} />
   }
   if (tela === 'projeto' && obraId) {
     const f = projeto?.fase ?? 'na_fila'

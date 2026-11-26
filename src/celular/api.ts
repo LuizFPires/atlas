@@ -99,12 +99,15 @@ export function criarApiCelularPortal(portal: PortalApi): ApiCelular {
 export interface ApiCelularFixture extends ApiCelular {
   readonly pedidos: Array<{ tipo: TipoPedido; obra_id: string; dados: object }>
   desligar(): void
+  /** Testes: o notebook responde erro, com esta mensagem, aos pedidos deste tipo. */
+  falharPedido(tipo: TipoPedido, mensagem: string): void
 }
 
 export function criarApiCelularFixture(opcoes: { logado?: boolean; ligado?: boolean } = {}): ApiCelularFixture {
   let logado = opcoes.logado ?? true
   let ligado = opcoes.ligado ?? true
   const pedidos: Array<{ tipo: TipoPedido; obra_id: string; dados: object }> = []
+  const falhas = new Map<TipoPedido, string>()
   const projetos = new Map<string, Projeto>()
   const proto = criarPrototipoFixture()
   let telasDoc: string | null = null
@@ -136,6 +139,7 @@ export function criarApiCelularFixture(opcoes: { logado?: boolean; ligado?: bool
   const api: ApiCelularFixture = {
     pedidos,
     desligar() { ligado = false },
+    falharPedido(tipo, mensagem) { falhas.set(tipo, mensagem) },
     logado: () => logado,
     async pedirCodigo() {},
     async entrar(_e, codigo) { if (!/^\d{6,8}$/.test(codigo.replace(/\D/g, ''))) throw new Error('Esse código não confere. Confira os números do e-mail.'); logado = true },
@@ -143,7 +147,8 @@ export function criarApiCelularFixture(opcoes: { logado?: boolean; ligado?: bool
     async nome() { return 'Zé' },
     async estado() {
       await andar()
-      return { computador: { ligado, visto_em: new Date().toISOString(), ocupado: ligado && [...projetos.values()].some((p) => p.fase === 'desenhando') ? 'Desenhando as telas' : null }, projetos: [...projetos.values()].map((p) => structuredClone(p)), pedidos: [] }
+      return { computador: { ligado, visto_em: new Date().toISOString(), ocupado: ligado && [...projetos.values()].some((p) => p.fase === 'desenhando') ? 'Desenhando as telas' : null }, projetos: [...projetos.values()].map((p) => structuredClone(p)),
+        pedidos: pedidos.map((p, i) => ({ id: String(i + 1).padStart(32, '0'), tipo: p.tipo, obra_id: p.obra_id, estado: falhas.has(p.tipo) ? 'erro' as const : 'pendente' as const, mensagem: falhas.get(p.tipo) ?? '', criado_em: new Date().toISOString() })) }
     },
     async obras() { return structuredClone(obras) },
     async pedir(tipo, obraId, dados) {

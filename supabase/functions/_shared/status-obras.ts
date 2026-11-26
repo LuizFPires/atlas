@@ -87,7 +87,7 @@ export async function publicarStatusObras(
   const ativa = await d.store.ativacaoAtiva(lic.id)
   const hashToken = await sha256(a.token_dispositivo || '-')
   if (!ativa || ativa.computador_hash !== a.computador_hash || !ativa.token_hash || !iguais(hashToken, ativa.token_hash)) throw negado()
-  if (!(await d.store.tentarEvento(`status-obras:${lic.id}`, 120, 60 * 60_000, d.agora()))) {
+  if (!(await d.store.tentarEvento(`status-obras:${lic.id}`, 240, 60 * 60_000, d.agora()))) {
     throw new ErroRegra('muitas_solicitacoes', 'Muitas atualizações seguidas. Espere uns 10 minutos e tente de novo.', 429)
   }
   const linhas = validarObras(a.obras, d.agora())

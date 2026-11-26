@@ -94,6 +94,15 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
     if (!o) throw new ErroLeigo(NAO_CONHECE)
     return o
   }
+  /** Pausar/continuar: além das obras criadas pelo celular, as criadas no notebook (o celular as conhece pelo nome da pasta,
+   *  que é o id que o status manda). Achado em 26/11/2026: "Pausar" no celular não parava a obra criada no notebook. */
+  const ligadaOuPasta = async (obraId: string): Promise<ObraLigada> => {
+    const o = memoria.ler()[obraId]
+    if (o) return o
+    const pastas = await p.obras.listar().catch(() => [] as string[])
+    if (pastas.includes(obraId)) return { pasta: obraId, nome: obraId.replace(/-/g, ' ') }
+    throw new ErroLeigo(NAO_CONHECE)
+  }
   const lembrar = (obraId: string, o: ObraLigada) => memoria.gravar({ ...memoria.ler(), [obraId]: o })
 
   const vazio = (nome: string, fase: FaseProjeto, extra: Partial<ProjetoRemoto> = {}): ProjetoRemoto =>
@@ -198,8 +207,8 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
         await canal.projeto(ped.obra_id, vazio(o.nome, 'construindo', { progresso: { feitas: 0, total: plano.etapas.length, atual: plano.etapas[0]?.nome.slice(0, 80) ?? '', telas: [] } }))
         return publicarStatus()
       }
-      case 'pausar': { const o = ligada(ped.obra_id); await p.painel.pausar(o.pasta); return publicarStatus() }
-      case 'continuar': { const o = ligada(ped.obra_id); await p.painel.continuar(o.pasta); return publicarStatus() }
+      case 'pausar': { const o = await ligadaOuPasta(ped.obra_id); await p.painel.pausar(o.pasta); return publicarStatus(true) }
+      case 'continuar': { const o = await ligadaOuPasta(ped.obra_id); await p.painel.continuar(o.pasta); return publicarStatus(true) }
       case 'foto_ajuda': { const d = await canal.referencia(String(ped.dados.referencia ?? '')); await p.aoFotoAjuda?.(d); return }
     }
   }
@@ -223,7 +232,9 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
     }
   }
 
-  async function publicarStatus() {
+  // O que foi mandado por último (sem a hora): não reenvia o mesmo andamento; reenvia de qualquer jeito a cada 5 min.
+  let ultimoEnvio = { chave: '', em: 0 }
+  async function publicarStatus(forcar = false) {
     const ligadas = memoria.ler()
     const porPasta = new Map(Object.entries(ligadas).map(([id, o]) => [o.pasta, { id, nome: o.nome }]))
     const pastas = await p.obras.listar().catch(() => [] as string[])
@@ -253,7 +264,10 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
         ultima_noticia: noticia.slice(0, 200), quando: new Date().toISOString(),
       })
     }
+    const chave = JSON.stringify(obras.map((o) => ({ ...o, quando: '' })))
+    if (!forcar && chave === ultimoEnvio.chave && Date.now() - ultimoEnvio.em < 5 * 60_000) return
     await canal.status(obras)
+    ultimoEnvio = { chave, em: Date.now() }
   }
 
   return {
@@ -286,9 +300,10 @@ export function criarMemoriaRemotoFixture(): MemoriaRemoto {
   return { ler: () => structuredClone(m), gravar: (n) => { m = structuredClone(n) } }
 }
 
-/** Liga o notebook ao celular enquanto `executor` existir: batida a cada 20 s e status das obras a cada 2 min. */
+/** Liga o notebook ao celular enquanto `executor` existir: batida a cada 20 s e o andamento das obras conferido a cada 30 s
+ *  (só sobe quando mudou). Antes era a cada 2 min e o celular mostrava 1% com o notebook em 2,72% (Eduardo, 26/11/2026). */
 export const BATIDA_MS = 20_000
-export const STATUS_MS = 120_000
+export const STATUS_MS = 30_000
 export function ligarCelularRemoto(ex: ReturnType<typeof criarExecutorRemoto>): () => void {
   const bater = () => { void ex.batida().catch(() => {}) }
   const status = () => { void ex.publicarStatus().catch(() => {}) }
