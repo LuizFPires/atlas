@@ -91,6 +91,27 @@ test('pausar e continuar a obra pelo celular', async () => {
   expect(pontes.painel.chamadas).toEqual(['pausar', 'continuar'])
 })
 
+// Achado em 26/11/2026 (Eduardo): obra criada no notebook aparece no celular com o id = nome da pasta. "Pausar" pelo celular
+// caía em "não está neste notebook" e a obra continuava trabalhando, sem aviso.
+test('pausar e continuar pelo celular uma obra criada no notebook (o id é a pasta)', async () => {
+  const id = (n: number) => String(n).repeat(32)
+  const { ex, respostas, pontes } = montar([[pedido({ id: id(5), tipo: 'pausar', obra_id: 'orcamento-de-obra' })], [pedido({ id: id(6), tipo: 'continuar', obra_id: 'orcamento-de-obra' })]])
+  await pontes.obras.criarSubpasta('orcamento de obra')
+  await ex.batida(); await ex.ocioso(); await ex.batida(); await ex.ocioso()
+  expect(respostas.map((r) => r.estado)).toEqual(['feito', 'feito'])
+  expect(pontes.painel.chamadas).toEqual(['pausar', 'continuar'])
+})
+
+test('o celular recebe o andamento logo que muda (a cada 30 s), sem reenviar o que não mudou', async () => {
+  const { STATUS_MS } = await import('./celular-remoto')
+  expect(STATUS_MS).toBeLessThanOrEqual(30_000)
+  const { ex, status, pontes } = montar()
+  await pontes.obras.criarSubpasta('barbearia')
+  await ex.publicarStatus()
+  await ex.publicarStatus()
+  expect(status.length).toBe(1)
+})
+
 test('pedido de uma obra que este notebook não conhece: responde erro em palavras simples, sem travar a fila', async () => {
   const { ex, respostas } = montar([[pedido({ id: '1'.repeat(32), tipo: 'ajuste', obra_id: 'c9999999999999999', dados: { texto: 'x' } }), pedido({ id: '2'.repeat(32), tipo: 'pausar', obra_id: 'c9999999999999999' })]])
   await ex.batida(); await ex.ocioso()

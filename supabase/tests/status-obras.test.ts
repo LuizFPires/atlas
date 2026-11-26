@@ -34,11 +34,12 @@ describe('/status-obras/publicar — autenticação', () => {
     expect((await publicar(pedido([obra()], { licenca_id: 'l2' }))).status).toBe(200)
     expect(m.store.statusObras.map((s) => s.licenca_id)).toEqual(['l1'])
   })
-  it('limita a frequência por licença', async () => {
+  it('limita a frequência por licença, com folga para o notebook mandar o andamento a cada 30 s (mais as pausas)', async () => {
     const { publicar, pedido } = await preparar()
-    let ultimo = 200
-    for (let i = 0; i < 125; i++) ultimo = (await publicar(pedido([obra()]))).status
-    expect(ultimo).toBe(429)
+    const status: number[] = []
+    for (let i = 0; i < 245; i++) status.push((await publicar(pedido([obra()]))).status)
+    expect(status.slice(0, 200).every((s) => s === 200)).toBe(true)
+    expect(status[status.length - 1]).toBe(429)
   })
 })
 

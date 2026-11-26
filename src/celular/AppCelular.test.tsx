@@ -97,6 +97,17 @@ test('acompanhar a obra e pausar pelo celular', async () => {
   expect(screen.getByText('Marcação pelo cliente')).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Pausar' }))
   expect(api.pedidos[0]).toMatchObject({ tipo: 'pausar', obra_id: 'o1' })
+  // Achado em 26/11/2026 (Eduardo pausou pelo celular e o notebook seguiu): o celular diz o que aconteceu com o pedido.
+  expect(await screen.findByText(/Pedido de pausa enviado\. O notebook para em até 1 minuto/)).toBeInTheDocument()
+})
+
+test('pausa que o notebook não conseguiu fazer: o celular mostra o motivo e o que fazer', async () => {
+  const api = criarApiCelularFixture()
+  api.falharPedido('pausar', 'Essa obra não está neste notebook. Abra o Atlas no computador onde ela foi criada.')
+  render(<AppCelular api={api} intervalo={20} />)
+  await userEvent.click(await screen.findByRole('button', { name: /Agenda da Barbearia/ }))
+  await userEvent.click(screen.getByRole('button', { name: 'Pausar' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('O notebook não conseguiu pausar: Essa obra não está neste notebook.')
 })
 
 // M52 (protótipo M09b/M10/M11 aprovado em 25/11/2026): Face ID para abrir o app.
