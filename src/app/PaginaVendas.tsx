@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { CampoFalado } from '../ui'
 import { guiaChaveGateway, type Guia } from './guias-site'
 import { montarSrcDoc } from './ponte-prototipo'
-import { explicarErroVendas, type EstadoVendas, type Marcacao, type PonteVendas } from './ponte-vendas'
+import { explicarErroVendas, type EstadoVendas, type Marcacao, type NumerosVendas, type PonteVendas } from './ponte-vendas'
 import type { Gateway } from './ponte-lancamento'
 import './pagina-vendas.css'
 
@@ -38,7 +38,15 @@ export function PaginaVendas({ obra, gateway, vendas, onGuia, intervaloMs = 15_0
     void vendas.estado(obra.pasta).then((x) => { if (vivo) setE(x) }, () => {})
     return () => { vivo = false }
   }, [vendas, obra.pasta])
-  const andando = !!e && ['aprovada', 'construindo', 'testando', 'abrindo'].includes(e.fase)
+  const andando = !!e && (['aprovada', 'construindo', 'testando', 'abrindo'].includes(e.fase) || e.painel === 'construindo')
+  const [numeros, setNumeros] = useState<NumerosVendas | null>(null)
+  const painelPronto = e?.painel === 'pronto'
+  useEffect(() => {
+    if (!painelPronto) return
+    let vivo = true
+    void vendas.numeros(obra.pasta).then((n) => { if (vivo) setNumeros(n) }, () => {})
+    return () => { vivo = false }
+  }, [painelPronto, vendas, obra.pasta])
   useEffect(() => {
     if (!andando) return
     const t = setInterval(() => { void vendas.estado(obra.pasta).then(setE, () => {}) }, intervaloMs)
@@ -153,6 +161,34 @@ export function PaginaVendas({ obra, gateway, vendas, onGuia, intervaloMs = 15_0
           <section className="at-noar__card at-noar__card--lime">
             <span className="at-noar__rot at-noar__rot--lime">AS VENDAS ESTÃO ABERTAS</span>
             <span className="at-noar__txt">A página está no ar no endereço do {obra.nome} + /vendas. Cada venda cai direto na sua conta do {gw}.</span>
+          </section>
+        )}
+        {e.fase === 'aberta' && (
+          <section className="at-noar__card at-noar__card--cheio">
+            <span className="at-noar__rot">SÍNDICO · O SEU PAINEL DE DONO</span>
+            {e.painel === 'nada' || e.painel === 'erro' ? (
+              <>
+                <span className="at-noar__txt">Quem paga, quem atrasou, quem está no plano grátis e quanto entra por mês. Preços editáveis, "liberar acesso grátis" e bloqueio automático de quem atrasa (com tolerância). Fica no seu sistema, só para você.</span>
+                {e.painel === 'erro' && <span className="at-noar__nota" role="alert">Da última vez o painel não ficou pronto. Pode tentar de novo.</span>}
+                <button type="button" className="at-noar__prim" disabled={ocupado} onClick={() => void fazer(() => vendas.montarPainel(obra.pasta))}>Montar o meu painel de dono →</button>
+              </>
+            ) : e.painel === 'construindo' ? (
+              <span className="at-noar__txt"><span className="at-noar__pisca" aria-hidden="true" /> O Síndico está montando o painel. Pode deixar o Atlas trabalhando.</span>
+            ) : (
+              <>
+                {numeros ? (
+                  <div className="at-pv__kpis" role="group" aria-label="Números do painel do dono">
+                    <span><small>CLIENTES PAGANDO</small><b>{numeros.pagando}</b></span>
+                    <span><small>ENTRA POR MÊS</small><b>{(numeros.mes / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}</b></span>
+                    <span><small>ATRASADOS</small><b>{numeros.atrasados}</b></span>
+                    <span><small>NO PLANO GRÁTIS</small><b>{numeros.gratis}</b></span>
+                  </div>
+                ) : <span className="at-noar__txt">Os números aparecem assim que o seu sistema responder.</span>}
+                <button type="button" className="at-noar__prim" onClick={() => void vendas.abrirPainel(obra.pasta).catch(() => setAviso('Não consegui abrir o painel agora.'))}>Abrir o meu painel de dono →</button>
+                <span className="at-noar__nota">Lá você cobra, oferece plano, libera acesso grátis e muda os preços. Também falando: "libera o plano grátis para a Padaria Sol até março".</span>
+              </>
+            )}
+            {aviso && <p className="at-noar__nota" role="alert">{aviso}</p>}
           </section>
         )}
         {e.fase === 'erro' && <p className="at-noar__nota" role="alert">{e.erro ?? 'Não deu certo agora.'}</p>}

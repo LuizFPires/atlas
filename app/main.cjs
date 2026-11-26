@@ -193,7 +193,7 @@ const lojas = criarLojas({
 const lancamento = require('./adaptadores/lancamento.cjs').criarLancamento({ raiz: obras.raiz() })
 // Página de vendas (M61): protótipo com marcações (Claude só leitor); a chave do gateway vai direto à Vercel do cliente.
 const paginaVendas = require('./adaptadores/pagina-vendas.cjs').criarPaginaVendas({
-  raiz: obras.raiz(),
+  raiz: obras.raiz(), cofre,
   perguntar: (pasta, pedido) => disparo.perguntar(String(pasta), pedido),
   vercel: (args, o = {}) => contasCli.rodarFerramenta('vercel', args, o),
   pedirConstrucao: async (pasta, texto) => { await garantirObra(String(pasta)); return posobra.executar(String(pasta), { tipo: 'mudar', texto }, { entendi: 'Você aprovou a página de vendas. Vou:', passos: ['Construir a página aprovada com o visual do app', 'Ligar a cobrança na sua conta, em modo de teste', 'Fazer uma compra de teste de ponta a ponta'], minutos: 90 }) },
@@ -206,6 +206,13 @@ const paginaVendas = require('./adaptadores/pagina-vendas.cjs').criarPaginaVenda
     let d = null
     try { d = await r.json() } catch { d = null }
     return { ok: !!(r.ok && d && d.ok === true), etapas: d && Array.isArray(d.etapas) ? d.etapas.map(String) : [], erro: d && typeof d.erro === 'string' ? d.erro : (r.ok ? undefined : `resposta ${r.status}`) }
+  },
+  // Números do painel do dono (M62): SÓ o endereço do próprio site, com o código do Atlas no cabeçalho.
+  resumo: async (url, token) => {
+    if (!/^https:\/\/[a-z0-9-]+\.vercel\.app\/api\/vendas\/resumo$/.test(url)) throw new Error('endereco-invalido')
+    const r = await fetch(url, { method: 'GET', redirect: 'error', signal: AbortSignal.timeout(20_000), headers: { 'x-atlas-teste': token } })
+    if (!r.ok) return null
+    return r.json()
   },
 })
 
@@ -420,6 +427,9 @@ handle('atlas:vendas:estado', (pasta) => paginaVendas.estado(String(pasta)))
 handle('atlas:vendas:desenhar', (pasta, nome) => paginaVendas.desenhar(String(pasta), String(nome ?? '')))
 handle('atlas:vendas:ajustar', (pasta, marcacoes) => paginaVendas.ajustar(String(pasta), Array.isArray(marcacoes) ? marcacoes.slice(0, 20).map((m) => ({ x: Number(m && m.x), y: Number(m && m.y), texto: String((m && m.texto) ?? '') })) : []))
 handle('atlas:vendas:aprovar', async (pasta, chave) => { await garantirFerramentas(); return paginaVendas.aprovar(String(pasta), String(chave ?? '')) })
+handle('atlas:vendas:painel', (pasta) => paginaVendas.montarPainel(String(pasta)))
+handle('atlas:vendas:numeros', (pasta) => paginaVendas.numeros(String(pasta)))
+handle('atlas:vendas:abrirPainel', async (pasta) => { const e = await paginaVendas.estado(String(pasta)); if (!e.painelUrl || !/^https:\/\/[a-z0-9-]+\.vercel\.app\/dono$/.test(e.painelUrl)) throw new Error('sem-painel'); await shell.openExternal(e.painelUrl) })
 handle('atlas:vendas:abrir', async (pasta, chave) => { await garantirFerramentas(); return paginaVendas.abrir(String(pasta), String(chave ?? '')) })
 handle('atlas:lojas:estado', (pasta) => lojas.estado(String(pasta)))
 handle('atlas:lojas:escolher', (pasta, c) => lojas.escolher(String(pasta), String(c)))

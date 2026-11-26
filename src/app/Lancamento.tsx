@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { guiaAsaas, guiaStripe, type Guia } from './guias-site'
 import { PaginaVendas } from './PaginaVendas'
-import type { PonteVendas } from './ponte-vendas'
+import type { NumerosVendas, PonteVendas } from './ponte-vendas'
 import { GATEWAYS, type EstadoLancamento, type ItemLancamento, type PonteLancamento } from './ponte-lancamento'
 import './colocar-no-ar.css'
 import './lancamento.css'
@@ -101,13 +101,20 @@ export function Lancamento({ obra, lancamento, onGuia, onVoltar, vendas }: Props
 }
 
 /** Menu "Lançamentos" (LC6): só as obras que o cliente decidiu vender. */
-export function Lancamentos({ lancamento, onAbrir }: { lancamento: PonteLancamento; onAbrir: (pasta: string) => void }) {
+export function Lancamentos({ lancamento, onAbrir, vendas }: { lancamento: PonteLancamento; onAbrir: (pasta: string) => void; vendas?: PonteVendas }) {
   const [lista, setLista] = useState<ItemLancamento[] | null>(null)
+  const [nums, setNums] = useState<Record<string, NumerosVendas | null>>({})
   useEffect(() => {
     let vivo = true
-    void lancamento.listar().then((l) => { if (vivo) setLista(l) }, () => { if (vivo) setLista([]) })
+    void lancamento.listar().then(async (l) => {
+      if (!vivo) return
+      setLista(l)
+      if (!vendas) return
+      const pares = await Promise.all(l.map(async (x) => [x.pasta, await vendas.numeros(x.pasta).catch(() => null)] as const))
+      if (vivo) setNums(Object.fromEntries(pares))
+    }, () => { if (vivo) setLista([]) })
     return () => { vivo = false }
-  }, [lancamento])
+  }, [lancamento, vendas])
   return (
     <main className="at-lanc">
       <div className="at-lanc__topo"><span className="at-noar__rot">AS OBRAS QUE VOCÊ ESTÁ VENDENDO</span><h1>Lançamentos</h1></div>
@@ -119,7 +126,7 @@ export function Lancamentos({ lancamento, onAbrir }: { lancamento: PonteLancamen
             <span className="at-noar__rot at-noar__rot--ambar">{ROTULO_FASE[l.fase]}</span>
             <b>{l.pasta}</b>
             <span className="at-noar__mudo">{l.endereco ?? ''}</span>
-            <span className="at-noar__mudo">— clientes pagando · — entrou este mês</span>
+            <span className="at-noar__mudo">{nums[l.pasta] ? `${nums[l.pasta]?.pagando} clientes pagando · ${((nums[l.pasta]?.mes ?? 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })} por mês` : '— clientes pagando · — por mês'}</span>
           </button>
         ))}
       </div>

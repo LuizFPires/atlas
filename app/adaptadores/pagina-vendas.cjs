@@ -10,6 +10,8 @@
 //    (ATLAS_TESTE_TOKEN). Nunca em arquivo, cofre ou log. Depois pede ao Incorporador (linha da obra) a página de verdade a partir de
 //    vendas\aprovada.html, e quando a linha termina faz a COMPRA DE TESTE: POST /api/vendas/compra-teste no site, com o código.
 //  abrir(pasta, chaveReal): só com a compra de teste ok. Troca para a chave de verdade na Vercel e publica (`vercel deploy --prod`).
+//  montarPainel / numeros (M62): o Síndico monta o painel do dono (/dono) no sistema do cliente; os números do topo vêm de
+//    GET /api/vendas/resumo com o código do Atlas (no cofre; não é chave de pagamento), sem nome de ninguém.
 // Dinheiro e chaves são SEMPRE do cliente (gateway dele). O Atlas não guarda chave nenhuma.
 'use strict'
 const fs = require('node:fs')
@@ -20,6 +22,7 @@ const { REGRA_CONTEUDO_CLIENTE, blocoDoCliente, extrairJson, garantirSubpasta } 
 
 const MAX_HTML = 300_000
 const PERIGOSO = /<\s*(script|iframe|object|embed)\b|\son[a-z]+\s*=|javascript:/i
+const PAINEL = ['nada', 'construindo', 'pronto', 'erro']
 const FASES = ['nada', 'pronta', 'aprovada', 'construindo', 'testando', 'teste-ok', 'teste-falhou', 'abrindo', 'aberta', 'erro']
 
 const htmlSeguro = (h) => typeof h === 'string' && h.length > 20 && h.length <= MAX_HTML && !PERIGOSO.test(h)
@@ -40,16 +43,25 @@ const PEDIDO_INCORPORADOR = (gateway) => [
   'Crie também POST /api/vendas/compra-teste: só responde se o cabeçalho x-atlas-teste for igual à variável ATLAS_TESTE_TOKEN E a chave do gateway for de teste; faz uma compra de ponta a ponta no modo de testes do gateway (cria a cobrança, paga com o meio de teste do gateway, espera o aviso, confere que a conta da empresa nasceu e que o e-mail de acesso saiu) e devolve JSON {ok, etapas:[...], erro?}. Com chave de verdade, devolve 404.',
 ].join(' ')
 
+const PEDIDO_SINDICO = [
+  'Siga o agente sindico e monte o painel do dono deste sistema (rota /dono, só para o papel dono, conferido no servidor e por RLS):',
+  'números do topo (clientes pagando, quanto entra por mês, atrasados, no plano grátis); lista de empresas com filtros (todos, em dia, atrasados, grátis) e ações (abrir, cobrar de novo, oferecer plano);',
+  'preços e planos editáveis (grátis, mensal, anual; parcelamento só no Asaas) e "liberar acesso grátis" por empresa e prazo;',
+  'situação de cada empresa só pelo aviso (webhook) do gateway com assinatura conferida; atraso com tolerância (padrão 5 dias, editável) e bloqueio automático, que libera sozinho ao pagar;',
+  'tudo também por voz (transcrição editável; a frase vira a ação com confirmação antes de gravar).',
+  'Crie também GET /api/vendas/resumo: só responde se o cabeçalho x-atlas-teste for igual à variável ATLAS_TESTE_TOKEN e devolve JSON {pagando, mes (centavos), atrasados, gratis}, sem nome nem dado de cliente.',
+].join(' ')
+
 /** deps: raiz, perguntar(pasta, pedido) (Claude só leitor), vercel(args,{cwd,entrada}), pedirConstrucao(pasta, texto), linhaRodando(pasta),
  *  testar(url, token) -> {ok, etapas, erro?, naoPronto?}, esperar(ms), gerarToken() */
-function criarPaginaVendas({ raiz, perguntar, vercel, pedirConstrucao, linhaRodando = () => false, testar, esperar = (ms) => new Promise((r) => setTimeout(r, ms)), gerarToken = () => crypto.randomBytes(32).toString('base64url'), tentativasTeste = 30 }) {
+function criarPaginaVendas({ raiz, perguntar, vercel, pedirConstrucao, linhaRodando = () => false, testar, resumo = async () => null, cofre = null, esperar = (ms) => new Promise((r) => setTimeout(r, ms)), gerarToken = () => crypto.randomBytes(32).toString('base64url'), tentativasTeste = 30 }) {
   const trabalhos = new Map()
   const arqEstado = (pasta) => caminhoSeguro(raiz, String(pasta), '.atlas', 'vendas.json')
   const lerEstado = (pasta) => {
     let j = null
     try { j = lerJson(arqEstado(pasta)) } catch { j = null }
     const o = j && typeof j === 'object' ? j : {}
-    return { fase: FASES.includes(o.fase) ? o.fase : 'nada', etapas: Array.isArray(o.etapas) ? o.etapas.filter((x) => typeof x === 'string').map((x) => x.slice(0, 80)).slice(0, 10) : [], erro: typeof o.erro === 'string' ? o.erro.slice(0, 200) : null }
+    return { painel: PAINEL.includes(o.painel) ? o.painel : 'nada', fase: FASES.includes(o.fase) ? o.fase : 'nada', etapas: Array.isArray(o.etapas) ? o.etapas.filter((x) => typeof x === 'string').map((x) => x.slice(0, 80)).slice(0, 10) : [], erro: typeof o.erro === 'string' ? o.erro.slice(0, 200) : null }
   }
   const gravarEstado = (pasta, m) => { pastaAtlas(raiz, String(pasta)); gravarAtomico(arqEstado(pasta), JSON.stringify({ versao: 1, ...lerEstado(pasta), ...m }) + '\n') }
   const dirVersao = (pasta, n) => caminhoSeguro(raiz, String(pasta), 'vendas', 'versoes', `v${String(n).padStart(3, '0')}`)
@@ -91,7 +103,9 @@ function criarPaginaVendas({ raiz, perguntar, vercel, pedirConstrucao, linhaRoda
     gravarEstado(pasta, { fase: 'pronta', erro: null })
   }
 
-  const publico = (pasta) => { const a = atual(pasta); const e = lerEstado(pasta); return { ...e, fase: a ? e.fase : 'nada', versao: a ? a.versao : 0, html: a ? a.html : '', resumo: a ? a.resumo : '' } }
+  const publico = (pasta) => { const a = atual(pasta); const e = lerEstado(pasta); const s = site(pasta); return { ...e, fase: a ? e.fase : 'nada', versao: a ? a.versao : 0, html: a ? a.html : '', resumo: a ? a.resumo : '', painelUrl: e.painel === 'pronto' && s ? `${s}/dono` : null } }
+  const chaveCodigo = (pasta) => `vendas/codigo/${pasta}`
+  const codigo = async (pasta) => { if (!cofre) return null; try { const v = await cofre.ler(chaveCodigo(pasta)); return typeof v === 'string' && v ? v : null } catch { return null } }
 
   async function pedir(pasta, texto) {
     const r = extrairJson(await perguntar(String(pasta), texto))
@@ -177,6 +191,8 @@ function criarPaginaVendas({ raiz, perguntar, vercel, pedirConstrucao, linhaRoda
       await porNaVercel(pasta, VARS[gw].chave, String(chaveTeste).trim())
       if (VARS[gw].ambiente) await porNaVercel(pasta, VARS[gw].ambiente, 'sandbox')
       await porNaVercel(pasta, 'ATLAS_TESTE_TOKEN', token)
+      // O código do Atlas (não é chave de pagamento) fica no cofre para o resumo do painel do dono (M62).
+      if (cofre) { try { await cofre.guardar(chaveCodigo(pasta), token) } catch { /* sem cofre: o resumo fica sem números */ } }
       fs.writeFileSync(caminhoSeguro(raiz, pasta, 'vendas', 'aprovada.html'), a.html)
       gravarEstado(pasta, { fase: 'aprovada', etapas: [], erro: null })
       trabalhos.set(`${pasta}:token`, token)
@@ -200,8 +216,41 @@ function criarPaginaVendas({ raiz, perguntar, vercel, pedirConstrucao, linhaRoda
       gravarEstado(pasta, { fase: 'aberta', erro: null })
       return publico(pasta)
     },
+    /** M62: o painel do dono (Síndico), no sistema do cliente. Só com as vendas abertas. Não espera. */
+    async montarPainel(pasta) {
+      pasta = String(pasta)
+      pastaDaObra(raiz, pasta)
+      if (lerEstado(pasta).fase !== 'aberta') throw new Error('vendas-fechadas')
+      if (trabalhos.has(pasta)) throw new Error('ja-construindo')
+      gravarEstado(pasta, { painel: 'construindo' })
+      const p = (async () => {
+        try {
+          await pedirConstrucao(pasta, PEDIDO_SINDICO)
+          await esperar(15_000)
+          for (let i = 0; i < 2880 && linhaRodando(pasta); i++) await esperar(15_000)
+          let n = null
+          for (let i = 0; i < tentativasTeste && !n; i++) { n = await this.numeros(pasta); if (!n) await esperar(60_000) }
+          gravarEstado(pasta, { painel: n ? 'pronto' : 'erro' })
+        } catch { gravarEstado(pasta, { painel: 'erro' }) }
+      })().finally(() => trabalhos.delete(pasta))
+      trabalhos.set(pasta, p)
+      return publico(pasta)
+    },
+    /** Os números do topo, lidos do sistema do cliente (sem nome de ninguém). null = sem painel ou sem resposta: nunca inventa. */
+    async numeros(pasta) {
+      pasta = String(pasta)
+      const s = site(pasta)
+      const t = await codigo(pasta)
+      if (!s || !t) return null
+      try {
+        const r = await resumo(`${s}/api/vendas/resumo`, t)
+        const n = (v) => (Number.isFinite(v) && v >= 0 ? Math.floor(v) : null)
+        if (!r || [r.pagando, r.mes, r.atrasados, r.gratis].some((v) => n(v) === null)) return null
+        return { pagando: n(r.pagando), mes: n(r.mes), atrasados: n(r.atrasados), gratis: n(r.gratis) }
+      } catch { return null }
+    },
     _esperar: (pasta) => trabalhos.get(String(pasta)),
   }
 }
 
-module.exports = { criarPaginaVendas, chaveValida, htmlSeguro, PEDIDO_INCORPORADOR }
+module.exports = { criarPaginaVendas, chaveValida, htmlSeguro, PEDIDO_INCORPORADOR, PEDIDO_SINDICO }
