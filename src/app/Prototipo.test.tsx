@@ -211,7 +211,7 @@ describe('protótipo navegável (sem script)', () => {
     expect(doc).toContain('<section id="tela-inicio"')
     expect(doc).toContain('<section id="tela-agenda"')
     expect(doc.match(/<template shadowrootmode="open">/g)).toHaveLength(3) // as 2 telas + o aviso "ainda não foi desenhada"; CSS de uma não vaza para a outra
-    expect(doc).toContain('href="#tela-agenda"')
+    expect(doc).toContain('href="about:srcdoc#tela-agenda"') // o próprio documento (srcdoc): só troca a âncora
     expect(doc).toMatch(/body:not\(:has\(section:target\)\) #tela-agenda\s*\{\s*display:\s*block/)
   })
   test('links para fora (http, javascript:) viram âncora morta: o protótipo nunca sai de si', async () => {
@@ -409,7 +409,7 @@ describe('ajudas no protótipo (Luiz, 23/11/2026)', () => {
     expect(screen.getByRole('button', { name: 'Onde dá para tocar?' })).toHaveAttribute('aria-pressed', 'true')
     const doc = screen.getByTitle(/Tela Marcar horário no celular/).getAttribute('srcdoc')!
     // Luiz, 24/11/2026: bolinha verde piscando SÓ no que já funciona (link para tela que existe); o que ainda não foi desenhado fica sem.
-    expect(doc).toContain('a[href^="#tela-"]:not([href="#tela-falta"])::after')
+    expect(doc).toContain('a[href*="#tela-"]:not([href$="#tela-falta"])::after')
     expect(doc).toContain('@keyframes at-toque')
   })
 

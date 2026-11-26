@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
 import { UsarSistema } from './UsarSistema'
@@ -82,4 +82,34 @@ test('"Tirar a marcação" apaga o pino', async () => {
   const balao = await screen.findByRole('dialog', { name: 'Marcação 1' })
   await user.click(within(balao).getByRole('button', { name: 'Tirar a marcação' }))
   expect(screen.queryByRole('button', { name: 'Marcação 1' })).toBeNull()
+})
+
+// Achado em 26/11/2026 (conferência do vídeo do Dudu): tocar num botão DENTRO do protótipo troca a tela no iframe, mas o topo
+// continuava em "Tela 1" e a marcação ia para a tela errada. Agora a prévia conta qual tela está aberta (script do Atlas com nonce).
+test('tocar num botão dentro do protótipo: o topo, os números e a marcação seguem a tela aberta; o app não recarrega a prévia', async () => {
+  const { user, mandar, telas } = await abrir()
+  const frame = document.querySelector('iframe')!
+  expect(frame.getAttribute('sandbox')).toBe('allow-scripts')
+  expect(frame.getAttribute('srcdoc')).toMatch(/<script nonce="[A-Za-z0-9]{16,64}">/)
+  const pedidos: unknown[] = []
+  frame.contentWindow!.postMessage = ((m: unknown) => { pedidos.push(m) }) as typeof window.postMessage
+  const avisar = (id: string, source: MessageEventSource | null = frame.contentWindow) => act(() => { window.dispatchEvent(new MessageEvent('message', { data: { tipo: 'atlas:tela', id }, source })) })
+  avisar(telas[1].id, window) // de outra janela: ignorado
+  expect(screen.getByText(`Tela 1 de ${telas.length} · ${telas[0].nome}`)).toBeInTheDocument()
+  avisar(telas[1].id)
+  expect(screen.getByText(`Tela 2 de ${telas.length} · ${telas[1].nome}`)).toBeInTheDocument()
+  expect(document.querySelector('iframe')).toBe(frame) // mesma prévia: a navegação de dentro não recarrega
+  await marcar(user, 100, 300)
+  const balao = await screen.findByRole('dialog', { name: 'Marcação 1' })
+  await within(balao).findByText(/O ATLAS SUGERE/)
+  await user.click(within(balao).getByRole('button', { name: 'Aceitar' }))
+  await user.click(screen.getByRole('button', { name: /Mandar para o Atlas fazer/ }))
+  await waitFor(() => expect(mandar).toHaveBeenCalled())
+  expect(mandar.mock.calls[0][0]).toContain(`1. Tela 2 (${telas[1].nome})`)
+  // Os números do app levam a prévia à tela pedida sem recarregar
+  await user.click(screen.getByRole('button', { name: 'Ir para a tela 3' }))
+  expect(pedidos).toContainEqual({ tipo: 'atlas:ir', id: telas[2].id })
+  expect(document.querySelector('iframe')).toBe(frame)
+  avisar('falta') // "ainda não foi desenhada": continua na última tela conhecida
+  expect(screen.getByText(`Tela 3 de ${telas.length} · ${telas[2].nome}`)).toBeInTheDocument()
 })

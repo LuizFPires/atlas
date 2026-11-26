@@ -99,6 +99,11 @@ export function montarSrcDoc(html: string): string | null {
   return `<!doctype html><meta http-equiv="Content-Security-Policy" content="${CSP}"><meta charset="utf-8">${SEM_BARRA}${html}`
 }
 
+/** O documento navegável sempre abre num iframe srcdoc (app, celular e link do celular). Lá dentro, "#tela-x" é resolvido contra o
+ *  endereço de QUEM EMBUTE, e o Chromium/Electron carregava a página de fora dentro da prévia em vez de trocar de tela (achado em
+ *  26/11/2026). "about:srcdoc#tela-x" é o próprio documento: só troca a âncora (:target), com ou sem script. */
+const DOC = 'about:srcdoc'
+
 /** Qualquer href que não seja âncora interna (#...) vira "#": o protótipo nunca navega para fora de si. Depois, todo link que não
  *  leva a uma tela que existe (inclusive "#") vai para o aviso "ainda não foi desenhada" (Luiz, 23/11/2026: botão que não faz nada). */
 function soLinksInternos(html: string, ids: Set<string>): string {
@@ -106,21 +111,21 @@ function soLinksInternos(html: string, ids: Set<string>): string {
     .replace(/(\shref\s*=\s*)(?:"(?!#)[^"]*"|'(?!#)[^']*'|(?!["'#])[^\s>]+)/gi, '$1"#"')
     .replace(/(\shref\s*=\s*)(["'])#([^"']*)\2/gi, (_t, pre: string, _q: string, alvo: string) => {
       const m = /^tela-([a-z0-9][a-z0-9-]*)$/.exec(alvo)
-      return `${pre}"#${m && ids.has(m[1]) ? `tela-${m[1]}` : 'tela-falta'}"`
+      return `${pre}"${DOC}#${m && ids.has(m[1]) ? `tela-${m[1]}` : 'tela-falta'}"`
     })
 }
 
 /** Aviso de parte que ainda não foi desenhada (sem script: é só mais uma "tela" do documento). */
-const TELA_FALTA = (volta: string) => `<section id="tela-falta"><template shadowrootmode="open"><style>:host{display:block}div{min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px;text-align:center;font:16px/1.5 system-ui,sans-serif;background:#F4F5F0;color:#1B1E22}b{font-size:20px}a{display:inline-block;padding:12px 18px;border-radius:12px;background:#1B1E22;color:#fff;text-decoration:none;font-weight:600}</style><div><b>Esta parte ainda não foi desenhada.</b><span>Peça ao Atlas, na conversa ao lado: "desenhe a tela de …".</span><a href="#tela-${volta}">Voltar</a></div></template></section>`
+const TELA_FALTA = (volta: string) => `<section id="tela-falta"><template shadowrootmode="open"><style>:host{display:block}div{min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px;text-align:center;font:16px/1.5 system-ui,sans-serif;background:#F4F5F0;color:#1B1E22}b{font-size:20px}a{display:inline-block;padding:12px 18px;border-radius:12px;background:#1B1E22;color:#fff;text-decoration:none;font-weight:600}</style><div><b>Esta parte ainda não foi desenhada.</b><span>Peça ao Atlas, na conversa ao lado: "desenhe a tela de …".</span><a href="${DOC}#tela-${volta}">Voltar</a></div></template></section>`
 
 /** "Onde dá para tocar?": contorno em tudo que leva a outra tela (vai dentro de cada tela: o CSS de fora não entra no shadow root). */
 // Luiz, 24/11/2026: uma bolinha verde, média, de fundo transparente, piscando, SÓ no que já leva a outra tela. O que ainda não foi
 // desenhado (link para "tela-falta") fica sem bolinha: dá para tocar e o Atlas explica, ou marcar e pedir.
-const REALCE = '<style>a[href^="#tela-"]:not([href="#tela-falta"]){position:relative}a[href^="#tela-"]:not([href="#tela-falta"])::after{content:"";position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;box-sizing:border-box;background:rgba(198,241,53,.35);border:2px solid #C6F135;box-shadow:0 0 12px rgba(198,241,53,.6);pointer-events:none;animation:at-toque 1.4s ease-in-out infinite;z-index:2}@keyframes at-toque{0%,100%{transform:scale(.85);opacity:.95}70%{transform:scale(1.25);opacity:.35}}@media (prefers-reduced-motion:reduce){a[href^="#tela-"]::after{animation:none}}</style>'
+const REALCE = '<style>a[href*="#tela-"]:not([href$="#tela-falta"]){position:relative}a[href*="#tela-"]:not([href$="#tela-falta"])::after{content:"";position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;box-sizing:border-box;background:rgba(198,241,53,.35);border:2px solid #C6F135;box-shadow:0 0 12px rgba(198,241,53,.6);pointer-events:none;animation:at-toque 1.4s ease-in-out infinite;z-index:2}@keyframes at-toque{0%,100%{transform:scale(.85);opacity:.95}70%{transform:scale(1.25);opacity:.35}}@media (prefers-reduced-motion:reduce){a[href*="#tela-"]::after{animation:none}}</style>'
 
 /**
  * Protótipo NAVEGÁVEL sem script: todas as telas num documento só, cada uma isolada no próprio shadow root (o CSS de uma
- * tela não vaza para a outra) e só uma aparece por vez. Os links <a href="#tela-ID"> trocam a tela (CSS :target).
+ * tela não vaza para a outra) e só uma aparece por vez. Os links <a href="#tela-ID"> viram "about:srcdoc#tela-ID" e trocam a tela (CSS :target).
  * Abre na tela `inicial`. Mesmo documento para o celular ao lado e para o link do celular. Devolve null se for grande demais.
  */
 /** Teto do protótipo navegável (todas as telas num documento): ~1.300 telas premium. Antes era ~1 MB e passava de 35-40 telas

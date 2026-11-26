@@ -2,7 +2,7 @@
 // passam de tela em tela; a bolinha verde piscando mostra o que já funciona; "Pedir mudança nesta tela" volta com a tela marcada.
 // Marcações (Milestone 40): "Marcar um ponto" põe um pino onde a pessoa tocar; o Atlas diz o que há ali (ajustar o que existe,
 // desenhar o que falta ou criar algo novo) e sugere a ação (Aceitar, Sugerir outra, Editar por texto ou voz). Todas vão juntas em
-// "Mandar para o Atlas fazer", que vira uma versão nova do protótipo. O HTML da tela continua só no iframe com sandbox vazio: o ponto
+// "Mandar para o Atlas fazer", que vira uma versão nova do protótipo. O HTML da tela continua só no iframe (sandbox só com o script do Atlas, por nonce; as telas não rodam script): o ponto
 // é medido no quadro de fora (nunca dentro da tela).
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { textoDaTrava } from './explicar-trava'
@@ -54,11 +54,28 @@ export function UsarSistema({ obraNome, telas, inicial, onFechar, onPedirMudanca
   const [aviso, setAviso] = useState('')
   const [falha, setFalha] = useState('')
   const [geo, setGeo] = useState({ left: 0, top: 0, escala: 1 })
+  // A prévia conta qual tela está aberta (script do Atlas com nonce; o HTML das telas continua sem script). Tocar num botão
+  // dentro do protótipo muda `i` sem recarregar; os números e as setas do app mandam a prévia para a tela pedida (irPara).
+  const [nonce] = useState(() => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join(''))
+  const [abriu, setAbriu] = useState(() => telas[Math.max(0, telas.findIndex((x) => x.id === inicial))]?.id ?? '')
+  const [irPara, setIrPara] = useState<{ id: string; n: number } | null>(null)
   const proximo = useRef(1)
   const fechar = useRef<HTMLButtonElement>(null)
   const aparelho = useRef<HTMLDivElement>(null)
   const t = telas[Math.min(i, telas.length - 1)]
   const total = telas.length
+  const vai = useCallback((j: number) => {
+    const alvo = telas[j]
+    if (!alvo) return
+    setI(j)
+    const naPrevia = telas.find((x) => x.id === abriu)
+    if (naPrevia && aparelhoDaTela(naPrevia) === aparelhoDaTela(alvo)) setIrPara((r) => ({ id: alvo.id, n: (r?.n ?? 0) + 1 }))
+    else { setAbriu(alvo.id); setIrPara(null) }
+  }, [telas, abriu])
+  const aoMudarTela = useCallback((id: string) => {
+    const j = telas.findIndex((x) => x.id === id)
+    if (j >= 0) setI(j) // "falta" (ainda não desenhada): fica na última tela conhecida
+  }, [telas])
   const editando = marcas.find((m) => m.id === ed) ?? null
   const voz = useVoz((falado) => { if (ed !== null) setMarcas((ms) => ms.map((m) => (m.id === ed ? { ...m, texto: [m.texto, falado].filter(Boolean).join(' ') } : m))) })
 
@@ -84,15 +101,17 @@ export function UsarSistema({ obraNome, telas, inicial, onFechar, onPedirMudanca
     const tecla = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { if (marcando) setMarcando(false); else onFechar() }
       else if ((e.target as HTMLElement | null)?.tagName === 'TEXTAREA') return
-      else if (e.key === 'ArrowRight') setI((v) => (v + 1) % total)
-      else if (e.key === 'ArrowLeft') setI((v) => (v + total - 1) % total)
+      else if (e.key === 'ArrowRight') vai((i + 1) % total)
+      else if (e.key === 'ArrowLeft') vai((i + total - 1) % total)
     }
     document.addEventListener('keydown', tecla)
     return () => document.removeEventListener('keydown', tecla)
-  }, [onFechar, total, marcando])
+  }, [onFechar, total, marcando, vai, i])
 
   if (!t) return null
   const doMesmo = telas.filter((x) => aparelhoDaTela(x) === aparelhoDaTela(t))
+  const inicialDaPrevia = doMesmo.some((x) => x.id === abriu) ? abriu : t.id
+  const avisoDaPrevia = { nonce, onTela: aoMudarTela, irPara }
   const mudar = (id: number, f: (m: Marca) => Marca) => setMarcas((ms) => ms.map((m) => (m.id === id ? f(m) : m)))
 
   const fincar = (e: React.MouseEvent) => {
@@ -158,15 +177,15 @@ export function UsarSistema({ obraNome, telas, inicial, onFechar, onPedirMudanca
       )}
       <div className="at-play__numeros" role="group" aria-label="Telas">
         {telas.map((x, j) => (
-          <button key={x.id} type="button" aria-label={`Ir para a tela ${j + 1}`} aria-current={j === i ? 'true' : undefined} className={j === i ? 'at-play__n--on' : ''} title={x.nome} onClick={() => setI(j)}>{j + 1}</button>
+          <button key={x.id} type="button" aria-label={`Ir para a tela ${j + 1}`} aria-current={j === i ? 'true' : undefined} className={j === i ? 'at-play__n--on' : ''} title={x.nome} onClick={() => vai(j)}>{j + 1}</button>
         ))}
       </div>
       <div className="at-play__palco">
-        <button type="button" className="at-play__seta" aria-label="Tela anterior" onClick={() => setI((v) => (v + total - 1) % total)}>‹</button>
+        <button type="button" className="at-play__seta" aria-label="Tela anterior" onClick={() => vai((i + total - 1) % total)}>‹</button>
         <div className={`at-play__aparelho${marcando ? ' at-play__aparelho--marcando' : ''}`} ref={aparelho}>
           {aparelhoDaTela(t) === 'computador'
-            ? <ComputadorPreview key={t.id} telas={doMesmo} inicial={t.id} realce={realce} titulo={`Tela ${t.nome} no computador (dá para clicar e navegar)`} />
-            : <CelularPreview key={t.id} html={t.html} telas={doMesmo} inicial={t.id} realce={realce} titulo={`Tela ${t.nome} no celular (dá para tocar e navegar)`} />}
+            ? <ComputadorPreview key={`computador-${inicialDaPrevia}`} telas={doMesmo} inicial={inicialDaPrevia} realce={realce} aviso={avisoDaPrevia} titulo={`Tela ${t.nome} no computador (dá para clicar e navegar)`} />
+            : <CelularPreview key={`celular-${inicialDaPrevia}`} html={t.html} telas={doMesmo} inicial={inicialDaPrevia} realce={realce} aviso={avisoDaPrevia} titulo={`Tela ${t.nome} no celular (dá para tocar e navegar)`} />}
           {marcando && <button type="button" className="at-play__alvo" aria-label="Escolher o lugar da marcação" onClick={fincar} />}
           {marcas.filter((m) => m.telaId === t.id).map((m) => (
             <button key={m.id} type="button" className={`at-play__pino${m.id === ed ? ' at-play__pino--on' : ''}`} aria-label={`Marcação ${numero(m)}`}
@@ -175,7 +194,7 @@ export function UsarSistema({ obraNome, telas, inicial, onFechar, onPedirMudanca
             </button>
           ))}
         </div>
-        <button type="button" className="at-play__seta" aria-label="Próxima tela" onClick={() => setI((v) => (v + 1) % total)}>›</button>
+        <button type="button" className="at-play__seta" aria-label="Próxima tela" onClick={() => vai((i + 1) % total)}>›</button>
       </div>
 
       <div className="at-play__lado">
@@ -225,7 +244,7 @@ export function UsarSistema({ obraNome, telas, inicial, onFechar, onPedirMudanca
           <section className="at-play__lista" aria-label="Suas marcações">
             <span className="at-play__lista-tit">SUAS MARCAÇÕES · {guardadas.length}</span>
             {guardadas.map((m) => (
-              <button key={m.id} type="button" className="at-play__item" onClick={() => { setI(telaN(m.telaId) - 1); setEd(m.id) }}>
+              <button key={m.id} type="button" className="at-play__item" onClick={() => { vai(telaN(m.telaId) - 1); setEd(m.id) }}>
                 <span className="at-play__bola">{numero(m)}</span>
                 <span><em>TELA {telaN(m.telaId)} · {m.tipo === 'ajustar' ? 'AJUSTAR' : m.tipo === 'desenhar' ? 'DESENHAR' : 'CRIAR'}</em>{m.texto}</span>
               </button>
