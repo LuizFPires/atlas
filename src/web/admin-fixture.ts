@@ -136,9 +136,10 @@ export function criarAdminFixture(agora: number = Date.now()): AdminApi {
     resolverOcorrencia(id) { atencao = atencao.filter((a) => a.id !== id); return ok({}) },
     listarCortesias() {
       const cortesias = clientes
-        .filter((x) => x.tipo === 'cortesia' && x.validade_em && new Date(x.validade_em).getTime() > agora)
-        .map((x) => ({ email: emailDe(x.nome), nome: x.nome, validade_em: x.validade_em as string }))
-      return ok({ cortesias })
+        .filter((x) => x.tipo === 'cortesia' && x.validade_em && new Date(x.validade_em).getTime() > agora - 90 * 86400_000)
+        .map((x) => ({ email: emailDe(x.nome), nome: x.nome, validade_em: x.validade_em as string, vencida: new Date(x.validade_em as string).getTime() <= agora }))
+      // Uma vencida de exemplo (fora da lista de clientes, para não mexer nos números do painel).
+      return ok({ cortesias: [...cortesias, { email: 'primo@exemplo.com', nome: 'Primo', validade_em: new Date(agora - 4 * 86400_000).toISOString(), vencida: true }] })
     },
     liberarCortesia(email, validadeEm, nome) {
       const e = email.trim().toLowerCase()

@@ -53,6 +53,8 @@ async function entrar() {
 
 beforeEach(() => { sessionStorage.clear(); localStorage.clear(); localStorage.setItem('atlas.admin.menu-recolhido', '0') }) // os testes partem do menu aberto
 const irParaAcoes = async () => { await userEvent.click(await screen.findByRole('link', { name: 'Ações' })) }
+// Luiz, 26/11/2026: as cortesias ganharam uma aba própria dentro de Ações (antes a lista ficava embaixo dos cartões).
+const irParaCortesias = async () => { await irParaAcoes(); await userEvent.click(await screen.findByRole('tab', { name: /^Cortesias/ })) }
 
 describe('painel do admin (F16)', () => {
   it('login com e-mail e senha; as chamadas levam só o token', async () => {
@@ -277,7 +279,7 @@ describe('painel do admin (F16)', () => {
     expect(within(linhaBella).getAllByText('—').length).toBeGreaterThanOrEqual(2) // sem e-mail e sem cadastro
   })
 
-  it('a aba Cadastros não existe mais; a aba Ações traz os 3 blocos', async () => {
+  it('a aba Cadastros não existe mais; a aba Ações traz os 3 blocos (cortesia na aba própria)', async () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api } = ambiente()
     montar(api)
@@ -285,6 +287,7 @@ describe('painel do admin (F16)', () => {
     await irParaAcoes()
     expect(await screen.findByRole('region', { name: 'Teste grátis' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'E-mails temporários bloqueados' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('tab', { name: /^Cortesias/ }))
     expect(screen.getByRole('region', { name: 'Liberar cortesia' })).toBeInTheDocument()
   })
 
@@ -415,55 +418,90 @@ describe('quandoFoi', () => {
   })
 })
 
-describe('cortesias ativas: estender prazo', () => {
+describe('aba Cortesias: mudar prazo, link novo e renovar a vencida', () => {
   const diaIso = (n: number) => new Date(Date.now() + n * 86400000).toISOString()
-  it('lista a cortesia, soma dias na data e estende pelo mesmo endpoint de liberar', async () => {
+  const hojeBr = () => new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 10)
+  type Rota = (url: string, init?: RequestInit) => Response | undefined
+  const abrirCom = async (cortesias: unknown[], extra: Rota = () => undefined) => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
-    const validade = diaIso(5)
-    const { api, chamadas } = ambiente((url) => (url.endsWith('/admin/cortesias') ? resp({ ok: true, cortesias: [{ email: 'amigo@x.com', nome: 'Amigo', validade_em: validade }] }) : url.endsWith('/admin/cortesia') ? resp({ ok: true, nova: false, validade_em: diaIso(12) }) : undefined))
-    montar(api)
-    await irParaAcoes()
-    const cartao = await screen.findByRole('region', { name: 'Cortesias ativas' })
-    expect(await within(cartao).findByText('amigo@x.com')).toBeInTheDocument()
-    const campo = within(cartao).getByLabelText('Estender prazo') as HTMLInputElement
-    const antes = campo.value
-    await userEvent.click(within(cartao).getByRole('button', { name: '+7 dias' }))
-    expect(campo.value > antes).toBe(true)
-    await userEvent.click(within(cartao).getByRole('button', { name: 'Estender' }))
-    await waitFor(() => expect(within(cartao).getByRole('status')).toHaveTextContent(/Cortesia renovada até \d\d\/\d\d\./))
-    const c = chamadas.find((x) => x.url.endsWith('/admin/cortesia'))!
-    const corpo = JSON.parse(String(c.init.body))
-    expect(corpo.email).toBe('amigo@x.com')
-    expect(corpo.silencioso).toBe(true)
-    expect(within(cartao).getByRole('status')).not.toHaveTextContent(/e-mail/i)
-    expect(corpo.validade_em).toMatch(/T02:59:59\.000Z$/)
-    expect(chamadas.filter((x) => x.url.endsWith('/admin/cortesias')).length).toBeGreaterThanOrEqual(2)
-  })
+    const amb = ambiente((url, init) => extra(url, init) ?? (url.endsWith('/admin/cortesias') ? resp({ ok: true, cortesias }) : undefined))
+    montar(amb.api)
+    await irParaCortesias()
+    return { ...amb, lista: await screen.findByRole('region', { name: 'Cortesias' }) }
+  }
 
-  it('perto do teto, +7 dias não passa de 180 dias e a data não pode ser menor que a validade atual', async () => {
-    sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
-    const validade = diaIso(176)
-    const { api, chamadas } = ambiente((url) => (url.endsWith('/admin/cortesias') ? resp({ ok: true, cortesias: [{ email: 'amigo@x.com', nome: 'Amigo', validade_em: validade }] }) : url.endsWith('/admin/cortesia') ? resp({ ok: true, nova: false, validade_em: diaIso(179) }) : undefined))
-    montar(api)
-    await irParaAcoes()
-    const cartao = await screen.findByRole('region', { name: 'Cortesias ativas' })
-    const campo = (await within(cartao).findByLabelText('Estender prazo')) as HTMLInputElement
-    expect(campo.min <= campo.value).toBe(true)
-    expect(campo.min >= new Date(new Date(validade).getTime() - 3 * 3600_000).toISOString().slice(0, 10)).toBe(true)
-    await userEvent.click(within(cartao).getByRole('button', { name: '+7 dias' }))
-    expect(campo.value).toBe(campo.max)
-    await userEvent.click(within(cartao).getByRole('button', { name: 'Estender' }))
-    await waitFor(() => expect(chamadas.some((x) => x.url.endsWith('/admin/cortesia'))).toBe(true))
-    const corpo = JSON.parse(String(chamadas.find((x) => x.url.endsWith('/admin/cortesia'))!.init.body))
-    expect(new Date(corpo.validade_em).getTime()).toBeLessThanOrEqual(Date.now() + 180 * 86400000)
-  })
-
-  it('sem nenhuma cortesia, mostra o estado vazio', async () => {
+  it('Ações separa em abas: Geral (teste grátis e bloqueios) e Cortesias (liberar e gerenciar)', async () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api } = ambiente((url) => (url.endsWith('/admin/cortesias') ? resp({ ok: true, cortesias: [] }) : undefined))
     montar(api)
     await irParaAcoes()
-    expect(await screen.findByText('Nenhuma cortesia ativa agora.')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Geral' })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByRole('region', { name: 'Teste grátis' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Liberar cortesia' })).toBeNull()
+    await userEvent.click(screen.getByRole('tab', { name: /^Cortesias/ }))
+    expect(screen.getByRole('region', { name: 'Liberar cortesia' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Cortesias' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Teste grátis' })).toBeNull()
+    expect(await screen.findByText('Nenhuma cortesia em vigor agora.')).toBeInTheDocument()
+  })
+
+  it('mudar prazo: tira dias (encurta) e salva sem mandar e-mail', async () => {
+    const { lista, chamadas } = await abrirCom([{ email: 'amigo@x.com', nome: 'Amigo', validade_em: diaIso(20), vencida: false }],
+      (url) => (url.endsWith('/admin/cortesia') ? resp({ ok: true, nova: false, validade_em: diaIso(13) }) : undefined))
+    expect(await within(lista).findByText('amigo@x.com')).toBeInTheDocument()
+    expect(within(lista).getByText(/faltam (19|20|21) dias/)).toBeInTheDocument()
+    await userEvent.click(within(lista).getByRole('button', { name: 'Mudar prazo de amigo@x.com' }))
+    const campo = within(lista).getByLabelText('Termina em') as HTMLInputElement
+    const antes = campo.value
+    await userEvent.click(within(lista).getByRole('button', { name: '−7 dias' }))
+    expect(campo.value < antes).toBe(true)
+    expect(campo.min).toBe(hojeBr())
+    await userEvent.click(within(lista).getByRole('button', { name: 'Salvar prazo' }))
+    await waitFor(() => expect(within(lista).getByRole('status')).toHaveTextContent(/Prazo de amigo@x\.com mudado: termina em \d\d\/\d\d\/\d{4}\./))
+    const corpo = JSON.parse(String(chamadas.find((x) => x.url.endsWith('/admin/cortesia'))!.init.body))
+    expect(corpo).toMatchObject({ email: 'amigo@x.com', silencioso: true })
+    expect(corpo.validade_em).toMatch(/T02:59:59\.000Z$/)
+    expect(new Date(corpo.validade_em).getTime()).toBeLessThan(new Date(diaIso(20)).getTime())
+  })
+
+  it('tirar dias não passa de hoje; somar não passa de 180 dias', async () => {
+    const { lista } = await abrirCom([{ email: 'amigo@x.com', nome: 'Amigo', validade_em: diaIso(2), vencida: false }])
+    await userEvent.click(await within(lista).findByRole('button', { name: 'Mudar prazo de amigo@x.com' }))
+    const campo = within(lista).getByLabelText('Termina em') as HTMLInputElement
+    await userEvent.click(within(lista).getByRole('button', { name: '−7 dias' }))
+    expect(campo.value).toBe(campo.min)
+    for (let i = 0; i < 7; i++) await userEvent.click(within(lista).getByRole('button', { name: '+30 dias' }))
+    expect(campo.value).toBe(campo.max)
+  })
+
+  it('"Novo link": gera outro link (o e-mail vai de novo) e mostra para copiar', async () => {
+    const { lista, chamadas } = await abrirCom([{ email: 'amigo@x.com', nome: 'Amigo', validade_em: diaIso(5), vencida: false }],
+      (url) => (url.endsWith('/admin/cortesia/reenviar') ? resp({ ok: true, email_enviado: true, link: 'https://atlas-ia.app.br/instalar?t=abc' }) : undefined))
+    await userEvent.click(await within(lista).findByRole('button', { name: 'Novo link para amigo@x.com' }))
+    expect(await within(lista).findByText('https://atlas-ia.app.br/instalar?t=abc')).toBeInTheDocument()
+    expect(within(lista).getByRole('status')).toHaveTextContent('Link novo gerado e e-mail reenviado para amigo@x.com.')
+    expect(JSON.parse(String(chamadas.find((x) => x.url.endsWith('/admin/cortesia/reenviar'))!.init.body))).toEqual({ email: 'amigo@x.com' })
+    expect(within(lista).getByRole('button', { name: 'Copiar link' })).toBeInTheDocument()
+  })
+
+  it('cortesia vencida: aparece em "Vencidas" e "Renovar" escolhe a nova data, renova e manda link novo', async () => {
+    const { lista, chamadas } = await abrirCom([
+      { email: 'ativo@x.com', nome: 'Ativo', validade_em: diaIso(5), vencida: false },
+      { email: 'velho@x.com', nome: 'Velho', validade_em: diaIso(-4), vencida: true },
+    ], (url) => (url.endsWith('/admin/cortesia') ? resp({ ok: true, nova: false, validade_em: diaIso(7), email_enviado: true, link: 'https://atlas-ia.app.br/instalar?t=novo' }) : undefined))
+    expect(await within(lista).findByText('ativo@x.com')).toBeInTheDocument()
+    expect(within(lista).queryByText('velho@x.com')).toBeNull()
+    await userEvent.click(within(lista).getByRole('tab', { name: 'Vencidas 1' }))
+    expect(within(lista).getByText('velho@x.com')).toBeInTheDocument()
+    expect(within(lista).getByText(/venceu em \d\d\/\d\d\/\d{4}/)).toBeInTheDocument()
+    expect(within(lista).queryByRole('button', { name: 'Novo link para velho@x.com' })).toBeNull()
+    await userEvent.click(within(lista).getByRole('button', { name: 'Renovar velho@x.com' }))
+    await userEvent.click(within(lista).getByRole('button', { name: '+7 dias' }))
+    await userEvent.click(within(lista).getByRole('button', { name: 'Renovar e mandar o link' }))
+    expect(await within(lista).findByText('https://atlas-ia.app.br/instalar?t=novo')).toBeInTheDocument()
+    const corpo = JSON.parse(String(chamadas.find((x) => x.url.endsWith('/admin/cortesia'))!.init.body))
+    expect(corpo.email).toBe('velho@x.com')
+    expect(corpo.silencioso).toBeUndefined()
   })
 })
 
@@ -475,7 +513,7 @@ describe('cortesia manual no painel', () => {
     montar(api)
     const clientes = await screen.findByRole('region', { name: 'Clientes' })
     expect(within(clientes).getByText(/Cortesia até 29\/11\/2026/)).toBeInTheDocument()
-    await irParaAcoes()
+    await irParaCortesias()
     const form = screen.getByRole('region', { name: 'Liberar cortesia' })
     await userEvent.type(within(form).getByLabelText('E-mail da pessoa'), 'Amigo@Email.com')
     await userEvent.type(within(form).getByLabelText('Vale até'), '2026-11-27')
@@ -489,7 +527,7 @@ describe('cortesia manual no painel', () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api } = ambiente(() => undefined)
     montar(api)
-    await irParaAcoes()
+    await irParaCortesias()
     const form = screen.getByRole('region', { name: 'Liberar cortesia' })
     const hoje = new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 10) // dia de hoje em Brasília
     expect(within(form).getByLabelText('Vale até')).toHaveAttribute('min', hoje)
@@ -500,7 +538,7 @@ describe('cortesia manual no painel', () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api } = ambiente((url) => (url.endsWith('/admin/cortesia') ? resp({ ok: true, nova: true, validade_em: '2026-11-28T02:59:59.000Z', email_enviado: true }) : undefined))
     montar(api)
-    await irParaAcoes()
+    await irParaCortesias()
     const form = screen.getByRole('region', { name: 'Liberar cortesia' })
     await userEvent.type(within(form).getByLabelText('E-mail da pessoa'), 'amigo@email.com')
     await userEvent.type(within(form).getByLabelText('Vale até'), '2026-11-27')
@@ -516,7 +554,7 @@ describe('cortesia manual no painel', () => {
     const escrever = vi.fn(async () => {})
     Object.defineProperty(navigator, 'clipboard', { value: { writeText: escrever }, configurable: true })
     montar(api)
-    await irParaAcoes()
+    await irParaCortesias()
     const form = screen.getByRole('region', { name: 'Liberar cortesia' })
     await userEvent.type(within(form).getByLabelText('E-mail da pessoa'), 'dudu@gmail.com')
     await userEvent.type(within(form).getByLabelText('Vale até'), '2026-11-27')
@@ -532,7 +570,7 @@ describe('cortesia manual no painel', () => {
     sessionStorage.setItem(CHAVE_SESSAO_ADMIN, 'jwt-luiz')
     const { api } = ambiente((url) => (url.endsWith('/admin/cortesia') ? resp({ erro: 'ja_tem_licenca_paga', mensagem: 'Essa pessoa já tem uma licença paga. Não precisa de cortesia.' }, 409) : undefined))
     montar(api)
-    await irParaAcoes()
+    await irParaCortesias()
     const form = await screen.findByRole('region', { name: 'Liberar cortesia' })
     await userEvent.type(within(form).getByLabelText('E-mail da pessoa'), 'ana@loja.com')
     await userEvent.type(within(form).getByLabelText('Vale até'), '2026-11-27')
