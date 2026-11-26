@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Botao, CampoFalado } from '../../ui'
 import { CATEGORIAS, formatarPreco, precoParaCentavos, type ItemCardapio, type PortaDados, type Resp } from './dados'
 
-const ERRO_PORTA = 'Não deu pra carregar/salvar agora. Tente de novo.'
+const ERRO_PORTA = 'Não deu pra carregar/salvar agora: a internet ou o servidor do app não respondeu. Confira a conexão e tente de novo.'
 
 export function Cardapio({ dados }: { dados: PortaDados }) {
   const [itens, setItens] = useState<ItemCardapio[]>([])

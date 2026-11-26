@@ -21,8 +21,8 @@ export async function registrarCasoAjuda(
   d: Deps,
   a: { email: unknown; computador_hash: unknown; token_dispositivo: string; tipo: unknown; descricao: unknown },
 ): Promise<{ ok: true }> {
-  const negado = () => new ErroRegra('nao_autorizado', 'Não foi possível confirmar este computador.', 403)
-  if (typeof a.computador_hash !== 'string' || !HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
+  const negado = () => new ErroRegra('nao_autorizado', 'A licença não foi reconhecida neste computador (ela vale para um computador ativo por vez). Confira no portal do Atlas qual computador está ativo.', 403)
+  if (typeof a.computador_hash !== 'string' || !HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'O Atlas deste computador mandou uma identificação que o servidor não reconhece. Atualize o Atlas e tente de novo.')
   if (typeof a.email !== 'string') throw negado()
   if (a.tipo !== 'ajuda_nao_resolvida' || typeof a.descricao !== 'string') throw new ErroRegra('caso_invalido', 'Caso inválido.', 400)
   const descricao = limparDescricao(a.descricao)
@@ -34,7 +34,7 @@ export async function registrarCasoAjuda(
   const hashToken = await sha256(a.token_dispositivo || '-')
   if (!ativa || ativa.computador_hash !== a.computador_hash || !ativa.token_hash || !iguais(hashToken, ativa.token_hash)) throw negado()
   if (!(await d.store.tentarEvento(`ajuda-caso:${lic.id}`, 10, 60 * 60_000, d.agora()))) {
-    throw new ErroRegra('muitas_solicitacoes', 'Muitos casos seguidos. Tente de novo mais tarde.', 429)
+    throw new ErroRegra('muitas_solicitacoes', 'Muitos casos seguidos. Espere uns 10 minutos e tente de novo.', 429)
   }
   await d.store.inserirOcorrencia({ cliente_id: cliente.id, tipo: 'ajuda_nao_resolvida', descricao, autor: 'app', resolvida: false })
   return { ok: true }

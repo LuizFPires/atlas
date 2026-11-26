@@ -61,7 +61,7 @@ function Entrar({ api, onEntrou }: { api: ApiCelular; onEntrou: (email: string) 
   const [erro, setErro] = useState('')
   const [indo, setIndo] = useState(false)
   const idE = useId(), idC = useId()
-  const agir = async (f: () => Promise<void>) => { setErro(''); setIndo(true); try { await f() } catch (e) { setErro((e as Error).message || 'Não deu certo agora.') } finally { setIndo(false) } }
+  const agir = async (f: () => Promise<void>) => { setErro(''); setIndo(true); try { await f() } catch (e) { setErro((e as Error).message || 'Não deu certo: o servidor do Atlas não respondeu (pode ser a internet do celular). Confira a conexão e tente de novo.') } finally { setIndo(false) } }
   return (
     <main className="cel">
       <header className="cel-topo"><span className="cel-marca"><Monograma largura={34} altura={19} />ATLAS</span></header>
@@ -125,7 +125,7 @@ function CartaoAvisos({ api }: { api: ApiCelular }) {
         enviar: (a) => api.avisos!.assinar(a),
       })
       setSit(r)
-    } catch (e) { setErro((e as Error).message || 'Não consegui ligar os avisos agora. Tente de novo.') }
+    } catch (e) { setErro((e as Error).message || 'Não consegui ligar os avisos: confira se o celular está com internet e se os avisos do navegador estão permitidos, e tente de novo.') }
   }
   const textos: Record<Exclude<SituacaoAvisos, 'sem-suporte'>, string> = {
     'pode-ligar': 'Receba um aviso quando a cota do Claude voltar, quando a obra parar ou quando ficar pronta.',
@@ -665,7 +665,7 @@ export function AppCelular({ api, intervalo = 4000, faceId = semFaceId }: { api:
       return (
         <main className="cel">
           <Cabecalho rotulo="O seu projeto" onVoltar={irObras} voltarRotulo="Voltar para Minhas obras" />
-          <div className="cel-corpo"><h1 className="cel-titulo">Algo deu errado no notebook.</h1><p className="cel-texto">{projeto.mensagem || 'Tente de novo daqui a pouco.'}</p></div>
+          <div className="cel-corpo"><h1 className="cel-titulo">Algo deu errado no notebook.</h1><p className="cel-texto">{projeto.mensagem || 'O notebook não conseguiu terminar este passo. Abra o Atlas no notebook para ver o motivo, ou tente de novo daqui a pouco.'}</p></div>
           <footer className="cel-rodape"><button type="button" className="cel-botao" onClick={irObras}>Voltar para Minhas obras</button></footer>
         </main>
       )

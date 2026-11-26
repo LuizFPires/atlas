@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Botao } from '../../ui'
 import { formatarData, hojeLocal, type Aluno, type PortaDados, type Presenca } from './dados'
 
-const ERRO_PORTA = 'Não deu pra carregar/salvar agora. Tente de novo.'
+const ERRO_PORTA = 'Não deu pra carregar/salvar agora: a internet ou o servidor do app não respondeu. Confira a conexão e tente de novo.'
 
 /** `hoje` é injetável (testes estáveis); por padrão é o dia LOCAL do computador. */
 export function Checkin({ dados, hoje }: { dados: PortaDados; hoje?: string }) {

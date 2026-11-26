@@ -54,7 +54,7 @@ export async function clienteLogado(d: DepsPortal, jwt: string, opcoes: { permit
   if (cliente.excluido_em && !opcoes.permitirExcluido) throw semAcesso()
   const licenca = await d.store.licencaDoCliente(cliente.id)
   // Só a exclusão de conta (LGPD) funciona sem licença; todo o resto continua exigindo uma.
-  if (!licenca && !opcoes.permitirSemLicenca) throw new ErroRegra('sem_licenca', 'Licença não encontrada.', 404)
+  if (!licenca && !opcoes.permitirSemLicenca) throw new ErroRegra('sem_licenca', 'Não achamos essa licença. Confira se é o mesmo e-mail da compra.', 404)
   return { cliente, licenca }
 }
 
@@ -138,9 +138,9 @@ export async function formaDePagamento(d: DepsPortal, jwt: string): Promise<{ ur
   const { licenca: l } = await clienteLogado(d, jwt)
   const contaGw = l.status !== 'cancelada' && l.conta_gateway_id ? await d.store.contaGateway(l.conta_gateway_id) : null
   if (!contaGw || !l.gateway_cliente_ref) throw new ErroRegra('sem_pagamento', 'Não há forma de pagamento para trocar agora.', 409)
-  if (!contaGw.base_retorno) throw new ErroRegra('retorno_nao_configurado', 'O endereço de retorno do pagamento ainda não está configurado.', 503)
+  if (!contaGw.base_retorno) throw new ErroRegra('retorno_nao_configurado', 'A troca da forma de pagamento está indisponível por um ajuste do nosso lado. Nada mudou na sua assinatura. Tente de novo mais tarde.', 503)
   const sk = await d.segredos.chaveSecreta(contaGw.segredo_ref)
-  if (!sk) throw new ErroRegra('gateway_nao_configurado', 'O pagamento ainda não está configurado.', 503)
+  if (!sk) throw new ErroRegra('gateway_nao_configurado', 'A troca da forma de pagamento está indisponível por um ajuste do nosso lado. Nada mudou na sua assinatura. Tente de novo mais tarde.', 503)
   return { url: await d.stripe(sk).criarPortalCobranca(l.gateway_cliente_ref, `${new URL(contaGw.base_retorno).origin}/conta`) }
 }
 
@@ -152,7 +152,7 @@ const mascarar = (e: string) => {
 /** Pede o código de 6 dígitos para trocar de computador. Vai SEMPRE para o e-mail da compra (o do login confirmado). */
 export async function pedirCodigoTroca(d: DepsPortal, jwt: string, ip: string) {
   const { cliente, licenca: l } = await clienteLogado(d, jwt)
-  if (l.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Essa licença está cancelada.', 409)
+  if (l.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Essa licença está cancelada. Para usar o Atlas de novo, faça uma nova assinatura.', 409)
   const bloqueada = await proximaTroca(d, l)
   if (bloqueada) { await registrarTrocaAntecipada(d, cliente.id, bloqueada); throw erroLimite(bloqueada) }
   await solicitarCodigo(d, cliente.email_compra, 'troca', ip)
@@ -181,7 +181,7 @@ async function enviarNovoAcesso(d: DepsPortal, cliente: Cliente) {
  */
 export async function desativarComputador(d: DepsPortal, jwt: string, codigo: string) {
   const { cliente, licenca: l } = await clienteLogado(d, jwt)
-  if (l.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Essa licença está cancelada.', 409)
+  if (l.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Essa licença está cancelada. Para usar o Atlas de novo, faça uma nova assinatura.', 409)
   const atual = await d.store.ativacaoAtiva(l.id)
   if (!atual) throw new ErroRegra('sem_ativacao', 'Nenhum computador está com a licença agora.', 409)
   const bloqueada = await proximaTroca(d, l)
@@ -204,7 +204,7 @@ export async function desativarComputador(d: DepsPortal, jwt: string, codigo: st
 /** Computador já liberado e o e-mail não chegou: manda o acesso de novo (só sem computador ativo; 3 por hora). */
 export async function reenviarAcesso(d: DepsPortal, jwt: string) {
   const { cliente, licenca: l } = await clienteLogado(d, jwt)
-  if (l.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Essa licença está cancelada.', 409)
+  if (l.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Essa licença está cancelada. Para usar o Atlas de novo, faça uma nova assinatura.', 409)
   if (await d.store.ativacaoAtiva(l.id)) throw new ErroRegra('ja_ativo', 'Já existe um computador com a licença. Para trocar, desative-o primeiro.', 409)
   if (!(await d.store.tentarEvento(`reenvio:cliente:${cliente.id}`, 3, 60 * 60_000, d.agora()))) {
     throw new ErroRegra('muitas_solicitacoes', 'Você já pediu o acesso algumas vezes. Espere uns minutos e olhe o seu e-mail.', 429)
@@ -247,7 +247,7 @@ export async function excluirConta(d: DepsPortal, jwt: string, confirmar: unknow
     if (!sk) throw new ErroRegra('gateway_nao_configurado', 'Não deu para parar a cobrança da mensalidade agora, então nada foi apagado. Tente de novo em instantes.', 503)
     await d.stripe(sk).cancelarAssinatura(licenca.gateway_assinatura_ref, true)
   }
-  if (!(await d.store.excluirConta(cliente.id, d.agora()))) throw new ErroRegra('sem_conta', 'Conta não encontrada.', 404)
+  if (!(await d.store.excluirConta(cliente.id, d.agora()))) throw new ErroRegra('sem_conta', 'Não achamos essa conta. Confira se é o mesmo e-mail da compra.', 404)
   if (cliente.auth_user_id) {
     try { await d.removerUsuarioAuth(cliente.auth_user_id) } catch {
       throw new ErroRegra('login_nao_removido', 'Apagamos os seus dados, mas faltou encerrar o seu login. Tente de novo em instantes para terminar.', 502)

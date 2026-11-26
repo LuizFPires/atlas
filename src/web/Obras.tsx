@@ -23,7 +23,7 @@ export function MinhasObras({ ponte }: { ponte: PonteStatusObras }) {
   return (
     <section className="p-card" aria-labelledby="p-ob">
       <span className="v-mono p-rotulo" id="p-ob">Minhas obras</span>
-      {erro && <p role="alert" className="v-erro">Não consegui buscar as suas obras agora. Tente de novo daqui a pouco.</p>}
+      {erro && <p role="alert" className="v-erro">Não consegui buscar as suas obras: o servidor do Atlas não respondeu (pode ser a internet). Confira a conexão e recarregue a página daqui a alguns minutos.</p>}
       {!erro && !obras && <p className="c-mute p-p" role="status">Buscando as suas obras…</p>}
       {obras && obras.length === 0 && <p className="c-mute p-p">Você ainda não tem obras por aqui. Quando o seu computador começar uma, ela aparece nesta lista.</p>}
       <ul className="ob-lista">

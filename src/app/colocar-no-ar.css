@@ -32,6 +32,7 @@
 .at-noar__lista > span, .at-noar__linha { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
 .at-noar__lista > span > span { color: var(--mute); }
 .at-noar__verde { color: var(--lime-txt, var(--lime)); }
+.at-noar__ambar { color: var(--aviso-txt, var(--aviso)); }
 .at-noar__mudo { color: var(--mute2, var(--mute)); font-weight: 500; }
 .at-noar__link { margin-left: 6px; padding: 0; border: 0; background: none; cursor: pointer; color: var(--lime-txt, var(--lime)); font: 600 14px var(--font-text); }
 .at-noar__prim { height: 56px; border-radius: 12px; border: 0; background: var(--lime); color: var(--on-lime); font: 700 17px var(--font-text); display: flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; }
@@ -98,4 +99,4 @@
 /* O código técnico do passo que parou, pequeno: é o que o Atlas usa para saber exatamente o que houve. */
 .at-noar__codigo { font: 500 11px var(--font-mono); letter-spacing: .04em; color: var(--mute2, var(--mute)); }
 /* Antes do clique: o que pode travar a publicação (conta do Supabase, limite grátis de 2 bancos). */
-.at-noar__antes { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--warn); font-size: 14px; line-height: 1.5; color: var(--text); }
+.at-noar__antes { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--aviso); background: color-mix(in srgb, var(--aviso) 8%, transparent); font-size: 14px; line-height: 1.5; color: var(--text); }

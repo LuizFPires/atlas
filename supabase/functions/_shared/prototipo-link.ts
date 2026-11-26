@@ -33,8 +33,8 @@ export async function publicarPrototipo(
   a: { email: string; computador_hash: string; token_dispositivo: string; nome: string; documento: string },
 ): Promise<{ url: string; expira_em: string }> {
   const v = await verificar(d, a)
-  if (!v.licenca_id) throw new ErroRegra('negado', 'Não foi possível gerar o link.', 403)
-  if (typeof a.documento !== 'string' || !ehPrototipoProtegido(a.documento)) throw new ErroRegra('prototipo_invalido', 'Esse protótipo não pôde ser publicado.', 400)
+  if (!v.licenca_id) throw new ErroRegra('negado', 'A licença não foi reconhecida, então o link não foi gerado. Confira a sua assinatura no portal do Atlas.', 403)
+  if (typeof a.documento !== 'string' || !ehPrototipoProtegido(a.documento)) throw new ErroRegra('prototipo_invalido', 'Esse protótipo não pôde ser publicado. Tente de novo; se repetir, use a Ajuda do Atlas.', 400)
   if (!armazem || !origemSite || !/^https:\/\/[a-z0-9.-]+$/.test(origemSite)) throw new ErroRegra('link_indisponivel', 'O link para o celular ainda não está disponível. Tente de novo mais tarde.', 503)
   if (!(await d.store.tentarEvento(`prototipo-link:${v.licenca_id}`, 30, 60 * 60_000, d.agora()))) {
     throw new ErroRegra('muitas_solicitacoes', 'Você gerou muitos links agora há pouco. Espere alguns minutos.', 429)
@@ -49,7 +49,7 @@ export async function publicarPrototipo(
 
 /** M33: guarda as telas que o notebook publicou para o celular do dono (mesmo armazém e mesma validade do link). Devolve o token. */
 export async function guardarTelasDoProjeto(d: Deps, armazem: ArmazemPrototipos | undefined, nome: string, documento: unknown): Promise<string> {
-  if (typeof documento !== 'string' || !ehPrototipoProtegido(documento)) throw new ErroRegra('prototipo_invalido', 'Esse protótipo não pôde ser publicado.', 400)
+  if (typeof documento !== 'string' || !ehPrototipoProtegido(documento)) throw new ErroRegra('prototipo_invalido', 'Esse protótipo não pôde ser publicado. Tente de novo; se repetir, use a Ajuda do Atlas.', 400)
   if (!armazem) throw new ErroRegra('link_indisponivel', 'As telas para o celular ainda não estão disponíveis.', 503)
   const agora = d.agora()
   const token = tokenNovo()
@@ -58,9 +58,9 @@ export async function guardarTelasDoProjeto(d: Deps, armazem: ArmazemPrototipos 
 }
 
 export async function verPrototipo(d: Deps, armazem: ArmazemPrototipos | undefined, token: string): Promise<PrototipoGuardado> {
-  if (typeof token !== 'string' || !TOKEN_RE.test(token) || !armazem) throw new ErroRegra('link_invalido', 'Esse link não existe.', 404)
+  if (typeof token !== 'string' || !TOKEN_RE.test(token) || !armazem) throw new ErroRegra('link_invalido', 'Esse link não existe (pode ter sido copiado pela metade). Abra de novo pelo botão do e-mail ou peça um link novo.', 404)
   const p = await armazem.ler(token).catch(() => null)
-  if (!p || !ehPrototipoProtegido(p.documento)) throw new ErroRegra('link_invalido', 'Esse link não existe.', 404)
+  if (!p || !ehPrototipoProtegido(p.documento)) throw new ErroRegra('link_invalido', 'Esse link não existe (pode ter sido copiado pela metade). Abra de novo pelo botão do e-mail ou peça um link novo.', 404)
   if (new Date(p.expira_em).getTime() <= d.agora().getTime()) throw new ErroRegra('link_vencido', 'Esse link venceu (ele vale 7 dias). Peça um link novo no Atlas.', 410)
   return p
 }

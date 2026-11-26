@@ -4,7 +4,7 @@ import { Botao } from '../../ui'
 import { SERVICOS, type Cliente, type Horario, type PortaDados } from './dados'
 import { lembretesQueSairiam, type PortaEnvio } from './lembretes'
 
-const ERRO_PORTA = 'Não deu pra carregar/salvar agora. Tente de novo.'
+const ERRO_PORTA = 'Não deu pra carregar/salvar agora: a internet ou o servidor do app não respondeu. Confira a conexão e tente de novo.'
 
 interface Props { dados: PortaDados; dia: string; nomeNegocio?: string; envio?: PortaEnvio }
 

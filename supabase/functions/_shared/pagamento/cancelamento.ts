@@ -6,15 +6,15 @@ import { type DepsPagamento, PRAZO_ARREPENDIMENTO_MS } from './config.ts'
 async function licencaDoEmail(d: DepsPagamento, email: string): Promise<Licenca> {
   const cli = await d.store.clientePorEmail(email.trim().toLowerCase())
   const lic = cli && (await d.store.licencaDoCliente(cli.id))
-  if (!cli || !lic) throw new ErroRegra('sem_licenca', 'Licença não encontrada.', 404)
+  if (!cli || !lic) throw new ErroRegra('sem_licenca', 'Não achamos essa licença. Confira se é o mesmo e-mail da compra.', 404)
   return lic
 }
 
 async function apiDaLicenca(d: DepsPagamento, lic: Licenca) {
   const conta = lic.conta_gateway_id ? await d.store.contaGateway(lic.conta_gateway_id) : null
-  if (!conta) throw new ErroRegra('gateway_nao_configurado', 'Essa compra não está ligada a uma conta de pagamento.', 503)
+  if (!conta) throw new ErroRegra('gateway_nao_configurado', 'O cancelamento está indisponível agora por um ajuste do nosso lado. Nada mudou na sua assinatura. Tente de novo mais tarde ou use a Ajuda do Atlas.', 503)
   const sk = await d.segredos.chaveSecreta(conta.segredo_ref)
-  if (!sk) throw new ErroRegra('gateway_nao_configurado', 'O pagamento ainda não está configurado.', 503)
+  if (!sk) throw new ErroRegra('gateway_nao_configurado', 'O cancelamento está indisponível agora por um ajuste do nosso lado. Nada mudou na sua assinatura. Tente de novo mais tarde ou use a Ajuda do Atlas.', 503)
   return d.stripe(sk)
 }
 

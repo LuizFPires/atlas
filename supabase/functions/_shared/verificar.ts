@@ -40,7 +40,7 @@ export async function verificar(
   d: Deps,
   a: { email: string; computador_hash: string; token_dispositivo: string },
 ): Promise<RespostaVerificar> {
-  if (!HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
+  if (!HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'O Atlas deste computador mandou uma identificação que o servidor não reconhece. Atualize o Atlas e tente de novo.')
   const negar = () => montarResposta(d, a.computador_hash, false, 'negado', null)
   const cliente = await d.store.clientePorEmail(a.email.trim().toLowerCase())
   const lic = cliente && (await d.store.licencaDoCliente(cliente.id))

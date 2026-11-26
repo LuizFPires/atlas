@@ -71,7 +71,7 @@ export async function solicitarCodigoPeloLink(d: Deps, token: string, ip = 'desc
   }
   const link = await validarLink(d, token)
   const cliente = await d.store.clientePorId(link.cliente_id)
-  if (!cliente) throw new ErroRegra('link_invalido', 'Esse link não existe.', 404)
+  if (!cliente) throw new ErroRegra('link_invalido', 'Esse link não existe (pode ter sido copiado pela metade). Abra de novo pelo botão do e-mail ou peça um link novo.', 404)
   await emitirCodigo(d, cliente, 'ativacao')
   // M31: o app ainda não ativado passa a falar o idioma da licença já na tela do código.
   const lic = await d.store.licencaDoCliente(cliente.id)
@@ -92,7 +92,7 @@ export async function consumirCodigo(d: Deps, clienteId: string, finalidade: Fin
   const t = await d.store.incrementarTentativa(c.id, MAX_TENTATIVAS, d.agora())
   if (!t) throw new ErroRegra('codigo_bloqueado', 'Muitas tentativas. Peça um novo código.', 429)
   if (!iguais(await hashCodigo(d, clienteId, finalidade, codigo.trim()), t.codigo_hash)) {
-    throw new ErroRegra('codigo_invalido', 'Código incorreto.', 400)
+    throw new ErroRegra('codigo_invalido', 'Código incorreto. Confira os 6 números do e-mail mais recente (o código anterior deixa de valer) ou peça um novo.', 400)
   }
   if (!(await d.store.consumirCodigo(c.id, MAX_TENTATIVAS, d.agora()))) {
     throw new ErroRegra('codigo_invalido', 'Código vencido ou já usado. Peça um novo.', 400)
@@ -101,13 +101,13 @@ export async function consumirCodigo(d: Deps, clienteId: string, finalidade: Fin
 }
 
 export async function confirmarAtivacao(d: Deps, a: { email: string; codigo: string; token: string; computador_hash: string }) {
-  if (!HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
+  if (!HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'O Atlas deste computador mandou uma identificação que o servidor não reconhece. Atualize o Atlas e tente de novo.')
   const link = await validarLink(d, a.token)
   // Sem e-mail (veio pelo link, com o código automático): o dono é quem recebeu o link.
   const cliente = a.email.trim() ? await d.store.clientePorEmail(norm(a.email)) : await d.store.clientePorId(link.cliente_id)
-  if (!cliente || cliente.id !== link.cliente_id) throw new ErroRegra('codigo_invalido', 'E-mail ou código não conferem.', 400)
+  if (!cliente || cliente.id !== link.cliente_id) throw new ErroRegra('codigo_invalido', 'E-mail ou código não conferem. Confira o e-mail e use o código da mensagem mais recente.', 400)
   const lic = await d.store.licencaDoCliente(cliente.id)
-  if (!lic || lic.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Licença não encontrada.', 404)
+  if (!lic || lic.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Não achamos essa licença. Confira se é o mesmo e-mail da compra.', 404)
   const atual = await d.store.ativacaoAtiva(lic.id)
   if (atual && atual.computador_hash !== a.computador_hash) {
     throw new ErroRegra('outro_computador', 'Essa licença já está em outro computador. Use "Trocar de computador" no portal.', 409)

@@ -14,10 +14,10 @@ export async function registrarTrocaAntecipada(d: Deps, clienteId: string, proxi
 }
 
 export async function trocarComputador(d: Deps, a: { email: string; codigo: string; novo_hash: string }) {
-  if (!HASH_RE.test(a.novo_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
+  if (!HASH_RE.test(a.novo_hash)) throw new ErroRegra('computador_invalido', 'O Atlas deste computador mandou uma identificação que o servidor não reconhece. Atualize o Atlas e tente de novo.')
   const cliente = await d.store.clientePorEmail(a.email.trim().toLowerCase())
   const lic = cliente && (await d.store.licencaDoCliente(cliente.id))
-  if (!cliente || !lic || lic.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Licença não encontrada.', 404)
+  if (!cliente || !lic || lic.status === 'cancelada') throw new ErroRegra('sem_licenca', 'Não achamos essa licença. Confira se é o mesmo e-mail da compra.', 404)
   const atual = await d.store.ativacaoAtiva(lic.id)
   if (!atual) throw new ErroRegra('sem_ativacao', 'Essa licença ainda não foi ativada em nenhum computador.', 409)
   if (atual.computador_hash === a.novo_hash) throw new ErroRegra('mesmo_computador', 'Esse já é o computador ativo.', 409)
@@ -60,7 +60,7 @@ export async function trocarComputador(d: Deps, a: { email: string; codigo: stri
 /** Override manual (admin, F16): libera uma troca fora do limite. A autenticação do admin é da borda HTTP. */
 export async function liberarTroca(d: Deps, licencaId: string, motivo: string) {
   const lic = await d.store.licencaPorId(licencaId)
-  if (!lic) throw new ErroRegra('sem_licenca', 'Licença não encontrada.', 404)
+  if (!lic) throw new ErroRegra('sem_licenca', 'Não achamos essa licença. Confira se é o mesmo e-mail da compra.', 404)
   await d.store.salvarLicenca({ ...lic, troca_liberada_em: d.agora() })
   await d.store.inserirOcorrencia({ cliente_id: lic.cliente_id, tipo: 'override_troca', descricao: motivo })
 }

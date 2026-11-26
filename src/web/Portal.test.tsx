@@ -117,7 +117,7 @@ describe('tela da conta (item 2)', () => {
     const { api } = sessaoAberta({ '/portal/eu': () => resp(CONTA.perfil), '/portal/conta': () => resp(CONTA), '/portal/forma-pagamento': () => resp({ url: 'http://evil.test' }) })
     render(<TemaProvider><Portal api={api} /></TemaProvider>)
     await userEvent.click(await screen.findByRole('button', { name: 'Trocar forma de pagamento' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('estranho') // só aceita https
+    expect(await screen.findByRole('alert')).toHaveTextContent('por segurança ele não abriu') // só aceita https
   })
 
   test('sessão vencida no servidor: pede para entrar de novo', async () => {

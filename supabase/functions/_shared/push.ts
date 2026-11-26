@@ -23,11 +23,11 @@ const SERVICOS = /^https:\/\/(fcm\.googleapis\.com|updates\.push\.services\.mozi
 const B64URL = /^[A-Za-z0-9_-]+$/
 
 const invalido = () => new ErroRegra('assinatura_invalida', 'Este celular não conseguiu ligar os avisos. Tente de novo.', 400)
-const semChave = () => new ErroRegra('aviso_indisponivel', 'Os avisos no celular ainda não estão disponíveis.', 503)
+const semChave = () => new ErroRegra('aviso_indisponivel', 'Os avisos no celular ainda não estão disponíveis. O resto do Atlas no celular funciona normalmente.', 503)
 
 async function licencaDoCelular(d: DepsPortal, jwt: string) {
   const { licenca } = await clienteLogado(d, jwt)
-  if (motivoDaLicenca(licenca as never, d.agora()) !== 'ok') throw new ErroRegra('licenca_inativa', 'Seu acesso ao Atlas não está ativo.', 403)
+  if (motivoDaLicenca(licenca as never, d.agora()) !== 'ok') throw new ErroRegra('licenca_inativa', 'Seu acesso ao Atlas não está ativo (a assinatura ou o teste terminou). Assine o Atlas para continuar.', 403)
   return licenca.id as string
 }
 
@@ -58,11 +58,11 @@ type Auth = { email: unknown; computador_hash: unknown; token_dispositivo: strin
 export async function avisarCelular(d: Deps, canal: CanalPush | undefined, envio: EnvioPush | undefined, a: Auth & { titulo: unknown; texto: unknown }) {
   if (!canal || !envio) throw semChave()
   const v = await verificar(d, { email: typeof a.email === 'string' ? a.email : '', computador_hash: typeof a.computador_hash === 'string' ? a.computador_hash : '', token_dispositivo: a.token_dispositivo })
-  if (!v.pode_construir || !v.licenca_id) throw new ErroRegra('nao_autorizado', 'Não foi possível confirmar este computador.', 403)
+  if (!v.pode_construir || !v.licenca_id) throw new ErroRegra('nao_autorizado', 'A licença não foi reconhecida neste computador (ela vale para um computador ativo por vez). Confira no portal do Atlas qual computador está ativo.', 403)
   const titulo = limparTexto(a.titulo, 60)
   const texto = limparTexto(a.texto, 180)
   if (!titulo || !texto) throw new ErroRegra('aviso_invalido', 'Aviso vazio.', 400)
-  if (!(await d.store.tentarEvento(`celular-aviso:${v.licenca_id}`, 30, 60 * 60_000, d.agora()))) throw new ErroRegra('muitas_solicitacoes', 'Muitos avisos agora.', 429)
+  if (!(await d.store.tentarEvento(`celular-aviso:${v.licenca_id}`, 30, 60 * 60_000, d.agora()))) throw new ErroRegra('muitas_solicitacoes', 'Muitos avisos seguidos. Espere uns 10 minutos e tente de novo.', 429)
   const corpo = JSON.stringify({ titulo, texto, url: '/app' })
   let enviados = 0
   for (const s of await canal.listar(v.licenca_id)) {

@@ -28,8 +28,8 @@ export type ResultadoCompra = { ok: true; url: string } | { ok: false; mensagem:
  * `origem: 'app'` = compra feita de dentro do Atlas instalado (muda só para onde a Stripe devolve o cliente).
  */
 const MSG = {
-  pt: { aceite: 'Para continuar, marque que você leu e aceita a Política de Privacidade e os Termos de Uso.', email: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.', fechada: 'A compra ainda não está aberta por aqui. Volte daqui a pouco.', falhou: 'Não deu para abrir o pagamento agora. Tente de novo em instantes.', rede: 'Sem conexão com o pagamento. Veja a sua internet e tente de novo.' },
-  en: { aceite: 'To continue, check that you have read and accept the Privacy Policy and the Terms of Use.', email: 'Check the email: it needs an @ and an ending, like .com.', fechada: 'Checkout isn’t open here yet. Please come back in a bit.', falhou: 'We couldn’t open the payment page right now. Please try again in a moment.', rede: 'No connection to the payment page. Check your internet and try again.' },
+  pt: { aceite: 'Para continuar, marque que você leu e aceita a Política de Privacidade e os Termos de Uso.', email: 'Confira o e-mail: ele precisa ter um @ e um final, como .com.br.', fechada: 'A compra ainda não está aberta por aqui. Volte daqui a pouco.', falhou: 'O servidor do Atlas não conseguiu abrir o pagamento agora. Nada foi cobrado. Tente de novo em alguns minutos; se continuar, use a Ajuda do Atlas.', rede: 'Sem conexão com o pagamento. Veja a sua internet e tente de novo.' },
+  en: { aceite: 'To continue, check that you have read and accept the Privacy Policy and the Terms of Use.', email: 'Check the email: it needs an @ and an ending, like .com.', fechada: 'Checkout isn’t open here yet. Please come back in a bit.', falhou: 'The Atlas server couldn’t open the payment page right now. You were not charged. Please try again in a few minutes; if it keeps happening, use Atlas Help.', rede: 'No connection to the payment page. Check your internet and try again.' },
 }
 
 /** M31: `mercado: 'us'` = compra em dólar, pela página em inglês (mensagens em inglês). */

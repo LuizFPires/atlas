@@ -46,7 +46,7 @@ export async function verAtualizacao(
 ): Promise<RespostaAtualizacao> {
   if (!VERSAO_RE.test(a.versao)) throw new ErroRegra('versao_invalida', 'Versão do app inválida.')
   const v = await verificar(d, a)
-  if (!v.licenca_id) throw new ErroRegra('negado', 'Não foi possível conferir a atualização.', 403)
+  if (!v.licenca_id) throw new ErroRegra('negado', 'A licença não foi reconhecida, então a atualização não foi liberada. Confira a sua assinatura no portal do Atlas.', 403)
   const mac = a.sistema === 'mac'
   const porSistema = fontes && !('manifesto' in fontes) ? fontes : { windows: fontes as FonteAtualizacao | undefined }
   const fonte = mac ? porSistema.mac : porSistema.windows

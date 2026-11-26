@@ -18,7 +18,7 @@ export async function processarWebhook(d: DepsPagamento, contaId: string, corpoB
   const conta = await d.store.contaGateway(contaId)
   if (!conta) throw new ErroRegra('conta_desconhecida', 'Conta de pagamento não encontrada.', 404)
   const whsec = await d.segredos.segredoWebhook(conta.segredo_ref)
-  if (!whsec) throw new ErroRegra('gateway_nao_configurado', 'O pagamento ainda não está configurado.', 503)
+  if (!whsec) throw new ErroRegra('gateway_nao_configurado', 'As vendas estão fechadas por um ajuste do nosso lado. Nada foi cobrado. Tente de novo mais tarde.', 503)
   if (!(await verificarAssinaturaStripe(corpoBruto, assinatura, whsec, d.agora().getTime()))) {
     throw new ErroRegra('assinatura_invalida', 'Assinatura inválida.', 400)
   }
@@ -90,7 +90,7 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
   if (String(s.currency ?? '').toLowerCase() !== moedaDo(mercado) || !(Number(s.amount_total) >= Math.round(valorBaseNoMercado(tipoProduto, mercado) * 100))) return
   const email = str(s.customer_details?.email) ?? str(s.customer_email)
   const pi = idDe(s.payment_intent)
-  if (!email || !pi) throw new ErroRegra('sessao_incompleta', 'Sessão sem e-mail ou pagamento.', 400)
+  if (!email || !pi) throw new ErroRegra('sessao_incompleta', 'Não achamos o pagamento desta compra. Volte pela página de pagamento; se já pagou, espere 1 minuto e recarregue.', 400)
   // Trava de integridade do parcelamento: o cliente escolhe as parcelas na tela da Stripe, à parte do que pediu no site.
   // O valor pago tem de cobrir o preço do número de parcelas REALMENTE usado (ex.: 10x pagando preço de 3x → recusa, fail-closed).
   const conta = await d.store.contaGateway(contaId)
@@ -113,7 +113,7 @@ async function sessaoPaga(d: DepsPagamento, contaId: string, s: Obj) {
     agora,
   })
   // Licença de outra conta (ou sem conta) para este e-mail: não grava nada nem mexe no estado dela.
-  if (licenca.conta_gateway_id !== contaId) throw new ErroRegra('conta_divergente', 'Esse e-mail já tem licença em outra conta de pagamento.', 409)
+  if (licenca.conta_gateway_id !== contaId) throw new ErroRegra('conta_divergente', 'Esse e-mail já tem uma licença comprada por outra conta de pagamento. Use outro e-mail ou a Ajuda do Atlas para juntar as compras.', 409)
   // M31: o idioma nasce na compra e não muda mais (quem comprou em dólar usa o Atlas em inglês).
   if (mercado === 'us' && licenca.idioma !== 'en') { await d.store.definirIdiomaLicenca(licenca.id, 'en'); licenca.idioma = 'en' }
   // gravarPagamento é atômico (upsert condicional: nunca sobrescreve 'estornado') e devolve o estado anterior.

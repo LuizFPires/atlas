@@ -23,7 +23,7 @@ export async function gerarLink(d: Deps, emailCompra: string) {
 /** Valida sem consumir. O consumo acontece na ativação confirmada. */
 export async function validarLink(d: Deps, token: string) {
   const l = await d.store.linkPorHash(await sha256(token))
-  if (!l) throw new ErroRegra('link_invalido', 'Esse link não existe.', 404)
+  if (!l) throw new ErroRegra('link_invalido', 'Esse link não existe (pode ter sido copiado pela metade). Abra de novo pelo botão do e-mail ou peça um link novo.', 404)
   if (l.usado_em) throw new ErroRegra('link_usado', 'Esse link já foi usado. Peça outro.', 410)
   if (l.expira_em <= d.agora()) throw new ErroRegra('link_expirado', 'Esse link venceu. Peça outro.', 410)
   return l

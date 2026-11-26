@@ -22,8 +22,8 @@ interface Auth { email: unknown; computador_hash: unknown; token_dispositivo: st
 
 /** Mesma autenticação do /ajuda-caso: e-mail + computador + token do dispositivo. Devolve a licença (nunca vem do corpo). */
 async function licencaDoDispositivo(d: Deps, a: Auth) {
-  const negado = () => new ErroRegra('nao_autorizado', 'Não foi possível confirmar este computador.', 403)
-  if (typeof a.computador_hash !== 'string' || !HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
+  const negado = () => new ErroRegra('nao_autorizado', 'A licença não foi reconhecida neste computador (ela vale para um computador ativo por vez). Confira no portal do Atlas qual computador está ativo.', 403)
+  if (typeof a.computador_hash !== 'string' || !HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'O Atlas deste computador mandou uma identificação que o servidor não reconhece. Atualize o Atlas e tente de novo.')
   if (typeof a.email !== 'string') throw negado()
   const cliente = await d.store.clientePorEmail(a.email.trim().toLowerCase())
   const lic = cliente && !cliente.excluido_em ? await d.store.licencaDoCliente(cliente.id) : null
@@ -47,7 +47,7 @@ export async function registrarPolitica(d: Deps, a: Auth & { obra_id: unknown; o
   const texto = typeof a.texto === 'string' ? limparDescricao(a.texto) : ''
   if (!texto) throw new ErroRegra('politica_invalida', 'Registro inválido.')
   const { lic } = await licencaDoDispositivo(d, a)
-  if (!(await d.store.tentarEvento(`politica:${lic.id}`, 30, 3600_000, d.agora()))) throw new ErroRegra('muitas_solicitacoes', 'Muitos pedidos seguidos. Tente de novo mais tarde.', 429)
+  if (!(await d.store.tentarEvento(`politica:${lic.id}`, 30, 3600_000, d.agora()))) throw new ErroRegra('muitas_solicitacoes', 'Muitos pedidos seguidos. Espere uns 10 minutos e tente de novo.', 429)
   const agora = d.agora()
   await d.store.registrarEventoPolitica({ licenca_id: lic.id, obra_id: a.obra_id, onde: a.onde as OndePolitica, texto, criado_em: agora })
   const situacoes = await semTabelaEhVazio(() => d.store.situacoesPolitica(lic.id))
@@ -100,7 +100,7 @@ export async function painelPolitica(d: DepsAdmin, jwt: string) {
 
 export async function decidirPolitica(d: DepsAdmin, jwt: string, a: { licenca_id: unknown; obra_id: unknown; decisao: unknown }) {
   const eu = await adminLogado(d, jwt)
-  if (typeof a.licenca_id !== 'string' || !/^[A-Za-z0-9-]{1,64}$/.test(a.licenca_id)) throw new ErroRegra('licenca_invalida', 'Licença inválida.')
+  if (typeof a.licenca_id !== 'string' || !/^[A-Za-z0-9-]{1,64}$/.test(a.licenca_id)) throw new ErroRegra('licenca_invalida', 'A licença não foi reconhecida. Confira a sua assinatura no portal do Atlas e tente de novo.')
   if (typeof a.obra_id !== 'string' || !OBRA_RE.test(a.obra_id)) throw new ErroRegra('obra_invalida', 'Obra inválida.')
   const mapa: Record<string, SituacaoPolitica['situacao']> = { liberar: 'liberada', manter: 'mantida', recusar: 'recusada' }
   const nova = typeof a.decisao === 'string' ? mapa[a.decisao] : undefined

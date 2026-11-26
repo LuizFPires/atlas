@@ -341,6 +341,6 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
     const id = crypto.randomUUID()
     // Nunca logar o objeto de erro bruto (pode, um dia, carregar algo sensível): só o rastro de Error ou uma string segura.
     console.error(id, e instanceof Error ? (e.stack ?? `${e.name}: ${e.message}`) : String(e))
-    return json({ erro: 'interno', mensagem: 'Algo deu errado do nosso lado. Tente de novo em instantes.', id }, 500)
+    return json({ erro: 'interno', mensagem: `O servidor do Atlas teve um problema (não foi nada que você fez). Tente de novo em alguns minutos; se continuar, use a Ajuda do Atlas e informe o código ${id.slice(0, 8)}.`, id }, 500)
   }
 }

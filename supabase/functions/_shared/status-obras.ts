@@ -78,8 +78,8 @@ export async function publicarStatusObras(
   d: Deps,
   a: { email: unknown; computador_hash: unknown; token_dispositivo: string; obras: unknown },
 ): Promise<{ ok: true; obras: number }> {
-  const negado = () => new ErroRegra('nao_autorizado', 'Não foi possível confirmar este computador.', 403)
-  if (typeof a.computador_hash !== 'string' || !HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
+  const negado = () => new ErroRegra('nao_autorizado', 'A licença não foi reconhecida neste computador (ela vale para um computador ativo por vez). Confira no portal do Atlas qual computador está ativo.', 403)
+  if (typeof a.computador_hash !== 'string' || !HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'O Atlas deste computador mandou uma identificação que o servidor não reconhece. Atualize o Atlas e tente de novo.')
   if (typeof a.email !== 'string') throw negado()
   const cliente = await d.store.clientePorEmail(a.email.trim().toLowerCase())
   const lic = cliente && !cliente.excluido_em ? await d.store.licencaDoCliente(cliente.id) : null
@@ -88,7 +88,7 @@ export async function publicarStatusObras(
   const hashToken = await sha256(a.token_dispositivo || '-')
   if (!ativa || ativa.computador_hash !== a.computador_hash || !ativa.token_hash || !iguais(hashToken, ativa.token_hash)) throw negado()
   if (!(await d.store.tentarEvento(`status-obras:${lic.id}`, 120, 60 * 60_000, d.agora()))) {
-    throw new ErroRegra('muitas_solicitacoes', 'Muitas atualizações seguidas. Tente de novo mais tarde.', 429)
+    throw new ErroRegra('muitas_solicitacoes', 'Muitas atualizações seguidas. Espere uns 10 minutos e tente de novo.', 429)
   }
   const linhas = validarObras(a.obras, d.agora())
   await d.store.substituirStatusObras(lic.id, linhas, d.agora())

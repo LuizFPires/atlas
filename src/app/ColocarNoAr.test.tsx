@@ -162,7 +162,7 @@ test('banco parou: cada motivo do Supabase vira a frase certa e o código aparec
   expect(explicarErro('supabase-link').frase).toMatch(/conectar/)
   expect(explicarErro('supabase-funcoes').frase).toMatch(/funções/)
   expect(explicarErro('supabase-demorou').frase).toMatch(/demor/)
-  expect(explicarErro('supabase-429').frase).toMatch(/minuto/)
+  expect(explicarErro('supabase-429').fazer).toMatch(/minuto/)
 })
 
 test('erro num passo mostra o código técnico pequeno, para o Atlas saber exatamente o que houve', async () => {
@@ -189,4 +189,17 @@ test('antes de colocar no ar: conta do Supabase não ligada → diz e oferece re
   unmount()
   montar({ ...criarNoArFixture(), conferirAntes: async () => ({ precisaBanco: true, bancoNovo: true, contaLigada: true, bancosAtivos: 1 }) })
   expect(await screen.findByText(/Você usa 1 de 2 bancos da conta grátis do Supabase/)).toBeInTheDocument()
+})
+
+test('conta do Supabase não ligada: a linha "Contas" não mostra ✓ (não diz que está tudo ligado quando não está)', async () => {
+  montar({ ...criarNoArFixture(), conferirAntes: async () => ({ precisaBanco: true, bancoNovo: true, contaLigada: false, bancosAtivos: null }) })
+  expect(await screen.findByText('GitHub · Vercel · Supabase (falta ligar)')).toBeInTheDocument()
+  expect(screen.queryByText('✓ GitHub · Vercel · Supabase')).not.toBeInTheDocument()
+})
+
+test('erro num passo: o que houve no título e o que fazer logo abaixo', async () => {
+  const erro: EstadoNoAr = { fase: 'erro', nome: 'ponto', passos: [{ id: 'vistoria', estado: 'feito' }, { id: 'banco', estado: 'erro' }, { id: 'publicar', estado: 'falta' }, { id: 'github', estado: 'falta' }, { id: 'teste', estado: 'falta' }, { id: 'celular', estado: 'falta' }], achados: [], endereco: null, erro: { passo: 'banco', motivo: 'supabase-limite-gratis' }, avisos: [] }
+  montar({ ...criarNoArFixture(), estado: async () => erro })
+  expect(await screen.findByText('A sua conta grátis do Supabase já tem 2 bancos ativos, que é o limite do plano grátis.')).toBeInTheDocument()
+  expect(screen.getByText(/pause ou apague um projeto que você não usa/)).toBeInTheDocument()
 })

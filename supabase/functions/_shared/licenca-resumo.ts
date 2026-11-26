@@ -19,7 +19,7 @@ export interface ResumoLicenca {
   agora: string
 }
 
-const negado = () => new ErroRegra('negado', 'Não foi possível ler a licença deste computador.', 401)
+const negado = () => new ErroRegra('negado', 'A licença deste computador não foi reconhecida (ela vale para um computador ativo por vez). Confira no portal do Atlas qual computador está ativo.', 401)
 
 export async function resumoDaLicenca(d: Deps, a: { email: string; computador_hash: string; token_dispositivo: string }): Promise<ResumoLicenca> {
   if (!HASH_RE.test(a.computador_hash ?? '')) throw negado()

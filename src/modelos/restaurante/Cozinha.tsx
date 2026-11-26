@@ -4,7 +4,7 @@ import { Botao } from '../../ui'
 import type { Pedido, PortaDados } from './dados'
 import type { PortaComanda } from './comanda'
 
-const ERRO_PORTA = 'Não deu pra carregar/salvar agora. Tente de novo.'
+const ERRO_PORTA = 'Não deu pra carregar/salvar agora: a internet ou o servidor do app não respondeu. Confira a conexão e tente de novo.'
 
 interface Props { dados: PortaDados; comanda?: PortaComanda }
 
@@ -35,7 +35,7 @@ export function Cozinha({ dados, comanda }: Props) {
       if (!r.ok) { setErro(r.mensagem); return }
       setErro('')
       setAviso(r.valor.deVerdade ? `Comanda de ${p.rotulo} enviada para a impressora.` : `Comanda de ${p.rotulo} preparada, mas ainda não sai na impressora de verdade (isso será ligado na entrega do seu app).`)
-    } catch { setErro('Não deu pra imprimir agora. Tente de novo.') }
+    } catch { setErro('Não deu pra imprimir agora: confira se a impressora está ligada e conectada a este aparelho, e tente de novo.') }
   }
 
   return (

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { semMensagem } from './sem-mensagem'
 import './ver-prototipo.css'
 import './convite-teste.css'
 
@@ -43,8 +44,8 @@ export function ConviteTeste({ codigo, api = (import.meta.env.VITE_API_URL as st
     try {
       const r = await buscar(`${api}/lojas/teste/entrar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ codigo, nome: n }) })
       const d = (await r.json().catch(() => ({}))) as { mensagem?: string }
-      if (r.ok) setPronto(n.slice(0, 40)); else setAviso(d.mensagem ?? 'Não deu certo agora. Tente de novo em instantes.')
-    } catch { setAviso('Não deu certo agora. Confira a internet e tente de novo.') } finally { setEnviando(false) }
+      if (r.ok) setPronto(n.slice(0, 40)); else setAviso(d.mensagem ?? semMensagem(r.status))
+    } catch { setAviso('Sem conexão com o servidor do Atlas. Confira a internet e tente de novo.') } finally { setEnviando(false) }
   }
 
   if (e.fase === 'carregando') return <main className="vp vp--msg"><span className="vp__giro" aria-hidden="true" /><p role="status">Abrindo o convite…</p></main>

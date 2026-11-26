@@ -100,7 +100,7 @@ export async function pedirDegustacao(d: DepsDegustacao, a: { email: unknown; ip
   try {
     await d.enviarConfirmacaoDegustacao(email, { token, expira_em, dias: cfg.dias })
   } catch {
-    throw new ErroRegra('email_nao_enviado', 'Não consegui mandar o e-mail agora. Tente de novo em instantes.', 502)
+    throw new ErroRegra('email_nao_enviado', 'O serviço de e-mail não respondeu agora. Tente de novo em alguns minutos.', 502)
   }
   return { ok: true, enviado: true }
 }

@@ -1,6 +1,7 @@
 // Cadastro: POST /cadastro no servidor (item 4 do M4). Só texto das 5 respostas + o session_id da compra
 // (prova que o Stripe devolve na URL /compra/sucesso?session_id=…). Sem segredo, sem pagamento.
 import { configCompra, type ConfigCompra } from './compra'
+import { semMensagem } from './sem-mensagem'
 import type { DadosCadastro, ResultadoCadastro } from './Cadastro'
 
 /** Lê o session_id da URL de retorno do pagamento (ou '' se não veio). */
@@ -20,7 +21,7 @@ export async function enviarCadastro(d: DadosCadastro, cfg: Pick<ConfigCompra, '
     })
     const corpo = (await r.json().catch(() => ({}))) as { ok?: boolean; mensagem?: string; enviado_para?: string; email_diferente?: boolean; segmento?: string | null }
     if (r.ok && corpo.ok === true) return { ok: true, enviado_para: corpo.enviado_para, email_diferente: corpo.email_diferente, segmento: corpo.segmento ?? null }
-    return { ok: false, mensagem: corpo.mensagem ?? 'Não deu para guardar as respostas agora. Tente de novo em instantes.' }
+    return { ok: false, mensagem: corpo.mensagem ?? `As respostas não foram guardadas. ${semMensagem(r.status)}` }
   } catch {
     return { ok: false, mensagem: 'Sem conexão com o servidor. Veja a sua internet e tente de novo.' }
   }

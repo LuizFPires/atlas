@@ -73,5 +73,5 @@ test('quando a porta rejeita, mostra aviso amigável', async () => {
   const dados = criarDadosFixture()
   vi.spyOn(dados, 'listarProdutos').mockRejectedValue(new Error('rede'))
   render(<Estoque dados={dados} />)
-  expect(await screen.findByRole('alert')).toHaveTextContent('Não deu pra carregar/salvar agora. Tente de novo.')
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não deu pra carregar/salvar agora: a internet ou o servidor do app não respondeu. Confira a conexão e tente de novo.')
 })

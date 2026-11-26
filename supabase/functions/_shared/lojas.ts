@@ -20,8 +20,8 @@ const OPTIN_RE = /^https:\/\/play\.google\.com\/apps\/(internaltest|testing)\/[A
 interface Auth { email: unknown; computador_hash: unknown; token_dispositivo: string }
 
 async function licencaDoDispositivo(d: Deps, a: Auth) {
-  const negado = () => new ErroRegra('nao_autorizado', 'Não foi possível confirmar este computador.', 403)
-  if (typeof a.computador_hash !== 'string' || !HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'Identificação do computador inválida.')
+  const negado = () => new ErroRegra('nao_autorizado', 'A licença não foi reconhecida neste computador (ela vale para um computador ativo por vez). Confira no portal do Atlas qual computador está ativo.', 403)
+  if (typeof a.computador_hash !== 'string' || !HASH_RE.test(a.computador_hash)) throw new ErroRegra('computador_invalido', 'O Atlas deste computador mandou uma identificação que o servidor não reconhece. Atualize o Atlas e tente de novo.')
   if (typeof a.email !== 'string') throw negado()
   const cliente = await d.store.clientePorEmail(a.email.trim().toLowerCase())
   const lic = cliente && !cliente.excluido_em ? await d.store.licencaDoCliente(cliente.id) : null
@@ -65,8 +65,8 @@ export async function entrarNoTeste(d: Deps, a: { codigo: unknown; nome: unknown
   const nome = nomeLimpo(a.nome)
   if (!nome) throw new ErroRegra('nome_invalido', 'Escreva o seu nome.')
   const agora = d.agora()
-  if (!(await d.store.tentarEvento(`teste-ip:${await sha256(a.ip || '-')}`, 20, 3600_000, agora))) throw new ErroRegra('muitas_solicitacoes', 'Muitos pedidos seguidos. Tente de novo mais tarde.', 429)
-  if (!(await d.store.tentarEvento(`teste-convite:${c.codigo}`, 200, DIA, agora))) throw new ErroRegra('muitas_solicitacoes', 'Muitos pedidos seguidos. Tente de novo mais tarde.', 429)
+  if (!(await d.store.tentarEvento(`teste-ip:${await sha256(a.ip || '-')}`, 20, 3600_000, agora))) throw new ErroRegra('muitas_solicitacoes', 'Muitos pedidos seguidos. Espere uns 10 minutos e tente de novo.', 429)
+  if (!(await d.store.tentarEvento(`teste-convite:${c.codigo}`, 200, DIA, agora))) throw new ErroRegra('muitas_solicitacoes', 'Muitos pedidos seguidos. Espere uns 10 minutos e tente de novo.', 429)
   const ja = (await d.store.testadoresDoConvite(c.codigo)).some((t) => chaveNome(t.nome) === chaveNome(nome))
   if (!ja) await d.store.registrarTestador({ codigo: c.codigo, nome, entrou_em: agora })
   return { ok: true as const }

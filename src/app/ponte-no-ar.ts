@@ -42,9 +42,9 @@ export const PASSOS_NO_AR: { id: IdPassoNoAr; titulo: string; sub: string }[] = 
 ]
 
 /** O que dizer quando um passo deu erro: o que houve + o que fazer, do tradutor único (explicar-trava.ts). */
-export function explicarErro(motivo: string): { frase: string; conta?: 'supabase' | 'vercel' | 'github' } {
+export function explicarErro(motivo: string): { frase: string; fazer: string; conta?: 'supabase' | 'vercel' | 'github' } {
   const x = explicarTrava(motivo)
-  return { frase: `${x.houve} ${x.fazer}`, ...(x.conta ? { conta: x.conta } : {}) }
+  return { frase: x.houve, fazer: x.fazer, ...(x.conta ? { conta: x.conta } : {}) }
 }
 
 const esperaFalsa = (ms: number) => new Promise((r) => setTimeout(r, ms))
