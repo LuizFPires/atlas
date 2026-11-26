@@ -99,3 +99,28 @@ test('voltou do estilo: mostra de novo o que já tinha contado', () => {
   render(<TemaProvider><Ideia ideia={{ conferir: vi.fn(async () => ({ cobertos: [], faltam: [] })) }} relatoInicial="o que eu contei antes" onVoltar={() => {}} onConcluir={() => {}} /></TemaProvider>)
   expect(screen.getByRole('textbox', { name: 'O que você contou' })).toHaveValue('o que eu contei antes')
 })
+
+// M64 (Luiz, 25/11/2026): o Atlas deduz se é para vender e confirma numa linha (prototipo/caminho-novo/CN1bVenda).
+const LONGO = 'hoje o ponto é no papel e os pedreiros vão usar pelo celular, abre e bate o ponto com a localização da obra e eu vejo as horas do mês de cada um, e outras construtoras vão assinar por mês'
+test('para vender: confirma numa linha e a obra já nasce sabendo (dados por empresa, cadastro, planos, LGPD)', async () => {
+  const conferir = vi.fn(async (_r: string, fim?: boolean) => (fim ? { cobertos: [], faltam: [], titulo: 'Ponto', venda: { paraVender: true, motivo: 'Você falou que outras construtoras vão assinar.' } } : { cobertos: [], faltam: [] }))
+  const { onConcluir } = montar({ conferir })
+  await userEvent.type(screen.getByRole('textbox', { name: 'O que você contou' }), LONGO)
+  await userEvent.click(screen.getByRole('button', { name: /Pronto: começar o protótipo/ }))
+  expect(await screen.findByRole('heading', { name: 'Pelo que você contou, é para vender a outras empresas. Certo?' })).toBeInTheDocument()
+  expect(screen.getByText(/outras construtoras vão assinar/)).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Sim, é para vender' }))
+  expect(onConcluir).toHaveBeenCalledWith(expect.objectContaining({ titulo: 'Ponto', paraVender: true }))
+  expect(onConcluir.mock.calls[0][0].relato).toMatch(/## Para vender a outras empresas/)
+  expect(onConcluir.mock.calls[0][0].relato).toMatch(/dados de cada empresa separados/)
+})
+
+test('o cliente corrige: "Não, é só para a minha empresa" vira uso interno, sem o bloco de venda', async () => {
+  const conferir = vi.fn(async (_r: string, fim?: boolean) => (fim ? { cobertos: [], faltam: [], titulo: 'Ponto', venda: { paraVender: true, motivo: 'x' } } : { cobertos: [], faltam: [] }))
+  const { onConcluir } = montar({ conferir })
+  await userEvent.type(screen.getByRole('textbox', { name: 'O que você contou' }), LONGO)
+  await userEvent.click(screen.getByRole('button', { name: /Pronto: começar o protótipo/ }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Não, é só para a minha empresa' }))
+  expect(onConcluir).toHaveBeenCalledWith(expect.objectContaining({ paraVender: false }))
+  expect(onConcluir.mock.calls[0][0].relato).not.toMatch(/Para vender a outras empresas/)
+})

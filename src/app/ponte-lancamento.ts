@@ -2,13 +2,14 @@
 export type Gateway = 'stripe' | 'asaas'
 export type FaseLancamento = 'comecar' | 'recebimento' | 'pagina'
 export interface Plano { nome: string; limite: string; preco: string }
-export interface EstadoLancamento { comecado: boolean; gateway: Gateway | null; contaPronta: boolean; planos: Plano[]; fase: FaseLancamento; endereco: string | null }
+export interface EstadoLancamento { paraVender: boolean; adaptacao: 'pedida' | null; comecado: boolean; gateway: Gateway | null; contaPronta: boolean; planos: Plano[]; fase: FaseLancamento; endereco: string | null }
 export interface ItemLancamento { pasta: string; endereco: string | null; fase: FaseLancamento; gateway: Gateway | null }
 
 export interface PonteLancamento {
   indisponivel?: boolean
   estado(pasta: string): Promise<EstadoLancamento>
-  comecar(pasta: string): Promise<EstadoLancamento>
+  /** adaptar: o cliente viu o aviso de que um sistema de uso interno precisa antes de uma obra de adaptação (M64). */
+  comecar(pasta: string, adaptar?: boolean): Promise<EstadoLancamento>
   escolherGateway(pasta: string, g: Gateway): Promise<EstadoLancamento>
   contaPronta(pasta: string): Promise<EstadoLancamento>
   listar(): Promise<ItemLancamento[]>
@@ -22,16 +23,16 @@ export const GATEWAYS: { id: Gateway; nome: string; pros: string[]; contras: str
   { id: 'asaas', nome: 'Asaas', pros: ['Mensalidade no Pix, que cai sozinha todo mês (Pix Automático)', 'Parcela no cartão: o anual pode ser em até 10×', 'Boleto e cartão todo mês', 'Empresa brasileira, tudo em português'], contras: ['Feito para vender dentro do Brasil: se um dia vender para fora, o Stripe é melhor'] },
 ]
 
-const vazio = (): EstadoLancamento => ({ comecado: false, gateway: null, contaPronta: false, planos: PLANOS, fase: 'comecar', endereco: 'pontoampla.vercel.app' })
+const vazio = (paraVender = true): EstadoLancamento => ({ paraVender, adaptacao: null, comecado: false, gateway: null, contaPronta: false, planos: PLANOS, fase: 'comecar', endereco: 'pontoampla.vercel.app' })
 
-export function criarLancamentoFixture(): PonteLancamento {
+export function criarLancamentoFixture({ usoInterno = [] as string[] } = {}): PonteLancamento {
   const m = new Map<string, EstadoLancamento>()
-  const de = (p: string) => { if (!m.has(p)) m.set(p, vazio()); return m.get(p) as EstadoLancamento }
+  const de = (p: string) => { if (!m.has(p)) m.set(p, vazio(!usoInterno.includes(p))); return m.get(p) as EstadoLancamento }
   const fase = (e: EstadoLancamento): FaseLancamento => (!e.comecado ? 'comecar' : !e.gateway || !e.contaPronta ? 'recebimento' : 'pagina')
   const devolve = (e: EstadoLancamento) => { e.fase = fase(e); return structuredClone(e) }
   return {
     async estado(p) { return devolve(de(p)) },
-    async comecar(p) { de(p).comecado = true; return devolve(de(p)) },
+    async comecar(p, adaptar) { const e = de(p); if (!e.comecado && !e.paraVender) { if (!adaptar) throw new Error('precisa-adaptar'); e.adaptacao = 'pedida' } e.comecado = true; return devolve(e) },
     async escolherGateway(p, g) { const e = de(p); if (e.gateway !== g) e.contaPronta = false; e.gateway = g; return devolve(e) },
     async contaPronta(p) { de(p).contaPronta = true; return devolve(de(p)) },
     async listar() { return [...m.entries()].filter(([, e]) => e.comecado).map(([pasta, e]) => ({ pasta, endereco: e.endereco, fase: fase(e), gateway: e.gateway })) },

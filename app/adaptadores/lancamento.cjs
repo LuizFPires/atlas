@@ -5,7 +5,7 @@
 'use strict'
 const fs = require('node:fs')
 const { caminhoSeguro } = require('../seguro.cjs')
-const { pastaAtlas, pastaDaObra, gravarAtomico, lerJson } = require('./obra-fs.cjs')
+const { pastaAtlas, pastaDaObra, gravarAtomico, lerJson, lerTexto } = require('./obra-fs.cjs')
 
 const PLANOS_SUGERIDOS = Object.freeze([
   Object.freeze({ nome: 'Grátis', limite: 'até 3 funcionários', preco: 'R$ 0' }),
@@ -13,14 +13,22 @@ const PLANOS_SUGERIDOS = Object.freeze([
   Object.freeze({ nome: 'Anual', limite: 'sem limite', preco: 'R$ 470/ano' }),
 ])
 const GATEWAYS = ['stripe', 'asaas']
+const MARCA_VENDA = '## Para vender a outras empresas'
+// M64: uso interno que vira venda = obra de adaptação (o cliente é avisado antes de que leva mais tempo).
+const PEDIDO_ADAPTAR = [
+  'Este sistema foi feito para uso interno de uma empresa e agora vai ser vendido a outras empresas. Faça a obra de adaptação:',
+  'várias empresas no mesmo sistema, cada uma vendo só os dados dela (coluna da empresa em toda tabela + RLS), sem perder os dados de hoje (eles viram a empresa do dono);',
+  'cadastro sozinho para quem assinar (a empresa e o usuário dono nascem com o pagamento ou no plano grátis), planos e limites (grátis, mensal, anual) e termos e privacidade (LGPD) para o público.',
+  'Teste que uma empresa nunca vê dados de outra. Não faça página de vendas nem cobrança: isso vem depois, com o incorporador.',
+].join(' ')
 
-function criarLancamento({ raiz }) {
+function criarLancamento({ raiz, pedirConstrucao = null }) {
   const arquivo = (pasta) => caminhoSeguro(raiz, String(pasta), '.atlas', 'lancamento.json')
   const ler = (pasta) => {
     let j = null
     try { j = lerJson(arquivo(pasta)) } catch { j = null }
     const o = j && typeof j === 'object' ? j : {}
-    return { comecado: o.comecado === true, gateway: GATEWAYS.includes(o.gateway) ? o.gateway : null, contaPronta: o.contaPronta === true, desde: typeof o.desde === 'string' ? o.desde.slice(0, 40) : null }
+    return { adaptacao: o.adaptacao === 'pedida' ? 'pedida' : null, comecado: o.comecado === true, gateway: GATEWAYS.includes(o.gateway) ? o.gateway : null, contaPronta: o.contaPronta === true, desde: typeof o.desde === 'string' ? o.desde.slice(0, 40) : null }
   }
   const gravar = (pasta, r) => { pastaAtlas(raiz, String(pasta)); gravarAtomico(arquivo(pasta), JSON.stringify({ versao: 1, ...r }) + '\n') }
   const noAr = (pasta) => {
@@ -31,15 +39,24 @@ function criarLancamento({ raiz }) {
     if (!j || typeof j.endereco !== 'string' || !/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(j.endereco)) return null
     return dom || j.endereco.replace(/^https:\/\//, '')
   }
+  const paraVender = (pasta) => { try { return lerTexto(caminhoSeguro(raiz, String(pasta), 'prototipo', 'relato.md')).includes(MARCA_VENDA) } catch { return false } }
   const fase = (r) => (!r.gateway || !r.contaPronta ? 'recebimento' : 'pagina')
-  const publico = (pasta, r) => ({ ...r, planos: PLANOS_SUGERIDOS.map((p) => ({ ...p })), fase: r.comecado ? fase(r) : 'comecar', endereco: noAr(pasta) })
+  const publico = (pasta, r) => ({ ...r, paraVender: paraVender(pasta), planos: PLANOS_SUGERIDOS.map((p) => ({ ...p })), fase: r.comecado ? fase(r) : 'comecar', endereco: noAr(pasta) })
 
   return {
     async estado(pasta) { pastaDaObra(raiz, String(pasta)); return publico(pasta, ler(pasta)) },
-    async comecar(pasta) {
+    /** adaptar: o cliente viu o aviso de que um sistema de uso interno precisa de uma obra de adaptação (leva mais tempo). */
+    async comecar(pasta, { adaptar = false } = {}) {
       pastaDaObra(raiz, String(pasta))
       if (!noAr(pasta)) throw new Error('obra-fora-do-ar')
       const r = ler(pasta)
+      if (!r.comecado && !paraVender(pasta)) {
+        if (!adaptar) throw new Error('precisa-adaptar')
+        if (!pedirConstrucao) throw new Error('indisponivel')
+        await pedirConstrucao(String(pasta), PEDIDO_ADAPTAR)
+        gravar(pasta, { ...r, comecado: true, adaptacao: 'pedida', desde: new Date().toISOString() })
+        return publico(pasta, ler(pasta))
+      }
       if (!r.comecado) gravar(pasta, { ...r, comecado: true, desde: new Date().toISOString() })
       return publico(pasta, ler(pasta))
     },
@@ -73,4 +90,4 @@ function criarLancamento({ raiz }) {
   }
 }
 
-module.exports = { criarLancamento, PLANOS_SUGERIDOS }
+module.exports = { criarLancamento, PLANOS_SUGERIDOS, PEDIDO_ADAPTAR, MARCA_VENDA }
