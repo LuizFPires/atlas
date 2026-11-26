@@ -251,12 +251,16 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
       // Agora o celular diz o MESMO que o painel do notebook: o momento da obra (trabalhando, esperando, precisa de você, com defeito).
       const modo = (await p.modos.ler(pasta).catch(() => null)) ?? 'automatico'
       const m = momentoDaObra(e, situacaoDaObra(modo, e))
-      const estado: ObraStatus['estado'] = m.nivel === 'pronta' ? 'pronta' : m.nivel === 'trabalhando' ? 'construindo' : m.nivel === 'precisa' || m.nivel === 'defeito' ? 'aguardando_aprovacao' : 'pausada'
+      // "Parada" (com "Continuar a obra") só quando a PESSOA pausou. Esperando (entre uma parte e outra, cota, fila, religando)
+      // continua "construindo": o notebook segue sozinho (achado em 26/11/2026, Eduardo viu "Parada" com a obra andando).
+      const estado: ObraStatus['estado'] = m.nivel === 'pronta' ? 'pronta' : m.nivel === 'precisa' || m.nivel === 'defeito' ? 'aguardando_aprovacao' : m.nivel === 'pausada' ? 'pausada' : 'construindo'
       const ativa = !achouAtiva && estado === 'construindo' && e.agora.length > 0
       if (ativa) achouAtiva = true
       const noticia = m.nivel === 'trabalhando' ? (e.etapa ? `Trabalhando em: ${e.etapa.nome}.` : m.titulo)
         : m.nivel === 'precisa' || m.nivel === 'defeito' ? `${m.titulo} Abra o Atlas no notebook para ver o que fazer.`
-          : m.titulo
+          : m.nivel === 'esperando' && !e.agora.length && m.rotulo === 'NINGUÉM TRABALHANDO' ? 'Entre uma parte e outra. O Atlas religa sozinho; você não precisa fazer nada.'
+            : m.nivel === 'esperando' ? `${m.titulo} Você não precisa fazer nada.`
+              : m.titulo
       obras.push({
         id, nome: (lig?.nome ?? pasta.replace(/-/g, ' ')).slice(0, 80),
         etapa_atual: { numero: e.etapa?.n ?? e.etapas.length, rotulo: (e.etapa?.nome ?? 'Tudo pronto').slice(0, 80) },

@@ -180,3 +180,16 @@ test('abrir o app (ou voltar para ele) busca o andamento na hora, sem esperar a 
   document.dispatchEvent(new Event('visibilitychange'))
   await waitFor(() => expect(obras.mock.calls.length).toBeGreaterThan(antes))
 })
+
+// Achado em 26/11/2026 (Eduardo): entre uma parte e outra, o celular dizia "Parada". Agora a obra que o notebook segue sozinho
+// aparece "em andamento", sem o botão "Continuar a obra" (que dava erro, porque ninguém tinha pausado).
+test('obra em andamento sem ninguém trabalhando neste instante: não aparece como parada', async () => {
+  const api = criarApiCelularFixture()
+  const obras = await api.obras()
+  vi.spyOn(api, 'obras').mockResolvedValue(obras.map((o) => (o.id === 'o1' ? { ...o, ativa_agora: false, ultima_noticia: 'Entre uma parte e outra. O Atlas religa sozinho; você não precisa fazer nada.' } : o)))
+  render(<AppCelular api={api} intervalo={600_000} />)
+  await userEvent.click(await screen.findByRole('button', { name: /Agenda da Barbearia/ }))
+  expect(screen.getByText('Em andamento no notebook')).toBeInTheDocument()
+  expect(screen.queryByText('Parada')).toBeNull()
+  expect(screen.getByRole('button', { name: 'Pausar' })).toBeInTheDocument()
+})

@@ -495,7 +495,7 @@ function ObraTela({ obra, projeto, pedido, onVoltar, onPausar, onContinuar }: { 
       <header className="cel-topo">
         <Voltar onClick={onVoltar} rotulo="Voltar para Minhas obras" />
         <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}><span className="cel-forte" style={{ fontSize: 17 }}>{nome}</span>
-          <span className="cel-sub"><span className={`cel-ponto ${pausada ? 'cel-ponto--off' : 'cel-ponto--vivo'}`} />{!obra ? 'Começando a obra no notebook' : pausada ? 'Parada' : obra.estado === 'pronta' ? 'Pronta' : 'Construindo agora no notebook'}</span></span>
+          <span className="cel-sub"><span className={`cel-ponto ${pausada ? 'cel-ponto--off' : 'cel-ponto--vivo'}`} />{!obra ? 'Começando a obra no notebook' : pausada ? 'Parada' : obra.estado === 'pronta' ? 'Pronta' : obra.ativa_agora ? 'Construindo agora no notebook' : 'Em andamento no notebook'}</span></span>
       </header>
       {/* M08b (aprovado em 25/11/2026): o prédio em primeiro plano, desenhado com os números da obra (um andar por etapa). */}
       <div className="cel-corpo cel-obra">

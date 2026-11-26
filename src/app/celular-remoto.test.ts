@@ -160,6 +160,25 @@ test('status das obras: publica um resumo de cada obra com PLAN (sem caminho nem
   expect(JSON.stringify(o)).not.toMatch(/Users|\\\\|Obras/)
 })
 
+// Achado em 26/11/2026 (Eduardo): entre uma parte e outra, por um instante, ninguém está trabalhando, e o celular dizia "Parada"
+// com "Continuar a obra" enquanto o notebook seguia sozinho. "Parada" é só quando a pessoa pausou.
+test('ninguém trabalhando por um instante (o Atlas religa sozinho): o celular vê "construindo", não "parada"', async () => {
+  const { ex, status, pontes } = montar()
+  await pontes.obras.criarSubpasta('barbearia')
+  pontes.painel.simular.semNinguem()
+  await ex.publicarStatus()
+  expect(status[0][0]).toMatchObject({ estado: 'construindo', ativa_agora: false })
+  expect(status[0][0].ultima_noticia).toMatch(/religa sozinho/)
+})
+
+test('pausada pela pessoa: aí sim o celular vê "pausada"', async () => {
+  const { ex, status, pontes } = montar()
+  await pontes.obras.criarSubpasta('barbearia')
+  await pontes.painel.pausar('barbearia')
+  await ex.publicarStatus()
+  expect(status[0][0].estado).toBe('pausada')
+})
+
 // M58: a foto do celular para a Ajuda: o notebook baixa a foto e entrega à Ajuda; o pedido responde "feito".
 test('foto_ajuda: baixa a foto e entrega à Ajuda do notebook', async () => {
   const { ex, respostas, pontes } = montar([[pedido({ tipo: 'foto_ajuda', obra_id: 'ajuda', dados: { referencia: 'b'.repeat(32) } })]])
