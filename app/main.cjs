@@ -304,7 +304,13 @@ handle('atlas:modos:gravar', (pasta, modo) => modos.gravar(String(pasta), String
 
 // Planejar e iniciar a construção (PLAN.md + linha de produção do kit na pasta da obra).
 handle('atlas:construcao:planejar', (pasta, nome) => construcao.planejar(String(pasta), String(nome)))
-handle('atlas:construcao:iniciar', async (pasta, nome, modo, etapas, como) => { await garantirObra(String(pasta)); return construcao.iniciar(String(pasta), String(nome), String(modo), Array.isArray(etapas) ? etapas : [], como ? String(como) : null) })
+handle('atlas:construcao:iniciar', async (pasta, nome, modo, etapas, como) => {
+  await garantirObra(String(pasta))
+  const r = await construcao.iniciar(String(pasta), String(nome), String(modo), Array.isArray(etapas) ? etapas : [], como ? String(como) : null)
+  // O cronograma (e com ele o Desempenho) nasce junto com a construção, não quando alguém abre a aba (27/11/2026).
+  painel.cronograma(String(pasta)).catch(() => {})
+  return r
+})
 // M51: quem está trabalhando e quem espera na fila (com o prazo que falta, para o front mostrar o que muda em cada caminho).
 handle('atlas:fila:estado', async () => {
   const comPrazo = async (pasta) => { let e = null; try { e = await painel.ler(pasta) } catch { /* sem estado */ } return { pasta, nome: nomeDaObra(pasta), restanteMin: e && Number.isFinite(e.restanteMin) ? e.restanteMin : null } }
@@ -650,4 +656,10 @@ app.whenReady().then(async () => { try { dominio.retomar((await obras.listar()).
 // Vigia da cota: 20 s depois de abrir (o app pode ter sido ligado com o Windows) e a cada 2 min; só obras paradas POR COTA.
 setTimeout(() => { const v = () => cota.vigiar().catch(() => {}); v(); setInterval(v, 120_000).unref() }, 20_000).unref()
 setTimeout(() => { const v = () => vigia.rodada().catch(() => {}); v(); setInterval(v, 60_000).unref() }, 30_000).unref()
+// Histórico da obra sempre em dia, com a tela aberta ou não (27/11/2026): a cada minuto o cronograma de cada obra anota a hora
+// em que cada etapa foi entregue. Antes, a hora só era anotada quando alguém abria a aba, e o Desempenho saía com números errados.
+setTimeout(() => {
+  const anotar = async () => { for (const pasta of await obras.listar().catch(() => [])) { try { await painel.cronograma(pasta) } catch { /* obra sem plano ainda */ } } }
+  void anotar(); setInterval(() => { void anotar() }, 60_000).unref()
+}, 40_000).unref()
 app.on('window-all-closed', () => app.quit())

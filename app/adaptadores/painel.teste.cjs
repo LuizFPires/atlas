@@ -303,3 +303,22 @@ test('painel: etapa que já estava pronta quando a construção começou não fi
   assert.ok(d.realizadoPct <= 80, String(d.realizadoPct))
   assert.equal(fs.existsSync(path.join(dir, '.atlas', 'desempenho.json')), false)
 })
+
+test('histórico da obra: começo pelo diário/modo/consumo (o mais cedo) e entregas pelo git (merge MN ou medição)', () => {
+  const { historicoDaObra } = require('./painel.cjs')
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'atlas-hist-'))
+  fs.mkdirSync(path.join(dir, '.atlas'))
+  fs.writeFileSync(path.join(dir, '.atlas', 'modo.json'), JSON.stringify({ versao: 1, modo: 'automatico', escolhidoEm: '2026-11-26T12:00:00.000Z' }))
+  const diario = [{ tipo: 'info', texto: 'O Atlas começou a trabalhar na obra', em: '2026-11-26T12:01:00.000Z' }]
+  const git = () => ({ status: 0, stdout: [
+    '2026-11-26T20:00:00-03:00\tMerge pull request #3: M2 — Site e cadastro',
+    '2026-11-26T15:30:00-03:00\tdocs(m2): medição',
+    '2026-11-26T14:00:00-03:00\tMerge pull request #2: M1 — Base com empresas separadas',
+    '2026-11-26T09:00:00-03:00\tprimeiro commit',
+  ].join('\n') })
+  const h = historicoDaObra(dir, diario, git)
+  assert.equal(h.inicio, '2026-11-26T12:00:00.000Z')
+  assert.equal(h.entregas[1], '2026-11-26T17:00:00.000Z')
+  assert.equal(h.entregas[2], '2026-11-26T18:30:00.000Z', 'a 1ª entrega (medição) vale')
+  assert.deepEqual(historicoDaObra(dir, [], () => { throw new Error('sem git') }).entregas, {})
+})

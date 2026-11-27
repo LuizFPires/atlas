@@ -100,7 +100,8 @@ export interface LinhaDiario { em: string; tipo: 'info' | 'trabalho' | 'parada' 
 export interface EtapaCronograma {
   n: number; nome: string; status: 'entregue' | 'andamento' | 'falta'; pct: number
   previsto: { inicio: string; fim: string } | null
-  real: { inicio: string; fim?: string } | null
+  /** antes: entregue antes de o Atlas começar a medir (hora desconhecida). */
+  real: { inicio: string; fim?: string; antes?: boolean } | null
   esperado: { inicio: string; fim: string } | null
 }
 export interface Cronograma { inicio: string; previstoFim: string; esperadoFim: string; diferencaMs: number; pausaMs: number; entregues: number; total: number; etapas: EtapaCronograma[]; pausas: { inicio: string; fim: string | null }[] }

@@ -37,11 +37,41 @@ function criarCronograma({ agora = () => new Date() } = {}) {
     const lista = (etapas || []).filter((e) => e && Number.isFinite(e.n)).map((e) => ({ ...e, peso: e.peso > 0 ? e.peso : 1 }))
     const pesoTotal = lista.reduce((s, e) => s + e.peso, 0) || 1
     let j = ler(dir)
+    // Histórico de verdade da obra (27/11/2026: "pegar desde o princípio, na criação"): quando a construção começou e quando cada
+    // etapa foi entregue (diário, consumo e git da obra). Usado ao nascer e para consertar UMA vez um cronograma criado tarde.
+    const h = o.historico && typeof o.historico === 'object' ? o.historico : {}
+    const hInicio = Number.isFinite(ms(h.inicio)) && ms(h.inicio) < t ? ms(h.inicio) : null
+    const entregas = h.entregas && typeof h.entregas === 'object' ? h.entregas : {}
+    const entregaDe = (n) => (Number.isFinite(ms(entregas[n])) ? ms(entregas[n]) : null)
+    const fazerPrevisto = (base, total) => { let ini = base; return lista.map((e) => { const d = (total * e.peso) / pesoTotal; const p = { n: e.n, inicio: iso(ini), fim: iso(ini + d) }; ini += d; return p }) }
+    // Etapas entregues sem hora conhecida: a hora fica a do começo e a marca "antes" (feita antes de o Atlas medir).
+    const preencherEntregas = (base) => {
+      const real = {}
+      let anterior = base
+      for (const e of lista) {
+        if (e.status !== 'concluido') break
+        const quando = entregaDe(e.n)
+        real[e.n] = quando !== null ? { inicio: iso(anterior), fim: iso(Math.max(anterior, quando)) } : { inicio: iso(anterior), fim: iso(anterior), antes: true }
+        anterior = ms(real[e.n].fim)
+      }
+      return real
+    }
     if (!j) {
       const total = Number.isFinite(o.previstoMs) && o.previstoMs > 0 ? o.previstoMs : lista.length * 6 * 3600_000
-      let ini = t
-      const previsto = lista.map((e) => { const d = (total * e.peso) / pesoTotal; const p = { n: e.n, inicio: iso(ini), fim: iso(ini + d) }; ini += d; return p })
-      j = { versao: 1, inicio: iso(t), porPeso: total / pesoTotal, previsto, real: {} }
+      const base = hInicio ?? t
+      j = { versao: 1, inicio: iso(base), porPeso: total / pesoTotal, previsto: fazerPrevisto(base, total), real: preencherEntregas(base), historico: true }
+    } else if (!j.historico && hInicio !== null && hInicio < ms(j.inicio) - 10 * 60_000) {
+      // Criado tarde (antes de 27/11/2026 ele só nascia quando alguém abria a aba): volta o começo para a hora certa, uma vez só.
+      const antigo = j.inicio
+      const total = j.previsto.length ? ms(j.previsto[j.previsto.length - 1].fim) - ms(j.previsto[0].inicio) : lista.length * (j.porPeso || 6 * 3600_000)
+      j.inicio = iso(hInicio)
+      j.previsto = fazerPrevisto(hInicio, total)
+      const consertadas = preencherEntregas(hInicio)
+      for (const [n, r] of Object.entries(consertadas)) if (!j.real[n] || j.real[n].fim === antigo || j.real[n].inicio === antigo) j.real[n] = r
+      for (const e of lista) { const r = j.real[e.n]; if (r && !r.fim && r.inicio === antigo) delete r.inicio }
+      j.historico = true
+    } else if (!j.historico) {
+      j.historico = true
     }
     // Etapa nova no PLAN: entra no fim do previsto, com a duração média por peso.
     for (const e of lista) {
@@ -56,7 +86,7 @@ function criarCronograma({ agora = () => new Date() } = {}) {
       const r = j.real[e.n] || {}
       if (e.status === 'concluido') {
         if (!r.inicio) r.inicio = fimAnterior
-        if (!r.fim) r.fim = iso(t)
+        if (!r.fim) r.fim = iso(entregaDe(e.n) ?? t)
         j.real[e.n] = r
         fimAnterior = r.fim
       } else if (atual && e.n === atual.n) {
@@ -80,7 +110,7 @@ function criarCronograma({ agora = () => new Date() } = {}) {
         esperado = { inicio: iso(cursor), fim: iso(cursor + d) }
         cursor += d
       }
-      return { n: e.n, nome: e.titulo, status: e.status === 'concluido' ? 'entregue' : atual && e.n === atual.n ? 'andamento' : 'falta', pct: Number(e.pct) || 0, previsto: prev ? { inicio: prev.inicio, fim: prev.fim } : null, real: real && real.inicio ? { inicio: real.inicio, ...(real.fim ? { fim: real.fim } : {}) } : null, esperado }
+      return { n: e.n, nome: e.titulo, status: e.status === 'concluido' ? 'entregue' : atual && e.n === atual.n ? 'andamento' : 'falta', pct: Number(e.pct) || 0, previsto: prev ? { inicio: prev.inicio, fim: prev.fim } : null, real: real && real.inicio ? { inicio: real.inicio, ...(real.fim ? { fim: real.fim } : {}), ...(real.antes ? { antes: true } : {}) } : null, esperado }
     })
     const ultimoPrevisto = lista.map((e) => j.previsto.find((p) => p.n === e.n)).filter(Boolean).pop()
     const previstoFim = ultimoPrevisto ? ultimoPrevisto.fim : j.inicio

@@ -83,3 +83,33 @@ test('arquivo estragado: recomeça sem quebrar', () => {
   const v = c.atualizar(dir, [M(1, 1, 'andamento')], { previstoMs: 5 * H })
   assert.equal(v.etapas.length, 1)
 })
+
+test('nasce desde o começo de verdade: com o histórico da obra, o início e as entregas antigas ficam nas horas certas', () => {
+  const { dir, c, agora } = montar()
+  const ontem = new Date(agora() - 20 * H).toISOString()
+  const entrega1 = new Date(agora() - 15 * H).toISOString()
+  const v = c.atualizar(dir, [M(1, 1, 'concluido'), M(2, 1, 'concluido'), M(3, 1, 'andamento', 20)], { previstoMs: 30 * H, historico: { inicio: ontem, entregas: { 1: entrega1 } } })
+  assert.equal(v.inicio, ontem)
+  assert.equal(v.etapas[0].real.fim, entrega1)
+  assert.equal(v.etapas[0].real.antes, undefined)
+  assert.equal(v.etapas[1].real.antes, true, 'entrega sem hora conhecida: marcada como feita antes de medir')
+  assert.equal(Date.parse(v.etapas[0].previsto.inicio), Date.parse(ontem))
+})
+
+test('cronograma criado tarde (versão antiga) é consertado uma vez com o histórico', () => {
+  const { dir, c, agora, passar } = montar()
+  c.atualizar(dir, [M(1, 1, 'concluido'), M(2, 1, 'andamento')], { previstoMs: 20 * H }) // criado agora, já com a 1 entregue
+  const arq = path.join(dir, '.atlas', 'cronograma.json')
+  const velho = JSON.parse(fs.readFileSync(arq, 'utf8')); delete velho.historico; fs.writeFileSync(arq, JSON.stringify(velho)) // como a versão antiga gravava
+  const criado = agora()
+  passar(H)
+  const ontem = new Date(criado - 10 * H).toISOString()
+  const entrega1 = new Date(criado - 6 * H).toISOString()
+  const v = c.atualizar(dir, [M(1, 1, 'concluido'), M(2, 1, 'andamento')], { previstoMs: 20 * H, historico: { inicio: ontem, entregas: { 1: entrega1 } } })
+  assert.equal(v.inicio, ontem)
+  assert.equal(v.etapas[0].real.fim, entrega1)
+  assert.equal(v.etapas[1].real.inicio, entrega1, 'a etapa seguinte começa quando a anterior foi entregue')
+  // não conserta de novo (histórico diferente depois não mexe)
+  const v2 = c.atualizar(dir, [M(1, 1, 'concluido'), M(2, 1, 'andamento')], { previstoMs: 20 * H, historico: { inicio: new Date(criado - 30 * H).toISOString(), entregas: {} } })
+  assert.equal(v2.inicio, ontem)
+})
