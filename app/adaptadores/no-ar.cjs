@@ -4,7 +4,7 @@
 //                   os pontos (tela PB4). "Corrigir e continuar" manda os pontos pela linha da obra (posobra.executar) e recomeça.
 //   2. banco      — Supabase do cliente: cria o projeto em São Paulo (sa-east-1) pela API oficial (api.supabase.com, token do cofre),
 //                   senha do banco gerada aqui e guardada SÓ no cofre (nunca em arquivo, log ou linha de comando: vai pelo ambiente),
-//                   espera ficar pronto, aplica as migrations (`supabase db push`) e publica as funções. Obra sem supabase/ = pula.
+//                   espera ficar pronto, aplica as migrations pela API de gestão (HTTPS, sem conexão direta ao Postgres) e publica as funções. Obra sem supabase/ = pula.
 //   3. publicar   — Vercel do cliente: cria o projeto com o nome escolhido, grava as variáveis do Supabase (valor pela entrada
 //                   padrão, nunca na linha de comando) e publica em produção. Endereço: https://<nome>.vercel.app
 //   4. github     — liga o projeto da Vercel ao repositório da obra: mudança aprovada no pós-obra entra no ar sozinha.
@@ -151,6 +151,45 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     'supabase-funcoes': (det) => `As funções do servidor (supabase/functions) não subiram no Supabase. Corrija para que "supabase functions deploy" funcione.${det ? ` Erro: ${det}` : ''}`,
   }
 
+  /** Lê os .sql de supabase/migrations em ordem de nome. */
+  function migrationsDaObra(cwd) {
+    const dir = path.join(cwd, 'supabase', 'migrations')
+    if (!fs.existsSync(dir)) return []
+    return fs.readdirSync(dir).filter((f) => /^[A-Za-z0-9_.-]+\.sql$/.test(f)).sort()
+      .map((arquivo) => ({ arquivo, versao: arquivo.split('_')[0].replace(/\.sql$/, ''), nome: arquivo.replace(/\.sql$/, '').split('_').slice(1).join('_'), sql: fs.readFileSync(path.join(dir, arquivo), 'utf8') }))
+  }
+  const literal = (t) => `'${String(t).replace(/'/g, "''")}'`
+  /** Uma consulta no banco pela API (com 3 tentativas para banco recém-criado ou internet instável). */
+  async function consultar(ref, token, query, { arquivo = null } = {}) {
+    for (let i = 0; ; i++) {
+      try { return await apiSupabase('POST', `/v1/projects/${ref}/database/query`, { query }, token) } catch (err) {
+        const m = String((err && err.message) || '')
+        if (m === 'supabase-401' || m === 'supabase-403') throw Object.assign(new Error('supabase-sem-permissao-banco'), { passo: 'banco' })
+        if (/^supabase-4\d\d$/.test(m) && m !== 'supabase-408' && m !== 'supabase-429') {
+          const det = resumoDoErro(String(err.detalhe || m))
+          throw Object.assign(new Error('supabase-migrations'), { passo: 'banco', detalhe: (arquivo ? `${arquivo}: ` : '') + det })
+        }
+        if (i >= 2) throw Object.assign(new Error('supabase-conexao'), { passo: 'banco' })
+        await esperar(esperaBancoMs)
+      }
+    }
+  }
+  async function aplicarMigrations(cwd, ref, token) {
+    const lista = migrationsDaObra(cwd)
+    if (!lista.length) return
+    await consultar(ref, token, 'create schema if not exists supabase_migrations; create table if not exists supabase_migrations.schema_migrations (version text not null primary key, statements text[], name text);')
+    const feitas = await consultar(ref, token, 'select version from supabase_migrations.schema_migrations;')
+    const ja = new Set((Array.isArray(feitas) ? feitas : []).map((r) => r && String(r.version)))
+    for (const m of lista) {
+      if (ja.has(m.versao)) continue
+      const registro = `insert into supabase_migrations.schema_migrations (version, name) values (${literal(m.versao)}, ${literal(m.nome)}) on conflict (version) do nothing;`
+      // Numa transação só (como o CLI): falhou no meio = nada fica pela metade. "concurrently" não roda em transação.
+      const solta = /\bconcurrently\b/i.test(m.sql) || /^\s*(begin|commit|start transaction)\b/im.test(m.sql)
+      const query = solta ? `${m.sql}\n;\n${registro}` : `begin;\n${m.sql}\n;\n${registro}\ncommit;`
+      await consultar(ref, token, query, { arquivo: m.arquivo })
+    }
+  }
+
   async function passoBanco(pasta, e) {
     const cwd = cwdDe(pasta)
     if (!fs.existsSync(path.join(cwd, 'supabase'))) return null // obra sem banco
@@ -179,20 +218,11 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       if (i === tentativasBanco - 1) throw Object.assign(new Error('supabase-demorou'), { passo: 'banco' })
       await esperar(esperaBancoMs)
     }
-    const envBanco = { SUPABASE_ACCESS_TOKEN: token, ...(senha ? { SUPABASE_DB_PASSWORD: senha } : {}) }
-    if (fs.existsSync(path.join(cwd, 'supabase', 'migrations'))) {
-      // Banco recém-criado às vezes ainda não aceita conexão: tenta de novo sozinho. Erro de SQL é defeito da obra: não adianta
-      // repetir; vai resumido (sem senha nem endereço de conexão) para a tela e, no "Corrigir e continuar", para a linha (26/11/2026).
-      for (let i = 0; ; i++) {
-        const l = await supabase(['link', '--project-ref', ref], { cwd, env: envBanco, timeoutMs: 120_000 })
-        const d = l.codigo === 0 ? await supabase(['db', 'push', '--yes'], { cwd, env: envBanco, timeoutMs: 300_000 }) : l
-        if (d.codigo === 0) break
-        const saida = String(d.saida || '')
-        if (erroDeSql(saida)) throw Object.assign(new Error('supabase-migrations'), { passo: 'banco', detalhe: resumoDoErro(saida) })
-        if (i >= 2) throw Object.assign(new Error(erroDeConexao(saida) ? 'supabase-conexao' : l.codigo !== 0 ? 'supabase-link' : 'supabase-migrations'), { passo: 'banco', detalhe: resumoDoErro(saida) })
-        await esperar(esperaBancoMs)
-      }
-    }
+    const envBanco = { SUPABASE_ACCESS_TOKEN: token }
+    // Migrations pela API de gestão do Supabase (HTTPS, a mesma que já criou o projeto), NUNCA pela conexão direta do Postgres
+    // (`supabase link` + `db push`): essa conexão é bloqueada em muitas redes (porta 5432/6543, IPv6) e travava o passo para
+    // sempre em "o banco não aceitou a conexão" (Guilherme, 27/11/2026). Registro na mesma tabela do Supabase CLI.
+    await aplicarMigrations(cwd, ref, token)
     const pastaFn = path.join(cwd, 'supabase', 'functions')
     if (fs.existsSync(pastaFn)) {
       for (const f of fs.readdirSync(pastaFn, { withFileTypes: true })) {

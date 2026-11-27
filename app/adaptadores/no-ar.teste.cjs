@@ -23,7 +23,7 @@ function cofreMem(inicial = {}) {
 const APROVADO = '{"laudo":"aprovado","bloqueia":[]}'
 
 function deps(over = {}) {
-  const chamadas = { vercel: [], supabase: [], api: [] }
+  const chamadas = { vercel: [], supabase: [], api: [], sql: [] }
   const base = {
     cofre: cofreMem({ 'contas/supabase': 'sbp_' + 'a'.repeat(40) }),
     vercel: async (args, o) => { chamadas.vercel.push({ args, entrada: o.entrada }); return { codigo: 0, saida: '' } },
@@ -31,6 +31,7 @@ function deps(over = {}) {
     git: async () => ({ codigo: 0, saida: 'https://github.com/ana/ponto.git\n' }),
     apiSupabase: async (m, c, corpo) => {
       chamadas.api.push({ m, c, corpo })
+      if (c.endsWith('/database/query')) { chamadas.sql.push(corpo.query); return over.query ? over.query(corpo.query) : [] }
       if (c === '/v1/organizations') return [{ id: 'x', slug: 'ana-org' }]
       if (m === 'POST' && c === '/v1/projects') return { id: 'abcdefghijklmnopqrst' }
       if (c === '/v1/projects/abcdefghijklmnopqrst') return { status: 'ACTIVE_HEALTHY' }
@@ -102,7 +103,8 @@ test('um clique: vistoria, banco em São Paulo, Vercel com variáveis pela entra
   assert.equal(await d.cofre.ler(chaveSenha('ponto')), 'senha-gerada-123')
   // senha e token nunca na linha de comando: só no ambiente
   for (const s of chamadas.supabase) assert.ok(!s.args.join(' ').includes('senha-gerada-123'))
-  assert.equal(chamadas.supabase.find((s) => s.args[0] === 'db').env.SUPABASE_DB_PASSWORD, 'senha-gerada-123')
+  // banco pela API de gestão (HTTPS), nunca pela conexão direta do Postgres (Guilherme, 27/11/2026)
+  assert.ok(!chamadas.supabase.some((s) => s.args[0] === 'link' || s.args[0] === 'db'))
   // variáveis pela entrada, nunca nos argumentos; nunca a service_role
   const envs = chamadas.vercel.filter((v) => v.args[0] === 'env')
   assert.deepEqual(envs.map((v) => v.args[2]), ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'])
@@ -236,6 +238,12 @@ test('rede: só api.supabase.com com caminho /v1 fixo, token no cabeçalho', asy
   await assert.rejects(pedirApiSupabase('GET', '/v1/x', null, 't', { enviar: async () => ({ status: 401, corpo: '' }) }), /supabase-401/)
 })
 
+test('rede: o motivo do Supabase (erro do SQL) vem junto no erro, para a tela', async () => {
+  const corpo = JSON.stringify({ message: 'Failed to run sql query: ERROR:  42P01: relation "x" does not exist' })
+  await assert.rejects(pedirApiSupabase('POST', '/v1/projects/abc/database/query', { query: 'x' }, 't', { enviar: async () => ({ status: 400, corpo }) }),
+    (e) => e.message === 'supabase-400' && /relation "x" does not exist/.test(e.detalhe))
+})
+
 test('rede: sondar só endereço .vercel.app', async () => {
   const enviar = async (o) => ({ status: 200, cabecalhos: {}, corpo: o.host })
   assert.equal((await sondarSite('https://ponto.vercel.app/', { enviar })).corpo, 'ponto.vercel.app')
@@ -269,14 +277,53 @@ test('conferirAntes: avisa ANTES de começar quanto banco a conta do Supabase j�
   assert.equal((await criarNoAr({ raiz, ...d3 }).conferirAntes('ponto')).bancosAtivos, null)
 })
 
-const ERRO_SQL = 'Connecting to remote database...\nApplying migration 20261120_ponto.sql...\nERROR: relation "public.funcionarios" does not exist (SQLSTATE 42P01)\nAt statement 3: create policy "ver o proprio ponto" on public.marcacoes using (auth.uid() = funcionario_id)\npostgresql://postgres.abcdefghijklmnopqrst:senha-gerada-123@aws-0-sa-east-1.pooler.supabase.com:5432/postgres\n'
+function obraComMigrations() {
+  const o = obra()
+  const dir = path.join(o.cwd, 'supabase', 'migrations')
+  fs.writeFileSync(path.join(dir, '20261120_ponto.sql'), 'create table public.marcacoes (id bigint primary key);\n')
+  fs.writeFileSync(path.join(dir, '20261121_funcionarios.sql'), "create table public.funcionarios (id bigint primary key, nome text default 'x');\n")
+  fs.writeFileSync(path.join(dir, 'leia-me.txt'), 'não é migration')
+  return o
+}
+const erroApi = (msg, detalhe) => Object.assign(new Error(msg), detalhe ? { detalhe } : {})
+
+test('migrations pela API de gestão do Supabase (HTTPS), em ordem, sem conexão direta ao Postgres (Guilherme, 27/11/2026)', async () => {
+  const { raiz } = obraComMigrations()
+  const { d, chamadas } = deps()
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').fase, 'noar', JSON.stringify(n.estado('ponto')))
+  assert.ok(!chamadas.supabase.some((s) => s.args[0] === 'link' || s.args[0] === 'db'), 'nada de supabase link / db push')
+  assert.ok(chamadas.api.filter((a) => a.c.endsWith('/database/query')).every((a) => a.m === 'POST' && a.c === '/v1/projects/abcdefghijklmnopqrst/database/query'))
+  const sql = chamadas.sql
+  assert.match(sql[0], /create table if not exists supabase_migrations\.schema_migrations/)
+  const iPonto = sql.findIndex((q) => q.includes('public.marcacoes'))
+  const iFunc = sql.findIndex((q) => q.includes('public.funcionarios'))
+  assert.ok(iPonto > 0 && iFunc > iPonto, 'em ordem de nome')
+  assert.match(sql[iPonto], /^begin;[\s\S]*insert into supabase_migrations\.schema_migrations[\s\S]*'20261120'[\s\S]*commit;$/)
+  assert.ok(!sql.some((q) => q.includes('não é migration')))
+})
+
+test('migration já aplicada não roda de novo (religar ou "Tentar de novo")', async () => {
+  const { raiz } = obraComMigrations()
+  const { d, chamadas } = deps({ query: async (q) => (/select version/.test(q) ? [{ version: '20261120' }] : []) })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').fase, 'noar')
+  assert.ok(!chamadas.sql.some((q) => q.includes('public.marcacoes')))
+  assert.ok(chamadas.sql.some((q) => q.includes('public.funcionarios')))
+})
+
+const ERRO_SQL = 'Failed to run sql query: ERROR:  42P01: relation "public.funcionarios" does not exist postgresql://postgres.abcdefghijklmnopqrst:senha-gerada-123@aws-0-sa-east-1.pooler.supabase.com:5432/postgres'
 
 test('tabelas não subiram (erro de SQL): o erro vem resumido, sem senha, e "corrigir" manda para a linha e depois publica sozinho (Ponto, 26/11/2026)', async () => {
-  const { raiz } = obra()
+  const { raiz } = obraComMigrations()
   const corrigidos = []
-  let push = 0, rodando = 1
+  let falhas = 0, rodando = 1
   const { d } = deps({
-    supabase: async (args) => (args[0] === 'db' && push++ === 0 ? { codigo: 1, saida: ERRO_SQL } : { codigo: 0, saida: '' }),
+    query: async (q) => { if (q.includes('public.marcacoes') && falhas++ === 0) throw erroApi('supabase-400', ERRO_SQL); return [] },
     corrigir: async (p, a) => { corrigidos.push([p, a]) },
     linhaRodando: () => rodando-- > 0,
   })
@@ -287,8 +334,9 @@ test('tabelas não subiram (erro de SQL): o erro vem resumido, sem senha, e "cor
   assert.equal(e.fase, 'erro')
   assert.equal(e.erro.motivo, 'supabase-migrations')
   assert.match(e.erro.detalhe, /relation "public\.funcionarios" does not exist/)
+  assert.match(e.erro.detalhe, /20261120_ponto\.sql/, 'diz qual arquivo falhou')
   assert.doesNotMatch(e.erro.detalhe, /senha-gerada-123|postgresql:\/\//)
-  assert.equal(push, 1, 'erro de SQL não adianta repetir: não tenta de novo sozinho')
+  assert.equal(falhas, 1, 'erro de SQL não adianta repetir: não tenta de novo sozinho')
   const c = await n.corrigir('ponto')
   assert.equal(c.fase, 'corrigindo')
   assert.equal(corrigidos.length, 1)
@@ -298,25 +346,34 @@ test('tabelas não subiram (erro de SQL): o erro vem resumido, sem senha, e "cor
   assert.equal(n.estado('ponto').fase, 'noar', 'depois da correção, confere de novo e publica sozinho')
 })
 
-test('banco ainda não aceita conexão (projeto novo): tenta de novo sozinho antes de desistir', async () => {
-  const { raiz } = obra()
-  let push = 0
-  const { d } = deps({ supabase: async (args) => (args[0] === 'db' && push++ < 2 ? { codigo: 1, saida: 'failed to connect to postgres: dial tcp: i/o timeout' } : { codigo: 0, saida: '' }) })
+test('banco recém-criado ainda não responde: tenta de novo sozinho antes de desistir', async () => {
+  const { raiz } = obraComMigrations()
+  let vezes = 0
+  const { d } = deps({ query: async (q) => { if (/create table if not exists/.test(q) && vezes++ < 2) throw erroApi('supabase-503'); return [] } })
   const n = criarNoAr({ raiz, ...d })
   await n.iniciar('ponto', 'ponto')
   await n._esperar('ponto')
   assert.equal(n.estado('ponto').fase, 'noar')
-  assert.equal(push, 3)
+  assert.equal(vezes, 3)
 })
 
-test('conexão falha sempre: motivo próprio (supabase-conexao), sem achar que é defeito da obra', async () => {
-  const { raiz } = obra()
-  const { d } = deps({ supabase: async (args) => (args[0] === 'db' ? { codigo: 1, saida: 'failed to connect to postgres: dial tcp: i/o timeout' } : { codigo: 0, saida: '' }) })
+test('internet cai sempre: motivo próprio (supabase-conexao), sem achar que é defeito da obra', async () => {
+  const { raiz } = obraComMigrations()
+  const { d } = deps({ query: async () => { throw erroApi('timeout') } })
   const n = criarNoAr({ raiz, ...d })
   await n.iniciar('ponto', 'ponto')
   await n._esperar('ponto')
   assert.equal(n.estado('ponto').erro.motivo, 'supabase-conexao')
   await assert.rejects(n.corrigir('ponto'), /nada-para-corrigir/)
+})
+
+test('chave do Supabase sem permissão no banco (401/403): motivo próprio, explicado na tela', async () => {
+  const { raiz } = obraComMigrations()
+  const { d } = deps({ query: async () => { throw erroApi('supabase-403') } })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').erro.motivo, 'supabase-sem-permissao-banco')
 })
 
 test('a Vercel não conseguiu montar o sistema (erro de build): vira "vercel-build" com o resumo e a linha corrige', async () => {

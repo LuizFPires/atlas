@@ -57,6 +57,7 @@ test('a Ajuda aberta por um erro já começa dizendo o que houve e o que fazer (
 
 test('os novos motivos (conexão com o banco e build na Vercel) têm explicação', () => {
   expect(explicarTrava('supabase-conexao').houve).toMatch(/banco/)
+  expect(explicarTrava('supabase-sem-permissao-banco').fazer).toMatch(/Religue/)
   expect(explicarTrava('vercel-build').fazer).toMatch(/Corrigir e continuar/)
   expect(explicarTrava('supabase-migrations').fazer).toMatch(/Corrigir e continuar/)
   expect(explicarTrava('supabase-funcoes').fazer).toMatch(/Corrigir e continuar/)

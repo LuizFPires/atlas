@@ -42,7 +42,10 @@ async function pedirApiSupabase(metodo, caminho, corpo, token, { enviar = pedir 
   if (r.status < 200 || r.status >= 300) {
     // Conta grátis com 2 projetos ativos (limite do Supabase): motivo próprio, para a tela dizer o que fazer (26/11/2026).
     if ((r.status === 400 || r.status === 402) && /maximum limits?.{0,80}free projects?|free project limit/i.test(String(r.corpo || '').slice(0, 2000))) throw new Error('supabase-limite-gratis')
-    throw new Error(`supabase-${r.status}`)
+    // O motivo do Supabase (ex.: o erro do SQL) vai junto para a tela; o token nunca está na resposta.
+    let msg = ''
+    try { const j = JSON.parse(r.corpo || '{}'); msg = String((j && (j.message || j.error || j.msg)) || '') } catch { msg = String(r.corpo || '') }
+    throw Object.assign(new Error(`supabase-${r.status}`), msg ? { detalhe: msg.slice(0, 1500) } : {})
   }
   try { return JSON.parse(r.corpo || 'null') } catch { throw new Error('supabase-resposta') }
 }
