@@ -46,8 +46,22 @@ function Verificacao({ c }: { c: Conferencia | null | undefined }) {
   return <span className={`at-bat__check ${r.ok ? '' : 'at-bat__check--aviso'}`}><span aria-hidden="true">{r.ok ? '✓' : '⚠'}</span> {r.texto}</span>
 }
 
-/** Os 8 "apps" do celular de mentirinha: o do cliente aparece entre os outros, como no protótipo. */
-const OUTROS = [['Fotos', '#E9E3DA'], ['Mapas', '#CFE3D2'], ['Banco', '#D7CDE8'], ['Música', '#F2C9C4'], ['Câmera', '#DADDD3'], ['Clima', '#C9DDF0'], ['Notas', '#F4E7B5']] as const
+/** Os apps de sempre em volta do app do cliente (desenhos genéricos, sem marca de ninguém). Aprovado pelo Luiz em 27/11/2026. */
+const GLIFOS: Record<string, { bg: string; svg: React.ReactNode }> = {
+  Fotos: { bg: 'linear-gradient(160deg,#fff,#e9e9ee)', svg: <><circle cx="12" cy="7" r="3.2" fill="#F6B73C" /><circle cx="17" cy="12" r="3.2" fill="#E8584F" opacity=".9" /><circle cx="12" cy="17" r="3.2" fill="#6C8CF5" opacity=".9" /><circle cx="7" cy="12" r="3.2" fill="#5BC27A" opacity=".9" /></> },
+  Mapas: { bg: 'linear-gradient(160deg,#dff3e4,#9fd6b0)', svg: <g fill="none" stroke="#2f7d4f" strokeWidth="2" strokeLinejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" /><path d="M9 4v14M15 6v14" /></g> },
+  Câmera: { bg: 'linear-gradient(160deg,#6b6f76,#2f3237)', svg: <g fill="none" stroke="#fff" strokeWidth="2"><rect x="3" y="7" width="18" height="12" rx="3" /><circle cx="12" cy="13" r="3.4" /><path d="M8 7l1.5-3h5L16 7" /></g> },
+  Clima: { bg: 'linear-gradient(160deg,#5aa9ff,#1f6fe0)', svg: <><circle cx="9" cy="9" r="3.5" fill="#FFD54A" /><path d="M7 18h10a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.6 1.6A2.7 2.7 0 0 0 7 18z" fill="#fff" /></> },
+  Notas: { bg: 'linear-gradient(160deg,#fff6c9,#ffd94a)', svg: <path d="M6 4h12v16H6zM9 9h6M9 13h6M9 17h3" fill="none" stroke="#7a5a00" strokeWidth="2" strokeLinecap="round" /> },
+  Agenda: { bg: 'linear-gradient(160deg,#fff,#eceef2)', svg: <g fill="none" stroke="#E8584F" strokeWidth="2"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M4 9h16M9 13h6M9 16h4" stroke="#555" /></g> },
+  Ajustes: { bg: 'linear-gradient(160deg,#8e8e93,#48484c)', svg: <g fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" /></g> },
+  Telefone: { bg: 'linear-gradient(160deg,#6ee07a,#2fb94a)', svg: <path fill="#fff" d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z" /> },
+  Navegador: { bg: 'linear-gradient(160deg,#5ac8fa,#1e8cf0)', svg: <g fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="#fff" /></g> },
+  Mensagens: { bg: 'linear-gradient(160deg,#6ee07a,#2fb94a)', svg: <path fill="#fff" d="M12 4c4.97 0 9 3.36 9 7.5S16.97 19 12 19c-1 0-1.96-.13-2.86-.38L5 20l1.2-3.3C4.8 15.4 3 13.6 3 11.5 3 7.36 7.03 4 12 4z" /> },
+  'E-mail': { bg: 'linear-gradient(160deg,#fff,#eceef2)', svg: <g fill="none" stroke="#1e8cf0" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></g> },
+}
+const GRADE = ['Fotos', 'Mapas', 'Câmera', 'Clima', '*', 'Notas', 'Agenda', 'Ajustes']
+const DOCK = ['Telefone', 'Navegador', 'Mensagens', 'E-mail']
 
 /** Logo no celular: ícone sugerido, ou a inicial do nome quando a logo é um arquivo do cliente (o arquivo em si não é aberto aqui). */
 function Marcador({ id, nome, tamanho }: { id: string; nome: string; tamanho: number }) {
@@ -55,27 +69,43 @@ function Marcador({ id, nome, tamanho }: { id: string; nome: string; tamanho: nu
   return <span aria-hidden="true" style={{ font: `700 ${Math.round(tamanho * 0.8)}px Fraunces, Georgia, serif`, color: '#D9A066' }}>{[...nome.trim()][0]?.toUpperCase() ?? ''}</span>
 }
 
+const AppIcone = ({ nome }: { nome: string }) => (
+  <span className="at-bat__app"><i style={{ background: GLIFOS[nome].bg }}><svg viewBox="0 0 24 24" aria-hidden="true">{GLIFOS[nome].svg}</svg></i><span>{nome}</span></span>
+)
+
+const DATA = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Sao_Paulo' })
+
+/** O celular do cliente (aprovado pelo Luiz em 27/11/2026): aparelho realista, fundo na cor da marca, o app entre os de sempre e
+ *  um aviso como os clientes vão receber (com o slogan). Nenhum app de verdade de ninguém: só desenhos genéricos. */
 function CelularMarca({ nome, slogan, logo }: { nome: string; slogan: string; logo: string }) {
-  const apps = [...OUTROS.slice(0, 4).map(([n, bg]) => ({ n, bg, meu: false })), { n: nome, bg: '#2B211B', meu: true }, ...OUTROS.slice(4).map(([n, bg]) => ({ n, bg, meu: false }))]
+  const [hoje] = useState(() => { const t = DATA.format(new Date()); return t.charAt(0).toUpperCase() + t.slice(1) })
   return (
     <aside className="at-bat__lado" aria-label="Como fica no celular">
       <span className="at-bat__dica">Assim fica no celular dos seus clientes:</span>
-      <div className="at-bat__celular">
+      <div className="at-bat__aparelho">
         <div className="at-bat__tela">
-          <div className="at-bat__barra"><span>9:41</span><span>●●● 5G</span></div>
-          <div className="at-bat__apps">
-            {apps.map((a) => (
-              <div key={a.n} className="at-bat__app">
-                <span className="at-bat__icone" style={{ background: a.bg, boxShadow: a.meu ? '0 0 0 3px #D9A066' : 'none' }}>{a.meu && <Marcador id={logo} nome={nome} tamanho={26} />}</span>
-                <span style={{ fontWeight: a.meu ? 700 : 400 }}>{a.n}</span>
-              </div>
-            ))}
+          <div className="at-bat__ilha" aria-hidden="true" />
+          <div className="at-bat__barra" aria-hidden="true">
+            <span>9:41</span>
+            <span className="at-bat__icos">
+              <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="#fff" /><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#fff" /><rect x="10" y="3" width="3" height="9" rx="1" fill="#fff" /><rect x="15" y="0" width="3" height="12" rx="1" fill="#fff" /></svg>
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round"><path d="M1.5 4.2a9.5 9.5 0 0 1 13 0M4 7a6 6 0 0 1 8 0" /><circle cx="8" cy="10" r="1.2" fill="#fff" stroke="none" /></svg>
+              <svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3.5" fill="none" stroke="#fff" strokeOpacity=".5" /><rect x="2.5" y="2.5" width="16" height="7" rx="2" fill="#fff" /><rect x="23.5" y="4" width="2" height="4" rx="1" fill="#fff" fillOpacity=".5" /></svg>
+            </span>
           </div>
-          <div className="at-bat__cartao">
-            <div className="at-bat__cartao-cab"><span className="at-bat__cartao-logo"><Marcador id={logo} nome={nome} tamanho={20} /></span><b>{nome}</b></div>
-            {slogan && <span className="at-bat__cartao-slogan">{slogan}</span>}
-            <span className="at-bat__cartao-botao">Marcar horário</span>
+          <div className="at-bat__aviso">
+            <span className="at-bat__aviso-logo"><Marcador id={logo} nome={nome} tamanho={22} /></span>
+            <span className="at-bat__aviso-txt"><b>{nome}</b><small>{slogan || 'Toque para abrir o app.'}</small></span>
+            <span className="at-bat__aviso-quando">agora</span>
           </div>
+          <div className="at-bat__relogio" aria-hidden="true"><span>{hoje}</span><b>9:41</b></div>
+          <div className="at-bat__grade">
+            {GRADE.map((n) => n === '*'
+              ? <span key="meu" className="at-bat__app at-bat__app--meu"><i><Marcador id={logo} nome={nome} tamanho={28} /></i><span>{nome}</span></span>
+              : <AppIcone key={n} nome={n} />)}
+          </div>
+          <div className="at-bat__paginas" aria-hidden="true"><b /><b /></div>
+          <div className="at-bat__dock" aria-hidden="true">{DOCK.map((n) => <AppIcone key={n} nome={n} />)}</div>
         </div>
       </div>
     </aside>
