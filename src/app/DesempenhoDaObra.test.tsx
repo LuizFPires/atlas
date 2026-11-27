@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TemaProvider } from '../tema/tema'
-import { DesempenhoDaObra } from './DesempenhoDaObra'
+import { DesempenhoDaObra, marcasY } from './DesempenhoDaObra'
 import { AbasDaObra } from './AbasDaObra'
 import { criarPainelFixture, type Desempenho } from './ponte-painel'
 
@@ -81,4 +81,11 @@ test('didática: diz que a projeção vale com o computador ligado e o Atlas abe
   expect(screen.getByText(/no fim deve usar ~145%/)).toBeInTheDocument()
   expect(screen.getByText(/computador desligado, Atlas fechado ou obra pausada/)).toBeInTheDocument()
   expect(container.querySelectorAll('[data-parada]').length).toBe(2)
+})
+
+test('eixo do consumo: no máximo 6 marcas redondas, mesmo com números grandes (nada embaralhado)', () => {
+  expect(marcasY(100)).toEqual([0, 25, 50, 75, 100])
+  expect(marcasY(145)).toEqual([0, 50, 100])
+  expect(marcasY(7006).length).toBeLessThanOrEqual(7)
+  expect(marcasY(7006)).toContain(100)
 })
