@@ -332,7 +332,7 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
                 </div>
                 {link && <a className="at-noar__prim" href={linkWhatsapp(recadoEquipe(obra.nome, link))} target="_blank" rel="noopener noreferrer">Mandar pelo WhatsApp</a>}
                 {estado?.avisos.map((a) => <span key={a} className="at-noar__nota">{a}</span>)}
-                <span className="at-noar__nota">Daqui pra frente, toda mudança que você pedir no pós-obra entra no ar sozinha, depois dos testes.</span>
+                <span className="at-noar__nota">Daqui pra frente, cada mudança que você pedir em "Pedir mudança" fica pronta numa versão de teste. Você confere e ela só entra no ar quando você clicar em "Colocar no ar".</span>
               </section>
               {(onDominio || dominio || onLojas || lojas || onVender) && (
                 <section className="at-noar__card at-noar__card--calmo">
