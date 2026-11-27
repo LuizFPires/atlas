@@ -138,12 +138,12 @@ const MSG = {
   fora: 'A entrega do kit ainda não está aberta por aqui. Volte daqui a pouco.',
   ativar: 'Ative este computador antes de começar a obra.',
   incompleto: 'O kit chegou incompleto. Tente de novo em instantes; nada foi guardado.',
-  rede: 'Sem internet no momento. Confira a conexão e tente de novo.',
+  rede: 'Sem internet no momento, ou o servidor do Atlas não respondeu (tentei 3 vezes). Confira a conexão e tente de novo.',
   negado: 'Não foi possível liberar o kit agora. Confira a sua licença.',
 }
 
 /** `deps`: { dadosApp, cofre, hashComputador (async () => hex), api (string|null), buscar? (fetch) }. */
-function criarKit({ dadosApp, cofre, hashComputador, api = process.env.ATLAS_API_URL, buscar = globalThis.fetch }) {
+function criarKit({ dadosApp, cofre, hashComputador, api = process.env.ATLAS_API_URL, buscar = globalThis.fetch, esperar = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
   const base = path.join(dadosApp, 'kit-temp')
   const dirs = new Map() // obraId -> pasta do plugin (só memória)
   const nomeDir = (obraId) => crypto.createHash('sha256').update(`kit:${obraId}`).digest('hex').slice(0, 24)
@@ -195,15 +195,23 @@ function criarKit({ dadosApp, cofre, hashComputador, api = process.env.ATLAS_API
       if (!ativ) return { ok: false, mensagem: MSG.ativar }
       let texto
       let ok
-      try {
-        const r = await buscar(`${api0}/entregar-kit`, {
-          method: 'POST', redirect: 'error', signal: AbortSignal.timeout(30_000),
-          headers: { 'Content-Type': 'application/json', 'X-Atlas-Dispositivo': ativ.token },
-          body: JSON.stringify({ email: ativ.email, computador_hash: await hashComputador(), obra_id: obraId }),
-        })
-        ok = r.ok
-        try { texto = await lerComTeto(r, LIM.resposta) } catch (e) { if (e && e.message === 'kit-grande') return { ok: false, mensagem: MSG.incompleto }; throw e }
-      } catch { return { ok: false, mensagem: MSG.rede } }
+      // Servidor que pisca (sem internet por um instante, erro 5xx): tenta 3 vezes antes de parar a obra (27/11/2026).
+      for (let i = 0; ; i++) {
+        let instavel = false
+        try {
+          const r = await buscar(`${api0}/entregar-kit`, {
+            method: 'POST', redirect: 'error', signal: AbortSignal.timeout(30_000),
+            headers: { 'Content-Type': 'application/json', 'X-Atlas-Dispositivo': ativ.token },
+            body: JSON.stringify({ email: ativ.email, computador_hash: await hashComputador(), obra_id: obraId }),
+          })
+          ok = r.ok
+          instavel = typeof r.status === 'number' && r.status >= 500
+          if (!instavel) { try { texto = await lerComTeto(r, LIM.resposta) } catch (e) { if (e && e.message === 'kit-grande') return { ok: false, mensagem: MSG.incompleto }; throw e } }
+        } catch { instavel = true }
+        if (!instavel) break
+        if (i >= 2) return { ok: false, mensagem: MSG.rede }
+        await esperar(3000)
+      }
       let d = null
       try { d = JSON.parse(texto) } catch { /* resposta estranha */ }
       if (!ok) return { ok: false, mensagem: d && typeof d.mensagem === 'string' ? d.mensagem.slice(0, 300) : MSG.negado, ...(d && (d.erro === 'obra_embargada' || d.erro === 'uso_recusado') ? { codigo: d.erro } : {}) }

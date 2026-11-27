@@ -6,7 +6,7 @@
 //  - GitHub: `gh auth login --web` (fluxo de código do próprio GitHub). O Atlas lê o código da saída, mostra grande na tela e abre
 //    github.com/login/device ao lado; a pessoa cola e clica em Continue. O login fica no cofre do Windows, guardado pelo gh.
 //  - Vercel: `vercel login` (mesmo fluxo de código). CI=1 impede a CLI de abrir o navegador do computador: o Atlas abre o site ao lado.
-//  - Supabase: a CLI dele NÃO faz login sem terminal ("Cannot use automatic login flow inside non-TTY environments"). A pessoa cria
+//  - Supabase: a chave é conferida pela API HTTPS do Supabase (sem CLI). A CLI dele NÃO faz login sem terminal ("Cannot use automatic login flow inside non-TTY environments"). A pessoa cria
 //    uma chave no site e cola aqui; o Atlas testa com o próprio Supabase e só então guarda no COFRE (DPAPI). Nunca vai a arquivo,
 //    log nem linha de comando: chega à linha de produção pelo ambiente (SUPABASE_ACCESS_TOKEN).
 //
@@ -22,6 +22,9 @@ const path = require('node:path')
 const { spawn } = require('node:child_process')
 
 const CHAVE_SUPABASE = 'contas/supabase'
+// Saída de ferramenta que é internet ou serviço instável (vale tentar de novo) x erro de montagem do sistema (não adianta repetir).
+const RE_INSTAVEL = /\b(429|5\d\d)\b|rate limit|ECONN\w*|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up|fetch failed|network|timed? ?out|service unavailable|bad gateway/i
+const RE_BUILD = /error TS\d+|Command ".*build.*" exited|Build failed|Module not found|SyntaxError|Failed to compile/i
 const MAX_SAIDA = 200_000
 
 /** Roda e espera (sem shell, a não ser .cmd do npm com argumentos FIXOS). Saída = stdout+stderr, com teto. */
@@ -56,6 +59,11 @@ function iniciarProcesso(cmd, args, { env, onTexto, onFim }) {
   }
 }
 const VERSOES = { vercel: '66', supabase: '3', eas: '27' }
+const PACOTES = {
+  vercel: { pacote: 'vercel', script: ['vercel', 'dist', 'vc.js'] },
+  supabase: { pacote: 'supabase', script: ['supabase', 'dist', 'supabase.js'] },
+  eas: { pacote: 'eas-cli', script: ['eas-cli', 'bin', 'run'] },
+}
 const RE_CODIGO = /\b([A-Z0-9]{4}-[A-Z0-9]{4})\b/
 const ENDERECO_FIXO = { github: 'https://github.com/login/device', hosp: 'https://vercel.com/device' }
 const ENDERECO_OK = {
@@ -90,7 +98,7 @@ function comandoGh(env = process.env, existe = fs.existsSync, plataforma = proce
  * deps: { dadosApp, cofre, rodar(cmd, args, {env, timeoutMs}) → {codigo, saida}, iniciar(cmd, args, {env, onTexto, onFim}) →
  *         {escrever, parar}, plataforma?, env? (base, já mínimo), existe?, execPath? }
  */
-function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = iniciarProcesso, plataforma = process.platform, env = process.env, existe = fs.existsSync, execPath = process.execPath }) {
+function criarContasCli({ dadosApp, cofre, apiSupabase = null, rodar = rodarProcesso, iniciar = iniciarProcesso, plataforma = process.platform, env = process.env, existe = fs.existsSync, execPath = process.execPath }) {
   const pastaFerr = path.join(dadosApp, 'ferramentas')
   const binFerr = path.join(pastaFerr, 'node_modules', '.bin')
   const estados = {}
@@ -114,14 +122,28 @@ function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = inic
   const self = {
     CHAVE_SUPABASE,
 
-    /** Instala Vercel e Supabase na pasta do Atlas (versões fixas). true = pronto. */
-    async instalarFerramentas() {
+    /**
+     * Instala na pasta do Atlas (versões fixas, sem global) SÓ as ferramentas que o passo precisa, cada uma no seu `npm install`:
+     * a da Expo (pesada, só para as lojas) nunca mais trava a ligação da Vercel nem o "Colocar no ar" (27/11/2026). Falhou = tenta
+     * de novo uma vez (internet que piscou). true = todas as pedidas prontas.
+     */
+    async instalarFerramentas(nomes = ['vercel']) {
       fs.mkdirSync(pastaFerr, { recursive: true })
       const npm = plataforma === 'win32' ? 'npm.cmd' : 'npm'
-      const r = await rodarCom({ cmd: npm, pre: [], env: {} }, ['install', '--prefix', pastaFerr, '--no-audit', '--no-fund', `vercel@${VERSOES.vercel}`, `supabase@${VERSOES.supabase}`, `eas-cli@${VERSOES.eas}`], {}, 300_000)
-      return r.codigo === 0
+      let tudo = true
+      for (const nome of nomes) {
+        if (!PACOTES[nome]) { tudo = false; continue }
+        if (self.ferramentasProntas([nome])) continue
+        let ok = false
+        for (let i = 0; i < 2 && !ok; i++) {
+          const r = await rodarCom({ cmd: npm, pre: [], env: {} }, ['install', '--prefix', pastaFerr, '--no-audit', '--no-fund', `${PACOTES[nome].pacote}@${VERSOES[nome]}`], {}, 600_000)
+          ok = r.codigo === 0
+        }
+        if (!ok) tudo = false
+      }
+      return tudo
     },
-    ferramentasProntas: () => existe(path.join(pastaFerr, 'node_modules', 'vercel', 'dist', 'vc.js')) && existe(path.join(pastaFerr, 'node_modules', 'supabase', 'dist', 'supabase.js')) && existe(path.join(pastaFerr, 'node_modules', 'eas-cli', 'bin', 'run')),
+    ferramentasProntas: (nomes = ['vercel']) => nomes.every((n) => PACOTES[n] && existe(path.join(pastaFerr, 'node_modules', ...PACOTES[n].script))),
 
     estado: (conta) => estados[conta] || 'pendente',
 
@@ -172,12 +194,20 @@ function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = inic
     /** Para o login em andamento (a pessoa saiu da tela). */
     cancelar(conta) { if (logins[conta]) { logins[conta].parar(); delete logins[conta]; if (estados[conta] === 'esperando') estados[conta] = 'pendente' } },
 
-    /** Testa a chave com o próprio Supabase e só então guarda no cofre. A chave nunca vai à linha de comando. */
+    /**
+     * Testa a chave com a API do próprio Supabase (HTTPS, a mesma do "Colocar no ar"; sem CLI, sem instalar nada) e só então guarda
+     * no cofre. 401/403 = recusada; sem internet = 'sem-internet' (nunca "recusada" por engano: a pessoa geraria chave à toa).
+     */
     async guardarChaveSupabase(bruta) {
       const chave = String(bruta ?? '').trim()
       if (!chaveSupabaseValida(chave)) return { ok: false, motivo: 'formato' }
-      const r = await rodarCom(supabase(), ['projects', 'list', '-o', 'json'], { SUPABASE_ACCESS_TOKEN: chave }, 30_000)
-      if (r.codigo !== 0) return { ok: false, motivo: 'recusada' }
+      try {
+        const lista = await apiSupabase('GET', '/v1/projects', null, chave)
+        if (!Array.isArray(lista)) return { ok: false, motivo: 'sem-internet' }
+      } catch (e) {
+        const m = String((e && e.message) || '')
+        return { ok: false, motivo: m === 'supabase-401' || m === 'supabase-403' ? 'recusada' : 'sem-internet' }
+      }
       await cofre.guardar(CHAVE_SUPABASE, chave)
       chaveCache = chave
       estados.supabase = 'ligado'
@@ -210,6 +240,19 @@ function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = inic
       return rodarCom(f, args, nome === 'vercel' ? { CI: '1', ...extra } : extra, timeoutMs, { cwd, entrada })
     },
 
+    /**
+     * Igual a rodarFerramenta, mas quando a saída mostra internet ou serviço instável (não erro do sistema), tenta de novo sozinho
+     * (até 3 vezes, 10 s entre elas). Para a página de vendas, o domínio e as lojas (27/11/2026).
+     */
+    async rodarFerramentaTentando(nome, args, opcoes = {}, { esperar = (ms) => new Promise((r) => setTimeout(r, ms)), esperaMs = 10_000 } = {}) {
+      for (let i = 0; ; i++) {
+        const r = await self.rodarFerramenta(nome, args, opcoes)
+        const saida = String(r.saida || '')
+        if (r.codigo === 0 || i >= 2 || RE_BUILD.test(saida) || !RE_INSTAVEL.test(saida)) return r
+        await esperar(esperaMs)
+      }
+    },
+
     /** Ambiente extra da linha de produção: ferramentas no PATH e a chave do Supabase (só se existir). */
     envDaLinha(pathAtual = env.PATH || env.Path || '') {
       const out = { PATH: [binFerr, pathAtual].filter(Boolean).join(path.delimiter) }
@@ -224,4 +267,4 @@ function criarContasCli({ dadosApp, cofre, rodar = rodarProcesso, iniciar = inic
   return self
 }
 
-module.exports = { rodarProcesso, comandoGh, criarContasCli, codigoEEndereco, chaveSupabaseValida, CHAVE_SUPABASE }
+module.exports = { RE_INSTAVEL, RE_BUILD, rodarProcesso, comandoGh, criarContasCli, codigoEEndereco, chaveSupabaseValida, CHAVE_SUPABASE }

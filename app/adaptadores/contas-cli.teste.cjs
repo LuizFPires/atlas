@@ -21,13 +21,14 @@ function processosFalsos() {
   return { vivos, iniciar }
 }
 
-function montar({ rodar = async () => ({ codigo: 1, saida: '' }), cofre = criarCofreMemoria() } = {}) {
+function montar({ rodar = async () => ({ codigo: 1, saida: '' }), cofre = criarCofreMemoria(), apiSupabase = async () => [], existe = () => true } = {}) {
   const dados = tmp()
   const pf = processosFalsos()
   const chamadas = []
   const r = async (cmd, args, o) => { chamadas.push({ cmd, args, env: o && o.env }); return rodar(cmd, args, o) }
-  const contas = criarContasCli({ dadosApp: dados, cofre, rodar: r, iniciar: pf.iniciar, plataforma: 'linux', env: { PATH: '/usr/bin' }, existe: () => true })
-  return { contas, pf, chamadas, cofre, dados }
+  const api = []
+  const contas = criarContasCli({ dadosApp: dados, cofre, rodar: r, iniciar: pf.iniciar, plataforma: 'linux', env: { PATH: '/usr/bin' }, existe, apiSupabase: async (m, c, corpo, token) => { api.push({ m, c, token }); return apiSupabase(m, c, corpo, token) } })
+  return { contas, pf, chamadas, cofre, dados, api }
 }
 
 test('lê o código e o endereço da saída do gh e da Vercel (só endereços oficiais)', () => {
@@ -83,21 +84,27 @@ test('ligar de novo derruba o login anterior (nunca dois ao mesmo tempo); sem c�
   assert.equal(c2.estado('github'), 'erro')
 })
 
-test('Supabase: a chave vai ao cofre (nunca a arquivo) só depois que o próprio Supabase aceita; formato errado nem é testado', async () => {
-  const usados = []
-  const { contas, cofre, chamadas, dados } = montar({ rodar: async (cmd, args, o) => { usados.push(o.env.SUPABASE_ACCESS_TOKEN); return { codigo: o.env.SUPABASE_ACCESS_TOKEN === 'sbp_' + 'a'.repeat(40) ? 0 : 1, saida: '[]' } } })
+test('Supabase: a chave é conferida pela API do Supabase (HTTPS, sem CLI) e só então vai ao cofre; formato errado nem é testado', async () => {
+  const boa = 'sbp_' + 'a'.repeat(40)
+  const { contas, cofre, chamadas, dados, api } = montar({ apiSupabase: async (m, c, corpo, token) => { if (token !== boa) throw new Error('supabase-401'); return [] } })
   assert.deepEqual(await contas.guardarChaveSupabase('senha123'), { ok: false, motivo: 'formato' })
-  assert.equal(chamadas.length, 0)
+  assert.equal(api.length, 0)
   assert.deepEqual(await contas.guardarChaveSupabase('sbp_' + 'b'.repeat(40)), { ok: false, motivo: 'recusada' })
   assert.equal(await cofre.ler(CHAVE_SUPABASE), null)
-  assert.deepEqual(await contas.guardarChaveSupabase('  sbp_' + 'a'.repeat(40) + '\n'), { ok: true })
-  assert.equal(await cofre.ler(CHAVE_SUPABASE), 'sbp_' + 'a'.repeat(40))
-  // a chave vai pelo ambiente, nunca na linha de comando
-  assert.ok(chamadas.every((c) => !c.args.join(' ').includes('sbp_')))
+  assert.deepEqual(await contas.guardarChaveSupabase('  ' + boa + '\n'), { ok: true })
+  assert.equal(await cofre.ler(CHAVE_SUPABASE), boa)
+  assert.deepEqual(api.map((a) => [a.m, a.c]), [['GET', '/v1/projects'], ['GET', '/v1/projects']])
+  assert.equal(chamadas.length, 0, 'nenhuma ferramenta instalada é usada para ligar o Supabase')
   const tudo = fs.readdirSync(dados, { recursive: true }).map((f) => { try { return fs.readFileSync(path.join(dados, String(f)), 'utf8') } catch { return '' } }).join('')
   assert.ok(!tudo.includes('sbp_'))
   assert.equal(contas.estado('supabase'), 'ligado')
   assert.deepEqual((await contas.situacao()).supabase, { ligado: true, usuario: null })
+})
+
+test('Supabase: sem internet NÃO diz que a chave foi recusada (motivo próprio, a pessoa não gera chave à toa)', async () => {
+  const { contas, cofre } = montar({ apiSupabase: async () => { throw new Error('timeout') } })
+  assert.deepEqual(await contas.guardarChaveSupabase('sbp_' + 'a'.repeat(40)), { ok: false, motivo: 'sem-internet' })
+  assert.equal(await cofre.ler(CHAVE_SUPABASE), null)
 })
 
 test('chaveSupabaseValida: só sbp_ + 40 letras/números', () => {
@@ -128,13 +135,44 @@ test('situacao: GitHub e Vercel perguntam à própria CLI; falha de CLI = não l
   assert.deepEqual(s.supabase, { ligado: false, usuario: null })
 })
 
-test('instalar as ferramentas: versões fixas, dentro da pasta do Atlas, sem global', async () => {
-  const { contas, chamadas, dados } = montar({ rodar: async () => ({ codigo: 0, saida: '' }) })
-  assert.equal(await contas.instalarFerramentas(), true)
-  const c = chamadas.find((x) => x.args.includes('install'))
-  assert.ok(c.args.includes('--prefix') && c.args.includes(path.join(dados, 'ferramentas')))
-  assert.ok(!c.args.includes('-g'))
-  assert.ok(c.args.some((a) => /^vercel@\d/.test(a)) && c.args.some((a) => /^supabase@\d/.test(a)))
+test('instalar as ferramentas: uma de cada vez, versões fixas, dentro da pasta do Atlas, sem global', async () => {
+  const { contas, chamadas, dados } = montar({ existe: () => false, rodar: async () => ({ codigo: 0, saida: '' }) })
+  assert.equal(await contas.instalarFerramentas(['vercel', 'supabase']), true)
+  const inst = chamadas.filter((x) => x.args.includes('install'))
+  assert.equal(inst.length, 2, 'cada ferramenta num npm install próprio')
+  for (const c of inst) { assert.ok(c.args.includes('--prefix') && c.args.includes(path.join(dados, 'ferramentas'))); assert.ok(!c.args.includes('-g')) }
+  assert.ok(inst[0].args.some((a) => /^vercel@\d/.test(a)) && !inst[0].args.some((a) => /^(supabase|eas-cli)@/.test(a)))
+  assert.ok(inst[1].args.some((a) => /^supabase@\d/.test(a)))
+})
+
+test('instalar as ferramentas: a pesada (Expo) não trava a Vercel; falhou uma vez = tenta de novo', async () => {
+  let vercelVezes = 0
+  const { contas, chamadas } = montar({ existe: () => false, rodar: async (cmd, args) => {
+    if (args.some((a) => /^vercel@/.test(a))) return { codigo: vercelVezes++ === 0 ? 1 : 0, saida: '' }
+    if (args.some((a) => /^eas-cli@/.test(a))) return { codigo: 1, saida: '' }
+    return { codigo: 0, saida: '' }
+  } })
+  assert.equal(await contas.instalarFerramentas(['vercel']), true)
+  assert.equal(vercelVezes, 2)
+  assert.ok(!chamadas.some((c) => c.args.some((a) => /^eas-cli@/.test(a))), 'só instala o que o passo precisa')
+  assert.equal(await contas.instalarFerramentas(['eas']), false)
+})
+
+test('ferramentas prontas: confere só as pedidas', () => {
+  const { contas } = montar({ existe: (f) => f.includes(path.join('vercel', 'dist')) })
+  assert.equal(contas.ferramentasProntas(['vercel']), true)
+  assert.equal(contas.ferramentasProntas(['vercel', 'eas']), false)
+})
+
+test('rodarFerramentaTentando: internet que pisca tenta de novo; erro de montagem e sucesso não repetem', async () => {
+  let vezes = 0
+  const { contas } = montar({ rodar: async () => (vezes++ < 2 ? { codigo: 1, saida: 'Error: connect ETIMEDOUT 76.76.21.21:443' } : { codigo: 0, saida: 'ok' }) })
+  assert.equal((await contas.rodarFerramentaTentando('vercel', ['deploy'], { cwd: '/x' }, { esperar: async () => {} })).codigo, 0)
+  assert.equal(vezes, 3)
+  let b = 0
+  const { contas: c2 } = montar({ rodar: async () => { b++; return { codigo: 1, saida: 'Error: Command "npm run build" exited with 1' } } })
+  assert.equal((await c2.rodarFerramentaTentando('vercel', ['deploy'], { cwd: '/x' }, { esperar: async () => {} })).codigo, 1)
+  assert.equal(b, 1)
 })
 
 test('rodarFerramenta (colocar no ar): só vercel/supabase, na pasta da obra, valor pela entrada', async () => {

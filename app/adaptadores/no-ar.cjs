@@ -95,11 +95,9 @@ const PEDIDO_VISTORIA = [
  *  linhaRodando(pasta) -> boolean                                     (a correção ainda está na linha?)
  *  esperar(ms), agora(), gerarSenha()
  */
-// Saída das ferramentas do banco (Supabase CLI): o que é defeito da obra (SQL) e o que é conexão. Resumo sem segredos.
-const RE_SQL = /SQLSTATE|syntax error|does not exist|already exists|violates|ERROR:\s|at statement \d+/i
-const RE_CONEXAO = /connect|timeout|timed out|no route|network|unreachable|dial tcp|i\/o|ECONN|EAI_AGAIN|temporarily unavailable/i
-function erroDeSql(saida) { return RE_SQL.test(saida) && !/password authentication failed/i.test(saida) }
-function erroDeConexao(saida) { return RE_CONEXAO.test(saida) }
+// Saída da CLI ao publicar funções: falta de permissão e instabilidade (internet, Supabase fora) NÃO são defeito da obra.
+const RE_SEM_PERMISSAO = /\b(401|403)\b|unauthori[sz]ed|forbidden|invalid access token/i
+const { RE_INSTAVEL, RE_BUILD } = require('./contas-cli.cjs')
 /** As linhas que explicam o erro (ERROR, statement, hint), sem endereço de conexão, senha, chave ou token; no máximo 600 letras. */
 function resumoDoErro(saida) {
   const limpas = String(saida)
@@ -111,7 +109,7 @@ function resumoDoErro(saida) {
   return (importantes.length ? importantes : limpas.slice(-4)).join(' · ').slice(0, 600)
 }
 
-function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, perguntar, corrigir, linhaRodando = () => false, esperar = (ms) => new Promise((r) => setTimeout(r, ms)), agora = () => new Date(), gerarSenha = () => crypto.randomBytes(24).toString('base64url'), esperaBancoMs = 10_000, tentativasBanco = 60, esperaCotaMs = 10 * 60_000, esperasCota = 7 * 24 * 6 }) {
+function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, perguntar, corrigir, linhaRodando = () => false, esperar = (ms) => new Promise((r) => setTimeout(r, ms)), agora = () => new Date(), gerarSenha = () => crypto.randomBytes(24).toString('base64url'), esperaBancoMs = 10_000, tentativasBanco = 120, esperaCotaMs = 10 * 60_000, esperasCota = 7 * 24 * 6 }) {
   const jobs = new Map() // pasta -> estado vivo
 
   const arquivoRegistro = (pasta) => caminhoSeguro(raiz, String(pasta), '.atlas', 'no-ar.json')
@@ -159,7 +157,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       .map((arquivo) => ({ arquivo, versao: arquivo.split('_')[0].replace(/\.sql$/, ''), nome: arquivo.replace(/\.sql$/, '').split('_').slice(1).join('_'), sql: fs.readFileSync(path.join(dir, arquivo), 'utf8') }))
   }
   const literal = (t) => `'${String(t).replace(/'/g, "''")}'`
-  /** Uma consulta no banco pela API (com 3 tentativas para banco recém-criado ou internet instável). */
+  /** Uma consulta no banco pela API (até 6 tentativas, ~1 min, para banco recém-criado ou internet instável). */
   async function consultar(ref, token, query, { arquivo = null } = {}) {
     for (let i = 0; ; i++) {
       try { return await apiSupabase('POST', `/v1/projects/${ref}/database/query`, { query }, token) } catch (err) {
@@ -169,7 +167,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
           const det = resumoDoErro(String(err.detalhe || m))
           throw Object.assign(new Error('supabase-migrations'), { passo: 'banco', detalhe: (arquivo ? `${arquivo}: ` : '') + det })
         }
-        if (i >= 2) throw Object.assign(new Error('supabase-conexao'), { passo: 'banco' })
+        if (i >= 5) throw Object.assign(new Error('supabase-conexao'), { passo: 'banco' }) // ~1 min: banco recém-ligado esquentando
         await esperar(esperaBancoMs)
       }
     }
@@ -227,18 +225,42 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     if (fs.existsSync(pastaFn)) {
       for (const f of fs.readdirSync(pastaFn, { withFileTypes: true })) {
         if (!f.isDirectory() || f.name.startsWith('_') || !/^[a-z0-9][a-z0-9_-]{0,60}$/i.test(f.name)) continue
-        const r = await supabase(['functions', 'deploy', f.name, '--project-ref', ref], { cwd, env: envBanco, timeoutMs: 300_000 })
-        if (r.codigo !== 0) throw Object.assign(new Error('supabase-funcoes'), { passo: 'banco', detalhe: resumoDoErro(String(r.saida || '')) })
+        // --use-api: o próprio Supabase monta a função (HTTPS). Sem Docker no computador do cliente e sem conexão direta ao banco.
+        for (let i = 0; ; i++) {
+          const r = await supabase(['functions', 'deploy', f.name, '--project-ref', ref, '--use-api'], { cwd, env: envBanco, timeoutMs: 300_000 })
+          if (r.codigo === 0) break
+          const saida = String(r.saida || '')
+          if (RE_SEM_PERMISSAO.test(saida)) throw Object.assign(new Error('supabase-sem-permissao-banco'), { passo: 'banco' })
+          if (!RE_INSTAVEL.test(saida)) throw Object.assign(new Error('supabase-funcoes'), { passo: 'banco', detalhe: resumoDoErro(saida) })
+          if (i >= 2) throw Object.assign(new Error('supabase-conexao'), { passo: 'banco' })
+          await esperar(esperaBancoMs)
+        }
       }
     }
-    const chaves = await apiSupabase('GET', `/v1/projects/${ref}/api-keys`, null, token)
-    return { url: `https://${ref}.supabase.co`, chave: chavePublica(chaves) }
+    // A chave pública do banco às vezes aparece só alguns instantes depois do banco pronto: busca de novo. Sem ela o sistema
+    // publicaria quebrado (não fala com o banco), então para com o motivo explicado em vez de fingir que deu certo.
+    let chave = null
+    for (let i = 0; i < 6 && !chave; i++) {
+      if (i) await esperar(esperaBancoMs)
+      try { chave = chavePublica(await apiSupabase('GET', `/v1/projects/${ref}/api-keys`, null, token)) } catch { chave = null }
+    }
+    if (!chave) throw Object.assign(new Error('supabase-sem-chave'), { passo: 'banco' })
+    return { url: `https://${ref}.supabase.co`, chave }
+  }
+
+  /** Vercel: tenta de novo (até 3 vezes) quando o erro é internet ou a Vercel instável; erro de verdade (build, conta) volta na hora. */
+  async function vercelTentando(args, o) {
+    for (let i = 0; ; i++) {
+      const r = await vercel(args, o)
+      if (r.codigo === 0 || i >= 2 || RE_BUILD.test(String(r.saida || '')) || !RE_INSTAVEL.test(String(r.saida || ''))) return r
+      await esperar(esperaBancoMs)
+    }
   }
 
   async function passoPublicar(pasta, e, banco) {
     const cwd = cwdDe(pasta)
     await vercel(['project', 'add', e.nome], { cwd, timeoutMs: 60_000 }) // já existe = segue (é dele)
-    const l = await vercel(['link', '--yes', '--project', e.nome], { cwd, timeoutMs: 60_000 })
+    const l = await vercelTentando(['link', '--yes', '--project', e.nome], { cwd, timeoutMs: 60_000 })
     if (l.codigo !== 0) throw Object.assign(new Error('vercel-link'), { passo: 'publicar' })
     if (banco) {
       let exemplo = ''
@@ -246,16 +268,16 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       const nomes = variaveisSupabase(exemplo)
       const valores = [...nomes.url.map((n) => [n, banco.url]), ...(banco.chave ? nomes.chave.map((n) => [n, banco.chave]) : [])]
       for (const [n, v] of valores) {
-        const r = await vercel(['env', 'add', n, 'production', '--force'], { cwd, entrada: v, timeoutMs: 60_000 })
+        const r = await vercelTentando(['env', 'add', n, 'production', '--force'], { cwd, entrada: v, timeoutMs: 60_000 })
         if (r.codigo !== 0) throw Object.assign(new Error('vercel-variaveis'), { passo: 'publicar' })
       }
       if (nomes.url.length === 0) e.avisos.push('O sistema não diz onde lê o endereço do banco (.env.example). O Atlas publicou mesmo assim.')
     }
-    const d = await vercel(['deploy', '--prod', '--yes'], { cwd, timeoutMs: 900_000 })
+    const d = await vercelTentando(['deploy', '--prod', '--yes'], { cwd, timeoutMs: 900_000 })
     if (d.codigo !== 0) {
       // O sistema não compila na Vercel: é defeito da obra, a linha corrige ("Corrigir e continuar"). Outro erro: conta ou Vercel fora.
       const saida = String(d.saida || '')
-      const build = /error TS\d+|Command ".*build.*" exited|Build failed|Module not found|SyntaxError|Failed to compile/i.test(saida)
+      const build = RE_BUILD.test(saida)
       throw Object.assign(new Error(build ? 'vercel-build' : 'vercel-deploy'), { passo: 'publicar', detalhe: resumoDoErro(saida) })
     }
     return `https://${e.nome}.vercel.app`
@@ -271,7 +293,8 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
   }
 
   async function passoTeste(endereco) {
-    for (let i = 0; i < 6; i++) {
+    // Endereço novo: o DNS e o cadeado (https) podem levar alguns minutos para chegar a este computador. Espera até ~5 min.
+    for (let i = 0; i < 30; i++) {
       try {
         const r = await sondar(`${endereco}/`)
         if (r.status === 200 && /<html|<!doctype/i.test(String(r.corpo || ''))) return true

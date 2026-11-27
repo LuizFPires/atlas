@@ -115,7 +115,9 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
       if (r.ok) { setChave(''); mudar('supabase', { estado: 'ligado', usuario: null }) }
       else setAvisoChave(r.motivo === 'formato'
         ? 'Essa não parece a chave. A chave do Supabase começa com sbp_ e tem 44 letras e números. Copie de novo pelo botão de copiar do site.'
-        : 'O Supabase não aceitou esta chave. Gere outra no site (Generate new token) e cole de novo.')
+        : r.motivo === 'sem-internet'
+          ? 'Não consegui falar com o Supabase agora para conferir a chave (a chave pode estar certa). Confira a internet e toque em Pronto de novo.'
+          : 'O Supabase não aceitou esta chave. Gere outra no site (Generate new token) e cole de novo.')
     } catch (e) { setAvisoChave(textoDaTrava(e, 'Não consegui conferir a chave.')) } finally { setTestando(false) }
   }
 

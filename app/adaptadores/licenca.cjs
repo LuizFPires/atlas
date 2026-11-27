@@ -22,7 +22,7 @@ function enderecoDaApi(bruto) {
 }
 
 /** `deps`: { cofre, hashComputador (async () => hex), api (string|null), buscar? (fetch) }. */
-function criarLicenca({ cofre, hashComputador, api = process.env.ATLAS_API_URL, buscar = globalThis.fetch }) {
+function criarLicenca({ cofre, hashComputador, api = process.env.ATLAS_API_URL, buscar = globalThis.fetch, esperar = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
   return {
     async verificar() {
       const base = enderecoDaApi(api)
@@ -34,19 +34,29 @@ function criarLicenca({ cofre, hashComputador, api = process.env.ATLAS_API_URL, 
         if (g && typeof g.token === 'string' && g.token) ativ = { token: g.token, email: typeof g.email === 'string' ? g.email : '' }
       } catch { /* cofre indisponível = sem licença */ }
       if (!ativ) return { ok: false, motivo: 'negado' }
-      try {
-        const r = await buscar(`${base}/verificar`, {
-          method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10_000),
-          headers: { 'Content-Type': 'application/json', 'X-Atlas-Dispositivo': ativ.token },
-          body: JSON.stringify({ email: ativ.email, computador_hash: await hashComputador() }),
-        })
-        const texto = await r.text()
+      // Servidor que pisca (sem internet por um instante, erro 5xx) não é licença negada: tenta 3 vezes (27/11/2026).
+      for (let i = 0; ; i++) {
+        let r
+        try {
+          r = await buscar(`${base}/verificar`, {
+            method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10_000),
+            headers: { 'Content-Type': 'application/json', 'X-Atlas-Dispositivo': ativ.token },
+            body: JSON.stringify({ email: ativ.email, computador_hash: await hashComputador() }),
+          })
+        } catch { r = null }
+        if (!r || (typeof r.status === 'number' && r.status >= 500)) {
+          if (i >= 2) return { ok: false, motivo: 'sem-conexao' }
+          await esperar(2000)
+          continue
+        }
+        let texto = ''
+        try { texto = await r.text() } catch { return { ok: false, motivo: 'sem-conexao' } }
         if (!r.ok || texto.length > MAX_RESPOSTA) return { ok: false, motivo: 'negado' }
         let d = null
         try { d = JSON.parse(texto) } catch { /* resposta estranha */ }
         if (d && d.pode_construir === true && d.motivo === 'ok') return { ok: true }
         return { ok: false, motivo: 'negado' }
-      } catch { return { ok: false, motivo: 'sem-conexao' } }
+      }
     },
   }
 }

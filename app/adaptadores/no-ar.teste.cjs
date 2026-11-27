@@ -376,6 +376,119 @@ test('chave do Supabase sem permissão no banco (401/403): motivo próprio, expl
   assert.equal(n.estado('ponto').erro.motivo, 'supabase-sem-permissao-banco')
 })
 
+function obraComFuncao() {
+  const o = obra()
+  fs.mkdirSync(path.join(o.cwd, 'supabase', 'functions', 'avisar'), { recursive: true })
+  fs.writeFileSync(path.join(o.cwd, 'supabase', 'functions', 'avisar', 'index.ts'), 'Deno.serve(() => new Response("ok"))\n')
+  fs.mkdirSync(path.join(o.cwd, 'supabase', 'functions', '_shared'), { recursive: true })
+  return o
+}
+
+test('funções do servidor: montadas pelo próprio Supabase (--use-api), sem Docker e sem conexão direta ao banco', async () => {
+  const { raiz } = obraComFuncao()
+  const { d, chamadas } = deps()
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').fase, 'noar')
+  const dep = chamadas.supabase.filter((s) => s.args[0] === 'functions')
+  assert.equal(dep.length, 1, '_shared não é função')
+  assert.deepEqual(dep[0].args, ['functions', 'deploy', 'avisar', '--project-ref', 'abcdefghijklmnopqrst', '--use-api'])
+  assert.equal(dep[0].env.SUPABASE_ACCESS_TOKEN, 'sbp_' + 'a'.repeat(40))
+  assert.equal(dep[0].env.SUPABASE_DB_PASSWORD, undefined, 'senha do banco não é necessária')
+})
+
+test('funções: internet/Supabase instável tenta de novo sozinho; não manda "corrigir" o que não é defeito da obra', async () => {
+  const { raiz } = obraComFuncao()
+  let vezes = 0
+  const { d } = deps({ supabase: async (args) => (args[0] === 'functions' && vezes++ < 2 ? { codigo: 1, saida: 'Error: request failed: 503 Service Unavailable' } : { codigo: 0, saida: '' }) })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').fase, 'noar')
+  assert.equal(vezes, 3)
+  const sempre = obraComFuncao()
+  const { d: d2 } = deps({ supabase: async (args) => (args[0] === 'functions' ? { codigo: 1, saida: 'fetch failed: ETIMEDOUT' } : { codigo: 0, saida: '' }) })
+  const n2 = criarNoAr({ raiz: sempre.raiz, ...d2 })
+  await n2.iniciar('ponto', 'ponto')
+  await n2._esperar('ponto')
+  assert.equal(n2.estado('ponto').erro.motivo, 'supabase-conexao')
+})
+
+test('funções: chave sem permissão vira motivo explicado; erro no código da função vai para "Corrigir e continuar"', async () => {
+  const a = obraComFuncao()
+  const { d } = deps({ supabase: async (args) => (args[0] === 'functions' ? { codigo: 1, saida: 'Unexpected error deploying Function: 401 Unauthorized' } : { codigo: 0, saida: '' }) })
+  const n = criarNoAr({ raiz: a.raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').erro.motivo, 'supabase-sem-permissao-banco')
+  const b = obraComFuncao()
+  let vezes = 0
+  const { d: d2 } = deps({ supabase: async (args) => { if (args[0] === 'functions') { vezes++; return { codigo: 1, saida: 'error: Module not found "npm:stripe@99"' } } return { codigo: 0, saida: '' } } })
+  const n2 = criarNoAr({ raiz: b.raiz, ...d2 })
+  await n2.iniciar('ponto', 'ponto')
+  await n2._esperar('ponto')
+  assert.equal(n2.estado('ponto').erro.motivo, 'supabase-funcoes')
+  assert.equal(vezes, 1)
+})
+
+test('teste do endereço: espera até ~5 min (DNS e certificado do endereço novo) antes de dizer que não respondeu', async () => {
+  const { raiz } = obra({ supabase: false })
+  let sondas = 0
+  const { d } = deps({ sondar: async (u) => {
+    if (u === 'https://ponto.vercel.app/' && sondas === 0) { sondas++; return { status: 404, cabecalhos: { 'x-vercel-error': 'DEPLOYMENT_NOT_FOUND' }, corpo: '' } }
+    sondas++
+    return sondas < 20 ? { status: 404, cabecalhos: {}, corpo: '' } : { status: 200, cabecalhos: {}, corpo: '<!doctype html>' }
+  } })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').fase, 'noar')
+})
+
+test('Vercel que pisca (ligar, variáveis, publicar) tenta de novo sozinho; build quebrado não repete', async () => {
+  const { raiz } = obra()
+  const vezes = { link: 0, env: 0, deploy: 0 }
+  let publicado = false
+  const { d } = deps({
+    vercel: async (args) => {
+      const k = args[0]
+      if (k in vezes && vezes[k]++ < 2) return { codigo: 1, saida: 'Error: getaddrinfo EAI_AGAIN api.vercel.com' }
+      if (k === 'deploy') publicado = true
+      return { codigo: 0, saida: '' }
+    },
+    sondar: async () => (publicado ? { status: 200, cabecalhos: {}, corpo: '<!doctype html>' } : { status: 404, cabecalhos: { 'x-vercel-error': 'DEPLOYMENT_NOT_FOUND' }, corpo: '' }),
+  })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').fase, 'noar', JSON.stringify(n.estado('ponto').erro))
+  assert.equal(vezes.link, 3)
+  assert.equal(vezes.deploy, 3)
+})
+
+test('chave pública do banco ainda não apareceu: espera e busca de novo; nunca publica o sistema sem ela', async () => {
+  const { raiz } = obra()
+  let pedidos = 0
+  const base = deps().d.apiSupabase
+  const { d, chamadas } = deps({ apiSupabase: async (m, c, corpo, t) => {
+    if (c.endsWith('/api-keys')) { pedidos++; return pedidos < 3 ? [] : [{ name: 'anon', api_key: 'A'.repeat(40) }] }
+    return base(m, c, corpo, t)
+  } })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').fase, 'noar')
+  assert.equal(pedidos, 3)
+  const sem = obra()
+  const { d: d2 } = deps({ apiSupabase: async (m, c, corpo, t) => (c.endsWith('/api-keys') ? [] : base(m, c, corpo, t)) })
+  const n2 = criarNoAr({ raiz: sem.raiz, ...d2 })
+  await n2.iniciar('ponto', 'ponto')
+  await n2._esperar('ponto')
+  assert.equal(n2.estado('ponto').erro.motivo, 'supabase-sem-chave')
+  void chamadas
+})
+
 test('a Vercel não conseguiu montar o sistema (erro de build): vira "vercel-build" com o resumo e a linha corrige', async () => {
   const { raiz } = obra()
   const corrigidos = []

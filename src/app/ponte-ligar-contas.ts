@@ -5,7 +5,7 @@ import type { Retangulo } from './ponte-navegador'
 export type ContaLigavel = 'github' | 'supabase' | 'hosp'
 export type EstadoLigacao = 'pendente' | 'esperando' | 'ligado' | 'erro'
 export type SituacaoContas = Record<ContaLigavel, { ligado: boolean; usuario: string | null }>
-export type ResultadoChave = { ok: true } | { ok: false; motivo: 'formato' | 'recusada' }
+export type ResultadoChave = { ok: true } | { ok: false; motivo: 'formato' | 'recusada' | 'sem-internet' }
 
 export interface PonteLigarContas {
   situacao(): Promise<SituacaoContas>

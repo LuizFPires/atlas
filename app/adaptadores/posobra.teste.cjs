@@ -136,6 +136,21 @@ test('prints: só entram os que existem em posobra/prints', async () => {
 const cofre = (v) => ({ ler: async () => v })
 const resp = (ok, corpo) => ({ ok, text: async () => (typeof corpo === 'string' ? corpo : JSON.stringify(corpo)) })
 
+test('licença: servidor que pisca (rede ou 5xx) tenta de novo; persistindo, diz "sem conexão" e não "licença negada"', async () => {
+  const tok = JSON.stringify({ token: 'segredo', email: 'a@b.c' })
+  let vezes = 0
+  const lic = criarLicenca({ cofre: cofre(tok), hashComputador: async () => 'h', api: 'https://api.exemplo.test', esperar: async () => {}, buscar: async () => {
+    vezes++
+    if (vezes === 1) throw new Error('rede')
+    if (vezes === 2) return { ok: false, status: 502, text: async () => '' }
+    return resp(true, { pode_construir: true, motivo: 'ok' })
+  } })
+  assert.deepEqual(await lic.verificar(), { ok: true })
+  assert.equal(vezes, 3)
+  const fora = criarLicenca({ cofre: cofre(tok), hashComputador: async () => 'h', api: 'https://api.exemplo.test', esperar: async () => {}, buscar: async () => ({ ok: false, status: 500, text: async () => '' }) })
+  assert.deepEqual(await fora.verificar(), { ok: false, motivo: 'sem-conexao' })
+})
+
 test('licença: só pode_construir===true com motivo ok libera; todo o resto nega', async () => {
   const tok = JSON.stringify({ token: 'segredo', email: 'a@b.c' })
   const vistos = []
