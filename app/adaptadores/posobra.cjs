@@ -16,7 +16,7 @@
 //       negados, git isolado, --setting-sources user, garantirSemConfigDeProjeto, env mínimo). Nenhuma permissão a mais.
 //    Uma linha por vez: com a linha rodando => 'ja-rodando' (nada é gravado).
 //  historico(pasta): <obra>\posobra\historico.json (só nome curto limpo, data e status; sem segredo). 'em-andamento' vira
-//    'para-conferir' quando a linha termina com 'concluiu'. 'no-ar' só depois que o publicar existir (pendência).
+//    'para-conferir' quando a linha termina com 'concluiu'; 'no-ar' quando o cliente clica em "Colocar no ar" depois disso.
 //
 // COMO TESTAR (Windows, Claude logado, obra já construída): pós-obra > descrever uma mudança > "Entender" mostra o plano > OK: surge
 // posobra\pedidos\p001.md, um milestone novo no PLAN.md e o painel volta a mostrar a obra andando. Licença em pausa: não executa.
@@ -180,7 +180,14 @@ function criarPosObra({ raiz, disparo, construcao, licenca, politica = null, ago
       const fim = construcao.linha.ultimoFim(pasta)
       let mudou = false
       for (const h of lista) {
-        if (h.status === 'em-andamento' && !construcao.linha.rodando(pasta) && fim && fim.estado === 'parou' && fim.motivo === 'concluiu' && String(fim.fimEm) >= String(h.criadoEm)) { h.status = 'para-conferir'; mudou = true }
+        if (h.status === 'em-andamento' && !construcao.linha.rodando(pasta) && fim && fim.estado === 'parou' && fim.motivo === 'concluiu' && String(fim.fimEm) >= String(h.criadoEm)) { h.status = 'para-conferir'; h.prontoEm = String(fim.fimEm); mudou = true }
+      }
+      // Aprovar antes (Luiz, 27/11/2026): o pedido só vai ao ar quando o cliente clica em "Colocar no ar". Publicação feita depois
+      // que o pedido ficou pronto (registro .atlas/no-ar.json) => "No ar".
+      let publicadoEm = null
+      try { const r = lerJson(caminhoSeguro(raiz, pasta, '.atlas', 'no-ar.json')); if (r && typeof r.quando === 'string' && typeof r.endereco === 'string') publicadoEm = r.quando } catch { publicadoEm = null }
+      for (const h of lista) {
+        if (h.status === 'para-conferir' && publicadoEm && Date.parse(publicadoEm) > Date.parse(h.prontoEm || h.criadoEm)) { h.status = 'no-ar'; mudou = true }
       }
       if (mudou) { try { gravarHistorico(pasta, lista) } catch { /* só não persiste agora */ } }
       return lista.slice().reverse().map((h) => ({

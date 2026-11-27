@@ -50,7 +50,7 @@ export const PASSOS_NO_AR: { id: IdPassoNoAr; titulo: string; sub: string }[] = 
   { id: 'vistoria', titulo: 'Vistoria final', sub: 'Segurança, privacidade (LGPD) e cada pessoa vendo só o que é dela.' },
   { id: 'banco', titulo: 'Banco de dados na sua conta Supabase', sub: 'Criado em São Paulo, vazio, com as tabelas do sistema.' },
   { id: 'publicar', titulo: 'Publicando na sua conta Vercel', sub: 'Montando o sistema e ligando ao banco.' },
-  { id: 'github', titulo: 'Ligando ao seu GitHub', sub: 'Toda mudança aprovada no pós-obra entra no ar sozinha.' },
+  { id: 'github', titulo: 'Publicação só com a sua aprovação', sub: 'Mudança pedida depois só entra no ar quando você clicar em Colocar no ar.' },
   { id: 'teste', titulo: 'Teste de verdade no endereço', sub: 'O Atlas abre o sistema e confere que ele responde.' },
   { id: 'celular', titulo: 'Pronto para instalar no celular', sub: 'Ícone, nome e o QR code para a equipe.' },
 ]

@@ -13,7 +13,7 @@ import posobra from './ponte-posobra.ts?raw'
 const f = f14.replace(/\r\n/g, '\n')
 
 test('F14: os textos fixos do protótipo estão na tela do app', () => {
-  for (const t of ['O que você quer mudar?', 'Quero mudar algo', 'Algo não funciona', 'Aperte e fale, como se contasse para um amigo no restaurante', 'Ou escreva, se preferir. O Atlas escreve o que você falar aqui embaixo.', 'Anexar print', 'Enviar para o Claude', 'O CLAUDE ENTENDEU ASSIM', 'O sistema no ar só muda quando você aprovar.', 'Pode fazer', 'Não é isso', 'PEDIDOS ANTERIORES', 'Todo pedido gera uma versão de teste antes de ir para o ar. Se algo der errado, dá para voltar para a versão anterior com um clique.']) {
+  for (const t of ['O que você quer mudar?', 'Quero mudar algo', 'Algo não funciona', 'Aperte e fale, como se contasse para um amigo no restaurante', 'Ou escreva, se preferir. O Atlas escreve o que você falar aqui embaixo.', 'Anexar print', 'Enviar para o Claude', 'O CLAUDE ENTENDEU ASSIM', 'O sistema no ar só muda quando você aprovar.', 'Pode fazer', 'Não é isso', 'PEDIDOS ANTERIORES', 'Todo pedido vira uma versão de teste. O sistema no ar só muda quando você confere e clica em']) {
     expect(f).toContain(t)
     expect(tela + posobra).toContain(t)
   }

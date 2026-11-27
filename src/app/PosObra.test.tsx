@@ -213,3 +213,24 @@ test('"Pode fazer" travou: diz o motivo e o cliente destrava pelo app (tentar de
   await user.click(screen.getByRole('button', { name: 'Tentar de novo' }))
   expect(await screen.findByText(/Combinado! Comecei/)).toBeInTheDocument()
 })
+
+test('aprovar antes: mudança pronta mostra "Ver como ficou" e "Colocar no ar"; sem pronta, nada disso aparece', async () => {
+  const posobra = criarPosObraFixture()
+  posobra.historico = async () => [{ id: 'p001', nome: 'Painel para computador', data: '27/11 · 120 min', status: 'para-conferir' }, { id: 'p002', nome: 'Outro', data: '27/11 · em andamento', status: 'em-andamento' }]
+  const onVerTeste = vi.fn(async () => {})
+  const onColocarNoAr = vi.fn(async () => {})
+  const { user } = montar({ posobra, onVerTeste, onColocarNoAr })
+  expect(await screen.findByText('1 mudança pronta para você conferir')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Ver como ficou' }))
+  expect(onVerTeste).toHaveBeenCalled()
+  await user.click(screen.getByRole('button', { name: 'Colocar no ar →' }))
+  expect(onColocarNoAr).toHaveBeenCalled()
+})
+
+test('aprovar antes: se não conseguir abrir a versão de teste, diz o motivo na tela', async () => {
+  const posobra = criarPosObraFixture()
+  posobra.historico = async () => [{ id: 'p001', nome: 'Painel', data: '27/11 · 20 min', status: 'para-conferir' }]
+  const { user } = montar({ posobra, onVerTeste: async () => { throw new Error('sem-teste') }, onColocarNoAr: async () => {} })
+  await user.click(await screen.findByRole('button', { name: 'Ver como ficou' }))
+  expect(await screen.findByRole('alert')).toBeInTheDocument()
+})

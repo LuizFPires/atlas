@@ -7,7 +7,7 @@
 //                   espera ficar pronto, aplica as migrations pela API de gestão (HTTPS, sem conexão direta ao Postgres) e publica as funções. Obra sem supabase/ = pula.
 //   3. publicar   — Vercel do cliente: cria o projeto com o nome escolhido, grava as variáveis do Supabase (valor pela entrada
 //                   padrão, nunca na linha de comando) e publica em produção. Endereço: https://<nome>.vercel.app
-//   4. github     — liga o projeto da Vercel ao repositório da obra: mudança aprovada no pós-obra entra no ar sozinha.
+//   4. github     — a Vercel NÃO publica sozinha a cada push: mudança do pós-obra só vai ao ar no "Colocar no ar" (aprovar antes).
 //   5. teste      — abre o endereço de verdade e confere que o sistema responde.
 //   6. celular    — o endereço vira QR e mensagem de WhatsApp na tela (o QR é feito no app, sem serviço de fora).
 // O registro <obra>\.atlas\no-ar.json guarda SÓ o que não é segredo (nome, ref do projeto, endereço, data) para religar sem recriar.
@@ -325,8 +325,10 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     const r = await git(['remote', 'get-url', 'origin'], { cwd })
     const url = String(r.saida || '').trim()
     if (r.codigo !== 0 || !/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+?(\.git)?$/.test(url)) return false
-    const c = await vercel(['git', 'connect', '--yes'], { cwd, timeoutMs: 60_000 })
-    return c.codigo === 0
+    // Aprovar antes (Luiz, 27/11/2026): a Vercel NÃO publica sozinha a cada mudança no GitHub. Mudança do pós-obra só vai ao ar
+    // quando o cliente clica em "Colocar no ar" (que passa de novo por este caminho: vistoria, banco, publicar e teste).
+    const c = await vercel(['git', 'disconnect', '--yes'], { cwd, timeoutMs: 60_000 })
+    return c.codigo === 0 || /not connected|no git|não está|isn't connected|is not linked/i.test(String(c.saida || ''))
   }
 
   async function passoTeste(endereco, e) {
@@ -384,7 +386,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       sub(e, 'Ligando a publicação ao seu repositório', { costume: [5, 30] })
       const ligado = await passoGithub(pasta)
       marca('github', ligado ? 'feito' : 'atencao')
-      if (!ligado) e.avisos.push('Não consegui ligar a publicação automática ao GitHub. As próximas mudanças o Atlas publica pelo botão.')
+      if (!ligado) e.avisos.push('Não consegui desligar a publicação automática da Vercel. Uma mudança pode entrar no ar antes de você aprovar.')
       marca('teste', 'agora')
       const ok = await passoTeste(endereco, e)
       if (!ok) throw Object.assign(new Error('teste-falhou'), { passo: 'teste' })

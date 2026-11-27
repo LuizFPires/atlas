@@ -21,6 +21,10 @@ interface Props {
   politica?: PontePolitica
   /** Destravar pelo app: abre o Falar com o Atlas com o motivo de o pedido não ter saído. */
   onAjuda?: (contexto: { onde: string; erro?: string }) => void
+  /** Aprovar antes (Luiz, 27/11/2026): abre a versão de teste neste computador para conferir. */
+  onVerTeste?: () => Promise<void>
+  /** Aprovar antes: publica as mudanças conferidas (Colocar no ar). */
+  onColocarNoAr?: () => Promise<void>
 }
 
 const ROTULO_STATUS: Record<StatusPedido, string> = { 'no-ar': 'No ar', 'para-conferir': 'Para conferir', 'em-andamento': 'Em andamento' }
@@ -29,7 +33,14 @@ const ROTULO_STATUS: Record<StatusPedido, string> = { 'no-ar': 'No ar', 'para-co
  * F14: pós-obra. O cliente conta, com as palavras dele, o que quer mudar (falando, escrevendo ou mandando um print).
  * Tudo o que ele diz é DADO para o Claude (o adaptador delimita); o print é só uma imagem guardada na pasta da obra.
  */
-export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politica = politicaIndisponivel, onAjuda }: Props) {
+export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politica = politicaIndisponivel, onAjuda, onVerTeste, onColocarNoAr }: Props) {
+  const [avisoHist, setAvisoHist] = useState('')
+  const [abrindo, setAbrindo] = useState<'teste' | 'noar' | null>(null)
+  const agirHist = async (qual: 'teste' | 'noar', f?: () => Promise<void>) => {
+    if (!f) return
+    setAvisoHist(''); setAbrindo(qual)
+    try { await f() } catch (e) { if (vivo.current) setAvisoHist(textoDaTrava(e, qual === 'teste' ? 'Não consegui abrir a versão de teste agora.' : 'Não consegui começar a colocar no ar agora.')) } finally { if (vivo.current) setAbrindo(null) }
+  }
   const [bloqueio, setBloqueio] = useState<ResultadoPolitica | null>(null)
   const [tipo, setTipo] = useState<TipoPedido>('mudar')
   const [texto, setTexto] = useState('')
@@ -192,13 +203,24 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politi
             <span>Quando você pedir uma mudança, ela aparece aqui com o andamento: em teste, no ar ou desfeita.</span>
           </div>
         )}
+        {historico.some((h) => h.status === 'para-conferir') && (
+          <div className="at-pos__conferir" aria-label="Mudanças para conferir">
+            <b>{historico.filter((h) => h.status === 'para-conferir').length === 1 ? '1 mudança pronta para você conferir' : `${historico.filter((h) => h.status === 'para-conferir').length} mudanças prontas para você conferir`}</b>
+            <span>1. Veja como ficou na versão de teste, neste computador. 2. Gostou? Coloque no ar: o Atlas confere de novo e publica tudo o que está pronto.</span>
+            <div className="at-pos__conferir-acoes">
+              {onVerTeste && <button type="button" className="at-pos__sec" disabled={abrindo !== null} onClick={() => void agirHist('teste', onVerTeste)}>{abrindo === 'teste' ? 'Abrindo…' : 'Ver como ficou'}</button>}
+              {onColocarNoAr && <button type="button" className="at-pos__ok" disabled={abrindo !== null} onClick={() => void agirHist('noar', onColocarNoAr)}>{abrindo === 'noar' ? 'Começando…' : 'Colocar no ar →'}</button>}
+            </div>
+            {avisoHist && <span className="at-pos__erro" role="alert">{avisoHist}</span>}
+          </div>
+        )}
         {historico.map((h) => (
           <div key={h.id} className="at-pos__hist">
             <div><b>{textoDaObra(h.nome, 60)}</b><span className={`at-pos__st at-pos__st--${h.status}`}>{ROTULO_STATUS[h.status]}</span></div>
             <span>{h.data}</span>
           </div>
         ))}
-        <span className="at-pos__nota">Todo pedido gera uma versão de teste antes de ir para o ar. Se algo der errado, dá para voltar para a versão anterior com um clique.</span>
+        <span className="at-pos__nota">Todo pedido vira uma versão de teste. O sistema no ar só muda quando você confere e clica em "Colocar no ar". Se não gostou, peça a correção aqui.</span>
       </aside>
     </main>
   )

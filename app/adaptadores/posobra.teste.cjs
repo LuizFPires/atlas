@@ -169,3 +169,15 @@ test('licença: só pode_construir===true com motivo ok libera; todo o resto neg
   assert.equal((await mk(resp(true, { pode_construir: true, motivo: 'ok' }), cofre(tok), 'http://inseguro.test').verificar()).ok, false)
   assert.equal(enderecoDaApi('https://u:p@x.test'), null)
 })
+
+test('pedido conferido: depois que o cliente coloca no ar (registro do "Colocar no ar" mais novo), vira "No ar"', async () => {
+  const { raiz, p, terminar } = montar()
+  await p.executar('obra', PEDIDO, PLANO)
+  terminar({ estado: 'parou', motivo: 'concluiu', fimEm: '2026-11-12T11:00:00Z' })
+  assert.equal((await p.historico('obra'))[0].status, 'para-conferir')
+  fs.mkdirSync(path.join(raiz, 'obra', '.atlas'), { recursive: true })
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'no-ar.json'), JSON.stringify({ versao: 1, nome: 'barbearia', endereco: 'https://barbearia.vercel.app', quando: '2026-11-12T09:00:00Z' }))
+  assert.equal((await p.historico('obra'))[0].status, 'para-conferir', 'publicação antiga não conta')
+  fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'no-ar.json'), JSON.stringify({ versao: 1, nome: 'barbearia', endereco: 'https://barbearia.vercel.app', quando: '2026-11-12T12:00:00Z' }))
+  assert.equal((await p.historico('obra'))[0].status, 'no-ar')
+})

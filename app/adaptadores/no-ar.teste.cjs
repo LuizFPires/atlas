@@ -111,7 +111,8 @@ test('um clique: vistoria, banco em São Paulo, Vercel com variáveis pela entra
   assert.deepEqual(envs.map((v) => v.entrada), ['https://abcdefghijklmnopqrst.supabase.co', 'A'.repeat(40)])
   assert.ok(!JSON.stringify(chamadas.vercel.map((v) => v.args)).includes('A'.repeat(40)))
   assert.ok(chamadas.vercel.some((v) => v.args.join(' ') === 'deploy --prod --yes'))
-  assert.ok(chamadas.vercel.some((v) => v.args.join(' ') === 'git connect --yes'))
+  assert.ok(chamadas.vercel.some((v) => v.args.join(' ') === 'git disconnect --yes'), 'mudança só vai ao ar com a aprovação')
+  assert.ok(!chamadas.vercel.some((v) => v.args.join(' ') === 'git connect --yes'))
   // registro sem segredo
   const reg = fs.readFileSync(path.join(cwd, '.atlas', 'no-ar.json'), 'utf8')
   assert.ok(reg.includes('abcdefghijklmnopqrst') && reg.includes('https://ponto.vercel.app'))
