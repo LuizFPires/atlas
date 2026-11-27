@@ -186,3 +186,13 @@ test('tela larga: sem moldura, sem logo nem passos da instalação; as contas s�
   expect(trilha.querySelectorAll('li')).toHaveLength(4)
   expect(trilha.querySelectorAll('.at-contas__conector')).toHaveLength(3)
 })
+
+test('"Já tenho conta": pula a criação de cada conta e, na última, segue para ligar', async () => {
+  const { onContinuar } = montar()
+  await clicar(/Já tenho conta no GitHub/)
+  expect(screen.getByText('CONTA 2 DE 4 · SUPABASE')).toBeInTheDocument()
+  await clicar(/Já tenho conta no Supabase/)
+  expect(screen.getByText('CONTA 3 DE 4 · HOSPEDAGEM')).toBeInTheDocument()
+  await clicar(/Já tenho conta na Vercel/)
+  expect(onContinuar).toHaveBeenCalled()
+})

@@ -102,6 +102,13 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda, n
     if (ok) setFeitas((f) => ({ ...f, [c.id]: true }))
     ir(conta + 1)
   }
+  // "Já tenho conta" (Luiz, 27/11/2026): quem já tem a conta não passa pelo passo a passo de criar; o Atlas só liga no fim.
+  const jaTenho = () => {
+    setFeitas((f) => ({ ...f, [c.id]: true }))
+    const proxima = CONTAS.findIndex((x, i) => i > conta && !x.opcional && !feitas[x.id])
+    if (proxima >= 0) ir(proxima)
+    else onContinuar()
+  }
   const voltar = () => {
     setAviso('')
     if (passo > 0) { setPasso(passo - 1); setAjuda(false) }
@@ -131,6 +138,11 @@ export function Contas({ contas, onContinuar, sondagemMs = 5000, onPedirAjuda, n
                 <h1>{c.oque}</h1>
                 <span className="at-ativ__txt">{c.porque}</span>
               </div>
+              {!c.opcional && !feitas[c.id] && (
+                <button type="button" className="at-contas__jatenho" onClick={jaTenho}>
+                  <Icone nome="check" tamanho={16} /><span><b>Já tenho conta {c.id === 'hosp' ? 'na Vercel' : `no ${c.nome}`}</b><small>Pular a criação. No fim, o Atlas só liga a sua conta a este computador.</small></span>
+                </button>
+              )}
 
               {!c.opcional && p && (
                 <>
