@@ -377,6 +377,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     setRelatoDaObra(null)
     setEstiloEscolhido(null)
     if (o.etapa === 'obra') { setFluxo('lista'); setAtivo('obra'); return }
+    // Protótipo trazido de outra IA que ainda não virou versão (obra recebida antes desta correção): adota antes de abrir as telas.
+    if (o.etapa === 'telas' && pontePrototipo.adotarImportado) { void pontePrototipo.adotarImportado(o.pasta).catch(() => {}).finally(() => setFluxo('telas')); return }
     setFluxo(o.etapa)
   }
   const painelDeAjuda = painelAjuda ? <Ajuda key={painelAjuda.n} toqueVoz={painelAjuda.toque ?? 0} ajuda={ponteAjuda} casos={ponteCasos} contexto={painelAjuda.contexto} nome={dono.split(' ')[0] || undefined} fotoCelular={fotoCelular} onFechar={() => { setPainelAjuda(null); setFotoCelular(null) }} /> : null
