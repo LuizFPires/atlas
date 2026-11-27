@@ -86,6 +86,46 @@ function criarPosObra({ raiz, disparo, construcao, licenca, politica = null, ago
     gravarAtomico(arquivoHistorico(pasta), JSON.stringify({ versao: 1, pedidos }) + '\n')
   }
 
+  /** Lê o histórico e avança os status ('em-andamento' -> 'para-conferir' -> 'no-ar'), gravando se mudou. Do mais antigo ao mais novo. */
+  function atualizar(pasta) {
+    const lista = lerHistorico(pasta)
+    const fim = construcao.linha.ultimoFim(pasta)
+    let mudou = false
+    for (const h of lista) {
+      if (h.status === 'em-andamento' && !construcao.linha.rodando(pasta) && fim && fim.estado === 'parou' && fim.motivo === 'concluiu' && String(fim.fimEm) >= String(h.criadoEm)) { h.status = 'para-conferir'; h.prontoEm = String(fim.fimEm); mudou = true }
+    }
+    // Aprovar antes (Luiz, 27/11/2026): o pedido só vai ao ar quando o cliente clica em "Colocar no ar". Publicação feita depois
+    // que o pedido ficou pronto (registro .atlas/no-ar.json) => "No ar".
+    let publicadoEm = null
+    try { const r = lerJson(caminhoSeguro(raiz, pasta, '.atlas', 'no-ar.json')); if (r && typeof r.quando === 'string' && typeof r.endereco === 'string') publicadoEm = r.quando } catch { publicadoEm = null }
+    for (const h of lista) {
+      if (h.status === 'para-conferir' && publicadoEm && Date.parse(publicadoEm) > Date.parse(h.prontoEm || h.criadoEm)) { h.status = 'no-ar'; mudou = true }
+    }
+    if (mudou) { try { gravarHistorico(pasta, lista) } catch { /* só não persiste agora */ } }
+    return lista
+  }
+
+  /** Quanto da revisão em andamento já foi feito: as tarefas marcadas no milestone dela e o tempo contra o estimado. Nunca 100 antes de
+   *  terminar (o "pronto" é a linha concluir) e nunca 0 depois de começar. */
+  function pctEmAndamento(pasta, h, agoraMs) {
+    let tarefas = 0
+    try {
+      const plan = lerTexto(caminhoSeguro(raiz, pasta, 'PLAN.md')) || ''
+      const ini = plan.search(new RegExp(`^##\\s+(?:Milestone\\s+|M)${Number(h.milestone)}\\s*[—–:-]`, 'im'))
+      if (ini >= 0) {
+        const resto = plan.slice(ini + 3)
+        const fim = resto.search(/^##\s/m)
+        const bloco = fim >= 0 ? resto.slice(0, fim) : resto
+        const total = (bloco.match(/^- \[[ xX]\]/gm) || []).length
+        const feitas = (bloco.match(/^- \[[xX]\]/gm) || []).length
+        if (total) tarefas = (feitas / total) * 100
+      }
+    } catch { tarefas = 0 }
+    const est = Math.max(1, Number(h.minutos) || 20) * 60_000
+    const tempo = Math.max(0, agoraMs - Date.parse(h.criadoEm)) / est * 100
+    return Math.round(Math.min(95, Math.max(1, tarefas, Number.isFinite(tempo) ? tempo : 0)))
+  }
+
   return {
     async entender(pasta, pedido) {
       pasta = String(pasta)
@@ -176,25 +216,37 @@ function criarPosObra({ raiz, disparo, construcao, licenca, politica = null, ago
     async historico(pasta) {
       pasta = String(pasta)
       pastaDaObra(raiz, pasta)
-      const lista = lerHistorico(pasta)
-      const fim = construcao.linha.ultimoFim(pasta)
-      let mudou = false
-      for (const h of lista) {
-        if (h.status === 'em-andamento' && !construcao.linha.rodando(pasta) && fim && fim.estado === 'parou' && fim.motivo === 'concluiu' && String(fim.fimEm) >= String(h.criadoEm)) { h.status = 'para-conferir'; h.prontoEm = String(fim.fimEm); mudou = true }
-      }
-      // Aprovar antes (Luiz, 27/11/2026): o pedido só vai ao ar quando o cliente clica em "Colocar no ar". Publicação feita depois
-      // que o pedido ficou pronto (registro .atlas/no-ar.json) => "No ar".
-      let publicadoEm = null
-      try { const r = lerJson(caminhoSeguro(raiz, pasta, '.atlas', 'no-ar.json')); if (r && typeof r.quando === 'string' && typeof r.endereco === 'string') publicadoEm = r.quando } catch { publicadoEm = null }
-      for (const h of lista) {
-        if (h.status === 'para-conferir' && publicadoEm && Date.parse(publicadoEm) > Date.parse(h.prontoEm || h.criadoEm)) { h.status = 'no-ar'; mudou = true }
-      }
-      if (mudou) { try { gravarHistorico(pasta, lista) } catch { /* só não persiste agora */ } }
+      const lista = atualizar(pasta)
       return lista.slice().reverse().map((h) => ({
         id: h.id, nome: umaLinha(h.nome, 40, 'Pedido'),
         data: h.status === 'em-andamento' ? `${dataCurta(h.criadoEm)} · em andamento` : `${dataCurta(h.criadoEm)} · ${Number(h.minutos) || 20} min`,
         status: ['no-ar', 'para-conferir', 'em-andamento'].includes(h.status) ? h.status : 'em-andamento',
       }))
+    },
+
+    /** Revisões para o Desempenho (aprovado pelo Luiz em 27/11/2026, ideia 2B): da mais nova para a mais antiga, com o % feito, o
+     *  tempo que levou (do pedido até ficar pronta) e o que o Atlas tinha estimado. Só números e nomes curtos; nada do texto do cliente além do nome. */
+    async revisoes(pasta) {
+      pasta = String(pasta)
+      pastaDaObra(raiz, pasta)
+      const lista = atualizar(pasta)
+      const agoraMs = agora().getTime()
+      return lista.map((h, i) => {
+        const status = ['no-ar', 'para-conferir', 'em-andamento'].includes(h.status) ? h.status : 'em-andamento'
+        const criado = Date.parse(h.criadoEm)
+        const pronto = h.prontoEm ? Date.parse(h.prontoEm) : NaN
+        const minutos = (ms) => (Number.isFinite(ms) && ms >= 0 ? Math.max(1, Math.round(ms / 60_000)) : null)
+        const andando = status === 'em-andamento'
+        return {
+          numero: i + 1, id: h.id, nome: umaLinha(h.nome, 40, 'Pedido'),
+          pedidaEm: Number.isFinite(criado) ? new Date(criado).toISOString() : null,
+          status,
+          pct: andando ? pctEmAndamento(pasta, h, agoraMs) : 100,
+          minutosEstimados: Math.max(1, Math.round(Number(h.minutos) || 20)),
+          minutosReais: andando ? null : minutos(pronto - criado),
+          minutosAteAgora: andando && Number.isFinite(criado) ? Math.max(0, Math.round((agoraMs - criado) / 60_000)) : null,
+        }
+      }).reverse()
     },
   }
 }

@@ -171,6 +171,7 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     entender: (pasta, pedido) => chamar('atlas:posobra:entender', String(pasta), JSON.parse(JSON.stringify(pedido ?? {}))),
     executar: (pasta, pedido, plano) => chamar('atlas:posobra:executar', String(pasta), JSON.parse(JSON.stringify(pedido ?? {})), JSON.parse(JSON.stringify(plano ?? {}))),
     historico: (pasta) => chamar('atlas:posobra:historico', String(pasta)),
+    revisoes: (pasta) => chamar('atlas:posobra:revisoes', String(pasta)),
   },
   cota: {
     ler: (pasta) => chamar('atlas:cota:ler', String(pasta)),
