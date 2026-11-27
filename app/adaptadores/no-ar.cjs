@@ -127,8 +127,21 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
   const gravarRegistro = (pasta, r) => { pastaAtlas(raiz, String(pasta)); gravarAtomico(arquivoRegistro(pasta), JSON.stringify({ versao: 1, ...r }) + '\n') }
   const cwdDe = (pasta) => pastaDaObra(raiz, String(pasta))
 
-  const novoEstado = (nome) => ({ fase: 'rodando', nome, passos: Object.fromEntries(PASSOS.map((p) => [p, 'falta'])), achados: [], endereco: null, erro: null, avisos: [], esperandoCota: false })
-  const publico = (e) => e && ({ fase: e.fase, nome: e.nome, passos: PASSOS.map((id) => ({ id, estado: e.passos[id] })), achados: [...e.achados], endereco: e.endereco, erro: e.erro, avisos: [...e.avisos], esperandoCota: e.esperandoCota === true })
+  const novoEstado = (nome) => ({ fase: 'rodando', nome, passos: Object.fromEntries(PASSOS.map((p) => [p, 'falta'])), achados: [], endereco: null, erro: null, avisos: [], esperandoCota: false, sub: null, duracoes: {}, diario: [], inicioPasso: null })
+  const publico = (e) => e && ({ fase: e.fase, nome: e.nome, passos: PASSOS.map((id) => ({ id, estado: e.passos[id] })), achados: [...e.achados], endereco: e.endereco, erro: e.erro, avisos: [...e.avisos], esperandoCota: e.esperandoCota === true, sub: e.sub ? { ...e.sub } : null, duracoes: { ...(e.duracoes || {}) }, diario: (e.diario || []).map((l) => ({ ...l })) })
+
+  // Acompanhamento (PG1Progresso, 27/11/2026): o que a etapa faz agora, quanto já foi DE VERDADE e o diário com hora.
+  const ms = () => agora().getTime()
+  /** O que a etapa está fazendo agora. pct = contagem real (null: a tela anda pelo tempo de costume, em segundos). */
+  const sub = (e, texto, { pct = null, costume = null } = {}) => { e.sub = { texto, pct: pct === null ? null : Math.max(0, Math.min(100, Math.round(pct))), costume, inicio: e.inicioPasso || ms(), noticia: ms() } }
+  /** Notícia de verdade: vai para o diário (com hora) e renova o sinal de vida. */
+  const contar = (e, texto) => {
+    e.diario.push({ hora: agora().toISOString(), texto })
+    if (e.diario.length > 30) e.diario.splice(0, e.diario.length - 30)
+    if (e.sub) e.sub.noticia = ms()
+  }
+  /** Só renova o sinal de vida (conferiu e ainda não mudou). */
+  const vivo = (e) => { if (e.sub) e.sub.noticia = ms() }
 
   async function nomeLivre(nome, pasta = null) {
     if (!nomeValido(nome)) return 'invalido'
@@ -172,13 +185,16 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       }
     }
   }
-  async function aplicarMigrations(cwd, ref, token) {
+  async function aplicarMigrations(cwd, ref, token, e) {
     const lista = migrationsDaObra(cwd)
     if (!lista.length) return
     await consultar(ref, token, 'create schema if not exists supabase_migrations; create table if not exists supabase_migrations.schema_migrations (version text not null primary key, statements text[], name text);')
     const feitas = await consultar(ref, token, 'select version from supabase_migrations.schema_migrations;')
     const ja = new Set((Array.isArray(feitas) ? feitas : []).map((r) => r && String(r.version)))
+    let i = 0
     for (const m of lista) {
+      i++
+      sub(e, `Criando as tabelas · ${i} de ${lista.length}`, { pct: 40 + (35 * (i - 1)) / lista.length })
       if (ja.has(m.versao)) continue
       const registro = `insert into supabase_migrations.schema_migrations (version, name) values (${literal(m.versao)}, ${literal(m.nome)}) on conflict (version) do nothing;`
       // Numa transação só (como o CLI): falhou no meio = nada fica pela metade. "concurrently" não roda em transação.
@@ -186,6 +202,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       const query = solta ? `${m.sql}\n;\n${registro}` : `begin;\n${m.sql}\n;\n${registro}\ncommit;`
       await consultar(ref, token, query, { arquivo: m.arquivo })
     }
+    contar(e, `Tabelas prontas: ${lista.length} ${lista.length === 1 ? 'arquivo' : 'arquivos'}.`)
   }
 
   async function passoBanco(pasta, e) {
@@ -199,6 +216,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     let senha = null
     try { senha = await cofre.ler(chaveSenha(pasta)) } catch { senha = null }
     if (!ref) {
+      sub(e, 'Criando o banco em São Paulo', { pct: 5 })
       const orgs = await apiSupabase('GET', '/v1/organizations', null, token)
       const org = Array.isArray(orgs) ? orgs.find((o) => o && typeof o.slug === 'string') || orgs.find((o) => o && typeof o.id === 'string') : null
       if (!org) throw Object.assign(new Error('supabase-sem-organizacao'), { passo: 'banco' })
@@ -208,10 +226,15 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       ref = criado && typeof criado.id === 'string' ? criado.id : (criado && criado.ref)
       if (typeof ref !== 'string' || !/^[a-z0-9]{10,40}$/.test(ref)) throw Object.assign(new Error('supabase-nao-criou'), { passo: 'banco' })
       gravarRegistro(pasta, { ...reg, nome: e.nome, ref })
+      contar(e, 'Banco criado no Supabase, em São Paulo.')
     }
     for (let i = 0; i < tentativasBanco; i++) {
+      // Sem contagem possível: o Supabase só diz "ainda não". A barra anda pelo tempo de costume (10% a 40%).
+      if (i === 0) sub(e, 'Esperando o Supabase ligar o banco', { pct: 10 })
       const p = await apiSupabase('GET', `/v1/projects/${ref}`, null, token)
-      if (p && p.status === 'ACTIVE_HEALTHY') break
+      vivo(e)
+      if (e.sub && i > 0) e.sub.pct = Math.min(38, 10 + Math.round((i * esperaBancoMs) / 1000 / 300 * 28))
+      if (p && p.status === 'ACTIVE_HEALTHY') { contar(e, 'O Supabase ligou o banco.'); break }
       if (p && /FAILED|REMOVED/.test(String(p.status))) throw Object.assign(new Error('supabase-falhou'), { passo: 'banco' })
       if (i === tentativasBanco - 1) throw Object.assign(new Error('supabase-demorou'), { passo: 'banco' })
       await esperar(esperaBancoMs)
@@ -220,11 +243,14 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     // Migrations pela API de gestão do Supabase (HTTPS, a mesma que já criou o projeto), NUNCA pela conexão direta do Postgres
     // (`supabase link` + `db push`): essa conexão é bloqueada em muitas redes (porta 5432/6543, IPv6) e travava o passo para
     // sempre em "o banco não aceitou a conexão" (Guilherme, 27/11/2026). Registro na mesma tabela do Supabase CLI.
-    await aplicarMigrations(cwd, ref, token)
+    await aplicarMigrations(cwd, ref, token, e)
     const pastaFn = path.join(cwd, 'supabase', 'functions')
     if (fs.existsSync(pastaFn)) {
-      for (const f of fs.readdirSync(pastaFn, { withFileTypes: true })) {
-        if (!f.isDirectory() || f.name.startsWith('_') || !/^[a-z0-9][a-z0-9_-]{0,60}$/i.test(f.name)) continue
+      const funcoes = fs.readdirSync(pastaFn, { withFileTypes: true }).filter((f) => f.isDirectory() && !f.name.startsWith('_') && /^[a-z0-9][a-z0-9_-]{0,60}$/i.test(f.name))
+      let j = 0
+      for (const f of funcoes) {
+        j++
+        sub(e, `Publicando as funções · ${j} de ${funcoes.length}`, { pct: 75 + (20 * (j - 1)) / funcoes.length })
         // --use-api: o próprio Supabase monta a função (HTTPS). Sem Docker no computador do cliente e sem conexão direta ao banco.
         for (let i = 0; ; i++) {
           const r = await supabase(['functions', 'deploy', f.name, '--project-ref', ref, '--use-api'], { cwd, env: envBanco, timeoutMs: 300_000 })
@@ -236,7 +262,9 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
           await esperar(esperaBancoMs)
         }
       }
+      if (funcoes.length) contar(e, `Funções do servidor publicadas: ${funcoes.length}.`)
     }
+    sub(e, 'Buscando a chave pública do banco', { pct: 95 })
     // A chave pública do banco às vezes aparece só alguns instantes depois do banco pronto: busca de novo. Sem ela o sistema
     // publicaria quebrado (não fala com o banco), então para com o motivo explicado em vez de fingir que deu certo.
     let chave = null
@@ -245,6 +273,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       try { chave = chavePublica(await apiSupabase('GET', `/v1/projects/${ref}/api-keys`, null, token)) } catch { chave = null }
     }
     if (!chave) throw Object.assign(new Error('supabase-sem-chave'), { passo: 'banco' })
+    contar(e, 'Banco pronto.')
     return { url: `https://${ref}.supabase.co`, chave }
   }
 
@@ -259,6 +288,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
 
   async function passoPublicar(pasta, e, banco) {
     const cwd = cwdDe(pasta)
+    sub(e, 'Ligando a obra à sua conta Vercel', { pct: 5 })
     await vercel(['project', 'add', e.nome], { cwd, timeoutMs: 60_000 }) // já existe = segue (é dele)
     const l = await vercelTentando(['link', '--yes', '--project', e.nome], { cwd, timeoutMs: 60_000 })
     if (l.codigo !== 0) throw Object.assign(new Error('vercel-link'), { passo: 'publicar' })
@@ -267,12 +297,18 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       try { exemplo = fs.readFileSync(path.join(cwd, '.env.example'), 'utf8') } catch { exemplo = '' }
       const nomes = variaveisSupabase(exemplo)
       const valores = [...nomes.url.map((n) => [n, banco.url]), ...(banco.chave ? nomes.chave.map((n) => [n, banco.chave]) : [])]
+      let k = 0
       for (const [n, v] of valores) {
+        k++
+        sub(e, `Gravando o endereço do banco · ${k} de ${valores.length}`, { pct: 10 + (10 * (k - 1)) / valores.length })
         const r = await vercelTentando(['env', 'add', n, 'production', '--force'], { cwd, entrada: v, timeoutMs: 60_000 })
         if (r.codigo !== 0) throw Object.assign(new Error('vercel-variaveis'), { passo: 'publicar' })
       }
       if (nomes.url.length === 0) e.avisos.push('O sistema não diz onde lê o endereço do banco (.env.example). O Atlas publicou mesmo assim.')
+      if (valores.length) contar(e, 'Endereço do banco gravado na Vercel.')
     }
+    // A Vercel só responde no fim: a barra anda pelo tempo de costume (2 a 4 min) e para em 90% até a resposta.
+    sub(e, 'Montando a versão final na Vercel', { costume: [120, 240] })
     const d = await vercelTentando(['deploy', '--prod', '--yes'], { cwd, timeoutMs: 900_000 })
     if (d.codigo !== 0) {
       // O sistema não compila na Vercel: é defeito da obra, a linha corrige ("Corrigir e continuar"). Outro erro: conta ou Vercel fora.
@@ -280,6 +316,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       const build = RE_BUILD.test(saida)
       throw Object.assign(new Error(build ? 'vercel-build' : 'vercel-deploy'), { passo: 'publicar', detalhe: resumoDoErro(saida) })
     }
+    contar(e, `A Vercel publicou o sistema em ${e.nome}.vercel.app.`)
     return `https://${e.nome}.vercel.app`
   }
 
@@ -292,9 +329,10 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     return c.codigo === 0
   }
 
-  async function passoTeste(endereco) {
+  async function passoTeste(endereco, e) {
     // Endereço novo: o DNS e o cadeado (https) podem levar alguns minutos para chegar a este computador. Espera até ~5 min.
     for (let i = 0; i < 30; i++) {
+      sub(e, i ? `Abrindo o endereço · tentativa ${i + 1}` : 'Abrindo o endereço de verdade', { costume: [5, 120] })
       try {
         const r = await sondar(`${endereco}/`)
         if (r.status === 200 && /<html|<!doctype/i.test(String(r.corpo || ''))) return true
@@ -321,13 +359,19 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
   }
 
   async function rodar(pasta, e, { pularVistoria = false } = {}) {
-    const marca = (p, s) => { e.passos[p] = s }
+    const marca = (p, s) => {
+      if (s === 'agora') { e.inicioPasso = ms(); e.sub = null }
+      else if (e.passos[p] === 'agora') { if (e.inicioPasso) e.duracoes[p] = Math.max(0, ms() - e.inicioPasso); e.sub = null }
+      e.passos[p] = s
+    }
     try {
       if (!pularVistoria) {
         marca('vistoria', 'agora')
+        sub(e, 'Conferindo segurança, privacidade e acessos', { costume: [60, 180] })
         const laudo = laudoDoTexto(await vistoriaEsperandoCota(pasta, e))
         if (laudo.laudo === 'reprovado') { marca('vistoria', 'atencao'); e.achados = laudo.achados; e.fase = 'vistoria'; return }
       }
+      if (!pularVistoria) contar(e, 'Vistoria aprovada.')
       marca('vistoria', 'feito')
       marca('banco', 'agora')
       const banco = await passoBanco(pasta, e)
@@ -337,12 +381,14 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       gravarRegistro(pasta, { ...lerRegistro(pasta), nome: e.nome, endereco, quando: agora().toISOString() })
       marca('publicar', 'feito')
       marca('github', 'agora')
+      sub(e, 'Ligando a publicação ao seu repositório', { costume: [5, 30] })
       const ligado = await passoGithub(pasta)
       marca('github', ligado ? 'feito' : 'atencao')
       if (!ligado) e.avisos.push('Não consegui ligar a publicação automática ao GitHub. As próximas mudanças o Atlas publica pelo botão.')
       marca('teste', 'agora')
-      const ok = await passoTeste(endereco)
+      const ok = await passoTeste(endereco, e)
       if (!ok) throw Object.assign(new Error('teste-falhou'), { passo: 'teste' })
+      contar(e, 'O sistema respondeu no endereço de verdade.')
       marca('teste', 'feito')
       marca('celular', 'feito')
       e.endereco = endereco

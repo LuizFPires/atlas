@@ -230,3 +230,31 @@ test('cota do Claude que não renovou no prazo: erro explicado (não "defeito do
   expect(await screen.findByText('A cota do seu plano do Claude acabou por agora.')).toBeInTheDocument()
   expect(screen.queryByText(/defeito do Atlas/)).not.toBeInTheDocument()
 })
+
+test('publicando: sem bolinha girando; a etapa de agora tem anel, barra com o que faz e %, avanço total, diário e o painel grande opcional', async () => {
+  const T = Date.now()
+  const estado: EstadoNoAr = {
+    fase: 'rodando', nome: 'pontoampla', achados: [], endereco: null, erro: null, avisos: [],
+    passos: [{ id: 'vistoria', estado: 'feito' }, { id: 'banco', estado: 'feito' }, { id: 'publicar', estado: 'agora' }, { id: 'github', estado: 'falta' }, { id: 'teste', estado: 'falta' }, { id: 'celular', estado: 'falta' }],
+    sub: { texto: 'Gravando o endereço do banco · 1 de 2', pct: 10, costume: null, inicio: T - 5000, noticia: T - 2000 },
+    duracoes: { vistoria: 108_000, banco: 125_000 },
+    diario: [{ hora: '2026-11-27T08:40:31Z', texto: 'Banco pronto.' }, { hora: '2026-11-27T08:40:58Z', texto: 'Endereço do banco gravado na Vercel.' }],
+  }
+  const noAr: PonteNoAr = { ...criarNoArFixture(), estado: async () => structuredClone(estado) }
+  const user = userEvent.setup()
+  const { container } = montar(noAr)
+  expect(await screen.findByRole('progressbar', { name: 'Publicando na sua conta Vercel' })).toHaveAttribute('aria-valuenow', '10')
+  expect(screen.getByText('Gravando o endereço do banco · 1 de 2')).toBeInTheDocument()
+  expect(screen.getByText(/Última notícia da Vercel há/)).toBeInTheDocument()
+  expect(screen.getByText('1 MIN 48 S')).toBeInTheDocument()
+  expect(screen.getByRole('progressbar', { name: 'Avanço total' })).toHaveAttribute('aria-valuenow', '35')
+  expect(screen.getByText('05:40:58')).toBeInTheDocument()
+  expect(container.querySelector('[class*="gira"]')).toBeNull()
+  await user.click(screen.getByRole('button', { name: 'Painel de acompanhamento' }))
+  const painel = screen.getByRole('region', { name: 'Painel de acompanhamento' })
+  expect(painel).toHaveTextContent('Banco pronto.')
+  expect(painel).toHaveTextContent('Endereço do banco gravado na Vercel.')
+  await user.click(screen.getByRole('button', { name: '← Voltar para a obra' }))
+  expect(screen.queryByRole('region', { name: 'Painel de acompanhamento' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Painel de acompanhamento' })).toBeInTheDocument()
+})

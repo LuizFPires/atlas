@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Esperando } from '../ui/Progresso'
 import { semMensagem } from './sem-mensagem'
 import './ver-prototipo.css'
 import './convite-teste.css'
@@ -48,7 +49,7 @@ export function ConviteTeste({ codigo, api = (import.meta.env.VITE_API_URL as st
     } catch { setAviso('Sem conexão com o servidor do Atlas. Confira a internet e tente de novo.') } finally { setEnviando(false) }
   }
 
-  if (e.fase === 'carregando') return <main className="vp vp--msg"><span className="vp__giro" aria-hidden="true" /><p role="status">Abrindo o convite…</p></main>
+  if (e.fase === 'carregando') return <main className="vp vp--msg"><p role="status">Abrindo o convite…</p><div className="vp__prog"><Esperando rotulo="Abrindo o convite" agora="Buscando o convite" costume={[1, 8]} /></div></main>
   if (e.fase === 'erro') return <main className="vp vp--msg"><p role="alert">{e.texto}</p></main>
   const app = e.c.app_nome
   return (

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import '../ui/progresso.css'
 import { textoDaTrava } from './explicar-trava'
 import { Botao, Icone, Microfone, Trabalhando, useVoz } from '../ui'
 import { andamentoDoDesenho } from './andamento-telas'
@@ -434,7 +435,7 @@ export function Prototipo({ obra, estilo, prototipo, arquivos, onVoltar, onConcl
                   return (
                     <li key={m.id} className={`at-proto__miniatura ${pronta ? 'at-proto__miniatura--pronta' : ''}`}>
                       <div className="at-proto__mini-celular">
-                        {doc ? <iframe title={`Miniatura: ${m.nome}`} sandbox={SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer" tabIndex={-1} /> : <div className="at-proto__mini-vazio"><span className="at-proto__mini-giro" aria-hidden="true" /></div>}
+                        {doc ? <iframe title={`Miniatura: ${m.nome}`} sandbox={SANDBOX_PREVIEW} srcDoc={doc} referrerPolicy="no-referrer" tabIndex={-1} /> : <div className="at-proto__mini-vazio"><span className="at-prog__vivo" aria-hidden="true" /><span className="at-proto__mini-fila">na fila</span></div>}
                       </div>
                       <span>{m.nome}</span>
                     </li>

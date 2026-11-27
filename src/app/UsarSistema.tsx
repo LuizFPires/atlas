@@ -1,4 +1,5 @@
 // "Usar o sistema" (P5, aprovado pelo Luiz em 24/11/2026): o protótipo em tela cheia, como se fosse de verdade. Setas e números
+import { Esperando } from '../ui/Progresso'
 // passam de tela em tela; a bolinha verde piscando mostra o que já funciona; "Pedir mudança nesta tela" volta com a tela marcada.
 // Marcações (Milestone 40): "Marcar um ponto" põe um pino onde a pessoa tocar; o Atlas diz o que há ali (ajustar o que existe,
 // desenhar o que falta ou criar algo novo) e sugere a ação (Aceitar, Sugerir outra, Editar por texto ou voz). Todas vão juntas em
@@ -205,7 +206,7 @@ export function UsarSistema({ obraNome, telas, inicial, onFechar, onPedirMudanca
             <div className="at-play__balao" role="dialog" aria-label={`Marcação ${n}`}>
               <div className="at-play__balao-tit"><span className="at-play__bola">{n}</span><span>MARCAÇÃO {n} · TELA {telaN(editando.telaId)}</span></div>
               {editando.fase === 'olhando'
-                ? <p className="at-play__olhando" role="status"><span className="at-play__giro" aria-hidden="true" />O Atlas está olhando este ponto…</p>
+                ? <div className="at-play__olhando" role="status"><span>O Atlas está olhando este ponto…</span><Esperando rotulo="Olhando o ponto marcado" agora="Lendo a tela e o pedido" costume={[10, 40]} /></div>
                 : (
                   <>
                     {sugerir && <div className={`at-play__tipo at-play__tipo--${k.classe}`}><b>{k.rotulo}</b><span>{k.sobre(editando.alvo)}</span></div>}
@@ -250,7 +251,7 @@ export function UsarSistema({ obraNome, telas, inicial, onFechar, onPedirMudanca
               </button>
             ))}
             {trabalhando
-              ? <p className="at-play__olhando" role="status"><span className="at-play__giro" aria-hidden="true" />O Atlas está fazendo {guardadas.length === 1 ? 'o ajuste' : `os ${guardadas.length} ajustes`}…</p>
+              ? <div className="at-play__olhando" role="status"><span>O Atlas está fazendo {guardadas.length === 1 ? 'o ajuste' : `os ${guardadas.length} ajustes`}…</span><Esperando rotulo="Fazendo os ajustes" agora={guardadas.length === 1 ? '1 ajuste' : `${guardadas.length} ajustes`} costume={[60, 60 + 90 * guardadas.length]} /></div>
               : onMandar && <button type="button" className="at-play__prim" onClick={() => void mandar()}>Mandar para o Atlas fazer</button>}
             {falha && <p className="at-play__falha" role="alert">{falha}</p>}
             <span className="at-play__miuda">O Atlas cria o que falta e ajusta o que já existe, do jeito que você explicou.</span>

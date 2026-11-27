@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import '../ui/progresso.css'
 import type { ProgressoProto } from './ponte-prototipo'
 import './etapas-obra.css'
 
@@ -56,7 +57,7 @@ export function EtapasObra({ atual, progresso, onVerTelas, intervaloMs = 3000, a
       </ol>
       {aviso && onVerTelas && (
         <button type="button" className="at-etapas__aviso" onClick={onVerTelas}>
-          <span className="at-etapas__giro" aria-hidden="true" />Protótipo: {aviso}
+          <span className="at-prog__vivo" aria-hidden="true" />Protótipo: {aviso}
         </button>
       )}
     </div>

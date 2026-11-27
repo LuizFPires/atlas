@@ -6,5 +6,5 @@
 .vp--msg { align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; }
 .vp--msg b { color: #C6F135; letter-spacing: 0.18em; }
 .vp--msg p { margin: 0; max-width: 320px; font-size: 16px; line-height: 1.5; }
-.vp__giro { width: 26px; height: 26px; border-radius: 13px; border: 3px solid #2A2E33; border-top-color: #C6F135; animation: vp-gira 0.8s linear infinite; }
-@keyframes vp-gira { to { transform: rotate(360deg); } }
+
+.vp__prog { width: min(360px, 80vw); }

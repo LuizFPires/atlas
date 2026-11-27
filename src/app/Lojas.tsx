@@ -101,12 +101,13 @@ export function Lojas({ pasta, appNome, lojas, onGuia, dominio = null, onVoltar,
   }
 
   const empresa = e.caminho === 'empresa'
-  const item = (id: string, titulo: string, pronto: boolean, sub: string, filho?: React.ReactNode) => (
+  let ordem = 0
+  const item = (id: string, titulo: string, pronto: boolean, sub: string, filho?: React.ReactNode) => { const n = ++ordem; return (
     <li key={id} className={`at-noar__passo at-noar__passo--${pronto ? 'feito' : 'falta'}`} aria-label={`${titulo}: ${pronto ? 'pronta' : 'falta'}`}>
-      <span className="at-noar__bola" aria-hidden="true">{pronto ? ICONE_OK : ''}</span>
+      <span className="at-noar__bola" aria-hidden="true">{pronto ? ICONE_OK : n}</span>
       <span className="at-noar__ptxt"><b>{titulo}</b><span>{sub}</span>{filho}</span>
     </li>
-  )
+  ) }
   const guiaBotao = (titulo: string, g: Guia, conta?: ContaLoja) => <button type="button" className="at-lojas__guia" aria-label={`Passo a passo: ${titulo}`} onClick={() => onGuia(g, conta)}>Passo a passo →</button>
   const zap = e.convite ? linkWhatsapp(`Oi! Me ajuda a testar o app ${appNome}? Leva 2 minutos, precisa de Android: ${e.convite.link}`) : null
 

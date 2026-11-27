@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Esperando, Progresso, useRelogio } from '../ui/Progresso'
 import { textoDaTrava } from './explicar-trava'
 import { palavras } from './plataforma'
 import { Botao, Icone } from '../ui'
@@ -16,7 +17,11 @@ const LINHAS: { id: ContaLigavel; nome: string; artigo: 'o' | 'a'; papel: string
   { id: 'hosp', nome: 'Vercel', artigo: 'a', papel: 'a vitrine', tipo: 'codigo', dica: { en: 'Connect a device', pt: 'Ligar um aparelho' } },
 ]
 
-type Linha = { estado: EstadoLigacao; usuario: string | null; codigo?: string; copiado?: boolean }
+type Linha = { estado: EstadoLigacao; usuario: string | null; codigo?: string; copiado?: boolean; desde?: number }
+
+/** O código de ligação (GitHub e Vercel) vale 15 minutos. */
+const VALIDADE_CODIGO_S = 900
+const agoraMs = () => Date.now()
 
 interface Props {
   ponte: PonteLigarContas
@@ -100,7 +105,7 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
       const { codigo } = await ponte.ligar(c, ret(area.current))
       let copiado = false
       try { await navigator.clipboard?.writeText(codigo); copiado = true } catch { /* sem área de transferência: a pessoa copia da tela */ }
-      mudar(c, { codigo, copiado })
+      mudar(c, { codigo, copiado, desde: agoraMs() })
     } catch {
       mudar(c, { estado: 'erro' })
       setAviso('Não consegui começar a ligação agora. Confira a internet e tente de novo.')
@@ -161,9 +166,9 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
                           <>
                             <span>O site vai pedir este código. {x.copiado ? 'Já copiamos para você: é só colar lá' : 'Escreva lá'} e clicar em <b>Continue</b>.</span>
                             <div className="at-ligar__codigo"><span>{x.codigo}</span>{x.copiado && <em>✓ COPIADO</em>}</div>
-                            <span className="at-ligar__espera" role="status"><span className="at-ligar__gira" aria-hidden="true" />Esperando você confirmar no site… o Atlas percebe sozinho.</span>
+                            <span className="at-ligar__espera" role="status"><b>Esperando você confirmar no site… o Atlas percebe sozinho.</b><ValidadeCodigo desde={x.desde ?? null} cadaS={Math.max(1, Math.round(sondagemMs / 1000))} /></span>
                           </>
-                        ) : <span className="at-ligar__espera" role="status"><span className="at-ligar__gira" aria-hidden="true" />Preparando o código…</span>}
+                        ) : <span className="at-ligar__espera" role="status"><Esperando rotulo="Preparando o código" agora="Pedindo o código à conta" costume={[2, 15]} /></span>}
                         <button type="button" className="at-ativ__link" onClick={() => void ponte.siteFora(l.id)}>Abrir no meu navegador</button>
                       </div>
                     )}
@@ -203,5 +208,17 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
         </section>
       </div>
     </div>
+  )
+}
+
+/** Quanto o código ainda vale (a barra esvazia) e o sinal de vida da conferência automática. */
+function ValidadeCodigo({ desde, cadaS }: { desde: number | null; cadaS: number }) {
+  const agora = useRelogio()
+  const resta = desde ? Math.max(0, VALIDADE_CODIGO_S - Math.floor((agora - desde) / 1000)) : VALIDADE_CODIGO_S
+  const mmss = `${Math.floor(resta / 60)}:${String(resta % 60).padStart(2, '0')}`
+  return (
+    <Progresso rotulo="Validade do código" semPct relogio={agora} pct={(resta / VALIDADE_CODIGO_S) * 100}
+      agora={resta > 0 ? `Código vale mais ${mmss}` : 'O código venceu'}
+      pulso={resta > 0 ? `Conferindo a cada ${cadaS} s se você já confirmou` : 'Toque em Tentar de novo para pegar um código novo'} />
   )
 }

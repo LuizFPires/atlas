@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Esperando } from '../ui/Progresso'
 import { textoDaTrava } from './explicar-trava'
 import { Botao, Icone } from '../ui'
 import type { PonteNavegador, Retangulo } from './ponte-navegador'
@@ -95,7 +96,8 @@ export function FichaTrava({ pasta, trava, ponte, navegador, onLigarContas, agor
               </>
             ) : (
               <>
-                <b role="status"><span className="at-trava__gira" aria-hidden="true" />{f.guia.depois}</b>
+                <b role="status">{f.guia.depois}</b>
+                <Esperando rotulo="Conferindo se destravou" agora="Conferindo se destravou" costume={[10, 60]} />
                 <button type="button" className="at-ativ__link" onClick={() => void abrirSite()}>Não deu certo? Abrir o site de novo</button>
               </>
             )}

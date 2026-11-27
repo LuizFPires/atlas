@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Esperando } from '../ui/Progresso'
 import { textoDaTrava } from './explicar-trava'
 import QRCode from 'qrcode'
 import { Botao, Icone } from '../ui'
@@ -53,7 +54,7 @@ export function JanelaCelular({ gerar, whatsapp, onFechar }: Props) {
         <button type="button" className="at-jc__x" aria-label="Fechar" autoFocus onClick={onFechar}><Icone nome="x" tamanho={18} /></button>
         <span className="at-jc__selo">PROTÓTIPO NO CELULAR</span>
         <h2>Abra no seu celular</h2>
-        {e.fase === 'gerando' && <p className="at-jc__txt" role="status"><span className="at-jc__giro" aria-hidden="true" /> Gerando o link…</p>}
+        {e.fase === 'gerando' && <div className="at-jc__txt" role="status"><Esperando rotulo="Gerando o link" agora="Gerando o link seguro" costume={[2, 10]} fonte="do servidor do Atlas" /></div>}
         {e.fase === 'erro' && <p className="at-jc__erro" role="alert">{e.texto}</p>}
         {e.fase === 'pronto' && (
           <>

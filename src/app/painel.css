@@ -77,10 +77,7 @@
 .at-pn__vigia { display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 16px; border: 1px solid var(--lime); background: var(--soft); }
 .at-pn__vigia--alerta { border-color: var(--erro, #E5534B); background: rgba(229, 83, 75, 0.08); }
 .at-pn__vigia .at-pn__pronta-txt { flex: 1; min-width: 0; }
-.at-pn__vigia-giro { flex: none; width: 22px; height: 22px; border-radius: 11px; border: 3px solid var(--card-b); border-top-color: var(--lime); animation: at-pn-vigia-gira 0.9s linear infinite; }
 .at-pn__vigia-bola { flex: none; width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center; color: var(--erro, #E5534B); background: rgba(229, 83, 75, 0.14); }
-@keyframes at-pn-vigia-gira { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .at-pn__vigia-giro { animation: none; } }
 .at-pn__vigia-fala { display: block; margin-top: 6px; padding: 8px 12px; border-left: 3px solid var(--erro, #E5534B); border-radius: 0 8px 8px 0; background: rgba(229, 83, 75, 0.06); font-style: normal; color: var(--text); }
 
 /* ── M41: a obra nunca fica no escuro (O1–O5 aprovados em 24/11/2026) ───────────────────────────────────────────── */

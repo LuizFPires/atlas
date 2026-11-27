@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Esperando, Progresso } from '../ui/Progresso'
 import { textoDaTrava } from './explicar-trava'
 import { Botao, Icone, Microfone, useVoz } from '../ui'
 import { BloqueioPolitica } from './BloqueioPolitica'
@@ -144,8 +145,12 @@ export function ComecarPlanilha({ planilha, arquivos, criarObra, onVoltar, onCon
       {(fase === 'lendo' || fase === 'entendendo') && (
         <section className="at-pl__lendo">
           <div className="at-pl__status" role="status">
-            {!visao || mostradas < visao.abas.length ? <><span className="at-pl__gira" aria-hidden="true" />Lendo a planilha…</> : <><Icone nome="check" tamanho={18} /> Pronto: li a planilha inteira.</>}
-            {visao && <span className="at-pl__conta">{Math.min(mostradas, visao.abas.length)} DE {visao.abas.length} ABAS</span>}
+            {!visao
+              ? <Esperando rotulo="Lendo a planilha" agora="Abrindo o arquivo" costume={[2, 15]} />
+              : mostradas < visao.abas.length
+                ? <Progresso rotulo="Lendo a planilha" agora={`Aba ${Math.min(mostradas + 1, visao.abas.length)} de ${visao.abas.length} · ${visao.abas[Math.min(mostradas, visao.abas.length - 1)]?.nome ?? ''}`} pct={(mostradas / visao.abas.length) * 100} pulso="O Atlas lê aba por aba, no seu computador" />
+                : <><Icone nome="check" tamanho={18} /> Pronto: li a planilha inteira.</>}
+            {visao && mostradas >= visao.abas.length && <span className="at-pl__conta">{visao.abas.length} DE {visao.abas.length} ABAS</span>}
           </div>
           {visao?.abas.slice(0, mostradas).map((a) => (
             <div key={a.nome} className="at-pl__aba">

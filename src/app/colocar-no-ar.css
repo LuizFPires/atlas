@@ -48,11 +48,13 @@
 .at-noar__opcao--on { border-color: var(--lime); background: var(--soft, transparent); }
 .at-noar__passos { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
 .at-noar__passo { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); }
-.at-noar__bola { width: 26px; height: 26px; border-radius: 13px; flex: none; display: flex; align-items: center; justify-content: center; font: 700 13px var(--font-text); border: 2px solid var(--card-b); box-sizing: border-box; }
+.at-noar__bola { width: 28px; height: 28px; border-radius: 14px; flex: none; display: flex; align-items: center; justify-content: center; font: 600 12px var(--font-mono); color: var(--mute2, var(--mute)); border: 2px solid var(--card-b); box-sizing: border-box; }
 .at-noar__passo--feito .at-noar__bola, .at-noar__passo--pulado .at-noar__bola { border: 0; background: var(--soft, #2a3a12); color: var(--lime-txt, var(--lime)); }
-.at-noar__passo--agora .at-noar__bola { border-color: var(--lime); border-top-color: transparent; animation: at-noar-gira 1s linear infinite; }
 .at-noar__passo--erro .at-noar__bola, .at-noar__passo--atencao .at-noar__bola { border-color: var(--aviso); color: var(--aviso-txt, var(--aviso)); }
-.at-noar__ptxt { display: flex; flex-direction: column; gap: 2px; }
+.at-noar__ptxt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.at-noar__ptxt > .at-prog { margin-top: 6px; }
+.at-noar__ptit { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.at-noar__dur { flex: none; font: 500 11px var(--font-mono); letter-spacing: 0.06em; color: var(--mute2, var(--mute)); }
 .at-noar__ptxt b { font-size: 15px; }
 .at-noar__ptxt span { font-size: 13px; line-height: 1.45; color: var(--mute2, var(--mute)); }
 .at-noar__passo--falta .at-noar__ptxt b { color: var(--mute2, var(--mute)); }
@@ -66,7 +68,6 @@
 .at-noar__prox b { font-size: 15px; }
 .at-noar__prox .at-noar__mudo { font-size: 13px; }
 .at-noar__prox .at-noar__verde { margin-left: auto; }
-@keyframes at-noar-gira { to { transform: rotate(360deg); } }
 @keyframes at-noar-pisca { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .at-noar__passo--agora .at-noar__bola, .at-noar__pisca { animation: none; } }
 @media (max-width: 1100px) { .at-noar__grade { grid-template-columns: 1fr; } .at-noar__cena { min-height: 360px; } }
@@ -104,3 +105,32 @@
 .at-noar__detalhe { font-size: 13px; color: var(--mute2, var(--mute)); }
 .at-noar__detalhe summary { cursor: pointer; }
 .at-noar__detalhe code { display: block; margin-top: 6px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--card-b); font: 500 12px var(--font-mono); white-space: pre-wrap; word-break: break-word; }
+
+/* Acompanhamento (PG1Progresso, aprovado em 27/11/2026): avanço total, diário com hora e o painel grande opcional. */
+.at-noar__total { display: flex; flex-direction: column; gap: 8px; }
+.at-noar__total-txt { display: flex; justify-content: space-between; gap: 10px; font: 600 11px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2, var(--mute)); }
+.at-noar__total-txt b { color: var(--text); }
+.at-noar__total-barra { position: relative; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.at-noar__total-barra i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--lime); transition: width 0.6s ease; }
+.at-noar__diario { display: flex; flex-direction: column; gap: 8px; }
+.at-noar__diario ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.at-noar__diario li { font-size: 13px; line-height: 1.45; color: var(--mute2, var(--mute)); border-radius: 6px; margin: 0 -6px; padding: 2px 6px; }
+.at-noar__diario li.at-noar__diario-novo { color: var(--text); background: rgb(198 241 53 / 0.08); }
+.at-noar__diario-hora { font-family: var(--font-mono); margin-right: 10px; }
+.at-noar__diario-novo .at-noar__diario-hora { color: var(--lime-txt, var(--lime)); }
+.at-noar__diario--cena { position: absolute; left: 24px; bottom: 22px; width: min(380px, calc(100% - 48px)); padding: 14px 16px; border-radius: 16px; background: rgb(20 22 25 / 0.86); border: 1px solid var(--card-b); }
+.at-noar__diario--cena li { color: #b4bbb2; }
+.at-noar__diario--cena li.at-noar__diario-novo { color: #edefea; }
+.at-noar__diario--painel { flex: 1; min-height: 0; overflow: auto; }
+.at-noar__diario--painel li { font-size: 14px; padding: 6px; }
+.at-noar__painel-bt { position: fixed; right: 28px; bottom: 24px; z-index: 5; display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--lime); background: var(--card); color: var(--text); font: 600 14px var(--font-text); cursor: pointer; box-shadow: 0 8px 24px rgb(0 0 0 / 0.35); }
+.at-noar__painel { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; }
+.at-noar__painel-col { display: flex; flex-direction: column; min-height: 0; }
+.at-noar__painel-col > .at-noar__card { overflow: auto; }
+.at-noar__passos--grande .at-noar__passo { padding: 16px 0; }
+.at-noar__passos--grande .at-noar__ptxt b { font-size: 17px; color: var(--text); }
+.at-noar__passos--grande .at-noar__passo--falta .at-noar__ptxt b { color: var(--mute2, var(--mute)); }
+.at-noar__passos--grande .at-noar__ptxt > span { font-size: 14px; }
+.at-noar__passos--grande .at-prog__agora, .at-noar__passos--grande .at-prog__pulso { font-size: 13px; }
+.at-noar__passos--grande .at-prog__barra { height: 6px; border-radius: 3px; }
+@media (max-width: 1100px) { .at-noar__painel { grid-template-columns: minmax(0, 1fr); } }

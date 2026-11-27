@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { Esperando } from './Progresso'
 import { Icone } from './Icone'
 import { assinarVoz, definirEstadoVoz, estadoVoz } from './voz-motor'
 import './status-voz.css'
@@ -26,7 +27,7 @@ export function StatusVoz({ embutido = false }: { embutido?: boolean }) {
       {e.fase === 'ouvindo' && !e.rascunho && <><span className="at-svoz__ponto" aria-hidden="true" /><span><b>Ouvindo…</b> Fale à vontade: o texto vai aparecendo a cada pausa. Quando terminar, aperte o microfone de novo.</span></>}
       {/* Rascunho ao vivo (Luiz, 23/11/2026: "sem delay na fala"): as últimas palavras faladas, já escritas; o campo recebe a versão revisada. */}
       {e.fase === 'ouvindo' && e.rascunho && <><span className="at-svoz__ponto" aria-hidden="true" /><span className="at-svoz__rascunho"><b>Ouvindo…</b> <span>{ultimasPalavras(e.rascunho)}</span></span></>}
-      {e.fase === 'escrevendo' && <><span className="at-svoz__giro" aria-hidden="true" /><span><b>Escrevendo o que você falou…</b> Leva só uns segundos.</span></>}
+      {e.fase === 'escrevendo' && <span className="at-svoz__prep"><b>Escrevendo o que você falou…</b><Esperando rotulo="Escrevendo a fala" agora="Transformando a fala em texto" costume={[2, 10]} /></span>}
       {e.fase === 'preparando' && (
         <div className="at-svoz__prep">
           <span><b>Preparando a voz do Atlas…</b> Isso acontece só na primeira vez. Depois, funciona até sem internet.</span>

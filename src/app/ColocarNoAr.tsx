@@ -9,7 +9,8 @@ import type { Guia } from './guias-site'
 import type { ContaLoja, PonteLojas } from './ponte-lojas'
 import type { DestinoSite } from './ponte-publicar'
 import type { EstadoDominio, PonteDominio } from './ponte-dominio'
-import { CORRIGIVEIS_NO_AR, PASSOS_NO_AR, explicarErro, type AntesDoNoAr, type EstadoNoAr, type PonteNoAr, type SituacaoNomeNoAr } from './ponte-no-ar'
+import { COSTUME_NO_AR, CORRIGIVEIS_NO_AR, PASSOS_NO_AR, explicarErro, type AntesDoNoAr, type EstadoNoAr, type PonteNoAr, type SituacaoNomeNoAr } from './ponte-no-ar'
+import { AnelEtapa, Progresso, duracaoCurta, pctDoProgresso, useRelogio } from '../ui/Progresso'
 import './colocar-no-ar.css'
 
 interface Props {
@@ -160,6 +161,9 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
   }, [esperandoVez, vez, intervaloMs])
 
   const fase = estado?.fase ?? 'parado'
+  const relogio = useRelogio()
+  const [painel, setPainel] = useState(false)
+  const temAcompanhamento = Boolean(estado && (fase === 'rodando' || fase === 'corrigindo' || fase === 'erro' || (estado.diario?.length ?? 0) > 0) && fase !== 'parado')
   const noArAgora = fase === 'noar'
   const link = useMemo(() => (noArAgora ? enderecoDoSistema(enderecoDominio ?? estado?.endereco ?? null) : null), [noArAgora, enderecoDominio, estado?.endereco])
   const matriz = useMemo(() => (link ? matrizQr(link) : null), [link])
@@ -177,11 +181,15 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
         </div>
         <span className={`at-noar__selo ${noArAgora || fase === 'parado' ? 'at-noar__selo--ok' : 'at-noar__selo--anda'}`}>{selo}</span>
       </header>
+      {painel && estado && temAcompanhamento ? (
+        <PainelAcompanhamento estado={estado} relogio={relogio} onVoltar={() => setPainel(false)} />
+      ) : (
       <div className="at-noar__grade">
         <section className="at-noar__cena" aria-label={`O prédio pronto: ${andares} de ${andares} andares`}>
           <img src={predio} alt="" />
           <div className="at-noar__pct"><b>100%</b><span>{andares} DE {andares} ANDARES PRONTOS · TESTES OK</span></div>
           {noArAgora && <span className="at-noar__noar"><span aria-hidden="true" />NO AR</span>}
+          {andando && estado?.diario && estado.diario.length > 0 && <Diario linhas={estado.diario.slice(-3)} titulo="O QUE ACONTECEU AGORA HÁ POUCO" className="at-noar__diario--cena" />}
         </section>
 
         <aside className="at-noar__lado">
@@ -256,7 +264,8 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
               {estado?.esperandoCota && (
                 <span className="at-noar__txt" role="status">{`${explicarTrava('claude-cota').houve} ${explicarTrava('claude-cota').fazer}`}</span>
               )}
-              <Passos estado={estado} />
+              <Total estado={estado} relogio={relogio} />
+              <Passos estado={estado} relogio={relogio} />
             </section>
           )}
 
@@ -290,7 +299,7 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
                   <code>{estado.erro.detalhe}</code>
                 </details>
               )}
-              <Passos estado={estado} />
+              <Passos estado={estado} relogio={relogio} />
               {explicarErro(estado.erro.motivo).conta && onLigarContas && <button type="button" className="at-noar__sec" onClick={onLigarContas}>Religar a conta</button>}
               {CORRIGIVEIS_NO_AR.includes(estado.erro.motivo)
                 ? <>
@@ -339,23 +348,111 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
           {travouInicio !== null && onAjuda && <button type="button" className="at-noar__sec" onClick={() => onAjuda({ onde: 'o começo da publicação', erro: travouInicio })}>Pedir ao Atlas para destravar</button>}
         </aside>
       </div>
+      )}
+      {temAcompanhamento && !painel && (
+        <button type="button" className="at-noar__painel-bt" onClick={() => setPainel(true)}><span className="at-prog__vivo" aria-hidden="true" />Painel de acompanhamento</button>
+      )}
     </main>
   )
 }
 
-function Passos({ estado }: { estado: EstadoNoAr | null }) {
+const ROTULO_ESTADO = { feito: 'feito', agora: 'fazendo agora', pulado: 'não precisa', atencao: 'com aviso', erro: 'parou aqui', falta: 'falta' } as const
+
+/** Quanto do total já foi: etapas feitas + o pedaço da etapa de agora. E quanto falta, pelo tempo de costume. */
+function totalDe(estado: EstadoNoAr, relogio: number) {
+  const n = PASSOS_NO_AR.length
+  let feitas = 0
+  let fracao = 0
+  let faltaS = 0
+  let atual = -1
+  PASSOS_NO_AR.forEach((p, i) => {
+    const s = estado.passos.find((x) => x.id === p.id)?.estado ?? 'falta'
+    if (s === 'feito' || s === 'pulado' || s === 'atencao') feitas++
+    else if (s === 'agora') {
+      atual = i
+      const pct = estado.sub ? pctDoProgresso(estado.sub, relogio) : 0
+      fracao = pct / 100
+      faltaS += COSTUME_NO_AR[p.id] * (1 - fracao)
+    } else if (s === 'falta') faltaS += COSTUME_NO_AR[p.id]
+  })
+  return { pct: Math.round(((feitas + fracao) / n) * 100), etapa: atual >= 0 ? atual + 1 : Math.min(n, feitas + 1), n, faltaMin: Math.max(1, Math.round(faltaS / 60)) }
+}
+
+function Total({ estado, relogio }: { estado: EstadoNoAr | null; relogio: number }) {
+  if (!estado) return null
+  const t = totalDe(estado, relogio)
   return (
-    <ol className="at-noar__passos">
-      {PASSOS_NO_AR.map((p) => {
+    <div className="at-noar__total" role="progressbar" aria-label="Avanço total" aria-valuemin={0} aria-valuemax={100} aria-valuenow={t.pct}>
+      <span className="at-noar__total-txt"><span>ETAPA {t.etapa} DE {t.n} · <b>{t.pct}%</b> DO TOTAL</span><span>FALTAM ~{t.faltaMin} MIN</span></span>
+      <span className="at-noar__total-barra"><i style={{ width: `${Math.max(2, t.pct)}%` }} /></span>
+    </div>
+  )
+}
+
+const FONTE: Partial<Record<string, string>> = { banco: 'do Supabase', publicar: 'da Vercel', github: 'da Vercel', teste: 'do endereço', vistoria: 'do Claude' }
+
+function Passos({ estado, relogio, grande = false }: { estado: EstadoNoAr | null; relogio: number; grande?: boolean }) {
+  return (
+    <ol className={`at-noar__passos${grande ? ' at-noar__passos--grande' : ''}`}>
+      {PASSOS_NO_AR.map((p, i) => {
         const s = estado?.passos.find((x) => x.id === p.id)?.estado ?? 'falta'
-        const rotulo = s === 'feito' ? 'feito' : s === 'agora' ? 'fazendo agora' : s === 'pulado' ? 'não precisa' : s === 'atencao' ? 'com aviso' : s === 'erro' ? 'parou aqui' : 'falta'
+        const sub = s === 'agora' ? estado?.sub ?? null : null
+        const dur = estado?.duracoes?.[p.id]
         return (
-          <li key={p.id} className={`at-noar__passo at-noar__passo--${s}`} aria-label={`${p.titulo}: ${rotulo}`}>
-            <span className="at-noar__bola" aria-hidden="true">{s === 'feito' || s === 'pulado' ? ICONE_OK : s === 'erro' || s === 'atencao' ? '!' : ''}</span>
-            <span className="at-noar__ptxt"><b>{p.titulo}</b><span>{s === 'pulado' ? 'Este sistema não usa banco de dados.' : p.sub}</span></span>
+          <li key={p.id} className={`at-noar__passo at-noar__passo--${s}`} aria-label={`${p.titulo}: ${ROTULO_ESTADO[s]}`}>
+            {s === 'agora'
+              ? <AnelEtapa numero={i + 1} pct={sub ? pctDoProgresso(sub, relogio) : 0} />
+              : <span className="at-noar__bola" aria-hidden="true">{s === 'feito' || s === 'pulado' ? ICONE_OK : s === 'erro' || s === 'atencao' ? '!' : i + 1}</span>}
+            <span className="at-noar__ptxt">
+              <span className="at-noar__ptit"><b>{p.titulo}</b>{s === 'feito' && typeof dur === 'number' && <span className="at-noar__dur">{duracaoCurta(dur / 1000).toUpperCase()}</span>}</span>
+              <span>{s === 'pulado' ? 'Este sistema não usa banco de dados.' : p.sub}</span>
+              {s === 'agora' && (
+                sub
+                  ? <Progresso rotulo={p.titulo} agora={sub.texto} pct={sub.pct} inicio={sub.inicio} costume={sub.costume} noticia={sub.noticia} fonte={FONTE[p.id]} relogio={relogio} />
+                  : <Progresso rotulo={p.titulo} agora="Começando" pct={0} pulso="O Atlas começou esta etapa agora" relogio={relogio} />
+              )}
+            </span>
           </li>
         )
       })}
     </ol>
   )
 }
+
+const hora = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'America/Sao_Paulo' }) }
+
+function Diario({ linhas, titulo, className = '' }: { linhas: { hora: string; texto: string }[]; titulo: string; className?: string }) {
+  const lista = [...linhas].reverse()
+  return (
+    <div className={`at-noar__diario ${className}`}>
+      <span className="at-noar__rot">{titulo}</span>
+      <ol>
+        {lista.map((l, i) => <li key={`${l.hora}-${i}`} className={i === 0 ? 'at-noar__diario-novo' : ''}><span className="at-noar__diario-hora">{hora(l.hora)}</span>{l.texto}</li>)}
+      </ol>
+    </div>
+  )
+}
+
+/** A visão grande (só se a pessoa quiser): todas as etapas com o detalhe e o diário inteiro. A principal continua a do prédio. */
+function PainelAcompanhamento({ estado, relogio, onVoltar }: { estado: EstadoNoAr; relogio: number; onVoltar: () => void }) {
+  return (
+    <section className="at-noar__painel" aria-label="Painel de acompanhamento">
+      <div className="at-noar__painel-col">
+        <div className="at-noar__card at-noar__card--cheio">
+          <span className="at-noar__rot at-noar__rot--lime"><span className="at-noar__pisca" aria-hidden="true" />PAINEL DE ACOMPANHAMENTO · COLOCAR NO AR</span>
+          <Total estado={estado} relogio={relogio} />
+          <Passos estado={estado} relogio={relogio} grande />
+        </div>
+      </div>
+      <div className="at-noar__painel-col">
+        <div className="at-noar__card at-noar__card--cheio">
+          {estado.diario && estado.diario.length > 0
+            ? <Diario linhas={estado.diario} titulo="DIÁRIO DESTA PUBLICAÇÃO · DO MAIS NOVO AO MAIS VELHO" className="at-noar__diario--painel" />
+            : <span className="at-noar__txt">As notícias aparecem aqui, com a hora, assim que cada parte terminar.</span>}
+          <button type="button" className="at-noar__sec" onClick={onVoltar}>← Voltar para a obra</button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
