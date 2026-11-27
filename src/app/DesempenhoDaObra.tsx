@@ -48,8 +48,8 @@ export function DesempenhoDaObra({ obra, painel, agora = () => new Date(), sonda
   const proxima = d.pausasPrevistas.find((p) => Date.parse(p.fim) > t)
   const plano = NOME_PLANO[d.plano]
   const ritmo = d.ritmo
-  const ritmoTxt = ritmo === null ? '—' : Math.abs(ritmo) < 0.02 ? 'no previsto' : `${ritmo > 0 ? '+' : '−'}${Math.round(Math.abs(ritmo) * 100)}%`
-  const ritmoNota = ritmo === null ? 'aparece depois do 1º avanço' : Math.abs(ritmo) < 0.02 ? 'gastando o previsto para o que já foi feito' : ritmo > 0 ? `para o que já foi feito, gastou ${Math.round(ritmo * 100)}% a mais do plano que o previsto: por isso o término vai mais longe` : `para o que já foi feito, gastou ${Math.round(-ritmo * 100)}% a menos que o previsto: o término vem mais cedo`
+  const ritmoTxt = ritmo === null ? '—' : ritmo > 3 ? 'muito acima' : Math.abs(ritmo) < 0.02 ? 'no previsto' : `${ritmo > 0 ? '+' : '−'}${Math.round(Math.abs(ritmo) * 100)}%`
+  const ritmoNota = ritmo === null ? (d.estimativaInicial ? 'aparece quando a 1ª etapa for entregue com o Atlas medindo' : 'aparece depois do 1º avanço') : ritmo > 3 ? 'o gasto está muito acima do previsto: a conta se ajusta a cada etapa entregue' : Math.abs(ritmo) < 0.02 ? 'gastando o previsto para o que já foi feito' : ritmo > 0 ? `para o que já foi feito, gastou ${Math.round(ritmo * 100)}% a mais do plano que o previsto: por isso o término vai mais longe` : `para o que já foi feito, gastou ${Math.round(-ritmo * 100)}% a menos que o previsto: o término vem mais cedo`
   const estimativa = d.estimativaInicial || (d.plano !== 'ultra' && !d.cotaAprendida)
   const paradaAgora = (d.semTrabalho ?? []).find((p) => p.ate_agora) ?? null
   const paradasAntes = (d.semTrabalho ?? []).filter((p) => !p.ate_agora)
@@ -68,7 +68,7 @@ export function DesempenhoDaObra({ obra, painel, agora = () => new Date(), sonda
             {fim <= t ? 'A obra está terminando.' : `≈ ${duracao(trabalhoMs)} de trabalho${n ? ` + ${n} ${n === 1 ? 'pausa' : 'pausas'} da cota do plano ${plano} (≈ ${duracao(esperaMs)} esperando)` : ''}. Vale se o computador ficar ligado, com o Atlas aberto, direto até lá.`}
           </span>
         </div>
-        <div className="at-de__card"><span className="at-de__rot">CONSUMO</span><b className="at-de__num">{pct(d.realizadoPct)}</b><span className="at-de__nota">{`do orçamento da obra · o previsto para agora era ${pct(d.previstoAgoraPct)}`}{fimPct !== null && fimPct > 100.5 ? ` · no fim deve usar ~${Math.round(fimPct)}%` : ''}</span></div>
+        <div className="at-de__card"><span className="at-de__rot">CONSUMO</span><b className="at-de__num">{pct(d.realizadoPct)}</b><span className="at-de__nota">{d.estimativaInicial ? 'do orçamento estimado (ainda em cálculo: fica certo quando a 1ª etapa for entregue com o Atlas medindo)' : `do orçamento da obra · o previsto para agora era ${pct(d.previstoAgoraPct)}`}{fimPct !== null && fimPct > 100.5 ? ` · no fim deve usar ~${Math.round(fimPct)}%` : ''}</span></div>
         <div className={`at-de__card${ritmo !== null && ritmo >= 0.02 ? ' at-de__card--ambar' : ''}`}><span className="at-de__rot">RITMO DE GASTO</span><b className={`at-de__num${ritmo !== null && ritmo >= 0.02 ? ' at-de__num--ambar' : ritmo !== null && ritmo <= -0.02 ? ' at-de__num--lime' : ''}`}>{ritmoTxt}</b><span className="at-de__nota">{ritmoNota}</span></div>
         <div className="at-de__card"><span className="at-de__rot">PAUSAS PREVISTAS</span><b className="at-de__num">{n}</b><span className="at-de__nota">{n === 0 ? 'sem pausas previstas' : `${proxima ? (Date.parse(proxima.inicio) <= t ? `parada agora, volta ~${hhmm(new Date(proxima.fim))}` : `a próxima ~${hhmm(new Date(proxima.inicio))}`) : ''} · o Atlas espera a cota renovar e volta sozinho, sem você fazer nada`}</span></div>
         <div className="at-de__card"><span className="at-de__rot">PLANO</span><b className="at-de__num">{plano}</b><span className="at-de__nota">{SOBRE_PLANO[d.plano]}</span></div>
@@ -100,6 +100,16 @@ export function DesempenhoDaObra({ obra, painel, agora = () => new Date(), sonda
   )
 }
 
+/** Marcas do eixo do consumo: no máximo 6, em passos redondos (25, 50, 100, 250…), sempre com a de 100% (o orçamento). */
+export function marcasY(vMax: number): number[] {
+  const passos = [25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000]
+  const passo = passos.find((p) => vMax / p <= 5) ?? passos[passos.length - 1]
+  const out: number[] = []
+  for (let v = 0; v <= vMax + 0.01; v += passo) out.push(v)
+  if (vMax >= 100 && !out.includes(100)) out.push(100)
+  return out.sort((a, b) => a - b)
+}
+
 /** O gráfico: eixo do tempo do início até o término mais distante; consumo de 0 a 100% (ou mais, se passar do orçamento). */
 function Curva({ d, agora }: { d: Desempenho; agora: number }) {
   const W = 1000, Hh = 300, E = 48, B = 268, T = 16
@@ -116,7 +126,7 @@ function Curva({ d, agora }: { d: Desempenho; agora: number }) {
   const ultimo = d.serie.projetado[d.serie.projetado.length - 1]
   return (
     <svg className="at-de__svg" viewBox={`0 0 ${W} ${Hh}`} role="img" aria-label={`Curva S do consumo: previsto, realizado até agora (${d.realizadoPct.toLocaleString('pt-BR')}%) e projetado até o término`}>
-      {Array.from({ length: Math.ceil(vMax / 25) + 1 }, (_, k) => k * 25).filter((v) => v <= vMax + 0.01).map((v) => <g key={v}><line className={`at-de__grade${v === 100 ? ' at-de__grade--orc' : ''}`} x1={E} x2={W - 8} y1={y(v)} y2={y(v)} /><text className="at-de__eixo" x={E - 8} y={y(v) + 4} textAnchor="end">{v}%</text>{v === 100 && vMax > 100 && <text className="at-de__eixo at-de__eixo--orc" x={E + 6} y={y(v) - 5}>orçamento previsto</text>}</g>)}
+      {marcasY(vMax).map((v) => <g key={v}><line className={`at-de__grade${v === 100 ? ' at-de__grade--orc' : ''}`} x1={E} x2={W - 8} y1={y(v)} y2={y(v)} /><text className="at-de__eixo" x={E - 8} y={y(v) + 4} textAnchor="end">{v}%</text>{v === 100 && vMax > 100 && <text className="at-de__eixo at-de__eixo--orc" x={E + 6} y={y(v) - 5}>orçamento previsto</text>}</g>)}
       {(d.semTrabalho ?? []).map((p) => <rect key={`p-${p.inicio}`} data-parada className="at-de__parada" x={x(Math.max(t0, Date.parse(p.inicio)))} y={T} width={Math.max(2, x(Math.min(t1, Date.parse(p.fim))) - x(Math.max(t0, Date.parse(p.inicio))))} height={B - T} />)}
       {marcas.map((h) => <text key={h} className="at-de__eixo" x={x(h)} y={Hh - 8} textAnchor={x(h) > W - 40 ? 'end' : 'middle'}>{hh(new Date(h))}</text>)}
       {d.pausasPrevistas.map((p) => <rect key={p.inicio} data-pausa className="at-de__pausa" x={x(Math.max(t0, Date.parse(p.inicio)))} y={T} width={Math.max(2, x(Date.parse(p.fim)) - x(Math.max(t0, Date.parse(p.inicio))))} height={B - T} />)}

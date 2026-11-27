@@ -288,3 +288,18 @@ test('painel: desempenho fixa o orçamento quando a 1ª etapa é entregue e depo
   assert.equal(depois.orcamento, guardado.orcamento) // não muda mais
   assert.equal(depois.plano, 'max')
 })
+
+test('painel: etapa que já estava pronta quando a construção começou não fixa um orçamento minúsculo (caso do Eduardo)', async () => {
+  const { registrarConsumo } = require('./retrato-obra.cjs')
+  const { raiz, c, painel } = montar({ plano: () => 'pro' })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  const dir = path.join(raiz, 'obra')
+  marcar(raiz, 1) // já veio pronta
+  await painel.cronograma('obra') // o cronograma nasce com ela entregue
+  registrarConsumo(dir, { fim: new Date(Date.now() + 1000).toISOString(), custoUsd: 40, duracaoMs: 60 * 60_000 })
+  const d = await painel.desempenho('obra')
+  assert.equal(d.estimativaInicial, true)
+  assert.equal(d.ritmo, null)
+  assert.ok(d.realizadoPct <= 80, String(d.realizadoPct))
+  assert.equal(fs.existsSync(path.join(dir, '.atlas', 'desempenho.json')), false)
+})

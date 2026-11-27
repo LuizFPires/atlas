@@ -320,11 +320,16 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
       // retrato-obra.cjs importa este arquivo: o require fica aqui dentro para não fechar um ciclo na carga.
       const d = calcularDesempenho({
         inicio: crono.inicio, previstoFim: crono.previstoFim,
-        etapas: p.milestones.map((m) => ({ n: m.n, peso: m.peso, status: m.status, pct: m.pct })),
+        etapas: p.milestones.map((m) => {
+          const real = (crono.etapas || []).find((e) => e.n === m.n)?.real
+          // Entregue no mesmo instante em que o cronograma nasceu = já estava pronta antes da construção (não gastou do registro).
+          return { n: m.n, peso: m.peso, status: m.status, pct: m.pct, ...(real && real.fim && real.fim === crono.inicio ? { antesDaObra: true } : {}) }
+        }),
         consumo: require('./retrato-obra.cjs').lerConsumo(cwd), pausas: crono.pausas, plano: plano(), agora: agora(),
-        orcamentoGuardado: guardado && guardado.versao === 1 ? guardado.orcamento : null,
+        // versão 2 (27/11/2026): a 1 podia ter fixado um orçamento minúsculo com etapas feitas antes de medir; é refeita.
+        orcamentoGuardado: guardado && guardado.versao === 2 ? guardado.orcamento : null,
       })
-      if (d.fixarOrcamento) { try { gravarAtomico(arq, JSON.stringify({ versao: 1, orcamento: d.fixarOrcamento, em: agora().toISOString() })) } catch { /* fica para a próxima leitura */ } }
+      if (d.fixarOrcamento) { try { gravarAtomico(arq, JSON.stringify({ versao: 2, orcamento: d.fixarOrcamento, em: agora().toISOString() })) } catch { /* fica para a próxima leitura */ } }
       delete d.fixarOrcamento
       return d
     },

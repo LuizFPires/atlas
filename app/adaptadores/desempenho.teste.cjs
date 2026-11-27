@@ -102,3 +102,20 @@ test('espera da cota não conta como "sem trabalho" (já tem a sua faixa)', () =
   const d = calcularDesempenho(base({ agora: new Date(agora), etapas: etapas(2, 0), consumo, orcamentoGuardado: 100, pausas: [{ inicio: iso(T0 + 2 * H), fim: iso(T0 + 7 * H) }] }))
   assert.deepEqual(d.semTrabalho, [])
 })
+
+test('etapas entregues ANTES de a medição começar não entram na conta (caso do Eduardo: nada de 7.006% nem +25.590%)', () => {
+  const agora = T0 + 2 * H
+  // 2 de 10 etapas já vieram prontas (entregues no começo, sem gasto medido); depois 1h40 de trabalho na 3ª, a 20%.
+  const ets = etapas(2, 20).map((e) => (e.status === 'concluido' ? { ...e, antesDaObra: true } : e))
+  const d = calcularDesempenho(base({ agora: new Date(agora), etapas: ets, consumo: turnos(T0 + 20 * 60_000, agora, 30) }))
+  assert.equal(d.fixarOrcamento, null, 'não fixa orçamento com etapa que não foi medida')
+  assert.equal(d.estimativaInicial, true)
+  assert.ok(d.realizadoPct <= 80, `consumo plausível (${d.realizadoPct}%)`)
+  assert.equal(d.ritmo, null, 'sem etapa medida, ainda não há ritmo')
+  // a 3ª etapa entregue depois de medir: aí sim fixa, com o custo dela
+  const ets2 = etapas(3, 0).map((e, i) => (i < 2 ? { ...e, antesDaObra: true } : e))
+  const d2 = calcularDesempenho(base({ agora: new Date(agora), etapas: ets2, consumo: turnos(T0 + 20 * 60_000, agora, 30) }))
+  assert.ok(d2.fixarOrcamento > 0)
+  assert.ok(Math.abs(d2.ritmo) < 0.05, `ritmo no previsto com a própria medida (${d2.ritmo})`)
+  assert.ok(d2.realizadoPct > 5 && d2.realizadoPct < 20, `consumo ~1/8 do orçamento (${d2.realizadoPct}%)`)
+})

@@ -40,18 +40,27 @@ function calcularDesempenho(o) {
   const pesoTotal = etapas.reduce((s, e) => s + e.peso, 0) || 1
   const feitoDe = (e) => (e.status === 'concluido' ? 1 : Math.min(100, Math.max(0, Number(e.pct) || 0)) / 100)
   const pesoFeito = etapas.reduce((s, e) => s + e.peso * feitoDe(e), 0)
-  const entregues = etapas.filter((e) => e.status === 'concluido').length
 
   const turnos = (o.consumo || []).filter((c) => c && Number.isFinite(ms(c.fim)) && ms(c.fim) >= inicio && Number(c.custoUsd) > 0).map((c) => ({ t: ms(c.fim), v: Number(c.custoUsd), d: Number(c.duracaoMs) || 0 })).sort((a, b) => a.t - b.t)
   const realizado = turnos.reduce((s, c) => s + c.v, 0)
   const gastoEntre = (de, ate) => turnos.reduce((s, c) => s + (c.t > de && c.t <= ate ? c.v : 0), 0)
 
+  // Só conta como "feito com este gasto" o que foi feito DEPOIS que a medição começou (27/11/2026). Etapa entregue antes do 1º
+  // começo da construção (obra trazida pronta em parte, ou feita antes de o Atlas medir) gastou o que não está no registro: se entrasse
+  // na conta, o orçamento sairia minúsculo e o consumo e o ritmo virariam milhares de % (o caso do Eduardo).
+  const medidoDe = (e) => (e.status === 'concluido' && e.antesDaObra ? 0 : feitoDe(e))
+  const pesoMedido = etapas.reduce((s, e) => s + e.peso * medidoDe(e), 0)
+  // O orçamento cobre só o escopo medido: o que já estava pronto antes de medir fica fora (não gastou deste registro).
+  const escopoMedido = Math.max(pesoMedido, pesoTotal - (pesoFeito - pesoMedido)) || 1
+  const entreguesMedidas = etapas.filter((e) => e.status === 'concluido' && medidoDe(e) === 1).length
+
   // Orçamento (BAC) e estimativa no fim (EAC).
-  const custoPorPeso = pesoFeito >= 0.2 && realizado > 0 ? realizado / pesoFeito : null
+  const custoPorPeso = pesoMedido >= 0.2 && realizado > 0 ? realizado / pesoMedido : null
   const eac = Math.max(realizado, custoPorPeso ? realizado + custoPorPeso * (pesoTotal - pesoFeito) : PADRAO.custoPorPeso * pesoTotal)
   const guardado = Number(o.orcamentoGuardado) > 0 ? Number(o.orcamentoGuardado) : null
-  const fixar = !guardado && entregues >= 1 && custoPorPeso ? eac : null
-  const orcamento = guardado ?? fixar ?? PADRAO.custoPorPeso * pesoTotal
+  const fixar = !guardado && entreguesMedidas >= 1 && custoPorPeso ? eac : null
+  // Sem medição suficiente, o orçamento é estimativa e cresce com o gasto (nunca mostra "estourou" antes de saber o tamanho).
+  const orcamento = guardado ?? fixar ?? Math.max(PADRAO.custoPorPeso * escopoMedido, realizado * 1.25)
   const estimativaInicial = !guardado && !fixar
 
   // Pausas de cota que já aconteceram: aprendem a cota (o gasto na janela até parar).
@@ -145,7 +154,7 @@ function calcularDesempenho(o) {
     realizadoPct: pct(realizado),
     previstoAgoraPct: r2(suave((agora - inicio) / (previstoFim - inicio)) * 100),
     fisicoPct: r2(fisicoPct),
-    ritmo: pesoFeito > 0 && realizado > 0 ? r2(realizado / (orcamento * (pesoFeito / pesoTotal)) - 1) : null,
+    ritmo: !estimativaInicial && pesoMedido > 0 && realizado > 0 ? r2(realizado / (orcamento * (pesoMedido / escopoMedido)) - 1) : null,
     plano,
     cota: cota === null ? null : r2(cota),
     cotaAprendida,
