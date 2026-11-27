@@ -36,7 +36,7 @@ function pedir({ host, metodo, caminho, corpo = null, cabecalhos = {}, timeoutMs
 
 async function pedirApiSupabase(metodo, caminho, corpo, token, { enviar = pedir } = {}) {
   if (!['GET', 'POST'].includes(metodo)) throw new Error('metodo-invalido')
-  if (typeof caminho !== 'string' || !/^\/v1\/[a-z0-9/_-]+$/.test(caminho) || caminho.includes('..')) throw new Error('caminho-invalido')
+  if (typeof caminho !== 'string' || !/^\/v1\/[a-z0-9/_-]+(\?reveal=true)?$/.test(caminho) || caminho.includes('..')) throw new Error('caminho-invalido')
   if (typeof token !== 'string' || !token) throw new Error('sem-token')
   const r = await enviar({ host: HOST_API, metodo, caminho, corpo, cabecalhos: { Accept: 'application/json', Authorization: `Bearer ${token}` } })
   if (r.status < 200 || r.status >= 300) {
@@ -48,6 +48,22 @@ async function pedirApiSupabase(metodo, caminho, corpo, token, { enviar = pedir 
     throw Object.assign(new Error(`supabase-${r.status}`), msg ? { detalhe: msg.slice(0, 1500) } : {})
   }
   try { return JSON.parse(r.corpo || 'null') } catch { throw new Error('supabase-resposta') }
+}
+
+// Conta do dono (primeiro acesso): SÓ https://<ref>.supabase.co/auth/v1/admin/users. A chave secreta vai no cabeçalho, nunca
+// no endereço nem no erro.
+async function pedirAuthSupabase(ref, metodo, caminho, corpo, chave, { enviar = pedir } = {}) {
+  if (typeof ref !== 'string' || !/^[a-z0-9]{10,40}$/.test(ref)) throw new Error('caminho-invalido')
+  if (!['POST'].includes(metodo)) throw new Error('metodo-invalido')
+  if (caminho !== '/auth/v1/admin/users') throw new Error('caminho-invalido')
+  if (typeof chave !== 'string' || !chave) throw new Error('sem-token')
+  const r = await enviar({ host: `${ref}.supabase.co`, metodo, caminho, corpo, cabecalhos: { Accept: 'application/json', apikey: chave, Authorization: `Bearer ${chave}` } })
+  if (r.status < 200 || r.status >= 300) {
+    let msg = ''
+    try { const j = JSON.parse(r.corpo || '{}'); msg = String((j && (j.error_code || j.code || j.msg || j.message || j.error)) || '') } catch { msg = '' }
+    throw Object.assign(new Error(`supabase-${r.status}`), msg ? { detalhe: msg.replace(/[\w.+-]+@[\w.-]+/g, '[e-mail]').slice(0, 200) } : {})
+  }
+  try { return JSON.parse(r.corpo || 'null') } catch { return null }
 }
 
 async function sondarSite(url, { enviar = pedir } = {}) {
@@ -63,4 +79,4 @@ async function sondarDominio(dominio, { enviar = pedir } = {}) {
   return enviar({ host: dominio, metodo: 'GET', caminho: '/', cabecalhos: { Accept: 'text/html' }, maxCorpo: 1000 })
 }
 
-module.exports = { pedirApiSupabase, sondarSite, sondarDominio, pedir, HOST_API }
+module.exports = { pedirApiSupabase, pedirAuthSupabase, sondarSite, sondarDominio, pedir, HOST_API }

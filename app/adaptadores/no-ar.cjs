@@ -23,7 +23,7 @@ const { caminhoSeguro } = require('../seguro.cjs')
 const { pastaAtlas, pastaDaObra, gravarAtomico, lerJson } = require('./obra-fs.cjs')
 const { extrairJson, umaLinha } = require('./projeto-comum.cjs')
 
-const PASSOS = ['vistoria', 'banco', 'publicar', 'github', 'teste', 'celular']
+const PASSOS = ['vistoria', 'banco', 'publicar', 'github', 'teste', 'acesso', 'celular']
 const NOME = /^[a-z0-9]([a-z0-9-]{1,46}[a-z0-9])$/
 const CHAVE_SUPABASE = 'contas/supabase'
 const chaveSenha = (pasta) => `no-ar/${crypto.createHash('sha256').update(String(pasta)).digest('hex').slice(0, 16)}/banco`
@@ -98,6 +98,37 @@ const PEDIDO_VISTORIA = [
 // Saída da CLI ao publicar funções: falta de permissão e instabilidade (internet, Supabase fora) NÃO são defeito da obra.
 const RE_SEM_PERMISSAO = /\b(401|403)\b|unauthori[sz]ed|forbidden|invalid access token/i
 const { RE_INSTAVEL, RE_BUILD } = require('./contas-cli.cjs')
+// A Vercel (plano grátis) recusa publicar quando não reconhece quem assinou a última mudança no GitHub (as mudanças da obra
+// saem assinadas pelo Atlas). Guilherme, 27/11/2026: "Deploy bloqueado".
+const RE_BLOQUEADO = /deployment (was )?blocked|commit author|contributing access|associate the committer|no git user associated|git author .{0,40}(access|member)/i
+const EMAIL = /^[^\s@<>()",;:]{1,64}@[a-z0-9.-]{1,180}\.[a-z]{2,24}$/i
+/** A chave secreta do banco (só em memória, para criar a conta do dono): a nova ('secret') ou a antiga ('service_role'). */
+function chaveSecreta(lista) {
+  if (!Array.isArray(lista)) return null
+  const ok = (k) => k && typeof k.api_key === 'string' && k.api_key.length > 20 && !/[*•]/.test(k.api_key)
+  const k = lista.find((x) => ok(x) && x.type === 'secret') || lista.find((x) => ok(x) && x.name === 'service_role')
+  return k ? k.api_key : null
+}
+/** O sistema tem entrada com senha (Supabase Auth)? Procura no código (sem node_modules/.git), no máximo 4000 arquivos. */
+function usaLogin(cwd) {
+  const RE = /\.auth\.(signInWithPassword|signInWithOtp|signUp|resetPasswordForEmail|getUser|getSession)\b/
+  const pilha = [cwd]
+  let n = 0
+  while (pilha.length && n < 4000) {
+    const d = pilha.pop()
+    let itens = []
+    try { itens = fs.readdirSync(d, { withFileTypes: true }) } catch { continue }
+    for (const it of itens) {
+      if (it.name.startsWith('.') || it.name === 'node_modules' || it.name === 'dist' || it.name === 'build' || it.name === 'supabase') continue
+      const c = path.join(d, it.name)
+      if (it.isDirectory()) { pilha.push(c); continue }
+      if (!/\.(t|j)sx?$|\.vue$|\.svelte$/.test(it.name)) continue
+      n++
+      try { if (fs.statSync(c).size < 400_000 && RE.test(fs.readFileSync(c, 'utf8'))) return true } catch { /* segue */ }
+    }
+  }
+  return false
+}
 /** As linhas que explicam o erro (ERROR, statement, hint), sem endereço de conexão, senha, chave ou token; no máximo 600 letras. */
 function resumoDoErro(saida) {
   const limpas = String(saida)
@@ -109,7 +140,7 @@ function resumoDoErro(saida) {
   return (importantes.length ? importantes : limpas.slice(-4)).join(' · ').slice(0, 600)
 }
 
-function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, perguntar, corrigir, linhaRodando = () => false, esperar = (ms) => new Promise((r) => setTimeout(r, ms)), agora = () => new Date(), gerarSenha = () => crypto.randomBytes(24).toString('base64url'), esperaBancoMs = 10_000, tentativasBanco = 120, esperaCotaMs = 10 * 60_000, esperasCota = 7 * 24 * 6 }) {
+function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupabase = null, emailDoDono = async () => null, sondar, perguntar, corrigir, linhaRodando = () => false, esperar = (ms) => new Promise((r) => setTimeout(r, ms)), agora = () => new Date(), gerarSenha = () => crypto.randomBytes(24).toString('base64url'), esperaBancoMs = 10_000, tentativasBanco = 120, esperaCotaMs = 10 * 60_000, esperasCota = 7 * 24 * 6 }) {
   const jobs = new Map() // pasta -> estado vivo
 
   const arquivoRegistro = (pasta) => caminhoSeguro(raiz, String(pasta), '.atlas', 'no-ar.json')
@@ -122,13 +153,57 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     if (typeof j.ref === 'string' && /^[a-z0-9]{10,40}$/.test(j.ref)) out.ref = j.ref
     if (typeof j.endereco === 'string' && /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(j.endereco)) out.endereco = j.endereco
     if (typeof j.quando === 'string') out.quando = j.quando.slice(0, 40)
+    if (j.acesso && typeof j.acesso.email === 'string' && EMAIL.test(j.acesso.email)) out.acesso = { email: j.acesso.email, novo: j.acesso.novo === true }
     return out
   }
   const gravarRegistro = (pasta, r) => { pastaAtlas(raiz, String(pasta)); gravarAtomico(arquivoRegistro(pasta), JSON.stringify({ versao: 1, ...r }) + '\n') }
   const cwdDe = (pasta) => pastaDaObra(raiz, String(pasta))
+  // O .git da obra fica FORA da pasta enviada à Vercel só durante a publicação de novo (bloqueio pelo autor).
+  const pausaGit = (cwd) => path.join(path.dirname(cwd), `.atlas-git-pausa-${path.basename(cwd)}`)
+  const SEM_GIT = (cwd) => ({ GIT_DIR: path.join(pausaGit(cwd), 'nao-existe'), GIT_CEILING_DIRECTORIES: path.dirname(cwd) })
+  function tirarGit(cwd) {
+    const git = path.join(cwd, '.git')
+    try { if (!fs.existsSync(git) || fs.existsSync(pausaGit(cwd))) return false; fs.renameSync(git, pausaGit(cwd)); return true } catch { return false }
+  }
+  function restaurarGit(cwd) {
+    const git = path.join(cwd, '.git')
+    try { if (fs.existsSync(pausaGit(cwd)) && !fs.existsSync(git)) fs.renameSync(pausaGit(cwd), git) } catch { /* tenta na próxima */ }
+  }
 
-  const novoEstado = (nome) => ({ fase: 'rodando', nome, passos: Object.fromEntries(PASSOS.map((p) => [p, 'falta'])), achados: [], endereco: null, erro: null, avisos: [], esperandoCota: false, sub: null, duracoes: {}, diario: [], inicioPasso: null })
-  const publico = (e) => e && ({ fase: e.fase, nome: e.nome, passos: PASSOS.map((id) => ({ id, estado: e.passos[id] })), achados: [...e.achados], endereco: e.endereco, erro: e.erro, avisos: [...e.avisos], esperandoCota: e.esperandoCota === true, sub: e.sub ? { ...e.sub } : null, duracoes: { ...(e.duracoes || {}) }, diario: (e.diario || []).map((l) => ({ ...l })) })
+  /** Primeiro acesso (Guilherme, 27/11/2026): o sistema só entra por convite e ninguém criava a conta do dono. O Atlas cria a
+   *  conta com o e-mail da licença (confirmada, sem senha, papel "dono" no app_metadata, que só o servidor muda). A senha o
+   *  dono cria em "Esqueci minha senha" na tela de entrada. O Atlas não define, não vê e não guarda senha. */
+  async function passoAcesso(pasta, e) {
+    const reg = lerRegistro(pasta)
+    if (!reg.ref || !authSupabase || !usaLogin(cwdDe(pasta))) return 'pulado'
+    if (reg.acesso) { e.acesso = reg.acesso; return 'feito' }
+    let email = null
+    try { email = await emailDoDono() } catch { email = null }
+    if (typeof email !== 'string' || !EMAIL.test(email.trim())) { e.avisos.push('Não achei o seu e-mail para criar o seu acesso ao sistema. Crie pela tela de entrada ou peça ao Atlas em "Pedir mudança".'); return 'atencao' }
+    email = email.trim().toLowerCase()
+    sub(e, 'Criando o seu acesso de dono', { costume: [3, 20] })
+    let token = null
+    try { token = await cofre.ler(CHAVE_SUPABASE) } catch { token = null }
+    let secreta = null
+    try { secreta = token ? chaveSecreta(await apiSupabase('GET', `/v1/projects/${reg.ref}/api-keys?reveal=true`, null, token)) : null } catch { secreta = null }
+    if (!secreta) { e.avisos.push('Não consegui criar o seu acesso ao sistema agora. Tente "Colocar no ar" de novo mais tarde.'); return 'atencao' }
+    let novo = true
+    try {
+      await authSupabase(reg.ref, 'POST', '/auth/v1/admin/users', { email, email_confirm: true, app_metadata: { papel: 'dono' } }, secreta)
+    } catch (err) {
+      const txt = `${err && err.message} ${err && err.detalhe}`
+      if (!/\b422\b|email_exists|already (been )?registered|already exists/i.test(txt)) { e.avisos.push('Não consegui criar o seu acesso ao sistema agora. Tente "Colocar no ar" de novo mais tarde.'); return 'atencao' }
+      novo = false
+    }
+    secreta = null
+    e.acesso = { email, novo }
+    gravarRegistro(pasta, { ...lerRegistro(pasta), acesso: e.acesso })
+    contar(e, novo ? `Acesso de dono criado para ${email}.` : `${email} já tinha acesso ao sistema.`)
+    return 'feito'
+  }
+
+  const novoEstado = (nome) => ({ fase: 'rodando', nome, passos: Object.fromEntries(PASSOS.map((p) => [p, 'falta'])), achados: [], endereco: null, erro: null, avisos: [], acesso: null, esperandoCota: false, sub: null, duracoes: {}, diario: [], inicioPasso: null })
+  const publico = (e) => e && ({ fase: e.fase, nome: e.nome, passos: PASSOS.map((id) => ({ id, estado: e.passos[id] })), achados: [...e.achados], endereco: e.endereco, erro: e.erro, avisos: [...e.avisos], acesso: e.acesso ? { ...e.acesso } : null, esperandoCota: e.esperandoCota === true, sub: e.sub ? { ...e.sub } : null, duracoes: { ...(e.duracoes || {}) }, diario: (e.diario || []).map((l) => ({ ...l })) })
 
   // Acompanhamento (PG1Progresso, 27/11/2026): o que a etapa faz agora, quanto já foi DE VERDADE e o diário com hora.
   const ms = () => agora().getTime()
@@ -309,7 +384,17 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
     }
     // A Vercel só responde no fim: a barra anda pelo tempo de costume (2 a 4 min) e para em 90% até a resposta.
     sub(e, 'Montando a versão final na Vercel', { costume: [120, 240] })
-    const d = await vercelTentando(['deploy', '--prod', '--yes'], { cwd, timeoutMs: 900_000 })
+    restaurarGit(cwd)
+    let d = await vercelTentando(['deploy', '--prod', '--yes'], { cwd, timeoutMs: 900_000 })
+    if (d.codigo !== 0 && RE_BLOQUEADO.test(String(d.saida || ''))) {
+      // Bloqueio pelo autor das mudanças: publica de novo SEM o histórico do GitHub junto (o .git sai da pasta só durante
+      // o envio e volta logo depois; se o Atlas fechar no meio, volta na próxima vez). O código continua igual.
+      contar(e, 'A Vercel não reconheceu quem assinou as mudanças. Publicando de novo sem o histórico do GitHub.')
+      sub(e, 'Publicando de novo na Vercel', { costume: [120, 240] })
+      const tirou = tirarGit(cwd)
+      try { d = await vercelTentando(['deploy', '--prod', '--yes'], { cwd, timeoutMs: 900_000, env: SEM_GIT(cwd) }) } finally { if (tirou) restaurarGit(cwd) }
+      if (d.codigo !== 0 && RE_BLOQUEADO.test(String(d.saida || ''))) throw Object.assign(new Error('vercel-bloqueado'), { passo: 'publicar', detalhe: resumoDoErro(String(d.saida || '')) })
+    }
     if (d.codigo !== 0) {
       // O sistema não compila na Vercel: é defeito da obra, a linha corrige ("Corrigir e continuar"). Outro erro: conta ou Vercel fora.
       const saida = String(d.saida || '')
@@ -392,6 +477,10 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       if (!ok) throw Object.assign(new Error('teste-falhou'), { passo: 'teste' })
       contar(e, 'O sistema respondeu no endereço de verdade.')
       marca('teste', 'feito')
+      marca('acesso', 'agora')
+      let acesso = 'atencao'
+      try { acesso = await passoAcesso(pasta, e) } catch { e.avisos.push('Não consegui criar o seu acesso ao sistema agora. Tente "Colocar no ar" de novo mais tarde.') }
+      marca('acesso', acesso)
       marca('celular', 'feito')
       e.endereco = endereco
       e.fase = 'noar'
@@ -436,7 +525,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
       const e = jobs.get(pasta)
       if (e) return publico(e)
       const reg = lerRegistro(pasta)
-      if (reg.endereco) return { fase: 'noar', nome: reg.nome || null, passos: PASSOS.map((id) => ({ id, estado: 'feito' })), achados: [], endereco: reg.endereco, erro: null, avisos: [] }
+      if (reg.endereco) return { fase: 'noar', nome: reg.nome || null, passos: PASSOS.map((id) => ({ id, estado: 'feito' })), achados: [], endereco: reg.endereco, erro: null, avisos: [], acesso: reg.acesso || null }
       return { fase: 'parado', nome: reg.nome || null, passos: PASSOS.map((id) => ({ id, estado: 'falta' })), achados: [], endereco: null, erro: null, avisos: [] }
     },
     /** A vistoria achou pontos: manda pela linha da obra e recomeça sozinho quando a linha terminar (a tela chama de novo). */
@@ -483,4 +572,4 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, sondar, pe
   }
 }
 
-module.exports = { criarNoAr, nomeValido, nomeDaObra, candidatos, variaveisSupabase, chavePublica, laudoDoTexto, chaveSenha, PASSOS, PEDIDO_VISTORIA }
+module.exports = { criarNoAr, nomeValido, nomeDaObra, candidatos, variaveisSupabase, chavePublica, chaveSecreta, usaLogin, RE_BLOQUEADO, laudoDoTexto, chaveSenha, PASSOS, PEDIDO_VISTORIA }

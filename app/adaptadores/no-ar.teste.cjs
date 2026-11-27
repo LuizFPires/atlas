@@ -96,7 +96,7 @@ test('um clique: vistoria, banco em São Paulo, Vercel com variáveis pela entra
   const e = n.estado('ponto')
   assert.equal(e.fase, 'noar', JSON.stringify(e))
   assert.equal(e.endereco, 'https://ponto.vercel.app')
-  assert.ok(e.passos.every((p) => p.estado === 'feito'))
+  assert.ok(e.passos.every((p) => p.estado === 'feito' || (p.id === 'acesso' && p.estado === 'pulado')), 'sem entrada com senha, o acesso do dono é pulado')
   const criar = chamadas.api.find((a) => a.m === 'POST')
   assert.equal(criar.corpo.region, 'sa-east-1')
   assert.equal(criar.corpo.organization_slug, 'ana-org')
@@ -569,4 +569,180 @@ test('cota que não renova nunca: depois do prazo vira erro explicado (claude-co
   assert.equal(e.fase, 'erro')
   assert.equal(e.erro.motivo, 'claude-cota')
   assert.equal(e.esperandoCota, false)
+})
+
+// Guilherme, 27/11/2026: "Deploy bloqueado" na Vercel (o autor das mudanças é o Atlas, que a Vercel não reconhece) e
+// "não consegui acessar" (o sistema só entra por convite e ninguém criava a conta do dono).
+const { chaveSecreta, usaLogin, RE_BLOQUEADO } = require('./no-ar.cjs')
+const BLOQUEIO = 'Error: The Deployment was blocked because the commit author does not have contributing access to the project on Vercel. Hobby teams do not support collaboration.'
+
+test('bloqueio da Vercel pelo autor: publica de novo sem o histórico do GitHub junto e devolve o .git no lugar', async () => {
+  const { raiz, cwd } = obra()
+  fs.mkdirSync(path.join(cwd, '.git'))
+  fs.writeFileSync(path.join(cwd, '.git', 'HEAD'), 'ref: refs/heads/main\n')
+  const deploys = []
+  let publicado = false
+  const { d } = deps({
+    vercel: async (args, o) => {
+      if (args[0] !== 'deploy') return { codigo: 0, saida: '' }
+      deploys.push({ env: o.env || null, temGit: fs.existsSync(path.join(cwd, '.git')) })
+      if (deploys.length === 1) return { codigo: 1, saida: BLOQUEIO }
+      publicado = true
+      return { codigo: 0, saida: '' }
+    },
+    sondar: async () => (publicado ? { status: 200, cabecalhos: {}, corpo: '<!doctype html>' } : { status: 404, cabecalhos: { 'x-vercel-error': 'DEPLOYMENT_NOT_FOUND' }, corpo: '' }),
+  })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(n.estado('ponto').fase, 'noar', JSON.stringify(n.estado('ponto').erro))
+  assert.equal(deploys.length, 2)
+  assert.equal(deploys[0].temGit, true)
+  assert.equal(deploys[1].temGit, false, 'na segunda vez o .git fica fora da pasta enviada')
+  assert.ok(deploys[1].env && deploys[1].env.GIT_DIR, 'e o git não acha o histórico')
+  assert.equal(fs.readFileSync(path.join(cwd, '.git', 'HEAD'), 'utf8'), 'ref: refs/heads/main\n', 'o .git volta inteiro')
+  assert.equal(fs.readdirSync(raiz).filter((x) => x.startsWith('.atlas-git-pausa')).length, 0)
+})
+
+test('bloqueio da Vercel que continua: motivo próprio (vercel-bloqueado), sem mandar a linha "corrigir" e com o .git de volta', async () => {
+  const { raiz, cwd } = obra()
+  fs.mkdirSync(path.join(cwd, '.git'))
+  const { d } = deps({ vercel: async (args) => (args[0] === 'deploy' ? { codigo: 1, saida: BLOQUEIO } : { codigo: 0, saida: '' }) })
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  const e = n.estado('ponto')
+  assert.equal(e.erro && e.erro.motivo, 'vercel-bloqueado')
+  assert.ok(fs.existsSync(path.join(cwd, '.git')))
+})
+
+test('o Atlas fechou no meio da publicação de novo: o .git volta na próxima vez', async () => {
+  const { raiz, cwd } = obra()
+  const pausa = path.join(raiz, '.atlas-git-pausa-ponto')
+  fs.mkdirSync(pausa)
+  fs.writeFileSync(path.join(pausa, 'HEAD'), 'x')
+  const { d } = deps()
+  const n = criarNoAr({ raiz, ...d })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(fs.readFileSync(path.join(cwd, '.git', 'HEAD'), 'utf8'), 'x')
+  assert.ok(!fs.existsSync(pausa))
+})
+
+test('RE_BLOQUEADO reconhece as mensagens da Vercel e não confunde com build quebrado', () => {
+  for (const m of [BLOQUEIO, 'The Deployment was blocked because GitHub could not associate the committer with a GitHub user.', 'The Deployment was blocked because there was no git user associated with the commit.']) assert.ok(RE_BLOQUEADO.test(m), m)
+  assert.ok(!RE_BLOQUEADO.test('Error: Command "npm run build" exited with 1'))
+})
+
+const LOGIN = "import { supabase } from './banco'\nexport const entrar = (e, s) => supabase.auth.signInWithPassword({ email: e, password: s })\n"
+function obraComLogin() {
+  const o = obra()
+  fs.mkdirSync(path.join(o.cwd, 'src'))
+  fs.writeFileSync(path.join(o.cwd, 'src', 'entrar.ts'), LOGIN)
+  return o
+}
+const comChaves = (base) => async (m, c, corpo) => (c.endsWith('/api-keys?reveal=true') ? [{ type: 'publishable', api_key: 'P'.repeat(40) }, { type: 'secret', api_key: 'sb_secret_' + 'S'.repeat(40) }] : base(m, c, corpo))
+
+test('primeiro acesso: cria a conta do dono com o e-mail da licença (confirmada, sem senha, papel dono) e não repete', async () => {
+  const { raiz, cwd } = obraComLogin()
+  const criadas = []
+  const { d } = deps()
+  const n = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), emailDoDono: async () => ' Gui@Exemplo.com ', authSupabase: async (ref, m, c, corpo, chave) => { criadas.push({ ref, m, c, corpo, chave }); return { id: 'u1' } } })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  const e = n.estado('ponto')
+  assert.equal(e.fase, 'noar', JSON.stringify(e.erro))
+  assert.equal(e.passos.find((p) => p.id === 'acesso').estado, 'feito')
+  assert.deepEqual(e.acesso, { email: 'gui@exemplo.com', novo: true })
+  assert.equal(criadas.length, 1)
+  assert.deepEqual(criadas[0], { ref: 'abcdefghijklmnopqrst', m: 'POST', c: '/auth/v1/admin/users', corpo: { email: 'gui@exemplo.com', email_confirm: true, app_metadata: { papel: 'dono' } }, chave: 'sb_secret_' + 'S'.repeat(40) })
+  assert.ok(!('password' in criadas[0].corpo), 'o Atlas não define senha')
+  const registro = fs.readFileSync(path.join(cwd, '.atlas', 'no-ar.json'), 'utf8')
+  assert.ok(!registro.includes('sb_secret_'), 'a chave secreta nunca vai para arquivo')
+  // Colocar no ar de novo (ex.: depois de uma mudança): não cria de novo
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  assert.equal(criadas.length, 1)
+  assert.deepEqual(n.estado('ponto').acesso, { email: 'gui@exemplo.com', novo: true })
+})
+
+test('primeiro acesso: o e-mail já tinha conta (422) segue normal, sem erro', async () => {
+  const { raiz } = obraComLogin()
+  const { d } = deps()
+  const n = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), emailDoDono: async () => 'gui@exemplo.com', authSupabase: async () => { throw Object.assign(new Error('supabase-422'), { detalhe: 'email_exists' }) } })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  const e = n.estado('ponto')
+  assert.equal(e.fase, 'noar')
+  assert.deepEqual(e.acesso, { email: 'gui@exemplo.com', novo: false })
+})
+
+test('primeiro acesso: sistema sem entrada com senha pula; sem e-mail ou sem chave avisa, mas o sistema fica no ar', async () => {
+  { // sem login no código
+    const { raiz } = obra()
+    let chamou = false
+    const { d } = deps()
+    const n = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), emailDoDono: async () => 'a@b.com', authSupabase: async () => { chamou = true } })
+    await n.iniciar('ponto', 'ponto'); await n._esperar('ponto')
+    assert.equal(n.estado('ponto').passos.find((p) => p.id === 'acesso').estado, 'pulado')
+    assert.equal(chamou, false)
+  }
+  { // sem e-mail
+    const { raiz } = obraComLogin()
+    const { d } = deps()
+    const n = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), emailDoDono: async () => null, authSupabase: async () => ({}) })
+    await n.iniciar('ponto', 'ponto'); await n._esperar('ponto')
+    const e = n.estado('ponto')
+    assert.equal(e.fase, 'noar')
+    assert.equal(e.passos.find((p) => p.id === 'acesso').estado, 'atencao')
+    assert.ok(e.avisos.some((a) => /seu e-mail/.test(a)))
+  }
+  { // Supabase fora na hora de criar
+    const { raiz } = obraComLogin()
+    const { d } = deps()
+    const n = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), emailDoDono: async () => 'a@b.com', authSupabase: async () => { throw new Error('timeout') } })
+    await n.iniciar('ponto', 'ponto'); await n._esperar('ponto')
+    const e = n.estado('ponto')
+    assert.equal(e.fase, 'noar')
+    assert.equal(e.passos.find((p) => p.id === 'acesso').estado, 'atencao')
+    assert.equal(e.acesso, null)
+  }
+})
+
+test('chave secreta: só a de verdade (nunca a pública nem a mascarada)', () => {
+  assert.equal(chaveSecreta([{ type: 'publishable', api_key: 'P'.repeat(40) }]), null)
+  assert.equal(chaveSecreta([{ type: 'secret', api_key: 'sb_secret_••••••••••••••••••••••' }]), null)
+  assert.equal(chaveSecreta([{ name: 'anon', api_key: 'A'.repeat(40) }, { name: 'service_role', api_key: 'S'.repeat(40) }]), 'S'.repeat(40))
+})
+
+test('usaLogin: acha o Supabase Auth no código, ignora node_modules', () => {
+  const { cwd } = obra()
+  fs.mkdirSync(path.join(cwd, 'node_modules', 'x'), { recursive: true })
+  fs.writeFileSync(path.join(cwd, 'node_modules', 'x', 'i.js'), LOGIN)
+  assert.equal(usaLogin(cwd), false)
+  fs.mkdirSync(path.join(cwd, 'app'))
+  fs.writeFileSync(path.join(cwd, 'app', 'login.tsx'), LOGIN)
+  assert.equal(usaLogin(cwd), true)
+})
+
+test('pedirAuthSupabase: só <ref>.supabase.co/auth/v1/admin/users, chave no cabeçalho, erro sem e-mail', async () => {
+  const { pedirAuthSupabase } = require('./no-ar-rede.cjs')
+  const vistos = []
+  const enviar = async (o) => { vistos.push(o); return { status: 422, corpo: JSON.stringify({ error_code: 'email_exists', msg: 'gui@x.com já existe' }) } }
+  await assert.rejects(pedirAuthSupabase('abcdefghijklmnopqrst', 'POST', '/auth/v1/admin/users', { email: 'gui@x.com' }, 'sb_secret_x', { enviar }), (e) => e.message === 'supabase-422' && e.detalhe === 'email_exists')
+  assert.equal(vistos[0].host, 'abcdefghijklmnopqrst.supabase.co')
+  assert.equal(vistos[0].cabecalhos.apikey, 'sb_secret_x')
+  assert.ok(!vistos[0].caminho.includes('sb_secret'))
+  for (const [ref, m, c] of [['evil.com/x', 'POST', '/auth/v1/admin/users'], ['abcdefghijklmnopqrst', 'DELETE', '/auth/v1/admin/users'], ['abcdefghijklmnopqrst', 'POST', '/auth/v1/admin/users/1'], ['abcdefghijklmnopqrst', 'POST', '/rest/v1/perfis']]) {
+    await assert.rejects(pedirAuthSupabase(ref, m, c, {}, 'k', { enviar }))
+  }
+  assert.equal(vistos.length, 1)
+})
+
+test('licença: email() devolve o e-mail guardado no cofre (ou null)', async () => {
+  const { criarLicenca } = require('./licenca.cjs')
+  const com = criarLicenca({ cofre: cofreMem({ 'atlas/dispositivo': JSON.stringify({ token: 't', email: 'gui@exemplo.com' }) }), hashComputador: async () => 'h' })
+  assert.equal(await com.email(), 'gui@exemplo.com')
+  const sem = criarLicenca({ cofre: cofreMem(), hashComputador: async () => 'h' })
+  assert.equal(await sem.email(), null)
 })

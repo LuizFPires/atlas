@@ -120,6 +120,7 @@ const EXPLICACOES: Record<string, Explicacao> = {
   'sem-token-vercel': { houve: 'A sua conta da Vercel (onde o sistema fica publicado) não está ligada a este computador.', fazer: 'Religue a conta e tente de novo.', conta: 'vercel' },
   'vercel-link': { houve: 'A Vercel não aceitou ligar a obra à sua conta.', fazer: 'Religue a conta da Vercel e tente de novo.', conta: 'vercel' },
   'vercel-variaveis': { houve: 'A Vercel não aceitou as configurações do banco desta obra.', fazer: 'Religue a conta da Vercel e tente de novo.', conta: 'vercel' },
+  'vercel-bloqueado': { houve: 'A Vercel recusou publicar porque não reconheceu quem assinou as mudanças (o plano grátis só aceita o dono da conta). O Atlas já tentou publicar sem esse histórico e ela recusou de novo.', fazer: 'Toque em Tentar de novo daqui a alguns minutos. Se repetir, toque em Falar com o Atlas: não precisa mexer no GitHub.', conta: 'vercel' },
   'vercel-deploy': { houve: 'A Vercel não conseguiu montar o sistema. No plano grátis ela aceita até 100 publicações por dia.', fazer: 'Tente de novo (se a conta tiver sido desligada, religue antes); se repetir, toque em Falar com o Atlas.', conta: 'vercel' },
   'vercel-dominio': { houve: 'A Vercel não aceitou o seu domínio.', fazer: 'Confira se o domínio está ativo no Registro.br e tente de novo.' },
   'vercel-dns': { houve: 'A Vercel ainda não enxerga o seu domínio apontado para ela.', fazer: 'Mudanças no Registro.br levam até algumas horas para valer. Tente de novo mais tarde.' },
