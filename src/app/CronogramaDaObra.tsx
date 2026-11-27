@@ -80,7 +80,7 @@ export function CronogramaDaObra({ obra, painel, agora = () => new Date(), sonda
         <ol className="at-cr__etapas" aria-label="Etapas: previsto e realizado">
           {c.etapas.map((e) => (
             <li key={e.n} className={`at-cr__linha at-cr__linha--${e.status}`}>
-              <div className="at-cr__nome"><span className="at-cr__bola">{e.n}</span><span><b>{e.nome}</b><em>{e.status === 'entregue' ? 'Entregue' : e.status === 'andamento' ? `Em andamento · ${e.pct}%` : 'Ainda não começou'}</em></span></div>
+              <div className="at-cr__nome"><span className="at-cr__bola">{e.n}</span><span><b>{e.nome}</b><em>{e.status === 'entregue' ? (e.real?.antes ? 'Entregue antes de o Atlas começar a medir' : 'Entregue') : e.status === 'andamento' ? `Em andamento · ${e.pct}%` : 'Ainda não começou'}</em></span></div>
               <div className="at-cr__trilho">
                 {e.previsto && <span className="at-cr__barra at-cr__barra--previsto" style={{ left: x(e.previsto.inicio), width: w(e.previsto.inicio, e.previsto.fim) }} />}
                 {c.pausas.filter((p) => e.real && Date.parse(p.inicio) < (e.real.fim ? Date.parse(e.real.fim) : t) && (p.fim ? Date.parse(p.fim) : t) > Date.parse(e.real.inicio)).map((p) => <span key={p.inicio} className="at-cr__barra at-cr__barra--pausa" style={{ left: x(Math.max(Date.parse(p.inicio), Date.parse(e.real!.inicio))), width: w(Math.max(Date.parse(p.inicio), Date.parse(e.real!.inicio)), Math.min(p.fim ? Date.parse(p.fim) : t, e.real!.fim ? Date.parse(e.real!.fim) : t)) }} />)}

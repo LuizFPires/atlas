@@ -142,7 +142,16 @@ function calcularDesempenho(o) {
   const pct = (v) => r2((v / orcamento) * 100)
   const previstoSerie = Array.from({ length: 41 }, (_, k) => { const tt = inicio + ((previstoFim - inicio) * k) / 40; return { t: iso(tt), v: r2(suave((tt - inicio) / (previstoFim - inicio)) * 100) } })
   let soma = 0
-  const brutos = [{ t: inicio, v: 0 }, ...turnos.map((c) => ({ t: c.t, v: (soma += c.v) }))]
+  // Cada rodada gasta ao longo do tempo em que trabalhou (rampa do começo ao fim), não num salto no fim: uma rodada de 3 h não
+  // aparece como 3 h paradas e um degrau (27/11/2026).
+  const brutos = [{ t: inicio, v: 0 }]
+  for (const c of turnos) {
+    const ultimo = brutos[brutos.length - 1]
+    const comeco = Math.max(ultimo.t, c.t - Math.max(0, c.d))
+    if (comeco > ultimo.t && comeco < c.t) brutos.push({ t: comeco, v: soma })
+    soma += c.v
+    brutos.push({ t: Math.max(c.t, ultimo.t), v: soma })
+  }
   if (brutos[brutos.length - 1].t < agora) brutos.push({ t: agora, v: realizado }) // segue reta até agora: sem gasto, sem subir
   const realizadoSerie = reduzir(brutos).map((p) => ({ t: iso(p.t), v: pct(p.v) }))
   const fisicoPct = (pesoFeito / pesoTotal) * 100

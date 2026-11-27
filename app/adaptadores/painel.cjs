@@ -52,6 +52,31 @@ function pausasDoDiario(linhas) {
   return pausas
 }
 
+/**
+ * Histórico de verdade da obra (27/11/2026: "pegar desde o princípio, na criação da obra"): quando a construção começou e quando
+ * cada etapa foi entregue. Fontes, todas da própria obra: o diário ("O Atlas começou a trabalhar"), o modo escolhido ao começar,
+ * o registro de consumo das rodadas da linha e o git (merge "MN —" ou "docs(mN): medição"). Nada aqui é obrigatório.
+ */
+function historicoDaObra(cwd, linhasDiario = [], git = (args) => spawnSync('git', args, { cwd, encoding: 'utf8', timeout: 5000, windowsHide: true, env: envMinimo({ GIT_CONFIG_NOSYSTEM: '1' }) })) {
+  const inicios = []
+  for (const e of linhasDiario) if (e && e.tipo === 'info' && /começou a trabalhar/i.test(String(e.texto)) && Number.isFinite(Date.parse(e.em))) inicios.push(Date.parse(e.em))
+  try { const m = lerJson(path.join(cwd, '.atlas', 'modo.json')); if (m && Number.isFinite(Date.parse(m.escolhidoEm))) inicios.push(Date.parse(m.escolhidoEm)) } catch { /* sem modo */ }
+  try { for (const c of require('./retrato-obra.cjs').lerConsumo(cwd)) if (c && c.motivo && Number.isFinite(Date.parse(c.inicio))) inicios.push(Date.parse(c.inicio)) } catch { /* sem consumo */ }
+  const entregas = {}
+  try {
+    const r = git(['log', '--format=%cI%x09%s', '-n', '2000'])
+    if (r && r.status === 0) {
+      for (const l of String(r.stdout || '').split(/\r?\n/).reverse()) { // do mais velho para o mais novo: fica a 1ª entrega
+        const [quando, ...resto] = l.split('\t')
+        const assunto = resto.join('\t')
+        const m = /Merge pull request #\d+.*?\bM(\d{1,3})\b/.exec(assunto) || /^docs\(m(\d{1,3})\):\s*medi/i.exec(assunto)
+        if (m && Number.isFinite(Date.parse(quando)) && !entregas[Number(m[1])]) entregas[Number(m[1])] = new Date(Date.parse(quando)).toISOString()
+      }
+    }
+  } catch { /* sem git */ }
+  return { inicio: inicios.length ? new Date(Math.min(...inicios)).toISOString() : null, entregas }
+}
+
 function lerPlanoDoTexto(texto) {
   const ms = []
   let atual = null
@@ -305,7 +330,11 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
       if (kit && p.pct < 100) { try { const r = kit.calcularPrazo(cwd); if (r && r.status === 'estimado' && Number.isFinite(r.data)) terminoMs = r.data } catch { /* sem ritmo ainda */ } }
       const qtd = p.milestones.length
       const previstoMs = Math.max(1, Math.ceil(qtd / 4)) * 24 * 3600_000 // previsaoPorEtapas (plano Pro): o que o Atlas prometeu no começo
-      return crono.atualizar(cwd, p.milestones.map((m) => ({ n: m.n, titulo: nomeCurto(m.titulo), peso: m.peso, status: m.status, pct: m.pct })), { previstoMs, terminoMs, pausas: pausasDoDiario(diario ? diario.ler(cwd, 500) : []) })
+      const linhasDiario = diario ? diario.ler(cwd, 500) : []
+      // O histórico só é lido quando o cronograma ainda não o usou (nasce agora ou foi criado tarde por uma versão antiga).
+      let historico = null
+      try { const j = lerJson(path.join(cwd, '.atlas', 'cronograma.json')); if (!j || !j.historico) historico = historicoDaObra(cwd, linhasDiario) } catch { historico = historicoDaObra(cwd, linhasDiario) }
+      return crono.atualizar(cwd, p.milestones.map((m) => ({ n: m.n, titulo: nomeCurto(m.titulo), peso: m.peso, status: m.status, pct: m.pct })), { previstoMs, terminoMs, pausas: pausasDoDiario(linhasDiario), ...(historico ? { historico } : {}) })
     },
 
     /** Aba Desempenho (26/11/2026): curva S do consumo, ritmo de gasto, pausas previstas pela cota e término projetado.
@@ -323,7 +352,7 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
         etapas: p.milestones.map((m) => {
           const real = (crono.etapas || []).find((e) => e.n === m.n)?.real
           // Entregue no mesmo instante em que o cronograma nasceu = já estava pronta antes da construção (não gastou do registro).
-          return { n: m.n, peso: m.peso, status: m.status, pct: m.pct, ...(real && real.fim && real.fim === crono.inicio ? { antesDaObra: true } : {}) }
+          return { n: m.n, peso: m.peso, status: m.status, pct: m.pct, ...(real && real.fim && (real.antes || real.fim === crono.inicio) ? { antesDaObra: true } : {}) }
         }),
         consumo: require('./retrato-obra.cjs').lerConsumo(cwd), pausas: crono.pausas, plano: plano(), agora: agora(),
         // versão 2 (27/11/2026): a 1 podia ter fixado um orçamento minúsculo com etapas feitas antes de medir; é refeita.
@@ -449,4 +478,4 @@ function responde(porta, nonce = null) {
   })
 }
 
-module.exports = { avancoFino, parcialDaEtapa, kitDirDoApp, criarPainel, portaLivre, responde, lerPlanoDoTexto, paradaDeOcorrencias, textoRestante, textoPrevisao, RE_ENDERECO }
+module.exports = { historicoDaObra, avancoFino, parcialDaEtapa, kitDirDoApp, criarPainel, portaLivre, responde, lerPlanoDoTexto, paradaDeOcorrencias, textoRestante, textoPrevisao, RE_ENDERECO }

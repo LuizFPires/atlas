@@ -119,3 +119,13 @@ test('etapas entregues ANTES de a medição começar não entram na conta (caso 
   assert.ok(Math.abs(d2.ritmo) < 0.05, `ritmo no previsto com a própria medida (${d2.ritmo})`)
   assert.ok(d2.realizadoPct > 5 && d2.realizadoPct < 20, `consumo ~1/8 do orçamento (${d2.realizadoPct}%)`)
 })
+
+test('rodada longa: o gasto sobe ao longo do tempo em que ela trabalhou (rampa), sem degrau no fim', () => {
+  const agora = T0 + 5 * H
+  const consumo = [{ inicio: iso(T0 + H), fim: iso(T0 + 4 * H), custoUsd: 30, duracaoMs: 3 * H }]
+  const d = calcularDesempenho(base({ agora: new Date(agora), etapas: etapas(1, 0), consumo, orcamentoGuardado: 100 }))
+  const pts = d.serie.realizado.map((p) => [Date.parse(p.t), p.v])
+  assert.deepEqual(pts.find(([t]) => t === T0 + H), [T0 + H, 0], 'começa a subir quando a rodada começou')
+  assert.deepEqual(pts.find(([t]) => t === T0 + 4 * H), [T0 + 4 * H, 30])
+  for (let i = 1; i < pts.length; i++) assert.ok(pts[i][0] >= pts[i - 1][0] && pts[i][1] >= pts[i - 1][1])
+})
