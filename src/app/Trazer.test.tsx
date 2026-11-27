@@ -83,7 +83,18 @@ test('escolher o .zip antes do nome: abre e confere o arquivo, e guarda na obra 
   await user.click(seguir)
   expect(await screen.findByText(/recebido · 2,3 MB/)).toBeInTheDocument()
   expect(obras.criadas).toContain('agenda-do-ze')
-  expect(onConcluir).toHaveBeenCalled()
+  // Luiz, 26/11/2026: "Abrir no Atlas e ajustar" voltava para a tela inicial. Agora entrega a obra para seguir nas telas dela.
+  expect(onConcluir).toHaveBeenCalledWith({ pasta: 'agenda-do-ze', nome: 'Agenda do Zé' })
+})
+
+test('arquivo pequeno mostra o tamanho em KB (não "0,0 MB")', async () => {
+  const user = userEvent.setup()
+  const base = criarImportarFixture()
+  const importar = { ...base, escolherZip: async () => { const z = await base.escolherZip(); return z && { ...z, tamanho: 18_432 } } }
+  render(<TemaProvider><TrazerPrototipo obras={criarObrasFixture()} importar={importar} onVoltar={() => {}} /></TemaProvider>)
+  await user.type(screen.getByLabelText(/Nome da obra/), 'Seu Lino')
+  await user.click(screen.getByRole('button', { name: /prototipo-atlas.zip: escolher arquivo/ }))
+  expect(await screen.findByText(/recebido · 18 KB/)).toBeInTheDocument()
 })
 
 test('um .zip com programa dentro é recusado com recado calmo e nada fica "recebido"', async () => {

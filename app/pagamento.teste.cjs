@@ -24,6 +24,6 @@ test('a lista de pagamento não se mistura com a dos sites oficiais', () => {
 test('a ponte do servidor aceita as rotas do contador e da compra', () => {
   assert.ok(ROTAS.includes('/licenca/resumo'))
   assert.ok(ROTAS.includes('/pagamento/checkout'))
-  // 6 rotas da ativação/compra + 5 do celular (M33, testadas em servidor.teste.cjs).
-  assert.equal(ROTAS.length, 11)
+  // 6 rotas da ativação/compra + 5 do celular (M33) + o aviso no celular (M41), testadas em servidor.teste.cjs.
+  assert.equal(ROTAS.length, 12)
 })

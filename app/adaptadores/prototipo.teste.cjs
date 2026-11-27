@@ -546,3 +546,35 @@ test('economia: os arquivos da obra (design system, relato, planilha) vão junto
   assert.match(lote, /já estão aqui/)
   assert.match(pedidoDe(chamadas[2]), /## Cores/)
 })
+
+// Luiz, 26/11/2026: protótipo trazido de outra IA ("Abrir no Atlas e ajustar" voltava para a tela inicial e as telas não apareciam).
+// O .zip fica em <obra>\prototipo; adotar vira a versão 1 do protótipo, com os links entre telas, e leva os textos para a obra.
+test('adotar o protótipo trazido: telas viram a versão 1 (links entre telas funcionando) e os textos vão para a obra', async () => {
+  const { raiz, p } = montar()
+  const proto = path.join(raiz, 'obra', 'prototipo')
+  fs.mkdirSync(path.join(proto, 'telas'), { recursive: true })
+  fs.writeFileSync(path.join(proto, 'telas', '01-inicio.html'), '<html><body><h1>Início</h1><a href="02-marcar-horario.html">Marcar</a> <a href="https://fora.com">fora</a></body></html>')
+  fs.writeFileSync(path.join(proto, 'telas', '02-marcar-horario.html'), '<html><body><aside>menu</aside><a href="./01-inicio.html#topo">Voltar</a></body></html>')
+  fs.writeFileSync(path.join(proto, 'design-system.md'), '# Cores')
+  fs.writeFileSync(path.join(proto, 'telas.md'), '# Telas')
+  fs.writeFileSync(path.join(proto, 'regras.md'), '# Regras')
+  const e = await p.adotarImportado('obra')
+  assert.equal(e.versoes.length, 1)
+  const t = e.versoes[0].telas
+  assert.deepEqual(t.map((x) => x.id), ['inicio', 'marcar-horario'])
+  assert.equal(t[1].nome, 'Marcar horario')
+  assert.match(t[0].html, /href="#tela-marcar-horario"/)
+  assert.match(t[1].html, /href="#tela-inicio"/)
+  assert.equal(t[1].aparelho, 'computador') // tem menu lateral
+  for (const n of ['design-system.md', 'telas.md', 'regras.md']) assert.ok(fs.existsSync(path.join(raiz, 'obra', n)), n)
+  // de novo: não cria outra versão nem sobrescreve os textos
+  fs.writeFileSync(path.join(raiz, 'obra', 'regras.md'), '# minhas')
+  const de2 = await p.adotarImportado('obra')
+  assert.equal(de2.versoes.length, 1)
+  assert.equal(fs.readFileSync(path.join(raiz, 'obra', 'regras.md'), 'utf8'), '# minhas')
+})
+
+test('adotar sem telas trazidas: recusa com código explicado', async () => {
+  const { p } = montar()
+  await assert.rejects(p.adotarImportado('obra'), /sem-telas-trazidas/)
+})

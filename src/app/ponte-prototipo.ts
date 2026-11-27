@@ -50,6 +50,8 @@ export interface EstadoProto {
 export interface PontePrototipo {
   /** O que já existe para a obra (vazio se ainda não foi desenhado). */
   estado(pasta: string): Promise<EstadoProto>
+  /** Protótipo trazido de outra IA (.zip em <obra>/prototipo): vira a versão 1, com os links entre as telas. Já tem versão: não refaz. */
+  adotarImportado?(pasta: string): Promise<EstadoProto>
   /** Pede ao Claude as telas no estilo escolhido: cria a versão 1. */
   /** estilo null = a obra já tem identidade própria: o Claude segue o design-system.md da pasta. */
   /** relato = o que o cliente contou (falando) sobre o sistema: base de TODAS as telas, sem limite fixo de quantidade. */
@@ -247,6 +249,7 @@ export function criarPrototipoFixture(raiz = 'C:\\Users\\Zé\\Atlas\\Obras'): Pr
     escritos,
     linksGerados,
     async estado(pasta) { return copia(obras.get(pasta)?.estado ?? { versoes: [], atual: 0 }) },
+    async adotarImportado(pasta) { return copia(obras.get(pasta)?.estado ?? { versoes: [], atual: 0 }) },
     async mapear(pasta, obraNome) {
       const salvo = mapas.get(pasta)
       if (salvo) return salvo.map((t) => ({ ...t }))

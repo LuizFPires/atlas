@@ -408,7 +408,14 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   }
   // Demais telas (F05+ vêm nos próximos milestones): por ora cai em Obras.
   let conteudo: ReactNode
-  if (ativo === 'obras' && fluxo === 'trazer') conteudo = <TrazerPrototipo obras={ponteObras} importar={ponteImportar} onVoltar={() => setFluxo('lista')} onConcluir={() => setFluxo('lista')} />
+  if (ativo === 'obras' && fluxo === 'trazer') conteudo = <TrazerPrototipo obras={ponteObras} importar={ponteImportar} onVoltar={() => setFluxo('lista')} onConcluir={async ({ pasta, nome }) => {
+    // Luiz (26/11/2026): antes voltava para a tela inicial. Agora o protótipo trazido vira a versão 1 e a obra segue nas telas.
+    await pontePrototipo.adotarImportado?.(pasta)
+    setObraAtual({ nome, pasta })
+    setEstiloEscolhido(null)
+    setAlcancada('telas')
+    setFluxo('telas')
+  }} />
   else if (ativo === 'obras' && fluxo === 'estilo' && obraAtual) conteudo = <Estilo obra={obraAtual} arquivos={ponteArquivos} estilo={ponteEstilo} onAvancar={ORDEM_ETAPAS.indexOf(alcancada) > 1 ? () => setFluxo('batismo') : undefined} onVoltar={() => setFluxo(relatoDaObra !== null ? 'ideia' : 'lista')} onConcluir={(r) => { setEstiloEscolhido(r.estilo); void pontePrototipo.pintar?.(obraAtual.pasta, obraAtual.nome, r.estilo).catch(() => {}); setFluxo('batismo') }} />
   else if (ativo === 'obras' && fluxo === 'telas' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setFluxo('batismo')} onConcluir={() => setFluxo('contas')} />
   else if (ativo === 'obras' && fluxo === 'batismo' && obraAtual) conteudo = <Batismo obra={obraAtual} batismo={ponteBatismo} nomes={ponteNomes} arquivos={ponteArquivos} onVoltar={() => setFluxo('estilo')} onConcluir={() => setFluxo('telas')} />
