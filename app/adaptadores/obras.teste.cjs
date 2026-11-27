@@ -72,3 +72,10 @@ test('situação: protótipo trazido de outra IA (prototipo/telas/*.html) conta 
   const o = criarObras({ raiz })
   assert.equal((await o.situacao('seu-lino')).prototipo, true)
 })
+
+test('listar: pastas escondidas (ex.: o .git guardado durante a publicação) não viram obra', async () => {
+  const { raiz, o } = montar()
+  fs.mkdirSync(path.join(raiz, 'ponto'))
+  fs.mkdirSync(path.join(raiz, '.atlas-git-pausa-ponto'))
+  assert.deepEqual(await o.listar(), ['ponto'])
+})

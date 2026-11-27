@@ -24,6 +24,14 @@ function enderecoDaApi(bruto) {
 /** `deps`: { cofre, hashComputador (async () => hex), api (string|null), buscar? (fetch) }. */
 function criarLicenca({ cofre, hashComputador, api = process.env.ATLAS_API_URL, buscar = globalThis.fetch, esperar = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
   return {
+    /** O e-mail da licença (o do dono): para criar o acesso dele ao sistema que publicou. null se não houver. */
+    async email() {
+      try {
+        const bruto = await cofre.ler(CHAVE_COFRE)
+        const g = bruto ? JSON.parse(bruto) : null
+        return g && typeof g.email === 'string' && g.email ? g.email : null
+      } catch { return null }
+    },
     async verificar() {
       const base = enderecoDaApi(api)
       if (!base || typeof buscar !== 'function') return { ok: false, motivo: 'indisponivel' }

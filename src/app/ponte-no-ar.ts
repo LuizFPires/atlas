@@ -2,7 +2,7 @@ import { explicarTrava } from './explicar-trava'
 // Ponte do "Colocar no ar com um clique" (M56; telas prototipo/caminho-novo/PB1Publicar … PB5NoAr).
 // O processo principal (app/adaptadores/no-ar.cjs) faz tudo nas contas do cliente; a tela só acompanha.
 
-export type IdPassoNoAr = 'vistoria' | 'banco' | 'publicar' | 'github' | 'teste' | 'celular'
+export type IdPassoNoAr = 'vistoria' | 'banco' | 'publicar' | 'github' | 'teste' | 'acesso' | 'celular'
 export type EstadoPassoNoAr = 'falta' | 'agora' | 'feito' | 'pulado' | 'atencao' | 'erro'
 export type FaseNoAr = 'parado' | 'rodando' | 'vistoria' | 'corrigindo' | 'noar' | 'erro'
 export type SituacaoNomeNoAr = 'livre' | 'ocupado' | 'seu' | 'incerto' | 'invalido'
@@ -18,6 +18,8 @@ export interface EstadoNoAr {
   /** `detalhe`: resumo técnico do erro (sem segredos), quando a ferramenta disse algo útil. */
   erro: { passo: IdPassoNoAr; motivo: string; detalhe?: string } | null
   avisos: string[]
+  /** A conta de dono que o Atlas criou no sistema (e-mail da licença). A senha o dono cria em "Esqueci minha senha". */
+  acesso?: { email: string; novo: boolean } | null
   /** A cota do plano do Claude acabou: a obra espera renovar sozinha e continua de onde parou (não é erro). */
   esperandoCota?: boolean
   /** O que a etapa de agora está fazendo (PG1Progresso). pct = contagem real; null = a tela anda pelo tempo de costume (s). */
@@ -31,7 +33,7 @@ export interface EstadoNoAr {
 export interface SubNoAr { texto: string; pct: number | null; costume: [number, number] | null; inicio: number; noticia: number }
 
 /** Tempo de costume de cada etapa (segundos), para o "faltam ~N min". */
-export const COSTUME_NO_AR: Record<IdPassoNoAr, number> = { vistoria: 120, banco: 240, publicar: 180, github: 20, teste: 20, celular: 1 }
+export const COSTUME_NO_AR: Record<IdPassoNoAr, number> = { vistoria: 120, banco: 240, publicar: 180, github: 20, teste: 20, acesso: 10, celular: 1 }
 
 export interface PonteNoAr {
   readonly indisponivel?: boolean
@@ -52,6 +54,7 @@ export const PASSOS_NO_AR: { id: IdPassoNoAr; titulo: string; sub: string }[] = 
   { id: 'publicar', titulo: 'Publicando na sua conta Vercel', sub: 'Montando o sistema e ligando ao banco.' },
   { id: 'github', titulo: 'Publicação só com a sua aprovação', sub: 'Mudança pedida depois só entra no ar quando você clicar em Colocar no ar.' },
   { id: 'teste', titulo: 'Teste de verdade no endereço', sub: 'O Atlas abre o sistema e confere que ele responde.' },
+  { id: 'acesso', titulo: 'Seu acesso de dono', sub: 'O Atlas cria a sua conta no sistema com o seu e-mail.' },
   { id: 'celular', titulo: 'Pronto para instalar no celular', sub: 'Ícone, nome e o QR code para a equipe.' },
 ]
 

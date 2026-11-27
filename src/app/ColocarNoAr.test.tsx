@@ -235,7 +235,7 @@ test('publicando: sem bolinha girando; a etapa de agora tem anel, barra com o qu
   const T = Date.now()
   const estado: EstadoNoAr = {
     fase: 'rodando', nome: 'pontoampla', achados: [], endereco: null, erro: null, avisos: [],
-    passos: [{ id: 'vistoria', estado: 'feito' }, { id: 'banco', estado: 'feito' }, { id: 'publicar', estado: 'agora' }, { id: 'github', estado: 'falta' }, { id: 'teste', estado: 'falta' }, { id: 'celular', estado: 'falta' }],
+    passos: [{ id: 'vistoria', estado: 'feito' }, { id: 'banco', estado: 'feito' }, { id: 'publicar', estado: 'agora' }, { id: 'github', estado: 'falta' }, { id: 'teste', estado: 'falta' }, { id: 'acesso', estado: 'falta' }, { id: 'celular', estado: 'falta' }],
     sub: { texto: 'Gravando o endereço do banco · 1 de 2', pct: 10, costume: null, inicio: T - 5000, noticia: T - 2000 },
     duracoes: { vistoria: 108_000, banco: 125_000 },
     diario: [{ hora: '2026-11-27T08:40:31Z', texto: 'Banco pronto.' }, { hora: '2026-11-27T08:40:58Z', texto: 'Endereço do banco gravado na Vercel.' }],
@@ -247,7 +247,7 @@ test('publicando: sem bolinha girando; a etapa de agora tem anel, barra com o qu
   expect(screen.getByText('Gravando o endereço do banco · 1 de 2')).toBeInTheDocument()
   expect(screen.getByText(/Última notícia da Vercel há/)).toBeInTheDocument()
   expect(screen.getByText('1 MIN 48 S')).toBeInTheDocument()
-  expect(screen.getByRole('progressbar', { name: 'Avanço total' })).toHaveAttribute('aria-valuenow', '35')
+  expect(screen.getByRole('progressbar', { name: 'Avanço total' })).toHaveAttribute('aria-valuenow', '30') // 2 de 7 etapas + 10% da terceira
   expect(screen.getByText('05:40:58')).toBeInTheDocument()
   expect(container.querySelector('[class*="gira"]')).toBeNull()
   await user.click(screen.getByRole('button', { name: 'Painel de acompanhamento' }))
@@ -257,4 +257,19 @@ test('publicando: sem bolinha girando; a etapa de agora tem anel, barra com o qu
   await user.click(screen.getByRole('button', { name: '← Voltar para a obra' }))
   expect(screen.queryByRole('region', { name: 'Painel de acompanhamento' })).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Painel de acompanhamento' })).toBeInTheDocument()
+})
+
+test('no ar com o acesso de dono criado: mostra o e-mail e como criar a senha (Esqueci minha senha)', async () => {
+  const noar: EstadoNoAr = { fase: 'noar', nome: 'pontoampla', passos: [], achados: [], endereco: 'https://pontoampla.vercel.app', erro: null, avisos: [], acesso: { email: 'gui@exemplo.com', novo: true } }
+  montar({ ...criarNoArFixture(), estado: async () => noar })
+  const card = await screen.findByRole('region', { name: 'Seu acesso' })
+  expect(card).toHaveTextContent('gui@exemplo.com')
+  expect(card).toHaveTextContent('Esqueci minha senha')
+  expect(card).toHaveTextContent('criar a sua senha')
+})
+
+test('a Vercel bloqueou pelo autor das mudanças: explica sem mandar mexer no GitHub', () => {
+  const e = explicarErro('vercel-bloqueado')
+  expect(e.frase).toMatch(/não reconheceu quem assinou/)
+  expect(e.fazer).toMatch(/não precisa mexer no GitHub/)
 })

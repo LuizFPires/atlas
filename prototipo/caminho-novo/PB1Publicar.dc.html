@@ -141,6 +141,12 @@
       </div>
       <span style="font-size:13px;line-height:1.5;color:#8E968C">Daqui pra frente, toda mudança que você pedir no pós-obra entra no ar sozinha, depois dos testes.</span>
      </section>
+     <!-- Primeiro acesso do dono (Guilherme, 27/11/2026): o Atlas cria a conta com o e-mail da licença; a senha o dono cria em "Esqueci minha senha". -->
+     <section aria-label="Seu acesso" style="display:flex;flex-direction:column;gap:6px;padding:16px 20px;border-radius:18px;background:#1E2125;border:1px solid #2C3036">
+      <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">SEU ACESSO DE DONO</span>
+      <b style="font-size:16px">voce@seuemail.com.br</b>
+      <span style="font-size:14px;line-height:1.5;color:#B4BBB2">Na primeira vez, abra o sistema, toque em <b style="color:#EDEFEA">“Esqueci minha senha”</b> e use este e-mail para criar a sua senha. Depois você convida a sua equipe por dentro do sistema.</span>
+     </section>
      <section style="display:flex;flex-direction:column;gap:10px;padding:18px 20px;border-radius:18px;background:#191B1E;border:1px solid #2C3036">
       <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;font-size:11px;color:#8E968C">PRÓXIMOS PASSOS · SÓ SE VOCÊ QUISER</span>
       <a href="PB6Dominio.dc.html" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:#1E2125;color:#EDEFEA"><span style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">Usar meu domínio</b><span style="font-size:13px;color:#8E968C">pontoampla.com.br no lugar do .vercel.app</span></span><span style="margin-left:auto;color:#C6F135">→</span></a>
@@ -273,6 +279,7 @@ class Component extends DCLogic {
       ['Publicando na sua conta Vercel', 'Montando o sistema e ligando ao banco.', 'agora'],
       ['Publicação só com a sua aprovação', 'Mudança pedida depois só entra no ar quando você clicar em Colocar no ar.', 'falta'],
       ['Teste de verdade no endereço', 'O Atlas usa o sistema como um funcionário: entra, bate o ponto, confere.', 'falta'],
+      ['Seu acesso de dono', 'O Atlas cria a sua conta no sistema com o seu e-mail.', 'falta'],
       ['Pronto para instalar no celular', 'Ícone, nome e o QR code para a equipe.', 'falta']
     ].map(([titulo, sub, e]) => ({ titulo, sub, marca: e === 'feito' ? '✓' : e === 'agora' ? '◌' : '', anim: e === 'agora' ? 'pb-gira' : '',
       cor: e === 'falta' ? '#8E968C' : '#EDEFEA',

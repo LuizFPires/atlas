@@ -156,7 +156,7 @@ const casos = criarCasos({ cofre, hashComputador: async () => hash() })
 const publicar = criarPublicar({ raiz: obras.raiz(), shell, cofre })
 // Colocar no ar com um clique (M56): contas do cliente já ligadas (contas-cli), Claude só leitor na vistoria, correções pela linha da obra.
 const { criarNoAr } = require('./adaptadores/no-ar.cjs')
-const { pedirApiSupabase, sondarSite, sondarDominio } = require('./adaptadores/no-ar-rede.cjs')
+const { pedirApiSupabase, pedirAuthSupabase, sondarSite, sondarDominio } = require('./adaptadores/no-ar-rede.cjs')
 const noAr = criarNoAr({
   raiz: obras.raiz(), cofre,
   vercel: (args, o = {}) => contasCli.rodarFerramenta('vercel', args, o),
@@ -164,6 +164,8 @@ const noAr = criarNoAr({
   supabase: async (args, o = {}) => { await garantirFerramentas(['supabase']); return contasCli.rodarFerramenta('supabase', args, o) },
   git: (args, { cwd } = {}) => rodarProcesso('git', args, { env: envMinimo({ GIT_CONFIG_NOSYSTEM: '1' }), cwd, timeoutMs: 15_000 }),
   apiSupabase: (metodo, caminho, corpo, token) => pedirApiSupabase(metodo, caminho, corpo, token),
+  authSupabase: (ref, metodo, caminho, corpo, chave) => pedirAuthSupabase(ref, metodo, caminho, corpo, chave),
+  emailDoDono: () => licenca.email(),
   sondar: (url) => sondarSite(url),
   perguntar: (pasta, pedido) => disparo.perguntar(pasta, pedido, { permitirGit: true, tipo: 'vistoria' }),
   linhaRodando: (pasta) => construcao.linha.rodando(pasta),

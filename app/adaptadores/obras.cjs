@@ -35,7 +35,7 @@ function criarObras({ raiz = raizPadrao(), shell, pararLinha } = {}) {
     raiz: () => raiz,
     async listar() {
       garantirRaiz()
-      return fs.readdirSync(raiz, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.isSymbolicLink()).map((d) => d.name)
+      return fs.readdirSync(raiz, { withFileTypes: true }).filter((d) => d.isDirectory() && !d.isSymbolicLink() && !d.name.startsWith('.')).map((d) => d.name)
     },
     async criarSubpasta(nome) {
       garantirRaiz()
