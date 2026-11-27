@@ -94,6 +94,7 @@ const EXPLICACOES: Record<string, Explicacao> = {
   'muitos-links': { houve: 'A pasta tem atalhos demais.', fazer: 'Copie os arquivos de verdade para uma pasta e mande essa pasta.' },
   'muitas-entradas': { houve: 'A pasta tem arquivos demais para trazer de uma vez.', fazer: 'Mande só a parte que importa (por exemplo, a pasta do projeto, sem backups).' },
   'precisa-adaptar': { houve: 'Esse sistema precisa ser adaptado antes de ser vendido para outras empresas.', fazer: 'Confirme a adaptação na tela de lançamento.' },
+  'sem-telas-trazidas': { houve: 'O .zip chegou, mas não tem nenhuma tela (arquivos .html na pasta telas).', fazer: 'Peça para a outra IA mandar de novo o prototipo-atlas.zip com a pasta telas/ e uma tela por arquivo .html. Depois traga o novo .zip numa obra nova.' },
   'nao-validou': { houve: 'Não consegui conferir os arquivos trazidos.', fazer: 'Confira se a pasta ainda existe e se não está aberta em outro programa, e tente de novo.' },
   'nao-gravou': { houve: 'Não consegui gravar os arquivos na pasta da obra.', fazer: 'Confira se o disco não está cheio e se a pasta Atlas › Obras existe, e tente de novo.' },
   'extrair': { houve: 'Não consegui abrir um arquivo que o Atlas baixou.', fazer: 'Confira a internet e tente de novo; o download recomeça do zero.' },

@@ -63,3 +63,12 @@ test('situação: obra no ar traz o endereço e o dia (o domínio próprio no ar
   escrever('lixo', 'no-ar.json', { endereco: '<script>' })
   assert.equal((await o.situacao('lixo')).noAr, undefined)
 })
+
+// Luiz, 26/11/2026: obra que recebeu um protótipo de outra IA (telas em prototipo/telas, ainda sem versão) continua nas telas.
+test('situação: protótipo trazido de outra IA (prototipo/telas/*.html) conta como protótipo', async () => {
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'obras-'))
+  fs.mkdirSync(path.join(raiz, 'seu-lino', 'prototipo', 'telas'), { recursive: true })
+  fs.writeFileSync(path.join(raiz, 'seu-lino', 'prototipo', 'telas', '01-inicio.html'), '<h1>oi</h1>')
+  const o = criarObras({ raiz })
+  assert.equal((await o.situacao('seu-lino')).prototipo, true)
+})

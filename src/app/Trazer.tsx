@@ -12,10 +12,11 @@ interface Props {
   importar: PonteImportar
   onVoltar: () => void
   /** Depois de conferido. A tela de ajustar o protótipo (F07) é do M16; até lá volta às obras. */
-  onConcluir?: () => void
+  /** Pacote guardado na obra: segue para as telas dela (antes voltava para a tela inicial; Luiz, 26/11/2026). */
+  onConcluir?: (obra: { pasta: string; nome: string }) => void | Promise<void>
 }
 
-const MB = (n: number) => `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} MB`
+const MB = (n: number) => (n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} MB`)
 
 const recadoDoErro = (e: unknown) => {
   switch (e instanceof Error ? e.message : '') {
@@ -92,13 +93,16 @@ export function TrazerPrototipo({ obras, importar, onVoltar, onConcluir }: Props
   }
 
   const seguir = async () => {
-    if (!recebido && pendente && zip) {
+    let r = recebido
+    if (!r && pendente && zip) {
       if (!nome.trim()) { setErro('Escreva o nome da obra primeiro. Pode ser o nome do seu sistema.'); return }
       setErro('')
       setOcupado(true)
-      try { await guardar(zip) } catch (e) { setErro(recadoDoErro(e)); return } finally { setOcupado(false) }
+      try { r = await guardar(zip) } catch (e) { setErro(recadoDoErro(e)); return } finally { setOcupado(false) }
     }
-    if (onConcluir) onConcluir(); else onVoltar()
+    if (!onConcluir || !r) { onVoltar(); return }
+    setOcupado(true)
+    try { await onConcluir({ pasta: r.pasta, nome: nome.trim() }) } catch (e) { setErro(textoDaTrava(e, 'Não consegui abrir as telas trazidas.')) } finally { setOcupado(false) }
   }
 
   const conferencia = recebido ? conferirPacote(recebido, link) : []

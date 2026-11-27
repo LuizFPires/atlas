@@ -367,6 +367,7 @@ handle('atlas:estilo:materializar', (pasta, origem) => estilo.materializar(Strin
 
 // Protótipo (F07): o Claude devolve as telas, o app grava versões imutáveis em <obra>/prototipo/versoes/vNNN; desfazer = ponteiro.
 handle('atlas:prototipo:estado', (pasta) => prototipo.estado(String(pasta)))
+handle('atlas:prototipo:adotarImportado', (pasta) => prototipo.adotarImportado(String(pasta)))
 handle('atlas:prototipo:desenhar', (pasta, nome, estilo, relato) => prototipo.desenhar(String(pasta), String(nome), estilo, String(relato ?? '')))
 handle('atlas:prototipo:ajustar', (pasta, pedido) => prototipo.ajustar(String(pasta), String(pedido)))
 handle('atlas:prototipo:voltar', (pasta, numero) => prototipo.voltar(String(pasta), Number(numero)))

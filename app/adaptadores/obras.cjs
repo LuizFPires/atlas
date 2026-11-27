@@ -57,7 +57,8 @@ function criarObras({ raiz = raizPadrao(), shell, pararLinha } = {}) {
       const existe = (...p) => { try { return fs.lstatSync(caminhoSeguro(raiz, String(pasta), ...p)).isFile() } catch { return false } }
       const s = {
         estilo: nomes().some((n) => /^design-system(-\d+)?\.md$/i.test(n)),
-        prototipo: nomes('prototipo', 'versoes').length > 0,
+        // Também o protótipo trazido de outra IA (prototipo/telas/*.html), antes de virar versão (Luiz, 26/11/2026).
+        prototipo: nomes('prototipo', 'versoes').length > 0 || nomes('prototipo', 'telas').some((n) => /\.html?$/i.test(n)),
         marca: nomes('marca').some((n) => /^marca(-\d+)?\.md$/i.test(n)),
         plano: existe('PLAN.md'),
       }

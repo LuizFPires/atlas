@@ -385,8 +385,57 @@ function criarPrototipo({ raiz, disparo }) {
     try { return await fn() } finally { ocupadas.delete(pasta) }
   }
 
+  /**
+   * Protótipo trazido de outra IA (Luiz, 26/11/2026): o .zip fica em <obra>\prototipo (importar.cjs). Adotar = virar a versão 1
+   * do protótipo do Atlas: cada telas/<nome>.html vira uma tela (id pelo nome do arquivo, sem o número da frente), os links entre
+   * as telas ("02-agenda.html") viram "#tela-agenda" e quem tem menu lateral é de computador. design-system.md, telas.md e regras.md
+   * vão para a raiz da obra (é onde o resto do caminho lê), sem sobrescrever o que já existe. Já tem versão: não faz de novo.
+   * O HTML é DADO: só é guardado; nunca é lido como instrução nem executado.
+   */
+  function adotarImportado(pasta) {
+    pasta = String(pasta)
+    pastaDaObra(raiz, pasta)
+    const estado = ler(pasta)
+    if (estado.versoes.length) return estado
+    let arquivos
+    try { arquivos = fs.readdirSync(caminhoSeguro(raiz, pasta, 'prototipo', 'telas')).filter((n) => /\.html?$/i.test(n)).sort() } catch { arquivos = [] }
+    const idDe = (arq) => {
+      const base = arq.replace(/\.html?$/i, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      const sem = base.replace(/^\d+[-_ .]*/, '') || base
+      return sem.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'tela'
+    }
+    const ids = new Map()
+    for (const arq of arquivos.slice(0, MAX_TELAS_TOTAL)) {
+      let id = idDe(arq)
+      for (let k = 2; [...ids.values()].includes(id); k++) id = `${idDe(arq)}-${k}`
+      ids.set(arq, id)
+    }
+    const telas = []
+    for (const [arq, id] of ids) {
+      let html = lerTexto(caminhoSeguro(raiz, pasta, 'prototipo', 'telas', arq), MAX_HTML)
+      if (html === null) continue
+      // Links entre as telas: "02-agenda.html", "./02-agenda.html#x" -> "#tela-agenda" (o protótipo navega por âncoras).
+      html = html.replace(/(\shref\s*=\s*)(["'])(?:\.\/)?([^"'#?\/]+\.html?)(?:[#?][^"']*)?\2/gi, (tudo, pre, q, alvo) => {
+        const destino = [...ids.entries()].find(([a]) => a.toLowerCase() === alvo.toLowerCase())
+        return destino ? `${pre}${q}#tela-${destino[1]}${q}` : tudo
+      })
+      const nome = id.replace(/-/g, ' ').replace(/^./, (c) => c.toLocaleUpperCase('pt-BR'))
+      const computador = /<aside\b|sidebar|min-width:\s*(?:7[6-9]\d|[89]\d\d|\d{4,})px/i.test(html)
+      telas.push({ id, nome, html, aparelho: computador ? 'computador' : 'celular' })
+    }
+    if (!telas.length) throw new Error('sem-telas-trazidas')
+    for (const nome of ['design-system.md', 'telas.md', 'regras.md']) {
+      const texto = lerTexto(caminhoSeguro(raiz, pasta, 'prototipo', nome), 200_000)
+      if (texto === null) continue
+      try { criarArquivoExclusivo(caminhoSeguro(raiz, pasta, nome), texto) } catch { /* já existe: fica o da obra */ }
+    }
+    gravarVersao(pasta, 'Protótipo trazido de outra IA', telas)
+    return ler(pasta)
+  }
+
   return {
     async estado(pasta) { return ler(String(pasta)) },
+    async adotarImportado(pasta) { return adotarImportado(pasta) },
 
     /** Caminho novo, parte 1 (logo depois da ideia, em segundo plano): grava o relato e o mapa de telas em prototipo/mapa.json.
      *  Mapa já salvo (ou protótipo já desenhado) não é refeito. Chamado de novo enquanto roda: devolve o mesmo trabalho. */
