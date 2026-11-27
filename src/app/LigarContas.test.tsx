@@ -36,6 +36,19 @@ test('Supabase: a pessoa cola a chave; formato errado explica com calma; certo f
   expect(await screen.findByText('Ligado')).toBeInTheDocument()
 })
 
+test('Supabase: sem internet na conferência, não diz que a chave é ruim', async () => {
+  const f = criarLigarContasFixture()
+  f.chaveSupabase = async () => ({ ok: false, motivo: 'sem-internet' })
+  montar(f)
+  await espera()
+  await userEvent.click(screen.getByRole('button', { name: 'Ligar o Supabase' }))
+  await userEvent.type(screen.getByLabelText('Chave do Supabase'), 'sbp_' + 'a'.repeat(40))
+  await userEvent.click(screen.getByRole('button', { name: 'Pronto' }))
+  const aviso = await screen.findByRole('alert')
+  expect(aviso).toHaveTextContent('a chave pode estar certa')
+  expect(aviso).not.toHaveTextContent('não aceitou')
+})
+
 test('o último passo só aparece com as três contas ligadas; antes diz quantas faltam', async () => {
   montar(criarLigarContasFixture(['github', 'supabase']))
   await espera()

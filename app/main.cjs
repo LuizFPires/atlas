@@ -81,7 +81,7 @@ const kit = criarKit({ dadosApp: app.getPath('userData'), cofre, hashComputador:
 // Modelo do Claude escolhido pelo cliente (um só para todo o Atlas; recomendado Opus 5.5).
 const modelo = criarModelo({ pasta: app.getPath('userData') })
 // Contas ligadas a este computador (tela C1): gh, Vercel e Supabase. A chave do Supabase fica só no cofre e chega à linha pelo ambiente.
-const contasCli = criarContasCli({ dadosApp: app.getPath('userData'), cofre, env: envMinimo() })
+const contasCli = criarContasCli({ dadosApp: app.getPath('userData'), cofre, env: envMinimo(), apiSupabase: (m, c, corpo, token) => require('./adaptadores/no-ar-rede.cjs').pedirApiSupabase(m, c, corpo, token) })
 void contasCli.recarregar()
 const { criarDiario } = require('./adaptadores/diario.cjs')
 const diario = criarDiario() // M41: diário da obra (.atlas/diario.jsonl), escrito pela linha e pelo vigia
@@ -160,7 +160,8 @@ const { pedirApiSupabase, sondarSite, sondarDominio } = require('./adaptadores/n
 const noAr = criarNoAr({
   raiz: obras.raiz(), cofre,
   vercel: (args, o = {}) => contasCli.rodarFerramenta('vercel', args, o),
-  supabase: (args, o = {}) => contasCli.rodarFerramenta('supabase', args, o),
+  // A CLI do Supabase só é usada (e só é instalada) quando a obra tem funções do servidor (supabase/functions).
+  supabase: async (args, o = {}) => { await garantirFerramentas(['supabase']); return contasCli.rodarFerramenta('supabase', args, o) },
   git: (args, { cwd } = {}) => rodarProcesso('git', args, { env: envMinimo({ GIT_CONFIG_NOSYSTEM: '1' }), cwd, timeoutMs: 15_000 }),
   apiSupabase: (metodo, caminho, corpo, token) => pedirApiSupabase(metodo, caminho, corpo, token),
   sondar: (url) => sondarSite(url),
@@ -173,7 +174,7 @@ const noAr = criarNoAr({
 const { criarDominio } = require('./adaptadores/dominio.cjs')
 const dominio = criarDominio({
   raiz: obras.raiz(),
-  vercel: (args, o = {}) => contasCli.rodarFerramenta('vercel', args, o),
+  vercel: (args, o = {}) => contasCli.rodarFerramentaTentando('vercel', args, o),
   rdap: (caminho) => require('./adaptadores/nomes.cjs').pedirStatus('rdap.registro.br', caminho),
   resolvedor: () => { const r = new (require('node:dns').promises.Resolver)({ timeout: 3000, tries: 1 }); r.setServers(['1.1.1.1', '8.8.8.8']); return r },
   sondar: (d) => sondarDominio(d),
@@ -184,7 +185,7 @@ const dominio = criarDominio({
 const { criarLojas } = require('./adaptadores/lojas.cjs')
 const lojas = criarLojas({
   raiz: obras.raiz(), cofre, hashComputador: async () => hash(),
-  eas: (args, o = {}) => contasCli.rodarFerramenta('eas', args, o),
+  eas: (args, o = {}) => contasCli.rodarFerramentaTentando('eas', args, o),
   pedirConstrucao: async (pasta, texto) => { await garantirObra(String(pasta)); return posobra.executar(String(pasta), { tipo: 'mudar', texto }, { entendi: 'Você quer o sistema nas lojas de aplicativos. Vou:', passos: ['Montar a versão de app com as mesmas telas', 'Preparar ícone, textos e a política de privacidade', 'Testar antes de mandar às lojas'], minutos: 60 }) },
   linhaRodando: (pasta) => construcao.linha.rodando(String(pasta)),
   avisar: (titulo, texto) => avisoCelular.avisar(titulo, texto),
@@ -200,7 +201,7 @@ const lancamento = require('./adaptadores/lancamento.cjs').criarLancamento({
 const paginaVendas = require('./adaptadores/pagina-vendas.cjs').criarPaginaVendas({
   raiz: obras.raiz(), cofre,
   perguntar: (pasta, pedido) => disparo.perguntar(String(pasta), pedido),
-  vercel: (args, o = {}) => contasCli.rodarFerramenta('vercel', args, o),
+  vercel: (args, o = {}) => contasCli.rodarFerramentaTentando('vercel', args, o),
   pedirConstrucao: async (pasta, texto) => { await garantirObra(String(pasta)); return posobra.executar(String(pasta), { tipo: 'mudar', texto }, { entendi: 'Você aprovou a página de vendas. Vou:', passos: ['Construir a página aprovada com o visual do app', 'Ligar a cobrança na sua conta, em modo de teste', 'Fazer uma compra de teste de ponta a ponta'], minutos: 90 }) },
   linhaRodando: (pasta) => construcao.linha.rodando(String(pasta)),
   // Compra de teste: SÓ o endereço do próprio site (vercel.app, conferido no adaptador), com o código do Atlas no cabeçalho.
@@ -446,7 +447,7 @@ handle('atlas:lojas:escolher', (pasta, c) => lojas.escolher(String(pasta), Strin
 handle('atlas:lojas:marcar', (pasta, conta, sim) => lojas.marcarConta(String(pasta), String(conta), sim === true))
 handle('atlas:lojas:tokenExpo', (t) => lojas.guardarTokenExpo(String(t ?? '')))
 // A chave da App Store Connect: o arquivo é escolhido AQUI (diálogo do computador) e vai direto ao cofre; a tela nunca vê o conteúdo.
-handle('atlas:lojas:montar', async (pasta) => { await garantirFerramentas(); return lojas.montar(String(pasta)) })
+handle('atlas:lojas:montar', async (pasta) => { await garantirFerramentas(['eas']); return lojas.montar(String(pasta)) })
 handle('atlas:lojas:googleEnviado', (pasta) => lojas.googleEnviado(String(pasta)))
 // O .aab do 1º envio ao Google: só endereço de artefato da Expo (conferido em lojas.cjs), aberto no navegador do computador.
 handle('atlas:lojas:baixarAab', async (pasta) => { const u = await lojas.linkAab(String(pasta)); if (!u) throw new Error('sem-arquivo'); await shell.openExternal(u) })
@@ -525,7 +526,8 @@ handle('atlas:navegador:guia', (guia, b) => navegador.abrirGuia(String(guia), b)
 handle('atlas:navegador:guiaFora', (guia) => navegador.abrirGuiaNoComputador(String(guia)))
 
 // Ligar as contas a este computador (C1Contas). A tela recebe só o código e o estado; o endereço vem da CLI e é conferido aqui.
-const garantirFerramentas = async () => { if (!contasCli.ferramentasProntas() && !(await contasCli.instalarFerramentas())) throw new Error('ferramentas-indisponiveis') }
+// Só a ferramenta que o passo usa (a da Expo, pesada, nunca trava a Vercel). function: usada antes desta linha (hoisting).
+async function garantirFerramentas(nomes = ['vercel']) { if (!contasCli.ferramentasProntas(nomes) && !(await contasCli.instalarFerramentas(nomes))) throw new Error('ferramentas-indisponiveis') }
 handle('atlas:planilha:ler', (pasta, nome) => planilhaObra.ler(String(pasta), String(nome)))
 handle('atlas:planilha:entender', (pasta, fala) => planilhaObra.entender(String(pasta), fala === undefined || fala === null ? undefined : String(fala)))
 handle('atlas:planilha:levar', (pasta, sim) => planilhaObra.levarDados(String(pasta), sim === true))
@@ -544,7 +546,7 @@ handle('atlas:contas:siteFora', (conta) => {
   if (u) void shell.openExternal(u)
 })
 handle('atlas:contas:abrirChaves', (b) => navegador.abrirEndereco('https://supabase.com/dashboard/account/tokens', b))
-handle('atlas:contas:chaveSupabase', async (chave) => { await garantirFerramentas(); return contasCli.guardarChaveSupabase(String(chave ?? '')) })
+handle('atlas:contas:chaveSupabase', async (chave) => { return contasCli.guardarChaveSupabase(String(chave ?? '')) })
 handle('atlas:contas:cancelar', (conta) => contasCli.cancelar(String(conta)))
 
 // Fichas de trava (T1Travas): site fixo de cada trava e "deixar público até o GitHub voltar" (só depois da confirmação na tela).

@@ -122,6 +122,23 @@ test('sem API, sem ativação, servidor negando, rede fora, resposta gigante: me
   for (const ruim of ['../x', 'a/b', '', 'a b', 'x'.repeat(81), 7, null]) assert.equal((await montar().kit.entregar(ruim)).ok, false, String(ruim))
 })
 
+test('entrega: servidor do Atlas que pisca (sem internet por um instante ou erro 5xx) tenta de novo sozinho antes de desistir', async () => {
+  let vezes = 0
+  const kit = criarKit({ dadosApp: tmp(), cofre: cofreAtivo, hashComputador: async () => 'h', api: 'https://x.test', esperar: async () => {}, buscar: async () => {
+    vezes++
+    if (vezes === 1) throw new Error('rede')
+    if (vezes === 2) return { ok: false, status: 503, text: async () => 'Service Unavailable' }
+    return { ok: true, status: 200, text: async () => JSON.stringify(KIT()) }
+  } })
+  assert.equal((await kit.entregar('a')).ok, true)
+  assert.equal(vezes, 3)
+  // licença negada (403) não é instabilidade: não repete
+  let negado = 0
+  const neg = criarKit({ dadosApp: tmp(), cofre: cofreAtivo, hashComputador: async () => 'h', api: 'https://x.test', esperar: async () => {}, buscar: async () => { negado++; return { ok: false, status: 403, text: async () => '{"mensagem":"Licença em pausa."}' } } })
+  assert.equal((await neg.entregar('a')).mensagem, 'Licença em pausa.')
+  assert.equal(negado, 1)
+})
+
 test('garantir: reaproveita o que existe; baixa de novo se faltar; sem API devolve null; com API e falha lança', async () => {
   const { kit, vistos } = montar()
   const d1 = await kit.garantir('a')
