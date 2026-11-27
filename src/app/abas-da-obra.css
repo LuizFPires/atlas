@@ -7,3 +7,11 @@
 .at-abobra__aba { min-height: 38px; padding: 0 16px; border-radius: 10px; border: 0; background: transparent; color: var(--mute); font: 600 14px var(--font-text); cursor: pointer; }
 .at-abobra__aba--on { background: var(--lime); color: var(--on-lime); font-weight: 700; }
 .at-abobra__aba:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+
+/* As abas da obra nunca somem ao rolar (Luiz, 27/11/2026: "esse menu não pode se perder; navegação tem que ser fácil").
+   Ficam presas no topo, com o fundo da tela por trás e uma linha discreta embaixo. */
+.at-abobra { position: sticky; top: 0; z-index: 30; margin: 0 -32px 18px; padding: 12px 32px; background: var(--bg); border-bottom: 1px solid var(--line); }
+.at-pn__topo:has(.at-abobra__abas) { position: sticky; top: 0; z-index: 30; margin: 0 -32px; padding: 12px 32px; background: var(--bg); border-bottom: 1px solid var(--line); }
+@media (max-width: 900px) {
+  .at-abobra, .at-pn__topo:has(.at-abobra__abas) { margin-left: -16px; margin-right: -16px; padding: 10px 16px; }
+}

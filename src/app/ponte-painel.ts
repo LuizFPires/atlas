@@ -149,6 +149,10 @@ export interface Desempenho {
   terminoProjetado: string
   previstoFim: string
   pausasPrevistas: { inicio: string; fim: string }[]
+  /** Trechos em que a obra não trabalhou (computador desligado, Atlas fechado ou obra pausada; 30 min ou mais, fora da cota). */
+  semTrabalho?: { inicio: string; fim: string; ate_agora: boolean }[]
+  /** Quanto do orçamento a obra deve usar até o fim, no ritmo de agora. */
+  projetadoFimPct?: number
   serie: { previsto: PontoCurva[]; realizado: PontoCurva[]; projetado: PontoCurva[] }
 }
 

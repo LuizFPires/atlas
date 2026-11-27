@@ -34,3 +34,15 @@
 .at-de__agora-txt { font: 600 12px var(--font-mono); fill: var(--lime-txt, var(--lime)); }
 .at-de__fim { fill: var(--lime); }
 @media (max-width: 1200px) { .at-de__resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); } .at-de__card--destaque { grid-column: 1 / -1; } }
+
+/* Didática das projeções (Luiz, 27/11/2026: "o usuário não pode ter dúvidas"). */
+.at-de__alerta { margin: 0; padding: 14px 18px; border-radius: 14px; border: 1px solid var(--aviso); background: rgb(242 177 74 / 0.08); font-size: 14px; line-height: 1.5; color: var(--text); }
+.at-de__alerta b { color: var(--aviso-txt); }
+.at-de__parada { fill: var(--mute2); opacity: 0.12; }
+.at-de__lg--parada { background: var(--mute2); opacity: 0.45; }
+.at-de__grade--orc { stroke: var(--mute2); stroke-dasharray: 2 4; opacity: 0.8; }
+.at-de__eixo--orc { font-size: 11px; }
+.at-de__comoler { display: flex; flex-direction: column; gap: 8px; padding: 14px 18px; border-radius: 14px; background: var(--card2); }
+.at-de__comoler > b { font-size: 14px; }
+.at-de__comoler ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 1.5; color: var(--mute); }
+.at-de__comoler li b { color: var(--text); font-weight: 600; }

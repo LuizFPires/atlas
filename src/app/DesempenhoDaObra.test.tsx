@@ -21,10 +21,10 @@ test('desempenho: término projetado com as pausas, consumo x previsto, ritmo de
   expect(within(resumo).getByText(/^(seg|ter|qua|qui|sex|sáb|dom)\.?, \d\d\/\d\d · ~\d\dh$/i)).toBeInTheDocument()
   expect(within(resumo).getByText(/2 pausas da cota do plano Pro/)).toBeInTheDocument()
   expect(within(resumo).getByText('14,20%')).toBeInTheDocument()
-  expect(within(resumo).getByText('previsto até agora: 12,00%')).toBeInTheDocument()
+  expect(within(resumo).getByText(/o previsto para agora era 12,00%/)).toBeInTheDocument()
   expect(within(resumo).getByText('+18%')).toBeInTheDocument()
-  expect(within(resumo).getByText('gastando mais que o previsto')).toBeInTheDocument()
-  expect(within(resumo).getByText(/^a próxima ~\d\dh\d\d$/)).toBeInTheDocument()
+  expect(within(resumo).getByText(/gastou 18% a mais do plano que o previsto: por isso o término vai mais longe/)).toBeInTheDocument()
+  expect(within(resumo).getByText(/^a próxima ~\d\dh\d\d · o Atlas espera a cota renovar e volta sozinho/)).toBeInTheDocument()
   expect(within(resumo).getByText('Pro')).toBeInTheDocument()
   const grafico = screen.getByRole('img', { name: /Curva S do consumo/ })
   expect(grafico.querySelectorAll('[data-serie="previsto"]').length).toBe(1)
@@ -42,7 +42,7 @@ test('antes da 1ª etapa e da 1ª pausa: avisa que orçamento e cota ainda são 
 test('gastando menos que o previsto: ritmo negativo em verde', async () => {
   montar({ ritmo: -0.07 })
   expect(await screen.findByText('−7%')).toBeInTheDocument()
-  expect(screen.getByText('gastando menos que o previsto')).toBeInTheDocument()
+  expect(screen.getByText(/a menos que o previsto: o término vem mais cedo/)).toBeInTheDocument()
 })
 
 test('Ultra (sem o limite de 5 h): nenhuma pausa prevista', async () => {
@@ -64,4 +64,21 @@ test('a aba Desempenho fica ao lado do Cronograma', async () => {
   expect(abas.indexOf('Desempenho')).toBe(abas.indexOf('Cronograma') + 1)
   await userEvent.click(screen.getByRole('tab', { name: 'Desempenho' }))
   expect(ir).toHaveBeenCalledWith('desempenho')
+})
+
+test('didática: diz que a projeção vale com o computador ligado e o Atlas aberto; trecho sem trabalho aparece e é explicado', async () => {
+  const H = 3600_000
+  const t0 = Date.parse('2026-11-26T22:00:00.000Z')
+  const i = (h: number) => new Date(t0 + h * H).toISOString()
+  const painel = criarPainelFixture()
+  const base = await painel.desempenho!('ponto')
+  painel.desempenho = async () => ({ ...base, projetadoFimPct: 145, semTrabalho: [{ inicio: i(1), fim: i(8), ate_agora: false }, { inicio: i(9), fim: i(10), ate_agora: true }] })
+  const { container } = render(<TemaProvider><DesempenhoDaObra obra={{ nome: 'Ponto', pasta: 'ponto' }} painel={painel} agora={() => new Date(t0 + 10 * H)} sondagemMs={0} /></TemaProvider>)
+  expect(await screen.findByText('Como ler esta projeção')).toBeInTheDocument()
+  expect(screen.getByText(/só com o computador ligado e o Atlas aberto/)).toBeInTheDocument()
+  expect(screen.getByText(/Vale se o computador ficar ligado, com o Atlas aberto, direto até lá/)).toBeInTheDocument()
+  expect(screen.getByText('A obra não está trabalhando agora')).toBeInTheDocument()
+  expect(screen.getByText(/no fim deve usar ~145%/)).toBeInTheDocument()
+  expect(screen.getByText(/computador desligado, Atlas fechado ou obra pausada/)).toBeInTheDocument()
+  expect(container.querySelectorAll('[data-parada]').length).toBe(2)
 })

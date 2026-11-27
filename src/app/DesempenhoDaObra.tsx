@@ -18,6 +18,12 @@ function quando(iso: string) {
   const [sem, resto] = dia.split(', ')
   return `${sem.charAt(0).toLocaleUpperCase('pt-BR')}${sem.slice(1)}, ${resto} · ~${hh(d)}`
 }
+function quandoCurto(iso: string) {
+  const d = new Date(iso)
+  const hoje = new Date()
+  const mesmoDia = d.toDateString() === hoje.toDateString()
+  return mesmoDia ? hhmm(d) : `${d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')} ${hhmm(d)}`
+}
 const duracao = (ms: number) => { const m = Math.max(0, Math.round(ms / 60_000)); const h = Math.floor(m / 60); return h >= 24 ? `${Math.round(h / 24)} dias` : h ? `${h}h${String(m % 60).padStart(2, '0')}` : `${m} min` }
 
 export function DesempenhoDaObra({ obra, painel, agora = () => new Date(), sondagemMs = 5 * 60_000 }: Props) {
@@ -43,22 +49,28 @@ export function DesempenhoDaObra({ obra, painel, agora = () => new Date(), sonda
   const plano = NOME_PLANO[d.plano]
   const ritmo = d.ritmo
   const ritmoTxt = ritmo === null ? '—' : Math.abs(ritmo) < 0.02 ? 'no previsto' : `${ritmo > 0 ? '+' : '−'}${Math.round(Math.abs(ritmo) * 100)}%`
-  const ritmoNota = ritmo === null ? 'aparece depois do 1º avanço' : Math.abs(ritmo) < 0.02 ? 'gastando o previsto' : ritmo > 0 ? 'gastando mais que o previsto' : 'gastando menos que o previsto'
+  const ritmoNota = ritmo === null ? 'aparece depois do 1º avanço' : Math.abs(ritmo) < 0.02 ? 'gastando o previsto para o que já foi feito' : ritmo > 0 ? `para o que já foi feito, gastou ${Math.round(ritmo * 100)}% a mais do plano que o previsto: por isso o término vai mais longe` : `para o que já foi feito, gastou ${Math.round(-ritmo * 100)}% a menos que o previsto: o término vem mais cedo`
   const estimativa = d.estimativaInicial || (d.plano !== 'ultra' && !d.cotaAprendida)
+  const paradaAgora = (d.semTrabalho ?? []).find((p) => p.ate_agora) ?? null
+  const paradasAntes = (d.semTrabalho ?? []).filter((p) => !p.ate_agora)
+  const fimPct = d.projetadoFimPct ?? null
 
   return (
     <div className="at-de">
+      {paradaAgora && (
+        <p className="at-de__alerta" role="status"><b>A obra não está trabalhando agora</b> desde {quandoCurto(paradaAgora.inicio)}. Ela só trabalha com o computador ligado e o Atlas aberto. Se ele estiver aberto e a obra parada, confira em Construção se ela foi pausada.</p>
+      )}
       <section className="at-de__resumo" aria-label="Resumo do desempenho">
         <div className="at-de__card at-de__card--destaque">
           <span className="at-de__rot">TÉRMINO PROJETADO</span>
           <b className="at-de__grande">{quando(d.terminoProjetado)}</b>
           <span className="at-de__nota">
-            {fim <= t ? 'A obra está terminando.' : `≈ ${duracao(trabalhoMs)} de trabalho${n ? ` + ${n} ${n === 1 ? 'pausa' : 'pausas'} da cota do plano ${plano} (≈ ${duracao(esperaMs)} esperando)` : ''}. Conta feita se só esta obra trabalhar.`}
+            {fim <= t ? 'A obra está terminando.' : `≈ ${duracao(trabalhoMs)} de trabalho${n ? ` + ${n} ${n === 1 ? 'pausa' : 'pausas'} da cota do plano ${plano} (≈ ${duracao(esperaMs)} esperando)` : ''}. Vale se o computador ficar ligado, com o Atlas aberto, direto até lá.`}
           </span>
         </div>
-        <div className="at-de__card"><span className="at-de__rot">CONSUMO</span><b className="at-de__num">{pct(d.realizadoPct)}</b><span className="at-de__nota">{`previsto até agora: ${pct(d.previstoAgoraPct)}`}</span></div>
+        <div className="at-de__card"><span className="at-de__rot">CONSUMO</span><b className="at-de__num">{pct(d.realizadoPct)}</b><span className="at-de__nota">{`do orçamento da obra · o previsto para agora era ${pct(d.previstoAgoraPct)}`}{fimPct !== null && fimPct > 100.5 ? ` · no fim deve usar ~${Math.round(fimPct)}%` : ''}</span></div>
         <div className={`at-de__card${ritmo !== null && ritmo >= 0.02 ? ' at-de__card--ambar' : ''}`}><span className="at-de__rot">RITMO DE GASTO</span><b className={`at-de__num${ritmo !== null && ritmo >= 0.02 ? ' at-de__num--ambar' : ritmo !== null && ritmo <= -0.02 ? ' at-de__num--lime' : ''}`}>{ritmoTxt}</b><span className="at-de__nota">{ritmoNota}</span></div>
-        <div className="at-de__card"><span className="at-de__rot">PAUSAS PREVISTAS</span><b className="at-de__num">{n}</b><span className="at-de__nota">{n === 0 ? 'sem pausas previstas' : proxima ? (Date.parse(proxima.inicio) <= t ? `parada agora, volta ~${hhmm(new Date(proxima.fim))}` : `a próxima ~${hhmm(new Date(proxima.inicio))}`) : 'sem pausas previstas'}</span></div>
+        <div className="at-de__card"><span className="at-de__rot">PAUSAS PREVISTAS</span><b className="at-de__num">{n}</b><span className="at-de__nota">{n === 0 ? 'sem pausas previstas' : `${proxima ? (Date.parse(proxima.inicio) <= t ? `parada agora, volta ~${hhmm(new Date(proxima.fim))}` : `a próxima ~${hhmm(new Date(proxima.inicio))}`) : ''} · o Atlas espera a cota renovar e volta sozinho, sem você fazer nada`}</span></div>
         <div className="at-de__card"><span className="at-de__rot">PLANO</span><b className="at-de__num">{plano}</b><span className="at-de__nota">{SOBRE_PLANO[d.plano]}</span></div>
       </section>
 
@@ -69,10 +81,20 @@ export function DesempenhoDaObra({ obra, painel, agora = () => new Date(), sonda
           <span><i className="at-de__lg at-de__lg--real" />Realizado</span>
           <span><i className="at-de__lg at-de__lg--proj" />Projetado</span>
           <span><i className="at-de__lg at-de__lg--pausa" />Pausa da cota</span>
+          {(d.semTrabalho?.length ?? 0) > 0 && <span><i className="at-de__lg at-de__lg--parada" />Sem trabalhar</span>}
         </div>
         <Curva d={d} agora={t} />
         {estimativa && <p className="at-de__aviso">{d.estimativaInicial ? 'O orçamento' : 'O tamanho da cota'} ainda é uma estimativa: fica mais certo depois da 1ª etapa entregue e da 1ª pausa da cota (a Anthropic não publica quanto cabe em cada janela de 5 h).</p>}
-        <p className="at-de__nota">Refeito a cada 5 min pelo ritmo real da obra. Se outra obra trabalhar junto, a cota é dividida e o término vai mais longe. O plano Pro e o Max também têm um limite por semana, que pode causar uma pausa mais longa.</p>
+        {paradasAntes.length > 0 && <p className="at-de__nota">{`A linha reta${paradasAntes.length > 1 ? ' nos trechos cinza' : ' no trecho cinza'} é tempo em que a obra não trabalhou (${paradasAntes.map((p) => `${quandoCurto(p.inicio)} até ${quandoCurto(p.fim)}`).join('; ')}): computador desligado, Atlas fechado ou obra pausada.`}</p>}
+        <div className="at-de__comoler" aria-label="Como ler esta projeção">
+          <b>Como ler esta projeção</b>
+          <ul>
+            <li><b>A obra trabalha sozinha</b>, mas só com o computador ligado e o Atlas aberto (pode minimizar e usar o computador para outras coisas). Fechou o Atlas ou desligou, ela para; ao abrir de novo, continua de onde parou.</li>
+            <li><b>O término projetado já conta isso:</b> ele considera o computador ligado direto daqui até o fim. Cada hora desligado empurra o término mais ou menos uma hora.</li>
+            <li><b>As pausas da cota não dependem de você:</b> o plano {plano} libera uso a cada 5 h. Quando acaba, a obra espera e volta sozinha.</li>
+            <li><b>Refeito a cada 5 min</b> pelo ritmo real. Outra obra trabalhando junto divide a cota e afasta o término. O plano também tem um limite por semana, que pode dar uma pausa mais longa.</li>
+          </ul>
+        </div>
       </section>
     </div>
   )
@@ -94,7 +116,8 @@ function Curva({ d, agora }: { d: Desempenho; agora: number }) {
   const ultimo = d.serie.projetado[d.serie.projetado.length - 1]
   return (
     <svg className="at-de__svg" viewBox={`0 0 ${W} ${Hh}`} role="img" aria-label={`Curva S do consumo: previsto, realizado até agora (${d.realizadoPct.toLocaleString('pt-BR')}%) e projetado até o término`}>
-      {[0, 25, 50, 75, 100].map((v) => <g key={v}><line className="at-de__grade" x1={E} x2={W - 8} y1={y(v)} y2={y(v)} /><text className="at-de__eixo" x={E - 8} y={y(v) + 4} textAnchor="end">{v}%</text></g>)}
+      {Array.from({ length: Math.ceil(vMax / 25) + 1 }, (_, k) => k * 25).filter((v) => v <= vMax + 0.01).map((v) => <g key={v}><line className={`at-de__grade${v === 100 ? ' at-de__grade--orc' : ''}`} x1={E} x2={W - 8} y1={y(v)} y2={y(v)} /><text className="at-de__eixo" x={E - 8} y={y(v) + 4} textAnchor="end">{v}%</text>{v === 100 && vMax > 100 && <text className="at-de__eixo at-de__eixo--orc" x={E + 6} y={y(v) - 5}>orçamento previsto</text>}</g>)}
+      {(d.semTrabalho ?? []).map((p) => <rect key={`p-${p.inicio}`} data-parada className="at-de__parada" x={x(Math.max(t0, Date.parse(p.inicio)))} y={T} width={Math.max(2, x(Math.min(t1, Date.parse(p.fim))) - x(Math.max(t0, Date.parse(p.inicio))))} height={B - T} />)}
       {marcas.map((h) => <text key={h} className="at-de__eixo" x={x(h)} y={Hh - 8} textAnchor={x(h) > W - 40 ? 'end' : 'middle'}>{hh(new Date(h))}</text>)}
       {d.pausasPrevistas.map((p) => <rect key={p.inicio} data-pausa className="at-de__pausa" x={x(Math.max(t0, Date.parse(p.inicio)))} y={T} width={Math.max(2, x(Date.parse(p.fim)) - x(Math.max(t0, Date.parse(p.inicio))))} height={B - T} />)}
       <path data-serie="previsto" className="at-de__previsto" d={linha(d.serie.previsto)} />

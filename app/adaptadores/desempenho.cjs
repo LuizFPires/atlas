@@ -67,6 +67,27 @@ function calcularDesempenho(o) {
   const cotaAprendida = plano !== 'ultra' && amostras.length > 0
   const cota = plano === 'ultra' ? null : cotaAprendida ? mediana(amostras) : PADRAO.cota[plano]
 
+  // Trechos SEM TRABALHO (Luiz, 27/11/2026): nenhuma rodada do Claude por mais de 30 min e sem pausa de cota no meio. Na prática,
+  // o computador desligado, o Atlas fechado ou a obra pausada. A linha do realizado segue reta neles e o gráfico marca o trecho.
+  const MIN_PARADA = 30 * 60_000
+  const semTrabalho = []
+  const tirarPausas = (a, b) => {
+    let trechos = [[a, b]]
+    for (const p of pausas) {
+      const pf = p.f ?? agora
+      trechos = trechos.flatMap(([x, y]) => (pf <= x || p.i >= y ? [[x, y]] : [[x, Math.max(x, p.i)], [Math.min(y, pf), y]].filter(([u, v]) => v > u)))
+    }
+    return trechos
+  }
+  const marcarParada = (a, b, ateAgora) => {
+    for (const [x, y] of tirarPausas(a, b)) if (y - x >= MIN_PARADA) semTrabalho.push({ inicio: iso(x), fim: iso(y), ate_agora: ateAgora && y === b })
+  }
+  {
+    let prev = turnos.length ? turnos[0].t : null
+    for (const c of turnos.slice(1)) { const comeco = c.t - Math.max(0, c.d); if (comeco - prev > MIN_PARADA) marcarParada(prev, comeco, false); prev = Math.max(prev, c.t) }
+    if (prev !== null && agora - prev > MIN_PARADA) marcarParada(prev, agora, true)
+  }
+
   // Ritmo de gasto por hora de trabalho: últimas 3 h fora das pausas; sem isso, pela duração das rodadas; sem nada, pelo previsto.
   const emPausa = (a, b) => pausas.reduce((s, p) => s + Math.max(0, Math.min(b, p.f ?? agora) - Math.max(a, p.i)), 0)
   const de3h = Math.max(inicio, agora - 3 * H)
@@ -112,7 +133,9 @@ function calcularDesempenho(o) {
   const pct = (v) => r2((v / orcamento) * 100)
   const previstoSerie = Array.from({ length: 41 }, (_, k) => { const tt = inicio + ((previstoFim - inicio) * k) / 40; return { t: iso(tt), v: r2(suave((tt - inicio) / (previstoFim - inicio)) * 100) } })
   let soma = 0
-  const realizadoSerie = reduzir([{ t: inicio, v: 0 }, ...turnos.map((c) => ({ t: c.t, v: (soma += c.v) }))]).map((p) => ({ t: iso(p.t), v: pct(p.v) }))
+  const brutos = [{ t: inicio, v: 0 }, ...turnos.map((c) => ({ t: c.t, v: (soma += c.v) }))]
+  if (brutos[brutos.length - 1].t < agora) brutos.push({ t: agora, v: realizado }) // segue reta até agora: sem gasto, sem subir
+  const realizadoSerie = reduzir(brutos).map((p) => ({ t: iso(p.t), v: pct(p.v) }))
   const fisicoPct = (pesoFeito / pesoTotal) * 100
 
   return {
@@ -129,6 +152,8 @@ function calcularDesempenho(o) {
     terminoProjetado: iso(t),
     previstoFim: iso(previstoFim),
     pausasPrevistas,
+    semTrabalho,
+    projetadoFimPct: pct(acum),
     serie: { previsto: previstoSerie, realizado: realizadoSerie, projetado: projetado.map((p) => ({ t: iso(p.t), v: pct(p.v) })) },
   }
 }
