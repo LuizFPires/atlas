@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Colocando no ar com barra de progresso (sem bolinha girando)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@property --pg-p{syntax:'<integer>';inherits:true;initial-value:0}
+@property --pg-t{syntax:'<integer>';inherits:true;initial-value:33}
+@keyframes pgP{0%{--pg-p:4}100%{--pg-p:100}}
+@keyframes pgT{0%{--pg-t:34}100%{--pg-t:50}}
+@keyframes pgMsg1{0%,22%{opacity:1}26%,100%{opacity:0}}
+@keyframes pgMsg2{0%,22%{opacity:0}26%,47%{opacity:1}51%,100%{opacity:0}}
+@keyframes pgMsg3{0%,47%{opacity:0}51%,72%{opacity:1}76%,100%{opacity:0}}
+@keyframes pgMsg4{0%,72%{opacity:0}76%,100%{opacity:1}}
+@keyframes pgVivo{0%{box-shadow:0 0 0 0 rgba(198,241,53,.55)}70%{box-shadow:0 0 0 7px rgba(198,241,53,0)}100%{box-shadow:0 0 0 0 rgba(198,241,53,0)}}
+@keyframes pgLog{0%{background:rgba(198,241,53,.14)}100%{background:transparent}}
+.pg-demo{animation:pgP 14s linear infinite, pgT 14s linear infinite}
+.pg-vivo{width:8px;height:8px;border-radius:4px;background:#C6F135;animation:pgVivo 1.8s ease-out infinite;flex:none}
+.pg-vivo--p{width:6px;height:6px;border-radius:3px}
+.pg-log{border-radius:6px;margin:0 -6px;padding:0 6px;animation:pgLog 2.4s ease-out infinite}
+.pg-passo{display:flex;gap:14px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #2A2E33}
+.pg-bola{width:28px;height:28px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;font:600 12px 'Geist Mono',monospace;border:2px solid #2C3036;color:#8E968C;box-sizing:border-box}
+.pg-bola--feito{background:#2A3A12;border-color:#2A3A12;color:#C6F135;font:700 13px 'Geist',sans-serif}
+.pg-anel{position:relative;width:28px;height:28px;flex:none;display:flex;align-items:center;justify-content:center}
+.pg-anel svg{position:absolute;inset:0}
+.pg-anel span{font:700 12px 'Geist Mono',monospace;color:#C6F135}
+.pg-anel-arco{stroke-dasharray:100;stroke-dashoffset:calc(100 - var(--pg-p));transition:stroke-dashoffset .4s}
+.pg-txt{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.pg-tit{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.pg-tit b{font-size:15px;color:#EDEFEA}
+.pg-passo--falta .pg-tit b{color:#8E968C}
+.pg-dur{font:500 11px 'Geist Mono',monospace;letter-spacing:.06em;color:#8E968C;white-space:nowrap}
+.pg-sub{font-size:13px;line-height:1.45;color:#8E968C}
+.pg-linha{display:flex;align-items:center;gap:10px;margin-top:8px}
+.pg-barra{position:relative;flex:1;min-width:90px;height:4px;border-radius:2px;background:#2A2E33;overflow:hidden}
+.pg-barra-i{position:absolute;left:0;top:0;bottom:0;width:calc(var(--pg-p) * 1%);border-radius:2px;background:#C6F135}
+.pg-agora{position:relative;width:168px;height:16px;flex:none}
+.pg-msg{position:absolute;right:0;top:0;white-space:nowrap;font:500 12px 'Geist',sans-serif;color:#EDEFEA;opacity:0}
+.pg-msg1{animation:pgMsg1 14s linear infinite}.pg-msg2{animation:pgMsg2 14s linear infinite}.pg-msg3{animation:pgMsg3 14s linear infinite}.pg-msg4{animation:pgMsg4 14s linear infinite}
+.pg-pct{width:34px;text-align:right;font:600 12px 'Geist Mono',monospace;color:#C6F135;counter-reset:p var(--pg-p)}
+.pg-pct::after{content:counter(p) '%'}
+.pg-total{width:calc(var(--pg-t) * 1%)}
+.pg-total-n{counter-reset:t var(--pg-t)}
+.pg-total-n::after{content:counter(t) '%'}
+.pg-pulso{display:flex;align-items:center;gap:7px;margin-top:4px;font-size:12px;color:#8E968C}
+@media (prefers-reduced-motion: reduce){.pg-demo,.pg-vivo,.pg-log,.pg-msg{animation:none}.pg-msg1{opacity:1}}
+
+.pg-pct--fixo::after{content:none}</style>
+</helmet>
+<div class="pg-demo" style="position:relative;width:1440px;height:900px;background:#141619;color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obras" tema="escuro" hint-size="248px,900px"></dc-import>
+ <main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:flex-end;gap:16px">
+   <div style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">← CANTEIRO DE OBRAS</span><h1 style="margin:0;font-size:28px;letter-spacing:-.01em">Ponto</h1></div>
+   <span style="margin-left:auto;display:flex;align-items:center;gap:8px;font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#C6F135"><span class="pg-vivo"></span>COLOCANDO NO AR</span>
+  </div>
+
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 460px;gap:24px">
+   <section style="position:relative;border-radius:24px;overflow:hidden;border:1px solid #2C3036;background:radial-gradient(120% 80% at 50% 30%,#22303A 0%,#16191C 70%)">
+    <img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20360%20560%22%3E%3Cpolygon%20points%3D%22180.0%2C528.0%2042.0%2C449.0%20180.0%2C370.0%20318.0%2C449.0%22%20fill%3D%22%232B2118%22%20stroke%3D%22%233A2E22%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C490.0%2088.0%2C437.0%2088.0%2C407.0%20180.0%2C460.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C490.0%20272.0%2C437.0%20272.0%2C407.0%20180.0%2C460.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C478.1%20158.8%2C471.2%20158.8%2C455.6%20170.8%2C462.5%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C466.7%20139.1%2C459.8%20139.1%2C444.2%20151.0%2C451.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C455.3%20119.3%2C448.4%20119.3%2C432.8%20131.2%2C439.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C443.9%2099.5%2C437.0%2099.5%2C421.4%20111.5%2C428.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C478.1%20201.2%2C471.2%20201.2%2C455.6%20189.2%2C462.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C466.7%20220.9%2C459.8%20220.9%2C444.2%20209.0%2C451.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C455.3%20240.7%2C448.4%20240.7%2C432.8%20228.8%2C439.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C443.9%20260.5%2C437.0%20260.5%2C421.4%20248.5%2C428.3%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C460.0%2088.0%2C407.0%2088.0%2C377.0%20180.0%2C430.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C460.0%20272.0%2C407.0%20272.0%2C377.0%20180.0%2C430.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C448.1%20158.8%2C441.2%20158.8%2C425.6%20170.8%2C432.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C436.7%20139.1%2C429.8%20139.1%2C414.2%20151.0%2C421.1%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C425.3%20119.3%2C418.4%20119.3%2C402.8%20131.2%2C409.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C413.9%2099.5%2C407.0%2099.5%2C391.4%20111.5%2C398.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C448.1%20201.2%2C441.2%20201.2%2C425.6%20189.2%2C432.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C436.7%20220.9%2C429.8%20220.9%2C414.2%20209.0%2C421.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C425.3%20240.7%2C418.4%20240.7%2C402.8%20228.8%2C409.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C413.9%20260.5%2C407.0%20260.5%2C391.4%20248.5%2C398.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C430.0%2088.0%2C377.0%2088.0%2C347.0%20180.0%2C400.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C430.0%20272.0%2C377.0%20272.0%2C347.0%20180.0%2C400.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C418.1%20158.8%2C411.2%20158.8%2C395.6%20170.8%2C402.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C406.7%20139.1%2C399.8%20139.1%2C384.2%20151.0%2C391.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C395.3%20119.3%2C388.4%20119.3%2C372.8%20131.2%2C379.7%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C383.9%2099.5%2C377.0%2099.5%2C361.4%20111.5%2C368.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C418.1%20201.2%2C411.2%20201.2%2C395.6%20189.2%2C402.5%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C406.7%20220.9%2C399.8%20220.9%2C384.2%20209.0%2C391.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C395.3%20240.7%2C388.4%20240.7%2C372.8%20228.8%2C379.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C383.9%20260.5%2C377.0%20260.5%2C361.4%20248.5%2C368.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C400.0%2088.0%2C347.0%2088.0%2C317.0%20180.0%2C370.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C400.0%20272.0%2C347.0%20272.0%2C317.0%20180.0%2C370.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C388.1%20158.8%2C381.2%20158.8%2C365.6%20170.8%2C372.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C376.7%20139.1%2C369.8%20139.1%2C354.2%20151.0%2C361.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C365.3%20119.3%2C358.4%20119.3%2C342.8%20131.2%2C349.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C353.9%2099.5%2C347.0%2099.5%2C331.4%20111.5%2C338.3%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C388.1%20201.2%2C381.2%20201.2%2C365.6%20189.2%2C372.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C376.7%20220.9%2C369.8%20220.9%2C354.2%20209.0%2C361.1%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C365.3%20240.7%2C358.4%20240.7%2C342.8%20228.8%2C349.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C353.9%20260.5%2C347.0%20260.5%2C331.4%20248.5%2C338.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C370.0%2088.0%2C317.0%2088.0%2C287.0%20180.0%2C340.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C370.0%20272.0%2C317.0%20272.0%2C287.0%20180.0%2C340.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C358.1%20158.8%2C351.2%20158.8%2C335.6%20170.8%2C342.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C346.7%20139.1%2C339.8%20139.1%2C324.2%20151.0%2C331.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C335.3%20119.3%2C328.4%20119.3%2C312.8%20131.2%2C319.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C323.9%2099.5%2C317.0%2099.5%2C301.4%20111.5%2C308.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C358.1%20201.2%2C351.2%20201.2%2C335.6%20189.2%2C342.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C346.7%20220.9%2C339.8%20220.9%2C324.2%20209.0%2C331.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C335.3%20240.7%2C328.4%20240.7%2C312.8%20228.8%2C319.7%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C323.9%20260.5%2C317.0%20260.5%2C301.4%20248.5%2C308.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C340.0%2088.0%2C287.0%2088.0%2C257.0%20180.0%2C310.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C340.0%20272.0%2C287.0%20272.0%2C257.0%20180.0%2C310.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C328.1%20158.8%2C321.2%20158.8%2C305.6%20170.8%2C312.5%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C316.7%20139.1%2C309.8%20139.1%2C294.2%20151.0%2C301.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C305.3%20119.3%2C298.4%20119.3%2C282.8%20131.2%2C289.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C293.9%2099.5%2C287.0%2099.5%2C271.4%20111.5%2C278.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C328.1%20201.2%2C321.2%20201.2%2C305.6%20189.2%2C312.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C316.7%20220.9%2C309.8%20220.9%2C294.2%20209.0%2C301.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C305.3%20240.7%2C298.4%20240.7%2C282.8%20228.8%2C289.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C293.9%20260.5%2C287.0%20260.5%2C271.4%20248.5%2C278.3%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C310.0%2088.0%2C257.0%2088.0%2C227.0%20180.0%2C280.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C310.0%20272.0%2C257.0%20272.0%2C227.0%20180.0%2C280.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C298.1%20158.8%2C291.2%20158.8%2C275.6%20170.8%2C282.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C286.7%20139.1%2C279.8%20139.1%2C264.2%20151.0%2C271.1%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C275.3%20119.3%2C268.4%20119.3%2C252.8%20131.2%2C259.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C263.9%2099.5%2C257.0%2099.5%2C241.4%20111.5%2C248.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C298.1%20201.2%2C291.2%20201.2%2C275.6%20189.2%2C282.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C286.7%20220.9%2C279.8%20220.9%2C264.2%20209.0%2C271.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C275.3%20240.7%2C268.4%20240.7%2C252.8%20228.8%2C259.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C263.9%20260.5%2C257.0%20260.5%2C241.4%20248.5%2C248.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C280.0%2088.0%2C227.0%2088.0%2C197.0%20180.0%2C250.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C280.0%20272.0%2C227.0%20272.0%2C197.0%20180.0%2C250.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C268.1%20158.8%2C261.2%20158.8%2C245.6%20170.8%2C252.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C256.7%20139.1%2C249.8%20139.1%2C234.2%20151.0%2C241.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C245.3%20119.3%2C238.4%20119.3%2C222.8%20131.2%2C229.7%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C233.9%2099.5%2C227.0%2099.5%2C211.4%20111.5%2C218.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C268.1%20201.2%2C261.2%20201.2%2C245.6%20189.2%2C252.5%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C256.7%20220.9%2C249.8%20220.9%2C234.2%20209.0%2C241.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C245.3%20240.7%2C238.4%20240.7%2C222.8%20228.8%2C229.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C233.9%20260.5%2C227.0%20260.5%2C211.4%20248.5%2C218.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C250.0%2088.0%2C197.0%2088.0%2C167.0%20180.0%2C220.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C250.0%20272.0%2C197.0%20272.0%2C167.0%20180.0%2C220.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C238.1%20158.8%2C231.2%20158.8%2C215.6%20170.8%2C222.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C226.7%20139.1%2C219.8%20139.1%2C204.2%20151.0%2C211.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C215.3%20119.3%2C208.4%20119.3%2C192.8%20131.2%2C199.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C203.9%2099.5%2C197.0%2099.5%2C181.4%20111.5%2C188.3%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C238.1%20201.2%2C231.2%20201.2%2C215.6%20189.2%2C222.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C226.7%20220.9%2C219.8%20220.9%2C204.2%20209.0%2C211.1%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C215.3%20240.7%2C208.4%20240.7%2C192.8%20228.8%2C199.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C203.9%20260.5%2C197.0%20260.5%2C181.4%20248.5%2C188.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C220.0%2088.0%2C167.0%2088.0%2C137.0%20180.0%2C190.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C220.0%20272.0%2C167.0%20272.0%2C137.0%20180.0%2C190.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C208.1%20158.8%2C201.2%20158.8%2C185.6%20170.8%2C192.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C196.7%20139.1%2C189.8%20139.1%2C174.2%20151.0%2C181.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C185.3%20119.3%2C178.4%20119.3%2C162.8%20131.2%2C169.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C173.9%2099.5%2C167.0%2099.5%2C151.4%20111.5%2C158.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C208.1%20201.2%2C201.2%20201.2%2C185.6%20189.2%2C192.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C196.7%20220.9%2C189.8%20220.9%2C174.2%20209.0%2C181.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C185.3%20240.7%2C178.4%20240.7%2C162.8%20228.8%2C169.7%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C173.9%20260.5%2C167.0%20260.5%2C151.4%20248.5%2C158.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C190.0%2088.0%2C137.0%2088.0%2C107.0%20180.0%2C160.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C190.0%20272.0%2C137.0%20272.0%2C107.0%20180.0%2C160.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C178.1%20158.8%2C171.2%20158.8%2C155.6%20170.8%2C162.5%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C166.7%20139.1%2C159.8%20139.1%2C144.2%20151.0%2C151.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C155.3%20119.3%2C148.4%20119.3%2C132.8%20131.2%2C139.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C143.9%2099.5%2C137.0%2099.5%2C121.4%20111.5%2C128.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C178.1%20201.2%2C171.2%20201.2%2C155.6%20189.2%2C162.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C166.7%20220.9%2C159.8%20220.9%2C144.2%20209.0%2C151.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C155.3%20240.7%2C148.4%20240.7%2C132.8%20228.8%2C139.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C143.9%20260.5%2C137.0%20260.5%2C121.4%20248.5%2C128.3%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C160.0%2088.0%2C107.0%2088.0%2C77.0%20180.0%2C130.0%22%20fill%3D%22%232F343A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C160.0%20272.0%2C107.0%20272.0%2C77.0%20180.0%2C130.0%22%20fill%3D%22%2324282D%22%2F%3E%3Cpolygon%20points%3D%22170.8%2C148.1%20158.8%2C141.2%20158.8%2C125.6%20170.8%2C132.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22151.0%2C136.7%20139.1%2C129.8%20139.1%2C114.2%20151.0%2C121.1%22%20fill%3D%22%233A3F45%22%2F%3E%3Cpolygon%20points%3D%22131.2%2C125.3%20119.3%2C118.4%20119.3%2C102.8%20131.2%2C109.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22111.5%2C113.9%2099.5%2C107.0%2099.5%2C91.4%20111.5%2C98.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22189.2%2C148.1%20201.2%2C141.2%20201.2%2C125.6%20189.2%2C132.5%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22209.0%2C136.7%20220.9%2C129.8%20220.9%2C114.2%20209.0%2C121.1%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22228.8%2C125.3%20240.7%2C118.4%20240.7%2C102.8%20228.8%2C109.7%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22248.5%2C113.9%20260.5%2C107.0%20260.5%2C91.4%20248.5%2C98.3%22%20fill%3D%22%23F2D27A%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C130.0%2088.0%2C77.0%20180.0%2C24.0%20272.0%2C77.0%22%20fill%3D%22%233A3F45%22%2F%3E%3Cline%20x1%3D%22180%22%20y1%3D%2277%22%20x2%3D%22180%22%20y2%3D%2233%22%20stroke%3D%22%23EDEFEA%22%20stroke-width%3D%222%22%2F%3E%3Cpolygon%20points%3D%22180.0%2C33.0%20206.0%2C41.0%20180.0%2C49.0%22%20fill%3D%22%23C6F135%22%2F%3E%3C%2Fsvg%3E" alt="O prédio do Ponto pronto, 12 andares" style="position:absolute;inset:110px 0 10px 0;width:100%;height:calc(100% - 120px);object-fit:contain;object-position:center bottom">
+    <div style="position:absolute;left:24px;top:22px;display:flex;flex-direction:column;gap:4px">
+     <span style="font:700 64px/1 'Geist',sans-serif;letter-spacing:-.03em;color:#C6F135">100%</span>
+     <span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">12 DE 12 ANDARES PRONTOS · TESTES OK</span>
+    </div>
+    <!-- Diário ao vivo: a última notícia de verdade, com hora -->
+    <div style="position:absolute;left:24px;bottom:22px;width:360px;display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:16px;background:rgba(20,22,25,.86);border:1px solid #2C3036">
+     <span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">O QUE ACONTECEU AGORA HÁ POUCO</span>
+     <span class="pg-log" style="font-size:13px;line-height:1.45;color:#EDEFEA"><span style="font-family:'Geist Mono',monospace;color:#C6F135">05:41:12</span>&nbsp; A Vercel recebeu 38 de 61 arquivos.</span>
+     <span style="font-size:13px;line-height:1.45;color:#B4BBB2"><span style="font-family:'Geist Mono',monospace;color:#8E968C">05:40:58</span>&nbsp; Endereço do banco gravado na Vercel.</span>
+     <span style="font-size:13px;line-height:1.45;color:#8E968C"><span style="font-family:'Geist Mono',monospace">05:40:31</span>&nbsp; Banco pronto: 7 tabelas e 1 função.</span>
+    </div>
+   </section>
+
+   <aside style="display:flex;flex-direction:column;gap:14px;min-height:0">
+    <section style="display:flex;flex-direction:column;gap:14px;padding:24px;border-radius:20px;background:#1E2125;border:1px solid #2C3036;flex:1;min-height:0">
+     <b style="font-size:22px;line-height:1.25">Pode deixar o Atlas trabalhando. Ele avisa no celular quando estiver pronto.</b>
+     <!-- Total: etapa X de 6, % e tempo que falta -->
+     <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="display:flex;justify-content:space-between;font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C"><span>ETAPA 3 DE 6 · <span class="pg-total-n" style="color:#EDEFEA"></span> DO TOTAL</span><span>FALTAM ~4 MIN</span></span>
+      <span style="position:relative;height:4px;border-radius:2px;background:#2A2E33;overflow:hidden"><i class="pg-total" style="position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:#C6F135"></i></span>
+     </div>
+     <ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column">
+      <li class="pg-passo">
+       <span class="pg-bola pg-bola--feito">✓</span>
+       <span class="pg-txt"><span class="pg-tit"><b>Vistoria final</b><span class="pg-dur">1 MIN 48 S</span></span><span class="pg-sub">Segurança, privacidade (LGPD) e cada pessoa vendo só o que é dela.</span></span>
+      </li>
+      <li class="pg-passo">
+       <span class="pg-bola pg-bola--feito">✓</span>
+       <span class="pg-txt"><span class="pg-tit"><b>Banco de dados na sua conta Supabase</b><span class="pg-dur">2 MIN 05 S</span></span><span class="pg-sub">Criado em São Paulo, com as 7 tabelas e 1 função do Ponto.</span></span>
+      </li>
+      <li class="pg-passo pg-passo--agora">
+       <span class="pg-anel" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="none" stroke="#2C3036" stroke-width="2.5"/><circle class="pg-anel-arco" cx="14" cy="14" r="12" fill="none" stroke="#C6F135" stroke-width="2.5" stroke-linecap="round" pathLength="100" transform="rotate(-90 14 14)"/></svg><span>3</span></span>
+       <span class="pg-txt">
+        <span class="pg-tit"><b>Publicando na sua conta Vercel</b></span>
+        <span class="pg-sub">Montando o sistema e ligando ao banco.</span>
+        <span class="pg-linha" role="progressbar" aria-label="Publicando na Vercel" aria-valuemin="0" aria-valuemax="100">
+         <span class="pg-barra"><i class="pg-barra-i"></i></span>
+         <span class="pg-agora"><span class="pg-msg pg-msg1">Enviando arquivos · 38 de 61</span><span class="pg-msg pg-msg2">Instalando o que ele usa</span><span class="pg-msg pg-msg3">Montando a versão final</span><span class="pg-msg pg-msg4">Ligando o endereço</span></span>
+         <span class="pg-pct"></span>
+        </span>
+        <span class="pg-pulso"><span class="pg-vivo pg-vivo--p"></span>Última notícia da Vercel há 3 s · normalmente leva 2 a 4 min</span>
+       </span>
+      </li>
+      <li class="pg-passo pg-passo--falta">
+       <span class="pg-bola">4</span>
+       <span class="pg-txt"><span class="pg-tit"><b>Ligando ao seu GitHub</b></span><span class="pg-sub">Toda mudança aprovada no pós-obra entra no ar sozinha.</span></span>
+      </li>
+      <li class="pg-passo pg-passo--falta">
+       <span class="pg-bola">5</span>
+       <span class="pg-txt"><span class="pg-tit"><b>Teste de verdade no endereço</b></span><span class="pg-sub">O Atlas abre o sistema e confere que ele responde.</span></span>
+      </li>
+      <li class="pg-passo pg-passo--falta" style="border-bottom:none">
+       <span class="pg-bola">6</span>
+       <span class="pg-txt"><span class="pg-tit"><b>Pronto para instalar no celular</b></span><span class="pg-sub">Ícone, nome e o QR code para a equipe.</span></span>
+      </li>
+     </ol>
+    </section>
+   </aside>
+  </div>
+ </main>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Esperando } from '../ui/Progresso'
 import { textoDaTrava } from './explicar-trava'
 import { Botao, CampoFalado, Icone, Microfone, Trabalhando, useVoz } from '../ui'
 import { type PonteArquivos } from './ponte-arquivos'
@@ -186,7 +187,8 @@ export function Batismo({ obra, batismo, nomes: conferidor, arquivos, onVoltar, 
           ))}
         </div>
         <div className="at-bat__acoes-meio">
-          <Botao variante="secundario" disabled={ocupado} onClick={() => void pedir({ evitar: vistos })}>{ocupado && pronto ? <><span className="at-bat__gira" aria-hidden="true" />Pensando em outros nomes…</> : '↻ Sugerir outros'}</Botao>
+          <Botao variante="secundario" disabled={ocupado} onClick={() => void pedir({ evitar: vistos })}>{ocupado && pronto ? 'Pensando em outros nomes…' : '↻ Sugerir outros'}</Botao>
+          {ocupado && pronto && <Esperando rotulo="Pensando em outros nomes" agora="Lendo as telas e pensando em 3 nomes" costume={[20, 40]} />}
           <button type="button" className="at-bat__falar" aria-expanded={falando} onClick={() => setFalando((f) => !f)}><Icone nome="microfone" tamanho={16} />Falar uma ideia de nome</button>
         </div>
         {falando && (

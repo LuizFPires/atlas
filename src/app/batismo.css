@@ -52,6 +52,5 @@
 .at-bat__cartao-botao { height: 40px; border-radius: 10px; background: #b5651d; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
 /* "Sugerir outros" (Luiz, 24/11/2026): enquanto o Claude pensa, os nomes atuais ficam apagados e o botão gira. */
 .at-bat__nomes--esperando { opacity: 0.4; pointer-events: none; transition: opacity 0.2s; }
-.at-bat__gira { display: inline-block; width: 14px; height: 14px; margin-right: 8px; vertical-align: -2px; border-radius: 7px; border: 2px solid currentColor; border-top-color: transparent; animation: at-bat-gira 1s linear infinite; }
-@keyframes at-bat-gira { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .at-bat__gira { animation: none; } }
+
+.at-bat__acoes-meio > .at-prog { flex: 1 1 260px; }

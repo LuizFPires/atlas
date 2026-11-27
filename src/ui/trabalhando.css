@@ -12,12 +12,11 @@
 .at-trab__etapas li { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--mute2); transition: color 0.3s; }
 .at-trab__etapas li[data-fase='feita'] { color: var(--mute); }
 .at-trab__etapas li[data-fase='agora'] { color: var(--text); font-weight: 600; }
-.at-trab__marca { flex: none; width: 22px; height: 22px; border-radius: 11px; border: 1px solid var(--card-b); display: grid; place-items: center; color: var(--on-lime); }
+.at-trab__marca { flex: none; width: 28px; height: 28px; border-radius: 14px; border: 2px solid var(--card-b); box-sizing: border-box; display: grid; place-items: center; color: var(--mute2); font: 600 11px var(--font-mono); }
+li[data-fase='feita'] .at-trab__marca { color: var(--on-lime); }
 li[data-fase='feita'] .at-trab__marca { background: var(--lime); border-color: var(--lime); }
 li[data-fase='agora'] .at-trab__marca { border-color: var(--lime); }
-.at-trab__giro { width: 12px; height: 12px; border-radius: 6px; border: 2px solid var(--card-b); border-top-color: var(--lime); animation: at-trab-gira 0.8s linear infinite; }
 .at-trab__nota { font-size: 14px; line-height: 1.5; color: var(--mute); }
 @keyframes at-trab-brilho { to { transform: translateX(100%); } }
-@keyframes at-trab-gira { to { transform: rotate(360deg); } }
 @media (max-width: 900px) { .at-trab { flex-direction: column; align-items: stretch; } .at-trab__ilustra { flex: none; max-width: none; } }
-@media (prefers-reduced-motion: reduce) { .at-trab__barra i::after, .at-trab__giro { animation: none; } .at-trab__barra i { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .at-trab__barra i::after { animation: none; } .at-trab__barra i { transition: none; } }

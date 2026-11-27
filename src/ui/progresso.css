@@ -1,0 +1,20 @@
+/* Progresso sem bolinha girando (PG1/PG2, aprovado em 27/11/2026). Só tokens do Atlas. */
+.at-prog { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.at-prog__linha { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.at-prog__barra { position: relative; flex: 1; min-width: 70px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.at-prog__barra i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 2px; background: var(--lime); transition: width 0.6s ease; }
+.at-prog__agora { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; color: var(--text); }
+.at-prog__pct { flex: none; min-width: 34px; text-align: right; font: 600 12px var(--font-mono); color: var(--lime-txt); }
+.at-prog__pulso { display: flex; align-items: center; gap: 7px; font-size: 12px; line-height: 1.4; color: var(--mute2); }
+.at-prog__pulso--demorando { color: var(--aviso-txt); }
+.at-prog__vivo { flex: none; width: 6px; height: 6px; border-radius: 3px; background: var(--lime); animation: at-prog-vivo 1.8s ease-out infinite; }
+.at-prog__pulso--demorando .at-prog__vivo { background: var(--aviso); animation: none; }
+@keyframes at-prog-vivo { 0% { box-shadow: 0 0 0 0 rgb(198 241 53 / 0.55); } 70% { box-shadow: 0 0 0 7px rgb(198 241 53 / 0); } 100% { box-shadow: 0 0 0 0 rgb(198 241 53 / 0); } }
+
+.at-anel { position: relative; flex: none; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; }
+.at-anel svg { position: absolute; inset: 0; }
+.at-anel__fundo { stroke: var(--card-b); }
+.at-anel__arco { stroke: var(--lime); transition: stroke-dashoffset 0.6s ease; }
+.at-anel > span { font: 700 12px var(--font-mono); color: var(--lime-txt); }
+
+@media (prefers-reduced-motion: reduce) { .at-prog__vivo { animation: none; } .at-prog__barra i, .at-anel__arco { transition: none; } }

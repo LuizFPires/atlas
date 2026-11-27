@@ -7,9 +7,6 @@
 .at-etapas__lista li[data-estado='feito'] .at-etapas__barra, .at-etapas__lista li[data-estado='agora'] .at-etapas__barra { background: var(--lime); }
 .at-etapas__aviso { flex: none; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--card-b); background: var(--card); color: var(--text); font: 600 14px var(--font-text); cursor: pointer; }
 .at-etapas__aviso:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
-.at-etapas__giro { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--lime); border-right-color: transparent; animation: at-etapas-giro 1s linear infinite; }
-@keyframes at-etapas-giro { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .at-etapas__giro { animation: none; } }
 @media (max-width: 900px) { .at-etapas { flex-direction: column; align-items: stretch; } .at-etapas__lista { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .at-etapas__ir { all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: 7px; width: 100%; padding: 4px 0 6px; cursor: pointer; border-radius: 6px; }
 .at-etapas__ir:hover { color: var(--lime-txt, var(--lime)); }

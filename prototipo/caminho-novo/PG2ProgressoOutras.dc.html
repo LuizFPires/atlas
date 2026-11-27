@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · As outras telas de espera no modelo da barra de progresso</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0} a{text-decoration:none}
+@property --pg-p{syntax:'<integer>';inherits:true;initial-value:0}
+@property --pg-t{syntax:'<integer>';inherits:true;initial-value:33}
+@keyframes pgP{0%{--pg-p:4}100%{--pg-p:100}}
+@keyframes pgT{0%{--pg-t:34}100%{--pg-t:50}}
+@keyframes pgMsg1{0%,22%{opacity:1}26%,100%{opacity:0}}
+@keyframes pgMsg2{0%,22%{opacity:0}26%,47%{opacity:1}51%,100%{opacity:0}}
+@keyframes pgMsg3{0%,47%{opacity:0}51%,72%{opacity:1}76%,100%{opacity:0}}
+@keyframes pgMsg4{0%,72%{opacity:0}76%,100%{opacity:1}}
+@keyframes pgVivo{0%{box-shadow:0 0 0 0 rgba(198,241,53,.55)}70%{box-shadow:0 0 0 7px rgba(198,241,53,0)}100%{box-shadow:0 0 0 0 rgba(198,241,53,0)}}
+@keyframes pgLog{0%{background:rgba(198,241,53,.14)}100%{background:transparent}}
+.pg-demo{animation:pgP 14s linear infinite, pgT 14s linear infinite}
+.pg-vivo{width:8px;height:8px;border-radius:4px;background:#C6F135;animation:pgVivo 1.8s ease-out infinite;flex:none}
+.pg-vivo--p{width:6px;height:6px;border-radius:3px}
+.pg-log{border-radius:6px;margin:0 -6px;padding:0 6px;animation:pgLog 2.4s ease-out infinite}
+.pg-passo{display:flex;gap:14px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #2A2E33}
+.pg-bola{width:28px;height:28px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;font:600 12px 'Geist Mono',monospace;border:2px solid #2C3036;color:#8E968C;box-sizing:border-box}
+.pg-bola--feito{background:#2A3A12;border-color:#2A3A12;color:#C6F135;font:700 13px 'Geist',sans-serif}
+.pg-anel{position:relative;width:28px;height:28px;flex:none;display:flex;align-items:center;justify-content:center}
+.pg-anel svg{position:absolute;inset:0}
+.pg-anel span{font:700 12px 'Geist Mono',monospace;color:#C6F135}
+.pg-anel-arco{stroke-dasharray:100;stroke-dashoffset:calc(100 - var(--pg-p));transition:stroke-dashoffset .4s}
+.pg-txt{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.pg-tit{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.pg-tit b{font-size:15px;color:#EDEFEA}
+.pg-passo--falta .pg-tit b{color:#8E968C}
+.pg-dur{font:500 11px 'Geist Mono',monospace;letter-spacing:.06em;color:#8E968C;white-space:nowrap}
+.pg-sub{font-size:13px;line-height:1.45;color:#8E968C}
+.pg-linha{display:flex;align-items:center;gap:10px;margin-top:8px}
+.pg-barra{position:relative;flex:1;min-width:90px;height:4px;border-radius:2px;background:#2A2E33;overflow:hidden}
+.pg-barra-i{position:absolute;left:0;top:0;bottom:0;width:calc(var(--pg-p) * 1%);border-radius:2px;background:#C6F135}
+.pg-agora{position:relative;width:168px;height:16px;flex:none}
+.pg-msg{position:absolute;right:0;top:0;white-space:nowrap;font:500 12px 'Geist',sans-serif;color:#EDEFEA;opacity:0}
+.pg-msg1{animation:pgMsg1 14s linear infinite}.pg-msg2{animation:pgMsg2 14s linear infinite}.pg-msg3{animation:pgMsg3 14s linear infinite}.pg-msg4{animation:pgMsg4 14s linear infinite}
+.pg-pct{width:34px;text-align:right;font:600 12px 'Geist Mono',monospace;color:#C6F135;counter-reset:p var(--pg-p)}
+.pg-pct::after{content:counter(p) '%'}
+.pg-total{width:calc(var(--pg-t) * 1%)}
+.pg-total-n{counter-reset:t var(--pg-t)}
+.pg-total-n::after{content:counter(t) '%'}
+.pg-pulso{display:flex;align-items:center;gap:7px;margin-top:4px;font-size:12px;color:#8E968C}
+@media (prefers-reduced-motion: reduce){.pg-demo,.pg-vivo,.pg-log,.pg-msg{animation:none}.pg-msg1{opacity:1}}
+
+.pg-pct--fixo::after{content:none}</style>
+</helmet>
+<div class="" style="position:relative;width:1440px;height:900px;background:#141619;color:#EDEFEA;font-family:'Geist',system-ui,sans-serif;display:flex;overflow:hidden">
+ <dc-import name="Shell" ativo="obras" tema="escuro" hint-size="248px,900px"></dc-import>
+<main style="flex:1;min-width:0;box-sizing:border-box;padding:24px 36px 28px;display:flex;flex-direction:column;gap:16px">
+ <div style="display:flex;flex-direction:column;gap:6px"><span style="font:600 12px 'Geist Mono',monospace;letter-spacing:.12em;color:#8E968C">PROPOSTA · NENHUMA BOLINHA GIRANDO SOZINHA</span><h1 style="margin:0;font-size:26px;letter-spacing:-.01em">Todo lugar que espera mostra o que faz, quanto falta e um sinal de vida</h1></div>
+ <section style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:16px 18px;border-radius:16px;background:#191B1E;border:1px solid #2C3036">
+ <span style="display:flex;flex-direction:column;gap:4px"><b style="font-size:14px;color:#C6F135">1 · O que está fazendo agora</b><span style="font-size:13px;line-height:1.45;color:#B4BBB2">Texto curto à direita da barra, que muda quando a etapa muda.</span></span>
+ <span style="display:flex;flex-direction:column;gap:4px"><b style="font-size:14px;color:#C6F135">2 · Quanto já foi, de verdade</b><span style="font-size:13px;line-height:1.45;color:#B4BBB2">A barra conta coisas reais (arquivos, telas, abas, tentativas). Sem contagem, anda pelo tempo de costume e para em 90% até a notícia chegar.</span></span>
+ <span style="display:flex;flex-direction:column;gap:4px"><b style="font-size:14px;color:#C6F135">3 · Sinal de vida</b><span style="font-size:13px;line-height:1.45;color:#B4BBB2">Ponto que pulsa e “última notícia há X s”. Passou do normal, a tela avisa em âmbar o que está acontecendo.</span></span>
+</section>
+ <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:1fr;gap:14px"><section style="display:flex;flex-direction:column;gap:12px;padding:16px 18px;border-radius:16px;background:#1E2125;border:1px solid #2C3036;min-width:0">
+ <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#8E968C">CONTAS · LIGAR O GITHUB</span><span style="font-size:12px;color:#6B7269">Antes: "esperando" girando</span></span>
+ <div style="display:flex;gap:12px;align-items:flex-start;--pg-p:91"><span class="pg-txt"><span class="pg-tit"><b>Esperando você confirmar no site do GitHub</b></span>
+ <span class="pg-linha"><span class="pg-barra"><i class="pg-barra-i"></i></span><span style="font:500 12px 'Geist',sans-serif;color:#EDEFEA;white-space:nowrap">Código vale mais 13:42</span><span class="pg-pct pg-pct--fixo"></span></span>
+ <span class="pg-pulso"><span class="pg-vivo pg-vivo--p"></span>Conferindo a cada 3 s · última conferência há 1 s</span></span></div></section><section style="display:flex;flex-direction:column;gap:12px;padding:16px 18px;border-radius:16px;background:#1E2125;border:1px solid #2C3036;min-width:0">
+ <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#8E968C">OBRA · O CLAUDE CONSTRUINDO</span><span style="font-size:12px;color:#6B7269">Antes: bolinha na etapa</span></span>
+ <div style="display:flex;gap:12px;align-items:flex-start;--pg-p:43"><span class="pg-anel" style="--pg-p:43" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="none" stroke="#2C3036" stroke-width="2.5"/><circle class="pg-anel-arco" cx="14" cy="14" r="12" fill="none" stroke="#C6F135" stroke-width="2.5" stroke-linecap="round" pathLength="100" transform="rotate(-90 14 14)"/></svg><span>4</span></span><span class="pg-txt"><span class="pg-tit"><b>Etapa 4 · Agenda dos funcionários</b></span><span class="pg-sub">Implementando, revisando e testando.</span>
+ <span class="pg-linha"><span class="pg-barra"><i class="pg-barra-i"></i></span><span style="font:500 12px 'Geist',sans-serif;color:#EDEFEA;white-space:nowrap">Item 3 de 7 · testes</span><span class="pg-pct pg-pct--fixo">43%</span></span>
+ <span class="pg-pulso"><span class="pg-vivo pg-vivo--p"></span>O Claude mexeu na obra há 8 s</span></span></div></section><section style="display:flex;flex-direction:column;gap:12px;padding:16px 18px;border-radius:16px;background:#1E2125;border:1px solid #2C3036;min-width:0">
+ <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#8E968C">PROTÓTIPO · DESENHANDO AS TELAS</span><span style="font-size:12px;color:#6B7269">Antes: bolinha no cartão</span></span>
+ <div style="display:flex;gap:12px;align-items:flex-start;--pg-p:38"><span class="pg-txt"><span class="pg-tit"><b>Desenhando as telas do Ponto</b></span>
+ <span class="pg-linha"><span class="pg-barra"><i class="pg-barra-i"></i></span><span style="font:500 12px 'Geist',sans-serif;color:#EDEFEA;white-space:nowrap">Tela 3 de 8 · Agenda</span><span class="pg-pct pg-pct--fixo">38%</span></span>
+ <span class="pg-pulso"><span class="pg-vivo pg-vivo--p"></span>Normalmente 1 a 2 min por tela · última notícia há 5 s</span></span></div></section><section style="display:flex;flex-direction:column;gap:12px;padding:16px 18px;border-radius:16px;background:#1E2125;border:1px solid #2C3036;min-width:0">
+ <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#8E968C">USAR O SISTEMA · ABRIR PARA TESTAR</span><span style="font-size:12px;color:#6B7269">Antes: bolinha no botão</span></span>
+ <div style="display:flex;gap:12px;align-items:flex-start;--pg-p:55"><span class="pg-txt"><span class="pg-tit"><b>Abrindo o sistema neste computador</b></span>
+ <span class="pg-linha"><span class="pg-barra"><i class="pg-barra-i"></i></span><span style="font:500 12px 'Geist',sans-serif;color:#EDEFEA;white-space:nowrap">Passo 2 de 3 · instalando</span><span class="pg-pct pg-pct--fixo">55%</span></span>
+ <span class="pg-pulso"><span class="pg-vivo pg-vivo--p"></span>Normalmente menos de 1 min</span></span></div></section><section style="display:flex;flex-direction:column;gap:12px;padding:16px 18px;border-radius:16px;background:#1E2125;border:1px solid #2C3036;min-width:0">
+ <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#8E968C">NOME E MARCA · SUGESTÕES</span><span style="font-size:12px;color:#6B7269">Antes: bolinha no botão</span></span>
+ <span style="position:relative;display:flex;align-items:center;justify-content:center;height:48px;border-radius:12px;background:#2A3A12;color:#C6F135;font:700 15px 'Geist',sans-serif;overflow:hidden;--pg-p:62">Lendo as telas e pensando em 3 nomes<span style="position:absolute;left:0;bottom:0;height:3px;width:62%;background:#C6F135"></span></span>
+ <span class="pg-pulso"><span class="pg-vivo pg-vivo--p"></span>Normalmente 20 a 40 s · já foram 24 s</span></section><section style="display:flex;flex-direction:column;gap:12px;padding:16px 18px;border-radius:16px;background:#1E2125;border:1px solid #2C3036;min-width:0">
+ <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#8E968C">PLANILHA · LENDO O ARQUIVO</span><span style="font-size:12px;color:#6B7269">Antes: bolinha ao lado do texto</span></span>
+ <div style="display:flex;gap:12px;align-items:flex-start;--pg-p:50"><span class="pg-txt"><span class="pg-tit"><b>Lendo a sua planilha</b></span>
+ <span class="pg-linha"><span class="pg-barra"><i class="pg-barra-i"></i></span><span style="font:500 12px 'Geist',sans-serif;color:#EDEFEA;white-space:nowrap">Aba 2 de 4 · Funcionários</span><span class="pg-pct pg-pct--fixo">50%</span></span>
+ <span class="pg-pulso"><span class="pg-vivo pg-vivo--p"></span>312 linhas lidas até agora</span></span></div></section><section style="display:flex;flex-direction:column;gap:12px;padding:16px 18px;border-radius:16px;background:#1E2125;border:1px solid #2C3036;min-width:0">
+ <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#8E968C">TRAVA · CONFERINDO SE DESTRAVOU</span><span style="font-size:12px;color:#6B7269">Antes: bolinha no botão</span></span>
+ <div style="display:flex;gap:12px;align-items:flex-start;--pg-p:33"><span class="pg-txt"><span class="pg-tit"><b>Conferindo com o GitHub</b></span>
+ <span class="pg-linha"><span class="pg-barra"><i class="pg-barra-i"></i></span><span style="font:500 12px 'Geist',sans-serif;color:#EDEFEA;white-space:nowrap">Conferência 1 de 3</span><span class="pg-pct pg-pct--fixo">33%</span></span>
+ <span class="pg-pulso"><span class="pg-vivo pg-vivo--p"></span>Se ainda estiver travado, a ficha diz o que fazer</span></span></div></section><section style="display:flex;flex-direction:column;gap:12px;padding:16px 18px;border-radius:16px;background:#1E2125;border:1px solid #2C3036;min-width:0">
+ <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#8E968C">VOZ · TRANSCREVENDO</span><span style="font-size:12px;color:#6B7269">Antes: bolinha na barra de voz</span></span>
+ <div style="display:flex;gap:12px;align-items:flex-start;--pg-p:70"><span class="pg-txt"><span class="pg-tit"><b>Transformando a fala em texto</b></span>
+ <span class="pg-linha"><span class="pg-barra"><i class="pg-barra-i"></i></span><span style="font:500 12px 'Geist',sans-serif;color:#EDEFEA;white-space:nowrap">12 s de fala</span><span class="pg-pct pg-pct--fixo">70%</span></span>
+ <span class="pg-pulso"><span class="pg-vivo pg-vivo--p"></span>Normalmente metade do tempo da fala</span></span></div></section><section style="display:flex;flex-direction:column;gap:12px;padding:16px 18px;border-radius:16px;background:#1E2125;border:1px solid #2C3036;min-width:0">
+ <span style="display:flex;flex-direction:column;gap:3px"><span style="font:600 11px 'Geist Mono',monospace;letter-spacing:.1em;color:#8E968C">CELULAR · GERANDO O LINK</span><span style="font-size:12px;color:#6B7269">Antes: bolinha na janela</span></span>
+ <div style="display:flex;gap:12px;align-items:flex-start;--pg-p:66"><span class="pg-txt"><span class="pg-tit"><b>Gerando o link seguro para o celular</b></span>
+ <span class="pg-linha"><span class="pg-barra"><i class="pg-barra-i"></i></span><span style="font:500 12px 'Geist',sans-serif;color:#EDEFEA;white-space:nowrap">Passo 2 de 3 · licença</span><span class="pg-pct pg-pct--fixo">66%</span></span>
+ <span class="pg-pulso"><span class="pg-vivo pg-vivo--p"></span>Conferindo a licença com o servidor do Atlas</span></span></div></section></div>
+ <span style="font-size:13px;color:#8E968C">Domínio próprio e Lojas usam a mesma lista do Colocar no ar (anel com número, barra, texto à direita e sinal de vida).</span>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

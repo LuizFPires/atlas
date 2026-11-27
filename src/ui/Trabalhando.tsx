@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { AnelEtapa } from './Progresso'
 import { Icone } from './Icone'
 import './trabalhando.css'
 
@@ -51,7 +52,9 @@ export function Trabalhando({ titulo, etapas, segundos, ilustracao, andamento }:
             const fase = i < atual ? 'feita' : i === atual ? 'agora' : 'depois'
             return (
               <li key={e} data-fase={fase}>
-                <span className="at-trab__marca" aria-hidden="true">{fase === 'feita' ? <Icone nome="check" tamanho={14} /> : fase === 'agora' ? <span className="at-trab__giro" /> : null}</span>
+                {fase === 'agora'
+                  ? <AnelEtapa numero={i + 1} pct={Math.round(Math.max(0, Math.min(1, (pct / 95) * etapas.length - i)) * 100)} />
+                  : <span className="at-trab__marca" aria-hidden="true">{fase === 'feita' ? <Icone nome="check" tamanho={14} /> : i + 1}</span>}
                 <span>{e}</span>
               </li>
             )

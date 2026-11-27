@@ -16,9 +16,6 @@
 .at-pl__lendo { background: var(--card); border: 1px solid var(--card-b); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 10px; }
 .at-pl__status { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 700; }
 .at-pl__conta { margin-left: auto; font: 600 13px var(--font-mono); color: var(--lime-txt); }
-.at-pl__gira { width: 16px; height: 16px; border-radius: 8px; border: 2px solid var(--lime); border-top-color: transparent; animation: at-pl-gira 1s linear infinite; }
-@keyframes at-pl-gira { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .at-pl__gira { animation: none; } }
 .at-pl__aba { display: flex; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--card2); }
 .at-pl__aba > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .at-pl__aba b { font-size: 16px; }
@@ -48,3 +45,5 @@
 .at-pl__levar b { color: var(--text); }
 .at-pl__tag { font: 600 10px var(--font-mono); font-style: normal; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 999px; background: var(--lime); color: var(--on-lime); }
 .at-pl__rotulo--caixa { text-transform: uppercase; }
+
+.at-pl__status > .at-prog { flex: 1; font-size: 14px; font-weight: 500; }

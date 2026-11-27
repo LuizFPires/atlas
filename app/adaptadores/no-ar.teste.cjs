@@ -489,6 +489,32 @@ test('chave pública do banco ainda não apareceu: espera e busca de novo; nunca
   void chamadas
 })
 
+test('acompanhamento: cada etapa conta o avanço de verdade (tabelas, funções), guarda quanto levou e o diário com hora', async () => {
+  const { raiz, cwd } = obraComMigrations()
+  fs.mkdirSync(path.join(cwd, 'supabase', 'functions', 'avisar'), { recursive: true })
+  const vistos = []
+  let n = null
+  const relogio = { t: Date.parse('2026-11-27T08:40:00Z') }
+  const { d } = deps({ query: async (q) => { if (/public\.(marcacoes|funcionarios)/.test(q)) vistos.push(n.estado('ponto').sub); return [] } })
+  n = criarNoAr({ raiz, ...d, agora: () => new Date((relogio.t += 1000)) })
+  await n.iniciar('ponto', 'ponto')
+  await n._esperar('ponto')
+  const e = n.estado('ponto')
+  assert.equal(e.fase, 'noar')
+  assert.deepEqual(vistos.map((s) => s.texto), ['Criando as tabelas · 1 de 2', 'Criando as tabelas · 2 de 2'])
+  assert.ok(vistos[0].pct < vistos[1].pct, 'a barra anda com a contagem')
+  assert.equal(typeof vistos[0].inicio, 'number')
+  assert.equal(typeof vistos[0].noticia, 'number')
+  for (const p of ['vistoria', 'banco', 'publicar']) assert.ok(e.duracoes[p] > 0, p)
+  const textos = e.diario.map((l) => l.texto)
+  assert.ok(textos.includes('Vistoria aprovada.'))
+  assert.ok(textos.includes('Tabelas prontas: 2 arquivos.'))
+  assert.ok(textos.some((t) => /Vercel publicou o sistema/.test(t)))
+  assert.ok(e.diario.every((l) => /^\d{4}-\d\d-\d\dT/.test(l.hora)))
+  assert.ok(e.diario.length <= 30)
+  assert.equal(e.sub, null, 'no fim não fica etapa "agora"')
+})
+
 test('a Vercel não conseguiu montar o sistema (erro de build): vira "vercel-build" com o resumo e a linha corrige', async () => {
   const { raiz } = obra()
   const corrigidos = []

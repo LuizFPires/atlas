@@ -1,3 +1,4 @@
+import { AnelEtapa, Progresso, pctDoProgresso, useRelogio } from '../ui/Progresso'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PASSOS_DOMINIO, explicarErroDominio, limparDominio, type ConferidoDominio, type EstadoDominio, type PonteDominio } from './ponte-dominio'
 
@@ -139,17 +140,37 @@ export function DominioProprio({ pasta, dominio, sugestao, abrirRegistro, onNoAr
   )
 }
 
+const COSTUME_DOMINIO: Record<string, readonly [number, number] | null> = { ligado: [5, 30], troca: null, internet: [600, 7200], cadeado: [60, 900] }
+
 function PassosDominio({ estado }: { estado: EstadoDominio }) {
+  const relogio = useRelogio()
+  // O estado não traz a hora de início: a tela anota quando viu cada etapa começar (para "já foram X" e a barra por costume).
+  const agoraIds = estado.passos.filter((x) => x.estado === 'agora').map((x) => x.id).join(',')
+  const [visto, setVisto] = useState<{ ids: string; inicios: Record<string, number> }>({ ids: '', inicios: {} })
+  if (visto.ids !== agoraIds) {
+    const n = { ...visto.inicios }
+    for (const id of agoraIds ? agoraIds.split(',') : []) if (!n[id]) n[id] = relogio
+    setVisto({ ids: agoraIds, inicios: n })
+  }
+  const inicios = visto.inicios
   return (
     <ol className="at-noar__passos">
-      {PASSOS_DOMINIO.map((p) => {
+      {PASSOS_DOMINIO.map((p, i) => {
         const s = estado.passos.find((x) => x.id === p.id)?.estado ?? 'falta'
         const classe = s === 'demorando' ? 'atencao' : s
         const rotulo = s === 'feito' ? 'feito' : s === 'agora' ? 'fazendo agora' : s === 'demorando' ? 'demorando' : 'falta'
+        const inicio = inicios[p.id] ?? null
+        const costume = COSTUME_DOMINIO[p.id] ?? null
+        const agora = p.id === 'troca' ? 'Esperando a sua troca' : p.id === 'internet' ? 'A internet atualizando' : p.id === 'cadeado' ? 'Ligando o cadeado' : 'Ligando na Vercel'
         return (
           <li key={p.id} className={`at-noar__passo at-noar__passo--${classe}`} aria-label={`${p.titulo}: ${rotulo}`}>
-            <span className="at-noar__bola" aria-hidden="true">{s === 'feito' ? ICONE_OK : s === 'demorando' ? '!' : ''}</span>
-            <span className="at-noar__ptxt"><b>{p.titulo}</b><span>{p.sub}</span></span>
+            {s === 'agora'
+              ? <AnelEtapa numero={i + 1} pct={pctDoProgresso({ inicio, costume }, relogio)} />
+              : <span className="at-noar__bola" aria-hidden="true">{s === 'feito' ? ICONE_OK : s === 'demorando' ? '!' : i + 1}</span>}
+            <span className="at-noar__ptxt"><b>{p.titulo}</b><span>{p.sub}</span>
+              {s === 'agora' && <Progresso rotulo={p.titulo} agora={agora} inicio={inicio} costume={costume} pct={p.id === 'troca' ? 0 : null} relogio={relogio}
+                pulso={p.id === 'troca' ? 'O Atlas confere sozinho a cada minuto se a troca chegou' : undefined} />}
+            </span>
           </li>
         )
       })}

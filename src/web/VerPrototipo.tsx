@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Esperando } from '../ui/Progresso'
 import './ver-prototipo.css'
 
 type Estado = { fase: 'carregando' } | { fase: 'ok'; nome: string; documento: string; ate: string } | { fase: 'erro'; texto: string }
@@ -29,7 +30,7 @@ export function VerPrototipo({ token, api = (import.meta.env.VITE_API_URL as str
     return () => { vivo = false }
   }, [token, api, buscar])
 
-  if (e.fase === 'carregando') return <main className="vp vp--msg"><span className="vp__giro" aria-hidden="true" /><p role="status">Abrindo o protótipo…</p></main>
+  if (e.fase === 'carregando') return <main className="vp vp--msg"><p role="status">Abrindo o protótipo…</p><div className="vp__prog"><Esperando rotulo="Abrindo o protótipo" agora="Buscando as telas" costume={[1, 8]} /></div></main>
   if (e.fase === 'erro') return <main className="vp vp--msg"><b>ATLAS</b><p role="alert">{e.texto}</p></main>
   return (
     <main className="vp">

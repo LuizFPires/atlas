@@ -20,7 +20,18 @@ export interface EstadoNoAr {
   avisos: string[]
   /** A cota do plano do Claude acabou: a obra espera renovar sozinha e continua de onde parou (não é erro). */
   esperandoCota?: boolean
+  /** O que a etapa de agora está fazendo (PG1Progresso). pct = contagem real; null = a tela anda pelo tempo de costume (s). */
+  sub?: SubNoAr | null
+  /** Quanto cada etapa já feita levou (ms). */
+  duracoes?: Partial<Record<IdPassoNoAr, number>>
+  /** Notícias de verdade, com hora (ISO), da mais velha para a mais nova. */
+  diario?: { hora: string; texto: string }[]
 }
+
+export interface SubNoAr { texto: string; pct: number | null; costume: [number, number] | null; inicio: number; noticia: number }
+
+/** Tempo de costume de cada etapa (segundos), para o "faltam ~N min". */
+export const COSTUME_NO_AR: Record<IdPassoNoAr, number> = { vistoria: 120, banco: 240, publicar: 180, github: 20, teste: 20, celular: 1 }
 
 export interface PonteNoAr {
   readonly indisponivel?: boolean
@@ -64,9 +75,19 @@ export function criarNoArFixture({ passoMs = 700, reprovar = false }: { passoMs?
   async function andar(pasta: string, desde = 0) {
     const e = estados.get(pasta)
     if (!e) return
+    e.duracoes = e.duracoes ?? {}
+    e.diario = e.diario ?? []
     for (let i = desde; i < ids.length; i++) {
       e.passos[i].estado = 'agora'
-      await esperaFalsa(passoMs)
+      const inicio = Date.now()
+      const textos = ['Conferindo segurança e privacidade', 'Criando as tabelas', 'Enviando arquivos', 'Ligando ao repositório', 'Abrindo o endereço', 'Preparando o QR code']
+      for (let k = 1; k <= 4; k++) {
+        e.sub = { texto: `${textos[i]} · ${k} de 4`, pct: (k - 1) * 25, costume: null, inicio, noticia: Date.now() }
+        await esperaFalsa(passoMs / 4)
+      }
+      e.sub = null
+      e.duracoes[ids[i]] = Date.now() - inicio
+      e.diario.push({ hora: new Date().toISOString(), texto: `${PASSOS_NO_AR[i].titulo}: pronto.` })
       if (i === 0 && reprova) { e.passos[0].estado = 'atencao'; e.fase = 'vistoria'; e.achados = ['Um funcionário conseguia ver o ponto de outro funcionário. Vai ficar cada um vendo só o seu.', 'Falta a página de privacidade (LGPD) no rodapé do app.']; return }
       e.passos[i].estado = 'feito'
     }
