@@ -43,7 +43,7 @@ export function ContasProntas({ situacao, onContinuar, onOutras, onVoltar }: { s
           {ORDEM.map((c) => (
             <li key={c}>
               <span className="at-cprontas__ok" aria-hidden="true"><Icone nome="check" tamanho={14} /></span>
-              <span><b>{NOMES[c].nome}</b>{situacao[c].usuario ? <span className="at-cprontas__mudo"> · ligado como {situacao[c].usuario}</span> : <span className="at-cprontas__mudo"> · ligado</span>}<small>{NOMES[c].papel}</small></span>
+              <span><span><b>{NOMES[c].nome}</b><span className="at-cprontas__mudo">{situacao[c].usuario ? ` · ligado como ${situacao[c].usuario}` : ' · ligado'}</span></span><small>{NOMES[c].papel}</small></span>
             </li>
           ))}
         </ul>
