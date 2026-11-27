@@ -42,12 +42,32 @@ export interface PedidoAnterior { id: string; nome: string; data: string; status
 
 export interface ResultadoExecucao { id: string; nome: string }
 
+/** Uma revisão (pedido do pós-obra) para a aba Desempenho (aprovado pelo Luiz em 27/11/2026, ideia 2B). */
+export interface Revisao {
+  /** 1 = a primeira pedida. */
+  numero: number
+  id: string
+  nome: string
+  /** Quando foi pedida (ISO). */
+  pedidaEm: string | null
+  status: StatusPedido
+  /** Quanto já foi feito: 100 quando pronta; a que está andando nunca chega a 100 antes de terminar. */
+  pct: number
+  minutosEstimados: number
+  /** Do pedido até ficar pronta. Só depois de pronta. */
+  minutosReais: number | null
+  /** Só da que está andando. */
+  minutosAteAgora: number | null
+}
+
 export interface PontePosObra {
   /** Entende o pedido e explica, sem mexer em nada. */
   entender(pasta: string, pedido: PedidoPosObra): Promise<PlanoPosObra>
   /** Roda a correção pelo mesmo pipeline da obra, só depois do OK. Gera uma versão de teste; o sistema no ar só muda quando o cliente aprovar. */
   executar(pasta: string, pedido: PedidoPosObra, plano: PlanoPosObra): Promise<ResultadoExecucao>
   historico(pasta: string): Promise<PedidoAnterior[]>
+  /** Revisões com % feito e tempos, da mais nova para a mais antiga (aba Desempenho). Opcional: sem ela, a lateral não aparece. */
+  revisoes?(pasta: string): Promise<Revisao[]>
 }
 
 // ---- Licença ------------------------------------------------------------------------------------------------------------------
@@ -153,6 +173,12 @@ export const HISTORICO_EXEMPLO: PedidoAnterior[] = [
   { id: 'h3', nome: 'Relatório de comissão', data: '05/11 · aguardando você', status: 'para-conferir' },
 ]
 
+export const REVISOES_EXEMPLO: Revisao[] = [
+  { numero: 3, id: 'h3', nome: 'Relatório de comissão', pedidaEm: '2026-11-12T13:00:00.000Z', status: 'para-conferir', pct: 100, minutosEstimados: 45, minutosReais: 52, minutosAteAgora: null },
+  { numero: 2, id: 'h2', nome: 'Lembrete 2 h antes', pedidaEm: '2026-11-09T15:00:00.000Z', status: 'no-ar', pct: 100, minutosEstimados: 40, minutosReais: 41, minutosAteAgora: null },
+  { numero: 1, id: 'h1', nome: 'Cor do botão de marcar', pedidaEm: '2026-11-05T12:00:00.000Z', status: 'no-ar', pct: 100, minutosEstimados: 20, minutosReais: 18, minutosAteAgora: null },
+]
+
 export interface PosObraFixture extends PontePosObra { readonly executados: PedidoPosObra[] }
 
 export function criarPosObraFixture(): PosObraFixture {
@@ -184,6 +210,7 @@ export function criarPosObraFixture(): PosObraFixture {
       return { id, nome }
     },
     async historico() { return lista.map((p) => ({ ...p })) },
+    async revisoes() { return REVISOES_EXEMPLO.map((r) => ({ ...r })) },
   }
 }
 
@@ -192,4 +219,5 @@ export const posObraIndisponivel: PontePosObra = {
   async entender() { throw new Error('indisponivel') },
   async executar() { throw new Error('indisponivel') },
   async historico() { return [] },
+  async revisoes() { return [] },
 }

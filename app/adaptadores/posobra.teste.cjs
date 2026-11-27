@@ -181,3 +181,33 @@ test('pedido conferido: depois que o cliente coloca no ar (registro do "Colocar 
   fs.writeFileSync(path.join(raiz, 'obra', '.atlas', 'no-ar.json'), JSON.stringify({ versao: 1, nome: 'barbearia', endereco: 'https://barbearia.vercel.app', quando: '2026-11-12T12:00:00Z' }))
   assert.equal((await p.historico('obra'))[0].status, 'no-ar')
 })
+
+test('revisões (Desempenho): % feito da que está andando (tarefas e tempo, nunca 100 antes de pronta), tempo real e estimado depois', async () => {
+  const { raiz, p, construcao, terminar } = montar()
+  await p.executar('obra', PEDIDO, PLANO) // pedido às 10h00, estimado 30 min
+  const em = (iso) => criarPosObra({ raiz, disparo: null, construcao, licenca: {}, agora: () => new Date(iso) })
+  let [r] = await em('2026-11-12T10:00:00Z').revisoes('obra')
+  assert.deepEqual({ numero: r.numero, status: r.status, pct: r.pct, ate: r.minutosAteAgora, reais: r.minutosReais, est: r.minutosEstimados }, { numero: 1, status: 'em-andamento', pct: 1, ate: 0, reais: null, est: 30 })
+  ;[r] = await em('2026-11-12T10:15:00Z').revisoes('obra')
+  assert.equal(r.pct, 50)
+  assert.equal(r.minutosAteAgora, 15)
+  // 2 de 3 tarefas marcadas no milestone da revisão: o % das tarefas vale mais que o do tempo
+  const arq = path.join(raiz, 'obra', 'PLAN.md')
+  const texto = fs.readFileSync(arq, 'utf8')
+  const i = texto.lastIndexOf('## Milestone')
+  fs.writeFileSync(arq, texto.slice(0, i) + texto.slice(i).replace('- [ ]', '- [x]').replace('- [ ]', '- [x]'))
+  ;[r] = await em('2026-11-12T10:05:00Z').revisoes('obra')
+  assert.equal(r.pct, 67)
+  ;[r] = await em('2026-11-12T12:00:00Z').revisoes('obra')
+  assert.equal(r.pct, 95, 'passou do estimado e ainda não terminou: 95, nunca 100')
+  terminar({ estado: 'parou', motivo: 'concluiu', fimEm: '2026-11-12T10:40:00Z' })
+  ;[r] = await em('2026-11-12T12:00:00Z').revisoes('obra')
+  assert.deepEqual({ status: r.status, pct: r.pct, reais: r.minutosReais, ate: r.minutosAteAgora }, { status: 'para-conferir', pct: 100, reais: 40, ate: null })
+  assert.equal(r.pedidaEm, '2026-11-12T10:00:00.000Z')
+  assert.equal(Object.keys(r).sort().join(','), 'id,minutosAteAgora,minutosEstimados,minutosReais,nome,numero,pct,pedidaEm,status')
+})
+
+test('revisões: obra sem pós-obra devolve lista vazia', async () => {
+  const { p } = montar()
+  assert.deepEqual(await p.revisoes('obra'), [])
+})

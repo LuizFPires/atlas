@@ -89,3 +89,79 @@ test('eixo do consumo: no máximo 6 marcas redondas, mesmo com números grandes 
   expect(marcasY(7006).length).toBeLessThanOrEqual(7)
   expect(marcasY(7006)).toContain(100)
 })
+
+// Revisões do pós-obra (Luiz, 27/11/2026, protótipo O8, ideia 2B): lateral recolhida por padrão com só o % feito; aberta com 5 cartões;
+// "Revisões →" / "Ver todas as revisões →" abrem a gaveta com todas, o tempo que levaram e os filtros.
+const REVS = [
+  { numero: 3, id: 'p003', nome: 'Link do /admin', pedidaEm: '2026-11-26T22:20:00.000Z', status: 'em-andamento' as const, pct: 45, minutosEstimados: 45, minutosReais: null, minutosAteAgora: 21 },
+  { numero: 2, id: 'p002', nome: 'Assinatura do espelho', pedidaEm: '2026-11-25T15:00:00.000Z', status: 'para-conferir' as const, pct: 100, minutosEstimados: 45, minutosReais: 52, minutosAteAgora: null },
+  { numero: 1, id: 'p001', nome: 'Painel no computador', pedidaEm: '2026-11-24T15:00:00.000Z', status: 'no-ar' as const, pct: 100, minutosEstimados: 120, minutosReais: 112, minutosAteAgora: null },
+]
+const montarComRevisoes = (revs = REVS) => {
+  const painel = criarPainelFixture()
+  render(<TemaProvider><DesempenhoDaObra obra={{ nome: 'Ponto', pasta: 'ponto' }} painel={painel} posobra={{ revisoes: async () => revs }} agora={() => AGORA} /></TemaProvider>)
+}
+
+test('revisões: lateral recolhida por padrão, só com o % feito de cada uma (sem tempo)', async () => {
+  window.localStorage.clear()
+  montarComRevisoes()
+  const mini = await screen.findByRole('complementary', { name: 'Revisões (recolhida)' })
+  expect(within(mini).getByText('quanto já foi feito')).toBeInTheDocument()
+  const itens = within(mini).getAllByRole('listitem')
+  expect(itens.map((i) => i.textContent)).toEqual(['R0345%', 'R02100%', 'R01100%'])
+  expect(within(mini).queryByText(/min/)).toBeNull()
+  expect(within(mini).getByRole('button', { name: 'Revisões →' })).toBeInTheDocument()
+})
+
+test('revisões: abrir a lateral mostra os cartões (mais recente no topo) e lembra a escolha; recolher volta', async () => {
+  window.localStorage.clear()
+  const user = userEvent.setup()
+  montarComRevisoes()
+  await user.click(await screen.findByRole('button', { name: 'Abrir a lateral das revisões' }))
+  const lado = screen.getByRole('complementary', { name: 'Revisões' })
+  const cartoes = within(lado).getAllByRole('listitem')
+  expect(cartoes[0]).toHaveTextContent('REV 03 · AGORA')
+  expect(cartoes[0]).toHaveTextContent('45%')
+  expect(cartoes[0]).toHaveTextContent('~24 min para terminar')
+  expect(cartoes[1]).toHaveTextContent('CONFERIR')
+  expect(cartoes[1]).toHaveTextContent('levou 52 min (est. 45 min)')
+  expect(within(lado).getByText('~1h22')).toBeInTheDocument() // média de 52 e 112 min
+  expect(window.localStorage.getItem('atlas:desempenho:revisoes-aberta')).toBe('1')
+  await user.click(within(lado).getByRole('button', { name: 'Recolher ›' }))
+  expect(screen.getByRole('complementary', { name: 'Revisões (recolhida)' })).toBeInTheDocument()
+  expect(window.localStorage.getItem('atlas:desempenho:revisoes-aberta')).toBe('0')
+})
+
+test('revisões: "Revisões →" abre a gaveta com todas, tempo contra o estimado, filtros; Esc fecha', async () => {
+  window.localStorage.clear()
+  const user = userEvent.setup()
+  montarComRevisoes()
+  await user.click(await screen.findByRole('button', { name: 'Revisões →' }))
+  const g = screen.getByRole('dialog', { name: 'Todas as revisões' })
+  expect(within(g).getByText('3 revisões de Ponto')).toBeInTheDocument()
+  expect(within(g).getByText('1h52 · est. 2h00')).toBeInTheDocument()
+  expect(within(g).getByText('21 min até agora')).toBeInTheDocument()
+  expect(within(g).getByText('HOJE · 26/11')).toBeInTheDocument()
+  expect(g.querySelectorAll('[data-revisao]').length).toBe(3)
+  await user.click(within(g).getByRole('button', { name: 'Para conferir (1)' }))
+  expect([...g.querySelectorAll('[data-revisao]')].map((e) => e.getAttribute('data-revisao'))).toEqual(['2'])
+  await user.keyboard('{Escape}')
+  expect(screen.queryByRole('dialog')).toBeNull()
+})
+
+test('revisões: sem nenhuma, a lateral recolhida avisa e a gaveta explica onde pedir', async () => {
+  window.localStorage.clear()
+  const user = userEvent.setup()
+  montarComRevisoes([])
+  expect(await screen.findByText('nenhuma ainda')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Revisões →' }))
+  expect(screen.getByText(/Nenhuma revisão ainda/)).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Fechar ✕' }))
+  expect(screen.queryByRole('dialog')).toBeNull()
+})
+
+test('sem a porta das revisões, a curva ocupa tudo (sem lateral)', async () => {
+  montar()
+  await screen.findByRole('region', { name: 'Resumo do desempenho' })
+  expect(screen.queryByRole('complementary')).toBeNull()
+})

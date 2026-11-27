@@ -411,6 +411,7 @@ handle('atlas:nomes:conferir', (nome) => nomes.conferir(String(nome)))
 handle('atlas:posobra:entender', (pasta, pedido) => posobra.entender(String(pasta), pedido))
 handle('atlas:posobra:executar', async (pasta, pedido, plano) => { await garantirObra(String(pasta)); return posobra.executar(String(pasta), pedido, plano) })
 handle('atlas:posobra:historico', (pasta) => posobra.historico(String(pasta)))
+handle('atlas:posobra:revisoes', (pasta) => posobra.revisoes(String(pasta)))
 
 // Ajuda do Atlas (F17): conversar (Claude só leitor), print da janela do Atlas, anexar imagem, abrir página da lista fechada; casos -> API.
 handle('atlas:ajuda:conversar', (contexto, historico, mensagem) => ajuda.conversar(contexto, historico, mensagem))

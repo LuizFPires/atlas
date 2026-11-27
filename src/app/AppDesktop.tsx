@@ -436,7 +436,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'obras' && fluxo === 'telas' && obraAtual) conteudo = <Prototipo obra={obraAtual} estilo={estiloEscolhido} prototipo={pontePrototipo} arquivos={ponteArquivos} onVoltar={() => setFluxo('batismo')} onConcluir={() => setFluxo('contas')} />
   else if (ativo === 'obras' && fluxo === 'batismo' && obraAtual) conteudo = <Batismo obra={obraAtual} batismo={ponteBatismo} nomes={ponteNomes} arquivos={ponteArquivos} onVoltar={() => setFluxo('estilo')} onConcluir={() => setFluxo('telas')} />
   else if (ativo === 'cronograma') conteudo = obraAtual ? <CronogramaDaObra obra={obraAtual} painel={pontePainel} /> : <p>Escolha uma obra para ver o cronograma dela.</p>
-  else if (ativo === 'desempenho') conteudo = obraAtual ? <DesempenhoDaObra obra={obraAtual} painel={pontePainel} /> : <p>Escolha uma obra para ver o desempenho dela.</p>
+  else if (ativo === 'desempenho') conteudo = obraAtual ? <DesempenhoDaObra obra={obraAtual} painel={pontePainel} posobra={pontePosObra} /> : <p>Escolha uma obra para ver o desempenho dela.</p>
   else if (ativo === 'posobra') conteudo = obraAtual ? <PosObra obra={obraAtual} posobra={pontePosObra} politica={pontePolitica} arquivos={ponteArquivos} licenca={ponteLicenca} onAcompanhar={() => setAtivo('obra')} onVerTeste={() => pontePainel.abrirTeste(obraAtual.pasta)} onColocarNoAr={async () => {
     // Aprovar antes: obra já publicada => publica de novo com o mesmo nome (vistoria, banco, publicar e teste); senão, abre o Colocar no ar.
     const e = await ponteNoAr.estado(obraAtual.pasta)
