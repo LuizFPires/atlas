@@ -81,3 +81,24 @@ test('o que foi gasto antes de a construção começar (protótipo, nome) não e
   const d = calcularDesempenho(base({ agora: new Date(T0 + H), consumo: [{ fim: iso(T0 - H), custoUsd: 50, duracaoMs: 1 }], orcamentoGuardado: 100 }))
   assert.equal(d.realizadoPct, 0)
 })
+
+test('obra sem trabalhar (computador desligado ou Atlas fechado): o realizado segue reto até agora e o trecho parado é marcado', () => {
+  const agora = T0 + 15 * H
+  // trabalhou das 19h às 23h, ficou parada das 23h às 10h (sem pausa de cota), voltou 10h–10h... e agora são 10h.
+  const consumo = turnos(T0, T0 + 4 * H, 5)
+  const d = calcularDesempenho(base({ agora: new Date(agora), etapas: etapas(2, 0), consumo, orcamentoGuardado: 100 }))
+  const ult = d.serie.realizado[d.serie.realizado.length - 1]
+  assert.equal(Date.parse(ult.t), agora, 'a linha do realizado chega até agora')
+  assert.equal(ult.v, d.realizadoPct, 'reta: sem gasto, sem subir')
+  assert.equal(d.semTrabalho.length, 1)
+  assert.equal(Date.parse(d.semTrabalho[0].inicio), T0 + 4 * H)
+  assert.equal(Date.parse(d.semTrabalho[0].fim), agora)
+  assert.equal(d.semTrabalho[0].ate_agora, true)
+})
+
+test('espera da cota não conta como "sem trabalho" (já tem a sua faixa)', () => {
+  const agora = T0 + 9 * H
+  const consumo = [...turnos(T0, T0 + 2 * H, 5), ...turnos(T0 + 7 * H, agora, 5)]
+  const d = calcularDesempenho(base({ agora: new Date(agora), etapas: etapas(2, 0), consumo, orcamentoGuardado: 100, pausas: [{ inicio: iso(T0 + 2 * H), fim: iso(T0 + 7 * H) }] }))
+  assert.deepEqual(d.semTrabalho, [])
+})

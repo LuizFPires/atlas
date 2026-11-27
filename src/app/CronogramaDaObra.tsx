@@ -57,7 +57,7 @@ export function CronogramaDaObra({ obra, painel, agora = () => new Date(), sonda
         <div className="at-cr__card at-cr__card--destaque">
           <span className="at-cr__rot">TÉRMINO ESPERADO</span>
           <b className="at-cr__grande">{dataHora(c.esperadoFim)}</b>
-          <span className="at-cr__nota">{c.entregues === c.total ? 'Todas as etapas entregues.' : `${falta(Date.parse(c.esperadoFim) - t)}, no ritmo real da obra`}</span>
+          <span className="at-cr__nota">{c.entregues === c.total ? 'Todas as etapas entregues.' : `${falta(Date.parse(c.esperadoFim) - t)}, no ritmo real da obra, com o computador ligado e o Atlas aberto`}</span>
         </div>
         <div className="at-cr__card"><span className="at-cr__rot">PREVISTO NO INÍCIO</span><b className="at-cr__num">{dataHora(c.previstoFim)}</b><span className="at-cr__nota">Calculado em {curta(c.inicio)}</span></div>
         <div className="at-cr__card"><span className="at-cr__rot">DIFERENÇA</span><b className={`at-cr__num${atrasou ? ' at-cr__num--ambar' : ''}`}>{atrasou ? '+' : '−'}{horas(c.diferencaMs)}</b><span className="at-cr__nota">{c.pausaMs >= 3600_000 ? `${horas(c.pausaMs)} foram pausa da cota do Claude` : atrasou ? 'Mais demorado que o previsto' : 'Adiantada em relação ao previsto'}</span></div>
