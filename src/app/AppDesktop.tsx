@@ -17,7 +17,8 @@ import { Contas } from './Contas'
 import { ComecarPlanilha } from './ComecarPlanilha'
 import { criarPlanilhaFixture, type PontePlanilha } from './ponte-planilha'
 import { LigarContas } from './LigarContas'
-import { criarLigarContasFixture, type PonteLigarContas } from './ponte-ligar-contas'
+import { ConferindoContas, ContasProntas, todasLigadas } from './ContasProntas'
+import { criarLigarContasFixture, type PonteLigarContas, type SituacaoContas } from './ponte-ligar-contas'
 import { criarTravasFixture, type PonteTravas } from './ponte-travas'
 import { Obras as ListaObras, type ObraParaContinuar } from './Obras'
 import { Canteiro } from './Canteiro'
@@ -170,10 +171,23 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteLigar = useMemo<PonteLigarContas | null>(() => (modoFixture() ? criarLigarContasFixture() : (ponte.ligarContas ?? null)), [ponte])
   // Depois de criar as contas nos sites, a mesma etapa 'contas' liga cada uma a este computador (C1Contas, 24/11/2026).
   const [ligandoContas, setLigandoContas] = useState(false)
+  // Etapa das contas (Luiz, 27/11/2026): antes do passo a passo, pergunta às contas se já estão ligadas (obra anterior).
+  // undefined = conferindo; null = não deu para conferir (segue o passo a passo normal).
+  const [situacaoContas, setSituacaoContas] = useState<SituacaoContas | null | undefined>(undefined)
+  const [outrasContas, setOutrasContas] = useState(false)
   // Ficha "conta desligada" dentro da obra: liga de novo e volta para a obra.
   const [religandoConta, setReligandoConta] = useState(false)
+  const naEtapaContas = fluxo === 'contas'
+  useEffect(() => {
+    if (!naEtapaContas || !ponteLigar) return
+    let vivo = true
+    void ponteLigar.situacao().then((s) => { if (vivo) setSituacaoContas(s) }, () => { if (vivo) setSituacaoContas(null) })
+    return () => { vivo = false }
+  }, [naEtapaContas, ponteLigar])
   const ponteTravas = useMemo<PonteTravas | undefined>(() => (modoFixture() ? criarTravasFixture() : ponte.travas), [ponte])
-  const ponteContas = useMemo<PonteContas>(() => contas ?? (modoFixture() ? criarContasFixture() : (ponte.contas ?? contasIndisponivel)), [contas, ponte])
+  const ponteContasBase = useMemo<PonteContas>(() => contas ?? (modoFixture() ? criarContasFixture() : (ponte.contas ?? contasIndisponivel)), [contas, ponte])
+  // Conta já ligada neste computador conta como pronta: o passo a passo começa direto na que falta.
+  const ponteContas = useMemo<PonteContas>(() => ({ ...ponteContasBase, pronta: async (c) => (situacaoContas?.[c]?.ligado ? true : ponteContasBase.pronta(c)) }), [ponteContasBase, situacaoContas])
 
   // Idem para o celular (Remote Control): sem adaptador real, não finge que o celular está ligado.
   const ponteCelular = useMemo<PonteCelular>(() => celular ?? (modoFixture() ? criarCelularFixture() : (ponte.celular ?? celularIndisponivel)), [celular, ponte])
@@ -451,6 +465,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     setFluxo('estilo')
   }} />
   else if (ativo === 'obras' && fluxo === 'contas' && ligandoContas && ponteLigar) conteudo = <LigarContas ponte={ponteLigar} navegador={modoFixture() ? undefined : ponte.navegador} onVoltar={() => setLigandoContas(false)} onContinuar={() => { setLigandoContas(false); setFluxo('aprovar') }} />
+  else if (ativo === 'obras' && fluxo === 'contas' && ponteLigar && !outrasContas && situacaoContas === undefined) conteudo = <ConferindoContas />
+  else if (ativo === 'obras' && fluxo === 'contas' && ponteLigar && !outrasContas && situacaoContas && todasLigadas(situacaoContas)) conteudo = <ContasProntas situacao={situacaoContas} onVoltar={() => setFluxo('telas')} onContinuar={() => setFluxo('aprovar')} onOutras={() => setOutrasContas(true)} />
   else if (ativo === 'obras' && fluxo === 'contas') conteudo = <Contas contas={ponteContas} navegador={modoFixture() ? undefined : ponte.navegador} onContinuar={() => { if (ponteLigar) setLigandoContas(true); else setFluxo('aprovar') }} onPedirAjuda={pedirAjudaPasso} />
   else if (ativo === 'retomar') conteudo = paradaF12
     ? <Retomar obra={paradaF12} outras={outrasF12} nome={dono || undefined} retomar={ponteRetomar} onContinuou={(o) => { setObraAtual({ nome: o.nome, pasta: o.pasta }); setFluxo('lista'); setAtivo('obra') }} onAgoraNao={() => setAtivo('obras')} />
