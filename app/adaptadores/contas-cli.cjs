@@ -223,6 +223,8 @@ function criarContasCli({ dadosApp, cofre, apiSupabase = null, rodar = rodarProc
       const linhaV = String(v.saida || '').split(/\r?\n/).map((l) => l.replace(/^>\s*/, '').trim()).filter(Boolean).pop() || null
       let chave = null
       try { chave = await cofre.ler(CHAVE_SUPABASE) } catch { /* cofre indisponível = não ligado */ }
+      if (chaveSupabaseValida(chave)) chaveCache = chave // a tela diz "Ligado": a linha também passa a receber a chave
+      else chave = null // só conta como ligado o que a linha consegue usar
       if (ghOk) estados.github = 'ligado'
       if (v.codigo === 0) estados.hosp = 'ligado'
       return {

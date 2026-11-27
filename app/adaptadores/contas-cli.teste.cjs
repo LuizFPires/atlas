@@ -187,3 +187,26 @@ test('rodarFerramenta (colocar no ar): só vercel/supabase, na pasta da obra, va
   assert.equal((await contas.rodarFerramenta('gh', ['x'])).codigo, 1)
   assert.equal((await contas.rodarFerramenta('vercel', [1])).codigo, 1)
 })
+
+// Guilherme, 27/11/2026: "o Supabase saiu deste computador" com a tela das contas dizendo "Ligado". O cofre (DPAPI) só abre
+// depois do "ready" do Electron; a leitura ao abrir o Atlas falhava em silêncio e a linha rodava sem a chave.
+test('cofre que ainda não abriu ao iniciar: a tela das contas, ao ler a chave, também a entrega à linha', async () => {
+  const chave = 'sbp_' + 'd'.repeat(40)
+  let pronto = false
+  const base = criarCofreMemoria()
+  await base.guardar(CHAVE_SUPABASE, chave)
+  const cofre = { ...base, ler: async (c) => { if (!pronto) throw new Error('cofre-indisponivel'); return base.ler(c) } }
+  const { contas } = montar({ cofre })
+  await contas.recarregar() // antes do "ready": falha
+  assert.equal(contas.envDaLinha().SUPABASE_ACCESS_TOKEN, undefined)
+  pronto = true
+  const s = await contas.situacao()
+  assert.equal(s.supabase.ligado, true)
+  assert.equal(contas.envDaLinha().SUPABASE_ACCESS_TOKEN, chave, 'se a tela diz Ligado, a linha recebe a chave')
+})
+
+test('main.cjs lê a chave do Supabase só depois do "ready" (antes, o cofre do Windows não abre)', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'main.cjs'), 'utf8')
+  assert.ok(!/^void contasCli\.recarregar\(\)/m.test(src), 'não pode ler no carregamento do módulo')
+  assert.match(src, /app\.whenReady\(\)\.then\(\(\) => contasCli\.recarregar\(\)\)/)
+})
