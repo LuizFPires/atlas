@@ -1,0 +1,17 @@
+/* Contas já prontas (27/11/2026). Só tokens do Atlas. */
+.at-cprontas { flex: 1; min-width: 0; box-sizing: border-box; padding: 24px 36px 28px; display: flex; align-items: flex-start; }
+.at-cprontas__card { width: min(640px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 26px; border-radius: 20px; background: var(--card); border: 1px solid var(--card-b); color: var(--text); font-family: var(--font-text); }
+.at-cprontas__card--ok { border-color: var(--lime); }
+.at-cprontas__rot { font: 600 12px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2); }
+.at-cprontas__rot--ok { color: var(--lime-txt); }
+.at-cprontas__tit { font-size: 26px; line-height: 1.2; letter-spacing: -0.01em; }
+.at-cprontas__txt { font-size: 15px; line-height: 1.5; color: var(--mute); }
+.at-cprontas__lista { margin: 0; padding: 14px; list-style: none; display: flex; flex-direction: column; gap: 12px; border-radius: 14px; background: var(--card2); }
+.at-cprontas__lista li { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; }
+.at-cprontas__lista li > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.at-cprontas__lista small { font-size: 13px; color: var(--mute2); }
+.at-cprontas__ok { flex: none; width: 26px; height: 26px; border-radius: 13px; display: grid; place-items: center; background: var(--soft); color: var(--lime-txt); }
+.at-cprontas__mudo { color: var(--mute); font-weight: 400; }
+.at-cprontas__nota { font-size: 13px; color: var(--mute2); }
+.at-cprontas__acoes { display: flex; gap: 12px; flex-wrap: wrap; }
+.at-cprontas__link { align-self: flex-start; padding: 0; border: 0; background: none; cursor: pointer; color: var(--mute); font: 500 14px var(--font-text); text-decoration: underline; }
