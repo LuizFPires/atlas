@@ -35,3 +35,9 @@
 .at-contas__trilha li { display: flex; align-items: center; }
 .at-contas__conector { width: 40px; height: 2px; margin: 0 6px; background: var(--card-b); border-radius: 1px; }
 .at-contas__conector--feito { background: var(--lime); }
+
+/* "Já tenho conta" (27/11/2026): pula o passo a passo de criar; a ligação acontece no fim (LigarContas). */
+.at-contas__jatenho { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--lime); background: var(--soft); color: var(--lime-txt); cursor: pointer; text-align: left; font-family: var(--font-text); }
+.at-contas__jatenho span { display: flex; flex-direction: column; gap: 2px; }
+.at-contas__jatenho b { font-size: 15px; color: var(--text); }
+.at-contas__jatenho small { font-size: 13px; color: var(--mute); }
