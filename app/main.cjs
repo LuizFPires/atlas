@@ -445,6 +445,7 @@ handle('atlas:testar:listar', (pasta) => testarIdeia.listar(String(pasta)))
 handle('atlas:testar:iniciar', (pasta, o) => testarIdeia.iniciar(String(pasta), { quantidade: Number(o && o.quantidade), mesmosDe: o && o.mesmosDe !== undefined && o.mesmosDe !== null ? Number(o.mesmosDe) : null, versao: o && typeof o.versao === 'string' ? o.versao : null }))
 handle('atlas:testar:estado', (pasta, n) => testarIdeia.estado(String(pasta), Number(n)))
 handle('atlas:testar:relatorio', (pasta, n) => testarIdeia.relatorio(String(pasta), Number(n)))
+handle('atlas:testar:cena', (pasta, n) => testarIdeia.cena(String(pasta), Number(n)))
 handle('atlas:testar:retomar', (pasta, n) => testarIdeia.retomar(String(pasta), Number(n)))
 
 // Ajuda do Atlas (F17): conversar (Claude só leitor), print da janela do Atlas, anexar imagem, abrir página da lista fechada; casos -> API.

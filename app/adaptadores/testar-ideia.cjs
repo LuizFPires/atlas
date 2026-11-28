@@ -25,6 +25,9 @@ const { REGRA_CONTEUDO_CLIENTE, blocoDoCliente, umaLinha, extrairJson } = requir
 
 const QUANTIDADES = [100, 250, 500, 1000]
 const LOTE = 20
+const RODADAS = 6
+const LOTE_CONVERSA = 15
+const ACOES = new Set(['postar', 'comentar', 'discutir', 'nada'])
 const FIXOS = {
   Idade: ['18 a 29', '30 a 44', '45 a 59', '60 ou mais'],
   'Uso de celular': ['Usa de tudo', 'Só WhatsApp e banco', 'Quase não usa'],
@@ -122,6 +125,20 @@ function pedidoOlhar(produto, agentes) {
     'Responda SOMENTE com JSON: [{"id":"a0001","r":"usaria","pagaria":29,"motivo":"...","fala":"...","forte":"...","fraco":"..."}]',
     '', 'PESSOAS:',
     ...agentes.map((a) => `- ${a.id}: ${a.nome}, ${a.idade} anos; ${Object.entries(a.tracos).map(([k, v]) => `${k}: ${v}`).join('; ')}`),
+  ].join('\n')
+}
+
+function pedidoConversa(produto, feed, falam) {
+  return [
+    REGRA_CONTEUDO_CLIENTE,
+    `Uma rede social simulada está conversando sobre o sistema "${produto.nome}" (${produto.oQueE}). Abaixo, a CONVERSA até agora e QUEM FALA AGORA. Interprete cada pessoa do jeito dela (idade, trabalho, jeito, o que achou antes).`,
+    'Para cada pessoa escolha uma "acao": "postar" (fala nova), "comentar" (responde concordando a um post), "discutir" (responde discordando de um post) ou "nada". Em comentar/discutir, "em" é o código do post [pN]. "texto" até 20 palavras. Se a conversa a fizer mudar de ideia, "muda" é a nova opinião ("usaria", "nao" ou "duvida"); senão null. Mudar de ideia é raro: só com bom motivo.',
+    'Use exatamente os ids de quem fala. Você não grava nada e não roda comandos.',
+    'Responda SOMENTE com JSON: [{"id":"a0001","acao":"comentar","em":"p3","texto":"...","muda":null}]',
+    '', 'CONVERSA:',
+    ...(feed.length ? feed.map((f) => `- [${f.post}] ${f.quem} (${f.r === 'usaria' ? 'gostou' : f.r === 'nao' ? 'não gostou' : 'em dúvida'}): ${f.texto}`) : ['- (ninguém falou ainda)']),
+    '', 'QUEM FALA AGORA:',
+    ...falam.map((a) => `- ${a.id}: ${a.nome}, ${a.idade} anos; ${a.tracos['Profissão'] || ''}; jeito ${a.tracos.Jeito || ''}; achou antes: ${a.r} ("${a.fala}")`),
   ].join('\n')
 }
 
@@ -232,7 +249,58 @@ function criarTestarIdeia({ raiz, disparo, agora = () => new Date(), agendar = (
       gravar(cwd, n, 'teste.json', { ...meta, feitos: Object.keys(reacoes).length, olhados: tentados.size })
       avisar(n)
     }
-    return { ...ler(cwd, n, 'teste.json', meta), etapa: 'relatorio' }
+    return { ...ler(cwd, n, 'teste.json', meta), etapa: 'conversa' }
+  }
+
+  async function passoConversa(cwd, n, meta) {
+    const agentes = ler(cwd, n, 'agentes.json', [])
+    const { produto } = ler(cwd, n, 'produto.json', {})
+    const reacoes = ler(cwd, n, 'reacoes.json', {})
+    const eventos = ler(cwd, n, 'conversa.json', [])
+    const mudancas = ler(cwd, n, 'mudancas.json', {})
+    const rnd = semente(n * 104729 + (meta.rodada || 0))
+    const com = agentes.filter((a) => reacoes[a.id])
+    const porId = new Map(agentes.map((a) => [a.id, a]))
+    const k = Math.min(100, Math.max(10, Math.round(com.length * 0.12)))
+    const peso = (a) => ({ Animado: 1.4, Apressado: 1.1, Detalhista: 0.9, Desconfiado: 1.2 }[a.tracos.Jeito] || 1)
+    for (let rodada = (meta.rodada || 0) + 1; rodada <= RODADAS; rodada++) {
+      // quem fala nesta rodada: sorteio com peso pelo jeito (como o "activity_level" do MiroFish)
+      const falam = com.map((a) => [a, rnd() * peso(a)]).sort((x, y) => y[1] - x[1]).slice(0, k).map(([a]) => a)
+      for (let i = 0; i < falam.length; i += LOTE_CONVERSA) {
+        const lote = falam.slice(i, i + LOTE_CONVERSA)
+        // o "feed": os posts mais recentes, metade de quem pensa igual e metade de quem pensa diferente
+        const posts = eventos.filter((e) => e.post)
+        const recentes = posts.slice(-40)
+        const feed = embaralhar(recentes, rnd).slice(0, 12).map((e) => ({ post: e.post, quem: `${porId.get(e.de).nome}, ${porId.get(e.de).idade}`, r: e.r, texto: e.texto }))
+        if (!feed.length) for (const a of embaralhar(com, rnd).slice(0, 8)) feed.push({ post: null, quem: `${a.nome}, ${a.idade}`, r: reacoes[a.id].r, texto: reacoes[a.id].fala })
+        const validos = new Set(feed.map((f) => f.post).filter(Boolean))
+        const ids = new Set(lote.map((a) => a.id))
+        let resp = []
+        try { resp = extrairJson(await perguntar(pedidoConversa(produto, feed.map((f, j) => ({ ...f, post: f.post || `p0-${j}` })), lote.map((a) => ({ ...a, r: reacoes[a.id].r, fala: reacoes[a.id].fala })))), 'array') } catch (e) { if (e && e.message === 'claude-cota') throw e; resp = [] }
+        const vistos = new Set()
+        for (const x of resp) {
+          if (!x || !ids.has(x.id) || vistos.has(x.id) || !ACOES.has(x.acao) || x.acao === 'nada') continue
+          vistos.add(x.id)
+          const texto = umaLinha(x.texto, 160)
+          if (!texto) continue
+          const alvo = typeof x.em === 'string' && validos.has(x.em) ? eventos.find((e) => e.post === x.em) : null
+          const acao = x.acao !== 'postar' && !alvo ? 'postar' : x.acao
+          if (REACOES.has(x.muda) && x.muda !== reacoes[x.id].r) {
+            if (!mudancas[x.id]) mudancas[x.id] = { de: reacoes[x.id].r }
+            reacoes[x.id] = { ...reacoes[x.id], r: x.muda }
+            mudancas[x.id].para = x.muda
+          }
+          eventos.push({ rodada, post: `p${eventos.length + 1}`, de: x.id, para: acao === 'postar' ? null : alvo.de, acao, texto, r: reacoes[x.id].r })
+        }
+      }
+      gravar(cwd, n, 'conversa.json', eventos)
+      gravar(cwd, n, 'reacoes.json', reacoes)
+      gravar(cwd, n, 'mudancas.json', mudancas)
+      meta = { ...meta, rodada }
+      gravar(cwd, n, 'teste.json', meta)
+      avisar(n)
+    }
+    return { ...meta, etapa: 'relatorio' }
   }
 
   async function passoRelatorio(cwd, n, meta) {
@@ -257,7 +325,10 @@ function criarTestarIdeia({ raiz, disparo, agora = () => new Date(), agendar = (
       const ligado = fracosT.find((t) => t.tema === nome)
       return { titulo: umaLinha(i && i.titulo, 60), como: umaLinha(i && i.como, 220), tema: ligado ? ligado.tema : null, n: ligado ? ligado.n : 0 }
     }).filter((i) => i.titulo)
-    gravar(cwd, n, 'relatorio.json', { aviso: AVISO, produto, ...c, fortes: tema(temas.fortes, 'forte'), fracos: fracosT, ideias, criadoEm: agora().toISOString() })
+    const ev = ler(cwd, n, 'conversa.json', [])
+    const mud = Object.values(ler(cwd, n, 'mudancas.json', {})).filter((m) => m.para && m.para !== m.de)
+    const conversa = { postam: ev.filter((e) => e.acao === 'postar').length, comentam: ev.filter((e) => e.acao === 'comentar').length, discutem: ev.filter((e) => e.acao === 'discutir').length }
+    gravar(cwd, n, 'relatorio.json', { aviso: AVISO, produto, ...c, conversa, mudaram: mud.length, passaramAGostar: mud.filter((m) => m.para === 'usaria').length, fortes: tema(temas.fortes, 'forte'), fracos: fracosT, ideias, criadoEm: agora().toISOString() })
     return { ...meta, etapa: 'pronto', terminadoEm: agora().toISOString() }
   }
 
@@ -278,6 +349,7 @@ function criarTestarIdeia({ raiz, disparo, agora = () => new Date(), agendar = (
         if (meta.etapa === 'entender') meta = await passoEntender(cwd, n, meta)
         else if (meta.etapa === 'agentes') meta = passoAgentes(cwd, n, meta)
         else if (meta.etapa === 'olhar') meta = await passoOlhar(cwd, n, meta)
+        else if (meta.etapa === 'conversa') meta = await passoConversa(cwd, n, meta)
         else if (meta.etapa === 'relatorio') meta = await passoRelatorio(cwd, n, meta)
         else throw new Error('etapa-invalida')
         gravar(cwd, n, 'teste.json', { ...meta, estado: meta.etapa === 'pronto' ? 'pronto' : 'rodando' })
@@ -296,7 +368,7 @@ function criarTestarIdeia({ raiz, disparo, agora = () => new Date(), agendar = (
     const m = ler(cwd, n, 'teste.json', null)
     if (!m) return null
     const r = m.etapa === 'pronto' ? ler(cwd, n, 'relatorio.json', null) : null
-    return { n, criadoEm: m.criadoEm, quantidade: m.quantidade, mesmosDe: m.mesmosDe || null, versao: m.versao || null, etapa: m.etapa, estado: m.estado, motivo: m.motivo || null, feitos: m.feitos || 0, olhados: m.olhados || 0, termometro: r ? r.geral : null, maisContra: r && r.fracos[0] ? r.fracos[0].tema : null }
+    return { n, criadoEm: m.criadoEm, quantidade: m.quantidade, mesmosDe: m.mesmosDe || null, versao: m.versao || null, etapa: m.etapa, estado: m.estado, motivo: m.motivo || null, feitos: m.feitos || 0, olhados: m.olhados || 0, rodada: m.rodada || 0, termometro: r ? r.geral : null, maisContra: r && r.fracos[0] ? r.fracos[0].tema : null }
   }
 
   return {
@@ -318,6 +390,18 @@ function criarTestarIdeia({ raiz, disparo, agora = () => new Date(), agendar = (
     },
     async estado(pasta, n) { return resumo(cwdDe(pasta), validarN(n)) },
     async relatorio(pasta, n) { const cwd = cwdDe(pasta); return ler(cwd, validarN(n), 'relatorio.json', null) },
+    /** O que a Praça desenha: cada agente (cor = opinião agora) e as últimas falas da conversa. */
+    async cena(pasta, n) {
+      const cwd = cwdDe(pasta)
+      const x = validarN(n)
+      const agentes = ler(cwd, x, 'agentes.json', [])
+      const reacoes = ler(cwd, x, 'reacoes.json', {})
+      const ev = ler(cwd, x, 'conversa.json', [])
+      return {
+        agentes: agentes.map((a) => ({ id: a.id, nome: a.nome, idade: a.idade, tracos: a.tracos, r: reacoes[a.id] ? reacoes[a.id].r : null, fala: reacoes[a.id] ? reacoes[a.id].fala : null })),
+        eventos: ev.slice(-300).map((e) => ({ rodada: e.rodada, de: e.de, para: e.para, acao: e.acao, texto: e.texto, r: e.r })),
+      }
+    },
     async retomar(pasta, n) { const x = validarN(n); cwdDe(pasta); void rodar(String(pasta), x); return { ok: true } },
     /** Ao abrir o Atlas: testes que estavam rodando ou pausados pela cota continuam sozinhos. */
     async retomarTodos(pastas) { for (const p of pastas) { try { const cwd = cwdDe(p); for (const n of numeros(cwd)) { const m = ler(cwd, n, 'teste.json', {}); if (m.estado === 'rodando' || m.estado === 'pausado-cota') void rodar(p, n) } } catch { /* obra sumiu */ } } },
