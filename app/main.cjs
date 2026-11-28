@@ -164,7 +164,13 @@ const { criarNoAr } = require('./adaptadores/no-ar.cjs')
 const { pedirApiSupabase, pedirAuthSupabase, sondarSite, sondarDominio, pedir: pedirHttps } = require('./adaptadores/no-ar-rede.cjs')
 // Resend, o carteiro (28/11/2026): 4ª conta, opcional, para o sistema mandar e-mail para qualquer pessoa.
 const { criarResend } = require('./adaptadores/resend.cjs')
-const resend = criarResend({ cofre, dados: app.getPath('userData'), pedir: (o) => pedirHttps(o) })
+const resend = criarResend({
+  cofre, dados: app.getPath('userData'), pedir: (o) => pedirHttps(o),
+  // Domínio dos e-mails pela Vercel (U1UsarSistema, aba 3): lista e registros pela CLI da conta do cliente; .com livre pelo RDAP oficial.
+  vercel: (args, o = {}) => contasCli.rodarFerramentaTentando('vercel', args, o),
+  resolvedor: () => { const r = new (require('node:dns').promises.Resolver)({ timeout: 3000, tries: 1 }); r.setServers(['1.1.1.1', '8.8.8.8']); return r },
+  rdapCom: (d) => require('./adaptadores/nomes.cjs').pedirStatus('rdap.verisign.com', `/com/v1/domain/${d}`, { hostsPermitidos: ['rdap.verisign.com'] }),
+})
 const noAr = criarNoAr({
   raiz: obras.raiz(), cofre,
   vercel: (args, o = {}) => contasCli.rodarFerramenta('vercel', args, o),
@@ -582,6 +588,16 @@ handle('atlas:resend:guardarChave', (chave) => resend.guardarChave(String(chave 
 handle('atlas:resend:escolherDominio', async (dominio) => { const s = await resend.escolherDominio(String(dominio ?? '')); vigiarResend(); return s })
 handle('atlas:resend:conferir', () => conferirResend())
 handle('atlas:resend:abrirChaves', (b) => navegador.abrirEndereco('https://resend.com/api-keys', b))
+handle('atlas:resend:dominiosNaVercel', () => resend.dominiosNaVercel())
+handle('atlas:resend:ligarPelaVercel', async (dominio) => { const s = await resend.ligarPelaVercel(String(dominio ?? '')); vigiarResend(); return s })
+handle('atlas:resend:nomeLivre', (nome) => resend.nomeLivre(String(nome ?? '')))
+// Tudo abre no Atlas (Luiz, 28/11/2026): compra na Vercel e Registro.br no navegador lateral, nunca em outra janela.
+handle('atlas:resend:abrirSite', (destino, b, termo) => {
+  const t = String(termo ?? '').toLowerCase().replace(/[^a-z0-9.-]/g, '').slice(0, 80)
+  const url = destino === 'vercel-comprar' ? `https://vercel.com/domains${t ? `?q=${encodeURIComponent(t)}` : ''}` : destino === 'registro' ? 'https://registro.br/painel/' : null
+  if (!url) throw new Error('destino-invalido')
+  return navegador.abrirEndereco(url, b)
+})
 async function ligarEmailsDasObras() {
   for (const o of await obras.listar().catch(() => [])) { try { await noAr.ligarEmails(o.pasta || o) } catch { /* tenta na próxima publicação */ } }
 }

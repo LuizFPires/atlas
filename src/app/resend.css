@@ -22,3 +22,21 @@
 @keyframes at-rs-pulso { 50% { opacity: 0.3; } }
 @media (prefers-reduced-motion: reduce) { .at-rs__pulso { animation: none; } }
 .at-rs__acoes { display: flex; justify-content: flex-end; }
+/* O domínio dos e-mails (aba 3 aprovada em 28/11/2026): três caminhos, compra com a Vercel e nada de copiar quando é na Vercel. */
+.at-dm__ops { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.at-dm__op { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--card-b); color: var(--mute); font: 13px/1.4 var(--font-text); cursor: pointer; }
+.at-dm__op b { font-size: 16px; color: var(--text); }
+.at-dm__op--on { border-color: var(--lime); box-shadow: 0 0 0 3px rgb(198 241 53 / 0.12); }
+.at-dm__tag { align-self: flex-start; margin-top: auto; font: 600 10px var(--font-mono); letter-spacing: 0.08em; padding: 3px 7px; border-radius: 6px; background: var(--soft); color: var(--lime-txt, var(--lime)); white-space: nowrap; }
+.at-dm__tag--amb { background: rgb(242 179 61 / 0.16); color: var(--aviso-txt, #F2B33D); }
+.at-dm__painel { display: flex; flex-direction: column; gap: 10px; }
+.at-dm__nomes { display: flex; flex-direction: column; gap: 8px; }
+.at-dm__nm { display: grid; grid-template-columns: minmax(140px, auto) 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--card-b); background: var(--card2, var(--card)); font-size: 13px; color: var(--mute); }
+.at-dm__nm b { color: var(--text); font-size: 15px; }
+.at-dm__nm--on { border-color: var(--lime); }
+.at-dm__nm--off { opacity: 0.6; }
+.at-dm__quem { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 14px; background: rgb(198 241 53 / 0.1); border: 1px solid var(--lime); font-size: 14px; line-height: 1.5; color: var(--mute); }
+.at-dm__quem b { display: block; color: var(--text); font-size: 15px; margin-bottom: 2px; }
+.at-dm__qi { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: rgb(198 241 53 / 0.18); color: var(--lime-txt, var(--lime)); }
+.at-dm__pe { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+@media (max-width: 900px) { .at-dm__ops { grid-template-columns: 1fr; } }
