@@ -20,16 +20,20 @@ interface Props {
   onVender?: () => void
   /** Começa já em "Pessoas da equipe" (testes e atalhos). */
   inicio?: 'usar' | 'pessoas'
+  /** Quanto da obra já foi construído (aba existe desde o início; Luiz, 28/11/2026). */
+  lerPct?: () => Promise<number>
 }
 
 const erroDe = (e: unknown) => { const x = explicarTrava(e instanceof Error ? e.message : String(e)); return `${x.houve} ${x.fazer}` }
 
-export function UsarOSistema({ obra, noAr, onDominio, onEmails, onLojas, onVender, inicio = 'usar' }: Props) {
+export function UsarOSistema({ obra, noAr, onDominio, onEmails, onLojas, onVender, inicio = 'usar', lerPct }: Props) {
   const [estado, setEstado] = useState<EstadoNoAr | null>(null)
   const [pessoas, setPessoas] = useState<PessoaDaEquipe[] | null>(null)
   const [erroLista, setErroLista] = useState('')
   const [vendo, setVendo] = useState<'usar' | 'pessoas'>(inicio)
   const [trocandoSenha, setTrocandoSenha] = useState(false)
+  const [pct, setPct] = useState<number | null>(null)
+  useEffect(() => { let vivo = true; lerPct?.().then((n) => { if (vivo) setPct(n) }, () => {}); return () => { vivo = false } }, [lerPct])
 
   const lerPessoas = useCallback(() => {
     if (!noAr.pessoas) return
@@ -41,7 +45,8 @@ export function UsarOSistema({ obra, noAr, onDominio, onEmails, onLojas, onVende
     noAr.estado(obra.pasta).then((e) => { if (vivo) setEstado(e) }, () => {})
     return () => { vivo = false }
   }, [noAr, obra.pasta])
-  useEffect(() => { lerPessoas() }, [lerPessoas])
+  const noArJa = estado?.fase === 'noar' && !!estado.endereco
+  useEffect(() => { if (noArJa) lerPessoas() }, [lerPessoas, noArJa])
 
   const link = useMemo(() => enderecoDoSistema(estado?.endereco ?? null), [estado?.endereco])
   const matriz = useMemo(() => (link ? matrizQr(link) : null), [link])
@@ -52,12 +57,57 @@ export function UsarOSistema({ obra, noAr, onDominio, onEmails, onLojas, onVende
   }
 
   const semSenha = estado?.acesso && !estado.acesso.senha
-  const abrir: { id: string; icone: NomeIcone; titulo: string; sub: string; tag: string; onClick?: () => void }[] = [
-    { id: 'dominio', icone: 'mapa', titulo: 'Usar meu domínio', sub: `${estado?.nome ?? 'seu-sistema'}.com.br no lugar do .vercel.app`, tag: 'PAGO · DOMÍNIO', onClick: onDominio },
-    { id: 'emails', icone: 'sino', titulo: 'E-mails para qualquer pessoa', sub: '“Esqueci minha senha” e avisos, pelo Resend', tag: estado?.email ? 'LIGADO' : 'GRÁTIS · PEDE DOMÍNIO', onClick: onEmails },
-    { id: 'lojas', icone: 'celular', titulo: 'App Store e Google Play', sub: `o ${obra.nome} aparece nas lojas, com ícone e página`, tag: 'PAGO · LOJAS', onClick: onLojas },
-    { id: 'vender', icone: 'moeda', titulo: `Vender o ${obra.nome} para outras empresas`, sub: 'página de vendas e cobrança na sua conta', tag: 'OPCIONAL', onClick: onVender },
-  ]
+  const guias = guiasDeAbrir(obra.nome, noArJa, { onDominio, onEmails, onLojas, onVender }, !!estado?.email)
+  const ladoDireito = (
+    <section className="at-usar__metade at-usar__metade--dir" aria-label="Abrir para clientes">
+      <div className="at-usar__mtit"><span className="at-usar__pto at-usar__pto--off" aria-hidden="true" /><b>Abrir para clientes</b><span className="at-acd__tag at-usar__tag">SÓ SE VOCÊ QUISER</span></div>
+      <span className="at-usar__txt">Nada disto é obrigatório. Cada item explica o que é, quanto custa e onde fazer. <b>Você pode fazer por conta própria, do seu jeito</b>, ou deixar o Atlas ajudar. Quando algo tem custo, você paga direto a quem vende, nunca ao Atlas.</span>
+      {guias.map((g, i) => (
+        <details key={g.id} className="at-usar__guia" open={i === 0 && !noArJa ? true : undefined}>
+          <summary className="at-usar__abrir">
+            <span className="at-usar__ic" aria-hidden="true"><Icone nome={g.icone} tamanho={18} /></span>
+            <span className="at-usar__quem"><b>{g.titulo}</b><span>{g.sub}</span></span>
+            <span className={`at-acd__tag ${g.tag === 'LIGADO' ? 'at-acd__tag--ok' : 'at-usar__tag'}`}>{g.tag}</span>
+            <span className="at-usar__seta" aria-hidden="true">⌄</span>
+          </summary>
+          <div className="at-usar__como">
+            {g.como.map(([t, txt]) => <p key={t}><b>{t}</b> {txt}</p>)}
+            <div className="at-usar__cpe">
+              <span className="at-usar__nota">Você pode fazer do seu jeito, por fora do Atlas.{g.acao ? ' Se quiser ajuda, é aqui:' : ` ${g.depois}`}</span>
+              {g.acao && <button type="button" className="at-acd__sec" onClick={g.acao}>{g.botao}</button>}
+            </div>
+          </div>
+        </details>
+      ))}
+    </section>
+  )
+
+  if (!estado) return <div className="at-usar"><span className="at-usar__txt" role="status">Lendo a sua obra…</span></div>
+
+  if (!noArJa) {
+    return (
+      <div className="at-usar">
+        <section className="at-usar__metade" aria-label="Quando a obra ficar pronta">
+          <div className="at-usar__mtit"><span className="at-usar__pto at-usar__pto--off" aria-hidden="true" /><b>Quando a obra ficar pronta</b>{pct !== null && <span className="at-acd__tag at-usar__tag">{Math.round(pct)}% CONSTRUÍDO</span>}</div>
+          <div className="at-noar__card">
+            <span className="at-noar__rot">O QUE VAI ACONTECER · R$ 0 POR MÊS</span>
+            <b className="at-usar__tit">O seu sistema vai funcionar de graça.</b>
+            <span className="at-usar__txt">Você não precisa comprar nada para usar com a sua equipe. Assim que a obra chegar a 100%:</span>
+            <ol className="at-usar__passos">
+              <li><b>Colocar no ar</b><span>Um toque. O sistema fica num endereço grátis da Vercel (algo como {estado.nome || obra.pasta}.vercel.app).</span></li>
+              <li><b>Sua senha de dono</b><span>Você cria aqui mesmo, sem e-mail.</span></li>
+              <li><b>Sua equipe</b><span>Você coloca as pessoas e manda a senha pelo WhatsApp.</span></li>
+            </ol>
+          </div>
+          <div className="at-noar__card at-usar__apagado" aria-label="Pessoas da equipe">
+            <div className="at-usar__lin"><span className="at-noar__rot">PESSOAS DA EQUIPE</span><span className="at-acd__tag at-usar__tag">QUANDO ESTIVER NO AR</span></div>
+            <span className="at-usar__txt">Aqui você vai colocar quem usa o sistema, com o papel de cada um (os papéis vêm do seu sistema).</span>
+          </div>
+        </section>
+        {ladoDireito}
+      </div>
+    )
+  }
 
   return (
     <div className="at-usar">
@@ -81,7 +131,6 @@ export function UsarOSistema({ obra, noAr, onDominio, onEmails, onLojas, onVende
               </div>
             </div>
           )}
-          {!link && estado && <span className="at-usar__txt">Ainda não está no ar. Toque em “Colocar no ar” na aba Obra.</span>}
           {link && (
             <div className="at-usar__pe">
               <a className="at-acd__sec at-usar__a" href={linkWhatsapp(recadoEquipe(obra.nome, link))} target="_blank" rel="noopener noreferrer">Mandar pelo WhatsApp</a>
@@ -111,20 +160,42 @@ export function UsarOSistema({ obra, noAr, onDominio, onEmails, onLojas, onVende
           </div>
         )}
       </section>
-      <section className="at-usar__metade at-usar__metade--dir" aria-label="Abrir para clientes">
-        <div className="at-usar__mtit"><span className="at-usar__pto at-usar__pto--off" aria-hidden="true" /><b>Abrir para clientes</b><span className="at-acd__tag at-usar__tag">SÓ SE VOCÊ QUISER</span></div>
-        <span className="at-usar__txt">Para usar com a sua equipe, o lado esquerdo já basta. Estes passos são para quando <b>clientes e o público</b> forem usar, com cara mais profissional. Quando algo tem custo, você paga direto a quem vende, nunca ao Atlas.</span>
-        {abrir.filter((a) => a.onClick).map((a) => (
-          <button key={a.id} type="button" className="at-usar__abrir" onClick={a.onClick}>
-            <span className="at-usar__ic" aria-hidden="true"><Icone nome={a.icone} tamanho={18} /></span>
-            <span className="at-usar__quem"><b>{a.titulo}</b><span>{a.sub}</span></span>
-            <span className={`at-acd__tag ${a.tag === 'LIGADO' ? 'at-acd__tag--ok' : 'at-usar__tag'}`}>{a.tag}</span>
-            <span className="at-usar__seta" aria-hidden="true">→</span>
-          </button>
-        ))}
-      </section>
+      {ladoDireito}
     </div>
   )
+}
+
+interface Guia { id: string; icone: NomeIcone; titulo: string; sub: string; tag: string; como: [string, string][]; acao?: () => void; botao: string; depois: string }
+/** Guias de "Abrir para clientes" (aba 6 aprovada em 28/11/2026): instrução para fazer por fora ou com o Atlas.
+ *  Valores "cerca de": quem vende mostra o preço final antes de cobrar. */
+function guiasDeAbrir(nome: string, noAr: boolean, h: { onDominio?: () => void; onEmails?: () => void; onLojas?: () => void; onVender?: () => void }, emailLigado: boolean): Guia[] {
+  const quandoNoAr = 'O Atlas ajuda nisso assim que o sistema estiver no ar.'
+  return [
+    { id: 'dominio', icone: 'mapa', titulo: 'Usar meu domínio', sub: 'o endereço com o nome da sua empresa (ex.: suaempresa.com.br)', tag: 'PAGO · DOMÍNIO',
+      como: [
+        ['O que é.', 'Sem domínio, o sistema fica num endereço grátis da Vercel (.vercel.app). O domínio é o nome próprio, como suaempresa.com.br. Você paga por ano a quem vende, nunca ao Atlas.'],
+        ['Onde comprar um .com.br.', 'No Registro.br (registro.br), a entidade oficial do Brasil, por cerca de R$ 40 por ano.'],
+        ['Onde comprar um .com (e outros).', 'Na sua conta da Vercel, que mostra o preço antes de você confirmar.'],
+        ['Pode comprar quando quiser.', 'Mesmo com a obra em andamento: quando o sistema estiver no ar, o Atlas liga o domínio (sozinho na Vercel, ou com um passo no Registro.br).'],
+      ], acao: noAr ? h.onDominio : undefined, botao: 'Fazer pelo Atlas →', depois: quandoNoAr },
+    { id: 'emails', icone: 'sino', titulo: 'E-mails para qualquer pessoa', sub: '“Esqueci minha senha” e avisos para clientes, pelo Resend', tag: emailLigado ? 'LIGADO' : 'GRÁTIS · PEDE DOMÍNIO',
+      como: [
+        ['O que é.', 'Para a sua equipe não faz falta: quem esquece a senha pede ao dono, que gera uma nova no Atlas. Para clientes receberem e-mails (senha, avisos), o sistema precisa de um “carteiro”: o Resend.'],
+        ['Quanto custa.', 'A conta do Resend é sua e tem plano grátis. Ele pede um domínio seu.'],
+        ['Pode ligar quando quiser.', 'A conta e o domínio valem para todos os seus sistemas.'],
+      ], acao: h.onEmails, botao: emailLigado ? 'Ver o Resend →' : 'Ligar o Resend pelo Atlas →', depois: '' },
+    { id: 'lojas', icone: 'celular', titulo: 'App Store e Google Play', sub: `o ${nome} aparece nas lojas, com ícone e página`, tag: 'PAGO · LOJAS',
+      como: [
+        ['O que é.', 'O sistema já funciona no celular pelo navegador e pode ser instalado na tela inicial, de graça. Estar nas lojas é opcional.'],
+        ['Quanto custa.', 'A conta é sua, paga direto às lojas: Apple, cerca de US$ 99 por ano; Google, cerca de US$ 25 uma vez só.'],
+        ['Pode abrir as contas quando quiser.', 'A aprovação das lojas costuma levar alguns dias, então vale começar antes.'],
+      ], acao: noAr ? h.onLojas : undefined, botao: 'Ver o passo a passo pelo Atlas →', depois: quandoNoAr },
+    { id: 'vender', icone: 'moeda', titulo: `Vender o ${nome} para outras empresas`, sub: 'página de vendas e cobrança na sua conta', tag: 'OPCIONAL',
+      como: [
+        ['O que é.', 'Se o sistema serve para outras empresas, o Atlas monta a página de vendas e a cobrança. O dinheiro cai na conta do seu meio de pagamento (Stripe ou Asaas), nunca passa pelo Atlas.'],
+        ['Quando.', 'Depois que o sistema estiver pronto e testado com a sua equipe.'],
+      ], acao: noAr ? h.onVender : undefined, botao: 'Ver como funciona pelo Atlas →', depois: quandoNoAr },
+  ].filter((g) => g.id === 'emails' ? !!h.onEmails : g.id === 'dominio' ? !!h.onDominio || !noAr : g.id === 'lojas' ? !!h.onLojas || !noAr : !!h.onVender || !noAr) as Guia[]
 }
 
 const NOMES_PADRAO: Record<string, string> = { dono: 'DONO', equipe: 'FUNCIONÁRIO' }

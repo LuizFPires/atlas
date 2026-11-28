@@ -34,7 +34,7 @@ const montar = (noAr: PonteNoAr, p: Partial<React.ComponentProps<typeof UsarOSis
 test('duas metades: usando agora (grátis, endereço, QR, WhatsApp) e abrir para clientes (só se quiser)', async () => {
   const dominio = vi.fn()
   montar(ponte(), { onDominio: dominio, onEmails: () => {}, onLojas: () => {}, onVender: () => {} })
-  const agora = screen.getByRole('region', { name: 'Usando agora' })
+  const agora = await screen.findByRole('region', { name: 'Usando agora' })
   expect(within(agora).getByText('R$ 0 POR MÊS')).toBeInTheDocument()
   expect(within(agora).getByText('Seu sistema já está funcionando.')).toBeInTheDocument()
   expect(within(agora).getByText(/Não precisa pagar nada nem comprar domínio/)).toBeInTheDocument()
@@ -43,17 +43,39 @@ test('duas metades: usando agora (grátis, endereço, QR, WhatsApp) e abrir para
   expect(within(agora).getByRole('link', { name: 'Mandar pelo WhatsApp' }).getAttribute('href')).toMatch(/^https:\/\/wa\.me\//)
   const clientes = screen.getByRole('region', { name: 'Abrir para clientes' })
   expect(within(clientes).getByText('SÓ SE VOCÊ QUISER')).toBeInTheDocument()
-  expect(within(clientes).getByText(/nunca ao Atlas/)).toBeInTheDocument()
-  for (const t of ['Usar meu domínio', 'E-mails para qualquer pessoa', 'App Store e Google Play', 'Vender o Ponto para outras empresas']) expect(within(clientes).getByRole('button', { name: new RegExp(t) })).toBeInTheDocument()
-  await userEvent.setup().click(within(clientes).getByRole('button', { name: /Usar meu domínio/ }))
+  expect(within(clientes).getAllByText(/nunca ao Atlas/).length).toBeGreaterThan(0)
+  for (const t of ['Usar meu domínio', 'E-mails para qualquer pessoa', 'App Store e Google Play', 'Vender o Ponto para outras empresas']) expect(within(clientes).getByText(t)).toBeInTheDocument()
+  expect(within(clientes).getAllByText(/Você pode fazer do seu jeito, por fora do Atlas/)).toHaveLength(4)
+  const guiaDominio = within(clientes).getByText('Usar meu domínio').closest('details') as HTMLElement
+  expect(within(guiaDominio).getAllByText(/Registro\.br/).length).toBeGreaterThan(0)
+  await userEvent.setup().click(within(guiaDominio).getByRole('button', { name: 'Fazer pelo Atlas →' }))
   expect(dominio).toHaveBeenCalled()
   expect(screen.queryByText(/LIMITADO/)).not.toBeInTheDocument()
 })
 
-test('abrir para clientes: só aparece o que existe nesta versão', () => {
+test('abrir para clientes: no ar, só aparece o que existe nesta versão', async () => {
   montar(ponte(), { onEmails: () => {} })
+  await screen.findByRole('region', { name: 'Usando agora' })
   const clientes = screen.getByRole('region', { name: 'Abrir para clientes' })
   expect(within(clientes).getAllByRole('button')).toHaveLength(1)
+})
+
+test('antes de ficar pronta: explica o que vai acontecer (grátis), a equipe fica para depois e os guias já ensinam a fazer por fora', async () => {
+  const emails = vi.fn()
+  const pessoas = vi.fn(async () => [])
+  montar(ponte({ estado: async (): Promise<EstadoNoAr> => ({ ...structuredClone(noArBase), fase: 'parado', endereco: null, acesso: undefined }), pessoas }), { lerPct: async () => 62.4, onDominio: () => {}, onEmails: emails, onLojas: () => {}, onVender: () => {} })
+  const antes = await screen.findByRole('region', { name: 'Quando a obra ficar pronta' })
+  expect(await within(antes).findByText('62% CONSTRUÍDO')).toBeInTheDocument()
+  expect(within(antes).getByText('O seu sistema vai funcionar de graça.')).toBeInTheDocument()
+  expect(within(antes).getByText('Colocar no ar')).toBeInTheDocument()
+  expect(within(antes).getByText('QUANDO ESTIVER NO AR')).toBeInTheDocument()
+  expect(pessoas).not.toHaveBeenCalled()
+  expect(screen.queryByRole('region', { name: 'Usando agora' })).not.toBeInTheDocument()
+  const clientes = screen.getByRole('region', { name: 'Abrir para clientes' })
+  expect(within(clientes).getAllByText(/O Atlas ajuda nisso assim que o sistema estiver no ar/)).toHaveLength(3)
+  expect(within(clientes).getAllByRole('button')).toHaveLength(1)
+  await userEvent.setup().click(within(clientes).getByRole('button', { name: 'Ligar o Resend pelo Atlas →' }))
+  expect(emails).toHaveBeenCalled()
 })
 
 test('pessoas da equipe na tela: o dono primeiro, marcado, com Trocar senha; sem ninguém, explica como colocar', async () => {
@@ -125,11 +147,11 @@ test('nova senha e tirar acesso (com confirmação); o dono não tem esses botõ
   expect(await within(lista).findByText('SEM ACESSO')).toBeInTheDocument()
 })
 
-test('aba "Usar o sistema" só aparece com a obra no ar', () => {
+test('aba "Usar o sistema" existe desde o início; o pontinho fica verde quando está no ar', () => {
   const { rerender } = render(<AbasDaObra nome="Ponto" atual="obra" onIr={() => {}} onCanteiro={() => {}} so="abas" />)
-  expect(screen.queryByRole('tab', { name: /Usar o sistema/ })).not.toBeInTheDocument()
+  expect(screen.getByRole('tab', { name: /Usar o sistema/ }).querySelector('.at-abobra__pto--off')).not.toBeNull()
   rerender(<AbasDaObra nome="Ponto" atual="obra" onIr={() => {}} onCanteiro={() => {}} so="abas" comUsar />)
-  expect(screen.getByRole('tab', { name: /Usar o sistema/ })).toBeInTheDocument()
+  expect(screen.getByRole('tab', { name: /Usar o sistema/ }).querySelector('.at-abobra__pto--off')).toBeNull()
 })
 
 test('colocar no ar: quando fica no ar, leva o cliente para "Usar o sistema"', async () => {
