@@ -1,5 +1,6 @@
 // Ponte entre o front (React) e o app desktop (Electron). O front só conhece esta interface:
 // a API do Electron fica atrás dela, então o CI (ubuntu) testa tudo sem empacotar nada.
+import type { PonteTestar } from './ponte-testar'
 import type { PonteServidor } from './ponte-servidor'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { PonteClaude } from './ponte-claude'
@@ -110,6 +111,8 @@ export interface PonteDesktop {
   ligarContas?: PonteLigarContas
   /** Resend, o carteiro (28/11/2026): 4ª conta, opcional. */
   resend?: PonteResend
+  /** Testar a ideia (TI1TestarIdeia): agentes de IA olham o protótipo. */
+  testar?: PonteTestar
   /** Fichas de trava na obra (T1Travas): site da trava e "deixar público até o GitHub voltar". */
   travas?: PonteTravas
   /** Começar por uma planilha (X1–X3): raio-X, o que entendi, voz. */

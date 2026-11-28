@@ -25,6 +25,8 @@ import { Obras as ListaObras, type ObraParaContinuar } from './Obras'
 import { Canteiro } from './Canteiro'
 import { AbasDaObra } from './AbasDaObra'
 import { UsarOSistema } from './UsarOSistema'
+import { TestarIdeia } from './TestarIdeia'
+import { criarTestarFixture, type PonteTestar } from './ponte-testar'
 import { CronogramaDaObra } from './CronogramaDaObra'
 import { DesempenhoDaObra } from './DesempenhoDaObra'
 import { Ideia } from './Ideia'
@@ -173,6 +175,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const pontePlanilha = useMemo<PontePlanilha | null>(() => (modoFixture() ? criarPlanilhaFixture() : (ponte.planilha ?? null)), [ponte])
   const ponteLigar = useMemo<PonteLigarContas | null>(() => (modoFixture() ? criarLigarContasFixture() : (ponte.ligarContas ?? null)), [ponte])
   const ponteResend = useMemo<PonteResend | undefined>(() => (modoFixture() ? criarResendFixture() : ponte.resend), [ponte])
+  const ponteTestar = useMemo<PonteTestar | undefined>(() => (modoFixture() ? criarTestarFixture() : ponte.testar), [ponte])
   // Depois de criar as contas nos sites, a mesma etapa 'contas' liga cada uma a este computador (C1Contas, 24/11/2026).
   const [ligandoContas, setLigandoContas] = useState(false)
   // Etapa das contas (Luiz, 27/11/2026): antes do passo a passo, pergunta às contas se já estão ligadas (obra anterior).
@@ -291,7 +294,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   useEffect(() => { if (fluxo === 'publicar' && obraAtual) void pontePainel.ler(obraAtual.pasta).then((e) => setAndaresNoAr(Math.max(1, e.etapas.length)), () => {}) }, [fluxo, obraAtual, pontePainel])
   // "Publicar agora ↑" só para obra já publicada (27/11/2026).
   useEffect(() => {
-    if (!obraAtual || !['obra', 'cronograma', 'desempenho', 'prototipo', 'posobra', 'usar'].includes(ativo)) return
+    if (!obraAtual || !['obra', 'cronograma', 'desempenho', 'prototipo', 'testar', 'posobra', 'usar'].includes(ativo)) return
     let vivo = true
     const pasta = obraAtual.pasta
     ponteNoAr.estado(pasta).then((e) => { if (vivo) setObraPublicada(e.endereco ? { pasta, endereco: e.endereco } : null) }, () => {})
@@ -513,12 +516,14 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     onEmails={ponteLigar && ponteResend ? () => setReligandoConta(true) : undefined}
     onLojas={ponteLojas.indisponivel ? undefined : () => { setGuiaAberto(null); setAbrirNoAr('lojas'); setFluxo('publicar'); setAtivo('obra') }}
     onVender={ponteLancamento.indisponivel ? undefined : () => { setLancObra(obraAtual.pasta); setGuiaAberto(null); setAtivo('lancamentos') }} />
+  else if (ativo === 'testar' && obraAtual && ponteTestar) conteudo = <TestarIdeia key={obraAtual.pasta} pasta={obraAtual.pasta} nome={obraAtual.nome} ponte={ponteTestar} />
+  else if (ativo === 'testar' && obraAtual) conteudo = <p className="at-testar__nota">Esta versão do Atlas ainda não tem o teste com agentes de IA. Atualize o Atlas para usar.</p>
   else if (ativo === 'lancamentos') conteudo = <Lancamentos lancamento={ponteLancamento} vendas={ponteVendas.indisponivel ? undefined : ponteVendas} onAbrir={setLancObra} />
   else if (ativo === 'canteiro' || ativo === 'concluidas') conteudo = <Canteiro modo={ativo} obras={ponteObras} painel={pontePainel} retomar={ponteRetomar} construcao={pontesModo.construcao} plano={planoNoMenu?.valor.toLocaleLowerCase('pt-BR').startsWith('max') ? 'max' : 'pro'} onAbrir={continuarObra} onNova={() => { setAtivo('obras'); setRelatoDaObra(null); setAlcancada('ideia'); setObraAtual(null); setFluxo('ideia') }} />
   else if (ativo === 'obras') conteudo = <ListaObras obras={ponteObras} painel={pontePainel} nome={dono || undefined} onComecar={() => { setRelatoDaObra(null); setAlcancada('ideia'); setObraAtual(null); setFluxo('ideia') }} onTrazer={() => setFluxo('trazer')} onVerCanteiro={() => setAtivo('canteiro')} />
   // Dentro da obra (Milestone 37): nome no topo, volta ao Canteiro e as partes (Construção, Protótipo, Pedir mudança).
   // M50: na Construção as abas moram na linha do título do Painel (PalcoObra); nas outras partes, a linha própria continua.
-  if (obraAtual && (ativo === 'cronograma' || ativo === 'desempenho' || ativo === 'prototipo' || ativo === 'posobra' || ativo === 'usar')) {
+  if (obraAtual && (ativo === 'cronograma' || ativo === 'desempenho' || ativo === 'prototipo' || ativo === 'posobra' || ativo === 'testar' || ativo === 'usar')) {
     conteudo = <><AbasDaObra nome={obraAtual.nome} atual={ativo} comUsar={obraPublicada?.pasta === obraAtual.pasta} onIr={(p) => setAtivo(p)} onCanteiro={() => setAtivo('canteiro')} />{conteudo}</>
   }
   // Caminho novo: faixa das 6 etapas no topo; fora das telas, o aviso do protótipo em segundo plano leva até elas.
