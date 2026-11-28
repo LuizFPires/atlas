@@ -126,3 +126,34 @@ test('capturar: só a página que está à mostra; escondida ou fechada = null',
   nav.mostrar(false)
   assert.equal(await nav.capturar(), null)
 })
+
+// Luiz, 28/11/2026 (opção A aprovada, depois do Rafael não achar onde clicar): o Atlas acende, dentro do site, o campo e o botão
+// certos. Só CSS: nada de script, nada lido da página.
+test('realce dentro do site: GitHub e Vercel nas páginas do aparelho; outras páginas sem realce', () => {
+  const { realceDoSite } = require('./navegador.cjs')
+  const gh = realceDoSite('https://github.com/login/device')
+  assert.match(gh, /outline/)
+  assert.match(gh, /form\[action\*="\/login\/device"\]/)
+  assert.ok(realceDoSite('https://github.com/login/device/confirm'))
+  assert.ok(realceDoSite('https://vercel.com/device'))
+  assert.equal(realceDoSite('https://github.com/'), null)
+  assert.equal(realceDoSite('https://github.com.evil.com/login/device'), null)
+  assert.equal(realceDoSite('lixo'), null)
+  assert.doesNotMatch(gh, /<script|javascript:|url\(/i)
+})
+
+test('realce dentro do site: aplicado a cada página que abre, só como estilo', () => {
+  const css = []
+  const views = []
+  const criarView = () => {
+    const ev = {}
+    const v = { loadURL(u) { (ev['did-navigate'] || []).forEach((f) => f({}, u)) }, setBounds() {}, setVisible() {}, destruir() {}, on(n, f) { (ev[n] = ev[n] || []).push(f) }, voltar() {}, recarregar() {}, inserirCSS(c) { css.push(c) } }
+    views.push(v)
+    return v
+  }
+  const nav = criarNavegador({ criarView, avisar: () => {}, abrirFora: () => {}, logadoNoGithub: async () => true })
+  nav.abrirEndereco('https://github.com/login/device', { x: 0, y: 0, width: 400, height: 600 })
+  assert.equal(css.length, 1)
+  nav.abrirEndereco('https://supabase.com/dashboard/account/tokens', { x: 0, y: 0, width: 400, height: 600 })
+  assert.equal(css.length, 1)
+})

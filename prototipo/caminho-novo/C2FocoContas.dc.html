@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas · Ligar as contas com foco</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#141619;--card:#1E2125;--card2:#22262B;--cb:#2C3036;--line:#2A2E33;--text:#EDEFEA;--mute:#B4BBB2;--mute2:#8E968C;--lime:#C6F135;--soft:#2A3A12;--amb:#F2B14A}
+*{box-sizing:border-box;min-width:0}[hidden]{display:none!important}
+body{margin:0;background:#0B0C0E;color:var(--text);font:15px/1.5 'Geist',system-ui,sans-serif}
+.abas{display:flex;gap:8px;flex-wrap:wrap;padding:14px max(3vw,12px)}
+.abas button{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--cb);background:var(--card);color:var(--text);font:600 14px 'Geist',sans-serif;cursor:pointer}
+.grupo{width:100%;font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:var(--mute2);margin-top:4px}
+.abas button[aria-pressed=true]{background:var(--lime);color:#141619;border-color:var(--lime)}
+.palco{padding:0 max(3vw,12px) 28px}
+.moldura{position:relative;overflow:hidden;border-radius:14px;border:1px solid var(--cb)}
+.tela{position:absolute;left:0;top:0;width:1440px;height:900px;transform-origin:0 0;background:var(--bg);display:grid;grid-template-columns:220px 1fr}
+.menu{background:#101214;border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:6px}
+.logo{font:700 20px 'Geist',sans-serif;letter-spacing:.04em;margin-bottom:18px}
+.mi{padding:9px 12px;border-radius:10px;color:var(--mute);font-size:14px}.mi.on{background:var(--card);color:var(--text)}
+.main{padding:24px 30px;display:flex;flex-direction:column;gap:14px;position:relative}
+.r{font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:var(--mute2)}
+h1{margin:0;font-size:24px}
+.sub{font-size:14px;color:var(--mute)}
+.grade{display:grid;grid-template-columns:520px 1fr;gap:18px;flex:1;min-height:0;position:relative}
+.main[style*='118px'] .grade{max-height:620px}
+.lista{display:flex;flex-direction:column;gap:10px}
+.lin{padding:14px 16px;border-radius:16px;background:var(--card);border:1px solid var(--cb);display:flex;flex-direction:column;gap:10px;position:relative}
+.topo{display:flex;align-items:center;gap:12px}
+.bola{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--cb);color:var(--mute2);font-weight:700;flex:none}
+.bola.ok{background:var(--lime);color:#141619;border-color:var(--lime)}
+.nome{flex:1}.nome b{font-size:16px}.nome b span{color:var(--mute2);font-weight:500}.nome small{display:block;font-size:13px;color:var(--mute)}
+.bt{white-space:nowrap;min-height:44px;padding:0 18px;border-radius:12px;border:1px solid var(--cb);background:var(--card2);color:var(--text);font:600 14px 'Geist',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.bt.lime{background:var(--lime);color:#141619;border-color:var(--lime)}
+.caixa{padding:12px 14px;border-radius:12px;background:#17191C;border:1px solid var(--cb);font-size:14px;color:var(--mute);display:flex;flex-direction:column;gap:8px}
+.caixa b{color:var(--text)}
+.codigo{display:flex;align-items:center;gap:12px;font:700 28px 'Geist Mono',monospace;letter-spacing:.12em;color:var(--text)}
+.codigo em{font:600 11px 'Geist Mono',monospace;letter-spacing:.08em;color:var(--lime);font-style:normal}
+.mini{font-size:12px;color:var(--mute2)}
+.site{display:flex;flex-direction:column;gap:8px;position:relative}
+.area{flex:1;border-radius:16px;border:1px solid var(--cb);background:#0F1113;position:relative;overflow:hidden}
+.vazio{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:40px;color:var(--mute2);font-size:14px}
+/* site do GitHub (simulado) */
+.gh{position:absolute;inset:0;background:#0d1117;display:flex;flex-direction:column;align-items:center;padding-top:60px;gap:16px;font-family:-apple-system,'Segoe UI',sans-serif;color:#e6edf3}
+.gh .barra{position:absolute;top:0;left:0;right:0;height:34px;background:#161b22;border-bottom:1px solid #30363d;display:flex;align-items:center;padding:0 12px;gap:8px;font:12px 'Geist Mono',monospace;color:#8b949e}
+.gh .barra i{width:8px;height:8px;border-radius:50%;background:#30363d}
+.gh h2{margin:0;font-size:22px;font-weight:400}
+.gh .bx{width:360px;padding:20px;border:1px solid #30363d;border-radius:8px;background:#161b22;display:flex;flex-direction:column;gap:14px;align-items:center}
+.gh .cods{display:flex;gap:6px;align-items:center}.gh .cods span{width:34px;height:42px;border:1px solid #30363d;border-radius:6px;display:grid;place-items:center;font:600 18px 'Geist Mono',monospace;background:#0d1117}
+.gh .cont{width:100%;height:36px;border-radius:6px;background:#238636;color:#fff;display:grid;place-items:center;font-weight:600;font-size:14px}
+.gh small{color:#8b949e;font-size:12px}
+/* FOCO */
+.foco-sombra{position:absolute;inset:0;background:rgba(11,12,14,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:5;pointer-events:none;transition:opacity .3s}
+.alvo{position:relative;z-index:6}
+.alvo-luz{box-shadow:0 0 0 3px var(--lime),0 0 0 9px rgba(198,241,53,.18),0 0 40px rgba(198,241,53,.25);border-color:var(--lime)!important;animation:luz 1.6s ease-in-out infinite}
+@keyframes luz{50%{box-shadow:0 0 0 3px var(--lime),0 0 0 14px rgba(198,241,53,.08),0 0 60px rgba(198,241,53,.35)}}
+.pulso{position:absolute;width:16px;height:16px;border-radius:50%;background:var(--lime);z-index:8}
+.pulso::after{content:'';position:absolute;inset:-10px;border-radius:50%;border:2px solid var(--lime);animation:onda 1.4s ease-out infinite}
+@keyframes onda{from{transform:scale(.5);opacity:1}to{transform:scale(1.8);opacity:0}}
+.dica{position:absolute;z-index:8;padding:12px 14px;border-radius:14px;background:var(--lime);color:#141619;font-size:14px;line-height:1.4;width:300px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.dica b{display:block;font-size:15px}
+.dica::before{content:'';position:absolute;width:14px;height:14px;background:var(--lime);transform:rotate(45deg)}
+.dica.esq::before{left:-6px;top:20px}.dica.cima::before{top:-6px;left:40px}.dica.baixo::before{bottom:-6px;left:40px}
+.faixa{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:var(--soft);border:1px solid var(--lime);font-size:14px;color:var(--text)}
+.passos{display:flex;gap:8px;flex-wrap:wrap}.passos span{font:600 11px 'Geist Mono',monospace;letter-spacing:.06em;padding:5px 9px;border-radius:999px;border:1px solid var(--cb);color:var(--mute2)}
+.passos .feito{background:var(--soft);color:var(--lime);border-color:transparent}.passos .agora{border-color:var(--lime);color:var(--text)}
+/* realce injetado dentro do site */
+.gh-alvo{outline:3px solid var(--lime);outline-offset:4px;border-radius:6px;animation:gha 1.4s ease-in-out infinite}
+@keyframes gha{50%{outline-offset:8px;outline-color:rgba(198,241,53,.5)}}
+.gh-et{position:absolute;padding:6px 10px;border-radius:999px;background:var(--lime);color:#141619;font:700 12px 'Geist',sans-serif;white-space:nowrap}
+.marca{position:absolute;left:30px;bottom:8px;font-size:12px;color:var(--mute2)}
+.trilha{display:flex;gap:8px}.tr{flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--cb);background:var(--card);font-size:14px;color:var(--mute2)}
+.tr i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--cb);font:700 12px 'Geist',sans-serif;font-style:normal}
+.tr.agora{border-color:var(--lime);color:var(--text)}.tr.agora i{border-color:var(--lime);color:var(--lime)}
+.wiz{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px}
+.comos{text-align:left;display:flex;flex-direction:column;gap:8px;font-size:16px;color:var(--mute);padding-left:20px;margin:0}.comos b{color:var(--text)}
+.gigante{min-height:60px;padding:0 30px;font-size:18px;border-radius:16px}
+.b2{display:grid;grid-template-columns:360px 1fr;gap:18px;flex:1;min-height:0}
+.b2-esq{display:flex;flex-direction:column;gap:10px}
+.pas{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;border:1px solid var(--cb);background:var(--card);font-size:13px;color:var(--mute)}
+.pas b{display:block;color:var(--text);font-size:15px}.pas>span:first-child{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;border:1px solid var(--cb);font-weight:700}
+.pas .ok{background:var(--lime);color:#141619;border-color:var(--lime)}.pas.ag{border-color:var(--lime);background:rgba(198,241,53,.07)}.pas.ag>span:first-child{border-color:var(--lime);color:var(--lime)}
+.barra-px{position:absolute;left:30px;right:30px;bottom:26px;display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:18px;background:#1A1F12;border:1.5px solid var(--lime);box-shadow:0 -10px 40px rgba(0,0,0,.4);font-size:14px;color:var(--mute)}
+.barra-px b{display:block;font-size:18px;color:var(--text)}
+.seta-anim{color:var(--lime);font-size:22px;animation:pula 1s ease-in-out infinite}.seta-dir{color:var(--lime);font-size:30px;animation:vai 1s ease-in-out infinite}
+@keyframes pula{50%{transform:translateY(6px)}}@keyframes vai{50%{transform:translateX(8px)}}
+.rl{color:var(--lime)}
+</style></head>
+<body>
+<div class="abas">
+ <span class="grupo">A · FOCO COM DESFOQUE</span>
+ <button id="b0" aria-pressed="true">A1 · Onde tocar</button>
+ <button id="b1" aria-pressed="false">A2 · Site aberto</button>
+ <button id="b2" aria-pressed="false">A3 · Próxima conta</button>
+ <span class="grupo">B · UMA CONTA POR VEZ</span>
+ <button id="b3" aria-pressed="false">B1 · Antes de abrir</button>
+ <button id="b4" aria-pressed="false">B2 · Site aberto</button>
+ <span class="grupo">C · BARRA DO PRÓXIMO PASSO</span>
+ <button id="b5" aria-pressed="false">C1 · Barra embaixo</button>
+ <button id="b6" aria-pressed="false">C2 · Site aberto</button>
+</div>
+<div class="palco"><div class="moldura" id="m">
+
+<!-- 1 -->
+<section class="tela" id="t0">
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Contas</span></aside>
+ <div class="main">
+  <div class="foco-sombra"></div>
+  <span class="r">AS CONTAS · LIGAR A ESTE COMPUTADOR · 0 DE 3</span>
+  <h1>Agora o Atlas liga as suas contas a este computador.</h1>
+  <span class="sub">É um clique em cada site, e <b style="color:var(--text)">tudo acontece aqui dentro do Atlas</b>. Você não precisa abrir o navegador.</span>
+  <div class="grade">
+   <div class="lista">
+    <div class="lin alvo alvo-luz">
+     <div class="topo"><span class="bola">1</span><div class="nome"><b>GitHub <span>· o cofre</span></b><small>Ainda não ligado</small></div><button class="bt lime" onclick="ver(1)">Ligar →</button></div>
+     <span class="pulso" style="right:-6px;top:-6px"></span>
+     <div class="dica esq" style="left:calc(100% + 18px);top:6px"><b>Comece aqui: toque em “Ligar”.</b>O site do GitHub abre aqui ao lado, dentro do Atlas. Não precisa abrir o navegador.</div>
+    </div>
+    <div class="lin"><div class="topo"><span class="bola">2</span><div class="nome"><b>Supabase <span>· o banco</span></b><small>Depois do GitHub</small></div><button class="bt">Ligar →</button></div></div>
+    <div class="lin"><div class="topo"><span class="bola">3</span><div class="nome"><b>Vercel <span>· a vitrine</span></b><small>Depois do Supabase</small></div><button class="bt">Ligar →</button></div></div>
+   </div>
+   <div class="site"><span class="sub">O site de cada conta abre aqui quando você tocar em Ligar.</span><div class="area"><div class="vazio">Aqui vai aparecer o site da conta.</div></div></div>
+  </div>
+  <span class="marca">Protótipo · o resto da tela fica desfocado e só o próximo passo fica aceso, com a bolinha piscando e o balão.</span>
+ </div>
+</section>
+
+<!-- 2 -->
+<section class="tela" id="t1" hidden>
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Contas</span></aside>
+ <div class="main">
+  <div class="foco-sombra"></div>
+  <span class="r">AS CONTAS · LIGAR A ESTE COMPUTADOR · 0 DE 3</span>
+  <h1>Agora o Atlas liga as suas contas a este computador.</h1>
+  <span class="sub">É um clique em cada site, e tudo acontece aqui dentro do Atlas.</span>
+  <div class="grade">
+   <div class="lista">
+    <div class="lin alvo" style="border-color:var(--lime)">
+     <div class="topo"><span class="bola" style="border-color:var(--lime);color:var(--lime)">…</span><div class="nome"><b>GitHub <span>· o cofre</span></b><small>O site está aberto aqui ao lado →</small></div></div>
+     <div class="caixa">
+      <span>O código já foi colado para você no site. É só tocar no botão verde <b>Continue</b> e depois em <b>Authorize</b>.</span>
+      <div class="codigo">4F2A-91KD <em>✓ JÁ ESTÁ NO SITE</em></div>
+      <div class="passos"><span class="feito">✓ CÓDIGO COLADO</span><span class="agora">TOQUE EM CONTINUE</span><span>TOQUE EM AUTHORIZE</span><span>O ATLAS PERCEBE SOZINHO</span></div>
+      <span class="mini">Esperando você no site… o Atlas confere a cada 5 s. O código vale mais 14:32.</span>
+     </div>
+    </div>
+    <div class="lin"><div class="topo"><span class="bola">2</span><div class="nome"><b>Supabase <span>· o banco</span></b><small>Depois do GitHub</small></div></div></div>
+    <div class="lin"><div class="topo"><span class="bola">3</span><div class="nome"><b>Vercel <span>· a vitrine</span></b><small>Depois do Supabase</small></div></div></div>
+   </div>
+   <div class="site alvo">
+    <div class="faixa"><span class="pulso" style="position:relative;flex:none;width:12px;height:12px"></span><span><b>É aqui.</b> Este é o site do GitHub, aberto dentro do Atlas. Toque no botão aceso.</span></div>
+    <div class="area alvo-luz">
+     <div class="gh">
+      <div class="barra"><i></i><i></i><i></i><span style="margin-left:8px">github.com/login/device</span></div>
+      <h2>Device Activation</h2>
+      <div class="bx">
+       <small>Enter the code displayed on your device</small>
+       <div class="cods"><span>4</span><span>F</span><span>2</span><span>A</span><b style="color:#8b949e">-</b><span>9</span><span>1</span><span>K</span><span>D</span></div>
+       <div class="cont gh-alvo" style="position:relative">Continue<span class="gh-et" style="left:calc(100% + 16px);top:50%;transform:translateY(-50%)">← toque aqui</span></div>
+      </div>
+      <small>“Device Activation” quer dizer “Ligar um aparelho”.</small>
+     </div>
+    </div>
+    <span class="mini" style="text-align:right">O site não abriu direito? <u>Abrir no meu navegador</u> (só aparece depois de 1 minuto)</span>
+   </div>
+  </div>
+  <span class="marca">Protótipo · a lista fica desfocada; o site ganha a borda acesa e o Atlas acende, dentro do próprio site, o botão que é para tocar.</span>
+ </div>
+</section>
+
+<!-- 3 -->
+<section class="tela" id="t2" hidden>
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Contas</span></aside>
+ <div class="main">
+  <div class="foco-sombra"></div>
+  <span class="r">AS CONTAS · LIGAR A ESTE COMPUTADOR · 1 DE 3</span>
+  <h1>Agora o Atlas liga as suas contas a este computador.</h1>
+  <span class="sub">É um clique em cada site, e tudo acontece aqui dentro do Atlas.</span>
+  <div class="grade">
+   <div class="lista">
+    <div class="lin"><div class="topo"><span class="bola ok">✓</span><div class="nome"><b>GitHub <span>· o cofre</span></b><small style="color:var(--lime)">Ligado como guilherme-ampla</small></div></div></div>
+    <div class="lin alvo alvo-luz">
+     <div class="topo"><span class="bola">2</span><div class="nome"><b>Supabase <span>· o banco</span></b><small>Ainda não ligado</small></div><button class="bt lime">Ligar →</button></div>
+     <span class="pulso" style="right:-6px;top:-6px"></span>
+     <div class="dica esq" style="left:calc(100% + 18px);top:6px"><b>GitHub ligado! Agora o Supabase.</b>Toque em “Ligar”. O site abre aqui ao lado, igual ao do GitHub.</div>
+    </div>
+    <div class="lin"><div class="topo"><span class="bola">3</span><div class="nome"><b>Vercel <span>· a vitrine</span></b><small>Depois do Supabase</small></div><button class="bt">Ligar →</button></div></div>
+   </div>
+   <div class="site"><span class="sub">O site de cada conta abre aqui quando você tocar em Ligar.</span><div class="area"><div class="vazio">✓ O GitHub foi ligado. O site fechou sozinho.</div></div></div>
+  </div>
+  <span class="marca">Protótipo · cada conta ligada passa o foco para a próxima, sem o cliente procurar.</span>
+ </div>
+</section>
+
+
+<!-- B1 · uma conta por vez -->
+<section class="tela" id="t3" hidden>
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Contas</span></aside>
+ <div class="main">
+  <div class="trilha"><span class="tr agora"><i>1</i>GitHub · o cofre</span><span class="tr"><i>2</i>Supabase · o banco</span><span class="tr"><i>3</i>Vercel · a vitrine</span><span class="tr"><i>✓</i>Pronto</span></div>
+  <div class="wiz">
+   <span class="r rl">CONTA 1 DE 3</span>
+   <h1 style="font-size:34px">Vamos ligar o GitHub.</h1>
+   <span class="sub" style="font-size:17px;max-width:620px">É onde o Atlas guarda o código do seu sistema. Tudo acontece aqui dentro do Atlas: você não precisa abrir o navegador.</span>
+   <ol class="comos"><li>Você toca no botão abaixo e o site do GitHub abre aqui mesmo.</li><li>O Atlas já cola o código lá para você.</li><li>Você toca em <b>Continue</b> e em <b>Authorize</b>. Pronto.</li></ol>
+   <button class="bt lime gigante alvo-luz" onclick="ver(4)">Abrir o GitHub aqui dentro →</button>
+   <span class="mini">Leva menos de 1 minuto.</span>
+  </div>
+  <span class="marca">Protótipo · uma conta por vez, uma tela por vez: só existe um botão para tocar.</span>
+ </div>
+</section>
+
+<!-- B2 -->
+<section class="tela" id="t4" hidden>
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Contas</span></aside>
+ <div class="main">
+  <div class="trilha"><span class="tr agora"><i>1</i>GitHub · o cofre</span><span class="tr"><i>2</i>Supabase · o banco</span><span class="tr"><i>3</i>Vercel · a vitrine</span><span class="tr"><i>✓</i>Pronto</span></div>
+  <div class="b2">
+   <div class="b2-esq">
+    <span class="r rl">CONTA 1 DE 3 · GITHUB</span>
+    <div class="pas"><span class="ok">✓</span><span><b>Site aberto</b>aqui ao lado</span></div>
+    <div class="pas"><span class="ok">✓</span><span><b>Código colado</b>4F2A-91KD</span></div>
+    <div class="pas ag"><span>3</span><span><b>Toque em Continue</b>o botão verde aceso no site →</span></div>
+    <div class="pas"><span>4</span><span><b>Toque em Authorize</b>na tela seguinte</span></div>
+    <span class="mini">O Atlas percebe sozinho quando terminar. O código vale mais 14:32.</span>
+   </div>
+   <div class="area alvo-luz" style="height:auto"><div class="gh">
+      <div class="barra"><i></i><i></i><i></i><span style="margin-left:8px">github.com/login/device</span></div>
+      <h2>Device Activation</h2>
+      <div class="bx">
+       <small>Enter the code displayed on your device</small>
+       <div class="cods"><span>4</span><span>F</span><span>2</span><span>A</span><b style="color:#8b949e">-</b><span>9</span><span>1</span><span>K</span><span>D</span></div>
+       <div class="cont gh-alvo" style="position:relative">Continue<span class="gh-et" style="left:calc(100% + 16px);top:50%;transform:translateY(-50%)">← toque aqui</span></div>
+      </div>
+      <small>“Device Activation” quer dizer “Ligar um aparelho”.</small>
+     </div></div>
+  </div>
+  <span class="marca">Protótipo · à esquerda, os passos com o atual aceso; à direita, o site com o botão aceso.</span>
+ </div>
+</section>
+
+<!-- C1 · barra do próximo passo -->
+<section class="tela" id="t5" hidden>
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Contas</span></aside>
+ <div class="main" style="padding-bottom:118px">
+  <span class="r">AS CONTAS · LIGAR A ESTE COMPUTADOR · 0 DE 3</span>
+  <h1>Agora o Atlas liga as suas contas a este computador.</h1>
+  <span class="sub">É um clique em cada site, e tudo acontece aqui dentro do Atlas.</span>
+  <div class="grade">
+   <div class="lista">
+    <div class="lin" style="border-color:var(--lime)"><div class="topo"><span class="bola" style="border-color:var(--lime);color:var(--lime)">1</span><div class="nome"><b>GitHub <span>· o cofre</span></b><small>É a próxima</small></div><span class="seta-anim">↓</span></div></div>
+    <div class="lin"><div class="topo"><span class="bola">2</span><div class="nome"><b>Supabase <span>· o banco</span></b><small>Depois do GitHub</small></div></div></div>
+    <div class="lin"><div class="topo"><span class="bola">3</span><div class="nome"><b>Vercel <span>· a vitrine</span></b><small>Depois do Supabase</small></div></div></div>
+   </div>
+   <div class="site"><span class="sub">O site de cada conta abre aqui.</span><div class="area"><div class="vazio">Aqui vai aparecer o site da conta.</div></div></div>
+  </div>
+  <div class="barra-px">
+   <span class="pulso" style="position:relative;flex:none"></span>
+   <div style="flex:1"><span class="r rl">PRÓXIMO PASSO · 1 DE 3</span><b>Ligar o GitHub</b><span>O site abre aqui dentro do Atlas. Não precisa abrir o navegador.</span></div>
+   <button class="bt lime gigante" onclick="ver(6)">Ligar o GitHub →</button>
+  </div>
+  <span class="marca" style="bottom:4px">Protótipo · sem desfoque: uma barra fixa embaixo diz sempre qual é o próximo passo, com um botão só.</span>
+ </div>
+</section>
+
+<!-- C2 -->
+<section class="tela" id="t6" hidden>
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Contas</span></aside>
+ <div class="main" style="padding-bottom:118px">
+  <span class="r">AS CONTAS · LIGAR A ESTE COMPUTADOR · 0 DE 3</span>
+  <h1>Agora o Atlas liga as suas contas a este computador.</h1>
+  <div class="grade">
+   <div class="lista">
+    <div class="lin" style="border-color:var(--lime)"><div class="topo"><span class="bola" style="border-color:var(--lime);color:var(--lime)">…</span><div class="nome"><b>GitHub <span>· o cofre</span></b><small>Site aberto ao lado · código já colado</small></div></div></div>
+    <div class="lin"><div class="topo"><span class="bola">2</span><div class="nome"><b>Supabase <span>· o banco</span></b><small>Depois do GitHub</small></div></div></div>
+    <div class="lin"><div class="topo"><span class="bola">3</span><div class="nome"><b>Vercel <span>· a vitrine</span></b><small>Depois do Supabase</small></div></div></div>
+   </div>
+   <div class="site"><div class="area alvo-luz"><div class="gh">
+      <div class="barra"><i></i><i></i><i></i><span style="margin-left:8px">github.com/login/device</span></div>
+      <h2>Device Activation</h2>
+      <div class="bx">
+       <small>Enter the code displayed on your device</small>
+       <div class="cods"><span>4</span><span>F</span><span>2</span><span>A</span><b style="color:#8b949e">-</b><span>9</span><span>1</span><span>K</span><span>D</span></div>
+       <div class="cont gh-alvo" style="position:relative">Continue<span class="gh-et" style="left:calc(100% + 16px);top:50%;transform:translateY(-50%)">← toque aqui</span></div>
+      </div>
+      <small>“Device Activation” quer dizer “Ligar um aparelho”.</small>
+     </div></div></div>
+  </div>
+  <div class="barra-px">
+   <span class="pulso" style="position:relative;flex:none"></span>
+   <div style="flex:1"><span class="r rl">AGORA · NO SITE AO LADO</span><b>Toque no botão verde “Continue”, depois em “Authorize”</b><span>O Atlas percebe sozinho quando terminar. O código já está colado lá.</span></div>
+   <span class="seta-dir">→</span>
+  </div>
+ </div>
+</section>
+</div></div>
+<script>
+const m=document.getElementById('m');const ts=[0,1,2,3,4,5,6].map(n=>document.getElementById('t'+n));const bs=[0,1,2,3,4,5,6].map(n=>document.getElementById('b'+n));
+const ajustar=()=>{const s=Math.min(1,m.clientWidth/1440);for(const t of ts)t.style.transform='scale('+s+')';m.style.height=(900*s)+'px'};
+new ResizeObserver(ajustar).observe(m);ajustar();
+function ver(n){ts.forEach((t,i)=>t.hidden=i!==n);bs.forEach((b,i)=>b.setAttribute('aria-pressed',i===n))}
+bs.forEach((b,i)=>b.onclick=()=>ver(i));
+</script>
+</body></html>

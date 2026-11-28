@@ -133,15 +133,20 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
   const feitas = LINHAS.filter((l) => linhas[l.id].estado === 'ligado').length
   const faltam = LINHAS.length - feitas
   const foco = LINHAS.find((l) => linhas[l.id].estado === 'esperando') ?? null
+  // Foco (Luiz, 28/11/2026, opção A, depois do Rafael não achar onde clicar): só o próximo passo fica aceso; o resto desfoca.
+  const alvo = foco ?? LINHAS.find((l) => linhas[l.id].estado !== 'ligado') ?? null
+  const comFoco = faltam > 0 && !!alvo
+  const fora = (sim: boolean) => (comFoco && sim ? ' at-ligar__fora' : '')
+  const anterior = LINHAS.filter((l) => linhas[l.id].estado === 'ligado').pop() ?? null
 
   return (
     <div className="at-contas-tela">
       <div className="at-contas">
         <section className="at-contas__corpo">
-          <div className="at-claude__cab">
+          <div className={`at-claude__cab${fora(true)}`}>
             <span className="at-claude__rotulo">AS CONTAS · LIGAR A ESTE COMPUTADOR · {feitas} DE 3</span>
             <h1>Agora o Atlas liga as suas contas a este computador.</h1>
-            <span className="at-ativ__txt">Criar a conta no site não basta: o Atlas precisa da sua permissão para guardar, anotar e publicar o seu sistema daqui. É um clique em cada site.</span>
+            <span className="at-ativ__txt">Criar a conta no site não basta: o Atlas precisa da sua permissão para guardar, anotar e publicar o seu sistema daqui. É um clique em cada site, e <b>tudo acontece aqui dentro do Atlas</b>: você não precisa abrir o navegador.</span>
           </div>
           <div className="at-contas__grade at-contas__grade--nav">
             <div className="at-ligar__lista">
@@ -149,7 +154,7 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
                 const x = linhas[l.id]
                 const nomeCom = `${l.artigo} ${l.nome}`
                 return (
-                  <div key={l.id} className={`at-ligar__linha${x.estado === 'esperando' ? ' at-ligar__linha--ativa' : ''}`}>
+                  <div key={l.id} className={`at-ligar__linha${x.estado === 'esperando' ? ' at-ligar__linha--ativa' : ''}${comFoco && alvo?.id === l.id && x.estado !== 'esperando' ? ' at-ligar__alvo' : ''}${fora(alvo?.id !== l.id)}`}>
                     <div className="at-ligar__topo">
                       <span className={`at-ligar__bola at-ligar__bola--${x.estado}`} aria-hidden="true">{x.estado === 'ligado' ? <Icone nome="check" tamanho={16} /> : x.estado === 'esperando' ? '…' : x.estado === 'erro' ? '!' : '○'}</span>
                       <div className="at-ligar__nome">
@@ -163,17 +168,26 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
                       {x.estado === 'pendente' && <Botao onClick={() => void ligar(l.id)} aria-label={`Ligar ${nomeCom}`}>Ligar →</Botao>}
                       {x.estado === 'erro' && <Botao onClick={() => void ligar(l.id)} aria-label={`Tentar de novo ${nomeCom}`}>Tentar de novo</Botao>}
                     </div>
+                    {comFoco && alvo?.id === l.id && x.estado !== 'esperando' && (
+                      <>
+                        <span className="at-ligar__pulso" aria-hidden="true" />
+                        <div className="at-ligar__balao" role="note">
+                          <b>{anterior ? `${anterior.nome} ligado! Agora ${nomeCom}.` : 'Comece aqui: toque em “Ligar”.'}</b>
+                          <span>O site {l.artigo === 'a' ? 'da' : 'do'} {l.nome} abre aqui ao lado, dentro do Atlas. Não precisa abrir o navegador.</span>
+                        </div>
+                      </>
+                    )}
 
                     {x.estado === 'esperando' && l.tipo === 'codigo' && (
                       <div className="at-ligar__caixa">
                         {x.codigo ? (
                           <>
-                            <span>O site vai pedir este código. {x.copiado ? 'Já copiamos para você: é só colar lá' : 'Escreva lá'} e clicar em <b>Continue</b>.</span>
+                            <span>{x.copiado ? <>Já copiamos o código. No site ao lado, toque no <b>campo aceso</b>, cole (<b>{palavras().sistema === 'o Mac' ? '⌘ + V' : 'Ctrl + V'}</b>) e toque em <b>Continue</b>.</> : <>No site ao lado, escreva este código no <b>campo aceso</b> e toque em <b>Continue</b>.</>}</span>
                             <div className="at-ligar__codigo"><span>{x.codigo}</span>{x.copiado && <em>✓ COPIADO</em>}</div>
                             <span className="at-ligar__espera" role="status"><b>Esperando você confirmar no site… o Atlas percebe sozinho.</b><ValidadeCodigo desde={x.desde ?? null} cadaS={Math.max(1, Math.round(sondagemMs / 1000))} /></span>
                           </>
                         ) : <span className="at-ligar__espera" role="status"><Esperando rotulo="Preparando o código" agora="Pedindo o código à conta" costume={[2, 15]} /></span>}
-                        <button type="button" className="at-ativ__link" onClick={() => void ponte.siteFora(l.id)}>Abrir no meu navegador</button>
+                        <PlanoB desde={x.desde ?? null} onAbrir={() => void ponte.siteFora(l.id)} />
                       </div>
                     )}
 
@@ -188,23 +202,25 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
                         </div>
                         {avisoChave && <p className="at-ativ__erro" role="alert">{avisoChave}</p>}
                         <span className="at-ativ__txt">A chave fica guardada {palavras().cofre}, nunca num arquivo. Dá para apagar quando quiser, no próprio site.</span>
-                        <button type="button" className="at-ativ__link" onClick={() => void ponte.siteFora('supabase')}>Abrir no meu navegador</button>
+                        <PlanoB desde={x.desde ?? null} onAbrir={() => void ponte.siteFora('supabase')} />
                       </div>
                     )}
                   </div>
                 )
               })}
-              {resend && <ResendConta ponte={resend} onde={() => ret(area.current)} />}
+              {resend && <div className={fora(true).trim() || undefined}><ResendConta ponte={resend} onde={() => ret(area.current)} /></div>}
               {aviso && <p className="at-ativ__erro" role="alert">{aviso}</p>}
-              <div className="at-ativ__rodape at-claude__acoes">
+              <div className={`at-ativ__rodape at-claude__acoes${fora(true)}`}>
                 <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>
                 {faltam === 0
                   ? <Botao onClick={onContinuar}>{rotuloContinuar}</Botao>
                   : <span className="at-ativ__txt">{faltam === 1 ? 'Falta 1 conta' : `Faltam ${faltam} contas`}. Sem elas o Atlas constrói, mas não consegue guardar nem publicar.</span>}
               </div>
             </div>
-            <div className="at-ligar__site">
-              <span className="at-ativ__txt">{foco ? `O site ${foco.artigo === 'a' ? 'da' : 'do'} ${foco.nome}, aberto dentro do Atlas:` : 'O site de cada conta abre aqui quando você clicar em Ligar.'}</span>
+            <div className={`at-ligar__site${foco ? ' at-ligar__site--aceso' : fora(true)}`}>
+              {foco
+                ? <div className="at-ligar__aqui" role="status"><span className="at-ligar__pulso at-ligar__pulso--dentro" aria-hidden="true" /><span><b>É aqui.</b> Este é o site {foco.artigo === 'a' ? 'da' : 'do'} {foco.nome}, aberto dentro do Atlas. Toque no que está aceso.</span></div>
+                : <span className="at-ativ__txt">O site de cada conta abre aqui quando você clicar em Ligar.</span>}
               <div ref={area} className="at-ligar__area" aria-hidden={!foco}>
                 {!foco && <span className="at-ativ__txt">Você nunca digita comando nem senha aqui. O Atlas só recebe a permissão que você der no site.</span>}
               </div>
@@ -214,6 +230,13 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
       </div>
     </div>
   )
+}
+
+/** "Abrir no meu navegador" é o plano B: só aparece depois de 1 minuto, para não puxar o olhar para fora do Atlas (Rafael, 28/11/2026). */
+function PlanoB({ desde, onAbrir }: { desde: number | null; onAbrir: () => void }) {
+  const agora = useRelogio()
+  if (desde !== null && agora - desde < 60_000) return null
+  return <button type="button" className="at-ativ__link at-ligar__planob" onClick={onAbrir}>O site não abriu direito? Abrir no meu navegador</button>
 }
 
 /** Quanto o código ainda vale (a barra esvazia) e o sinal de vida da conferência automática. */
