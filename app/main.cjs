@@ -125,6 +125,12 @@ const disparoLeve = criarDisparo({ recursos: recursosClaude, modelo: () => model
 // Começar por uma planilha (X1–X3): raio-X aqui no computador; "o que entendi" pelo Claude lendo planilha/raio-x.md da obra.
 const planilhaObra = criarPlanilhaObra({ raiz: obras.raiz(), disparo, politica: { registrar: async (pasta, onde, texto) => { const s = await politica.registrar(pasta, onde, texto); if (s === 'embargada' || s === 'recusada') embargar(pasta); return s } } })
 const ideia = require('./adaptadores/ideia.cjs').criarIdeia({ disparo: criarDisparo({ recursos: recursosClaude, modelo: () => ['--model', 'claude-haiku-5-5'], raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() }) })
+// Testar a ideia (TI1, 28/11/2026): agentes de IA olham o protótipo, no Claude do cliente (modelo rápido, sem pasta: não lê arquivo).
+const testarIdeia = require('./adaptadores/testar-ideia.cjs').criarTestarIdeia({
+  raiz: obras.raiz(),
+  disparo: criarDisparo({ recursos: recursosClaude, modelo: () => ['--model', 'claude-haiku-5-5'], raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() }),
+  avisar: (n) => { if (janelaPrincipal && !janelaPrincipal.isDestroyed()) janelaPrincipal.webContents.send('atlas:testar:mudou', Number(n)) },
+})
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo: disparoLeve })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })
 // Protótipo que parou no meio (sem internet, computador desligado; pedido do Luiz, 23/11/2026): ao abrir o Atlas e a cada 2 min,
@@ -434,6 +440,12 @@ handle('atlas:posobra:descartar', (pasta, id) => posobra.descartar(String(pasta)
 handle('atlas:posobra:publicarAgora', (pasta, nome) => posobra.publicarAgora(String(pasta), String(nome ?? '')))
 // Ao abrir: obra que ficou no meio de um "Publicar agora" (o Atlas fechou) volta ao ponto de antes.
 app.whenReady().then(async () => { try { for (const o of await obras.listar()) await posobra.recuperar(o.pasta || o).catch(() => {}) } catch { /* sem obras */ } })
+app.whenReady().then(async () => { try { await testarIdeia.retomarTodos((await obras.listar()).map((o) => o.pasta || o)) } catch { /* sem obras */ } })
+handle('atlas:testar:listar', (pasta) => testarIdeia.listar(String(pasta)))
+handle('atlas:testar:iniciar', (pasta, o) => testarIdeia.iniciar(String(pasta), { quantidade: Number(o && o.quantidade), mesmosDe: o && o.mesmosDe !== undefined && o.mesmosDe !== null ? Number(o.mesmosDe) : null, versao: o && typeof o.versao === 'string' ? o.versao : null }))
+handle('atlas:testar:estado', (pasta, n) => testarIdeia.estado(String(pasta), Number(n)))
+handle('atlas:testar:relatorio', (pasta, n) => testarIdeia.relatorio(String(pasta), Number(n)))
+handle('atlas:testar:retomar', (pasta, n) => testarIdeia.retomar(String(pasta), Number(n)))
 
 // Ajuda do Atlas (F17): conversar (Claude só leitor), print da janela do Atlas, anexar imagem, abrir página da lista fechada; casos -> API.
 handle('atlas:ajuda:conversar', (contexto, historico, mensagem) => ajuda.conversar(contexto, historico, mensagem))

@@ -112,6 +112,15 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
       return () => ipcRenderer.removeListener('atlas:navegador:pagina', ouvir)
     },
   },
+  // Testar a ideia (TI1, 28/11/2026): agentes de IA olham o protótipo; a tela recarrega quando o teste anda.
+  testar: {
+    listar: (pasta) => chamar('atlas:testar:listar', String(pasta)),
+    iniciar: (pasta, o) => chamar('atlas:testar:iniciar', String(pasta), { quantidade: Number(o?.quantidade), mesmosDe: o?.mesmosDe === undefined || o?.mesmosDe === null ? null : Number(o.mesmosDe), versao: typeof o?.versao === 'string' ? o.versao : null }),
+    estado: (pasta, n) => chamar('atlas:testar:estado', String(pasta), Number(n)),
+    relatorio: (pasta, n) => chamar('atlas:testar:relatorio', String(pasta), Number(n)),
+    retomar: (pasta, n) => chamar('atlas:testar:retomar', String(pasta), Number(n)),
+    aoMudar: (f) => { const ouvir = (_e, n) => { if (typeof f === 'function') f(Number(n)) }; ipcRenderer.on('atlas:testar:mudou', ouvir); return () => ipcRenderer.removeListener('atlas:testar:mudou', ouvir) },
+  },
   // Contas do cliente: "abrir o site" (no navegador do computador) e se a conta já está pronta (visto pelo navegador do Atlas).
   contas: { abrirSite: (conta) => chamar('atlas:navegador:fora', String(conta)), pronta: (conta) => chamar('atlas:navegador:pronta', String(conta)) },
   // Começar por uma planilha (X1–X3): a tela recebe o resumo e o que o Atlas entendeu; nunca os dados da planilha.
