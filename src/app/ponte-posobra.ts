@@ -37,8 +37,16 @@ export interface PlanoPosObra {
   politica?: ResultadoPolitica
 }
 
-export type StatusPedido = 'no-ar' | 'para-conferir' | 'em-andamento'
-export interface PedidoAnterior { id: string; nome: string; data: string; status: StatusPedido }
+export type StatusPedido = 'no-ar' | 'para-conferir' | 'em-andamento' | 'cancelada' | 'descartada'
+export interface PedidoAnterior {
+  id: string; nome: string; data: string; status: StatusPedido
+  /** Em andamento: 'agora' = a linha está nele; 'fila' = esperando a vez. */
+  fila?: 'agora' | 'fila' | null
+  /** Ainda tem tarefa por fazer: pode ser cancelado na hora. */
+  podeCancelar?: boolean
+  /** Pronto e ainda não publicado: pode ser descartado (sai da versão de teste). */
+  podeDescartar?: boolean
+}
 
 export interface ResultadoExecucao { id: string; nome: string }
 
@@ -66,6 +74,12 @@ export interface PontePosObra {
   /** Roda a correção pelo mesmo pipeline da obra, só depois do OK. Gera uma versão de teste; o sistema no ar só muda quando o cliente aprovar. */
   executar(pasta: string, pedido: PedidoPosObra, plano: PlanoPosObra): Promise<ResultadoExecucao>
   historico(pasta: string): Promise<PedidoAnterior[]>
+  /** Tira o pedido da fila na hora (Guilherme, 27/11/2026). Se a linha estava nele, para e segue com o próximo. */
+  cancelar?(pasta: string, id: string): Promise<{ ok: true; continuou: boolean }>
+  /** Mudança pronta, ainda não publicada, sai da versão de teste. */
+  descartar?(pasta: string, id: string): Promise<{ ok: true }>
+  /** Publica agora o que já está pronto, sem esperar a fila; a obra volta sozinha ao ponto onde estava. */
+  publicarAgora?(pasta: string, nome?: string): Promise<{ ok: true }>
   /** Revisões com % feito e tempos, da mais nova para a mais antiga (aba Desempenho). Opcional: sem ela, a lateral não aparece. */
   revisoes?(pasta: string): Promise<Revisao[]>
 }
@@ -170,7 +184,7 @@ export function montarPedidoPosObra(p: PedidoPosObra): string {
 export const HISTORICO_EXEMPLO: PedidoAnterior[] = [
   { id: 'h1', nome: 'Cor do botão de marcar', data: '12/11 · 18 min', status: 'no-ar' },
   { id: 'h2', nome: 'Lembrete 2 h antes', data: '09/11 · 41 min', status: 'no-ar' },
-  { id: 'h3', nome: 'Relatório de comissão', data: '05/11 · aguardando você', status: 'para-conferir' },
+  { id: 'h3', nome: 'Relatório de comissão', data: '05/11 · aguardando você', status: 'para-conferir', podeDescartar: true },
 ]
 
 export const REVISOES_EXEMPLO: Revisao[] = [
@@ -211,6 +225,22 @@ export function criarPosObraFixture(): PosObraFixture {
     },
     async historico() { return lista.map((p) => ({ ...p })) },
     async revisoes() { return REVISOES_EXEMPLO.map((r) => ({ ...r })) },
+    async cancelar(_pasta, id) {
+      const p = lista.find((x) => x.id === id)
+      if (!p || !p.podeCancelar) throw new Error('nao-cancelavel')
+      const eraAgora = p.fila === 'agora'
+      Object.assign(p, { status: 'cancelada', fila: null, podeCancelar: false, data: 'hoje · cancelada' })
+      const prox = [...lista].reverse().find((x) => x.status === 'em-andamento' && x.podeCancelar)
+      if (eraAgora && prox) prox.fila = 'agora'
+      return { ok: true, continuou: !!prox }
+    },
+    async descartar(_pasta, id) {
+      const p = lista.find((x) => x.id === id)
+      if (!p || p.status !== 'para-conferir') throw new Error('nao-descartavel')
+      Object.assign(p, { status: 'descartada', podeDescartar: false, data: 'hoje · descartada' })
+      return { ok: true }
+    },
+    async publicarAgora() { return { ok: true } },
   }
 }
 

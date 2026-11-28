@@ -140,7 +140,9 @@ const licenca = criarLicenca({ cofre, hashComputador: async () => hash() })
 const servidor = criarServidor()
 // M65: o Atlas não constrói outro Atlas. O servidor é a fonte da verdade do embargo (sem kit, a linha não roda).
 const politica = require('./adaptadores/politica.cjs').criarPolitica({ raiz: obras.raiz(), cofre, hashComputador: async () => hash() })
-const posobra = criarPosObra({ raiz: obras.raiz(), disparo, construcao, licenca, politica: { registrar: async (pasta, onde, texto) => { const s = await politica.registrar(pasta, onde, texto); if (s === 'embargada' || s === 'recusada') embargar(pasta); return s } } })
+// git/noAr: controles do pós-obra (cancelar, descartar, publicar agora). noAr é criado mais abaixo; só é usado depois de pronto.
+const gitDaObra = (args, { cwd } = {}) => rodarProcesso('git', args, { env: envMinimo({ GIT_CONFIG_NOSYSTEM: '1' }), cwd, timeoutMs: 60_000 })
+const posobra = criarPosObra({ raiz: obras.raiz(), git: gitDaObra, noAr: { iniciar: (p, n) => noAr.iniciar(p, n), estado: (p) => noAr.estado(p) }, disparo, construcao, licenca, politica: { registrar: async (pasta, onde, texto) => { const s = await politica.registrar(pasta, onde, texto); if (s === 'embargada' || s === 'recusada') embargar(pasta); return s } } })
 /** Obra embargada: o kit sai do computador e a linha para (o servidor já não entrega o kit de novo). */
 function embargar(pasta) { try { kit.descartar(String(pasta)) } catch { /* já sem kit */ } try { if (construcao.linha.rodando(String(pasta))) painel.pausar(String(pasta)) } catch { /* já parada */ } }
 /** Antes de ligar a linha: sinais no código (camada 4) e o kit da obra (o servidor recusa obra embargada). */
@@ -417,6 +419,11 @@ handle('atlas:posobra:entender', (pasta, pedido) => posobra.entender(String(past
 handle('atlas:posobra:executar', async (pasta, pedido, plano) => { await garantirObra(String(pasta)); return posobra.executar(String(pasta), pedido, plano) })
 handle('atlas:posobra:historico', (pasta) => posobra.historico(String(pasta)))
 handle('atlas:posobra:revisoes', (pasta) => posobra.revisoes(String(pasta)))
+handle('atlas:posobra:cancelar', (pasta, id) => posobra.cancelar(String(pasta), String(id)))
+handle('atlas:posobra:descartar', (pasta, id) => posobra.descartar(String(pasta), String(id)))
+handle('atlas:posobra:publicarAgora', (pasta, nome) => posobra.publicarAgora(String(pasta), String(nome ?? '')))
+// Ao abrir: obra que ficou no meio de um "Publicar agora" (o Atlas fechou) volta ao ponto de antes.
+app.whenReady().then(async () => { try { for (const o of await obras.listar()) await posobra.recuperar(o.pasta || o).catch(() => {}) } catch { /* sem obras */ } })
 
 // Ajuda do Atlas (F17): conversar (Claude só leitor), print da janela do Atlas, anexar imagem, abrir página da lista fechada; casos -> API.
 handle('atlas:ajuda:conversar', (contexto, historico, mensagem) => ajuda.conversar(contexto, historico, mensagem))
@@ -560,6 +567,17 @@ handle('atlas:contas:siteFora', (conta) => {
 handle('atlas:contas:abrirChaves', (b) => navegador.abrirEndereco('https://supabase.com/dashboard/account/tokens', b))
 handle('atlas:contas:chaveSupabase', async (chave) => { return contasCli.guardarChaveSupabase(String(chave ?? '')) })
 handle('atlas:contas:cancelar', (conta) => contasCli.cancelar(String(conta)))
+// Conta religada (27/11/2026): fecha as travas "conta desligada" das contas que voltaram e a obra parada por elas continua sozinha.
+handle('atlas:contas:aposLigar', async (pasta) => {
+  pasta = String(pasta)
+  const s = await contasCli.situacao()
+  const ligados = [s.github.ligado && 'github', s.hosp.ligado && 'vercel', s.supabase.ligado && 'supabase'].filter(Boolean)
+  const servicos = await ocorrencias.fecharContas(pasta, ligados)
+  if (!servicos.length) return { servicos: [], continuou: false }
+  let continuou = false
+  try { continuou = await painel.retomarAposConta(pasta, servicos) } catch { continuou = false }
+  return { servicos, continuou }
+})
 
 // Fichas de trava (T1Travas): site fixo de cada trava e "deixar público até o GitHub voltar" (só depois da confirmação na tela).
 // De hora em hora (e ao abrir), obra que ficou pública volta para privado sozinha quando a trava do GitHub fecha.

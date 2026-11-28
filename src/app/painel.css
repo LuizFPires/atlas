@@ -231,3 +231,12 @@
 .at-pn__balao--canto .at-pn__btn { flex: none; height: 38px; padding: 0 14px; font-size: 13px; border-radius: 10px; }
 /* Destravar pelo app: o avanço que travou vira conversa com o Atlas, sem depender de ninguém. */
 .at-pn__destravar { align-self: flex-start; height: 40px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--card-b); background: var(--card); color: var(--text); font: 600 14px var(--font-text); cursor: pointer; }
+
+/* Publicar agora e conta religada (27/11/2026) */
+.at-pn__btn--novo { border-color: var(--lime) !important; background: var(--soft) !important; }
+.at-pn__voltou { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 14px 18px; border-radius: 16px; border: 1px solid var(--lime); background: var(--soft); }
+.at-pn__voltou-ic { width: 32px; height: 32px; border-radius: 16px; background: var(--lime); color: var(--on-lime); display: grid; place-items: center; font-weight: 800; }
+.at-pn__voltou div { display: flex; flex-direction: column; gap: 2px; }
+.at-pn__voltou b { font-size: 16px; }
+.at-pn__voltou span { font-size: 13px; color: var(--mute); }
+.at-pn__voltou-ok { min-height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 13px var(--font-text); cursor: pointer; }

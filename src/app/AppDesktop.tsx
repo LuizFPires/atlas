@@ -38,6 +38,7 @@ import { ColocarNoAr } from './ColocarNoAr'
 import { Publicando } from './Publicando'
 import { Entrega, type ResumoEntrega } from './Entrega'
 import { PosObra } from './PosObra'
+import { PublicarAgora } from './PublicarAgora'
 import { criarLicencaApi, criarLicencaFixture, criarPosObraFixture, licencaIndisponivel, posObraIndisponivel, type PonteLicenca, type PontePosObra } from './ponte-posobra'
 import { criarPublicarFixture, publicarIndisponivel, type PontePublicar } from './ponte-publicar'
 import { criarNoArFixture, noArIndisponivel, type PonteNoAr } from './ponte-no-ar'
@@ -177,6 +178,11 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const [outrasContas, setOutrasContas] = useState(false)
   // Ficha "conta desligada" dentro da obra: liga de novo e volta para a obra.
   const [religandoConta, setReligandoConta] = useState(false)
+  // Conta religada (27/11/2026): faixa "X ligado de novo. A obra continuou sozinha." e o painel "Publicar agora".
+  const [contaVoltou, setContaVoltou] = useState<{ pasta: string; servicos: string[]; continuou: boolean } | null>(null)
+  const [publicarAgoraAberto, setPublicarAgoraAberto] = useState(false)
+  const fecharPublicarAgora = useCallback(() => setPublicarAgoraAberto(false), [])
+  const [obraPublicada, setObraPublicada] = useState<{ pasta: string; endereco: string } | null>(null)
   const naEtapaContas = fluxo === 'contas'
   useEffect(() => {
     if (!naEtapaContas || !ponteLigar) return
@@ -276,6 +282,19 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   const ponteNoAr = useMemo<PonteNoAr>(() => noAr ?? (modoFixture() ? criarNoArFixture() : (ponte.noAr ?? noArIndisponivel)), [noAr, ponte])
   const [andaresNoAr, setAndaresNoAr] = useState(12)
   useEffect(() => { if (fluxo === 'publicar' && obraAtual) void pontePainel.ler(obraAtual.pasta).then((e) => setAndaresNoAr(Math.max(1, e.etapas.length)), () => {}) }, [fluxo, obraAtual, pontePainel])
+  // "Publicar agora ↑" só para obra já publicada (27/11/2026).
+  useEffect(() => {
+    if (!obraAtual || ativo !== 'obra') return
+    let vivo = true
+    const pasta = obraAtual.pasta
+    ponteNoAr.estado(pasta).then((e) => { if (vivo) setObraPublicada(e.endereco ? { pasta, endereco: e.endereco } : null) }, () => {})
+    return () => { vivo = false }
+  }, [obraAtual, ativo, fluxo, ponteNoAr])
+  const voltarDasContas = (pasta: string) => {
+    setReligandoConta(false)
+    if (!ponteLigar?.aposLigar) return
+    void ponteLigar.aposLigar(pasta).then((r) => { if (r.servicos.length) setContaVoltou({ pasta, ...r }) }, () => {})
+  }
   const pontePublicar = useMemo<PontePublicar>(() => publicar ?? (modoFixture() ? criarPublicarFixture() : (ponte.publicar ?? publicarIndisponivel)), [publicar, ponte])
 
   // Pós-obra (F14): sem adaptador real, não finge que entendeu nem que mexeu na obra.
@@ -440,15 +459,16 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'posobra') conteudo = obraAtual ? <PosObra obra={obraAtual} posobra={pontePosObra} politica={pontePolitica} arquivos={ponteArquivos} licenca={ponteLicenca} onAcompanhar={() => setAtivo('obra')} onVerTeste={() => pontePainel.abrirTeste(obraAtual.pasta)} onColocarNoAr={async () => {
     // Aprovar antes: obra já publicada => publica de novo com o mesmo nome (vistoria, banco, publicar e teste); senão, abre o Colocar no ar.
     const e = await ponteNoAr.estado(obraAtual.pasta)
-    if (e.nome && e.fase === 'noar') await ponteNoAr.iniciar(obraAtual.pasta, e.nome)
+    // Já publicada: pelo "Publicar agora", que para a linha e publica a base (nunca o que está pela metade) e depois devolve a obra.
+    if (e.nome && e.fase === 'noar') { if (pontePosObra.publicarAgora) await pontePosObra.publicarAgora(obraAtual.pasta, e.nome); else await ponteNoAr.iniciar(obraAtual.pasta, e.nome) }
     setGuiaAberto(null); setFluxo('publicar'); setAtivo('obra')
   }} onAjuda={(c) => abrirAjuda({ origem: 'erro', obra: obraAtual.nome, pasta: obraAtual.pasta, onde: c.onde, erro: c.erro ? { titulo: 'Pedido de mudança', detalhe: c.erro } : undefined })} /> : <p>Escolha uma obra em Minhas obras para pedir uma mudança nela.</p>
   else if (ativo === 'obra' && obraAtual && fluxo === 'publicar' && !religandoConta) conteudo = <ColocarNoAr key={guiaAberto ? 'volta-guia' : 'noar'} obra={obraAtual} noAr={ponteNoAr} dominio={ponteDominio.indisponivel ? undefined : ponteDominio} abrirRegistro={() => pontePublicar.abrirSite('registro')} dominioAberto={guiaAberto?.volta === 'dominio'} lojas={ponteLojas.indisponivel ? undefined : ponteLojas} lojasAberto={guiaAberto?.volta === 'lojas'} abrirSiteLojas={(d) => pontePublicar.abrirSite(d)} onVender={ponteLancamento.indisponivel ? undefined : () => { setLancObra(obraAtual.pasta); setGuiaAberto(null); setAtivo('lancamentos') }} onGuiaLojas={(g, conta) => { setGuiaAberto({ guia: g, volta: 'lojas', conta }); setFluxo('guia') }} onGuiaRegistro={(e) => { if (!e.dominio) return; const pasta = obraAtual.pasta; setGuiaAberto({ guia: guiaRegistro({ dominio: e.dominio, servidores: e.servidores, registros: e.registros }), volta: 'dominio', conferirFim: () => ponteDominio.estado(pasta).then((d) => d.fase === 'noar' || d.fase === 'cadeado') }); setFluxo('guia') }} andares={andaresNoAr} onVoltar={() => setFluxo('lista')} onDominio={(e) => { setEnderecoNoAr(e); setSelecaoPub({ dominio: true }); setFluxo('publicando') }} onLojas={(e) => { setEnderecoNoAr(e); setSelecaoPub({ lojas: true }); setFluxo('publicando') }} onAjuda={(c) => abrirAjuda({ origem: 'erro', obra: obraAtual.nome, pasta: obraAtual.pasta, onde: c.onde, erro: c.erro ? { titulo: 'Colocar no ar', detalhe: c.erro } : undefined })} onLigarContas={ponteLigar ? () => setReligandoConta(true) : undefined} />
   else if (ativo === 'obra' && obraAtual && fluxo === 'guia' && guiaAberto) conteudo = <GuiaSite guia={guiaAberto.guia} navegador={modoFixture() ? undefined : ponte.navegador} abrirFora={(d) => pontePublicar.abrirSite(d)} conferirFim={guiaAberto.conferirFim} onFim={() => { const c = guiaAberto.conta; if (c) void ponteLojas.marcarConta(obraAtual.pasta, c, true).catch(() => {}).finally(() => setFluxo('publicar')); else setFluxo('publicar') }} onVoltar={() => setFluxo('publicar')} onAjuda={(p) => { const pasta = obraAtual.pasta; void ponteAjuda.tirarPrint(pasta).catch(() => null).then((img) => abrirAjuda({ ...contextoDoPasso(p), obra: obraAtual.nome, pasta, ...(img ? { print: img } : {}) })) }} />
   else if (ativo === 'obra' && obraAtual && fluxo === 'publicando') conteudo = <Publicando obra={obraAtual} selecao={selecaoPub} publicar={pontePublicar} jaNoAr={enderecoNoAr} onVoltar={() => setFluxo('publicar')} onConcluir={(noAr) => { setEnderecoNoAr(noAr); setResumoEntrega(null); void pontePainel.ler(obraAtual.pasta).then((e) => setResumoEntrega({ etapas: e.etapas.length, tarefas: e.feitas }), () => {}); setFluxo('entrega') }} onPedirAjuda={pedirAjudaPasso} onErro={(p, e) => abrirAjuda({ ...contextoDoPasso(p), origem: 'erro', onde: 'a publicação', erro: e })} />
   else if (ativo === 'obra' && obraAtual && fluxo === 'entrega') conteudo = <Entrega obra={obraAtual} endereco={enderecoNoAr} resumo={resumoEntrega} onMudar={() => setAtivo('posobra')} />
-  else if (ativo === 'obra' && obraAtual && religandoConta && ponteLigar) conteudo = <LigarContas ponte={ponteLigar} navegador={modoFixture() ? undefined : ponte.navegador} onVoltar={() => setReligandoConta(false)} onContinuar={() => setReligandoConta(false)} rotuloContinuar="Tudo ligado · Voltar à obra →" />
-  else if (ativo === 'obra' && obraAtual) conteudo = <Painel filaObras={pontesModo.construcao} plano={planoNoMenu?.valor.toLocaleLowerCase('pt-BR').startsWith('max') ? 'max' : 'pro'} obra={obraAtual} abas={<AbasDaObra so="abas" nome={obraAtual.nome} atual="obra" onIr={(p) => setAtivo(p)} onCanteiro={() => setAtivo('canteiro')} />} onCanteiro={() => setAtivo('canteiro')} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => abrirAjuda({ origem: 'menu' })} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => { setGuiaAberto(null); setFluxo('publicar') }} travas={ponteTravas} navegador={modoFixture() ? undefined : ponte.navegador} onLigarContas={ponteLigar ? () => setReligandoConta(true) : undefined} onVerCronograma={() => setAtivo('cronograma')} />
+  else if (ativo === 'obra' && obraAtual && religandoConta && ponteLigar) conteudo = <LigarContas ponte={ponteLigar} navegador={modoFixture() ? undefined : ponte.navegador} onVoltar={() => voltarDasContas(obraAtual.pasta)} onContinuar={() => voltarDasContas(obraAtual.pasta)} rotuloContinuar="Tudo ligado · Voltar à obra →" />
+  else if (ativo === 'obra' && obraAtual) conteudo = <>{<Painel filaObras={pontesModo.construcao} plano={planoNoMenu?.valor.toLocaleLowerCase('pt-BR').startsWith('max') ? 'max' : 'pro'} obra={obraAtual} abas={<AbasDaObra so="abas" nome={obraAtual.nome} atual="obra" onIr={(p) => setAtivo(p)} onCanteiro={() => setAtivo('canteiro')} />} onCanteiro={() => setAtivo('canteiro')} painel={pontePainel} modos={pontesModo.modos} cota={ponteCota} ocorrencias={ponteOcorrencias} onPedirAjuda={() => abrirAjuda({ origem: 'menu' })} onVerMax={() => { void ponteClaude.abrirSite('planos') }} onPublicar={() => { setGuiaAberto(null); setFluxo('publicar') }} travas={ponteTravas} navegador={modoFixture() ? undefined : ponte.navegador} onLigarContas={ponteLigar ? () => setReligandoConta(true) : undefined} onVerCronograma={() => setAtivo('cronograma')}  onPublicarAgora={obraPublicada?.pasta === obraAtual.pasta && pontePosObra.publicarAgora ? () => setPublicarAgoraAberto(true) : undefined} contaVoltou={contaVoltou?.pasta === obraAtual.pasta ? contaVoltou : null} onFecharContaVoltou={() => setContaVoltou(null)} />}{publicarAgoraAberto && <PublicarAgora obra={obraAtual} posobra={pontePosObra} endereco={obraPublicada?.endereco} onFechar={fecharPublicarAgora} onVerTeste={() => { void pontePainel.abrirTeste(obraAtual.pasta).catch(() => {}) }} onPublicando={() => { setPublicarAgoraAberto(false); setGuiaAberto(null); setFluxo('publicar') }} />}</>
   else if (ativo === 'obras' && fluxo === 'aprovar' && obraAtual) conteudo = <Aprovar obra={obraAtual} construcao={pontesModo.construcao} claude={ponteClaude} modos={pontesModo.modos} onVoltar={() => setFluxo('contas')} onComecou={() => { setFluxo('lista'); setAtivo('obra') }} tampa={modoFixture() ? undefined : ponte.tampa} />
   else if (ativo === 'obras' && fluxo === 'planilha' && pontePlanilha) conteudo = <ComecarPlanilha politica={pontePolitica} planilha={pontePlanilha} arquivos={ponteArquivos} criarObra={(nome) => ponteObras.criarSubpasta(nome)} onVoltar={() => setFluxo('ideia')} onConcluir={({ pasta, nome, relato }) => {
     // A obra nasceu da planilha: segue o caminho (visual, nome, protótipo) com o relato que veio dela.

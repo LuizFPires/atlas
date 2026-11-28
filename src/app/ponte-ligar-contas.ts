@@ -19,6 +19,8 @@ export interface PonteLigarContas {
   /** Supabase: o Atlas testa a chave e guarda no cofre. */
   chaveSupabase(chave: string): Promise<ResultadoChave>
   cancelar(conta: ContaLigavel): Promise<void>
+  /** Depois de ligar: fecha os avisos "conta saiu" das contas que voltaram e a obra parada por elas continua sozinha. */
+  aposLigar?(pasta: string): Promise<{ servicos: string[]; continuou: boolean }>
 }
 
 export interface LigarContasFixture extends PonteLigarContas {

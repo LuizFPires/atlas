@@ -384,6 +384,21 @@ function criarPainel({ raiz, modos, construcao, shell, kitDir = process.env.ATLA
       if (!linha.rodando(pasta)) linha.religar(pasta)
     },
 
+    /** Conta religada (27/11/2026): a obra que parou por causa dela continua sozinha, e a pergunta velha some. Obra pausada pelo
+     *  cliente continua pausada. Devolve true se a obra está trabalhando depois disso. */
+    async retomarAposConta(pasta, servicos = []) {
+      const cwd = pastaDaObra(raiz, pasta)
+      if (linha.rodando(pasta)) return true
+      if (lerEstadoLocal(pasta).pausada) return false
+      const modo = await modos.ler(pasta)
+      if (modo) gravarRecomendadoGlobal(modo, { home, agora: agora() })
+      if (vigia && vigia.zerar) vigia.zerar(pasta)
+      const nomes = (Array.isArray(servicos) ? servicos : []).filter((x) => ['GitHub', 'Vercel', 'Supabase'].includes(x))
+      if (diario) diario.registrar(cwd, { tipo: 'info', texto: `${nomes.length ? nomes.join(' e ') : 'Conta'} ligado de novo. Continuando de onde parou.` })
+      linha.religar(pasta)
+      return true
+    },
+
     /** Guilherme (24/11/2026): a linha parou perguntando como seguir; o cliente escolheu uma das opções que ela deu. */
     async decidir(pasta, rotulo) {
       const cwd = pastaDaObra(raiz, pasta)

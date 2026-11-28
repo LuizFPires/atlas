@@ -322,3 +322,25 @@ test('histórico da obra: começo pelo diário/modo/consumo (o mais cedo) e entr
   assert.equal(h.entregas[2], '2026-11-26T18:30:00.000Z', 'a 1ª entrega (medição) vale')
   assert.deepEqual(historicoDaObra(dir, [], () => { throw new Error('sem git') }).entregas, {})
 })
+
+// Guilherme (27/11): religou o Supabase e a obra continuou parada, com a pergunta velha na tela.
+test('retomarAposConta: a obra parada pela conta continua sozinha, a pergunta velha some e o diário conta; pausada pelo cliente fica pausada', async () => {
+  const { criarDiario } = require('./diario.cjs')
+  const diario = criarDiario()
+  const zeradas = []
+  const vigia = { estado: () => null, zerar: (p) => zeradas.push(p) }
+  const { raiz, c, painel } = montar({ diario, vigia })
+  await c.iniciar('obra', 'Barbearia', 'automatico', ETAPAS)
+  c.linha.parar('obra'); await new Promise((r) => setTimeout(r, 20))
+  const religadas = []
+  const religar = c.linha.religar
+  c.linha.religar = (p, o) => { religadas.push(p); return religar(p, o) }
+  assert.equal(await painel.retomarAposConta('obra', ['Supabase']), true)
+  assert.deepEqual(religadas, ['obra'])
+  assert.deepEqual(zeradas, ['obra'])
+  assert.ok(diario.ler(path.join(raiz, 'obra')).some((e) => e.texto === 'Supabase ligado de novo. Continuando de onde parou.'))
+  c.linha.parar('obra'); await new Promise((r) => setTimeout(r, 20))
+  await painel.pausar('obra')
+  assert.equal(await painel.retomarAposConta('obra', ['Supabase']), false)
+  assert.equal(religadas.length, 1)
+})

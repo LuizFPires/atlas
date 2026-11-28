@@ -234,3 +234,62 @@ test('aprovar antes: se não conseguir abrir a versão de teste, diz o motivo na
   await user.click(await screen.findByRole('button', { name: 'Ver como ficou' }))
   expect(await screen.findByRole('alert')).toBeInTheDocument()
 })
+
+// Guilherme (27/11/2026): "cancele as que estão travadas, mas eu falo e ela não me obedece". Cancelar é um botão, na hora.
+const FILA = [
+  { id: 'p024', nome: 'Assinatura do espelho', data: '27/11 · na fila', status: 'em-andamento' as const, fila: 'fila' as const, podeCancelar: true },
+  { id: 'p021', nome: 'Filtro por obra', data: '27/11 · sendo feita', status: 'em-andamento' as const, fila: 'agora' as const, podeCancelar: true },
+  { id: 'p020', nome: 'Hora extra no domingo', data: '26/11 · 30 min', status: 'para-conferir' as const, podeDescartar: true },
+  { id: 'p019', nome: 'Relatório do mês', data: '25/11 · 20 min', status: 'no-ar' as const },
+]
+const posobraComFila = () => {
+  const base = criarPosObraFixture()
+  let lista = FILA.map((x) => ({ ...x }))
+  const chamadas: string[] = []
+  return {
+    chamadas,
+    posobra: {
+      ...base,
+      historico: async () => lista.map((x) => ({ ...x })),
+      cancelar: async (_p: string, id: string) => { chamadas.push(`cancelar ${id}`); lista = lista.map((x) => (x.id === id ? { ...x, status: 'cancelada' as const, fila: null, podeCancelar: false, data: '27/11 · cancelada' } : x.id === 'p024' && id === 'p021' ? { ...x, fila: 'agora' as const } : x)) as typeof lista; return { ok: true as const, continuou: true } },
+      descartar: async (_p: string, id: string) => { chamadas.push(`descartar ${id}`); throw new Error('descartar-conflito') },
+    },
+  }
+}
+
+test('cancelar o que está sendo feito: confirma dizendo o que acontece, cancela e a fila segue', async () => {
+  const { posobra, chamadas } = posobraComFila()
+  const { user } = montar({ posobra })
+  expect(await screen.findByText('Sendo feita')).toBeInTheDocument()
+  expect(screen.getByText('Na fila')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Relatório do mês/ })).toBeNull() // no ar: nem cancelar nem descartar
+  await user.click(screen.getByRole('button', { name: 'Cancelar Filtro por obra' }))
+  const conf = screen.getByRole('group', { name: 'Confirmar: cancelar Filtro por obra' })
+  expect(conf).toHaveTextContent('O Atlas para agora o que está fazendo nela')
+  await user.click(within(conf).getByRole('button', { name: 'Manter' }))
+  expect(chamadas).toEqual([])
+  await user.click(screen.getByRole('button', { name: 'Cancelar Filtro por obra' }))
+  await user.click(screen.getByRole('button', { name: 'Sim, cancelar' }))
+  expect(await screen.findByText('Cancelado. O Atlas parou “Filtro por obra” e já começou o próximo pedido.')).toBeInTheDocument()
+  expect(chamadas).toEqual(['cancelar p021'])
+  expect(screen.getByText('Cancelada')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Cancelar Filtro por obra' })).toBeNull()
+})
+
+test('cancelar da fila: avisa que nada muda no sistema', async () => {
+  const { posobra } = posobraComFila()
+  const { user } = montar({ posobra })
+  await user.click(await screen.findByRole('button', { name: 'Cancelar Assinatura do espelho' }))
+  expect(screen.getByRole('group', { name: /Confirmar/ })).toHaveTextContent('Ainda não começou: sai da fila e nada muda no sistema.')
+  await user.click(screen.getByRole('button', { name: 'Sim, cancelar' }))
+  expect(await screen.findByText('Cancelado. “Assinatura do espelho” saiu da fila.')).toBeInTheDocument()
+})
+
+test('descartar a pronta que se misturou com outras: explica o que fazer, sem termo técnico', async () => {
+  const { posobra } = posobraComFila()
+  const { user } = montar({ posobra })
+  await user.click(await screen.findByRole('button', { name: 'Descartar Hora extra no domingo' }))
+  expect(screen.getByRole('group', { name: /Confirmar/ })).toHaveTextContent('Ela não vai para o ar')
+  await user.click(screen.getByRole('button', { name: 'Sim, descartar' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('se misturou com outras')
+})

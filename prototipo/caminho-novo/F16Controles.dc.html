@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atlas · Obra: cancelar mudança, publicar agora e conta religada</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><style>body{margin:0}
+:root{--bg:#141619;--card:#1E2125;--card2:#22262B;--cb:#2C3036;--line:#2A2E33;--text:#EDEFEA;--mute:#B4BBB2;--mute2:#8E968C;--lime:#C6F135;--soft:#2A3A12;--amb:#F2B14A;--ambsoft:#3A2E14;--red:#F07A6A}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:#0B0C0E;color:var(--text);font:15px/1.5 'Geist',system-ui,sans-serif}
+
+
+
+
+
+.tela{position:absolute;left:0;top:0;width:1440px;height:900px;transform-origin:0 0;background:var(--bg);display:grid;grid-template-columns:220px 1fr}
+.tela[hidden]{display:none}
+.menu{background:#101214;border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:6px}
+.logo{font:700 20px 'Geist',sans-serif;letter-spacing:.04em;margin-bottom:18px}.logo b{color:var(--lime)}
+.mi{padding:9px 12px;border-radius:10px;color:var(--mute);font-size:14px}.mi.on{background:var(--card);color:var(--text)}
+.falar{margin-top:18px;padding:10px 12px;border-radius:10px;background:var(--lime);color:#141619;font-weight:600;font-size:14px;text-align:center}
+.main{padding:22px 30px;display:flex;flex-direction:column;gap:14px;position:relative;min-height:0}
+.topo{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.topo small{white-space:nowrap;font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:var(--mute2)}
+.topo h1{margin:2px 0 0;font-size:22px}
+.tabs{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--card);border:1px solid var(--cb)}
+.tabs span{white-space:nowrap;padding:7px 10px;border-radius:9px;font-size:13px;color:var(--mute)}.tabs span.on{background:var(--lime);color:#141619;font-weight:600}
+.acoes{display:flex;gap:8px}
+.bt{white-space:nowrap;min-height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--cb);background:var(--card);color:var(--text);font:600 13px 'Geist',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.bt.lime{background:var(--lime);color:#141619;border-color:var(--lime)}
+.bt.novo{border-color:var(--lime);background:var(--soft)}
+.bt.perigo{border-color:#5A2A24;background:#2A1714;color:#FFB4A8}
+.bt.fantasma{background:transparent}
+.bt.mini{min-height:30px;padding:0 10px;font-size:12px}
+.r{font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:var(--mute2)}
+.card{padding:18px 20px;border-radius:18px;background:var(--card);border:1px solid var(--cb)}
+.nota{font-size:12px;color:var(--mute2)}
+.marca{position:absolute;left:30px;bottom:6px;font-size:12px;color:var(--mute2);max-width:560px;text-align:left}
+/* pedir mudança */
+.pm{display:grid;grid-template-columns:1fr 440px;gap:16px;flex:1;min-height:0}
+.ped{display:flex;flex-direction:column;gap:12px}
+.ped textarea{width:100%;height:150px;border-radius:14px;border:1px solid var(--cb);background:var(--bg);color:var(--mute2);font:15px 'Geist',sans-serif;padding:14px;resize:none}
+.lado{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:auto}
+.it{padding:11px 13px;border-radius:12px;background:var(--card2);border:1px solid var(--cb);display:flex;flex-direction:column;gap:6px}
+.it .l1{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.it b{font-size:14px}
+.it .l2{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--mute2)}
+.st{font:600 10px 'Geist Mono',monospace;letter-spacing:.08em;padding:3px 7px;border-radius:6px;white-space:nowrap}
+.st.fila{background:#2A2E33;color:var(--mute)}.st.and{background:var(--ambsoft);color:var(--amb)}.st.conf{background:var(--soft);color:var(--lime)}.st.ar{background:#1F2A22;color:#9BD28A}.st.canc{background:#2A2E33;color:var(--mute2);text-decoration:line-through}
+.it.andando{border-color:var(--amb)}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;background:var(--amb)}
+.cancelar{background:none;border:0;padding:0;color:var(--mute);font:600 12px 'Geist',sans-serif;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.cancelar:hover{color:#FFB4A8}
+.confirma{margin-top:4px;padding:12px;border-radius:10px;background:#2A1714;border:1px solid #5A2A24;display:flex;flex-direction:column;gap:8px;font-size:13px;color:#F3D5CF}
+.confirma .bts{display:flex;gap:8px;justify-content:flex-end}
+.it.sumindo{opacity:.55}
+.toast{padding:10px 12px;border-radius:10px;background:var(--soft);border:1px solid var(--lime);font-size:13px}
+/* publicar agora */
+.fundo{z-index:2;position:absolute;inset:0;background:rgba(5,6,8,.62)}
+.gav{z-index:2;position:absolute;top:0;right:0;bottom:0;width:620px;background:var(--card);border-left:1px solid var(--cb);box-shadow:-20px 0 60px rgba(0,0,0,.5);padding:24px 26px;display:flex;flex-direction:column;gap:14px}
+.gav h2{margin:2px 0 0;font-size:22px}
+.grupo{padding:14px 16px;border-radius:14px;border:1px solid var(--cb);background:var(--card2);display:flex;flex-direction:column;gap:8px}
+.grupo.vai{border-color:var(--lime)}
+.li{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px}
+.li span:last-child{font-size:12px;color:var(--mute2)}
+.ok{color:var(--lime);font-weight:700;margin-right:8px}.fora{color:var(--mute2);font-weight:700;margin-right:8px}
+.passos{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--mute)}
+.passos b{color:var(--text)}
+.pe{margin-top:auto;display:flex;gap:10px;justify-content:flex-end;align-items:center}
+.obra{flex:1;min-height:0;border-radius:18px;border:1px solid var(--cb);background:radial-gradient(ellipse at 60% 80%,#2A2416 0,#15181B 60%);position:relative;overflow:hidden}
+.pct{position:absolute;left:26px;top:20px}.pct b{font:700 52px 'Geist',sans-serif;color:var(--lime)}
+.predio{position:absolute;left:50%;bottom:-20px;width:240px;height:420px;transform:translateX(-50%);background:repeating-linear-gradient(0deg,#1D2024 0 30px,#14171A 30px 34px);border-radius:6px 6px 0 0;box-shadow:inset 0 0 0 2px #2C3036}
+.predio::before{content:'';position:absolute;inset:16px;background:repeating-linear-gradient(90deg,#E8C65A 0 18px,transparent 18px 34px),repeating-linear-gradient(0deg,transparent 0 12px,#14171A 12px 34px);opacity:.75;mix-blend-mode:screen}
+.faixa{position:absolute;left:20px;right:20px;bottom:18px;display:grid;grid-template-columns:1fr 330px;gap:10px}
+.fx{padding:12px 14px;border-radius:12px;background:rgba(20,22,25,.92);border:1px solid var(--cb);font-size:13px}
+.fx .mono{font:12px 'Geist Mono',monospace;color:var(--mute2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* conta religada */
+.ban{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:14px 18px;border-radius:16px;border:1px solid var(--lime);background:#1C2614}
+.ban .ic{width:34px;height:34px;border-radius:17px;background:var(--lime);color:#141619;display:grid;place-items:center;font-weight:800}
+.ban b{font-size:16px}.ban span{font-size:13px;color:var(--mute)}
+.antes{padding:12px 16px;border-radius:14px;border:1px dashed var(--cb);font-size:13px;color:var(--mute2);display:flex;gap:10px;align-items:center}
+.antes s{color:var(--mute2)}
+.diario{display:flex;flex-direction:column;gap:4px;font:12px 'Geist Mono',monospace;color:var(--mute)}
+.diario span b{color:var(--lime);font-weight:600}
+ .tela{position:relative !important}</style></helmet>
+<!-- Guilherme, 27/11/2026: 1) Cancelar/Descartar no pedido (confirmação diz o que acontece); 2) Publicar agora: vai para o ar x fica na fila; 3) conta religada: aviso e pergunta fecham sozinhos e a obra continua. Aprovado pelo Luiz em 27/11/2026. -->
+<div style="width:1440px;display:flex;flex-direction:column;gap:24px;background:#0B0C0E">
+<section class="tela" id="t1" style="position: relative;">
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Canteiro de obras</span><span class="mi">Obras concluídas</span><span class="mi">Lançamentos</span><span class="falar">Falar com o Atlas</span></aside>
+ <div class="main">
+  <div class="topo"><div><small>← CANTEIRO DE OBRAS</small><h1>Ponto</h1></div>
+   <div class="tabs"><span>Construção</span><span>Cronograma</span><span>Desempenho</span><span>Protótipo</span><span class="on">Pedir mudança</span></div>
+   <div class="acoes"><span class="bt">Contas ligadas</span><span class="bt">Pausar obra</span><span class="bt lime">Ver versão de teste</span></div></div>
+  <div class="pm">
+   <div class="card ped"><span class="r">PEDIR MUDANÇA</span><h2 style="margin:0;font-size:24px">O que você quer mudar?</h2>
+    <textarea readonly="">Escreva ou fale o que quer mudar no sistema…</textarea>
+    <span class="nota">Para cancelar uma mudança, não precisa escrever aqui: use “Cancelar” no pedido, ao lado. É na hora.</span>
+   </div>
+   <aside class="card lado" id="lado1">
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="r">SEUS PEDIDOS</span><span class="nota">o mais novo no topo</span></div>
+    <div id="lista1"><div class="it"><div class="l1"><b>Assinatura do espelho de ponto</b><span class="st fila">NA FILA</span></div><div class="l2"><span>p024 · hoje 20:40</span><button class="cancelar" data-i="0">Cancelar</button></div></div><div class="it"><div class="l1"><b>Exportar para a contabilidade</b><span class="st fila">NA FILA</span></div><div class="l2"><span>p023 · hoje 19:12</span><button class="cancelar" data-i="1">Cancelar</button></div></div><div class="it"><div class="l1"><b>Cor do botão de bater ponto</b><span class="st fila">NA FILA</span></div><div class="l2"><span>p022 · hoje 18:05</span><button class="cancelar" data-i="2">Cancelar</button></div></div><div class="it andando"><div class="l1"><b>Filtro por obra</b><span class="st and">SENDO FEITA · 40%</span></div><div class="bar"><i style="width:40%"></i></div><div class="l2"><span>p021 · hoje 16:30</span><button class="cancelar" data-i="3">Cancelar</button></div><div class="confirma"><span><b>Cancelar “Filtro por obra”?</b> O Atlas para agora o que está fazendo nela e descarta o que ainda não ficou pronto. A fila segue com o próximo pedido.</span><div class="bts"><button class="bt mini fantasma" data-k="manter">Manter</button><button class="bt mini perigo" data-k="sim" data-i="3">Sim, cancelar</button></div></div></div><div class="it"><div class="l1"><b>Hora extra no domingo</b><span class="st conf">PARA CONFERIR</span></div><div class="l2"><span>p020 · ontem</span><button class="cancelar" data-i="4">Descartar</button></div></div><div class="it"><div class="l1"><b>Relatório do mês em PDF</b><span class="st ar">NO AR</span></div><div class="l2"><span>p019 · 25/11</span></div></div></div>
+    <span class="nota">Cancelar tira o pedido da fila na hora. Se ele já estava sendo feito, o Atlas para e descarta o que não ficou pronto. O sistema no ar não muda.</span>
+   </aside>
+  </div>
+  
+ </div>
+</section>
+<section class="tela" id="t2" style="position: relative;">
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Canteiro de obras</span><span class="mi">Obras concluídas</span><span class="mi">Lançamentos</span><span class="falar">Falar com o Atlas</span></aside>
+ <div class="main">
+  <div class="topo"><div><small>← CANTEIRO DE OBRAS</small><h1>Ponto</h1></div>
+   <div class="tabs"><span class="on">Construção</span><span>Cronograma</span><span>Desempenho</span><span>Protótipo</span><span>Pedir mudança</span></div>
+   <div class="acoes"><span class="bt">Contas ligadas</span><span class="bt">Pausar obra</span><button class="bt novo" id="abrePub">Publicar agora ↑</button><span class="bt lime">Ver versão de teste</span></div></div>
+  <div class="obra"><div class="pct"><span class="r" style="color:var(--amb)">● TRABALHANDO</span><br><b>96,87%</b><div class="nota">Pós-obra · 3 pedidos na fila</div></div><div class="predio"></div>
+   <div class="faixa"><div class="fx"><b>Construindo: Filtro por obra (p021)</b><div class="mono">20:58 Ajustando o código · 20:57 Conferindo o histórico da obra</div></div><div class="fx"><b style="color:var(--lime)">Mestre de obras</b><div>Ajustando o código</div></div></div>
+  </div>
+  <div id="pub">
+   <div class="fundo" id="fechaPubF"></div>
+   <aside class="gav" role="dialog" aria-label="Publicar agora">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start"><div><span class="r">PUBLICAR AGORA</span><h2>Publicar o que já está pronto</h2></div><button class="bt" id="fechaPub">Fechar ✕</button></div>
+    <span style="color:var(--mute)">Coloca no ar agora a versão que já está pronta, <b style="color:var(--text)">sem esperar as mudanças da fila</b>. Elas continuam sendo feitas e você publica depois.</span>
+    <div class="grupo vai"><span class="r" style="color:var(--lime)">VAI PARA O AR</span>
+     <div class="li"><span><span class="ok">✓</span>Tudo o que já está no ar hoje</span><span>ponto-sistema.vercel.app</span></div>
+     <div class="li"><span><span class="ok">✓</span>Relatório do mês em PDF</span><span>pronta · você conferiu</span></div>
+     <div class="li"><span><span class="ok">✓</span>Hora extra no domingo</span><span>pronta · ainda não conferida</span></div>
+     <a class="nota" style="color:var(--mute)">Não quer alguma? Toque em “Descartar” nela, em Pedir mudança.</a>
+    </div>
+    <div class="grupo"><span class="r">FICA DE FORA · CONTINUA NA FILA</span>
+     <div class="li"><span><span class="fora">–</span>Filtro por obra</span><span>sendo feita · 40%</span></div>
+     <div class="li"><span><span class="fora">–</span>Exportar para a contabilidade</span><span>na fila</span></div>
+     <div class="li"><span><span class="fora">–</span>Assinatura do espelho de ponto</span><span>na fila</span></div>
+    </div>
+    <div class="grupo"><span class="r">COMO FICA</span>
+     <div class="passos"><span>1. A obra <b>pausa</b> enquanto publica (uns 5 minutos).</span><span>2. O Atlas confere e publica na sua Vercel, e testa o endereço.</span><span>3. A obra <b>volta sozinha</b> para a fila, de onde parou.</span></div>
+    </div>
+    <div class="pe"><span class="bt fantasma">Ver como ficou</span><span class="bt lime">Publicar agora →</span></div>
+   </aside>
+  </div>
+  
+ </div>
+</section>
+<section class="tela" id="t3" style="position: relative;">
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Canteiro de obras</span><span class="mi">Obras concluídas</span><span class="mi">Lançamentos</span><span class="falar">Falar com o Atlas</span></aside>
+ <div class="main">
+  <div class="topo"><div><small>← CANTEIRO DE OBRAS</small><h1>Ponto</h1></div>
+   <div class="tabs"><span class="on">Construção</span><span>Cronograma</span><span>Desempenho</span><span>Protótipo</span><span>Pedir mudança</span></div>
+   <div class="acoes"><span class="bt">Contas ligadas</span><span class="bt">Pausar obra</span><span class="bt novo">Publicar agora ↑</span><span class="bt lime">Ver versão de teste</span></div></div>
+  <div class="ban"><span class="ic">✓</span><div><b>Supabase ligado de novo. A obra continuou sozinha.</b><br><span>20:45 · O aviso e a pergunta que dependiam dele foram fechados. Não precisa fazer mais nada.</span></div><span class="bt mini fantasma" id="ok3">Entendi</span></div>
+  <div class="antes"><span class="r">ANTES</span><s>“A conta do Supabase saiu deste computador”</s> · <s>“A obra precisa que você escolha como seguir”</s><span style="margin-left:auto">fechados sozinhos</span></div>
+  <div class="obra"><div class="pct"><span class="r" style="color:var(--amb)">● TRABALHANDO</span><br><b>96,87%</b><div class="nota">Publicando a versão principal (M19)</div></div><div class="predio"></div>
+   <div class="faixa"><div class="fx"><div class="diario"><span>20:46 Publicando na sua Vercel</span><span><b>20:45 Supabase ligado de novo. Continuando de onde parou.</b></span><span>20:44 Parou: precisava do Supabase</span></div></div><div class="fx"><b style="color:var(--lime)">Mestre de obras</b><div>Publicando a versão principal</div></div></div>
+  </div>
+  
+ </div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2748}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
