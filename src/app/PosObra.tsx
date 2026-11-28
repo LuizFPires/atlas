@@ -27,7 +27,21 @@ interface Props {
   onColocarNoAr?: () => Promise<void>
 }
 
-const ROTULO_STATUS: Record<StatusPedido, string> = { 'no-ar': 'No ar', 'para-conferir': 'Para conferir', 'em-andamento': 'Em andamento' }
+const ROTULO_STATUS: Record<StatusPedido, string> = { 'no-ar': 'No ar', 'para-conferir': 'Para conferir', 'em-andamento': 'Em andamento', cancelada: 'Cancelada', descartada: 'Descartada' }
+const rotuloDe = (h: PedidoAnterior) => (h.status === 'em-andamento' && h.fila === 'agora' ? 'Sendo feita' : h.status === 'em-andamento' && h.fila === 'fila' ? 'Na fila' : ROTULO_STATUS[h.status])
+/** Cancelar e descartar (Guilherme, 27/11/2026): o que acontece, em português, antes de confirmar. */
+const textoConfirmar = (h: PedidoAnterior) => h.status === 'para-conferir'
+  ? 'Ela não vai para o ar e o Atlas desfaz na versão de teste. O que está no ar não muda.'
+  : h.fila === 'agora'
+    ? 'O Atlas para agora o que está fazendo nela e descarta o que ainda não ficou pronto. A fila segue com o próximo pedido.'
+    : 'Ainda não começou: sai da fila e nada muda no sistema.'
+const ERROS_CONTROLE: Record<string, string> = {
+  'obra-trabalhando': 'A obra está trabalhando em outra mudança agora. Pause a obra e tente de novo.',
+  'descartar-conflito': 'Essa mudança se misturou com outras que vieram depois, então não dá para tirar sozinha. Peça aqui em cima o que você quer desfazer.',
+  'descartar-nao-achou': 'Não achei essa mudança na versão de teste. Peça aqui em cima o que você quer desfazer.',
+  'ja-pronta': 'Essa mudança acabou de ficar pronta. Quando ela aparecer para conferir, use Descartar.',
+  'ja-rodando': 'O Atlas ainda está terminando outra ação nesta obra. Tente de novo em instantes.',
+}
 
 /**
  * F14: pós-obra. O cliente conta, com as palavras dele, o que quer mudar (falando, escrevendo ou mandando um print).
@@ -57,6 +71,28 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politi
   const [feito, setFeito] = useState<string | null>(null)
   const [entendendo, setEntendendo] = useState(false)
   const [historico, setHistorico] = useState<PedidoAnterior[]>([])
+  const [confirmar, setConfirmar] = useState<string | null>(null)
+  const [controlando, setControlando] = useState(false)
+  const [recadoHist, setRecadoHist] = useState('')
+  const controlar = async (h: PedidoAnterior) => {
+    const descartar = h.status === 'para-conferir'
+    const f = descartar ? posobra.descartar : posobra.cancelar
+    if (!f) return
+    setControlando(true); setAvisoHist(''); setRecadoHist('')
+    try {
+      const r = await f.call(posobra, obra.pasta, h.id)
+      if (!vivo.current) return
+      setConfirmar(null)
+      const nome = textoDaObra(h.nome, 60)
+      setRecadoHist(descartar ? `Descartada. “${nome}” não vai para o ar.`
+        : h.fila === 'agora' ? (('continuou' in r && r.continuou) ? `Cancelado. O Atlas parou “${nome}” e já começou o próximo pedido.` : `Cancelado. O Atlas parou “${nome}”.`)
+          : `Cancelado. “${nome}” saiu da fila.`)
+      setHistorico(await posobra.historico(obra.pasta).catch(() => historico))
+    } catch (e) {
+      const c = e instanceof Error ? e.message : String(e)
+      if (vivo.current) setAvisoHist(ERROS_CONTROLE[c] ?? 'Não consegui agora. Tente de novo em instantes.')
+    } finally { if (vivo.current) setControlando(false) }
+  }
   const vivo = useRef(true)
   const mudouPedido = () => { reqId.current++; setEntendendo(false); setPlano(); setRecadoLic(''); setFeito(null) }
   // Microfone: a transcrição cai no campo e continua editável antes de enviar.
@@ -211,15 +247,33 @@ export function PosObra({ obra, posobra, arquivos, licenca, onAcompanhar, politi
               {onVerTeste && <button type="button" className="at-pos__sec" disabled={abrindo !== null} onClick={() => void agirHist('teste', onVerTeste)}>{abrindo === 'teste' ? 'Abrindo…' : 'Ver como ficou'}</button>}
               {onColocarNoAr && <button type="button" className="at-pos__ok" disabled={abrindo !== null} onClick={() => void agirHist('noar', onColocarNoAr)}>{abrindo === 'noar' ? 'Começando…' : 'Colocar no ar →'}</button>}
             </div>
-            {avisoHist && <span className="at-pos__erro" role="alert">{avisoHist}</span>}
           </div>
         )}
-        {historico.map((h) => (
-          <div key={h.id} className="at-pos__hist">
-            <div><b>{textoDaObra(h.nome, 60)}</b><span className={`at-pos__st at-pos__st--${h.status}`}>{ROTULO_STATUS[h.status]}</span></div>
-            <span>{h.data}</span>
-          </div>
-        ))}
+        {avisoHist && <span className="at-pos__erro" role="alert">{avisoHist}</span>}
+        {recadoHist && <span className="at-pos__recado" role="status">{recadoHist}</span>}
+        {historico.map((h) => {
+          const pode = (h.podeCancelar && !!posobra.cancelar) || (h.podeDescartar && !!posobra.descartar)
+          const verbo = h.status === 'para-conferir' ? 'Descartar' : 'Cancelar'
+          return (
+            <div key={h.id} className={`at-pos__hist${h.fila === 'agora' ? ' at-pos__hist--agora' : ''}${h.status === 'cancelada' || h.status === 'descartada' ? ' at-pos__hist--fora' : ''}`}>
+              <div><b>{textoDaObra(h.nome, 60)}</b><span className={`at-pos__st at-pos__st--${h.status}${h.fila ? ` at-pos__st--${h.fila}` : ''}`}>{rotuloDe(h)}</span></div>
+              <div className="at-pos__hist-pe">
+                <span>{h.data}</span>
+                {pode && confirmar !== h.id && <button type="button" className="at-pos__cancelar" disabled={controlando} onClick={() => { setConfirmar(h.id); setRecadoHist(''); setAvisoHist('') }} aria-label={`${verbo} ${textoDaObra(h.nome, 60)}`}>{verbo}</button>}
+              </div>
+              {confirmar === h.id && (
+                <div className="at-pos__confirma" role="group" aria-label={`Confirmar: ${verbo.toLowerCase()} ${textoDaObra(h.nome, 60)}`}>
+                  <span><b>{verbo} “{textoDaObra(h.nome, 60)}”?</b> {textoConfirmar(h)}</span>
+                  <div>
+                    <button type="button" className="at-pos__sec" disabled={controlando} onClick={() => setConfirmar(null)}>Manter</button>
+                    <button type="button" className="at-pos__perigo" disabled={controlando} onClick={() => void controlar(h)}>{controlando ? 'Fazendo…' : `Sim, ${verbo.toLowerCase()}`}</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+        {historico.some((h) => h.podeCancelar) && <span className="at-pos__nota">Para cancelar, não precisa escrever: use “Cancelar” no pedido. Se ele já estava sendo feito, o Atlas para e descarta o que não ficou pronto. O sistema no ar não muda.</span>}
         <span className="at-pos__nota">Todo pedido vira uma versão de teste. O sistema no ar só muda quando você confere e clica em "Colocar no ar". Se não gostou, peça a correção aqui.</span>
       </aside>
     </main>

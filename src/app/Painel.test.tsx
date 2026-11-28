@@ -336,3 +336,16 @@ test('avanço da obra travou: diz o motivo de verdade e oferece "Pedir ao Atlas 
   await user.click(screen.getByRole('button', { name: 'Pedir ao Atlas para destravar' }))
   expect(ajuda).toHaveBeenCalledTimes(1)
 })
+
+// 27/11/2026 (Guilherme): conta religada => faixa verde; obra publicada => "Publicar agora ↑".
+test('conta religada: a faixa diz que a obra continuou sozinha; "Publicar agora ↑" aparece quando a obra já foi publicada', async () => {
+  const onPublicarAgora = vi.fn()
+  const onFechar = vi.fn()
+  const user = userEvent.setup()
+  render(<TemaProvider><Painel obra={obra} painel={criarPainelFixture({ agora })} modos={criarModoObraFixture({ [obra.pasta]: 'automatico' })} sondagemMs={0} onPublicarAgora={onPublicarAgora} contaVoltou={{ servicos: ['Supabase'], continuou: true }} onFecharContaVoltou={onFechar} /></TemaProvider>)
+  expect(await screen.findByText('Supabase ligado de novo. A obra continuou sozinha.')).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Entendi' }))
+  expect(onFechar).toHaveBeenCalled()
+  await user.click(screen.getByRole('button', { name: 'Publicar agora ↑' }))
+  expect(onPublicarAgora).toHaveBeenCalled()
+})

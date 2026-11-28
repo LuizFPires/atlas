@@ -54,3 +54,16 @@
 .at-pos__conferir { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--lime); background: var(--soft); font-size: 13px; line-height: 1.5; color: var(--mute); }
 .at-pos__conferir b { font-size: 15px; color: var(--text); }
 .at-pos__conferir-acoes { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Cancelar e descartar (Guilherme, 27/11/2026) */
+.at-pos__hist-pe { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; color: var(--mute); }
+.at-pos__hist--agora { border-top-color: var(--aviso, #F2B33D); }
+.at-pos__st--agora { background: rgb(242 179 61 / 0.16); color: var(--aviso-txt, #F2B33D); }
+.at-pos__hist--fora b { color: var(--mute); text-decoration: line-through; text-decoration-color: var(--mute2, var(--mute)); }
+.at-pos__st--cancelada, .at-pos__st--descartada { background: transparent; border: 1px solid var(--card-b); color: var(--mute); }
+.at-pos__cancelar { min-height: 32px; padding: 0 4px; border: none; background: none; color: var(--mute); font: 600 13px var(--font-text); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.at-pos__cancelar:hover, .at-pos__cancelar:focus-visible { color: var(--erro-txt, #FFB4A8); }
+.at-pos__confirma { margin-top: 6px; padding: 12px; border-radius: 12px; border: 1px solid rgb(240 122 106 / 0.45); background: rgb(240 122 106 / 0.08); display: flex; flex-direction: column; gap: 10px; font-size: 14px; line-height: 1.5; color: var(--text); }
+.at-pos__confirma > div { display: flex; gap: 8px; justify-content: flex-end; }
+.at-pos__perigo { height: 40px; padding: 0 16px; border-radius: 10px; border: 1px solid rgb(240 122 106 / 0.6); background: rgb(240 122 106 / 0.16); color: var(--erro-txt, #FFB4A8); font: 700 14px var(--font-text); cursor: pointer; }
+.at-pos__recado { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--lime); background: var(--soft); font-size: 14px; color: var(--text); }

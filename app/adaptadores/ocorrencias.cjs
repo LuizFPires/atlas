@@ -132,6 +132,26 @@ function criarOcorrencias({ raiz, cofre, canais = {}, agora = () => new Date() }
       gravarLivro(pasta, d)
     },
 
+    /** Conta religada (27/11/2026): fecha as travas "conta desligada" dos serviços que voltaram. Devolve os serviços fechados. */
+    async fecharContas(pasta, ligados) {
+      const quais = new Set((Array.isArray(ligados) ? ligados : []).map((x) => String(x).toLowerCase()))
+      const d = lerLivro(pasta)
+      if (!d) return []
+      const fechados = new Set()
+      for (const o of d.ocorrencias) {
+        if (!o || o.status !== 'aberta' || tipoDaTrava(o) !== 'conta-desligada') continue
+        const serv = String(o.servico || '').toLowerCase()
+        const qual = ['github', 'vercel', 'supabase'].find((x) => serv.includes(x))
+        if (!qual || !quais.has(qual)) continue
+        o.status = 'resolvida'
+        o.resolvida_em = agora().toISOString()
+        o.nota_final = 'Conta ligada de novo pelo cliente no Atlas.'
+        fechados.add({ github: 'GitHub', vercel: 'Vercel', supabase: 'Supabase' }[qual])
+      }
+      if (fechados.size) gravarLivro(pasta, d)
+      return [...fechados]
+    },
+
     async adiar(pasta, id) {
       achar(pasta, id)
       const d = lerLivro(pasta)

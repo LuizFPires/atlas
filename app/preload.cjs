@@ -139,6 +139,7 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     abrirChaves: (b) => chamar('atlas:contas:abrirChaves', { x: Number(b?.x), y: Number(b?.y), width: Number(b?.width), height: Number(b?.height) }),
     chaveSupabase: (chave) => chamar('atlas:contas:chaveSupabase', String(chave ?? '')),
     cancelar: (conta) => chamar('atlas:contas:cancelar', String(conta)),
+    aposLigar: (pasta) => chamar('atlas:contas:aposLigar', String(pasta)),
   },
   // Roteiro da ideia: quais tópicos o relato já respondeu e, no fim, o que faltou.
   ideia: { conferir: (relato, fim) => chamar('atlas:ideia:conferir', String(relato ?? ''), fim === true) },
@@ -172,6 +173,9 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     executar: (pasta, pedido, plano) => chamar('atlas:posobra:executar', String(pasta), JSON.parse(JSON.stringify(pedido ?? {})), JSON.parse(JSON.stringify(plano ?? {}))),
     historico: (pasta) => chamar('atlas:posobra:historico', String(pasta)),
     revisoes: (pasta) => chamar('atlas:posobra:revisoes', String(pasta)),
+    cancelar: (pasta, id) => chamar('atlas:posobra:cancelar', String(pasta), String(id)),
+    descartar: (pasta, id) => chamar('atlas:posobra:descartar', String(pasta), String(id)),
+    publicarAgora: (pasta, nome) => chamar('atlas:posobra:publicarAgora', String(pasta), String(nome ?? '')),
   },
   cota: {
     ler: (pasta) => chamar('atlas:cota:ler', String(pasta)),

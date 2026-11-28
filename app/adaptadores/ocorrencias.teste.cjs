@@ -140,3 +140,16 @@ test('trava conhecida (ex.: Supabase dormindo) não abre a tela genérica F11: e
   const oc = criarOcorrencias({ raiz, cofre: { guardar: async () => {} } })
   assert.equal(await oc.ler('obra'), null)
 })
+
+test('fecharContas: conta religada fecha só as travas "conta desligada" daquele serviço (o resto fica aberto)', async () => {
+  const { raiz, o } = montar()
+  hook(raiz, 'abrir', '--servico', 'Supabase', '--motivo', 'conta desligada deste computador', '--acao', 'ligar')
+  hook(raiz, 'abrir', '--servico', 'Vercel', '--motivo', 'conta desligada deste computador', '--acao', 'ligar')
+  hook(raiz, 'abrir', '--servico', 'Supabase', '--motivo', 'projeto pausado por falta de uso', '--acao', 'acordar')
+  assert.deepEqual(await o.fecharContas('obra', ['supabase']), ['Supabase'])
+  const d = JSON.parse(fs.readFileSync(livro(raiz), 'utf8')).ocorrencias
+  assert.deepEqual(d.map((x) => x.status), ['resolvida', 'aberta', 'aberta'])
+  assert.match(d[0].nota_final, /ligada de novo/)
+  assert.deepEqual(await o.fecharContas('obra', ['supabase']), [], 'nada mais a fechar')
+  assert.deepEqual(await o.fecharContas('obra', []), [])
+})

@@ -9,7 +9,7 @@ import type { Revisao, StatusPedido } from './ponte-posobra'
 
 export const tempo = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}` : `${m} min`)
 const dois = (n: number) => String(n).padStart(2, '0')
-const SITUACAO: Record<StatusPedido, string> = { 'no-ar': 'NO AR', 'para-conferir': 'CONFERIR', 'em-andamento': '' }
+const SITUACAO: Record<StatusPedido, string> = { 'no-ar': 'NO AR', 'para-conferir': 'CONFERIR', 'em-andamento': '', cancelada: 'CANCELADA', descartada: 'DESCARTADA' }
 const situacao = (r: Revisao) => (r.status === 'em-andamento' ? `${r.pct}%` : SITUACAO[r.status])
 const dataCurta = (iso: string | null) => { if (!iso) return ''; const d = new Date(iso); return `${dois(d.getDate())}/${dois(d.getMonth() + 1)}` }
 const horaCurta = (iso: string | null) => { if (!iso) return ''; const d = new Date(iso); return `${dois(d.getHours())}h${dois(d.getMinutes())}` }

@@ -31,6 +31,11 @@ interface Props {
   modos: PonteModoObra
   /** "Publicar o sistema" (F13a, do M20). */
   onPublicar?: () => void
+  /** Obra já publicada: "Publicar agora ↑" abre o painel que publica o que está pronto sem esperar a fila (27/11/2026). */
+  onPublicarAgora?: () => void
+  /** Conta religada: faixa verde dizendo que a obra continuou sozinha (27/11/2026). */
+  contaVoltou?: { servicos: string[]; continuou: boolean } | null
+  onFecharContaVoltou?: () => void
   /** Cota do plano (F10): quando a cota acaba, a tela de pausa calma aparece e a obra volta sozinha ao renovar. */
   cota?: PonteCota
   /** Ocorrências (F11): a única parada que exige o cliente; vale nos dois modos. */
@@ -69,7 +74,7 @@ export const recadoDoErroPainel = (e: unknown) => {
 
 
 /** F09: painel da obra. O prédio, o %, o prazo e o "agora na obra"; detalhes técnicos só em "ver detalhes". */
-export function Painel({ obra, abas, onCanteiro, filaObras, plano = 'pro', painel, modos, cota, ocorrencias, onPublicar, onVerMax, onPedirAjuda, sondagemMs = 5000, travas, navegador, onLigarContas, onVerCronograma }: Props) {
+export function Painel({ obra, abas, onCanteiro, filaObras, plano = 'pro', painel, modos, cota, ocorrencias, onPublicar, onPublicarAgora, contaVoltou, onFecharContaVoltou, onVerMax, onPedirAjuda, sondagemMs = 5000, travas, navegador, onLigarContas, onVerCronograma }: Props) {
   const [estado, setEstado] = useState<EstadoObra | null>(null)
   const [modo, setModo] = useState<ModoObra | null>(null)
   const [modoLido, setModoLido] = useState(false)
@@ -186,9 +191,21 @@ export function Painel({ obra, abas, onCanteiro, filaObras, plano = 'pro', paine
           {onLigarContas && !concluida && <Botao variante="secundario" className="at-pn__btn" onClick={onLigarContas}>Contas ligadas</Botao>}
           {(sit === 'andando' || sit === 'espera-ok') && <Botao variante="secundario" className="at-pn__btn" onClick={() => agir(() => painel.pausar(obra.pasta))}>Pausar obra</Botao>}
           {concluida && <Botao variante="secundario" className="at-pn__btn" onClick={() => agir(() => painel.abrirTeste(obra.pasta))}>Ver como ficou</Botao>}
+          {onPublicarAgora && <Botao variante="secundario" className="at-pn__btn at-pn__btn--novo" onClick={onPublicarAgora}>Publicar agora ↑</Botao>}
           {estado?.temTeste && !concluida && <Botao className="at-pn__btn" onClick={() => agir(() => painel.abrirTeste(obra.pasta))}>Ver versão de teste</Botao>}
         </div>
       </div>
+
+      {contaVoltou && contaVoltou.servicos.length > 0 && (
+        <div className="at-pn__voltou" role="status">
+          <span className="at-pn__voltou-ic" aria-hidden="true">✓</span>
+          <div>
+            <b>{contaVoltou.servicos.join(' e ')} ligado de novo.{contaVoltou.continuou ? ' A obra continuou sozinha.' : ''}</b>
+            <span>{contaVoltou.continuou ? 'O aviso e a pergunta que dependiam dele foram fechados. Não precisa fazer mais nada.' : 'O aviso foi fechado. A obra está pausada por você: toque em Continuar quando quiser.'}</span>
+          </div>
+          {onFecharContaVoltou && <button type="button" className="at-pn__voltou-ok" onClick={onFecharContaVoltou}>Entendi</button>}
+        </div>
+      )}
 
       {erro && <p className="at-pn__erro" role="alert">{erro}</p>}
       {erro && onPedirAjuda && <button type="button" className="at-pn__destravar" onClick={onPedirAjuda}>Pedir ao Atlas para destravar</button>}
