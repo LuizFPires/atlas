@@ -48,3 +48,19 @@
 .at-pess__senha b { flex: 1; font: 600 18px var(--font-mono); }
 .at-pess__recado { padding: 12px 14px; border-radius: 12px; background: var(--card2, var(--card)); border: 1px solid var(--card-b); font-size: 13px; line-height: 1.5; color: var(--mute); }
 @media (max-width: 1100px) { .at-usar, .at-pess__duas { grid-template-columns: 1fr; } .at-usar__metade--dir { border-left: 0; padding-left: 0; } }
+/* Aba desde o início da obra (aprovado em 28/11/2026): guias que se abrem e explicam o que é, quanto custa e onde fazer. */
+.at-usar__guia { border-radius: 14px; }
+.at-usar__guia > summary { list-style: none; }
+.at-usar__guia > summary::-webkit-details-marker { display: none; }
+.at-usar__guia[open] > summary { border-color: var(--lime); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.at-usar__guia[open] .at-usar__seta { transform: rotate(180deg); }
+.at-usar__como { padding: 14px 16px; border: 1px solid var(--lime); border-top: 0; border-radius: 0 0 14px 14px; background: var(--card); font-size: 14px; line-height: 1.55; color: var(--mute); }
+.at-usar__como p { margin: 0 0 8px; }
+.at-usar__como b { color: var(--text); }
+.at-usar__cpe { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.at-usar__passos { margin: 0; padding: 0; list-style: none; counter-reset: passo; display: flex; flex-direction: column; gap: 10px; }
+.at-usar__passos li { counter-increment: passo; display: grid; grid-template-columns: 26px 1fr; column-gap: 12px; font-size: 13px; color: var(--mute); }
+.at-usar__passos li::before { content: counter(passo); grid-row: span 2; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--font-mono); background: rgb(198 241 53 / 0.12); color: var(--lime-txt, var(--lime)); }
+.at-usar__passos b { color: var(--text); font-size: 14px; }
+.at-usar__apagado { opacity: 0.6; }
+.at-abobra__pto--off { background: var(--mute2, var(--mute)); box-shadow: none; }

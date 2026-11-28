@@ -1,5 +1,5 @@
 import userEvent from '@testing-library/user-event'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { TemaProvider } from '../tema/tema'
 import { AppDesktop } from './AppDesktop'
 import { CHAVE_COFRE } from './ativacao-api'
@@ -20,6 +20,13 @@ async function ate(noAr: PonteNoAr) {
   render(<TemaProvider><AppDesktop ponte={ponte} api={api} painel={painel} cota={criarCotaFixture()} publicar={criarPublicarFixture()} noAr={noAr} ajuda={criarAjudaFixture()} retomar={criarRetomarFixture({ ...OBRA_PARADA_EXEMPLO, paradaEm: null })} /></TemaProvider>)
   await userEvent.click(await screen.findByRole('button', { name: 'Continuar obra' }))
   await userEvent.click(await screen.findByRole('button', { name: 'Publicar o sistema →' }))
+}
+
+/** Aba "Usar o sistema": cada item de "Abrir para clientes" é um guia que se abre; o botão do Atlas fica dentro dele. */
+async function peloAtlas(titulo: RegExp) {
+  const tit = await screen.findByText(titulo, { selector: 'b' }, { timeout: 6000 })
+  const guia = tit.closest('details') as HTMLElement
+  await userEvent.click(within(guia).getByRole('button', { name: /pelo Atlas/ }))
 }
 
 test('do painel da obra pronta: Publicar o sistema -> um clique -> no ar com QR do endereço publicado', { timeout: 15000 }, async () => {
@@ -45,14 +52,14 @@ test('erro ao colocar no ar: a Ajuda do Atlas abre sozinha, sabendo onde parou',
 test('no ar: "Usar meu domínio" abre o domínio próprio ao lado do prédio (M57)', { timeout: 15000 }, async () => {
   await ate(criarNoArFixture({ passoMs: 5 }))
   await userEvent.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
-  await userEvent.click(await screen.findByRole('button', { name: /Usar meu domínio/ }, { timeout: 6000 }))
+  await peloAtlas(/^Usar meu domínio$/)
   expect(await screen.findByRole('textbox', { name: 'Seu domínio' })).toBeInTheDocument()
 })
 
 test('domínio próprio → passo a passo do Registro.br com o servidor para copiar e o "Falar com o Atlas" (M58)', { timeout: 15000 }, async () => {
   await ate(criarNoArFixture({ passoMs: 5 }))
   await userEvent.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
-  await userEvent.click(await screen.findByRole('button', { name: /Usar meu domínio/ }, { timeout: 6000 }))
+  await peloAtlas(/^Usar meu domínio$/)
   await userEvent.type(await screen.findByRole('textbox', { name: 'Seu domínio' }), 'pontoampla.com.br')
   await userEvent.click(screen.getByRole('button', { name: /Conferir e ligar/ }))
   await userEvent.click(await screen.findByRole('button', { name: /passo a passo/ }))
@@ -65,7 +72,7 @@ test('domínio próprio → passo a passo do Registro.br com o servidor para cop
 test('lojas (M59): pergunta, passo a passo da Apple e a conta fica marcada ao terminar', { timeout: 20000 }, async () => {
   await ate(criarNoArFixture({ passoMs: 5 }))
   await userEvent.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
-  await userEvent.click(await screen.findByRole('button', { name: /App Store e Google Play/ }, { timeout: 6000 }))
+  await peloAtlas(/^App Store e Google Play$/)
   await userEvent.click(await screen.findByRole('button', { name: 'Seguir →' }))
   await userEvent.click(await screen.findByRole('button', { name: 'Passo a passo: Conta da Apple' }))
   expect(await screen.findByText('PASSO 1 DE 6')).toBeInTheDocument()
@@ -77,7 +84,7 @@ test('lojas (M59): pergunta, passo a passo da Apple e a conta fica marcada ao te
 test('lançamento (M60): da obra no ar para "Lançamentos", começar, escolher o Asaas e a obra aparece na lista', { timeout: 20000 }, async () => {
   await ate(criarNoArFixture({ passoMs: 5 }))
   await userEvent.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
-  await userEvent.click(await screen.findByRole('button', { name: /Vender o .* para outras empresas/ }, { timeout: 6000 }))
+  await peloAtlas(/^Vender o .* para outras empresas$/)
   await userEvent.click(await screen.findByRole('button', { name: 'Começar o lançamento →' }))
   await userEvent.click(await screen.findByRole('button', { name: 'Escolher o Asaas →' }))
   await userEvent.click(await screen.findByRole('button', { name: 'Já criei a conta' }))

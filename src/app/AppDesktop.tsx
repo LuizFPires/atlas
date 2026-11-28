@@ -267,6 +267,8 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
     }
   }, [painel, cota, ocorrencias, ponte])
   const pontePainel = pontesObra.painel
+  const pastaAtual = obraAtual?.pasta
+  const lerPctDaObra = useCallback(() => (pastaAtual ? pontePainel.ler(pastaAtual).then((e) => e.pct) : Promise.resolve(0)), [pastaAtual, pontePainel])
   const ponteCota = pontesObra.cota
   const ponteOcorrencias = pontesObra.ocorrencias
 
@@ -506,7 +508,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   else if (ativo === 'lancamentos' && lancObra && guiaAberto?.volta === 'lancamento') conteudo = <GuiaSite guia={guiaAberto.guia} navegador={modoFixture() ? undefined : ponte.navegador} abrirFora={(d) => pontePublicar.abrirSite(d)} onFim={() => { const p = lancObra; setGuiaAberto(null); void ponteLancamento.contaPronta(p).catch(() => {}) }} onVoltar={() => setGuiaAberto(null)} onAjuda={(p) => { void ponteAjuda.tirarPrint(lancObra).catch(() => null).then((img) => abrirAjuda({ ...contextoDoPasso(p), pasta: lancObra, ...(img ? { print: img } : {}) })) }} />
   else if (ativo === 'lancamentos' && lancObra) conteudo = <Lancamento key={lancObra} obra={{ pasta: lancObra, nome: obraAtual?.pasta === lancObra ? obraAtual.nome : lancObra.charAt(0).toLocaleUpperCase('pt-BR') + lancObra.slice(1) }} lancamento={ponteLancamento} vendas={ponteVendas.indisponivel ? undefined : ponteVendas} onGuia={(g) => setGuiaAberto({ guia: g, volta: 'lancamento' })} onVoltar={() => setLancObra(null)} />
   else if (ativo === 'usar' && obraAtual && religandoConta && ponteLigar) conteudo = <LigarContas ponte={ponteLigar} navegador={modoFixture() ? undefined : ponte.navegador} onVoltar={() => voltarDasContas(obraAtual.pasta)} onContinuar={() => voltarDasContas(obraAtual.pasta)} rotuloContinuar="Tudo ligado · Voltar a Usar o sistema →" resend={ponteResend} />
-  else if (ativo === 'usar' && obraAtual) conteudo = <UsarOSistema key={obraAtual.pasta} obra={obraAtual} noAr={ponteNoAr}
+  else if (ativo === 'usar' && obraAtual) conteudo = <UsarOSistema key={obraAtual.pasta} obra={obraAtual} noAr={ponteNoAr} lerPct={lerPctDaObra}
     onDominio={ponteDominio.indisponivel ? undefined : () => { setGuiaAberto(null); setAbrirNoAr('dominio'); setFluxo('publicar'); setAtivo('obra') }}
     onEmails={ponteLigar && ponteResend ? () => setReligandoConta(true) : undefined}
     onLojas={ponteLojas.indisponivel ? undefined : () => { setGuiaAberto(null); setAbrirNoAr('lojas'); setFluxo('publicar'); setAtivo('obra') }}
@@ -517,7 +519,7 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
   // Dentro da obra (Milestone 37): nome no topo, volta ao Canteiro e as partes (Construção, Protótipo, Pedir mudança).
   // M50: na Construção as abas moram na linha do título do Painel (PalcoObra); nas outras partes, a linha própria continua.
   if (obraAtual && (ativo === 'cronograma' || ativo === 'desempenho' || ativo === 'prototipo' || ativo === 'posobra' || ativo === 'usar')) {
-    conteudo = <><AbasDaObra nome={obraAtual.nome} atual={ativo} comUsar={obraPublicada?.pasta === obraAtual.pasta || ativo === 'usar'} onIr={(p) => setAtivo(p)} onCanteiro={() => setAtivo('canteiro')} />{conteudo}</>
+    conteudo = <><AbasDaObra nome={obraAtual.nome} atual={ativo} comUsar={obraPublicada?.pasta === obraAtual.pasta} onIr={(p) => setAtivo(p)} onCanteiro={() => setAtivo('canteiro')} />{conteudo}</>
   }
   // Caminho novo: faixa das 6 etapas no topo; fora das telas, o aviso do protótipo em segundo plano leva até elas.
   const CAMINHO: readonly string[] = ['ideia', 'estilo', 'batismo', 'telas', 'contas', 'aprovar']
