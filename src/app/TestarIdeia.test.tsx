@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { TestarIdeia } from './TestarIdeia'
 import { criarTestarFixture, type RelatorioTeste } from './ponte-testar'
 import { compararTemas, frasesDoVeredito } from './testar-ideia-util'
@@ -42,8 +42,8 @@ describe('TestarIdeia', () => {
     expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(true)
     fireEvent.click(screen.getByRole('radio', { name: /100/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Começar com 100 pessoas →' }))
-    expect(iniciar).toHaveBeenCalledWith('p', { quantidade: 100, mesmosDe: 1, versao: null })
     expect(await screen.findByText('O QUE ELAS ESTÃO DIZENDO')).toBeTruthy()
+    expect(iniciar).toHaveBeenCalledWith('p', { quantidade: 100, mesmosDe: 1, versao: null })
     for (let i = 0; i < 6; i++) await act(() => vi.advanceTimersByTimeAsync(3000))
     expect(await screen.findByText('Isto é um termômetro, não uma pesquisa de mercado.')).toBeTruthy()
     expect(screen.getByText('O que 97 agentes de IA acharam do Ponto')).toBeTruthy() // conta quem respondeu (3 ficaram sem resposta)
@@ -101,5 +101,67 @@ describe('contas do relatório', () => {
     const r = await relDaFixture()
     const v = frasesDoVeredito({ ...r, geral: c(70, 20, 10), porTipo: { Profissão: [{ valor: 'RH', ...c(30, 10, 0) }] } })
     expect(v).toEqual({ titulo: 'Termômetro: mais a favor do que contra.', quem: null })
+  })
+})
+
+describe('entrevistas e ideias', () => {
+  async function abrirRelatorio(extra: Partial<Parameters<typeof TestarIdeia>[0]> = {}) {
+    const ponte = criarTestarFixture()
+    render(<TestarIdeia pasta="p" nome="Ponto" ponte={ponte} {...extra} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Abrir relatório' }))
+    await screen.findByText('Isto é um termômetro, não uma pesquisa de mercado.')
+    return ponte
+  }
+
+  test('entrevista: abre a gaveta do agente, pergunta, guarda a etiqueta e a lista não perde a conversa', async () => {
+    const ponte = await abrirRelatorio()
+    const entrevistar = vi.spyOn(ponte, 'entrevistar')
+    fireEvent.click(await screen.findByRole('button', { name: /Diego, 43.*CONTRA/ }))
+    const gaveta = screen.getByRole('dialog', { name: 'Entrevistas com os agentes' })
+    expect(gaveta.textContent).toContain('No meu canteiro o sinal some.')
+    fireEvent.click(screen.getByRole('button', { name: 'Por que você não usaria?' }))
+    expect(await screen.findByText(/Se funcionasse sem internet, eu pensava/)).toBeTruthy()
+    expect(entrevistar).toHaveBeenCalledWith('p', 1, 'a3', 'Por que você não usaria?')
+    fireEvent.click(screen.getByRole('tab', { name: '+ agente' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Mudou de ideia' }))
+    expect(screen.getAllByText('MUDOU DE IDEIA').length).toBeGreaterThan(0)
+    fireEvent.click(screen.getByRole('tab', { name: 'Diego, 43' }))
+    expect(screen.getByText(/Se funcionasse sem internet, eu pensava/)).toBeTruthy()
+    expect(screen.getByText(/É um agente de IA fazendo um papel/)).toBeTruthy()
+  })
+
+  test('pergunta vazia não vai; erro da entrevista devolve a pergunta ao campo', async () => {
+    const ponte = await abrirRelatorio()
+    vi.spyOn(ponte, 'entrevistar').mockRejectedValueOnce(new Error('claude-cota'))
+    fireEvent.click(await screen.findByRole('button', { name: /Procurar outro agente/ }))
+    fireEvent.click(within(screen.getByRole('dialog')).getAllByRole('button', { name: /Renato/ })[0])
+    expect((screen.getByRole('button', { name: 'Perguntar' }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText('Sua pergunta'), { target: { value: 'Quanto pagaria?' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Perguntar' }))
+    expect(await screen.findByText(/A cota do seu plano do Claude acabou/)).toBeTruthy()
+    expect((screen.getByLabelText('Sua pergunta') as HTMLTextAreaElement).value).toBe('Quanto pagaria?')
+  })
+
+  test('ideias marcadas viram um pedido de revisão do protótipo e levam à versão nova', async () => {
+    const revisarPrototipo = vi.fn(async () => 4)
+    const onVerPrototipo = vi.fn()
+    await abrirRelatorio({ pasta: 'p-ideias', revisarPrototipo, onVerPrototipo })
+    expect((screen.getByRole('checkbox', { name: /Bater ponto sem internet/ }) as HTMLInputElement).checked).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: /Outra mudança sua/ }))
+    fireEvent.change(screen.getByLabelText(/Outra mudança sua/), { target: { value: 'Botão maior para bater o ponto' } })
+    expect(screen.getByText(/2 mudanças marcadas/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar o protótipo com as ideias marcadas →' }))
+    expect(revisarPrototipo).toHaveBeenCalledWith(expect.stringContaining('- Bater ponto sem internet: Guarda no celular e envia quando o sinal voltar. (citado por 141 agentes)'))
+    expect(revisarPrototipo).toHaveBeenCalledWith(expect.stringContaining('- Mudança do dono: Botão maior para bater o ponto'))
+    expect(revisarPrototipo).toHaveBeenCalledWith(expect.stringContaining('agentes de IA, não de pessoas reais'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver a versão 4 no Protótipo →' }))
+    expect(onVerPrototipo).toHaveBeenCalled()
+  })
+
+  test('sem nenhuma ideia marcada, não deixa pedir a revisão', async () => {
+    await abrirRelatorio({ pasta: 'p-vazio', revisarPrototipo: vi.fn(async () => 2) })
+    fireEvent.click(screen.getByRole('checkbox', { name: /Bater ponto sem internet/ }))
+    expect((screen.getByRole('button', { name: 'Revisar o protótipo com as ideias marcadas →' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText('Marque pelo menos uma ideia (ou escreva a sua).')).toBeTruthy()
   })
 })

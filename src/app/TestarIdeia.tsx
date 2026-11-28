@@ -10,13 +10,19 @@ import { AVISO_IA, compararTemas } from './testar-ideia-util'
 import './testar-ideia.css'
 
 type Tela = { t: 'lista' } | { t: 'novo'; mesmosDe: number | null } | { t: 'teste'; n: number }
-interface Props { pasta: string; nome: string; ponte: PonteTestar; versao?: string | null }
+interface Props {
+  pasta: string; nome: string; ponte: PonteTestar
+  /** Versão atual do protótipo ("v3"), guardada no teste para a comparação. */
+  lerVersao?: () => Promise<string | null>
+  revisarPrototipo?: (pedido: string) => Promise<number>
+  onVerPrototipo?: () => void
+}
 
 const pct = (x: number) => `${x}%`
 const quando = (iso: string) => { const d = new Date(iso); return isNaN(d.getTime()) ? '' : d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) }
 const mil = (n: number) => n.toLocaleString('pt-BR')
 
-export function TestarIdeia({ pasta, nome, ponte, versao = null }: Props) {
+export function TestarIdeia({ pasta, nome, ponte, lerVersao, revisarPrototipo, onVerPrototipo }: Props) {
   const [testes, setTestes] = useState<ResumoTeste[] | null>(null)
   const [tela, setTela] = useState<Tela>({ t: 'lista' })
   const [erro, setErro] = useState<string | null>(null)
@@ -28,9 +34,9 @@ export function TestarIdeia({ pasta, nome, ponte, versao = null }: Props) {
   if (tela.t === 'novo') {
     return <NovoTeste nome={nome} anterior={testes.find((t) => t.estado === 'pronto') ?? null} mesmosDe={tela.mesmosDe} erro={erro}
       onVoltar={() => { setErro(null); setTela({ t: 'lista' }) }}
-      onComecar={(quantidade, mesmosDe) => { setErro(null); ponte.iniciar(pasta, { quantidade, mesmosDe, versao }).then(({ n }) => { void ler(); setTela({ t: 'teste', n }) }, (e) => setErro(textoDaTrava(e, 'Começar o teste'))) }} />
+      onComecar={(quantidade, mesmosDe) => { setErro(null); (lerVersao ? lerVersao().catch(() => null) : Promise.resolve(null)).then((versao) => ponte.iniciar(pasta, { quantidade, mesmosDe, versao })).then(({ n }) => { void ler(); setTela({ t: 'teste', n }) }, (e) => setErro(textoDaTrava(e, 'Começar o teste'))) }} />
   }
-  if (tela.t === 'teste') return <TesteAberto pasta={pasta} nome={nome} ponte={ponte} n={tela.n} onVoltar={() => { void ler(); setTela({ t: 'lista' }) }} onDeNovo={(n) => setTela({ t: 'novo', mesmosDe: n })} />
+  if (tela.t === 'teste') return <TesteAberto pasta={pasta} nome={nome} ponte={ponte} n={tela.n} revisarPrototipo={revisarPrototipo} onVerPrototipo={onVerPrototipo} onVoltar={() => { void ler(); setTela({ t: 'lista' }) }} onDeNovo={(n) => setTela({ t: 'novo', mesmosDe: n })} />
   if (!testes.length) return <Convite nome={nome} onTestar={() => setTela({ t: 'novo', mesmosDe: null })} />
   return <ListaDeTestes pasta={pasta} ponte={ponte} testes={testes} onNovo={() => setTela({ t: 'novo', mesmosDe: null })} onAbrir={(n) => setTela({ t: 'teste', n })} onDeNovo={(n) => setTela({ t: 'novo', mesmosDe: n })} />
 }
@@ -92,7 +98,7 @@ const FASES: { etapa: ResumoTeste['etapa'][]; texto: (r: ResumoTeste) => string 
 ]
 const faseDaPraca = (e: ResumoTeste['etapa']): FasePraca => (e === 'entender' || e === 'agentes' ? 'criando' : e === 'olhar' ? 'olhando' : e)
 
-function TesteAberto({ pasta, nome, ponte, n, onVoltar, onDeNovo }: { pasta: string; nome: string; ponte: PonteTestar; n: number; onVoltar: () => void; onDeNovo: (n: number) => void }) {
+function TesteAberto({ pasta, nome, ponte, n, onVoltar, onDeNovo, revisarPrototipo, onVerPrototipo }: { pasta: string; nome: string; ponte: PonteTestar; n: number; onVoltar: () => void; onDeNovo: (n: number) => void; revisarPrototipo?: (pedido: string) => Promise<number>; onVerPrototipo?: () => void }) {
   const [r, setR] = useState<ResumoTeste | null>(null)
   const [cena, setCena] = useState<CenaTeste>({ agentes: [], eventos: [] })
   const [rel, setRel] = useState<RelatorioTeste | null>(null)
@@ -119,7 +125,7 @@ function TesteAberto({ pasta, nome, ponte, n, onVoltar, onDeNovo }: { pasta: str
 
   if (some) return <div className="at-testar__novo"><p className="at-testar__erro">{textoDaTrava('teste-invalido')}</p><Botao variante="secundario" onClick={onVoltar}>Voltar aos testes</Botao></div>
   if (!r) return <p className="at-testar__nota">Abrindo o teste {n}…</p>
-  if (r.estado === 'pronto' && rel) return <RelatorioTesteView rel={rel} resumo={r} nome={nome} cena={cena} onVoltar={onVoltar} onDeNovo={() => onDeNovo(n)} />
+  if (r.estado === 'pronto' && rel) return <RelatorioTesteView rel={rel} resumo={r} nome={nome} cena={cena} pasta={pasta} ponte={ponte} onVoltar={onVoltar} onDeNovo={() => onDeNovo(n)} revisarPrototipo={revisarPrototipo} onVerPrototipo={onVerPrototipo} />
   const t = r.termometro
   const idx = FASES.findIndex((f) => f.etapa.includes(r.etapa))
   const feed = cena.eventos.slice(-8).reverse()

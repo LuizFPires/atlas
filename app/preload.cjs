@@ -119,6 +119,8 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     estado: (pasta, n) => chamar('atlas:testar:estado', String(pasta), Number(n)),
     relatorio: (pasta, n) => chamar('atlas:testar:relatorio', String(pasta), Number(n)),
     cena: (pasta, n) => chamar('atlas:testar:cena', String(pasta), Number(n)),
+    entrevistas: (pasta, n) => chamar('atlas:testar:entrevistas', String(pasta), Number(n)),
+    entrevistar: (pasta, n, id, pergunta) => chamar('atlas:testar:entrevistar', String(pasta), Number(n), String(id), String(pergunta)),
     retomar: (pasta, n) => chamar('atlas:testar:retomar', String(pasta), Number(n)),
     aoMudar: (f) => { const ouvir = (_e, n) => { if (typeof f === 'function') f(Number(n)) }; ipcRenderer.on('atlas:testar:mudou', ouvir); return () => ipcRenderer.removeListener('atlas:testar:mudou', ouvir) },
   },

@@ -1,14 +1,23 @@
 // Relatório do "Testar a ideia" (TI1TestarIdeia): aviso amarelo de termômetro, o veredito, quanto pagariam, pontos fortes e
 // fracos e o mapa de calor por tipo de agente em barras de duelo (a favor × contra na mesma linha). Os números vêm do programa.
-import { useState } from 'react'
-import { Botao, Cartao } from '../ui'
-import type { CenaTeste, ContagemTeste, RelatorioTeste, ResumoTeste, TemaRelatorio } from './ponte-testar'
+import { useState, useSyncExternalStore } from 'react'
+import { Botao, Cartao, CampoFalado } from '../ui'
+import { textoDaTrava } from './explicar-trava'
+import { GavetaEntrevistas } from './GavetaEntrevistas'
+import { esquecerRevisao, ouvirRevisoes, pedidoDeRevisao, revisaoDe, revisar } from './revisao-teste'
+import type { AgenteNaCena, CenaTeste, ContagemTeste, PonteTestar, RelatorioTeste, ResumoTeste, TemaRelatorio } from './ponte-testar'
 import { AVISO_IA, frasesDoVeredito } from './testar-ideia-util'
 
-interface Props { rel: RelatorioTeste; resumo: ResumoTeste; nome: string; cena: CenaTeste; onVoltar: () => void; onDeNovo: () => void }
+interface Props {
+  rel: RelatorioTeste; resumo: ResumoTeste; nome: string; cena: CenaTeste; pasta: string; ponte: PonteTestar; onVoltar: () => void; onDeNovo: () => void
+  /** Revisa o protótipo com o pedido e devolve o número da versão nova (para aprovar na aba Protótipo). */
+  revisarPrototipo?: (pedido: string) => Promise<number>
+  onVerPrototipo?: () => void
+}
 const mil = (n: number) => n.toLocaleString('pt-BR')
 
-export function RelatorioTesteView({ rel, resumo, nome, onVoltar, onDeNovo }: Props) {
+export function RelatorioTesteView({ rel, resumo, nome, cena, pasta, ponte, onVoltar, onDeNovo, revisarPrototipo, onVerPrototipo }: Props) {
+  const [gaveta, setGaveta] = useState<string | 'lista' | null>(null)
   const g = rel.geral
   const v = frasesDoVeredito(rel)
   const dims = Object.keys(rel.porTipo).filter((k) => rel.porTipo[k].length > 1)
@@ -52,7 +61,25 @@ export function RelatorioTesteView({ rel, resumo, nome, onVoltar, onDeNovo }: Pr
             <div className="at-rel__leg"><span><i className="az" />a favor</span><span><i className="dv" />em dúvida</span><span><i className="vm" />contra</span><span>Linhas apagadas têm menos de 20 agentes: olhe com cuidado.</span></div>
           </Cartao>
         )}
+        {cena.agentes.length > 0 && (
+          <Cartao className="at-testar__card at-rel__span3">
+            <span className="at-testar__r">ENTREVISTE QUALQUER UM DOS {mil(cena.agentes.length)} AGENTES</span>
+            <span className="at-testar__txt">Escolha um agente e pergunte o que quiser. A conversa abre ao lado e fica guardada neste teste.</span>
+            <div className="at-rel__ags">
+              {sugeridos(cena.agentes).map((a) => (
+                <button key={a.id} type="button" className="at-gaveta__ag" onClick={() => setGaveta(a.id)}>
+                  <span className={`at-gaveta__av ${a.r === 'usaria' ? 'az' : a.r === 'nao' ? 'vm' : 'dv'}`}>{a.nome.charAt(0)}</span>
+                  <span><b>{a.nome}, {a.idade}</b>{Object.values(a.tracos).slice(0, 2).join(' · ')}</span>
+                  <span className={`at-gaveta__selo ${a.r === 'usaria' ? 'az' : a.r === 'nao' ? 'vm' : 'dv'}`}>{a.mudou ? 'MUDOU DE IDEIA' : a.r === 'usaria' ? 'FÃ' : a.r === 'nao' ? 'CONTRA' : 'EM DÚVIDA'}</span>
+                </button>
+              ))}
+              <button type="button" className="at-gaveta__ag at-gaveta__ag--busca" onClick={() => setGaveta('lista')}><span className="at-gaveta__av">+</span><span><b>Procurar outro agente</b>por nome, profissão, cidade ou opinião</span></button>
+            </div>
+          </Cartao>
+        )}
+        {revisarPrototipo && <Ideias pasta={pasta} n={resumo.n} rel={rel} revisarPrototipo={revisarPrototipo} onVerPrototipo={onVerPrototipo} />}
       </div>
+      {gaveta && <GavetaEntrevistas pasta={pasta} n={resumo.n} ponte={ponte} agentes={cena.agentes} aberto={gaveta} onFechar={() => setGaveta(null)} />}
       <div className="at-testar__acoes">
         <Botao variante="secundario" onClick={onVoltar}>← Testes</Botao>
         <Botao variante="secundario" onClick={onDeNovo}>Rodar de novo com os mesmos agentes</Botao>
@@ -87,5 +114,59 @@ function Duelo({ x }: { x: ContagemTeste & { valor: string } }) {
       <div className="at-rel__db" aria-label={`${x.valor}: ${x.pctUsaria}% a favor, ${x.pctNao}% contra`}><i className="az" style={{ width: `${x.pctUsaria}%` }} /><i className="dv" style={{ width: `${x.pctDuvida}%` }} /><i className="vm" style={{ width: `${x.pctNao}%` }} /></div>
       <b className="vm">{x.pctNao}%<small>contra</small></b>
     </div>
+  )
+}
+
+/** 4 agentes para começar: o contra mais falante, um fã, quem mudou de ideia e outro contra (sem repetir). */
+function sugeridos(agentes: AgenteNaCena[]): AgenteNaCena[] {
+  const com = agentes.filter((a) => a.fala)
+  const escolhas = [com.find((a) => a.r === 'nao'), com.find((a) => a.r === 'usaria'), com.find((a) => a.mudou), com.filter((a) => a.r === 'nao')[1], com.find((a) => a.r === 'duvida')]
+  return [...new Map(escolhas.filter((a): a is AgenteNaCena => !!a).map((a) => [a.id, a])).values()].slice(0, 4)
+}
+
+function Ideias({ pasta, n, rel, revisarPrototipo, onVerPrototipo }: { pasta: string; n: number; rel: RelatorioTeste; revisarPrototipo: (pedido: string) => Promise<number>; onVerPrototipo?: () => void }) {
+  const [marcadas, setMarcadas] = useState<Set<number>>(() => new Set(rel.ideias.slice(0, 2).map((_, i) => i)))
+  const [outra, setOutra] = useState('')
+  const [escrevendo, setEscrevendo] = useState(false)
+  const chave = `${pasta}#${n}`
+  const rev = useSyncExternalStore(ouvirRevisoes, () => revisaoDe(chave))
+  const total = marcadas.size + (outra.trim() ? 1 : 0)
+  const enviar = () => {
+    const escolhidas = rel.ideias.filter((_, i) => marcadas.has(i))
+    revisar(chave, [...escolhidas.map((i) => i.titulo), ...(outra.trim() ? [outra.trim()] : [])], () => revisarPrototipo(pedidoDeRevisao(n, escolhidas, outra)))
+  }
+  return (
+    <Cartao className="at-testar__card at-rel__span3">
+      <span className="at-testar__r">IDEIAS PARA O PROTÓTIPO · TIRADAS DAS CRÍTICAS DOS AGENTES</span>
+      {rev ? (
+        <div className="at-rel__feito" role="status">
+          <span className="at-rel__ok" aria-hidden="true">{rev.estado === 'erro' ? '!' : '✓'}</span>
+          <div>
+            {rev.estado === 'revisando' && <><b>O Atlas está revisando o protótipo.</b> Vai virar uma versão nova, com {rev.ideias.map((t) => `“${t}”`).join(', ')}. A versão de agora continua guardada. Pode trocar de aba: quando ficar pronta, ela aparece no Protótipo para você aprovar.</>}
+            {rev.estado === 'pronta' && <><b>A versão {rev.versao} do protótipo está pronta.</b> Revise e aprove na aba Protótipo. Depois, rode o teste de novo com os mesmos agentes para comparar.</>}
+            {rev.estado === 'erro' && <><b>Não deu para revisar o protótipo agora.</b> {textoDaTrava(rev.erro, 'A revisão do protótipo')}</>}
+            <div className="at-rel__passos"><span className="ok">✓ Ideias enviadas</span><span className={rev.estado === 'revisando' ? 'ag' : rev.estado === 'pronta' ? 'ok' : ''}>{rev.estado === 'pronta' ? '✓ Protótipo revisado' : 'Revisando as telas…'}</span><span>Você aprova a versão nova</span><span>Testar de novo com os mesmos agentes</span></div>
+            {rev.estado === 'pronta' && onVerPrototipo && <div className="at-testar__acoes at-testar__acoes--esq"><Botao onClick={() => { esquecerRevisao(chave); onVerPrototipo() }}>Ver a versão {rev.versao} no Protótipo →</Botao></div>}
+            {rev.estado === 'erro' && <div className="at-testar__acoes at-testar__acoes--esq"><Botao variante="secundario" onClick={() => esquecerRevisao(chave)}>Voltar às ideias</Botao></div>}
+          </div>
+        </div>
+      ) : (
+        <>
+          <span className="at-testar__nota">Marque as que você quer. A decisão é sua.</span>
+          {rel.ideias.length === 0 && <span className="at-testar__txt">Os agentes não deixaram nenhuma ideia clara desta vez. Você pode escrever a sua mudança abaixo.</span>}
+          {rel.ideias.map((i, k) => (
+            <label key={k} className={`at-rel__sug${marcadas.has(k) ? ' at-rel__sug--sel' : ''}`}>
+              <input type="checkbox" checked={marcadas.has(k)} onChange={(e) => setMarcadas((m) => { const x = new Set(m); if (e.target.checked) x.add(k); else x.delete(k); return x })} />
+              <span><b>{i.titulo}</b>{i.como}{i.n ? ` (${mil(i.n)} agentes falaram disso.)` : ''}</span>
+            </label>
+          ))}
+          {escrevendo ? <CampoFalado rotulo="Outra mudança sua" valor={outra} onChange={setOutra} placeholder="Escreva ou fale o que mais quer mudar, junto com essas" /> : <button type="button" className="at-rel__sug at-rel__sug--outra" onClick={() => setEscrevendo(true)}><span aria-hidden="true">+</span><span><b>Outra mudança sua</b>Escreva ou fale o que mais quer mudar, junto com essas.</span></button>}
+          <div className="at-rel__pedido">
+            <span className="at-testar__nota">{total === 0 ? 'Marque pelo menos uma ideia (ou escreva a sua).' : `${total} ${total === 1 ? 'mudança marcada' : 'mudanças marcadas'}. O Atlas revisa o protótipo e mostra a versão nova para você aprovar antes de qualquer construção.`}</span>
+            <Botao disabled={total === 0} onClick={enviar}>Revisar o protótipo com as ideias marcadas →</Botao>
+          </div>
+        </>
+      )}
+    </Cartao>
   )
 }

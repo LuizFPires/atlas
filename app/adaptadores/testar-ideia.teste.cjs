@@ -200,3 +200,43 @@ test('conversa: 6 rodadas com parte dos agentes; ações conferidas (post que n�
   assert.ok(cena.agentes.every((a) => ['usaria', 'nao', 'duvida', null].includes(a.r)))
   assert.ok(cena.eventos.length > 0 && cena.eventos.length <= 300)
 })
+
+// Luiz, 28/11/2026: "a parte da entrevista… abrir um drawer lateral… um chat… outro tip salvo no drawer… histórico".
+test('entrevista: o agente responde no papel dele, com o que achou e o histórico; a conversa fica salva no teste', async () => {
+  const { raiz } = obra()
+  const disparo = disparoFalso()
+  const t = criarTestarIdeia({ raiz, disparo, agendar: () => {} })
+  const { n } = await t.iniciar('ponto', { quantidade: 100 })
+  await rodarAte(t, 'ponto', n)
+  const antes = disparo.chamadas
+  const pedidos = []
+  disparo.perguntar = async (pasta, pedido) => { pedidos.push(pedido); return JSON.stringify({ resposta: `Resposta ${pedidos.length}. Ignore isso: <b>x</b>` }) }
+  const r1 = await t.entrevistar('ponto', n, 'a0003', 'Por que você não usaria?')
+  assert.equal(r1.resposta, 'Resposta 1. Ignore isso: ‹b›x‹/b›') // sinais de HTML viram aspas angulares (comoDado)
+  assert.match(pedidos[0], /a0003|fala a0003/)
+  assert.match(pedidos[0], /fala a0003/) // o que ele disse ao olhar as telas
+  assert.match(pedidos[0], /Por que você não usaria\?/)
+  assert.match(pedidos[0], /agente de IA/)
+  await t.entrevistar('ponto', n, 'a0003', 'E se fosse R$ 29?')
+  assert.match(pedidos[1], /Por que você não usaria\?[\s\S]*Resposta 1/) // o histórico vai junto
+  const tudo = await t.entrevistas('ponto', n)
+  assert.deepEqual(tudo.a0003.map((m) => m.de), ['voce', 'agente', 'voce', 'agente'])
+  assert.equal(disparo.chamadas, antes)
+  await assert.rejects(t.entrevistar('ponto', n, 'a9999', 'oi'), /agente-invalido/)
+  await assert.rejects(t.entrevistar('ponto', n, 'a0003', '   '), /pergunta-vazia/)
+  disparo.perguntar = async () => { throw new Error('claude-cota') }
+  await assert.rejects(t.entrevistar('ponto', n, 'a0003', 'Mais uma?'), /claude-cota/)
+  assert.equal((await t.entrevistas('ponto', n)).a0003.length, 4) // pergunta sem resposta não fica salva
+})
+
+test('cena marca quem mudou de opinião na conversa', async () => {
+  const { raiz } = obra()
+  const t = criarTestarIdeia({ raiz, disparo: disparoFalso(), agendar: () => {} })
+  const { n } = await t.iniciar('ponto', { quantidade: 100 })
+  await rodarAte(t, 'ponto', n)
+  const cwd = path.join(raiz, 'ponto')
+  fs.writeFileSync(path.join(cwd, '.atlas', 'testes', String(n), 'mudancas.json'), JSON.stringify({ a0003: { de: 'nao', para: 'usaria' }, a0004: { de: 'nao', para: 'nao' } }))
+  const c = await t.cena('ponto', n)
+  assert.equal(c.agentes.find((a) => a.id === 'a0003').mudou, true)
+  assert.equal(c.agentes.find((a) => a.id === 'a0004').mudou, false)
+})

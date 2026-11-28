@@ -34,8 +34,9 @@ export interface RelatorioTeste {
   passaramAGostar: number
   criadoEm: string
 }
+export interface MensagemEntrevista { de: 'voce' | 'agente'; texto: string; em: string }
 export type Opiniao = 'usaria' | 'nao' | 'duvida'
-export interface AgenteNaCena { id: string; nome: string; idade: number; tracos: Record<string, string>; r: Opiniao | null; fala: string | null }
+export interface AgenteNaCena { id: string; nome: string; idade: number; tracos: Record<string, string>; r: Opiniao | null; fala: string | null; mudou?: boolean }
 export interface EventoConversa { rodada: number; de: string; para: string | null; acao: 'postar' | 'comentar' | 'discutir'; texto: string; r: Opiniao }
 export interface CenaTeste { agentes: AgenteNaCena[]; eventos: EventoConversa[] }
 export interface PonteTestar {
@@ -45,6 +46,10 @@ export interface PonteTestar {
   relatorio(pasta: string, n: number): Promise<RelatorioTeste | null>
   retomar(pasta: string, n: number): Promise<{ ok: true }>
   cena(pasta: string, n: number): Promise<CenaTeste>
+  /** Entrevistas salvas do teste, por agente. */
+  entrevistas(pasta: string, n: number): Promise<Record<string, MensagemEntrevista[]>>
+  /** Pergunta a um agente; a pergunta e a resposta ficam salvas no teste. */
+  entrevistar(pasta: string, n: number, id: string, pergunta: string): Promise<{ resposta: string }>
   aoMudar?(f: (n: number) => void): () => void
 }
 
@@ -56,8 +61,9 @@ export function criarTestarFixture(): PonteTestar {
   const contagem = (u: number, n: number, d: number): ContagemTeste => { const t = u + n + d; return { total: t, usaria: u, nao: n, duvida: d, pctUsaria: Math.round((u / t) * 100), pctNao: Math.round((n / t) * 100), pctDuvida: Math.round((d / t) * 100) } }
   const testes: ResumoTeste[] = [{ n: 1, criadoEm: '2026-11-27T21:02:00.000Z', quantidade: 500, mesmosDe: null, versao: 'v3', etapa: 'pronto', estado: 'pronto', motivo: null, feitos: 500, olhados: 488, termometro: contagem(305, 155, 28), maisContra: 'Sem internet na obra' }]
   const passos = new Map<number, number>()
+  const conversas = new Map<number, Record<string, MensagemEntrevista[]>>()
   const profs = ['Mestre de obras', 'Dono de construtora', 'Pedreiro', 'RH', 'Contador']
-  const agentes: AgenteNaCena[] = Array.from({ length: 60 }, (_, i) => ({ id: 'a' + i, nome: ['Marta', 'Renato', 'Jéssica', 'Diego', 'Raimundo'][i % 5], idade: 22 + ((i * 7) % 45), tracos: { Profissão: profs[i % 5] }, r: i % 9 === 0 ? 'duvida' : i % 3 === 0 ? 'nao' : 'usaria', fala: i % 3 === 0 ? 'No meu canteiro o sinal some.' : 'Acaba a briga de quem chegou atrasado.' }))
+  const agentes: AgenteNaCena[] = Array.from({ length: 60 }, (_, i) => ({ id: 'a' + i, nome: ['Marta', 'Renato', 'Jéssica', 'Diego', 'Raimundo'][i % 5], idade: 22 + ((i * 7) % 45), tracos: { Profissão: profs[i % 5] }, r: i % 9 === 0 ? 'duvida' : i % 3 === 0 ? 'nao' : 'usaria', mudou: i % 11 === 0, fala: i % 3 === 0 ? 'No meu canteiro o sinal some.' : 'Acaba a briga de quem chegou atrasado.' }))
   const tema = (t: string, n: number, fala: string, quem: string): TemaRelatorio => ({ tema: t, n, ids: [], exemplo: { id: 'a1', fala, quem } })
   const relatorio = (r: ResumoTeste): RelatorioTeste => ({
     aviso: 'São agentes de IA, não pessoas reais.',
@@ -101,5 +107,17 @@ export function criarTestarFixture(): PonteTestar {
     relatorio: async (_p, n) => { const t = testes.find((x) => x.n === n); return t && t.estado === 'pronto' ? relatorio(t) : null },
     retomar: async () => ({ ok: true }),
     cena: async () => ({ agentes, eventos: [] }),
+    entrevistas: async (_p, n) => structuredClone(conversas.get(n) ?? {}),
+    entrevistar: async (_p, n, id, pergunta) => {
+      if (!pergunta.trim()) throw new Error('pergunta-vazia')
+      const a = agentes.find((x) => x.id === id)
+      if (!a) throw new Error('agente-invalido')
+      const resposta = a.r === 'nao' ? `Olha, no meu canteiro o sinal some. Se funcionasse sem internet, eu pensava. (sobre: ${pergunta.slice(0, 40)})` : 'Eu usaria, sim. Me poupa a tarde de sexta fechando as horas.'
+      const m = conversas.get(n) ?? {}
+      const em = new Date().toISOString()
+      m[id] = [...(m[id] ?? []), { de: 'voce', texto: pergunta, em }, { de: 'agente', texto: resposta, em }]
+      conversas.set(n, m)
+      return { resposta }
+    },
   }
 }

@@ -26,6 +26,8 @@ interface Props {
   /** Depois que a obra começou (PLAN.md gerado e construção disparada no modo escolhido): segue para o painel da obra (M19); até lá, volta às obras. */
   onComecou?: () => void
   tampa?: PonteTampa
+  /** TI1TestarIdeia (28/11/2026): "Quer ver como 500 clientes reagem?" antes de construir. Opcional: dá para construir direto. */
+  onTestarIdeia?: () => void
 }
 
 export const recadoDoErroAprovar = (e: unknown) => {
@@ -60,7 +62,7 @@ export function textoCota(pausas: number): string {
 }
 
 /** F08: aprovar e começar a obra. Mostra etapas, prazo no plano do cliente e consumo da cota. */
-export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou, tampa }: Props) {
+export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou, tampa, onTestarIdeia }: Props) {
   const [plano, setPlano] = useState<Plano | undefined>()
   const [plan, setPlan] = useState<Planejamento | null>(null)
   const [erro, setErro] = useState('')
@@ -150,6 +152,15 @@ export function Aprovar({ obra, construcao, claude, modos, onVoltar, onComecou, 
             ))}
           </section>
           <div className="at-apr__lado">
+            {onTestarIdeia && (
+              <section className="at-apr__card at-apr__testar" aria-label="Testar a ideia antes de construir">
+                <span className="at-apr__rotulo">O ATLAS SUGERE · ANTES DE CONSTRUIR</span>
+                <b>Quer ver como 500 clientes reagem ao {obra.nome}?</b>
+                <span className="at-apr__texto">O Atlas cria 500 pessoas diferentes, do jeito do seu público, mostra as telas para cada uma e conta o que acharam: o que agradou, o que incomodou e quanto pagariam. Leva uns 25 minutos e usa a sua cota do Claude. Se preferir, é só construir direto.</span>
+                <div className="at-apr__testar-acoes"><Botao variante="secundario" onClick={onTestarIdeia}>Testar a ideia →</Botao></div>
+                <span className="at-apr__nota">São agentes de IA, não pessoas reais: serve como termômetro, não como pesquisa de mercado. O Atlas não recomenda nem garante nada. Dá para testar a qualquer momento na aba “Testar a ideia”.</span>
+              </section>
+            )}
             {previsao && (
               <section className="at-apr__card at-apr__previsao" aria-label="Previsão no seu plano">
                 <span className="at-apr__rotulo">PREVISÃO NO SEU PLANO ({NOME_PLANO[meu].toUpperCase()})</span>
