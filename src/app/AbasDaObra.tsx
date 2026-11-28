@@ -3,12 +3,13 @@ import './abas-da-obra.css'
 
 // Tudo de uma obra mora dentro dela (Milestone 37, Luiz em 23/11/2026): volta ao Canteiro e as partes da obra. O nome da obra
 // já é o título de cada parte (painel, protótipo), então aqui não se repete.
-export type ParteDaObra = 'obra' | 'cronograma' | 'desempenho' | 'prototipo' | 'posobra' | 'usar'
+export type ParteDaObra = 'obra' | 'cronograma' | 'desempenho' | 'prototipo' | 'testar' | 'posobra' | 'usar'
 const PARTES: { id: ParteDaObra; nome: string }[] = [
   { id: 'obra', nome: 'Construção' },
   { id: 'cronograma', nome: 'Cronograma' }, // M41 (O6 aprovado em 24/11/2026)
   { id: 'desempenho', nome: 'Desempenho' }, // O7 (aprovado pelo Luiz em 26/11/2026): curva S do consumo do plano
   { id: 'prototipo', nome: 'Protótipo' },
+  { id: 'testar', nome: 'Testar a ideia' }, // TI1TestarIdeia (Luiz, 28/11/2026): agentes de IA olham o protótipo, a qualquer momento
   { id: 'posobra', nome: 'Pedir mudança' },
   { id: 'usar', nome: 'Usar o sistema' }, // U1UsarSistema (Luiz, 28/11/2026): existe desde o início da obra; o pontinho fica verde quando está no ar
 ]
