@@ -51,7 +51,7 @@ function registrosDe(d) {
   }))
 }
 
-function criarResend({ cofre, dados, pedir, agora = () => new Date() }) {
+function criarResend({ cofre, dados, pedir, agora = () => new Date(), vercel = null, resolvedor = null, rdapCom = null }) {
   const pedirResend = criarPedirResend(pedir)
   const arquivo = path.join(dados, 'resend.json')
   const ler = () => { try { const j = JSON.parse(fs.readFileSync(arquivo, 'utf8')); return j && typeof j === 'object' ? j : {} } catch { return {} } }
@@ -63,10 +63,10 @@ function criarResend({ cofre, dados, pedir, agora = () => new Date() }) {
     const j = ler()
     const dominio = typeof j.dominio === 'string' && DOMINIO.test(j.dominio) ? j.dominio : null
     const estado = !dominio ? 'sem-dominio' : j.estado === 'verificado' ? 'verificado' : j.estado === 'falhou' ? 'falhou' : 'esperando'
-    return { ligado: !!c, dominio, estado, registros: Array.isArray(j.registros) ? j.registros : [], remetente: dominio ? `nao-responda@${dominio}` : null }
+    return { ligado: !!c, dominio, estado, registros: Array.isArray(j.registros) ? j.registros : [], remetente: dominio ? `nao-responda@${dominio}` : null, pelaVercel: j.pelaVercel === true }
   }
 
-  return {
+  const api = {
     situacao,
     async guardarChave(texto) {
       const c = String(texto ?? '').trim()
@@ -95,6 +95,51 @@ function criarResend({ cofre, dados, pedir, agora = () => new Date() }) {
       try { await pedirResend('POST', `/domains/${d.id}/verify`, null, c) } catch { /* a conferência pede de novo */ }
       gravar({ dominio, id: d.id, estado: d.status === 'verified' ? 'verificado' : 'esperando', registros: registrosDe(d), desde: agora().toISOString() })
       return situacao()
+    },
+    /** Domínios da conta Vercel do cliente (U1UsarSistema, aba 3): quais usam os servidores da Vercel (aí o Atlas cria os
+     *  registros sozinho). O .vercel.app não serve para e-mail. */
+    async dominiosNaVercel() {
+      if (!vercel) return []
+      const r = await vercel(['domains', 'ls'], { timeoutMs: 60_000 })
+      if (!r || r.codigo !== 0) throw new Error('vercel-dominios')
+      const vistos = []
+      for (const linha of String(r.saida || '').split(/\r?\n/)) {
+        const tok = linha.trim().split(/\s+/)[0] || ''
+        const d = tok.toLowerCase()
+        if (DOMINIO.test(d) && !/\.vercel\.app$/.test(d) && !vistos.includes(d)) vistos.push(d)
+      }
+      const res = resolvedor ? resolvedor() : null
+      const out = []
+      for (const d of vistos.slice(0, 30)) {
+        let ns = []
+        try { ns = res ? await res.resolveNs(d) : [] } catch { ns = [] }
+        out.push({ dominio: d, servidoresVercel: ns.length > 0 && ns.every((x) => /\.vercel-dns\.com\.?$/i.test(String(x))) })
+      }
+      return out
+    },
+    /** Domínio nos servidores da Vercel: cadastra no Resend e cria cada registro pedido na Vercel do cliente. */
+    async ligarPelaVercel(texto) {
+      const dominio = String(texto ?? '').trim().toLowerCase()
+      if (!DOMINIO.test(dominio) || /\.vercel\.app$/.test(dominio)) throw new Error('dominio-invalido')
+      if (!vercel) throw new Error('vercel-dns-recusou')
+      const s = await api.escolherDominio(dominio)
+      for (const reg of s.registros) {
+        if (!/^(TXT|MX|CNAME)$/.test(reg.tipo) || !/^[a-z0-9._-]{1,120}$/i.test(reg.nome)) continue
+        const args = ['dns', 'add', dominio, reg.nome, reg.tipo, reg.valor]
+        if (reg.tipo === 'MX') args.push(String(Number(reg.prioridade) || 10))
+        const r = await vercel(args, { timeoutMs: 60_000 })
+        if (r && r.codigo !== 0 && !/already exists|duplicate/i.test(String(r.saida || ''))) throw new Error('vercel-dns-recusou')
+      }
+      gravar({ ...ler(), pelaVercel: true })
+      try { await api.conferir() } catch { /* a vigia confere de minuto em minuto */ }
+      return situacao()
+    },
+    /** Nome para comprar: só .com tem resposta oficial (RDAP da Verisign); o resto é incerto (a Vercel mostra na compra). */
+    async nomeLivre(texto) {
+      const d = String(texto ?? '').trim().toLowerCase()
+      if (!DOMINIO.test(d)) return 'invalido'
+      if (!/^[a-z0-9-]{1,63}\.com$/.test(d) || !rdapCom) return 'incerto'
+      try { const st = await rdapCom(d); return st === 404 ? 'livre' : st === 200 ? 'ocupado' : 'incerto' } catch { return 'incerto' }
     },
     /** Pergunta ao Resend. Devolve a situação; `virouVerificado` true só na vez em que passou a verificado. */
     async conferir() {
@@ -125,6 +170,7 @@ function criarResend({ cofre, dados, pedir, agora = () => new Date() }) {
       return FORMATO.test(String(senha || '')) ? { dominio: s.dominio, senha } : null
     },
   }
+  return api
 }
 
 module.exports = { criarResend, criarPedirResend, caminhoPermitido, CHAVE, CHAVE_ENVIO }

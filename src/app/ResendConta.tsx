@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { Botao, Icone } from '../ui'
 import type { PonteResend, SituacaoResend } from './ponte-resend'
+import { DominioDosEmails } from './DominioDosEmails'
 import type { Retangulo } from './ponte-navegador'
 import './resend.css'
 
@@ -13,6 +14,8 @@ interface Props {
   onde?: () => Retangulo
   /** De quanto em quanto tempo o Atlas confere o domínio (padrão: 1 minuto). */
   sondagemMs?: number
+  /** De quanto em quanto tempo procura a compra na Vercel (testes). */
+  sondagemCompraMs?: number
 }
 
 const AVISO_CHAVE: Record<string, string> = {
@@ -30,11 +33,10 @@ const PROVEDORES: { id: string; nome: string; como: string }[] = [
 ]
 const copiar = (t: string) => { try { void navigator.clipboard?.writeText(t) } catch { /* sem área de transferência */ } }
 
-export function ResendConta({ ponte, onde, sondagemMs = 60_000 }: Props) {
+export function ResendConta({ ponte, onde, sondagemMs = 60_000, sondagemCompraMs }: Props) {
   const [s, setS] = useState<SituacaoResend | null>(null)
   const [aberto, setAberto] = useState(false)
   const [chave, setChave] = useState('')
-  const [dominio, setDominio] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [aviso, setAviso] = useState('')
   const [prov, setProv] = useState('registro')
@@ -55,13 +57,6 @@ export function ResendConta({ ponte, onde, sondagemMs = 60_000 }: Props) {
       const r = await ponte.guardarChave(chave)
       if (r.ok) { setChave(''); setS(await ponte.situacao()) } else setAviso(AVISO_CHAVE[r.motivo] ?? AVISO_CHAVE['sem-internet'])
     } catch { setAviso(AVISO_CHAVE['sem-internet']) } finally { setOcupado(false) }
-  }
-  const enviarDominio = async () => {
-    setOcupado(true); setAviso('')
-    try { setS(await ponte.escolherDominio(dominio)) } catch (e) {
-      const c = e instanceof Error ? e.message : ''
-      setAviso(c === 'dominio-invalido' ? 'Escreva só o domínio, por exemplo suaempresa.com.br. O endereço .vercel.app não serve: precisa ser um domínio seu.' : 'Não consegui falar com o Resend agora. Confira a internet e tente de novo.')
-    } finally { setOcupado(false) }
   }
   const conferirAgora = async () => { setOcupado(true); try { setS(await ponte.conferir()) } catch { /* tenta no próximo minuto */ } finally { setOcupado(false) } }
 
@@ -95,20 +90,18 @@ export function ResendConta({ ponte, onde, sondagemMs = 60_000 }: Props) {
         </div>
       )}
 
-      {s.ligado && !s.dominio && (
+      {s.ligado && !s.dominio && <DominioDosEmails ponte={ponte} onde={onde} onSituacao={setS} sondagemCompraMs={sondagemCompraMs} />}
+
+      {s.ligado && s.dominio && !verificado && s.pelaVercel && (
         <div className="at-ligar__caixa">
-          <span className="at-rs__passo">LIGAR O RESEND · 2 DE 2</span>
-          <span>Qual é o domínio dos seus e-mails? É o que vem depois do @ no e-mail da sua empresa. O Resend só manda para qualquer pessoa depois de confirmar que o domínio é seu. É uma vez só e vale para todos os seus sistemas.</span>
-          <div className="at-ligar__campo">
-            <label htmlFor="dominio-resend" className="at-ligar__oculto">Seu domínio</label>
-            <input id="dominio-resend" type="text" autoComplete="off" spellCheck={false} placeholder="suaempresa.com.br" value={dominio} onChange={(e) => setDominio(e.target.value)} />
-            <Botao onClick={() => void enviarDominio()} disabled={!dominio.trim() || ocupado}>{ocupado ? 'Cadastrando…' : 'Continuar'}</Botao>
-          </div>
-          {aviso && <p className="at-ativ__erro" role="alert">{aviso}</p>}
+          <span className="at-rs__passo">VERIFICAR {s.dominio.toUpperCase()}</span>
+          <span>✓ O Atlas criou os registros do e-mail na sua Vercel. Você não precisa copiar nada.</span>
+          <div className="at-rs__espera" role="status"><span className="at-rs__pulso" aria-hidden="true" /><span><b>Esperando o Resend confirmar.</b> O Atlas confere sozinho a cada minuto. Costuma levar alguns minutos. Pode fechar o Atlas: ele continua de onde parou.</span></div>
+          <div className="at-rs__acoes"><button type="button" className="at-ativ__link" onClick={() => void conferirAgora()} disabled={ocupado}>Conferir agora</button></div>
         </div>
       )}
 
-      {s.ligado && s.dominio && !verificado && (
+      {s.ligado && s.dominio && !verificado && !s.pelaVercel && (
         <div className="at-ligar__caixa">
           <span className="at-rs__passo">VERIFICAR {s.dominio.toUpperCase()}</span>
           <b>Copie estes registros para o seu domínio</b>
@@ -131,7 +124,10 @@ export function ResendConta({ ponte, onde, sondagemMs = 60_000 }: Props) {
             </tbody>
           </table>
           <div className="at-rs__espera" role="status"><span className="at-rs__pulso" aria-hidden="true" /><span><b>{s.estado === 'falhou' ? 'O Resend ainda não achou os registros.' : 'Esperando o domínio confirmar.'}</b> O Atlas confere sozinho a cada minuto. Costuma levar de 5 minutos a algumas horas. Pode fechar o Atlas: ele continua de onde parou.</span></div>
-          <div className="at-rs__acoes"><button type="button" className="at-ativ__link" onClick={() => void conferirAgora()} disabled={ocupado}>Conferir agora</button></div>
+          <div className="at-rs__acoes">
+            {ponte.abrirSite && onde && prov === 'registro' && <button type="button" className="at-ativ__link" onClick={() => void ponte.abrirSite!('registro', onde()).catch(() => {})}>Abrir o Registro.br ao lado</button>}
+            <button type="button" className="at-ativ__link" onClick={() => void conferirAgora()} disabled={ocupado}>Conferir agora</button>
+          </div>
         </div>
       )}
 

@@ -145,6 +145,8 @@ const EXPLICACOES: Record<string, Explicacao> = {
   'papel-invalido': { houve: 'Esse papel não existe no seu sistema.', fazer: 'Escolha um dos papéis da lista e tente de novo.' },
   'pessoa-ja-existe': { houve: 'Esse e-mail já tem conta no seu sistema.', fazer: 'Procure a pessoa na lista "Quem já entra". Se ela esqueceu a senha, toque em Nova senha.' },
   'nao-pode-tirar-dono': { houve: 'O dono não pode tirar o próprio acesso.', fazer: 'Se quiser trocar a sua senha, toque em Trocar senha.' },
+  'vercel-dns-recusou': { houve: 'A Vercel não deixou o Atlas criar os registros do e-mail nesse domínio.', fazer: 'Confira se o domínio está na mesma conta da Vercel ligada ao Atlas. Se ele estiver em outra conta, escolha "Já tenho, em outro lugar".', conta: 'vercel' },
+  'vercel-dominios': { houve: 'Não consegui ler os domínios da sua conta da Vercel agora.', fazer: 'Confira a internet e se a Vercel está ligada em Contas. Depois toque em Tentar de novo.', conta: 'vercel' },
   'resend-sem-chave': { houve: 'A chave do Resend sumiu deste computador.', fazer: 'Abra Contas, toque em Ligar o Resend e cole a chave de novo; o Atlas continua de onde parou.' },
   'resend-falhou': { houve: 'O Resend não respondeu do jeito esperado ao preparar o domínio dos e-mails.', fazer: 'Espere uns minutos e tente de novo. Se continuar, toque em Pedir ajuda ao Atlas.' },
   'nome-ocupado': { houve: 'Esse nome de endereço já é de outra pessoa.', fazer: 'Escolha um dos nomes sugeridos ou escreva outro.' },
