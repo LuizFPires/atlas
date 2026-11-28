@@ -82,7 +82,10 @@ const kit = criarKit({ dadosApp: app.getPath('userData'), cofre, hashComputador:
 const modelo = criarModelo({ pasta: app.getPath('userData') })
 // Contas ligadas a este computador (tela C1): gh, Vercel e Supabase. A chave do Supabase fica só no cofre e chega à linha pelo ambiente.
 const contasCli = criarContasCli({ dadosApp: app.getPath('userData'), cofre, env: envMinimo(), apiSupabase: (m, c, corpo, token) => require('./adaptadores/no-ar-rede.cjs').pedirApiSupabase(m, c, corpo, token) })
-void contasCli.recarregar()
+// A chave do Supabase só pode ser lida do cofre DEPOIS do "ready": no Windows o safeStorage (DPAPI) não está disponível antes e a
+// leitura falhava em silêncio. Com isso, depois de fechar e abrir o Atlas a linha rodava sem a chave e dizia "o Supabase saiu
+// deste computador", embora a tela das contas mostrasse "Ligado" (Guilherme, 27/11/2026).
+app.whenReady().then(() => contasCli.recarregar())
 const { criarDiario } = require('./adaptadores/diario.cjs')
 const diario = criarDiario() // M41: diário da obra (.atlas/diario.jsonl), escrito pela linha e pelo vigia
 const { criarAvisoCelular, textoDoAviso } = require('./adaptadores/aviso-celular.cjs')
