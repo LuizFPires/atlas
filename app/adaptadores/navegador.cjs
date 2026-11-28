@@ -5,6 +5,7 @@
 // SEGURANÇA
 //  - Um navegador só, isolado (main.cjs cria com partition própria 'persist:atlas-contas', sandbox, sem preload, sem Node, sem
 //    permissões de câmera/microfone/arquivo). O Atlas não injeta script nem lê o que a pessoa digita: a senha vai direto ao site.
+//    Só acrescenta ESTILO (realceDoSite) para acender o campo e o botão certos nas páginas de ligar um aparelho.
 //  - Só abre os sites das contas (urlPermitida: https e domínio exato ou subdomínio da lista). Qualquer outro endereço (ex.:
 //    "entrar com o Google", que o Google bloqueia dentro de apps) vai para o navegador do computador (abrirFora).
 //  - O endereço inicial de cada conta é fixo aqui (SITES); a tela só diz QUAL conta.
@@ -48,6 +49,23 @@ function contaPronta(conta, url, logadoGithub) {
   return false
 }
 
+// Foco nas contas (Luiz, 28/11/2026, opção A): nas páginas de ligar um aparelho, o Atlas acende o campo do código e o botão de
+// seguir, para a pessoa saber onde tocar. Só estilo (insertCSS): nenhum script, nada é lido nem preenchido na página.
+const ANEL = 'outline:3px solid #C6F135!important;outline-offset:4px!important;border-radius:6px!important;animation:atlasRealce 1.4s ease-in-out infinite!important'
+const ANIMA = '@keyframes atlasRealce{50%{outline-offset:8px;outline-color:rgba(198,241,53,.45)}}'
+function realceDoSite(url) {
+  let u
+  try { u = new URL(String(url)) } catch { return null }
+  if (u.protocol !== 'https:') return null
+  if (u.hostname === 'github.com' && /^\/login\/(device|oauth)/.test(u.pathname)) {
+    return `${ANIMA} form[action*="/login/device"] input:not([type=hidden]), form[action*="/login/device"] [type=submit], form[action*="/login/oauth"] [type=submit], button[name="authorize"] { ${ANEL} }`
+  }
+  if (u.hostname === 'vercel.com' && /^\/(device|oauth\/device)/.test(u.pathname)) {
+    return `${ANIMA} main form input:not([type=hidden]), main form [type=submit] { ${ANEL} }`
+  }
+  return null
+}
+
 const posicaoValida = (b) => b && ['x', 'y', 'width', 'height'].every((k) => Number.isFinite(b[k]) && b[k] >= 0 && b[k] <= 20000)
 
 /**
@@ -62,6 +80,8 @@ function criarNavegador({ criarView, avisar, abrirFora, logadoNoGithub }) {
   const prontas = new Set()
 
   const pagina = async (url) => {
+    const css = realceDoSite(url)
+    if (css && view && typeof view.inserirCSS === 'function') { try { view.inserirCSS(css) } catch { /* página fechou */ } }
     if (guiaAtual) { avisar({ guia: guiaAtual, url: String(url).slice(0, 300), pronta: false }); return }
     if (!contaAtual) return
     const conta = contaAtual
@@ -136,4 +156,4 @@ function criarNavegador({ criarView, avisar, abrirFora, logadoNoGithub }) {
   }
 }
 
-module.exports = { criarNavegador, SITES, GUIAS_SITE, urlPermitida, contaPronta }
+module.exports = { criarNavegador, SITES, GUIAS_SITE, urlPermitida, contaPronta, realceDoSite }

@@ -86,3 +86,31 @@ test('Resend aparece como 4ª conta, opcional: não conta no "faltam" e não tra
   expect(await screen.findByRole('group', { name: 'Resend, o carteiro' })).toHaveTextContent('Opcional · recomendada')
   expect(await screen.findByRole('button', { name: 'Tudo ligado · Último passo →' })).toBeEnabled()
 })
+
+// Luiz, 28/11/2026 (opção A, depois do Rafael não achar onde clicar): só o próximo passo fica aceso; o resto desfoca.
+test('foco: a primeira conta fica acesa com "Comece aqui" e o resto desfocado', async () => {
+  const { container } = render(<TemaProvider><LigarContas ponte={criarLigarContasFixture()} onContinuar={() => {}} onVoltar={() => {}} sondagemMs={20} /></TemaProvider>)
+  await espera()
+  const gh = screen.getByRole('button', { name: 'Ligar o GitHub' }).closest('.at-ligar__linha')!
+  expect(gh).toHaveClass('at-ligar__alvo')
+  expect(gh).not.toHaveClass('at-ligar__fora')
+  expect(screen.getByRole('note')).toHaveTextContent('Comece aqui: toque em “Ligar”.')
+  expect(screen.getByRole('note')).toHaveTextContent('Não precisa abrir o navegador')
+  expect(screen.getByRole('button', { name: 'Ligar o Supabase' }).closest('.at-ligar__linha')).toHaveClass('at-ligar__fora')
+  expect(container.querySelector('.at-claude__cab')).toHaveClass('at-ligar__fora')
+})
+
+test('foco: com o site aberto, o site acende ("É aqui") e o plano B do navegador só aparece depois de 1 minuto', async () => {
+  const f = criarLigarContasFixture()
+  montar(f)
+  await espera()
+  await userEvent.click(screen.getByRole('button', { name: 'Ligar o GitHub' }))
+  expect(await screen.findByText(/Este é o site do GitHub, aberto dentro do Atlas/)).toBeInTheDocument()
+  expect(document.querySelector('.at-ligar__site')).toHaveClass('at-ligar__site--aceso')
+  expect(screen.getByText(/campo aceso/)).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Abrir no meu navegador/ })).not.toBeInTheDocument()
+  f.confirmar('github')
+  expect(await screen.findByText('Ligado como ze-barbearia')).toBeInTheDocument()
+  expect(screen.getByRole('note')).toHaveTextContent('GitHub ligado! Agora o Supabase.')
+  expect(screen.getByRole('button', { name: 'Ligar o Supabase' }).closest('.at-ligar__linha')).toHaveClass('at-ligar__alvo')
+})

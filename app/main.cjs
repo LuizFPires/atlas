@@ -543,6 +543,7 @@ const navegador = criarNavegador({
       voltar: () => { if (wc.navigationHistory.canGoBack()) wc.navigationHistory.goBack() },
       recarregar: () => wc.reload(),
       capturar: async () => (await wc.capturePage()).toPNG(),
+      inserirCSS: (css) => { void wc.insertCSS(String(css)).catch(() => {}) },
       destruir: () => { try { janelaPrincipal?.contentView.removeChildView(v) } catch { /* janela já fechou */ } wc.close() },
     }
   },
