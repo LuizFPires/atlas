@@ -9,7 +9,7 @@ import { type ArmazemPrototipos, guardarTelasDoProjeto } from './prototipo-link.
 import { ErroRegra, type Deps } from './tipos.ts'
 import { motivoDaLicenca, verificar } from './verificar.ts'
 
-export const TIPOS_PEDIDO = ['obra_nova', 'ajuste', 'aprovar_telas', 'nome', 'construir', 'pausar', 'continuar', 'foto_ajuda'] as const
+export const TIPOS_PEDIDO = ['obra_nova', 'ajuste', 'aprovar_telas', 'nome', 'construir', 'pausar', 'continuar', 'foto_ajuda', 'testar', 'entrevistar'] as const
 export type TipoPedido = (typeof TIPOS_PEDIDO)[number]
 export const FASES = ['na_fila', 'desenhando', 'telas_prontas', 'ajustando', 'pensando_nomes', 'nomes_prontos', 'pronto_para_construir', 'construindo', 'erro'] as const
 export type FaseProjeto = (typeof FASES)[number]
@@ -36,6 +36,8 @@ export interface ProjetoCelular {
   telas_token: string | null
   atualizado_em: Date
 }
+/** Testar a ideia (28/11/2026): o resumo que o notebook publica de uma obra (testes, relatórios, a Praça, entrevistas). */
+export interface TesteCelular { obra_id: string; dados: Record<string, unknown>; atualizado_em: Date }
 export interface Referencia { licenca_id: string; imagem: string; criada_em: Date }
 
 /** Porta do armazenamento do canal (tabelas celular_* e pasta privada "referencias"). Sempre filtrada pela licença. */
@@ -49,6 +51,8 @@ export interface CanalCelular {
   responder(licencaId: string, id: string, estado: 'feito' | 'erro', mensagem: string): Promise<boolean>
   pedidosRecentes(licencaId: string, limite: number): Promise<Pedido[]>
   salvarProjeto(licencaId: string, p: ProjetoCelular): Promise<void>
+  salvarTeste(licencaId: string, t: TesteCelular): Promise<void>
+  testes(licencaId: string): Promise<TesteCelular[]>
   projetos(licencaId: string): Promise<ProjetoCelular[]>
   guardarReferencia(id: string, r: Referencia): Promise<void>
   contarReferencias(licencaId: string): Promise<number>
@@ -62,6 +66,9 @@ export const REENTREGA_MS = 10 * 60_000
 export const MAX_ABERTOS = 20
 export const MAX_REFERENCIAS = 6
 export const MAX_IMAGEM_BYTES = 2 * 1024 * 1024
+export const MAX_TESTE_BYTES = 60_000
+export const QUANTIDADES_TESTE = [100, 250, 500, 1000]
+const AGENTE_RE = /^a\d{4}$/
 const OBRA_RE = /^[\w.-]{1,64}$/
 const ID_RE = /^[0-9a-f]{32}$/
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/
@@ -124,8 +131,36 @@ async function validarDados(canal: CanalCelular, licencaId: string, tipo: TipoPe
       if (typeof r !== 'string' || !ID_RE.test(r) || !(await canal.referenciaExiste(licencaId, r))) throw invalido()
       return { referencia: r }
     }
+    // Testar a ideia (28/11/2026): quantos agentes e se usa os mesmos do último teste; entrevista a um agente de um teste.
+    case 'testar': {
+      if (!QUANTIDADES_TESTE.includes(dados.quantidade as number)) throw invalido()
+      return { quantidade: dados.quantidade, mesmos: dados.mesmos === true }
+    }
+    case 'entrevistar': {
+      const n = dados.teste
+      if (typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > 9999 || typeof dados.agente !== 'string' || !AGENTE_RE.test(dados.agente)) throw invalido()
+      return { teste: n, agente: dados.agente, pergunta: textoLivre(dados.pergunta, 1, 400) }
+    }
     default: return {}
   }
+}
+
+/** Só JSON simples, com texto limpo e tamanhos limitados: o resumo do teste é lido pelo celular como dado, nunca como código. */
+const CHAVE_RE = /^[\p{L}\p{N} _.-]{1,40}$/u
+export function limparJson(x: unknown, fundo = 0): unknown {
+  if (fundo > 7) throw invalido()
+  if (x === null || typeof x === 'boolean') return x
+  if (typeof x === 'number') { if (!Number.isFinite(x)) throw invalido(); return x }
+  if (typeof x === 'string') return limparTexto(x, 700)
+  if (Array.isArray(x)) { if (x.length > 160) throw invalido(); return x.map((v) => limparJson(v, fundo + 1)) }
+  if (typeof x === 'object') {
+    const e = Object.entries(x as Record<string, unknown>)
+    if (e.length > 160) throw invalido()
+    const o: Record<string, unknown> = {}
+    for (const [k, v] of e) { if (!CHAVE_RE.test(k) || k === '__proto__' || k === 'constructor' || k === 'prototype') throw invalido(); o[k] = limparJson(v, fundo + 1) }
+    return o
+  }
+  throw invalido()
 }
 
 const pedidoParaFora = (p: Pedido) => ({ id: p.id, tipo: p.tipo, obra_id: p.obra_id, estado: p.estado, mensagem: p.mensagem, criado_em: p.criado_em.toISOString() })
@@ -136,12 +171,13 @@ const projetoParaFora = (p: ProjetoCelular) => ({ ...p, atualizado_em: p.atualiz
 export async function estadoDoCelular(d: DepsPortal, canal: CanalCelular | undefined, jwt: string) {
   if (!canal) throw indisponivel()
   const lic = await licencaDoCelular(d, jwt)
-  const [s, projetos, pedidos] = await Promise.all([canal.ultimoSinal(lic.id), canal.projetos(lic.id), canal.pedidosRecentes(lic.id, 30)])
+  const [s, projetos, pedidos, testes] = await Promise.all([canal.ultimoSinal(lic.id), canal.projetos(lic.id), canal.pedidosRecentes(lic.id, 30), canal.testes(lic.id)])
   const ligado = !!s && d.agora().getTime() - s.visto_em.getTime() <= LIGADO_MS
   return {
     computador: { ligado, visto_em: s ? s.visto_em.toISOString() : null, ocupado: ligado ? s!.ocupado : null },
     projetos: projetos.map(projetoParaFora),
     pedidos: pedidos.map(pedidoParaFora),
+    testes: testes.map((t) => ({ ...t.dados, obra_id: t.obra_id, atualizado_em: t.atualizado_em.toISOString() })),
   }
 }
 
@@ -232,6 +268,18 @@ export async function publicarProjeto(d: Deps, canal: CanalCelular | undefined, 
   }
   await canal.salvarProjeto(lic, { ...base, telas_token, atualizado_em: d.agora() })
   return { ok: true, telas_token }
+}
+
+/** Testar a ideia: o notebook publica o resumo dos testes de uma obra (substitui o anterior). */
+export async function publicarTeste(d: Deps, canal: CanalCelular | undefined, a: Auth & { obra_id: unknown; teste: unknown }) {
+  if (!canal) throw indisponivel()
+  const lic = await licencaDoComputador(d, a)
+  if (typeof a.obra_id !== 'string' || !OBRA_RE.test(a.obra_id) || !a.teste || typeof a.teste !== 'object' || Array.isArray(a.teste)) throw invalido()
+  const dados = limparJson(a.teste) as Record<string, unknown>
+  if (new TextEncoder().encode(JSON.stringify(dados)).length > MAX_TESTE_BYTES) throw invalido('O resumo do teste ficou grande demais.')
+  if (!(await d.store.tentarEvento(`celular-teste:${lic}`, 900, 60 * 60_000, d.agora()))) throw new ErroRegra('muitas_solicitacoes', 'Muitas atualizações seguidas. Espere uns 10 minutos e tente de novo.', 429)
+  await canal.salvarTeste(lic, { obra_id: a.obra_id, dados, atualizado_em: d.agora() })
+  return { ok: true }
 }
 
 export async function baixarReferencia(d: Deps, canal: CanalCelular | undefined, a: Auth & { id: unknown }) {

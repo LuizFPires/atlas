@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas no celular · Testar a ideia (protótipo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#141619;--card:#1E2125;--cardB:#2C3036;--card2:#22262B;--text:#EDEFEA;--mute:#B4BBB2;--mute2:#8E968C;--lime:#C6F135;--onLime:#141619;--line:#2A2E33;--soft:#2A3A12;--aviso:#F2B14A;--az:#4C8DFF;--vm:#FF5A4E;--dv:#5A6058}
+*{box-sizing:border-box}
+button,input,label{font-family:inherit}
+body{margin:0;background:#0B0C0D;color:var(--text);font-family:Geist,system-ui,sans-serif;display:flex;gap:28px;justify-content:center;align-items:flex-start;padding:28px 20px;min-height:100vh;flex-wrap:wrap}
+.guia{width:300px;display:flex;flex-direction:column;gap:10px}
+.guia h1{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}
+.guia p{margin:0;color:var(--mute);font-size:14px;line-height:1.5}
+.guia button{all:unset;cursor:pointer;display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;border:1px solid var(--cardB);background:var(--card);font-size:14px}
+.guia button i{font:600 11px 'Geist Mono',ui-monospace,monospace;font-style:normal;color:var(--mute2);width:18px}
+.guia button[aria-pressed=true]{border-color:var(--lime);background:var(--soft)}
+.guia .marca{font-size:12px;color:var(--mute2);line-height:1.5}
+.fone{width:390px;height:844px;border-radius:52px;border:10px solid #000;outline:1px solid #2a2a2a;background:var(--bg);position:relative;overflow:hidden;flex:none;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.status{height:50px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 30px 6px;font:600 15px Geist,system-ui,sans-serif;flex:none}
+.ilha{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:120px;height:34px;border-radius:20px;background:#000;z-index:9}
+.tela{position:absolute;inset:50px 0 0;display:flex;flex-direction:column}
+.tela[hidden]{display:none}
+.rolo{flex:1;overflow:auto;padding:6px 20px 20px;display:flex;flex-direction:column;gap:14px}
+.rolo::-webkit-scrollbar{display:none}
+.topo{display:flex;align-items:center;gap:12px;padding:8px 20px 4px}
+.voltar{width:44px;height:44px;border-radius:22px;border:0;background:var(--card);color:var(--text);display:grid;place-items:center;cursor:pointer;flex:none}
+.rot{font:500 12px 'Geist Mono',monospace;letter-spacing:.12em;color:var(--mute2);text-transform:uppercase}
+.tit{margin:0;font-size:26px;line-height:1.15;letter-spacing:-.02em}
+.txt{margin:0;font-size:15px;line-height:1.5;color:var(--mute)}
+.nota{font-size:12px;line-height:1.45;color:var(--mute2)}
+.card{background:var(--card);border:1px solid var(--cardB);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.card.lime{border-color:var(--lime)}
+.aviso{background:#3A2C10;border:1px solid var(--aviso);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.5;display:flex;gap:10px}
+.aviso .i{flex:none;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--aviso);color:var(--aviso);display:grid;place-items:center;font-weight:700;font-size:13px}
+.botao{height:56px;border-radius:12px;border:0;background:var(--lime);color:var(--onLime);font:700 17px Geist,system-ui,sans-serif;cursor:pointer;width:100%}
+.botao.sec{background:transparent;color:var(--text);border:1px solid var(--cardB)}
+.rodape{padding:12px 20px 30px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tags span{font:600 10px 'Geist Mono',ui-monospace,monospace;letter-spacing:.06em;padding:5px 8px;border-radius:999px;border:1px solid var(--cardB);color:var(--mute)}
+.bol{width:44px;height:44px;border-radius:22px;display:grid;place-items:center;flex:none;background:var(--soft);color:var(--lime)}
+.linha{display:flex;align-items:center;gap:14px}
+/* menu de baixo — o 3º item agora no padrão dos vizinhos */
+.menu{display:flex;justify-content:space-around;padding:10px 12px 28px;border-top:1px solid var(--line);background:#101214;flex:none}
+.menu button,.menu label{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:4px;font:500 12px Geist,system-ui,sans-serif;color:var(--mute);min-width:72px;padding:4px;cursor:pointer;white-space:nowrap}
+.menu .on{color:var(--lime)}
+.menu .novo-ic{position:relative}
+.novidade{position:absolute;top:-2px;right:-6px;width:8px;height:8px;border-radius:50%;background:var(--lime)}
+/* obras */
+.card.notebook{flex-direction:row;align-items:center;gap:14px}
+.obra{background:var(--card);border:1px solid var(--cardB);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;cursor:pointer}
+.obra b{font-size:17px}
+.selo{align-self:flex-start;font:600 12px 'Geist Mono',ui-monospace,monospace;padding:6px 10px;border-radius:999px;background:var(--soft);color:var(--lime)}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.mini-teste{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--card2);font-size:13px;color:var(--mute)}
+.mini-teste b{color:var(--az);font:600 15px 'Geist Mono',ui-monospace,monospace}
+/* quantidade */
+.qtd{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.q{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:3px;padding:12px;border-radius:12px;border:1px solid var(--cardB);background:var(--card2);font-size:12px;color:var(--mute)}
+.q b{font:600 24px 'Geist Mono',ui-monospace,monospace;color:var(--text)}
+.q[aria-checked=true]{border-color:var(--lime);background:var(--soft)}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4}
+.chk input{width:20px;height:20px;accent-color:var(--lime);flex:none;margin:0}
+/* ao vivo */
+.praca{position:relative;height:300px;border-radius:16px;overflow:hidden;background:radial-gradient(120% 90% at 50% 55%,#1b1f22 0%,#0e1012 70%);border:1px solid var(--cardB);flex:none}
+.praca canvas{position:absolute;inset:0;width:100%;height:100%}
+.hud{position:absolute;left:12px;top:10px;font:600 10px 'Geist Mono',ui-monospace,monospace;letter-spacing:.06em;color:#9AA197}
+.hud b{display:block;font-size:24px;color:#EDEFEA}
+.calorbt{position:absolute;right:10px;top:10px;font:600 10px 'Geist Mono',ui-monospace,monospace;text-transform:uppercase;letter-spacing:.06em;padding:7px 10px;border-radius:999px;border:1px solid rgba(237,239,234,.2);background:rgba(14,16,18,.8);color:#EDEFEA;cursor:pointer}
+.calorbt[aria-pressed=true]{border-color:var(--lime);color:var(--lime)}
+.leg{position:absolute;left:12px;bottom:8px;display:flex;gap:10px;font-size:11px;color:#9AA197}
+.leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.fases{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;font-size:14px;color:var(--mute2)}
+.fases li{display:flex;gap:10px;align-items:center}
+.fases i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:600 10px 'Geist Mono',ui-monospace,monospace;font-style:normal;border:1px solid var(--cardB)}
+.fases .feito i{background:var(--lime);color:var(--onLime);border-color:var(--lime)} .fases .feito{color:var(--mute)}
+.fases .agora{color:var(--text)} .fases .agora i{border-color:var(--lime);color:var(--lime)}
+.placar{display:grid;grid-template-columns:repeat(3,1fr);text-align:center}
+.placar b{display:block;font:600 24px 'Geist Mono',ui-monospace,monospace}
+.placar span{font-size:12px;color:var(--mute)}
+.feed{display:flex;flex-direction:column;gap:6px}
+.fala{padding:9px 11px;border-radius:12px;background:var(--card2);border-left:3px solid var(--dv);font-size:14px;line-height:1.4;animation:entra .4s ease}
+.fala.az{border-left-color:var(--az)} .fala.vm{border-left-color:var(--vm)}
+@keyframes entra{from{opacity:0;transform:translateY(-4px)}}
+/* relatório */
+.ver{display:flex;gap:14px;align-items:center}
+.anel{flex:none;width:96px;height:96px;border-radius:50%;background:conic-gradient(var(--az) 63%,var(--card2) 0);display:grid;place-items:center}
+.anel div{width:74px;height:74px;border-radius:50%;background:var(--card);display:grid;place-items:center;text-align:center}
+.anel b{display:block;font:600 22px/1 'Geist Mono',ui-monospace,monospace} .anel small{font-size:10px;color:var(--mute)}
+.hist{display:flex;gap:6px;align-items:flex-end;height:96px}
+.hist div{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
+.hist i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:var(--card2);border:1px solid var(--cardB)}
+.hist i.on{background:var(--lime);border-color:var(--lime)}
+.hist span{font:500 9px/1.1 'Geist Mono',ui-monospace,monospace;color:var(--mute);text-align:center}
+.it{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:10px;border-radius:12px;background:var(--card2);border-left:3px solid currentColor}
+.it b,.it q{color:var(--text)} .it span{font:600 13px 'Geist Mono',ui-monospace,monospace} .it q{grid-column:1/-1;quotes:none;font-size:13px;color:var(--mute)}
+.az{color:var(--az)} .vm{color:var(--vm)}
+.dims{display:flex;gap:6px;overflow-x:auto}
+.dims button{flex:none;padding:7px 12px;border-radius:999px;border:1px solid var(--cardB);background:var(--card2);color:var(--mute);font:600 13px Geist,system-ui,sans-serif;cursor:pointer}
+.dims button[aria-pressed=true]{border-color:var(--lime);color:var(--text);background:var(--soft)}
+.duelo{display:flex;flex-direction:column;gap:5px}
+.duelo .cab{display:flex;justify-content:space-between;font-size:14px}
+.duelo .cab small{color:var(--mute);font-size:11px;margin-left:6px}
+.duelo .db{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--card2)}
+.duelo .nums{display:flex;justify-content:space-between;font:600 12px 'Geist Mono',ui-monospace,monospace}
+.duelo.poucos{opacity:.5}
+.ag{all:unset;cursor:pointer;display:grid;grid-template-columns:38px 1fr auto;gap:10px;align-items:center;padding:10px;border-radius:12px;border:1px solid var(--cardB);background:var(--card2);font-size:12px;color:var(--mute)}
+.ag b{display:block;color:var(--text);font-size:15px}
+.av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font:600 15px 'Geist Mono',ui-monospace,monospace;color:#fff;background:var(--dv)}
+.av.az{background:var(--az);color:#fff} .av.vm{background:var(--vm);color:#fff}
+.sl{font:600 10px 'Geist Mono',ui-monospace,monospace;padding:5px 7px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.sug{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:12px;border-radius:12px;border:1px solid var(--cardB);background:var(--card2);font-size:13px;line-height:1.45;color:var(--mute);cursor:pointer}
+.sug b{display:block;color:var(--text);font-size:15px}
+.sug input{width:20px;height:20px;accent-color:var(--lime);margin:0}
+.sug.sel{border-color:var(--lime);background:var(--soft)}
+.feito{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5}
+.ok{flex:none;width:26px;height:26px;border-radius:50%;background:var(--lime);color:var(--onLime);display:grid;place-items:center;font-weight:700}
+/* entrevista (folha de baixo) */
+.folha{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,.5)}
+.folha[hidden]{display:none}
+.folha-in{height:88%;background:#191C1F;border-radius:24px 24px 0 0;border-top:1px solid var(--cardB);display:flex;flex-direction:column;padding:10px 16px 26px;gap:10px;animation:sobe .25s ease}
+@keyframes sobe{from{transform:translateY(40px);opacity:.4}}
+.alca{width:40px;height:5px;border-radius:3px;background:var(--cardB);align-self:center}
+.tips{display:flex;gap:6px;overflow-x:auto;flex:none}
+.tip{flex:none;display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;border:1px solid var(--cardB);background:var(--card2);color:var(--mute);font:600 13px Geist,system-ui,sans-serif;cursor:pointer}
+.tip i{width:8px;height:8px;border-radius:50%;background:var(--dv)} .tip.az i{background:var(--az)} .tip.vm i{background:var(--vm)}
+.tip[aria-selected=true]{border-color:var(--lime);color:var(--text);background:var(--soft)}
+.tip.mais{border-style:dashed}
+.chat{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:86%;padding:9px 12px;border-radius:14px;font-size:15px;line-height:1.45;background:var(--card2)}
+.msg small{display:block;font:600 10px 'Geist Mono',ui-monospace,monospace;color:var(--mute2);text-transform:uppercase;margin-bottom:2px}
+.msg.eu{align-self:flex-end;background:var(--soft);border:1px solid var(--lime)}
+.chips{display:flex;gap:6px;overflow-x:auto;flex:none}
+.chips button{flex:none;padding:7px 11px;border-radius:999px;border:1px solid var(--cardB);background:transparent;color:var(--text);font:500 13px Geist,system-ui,sans-serif;cursor:pointer}
+.entrada{display:flex;gap:8px;align-items:center;flex:none}
+.entrada input{flex:1;height:48px;border-radius:24px;border:1px solid var(--cardB);background:#16181B;color:var(--text);padding:0 16px;font:400 15px Geist,system-ui,sans-serif}
+.mic{width:48px;height:48px;border-radius:24px;border:0;background:var(--lime);color:var(--onLime);display:grid;place-items:center;cursor:pointer;flex:none}
+.busca{height:44px;border-radius:12px;border:1px solid var(--cardB);background:#16181B;color:var(--text);padding:0 14px;font:400 14px Geist,system-ui,sans-serif}
+.cmp{display:flex;gap:14px;align-items:center}
+.cmp small{display:block;font:600 10px 'Geist Mono',ui-monospace,monospace;color:var(--mute)} .cmp b{font:600 28px 'Geist Mono',ui-monospace,monospace}
+.ht{background:var(--card);border:1px solid var(--cardB);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.ht.on{border-color:var(--lime)}
+.ht .n{display:flex;justify-content:space-between} .ht .n span{font:500 12px 'Geist Mono',ui-monospace,monospace;color:var(--mute)}
+.push{position:absolute;top:56px;left:10px;right:10px;z-index:30;background:rgba(40,43,47,.96);border-radius:18px;padding:12px 14px;display:flex;gap:10px;align-items:center;font-size:13px;line-height:1.35;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:desce .4s ease;cursor:pointer}
+.push[hidden]{display:none}
+.push .lg{width:36px;height:36px;border-radius:9px;background:#141619;display:grid;place-items:center;flex:none}
+@keyframes desce{from{transform:translateY(-30px);opacity:0}}
+</style>
+</head>
+<body>
+<div class="guia">
+  <h1>Testar a ideia · no celular</h1>
+  <p>O teste roda no notebook (como a obra). O celular começa, acompanha a Praça ao vivo, lê o relatório, entrevista os agentes e pede a revisão do protótipo.</p>
+  <button data-ir="obras"><i>1</i>Minhas obras · menu de baixo corrigido</button>
+  <button data-ir="aprovar"><i>2</i>Logo depois de aprovar as telas</button>
+  <button data-ir="qtd"><i>3</i>Quantas pessoas</button>
+  <button data-ir="vivo"><i>4</i>Ao vivo (Praça)</button>
+  <button data-ir="rel"><i>5</i>Relatório</button>
+  <button data-ir="entrevista"><i>6</i>Entrevista (folha de baixo)</button>
+  <button data-ir="testes"><i>7</i>Testes salvos e comparação</button>
+  <p class="marca">Tudo é clicável dentro do celular. No menu de baixo, “Foto para a Ajuda” agora segue o padrão de Obras e Nova obra: ícone em cima, nome embaixo.</p>
+</div>
+
+<div class="fone">
+  <div class="ilha"></div>
+  <div class="status"><span>07:34</span><span>●●● ⌁ 91</span></div>
+  <div class="push" id="push" hidden data-ir="rel"><span class="lg"><svg width="22" height="14" viewBox="0 0 34 19"><path d="M2 18 L17 2 L32 18" fill="none" stroke="#C6F135" stroke-width="4"/><path d="M9 18 L17 10 L25 18" fill="none" stroke="#C6F135" stroke-width="4"/></svg></span><span><b>Atlas · Ponto</b><br>O teste da ideia ficou pronto: 63% dos agentes usariam. Toque para ver.</span></div>
+
+  <!-- 1 OBRAS -->
+  <section class="tela" id="obras">
+    <div class="rolo" style="padding-top:14px">
+      <div class="linha" style="gap:8px;font:700 18px Geist,system-ui,sans-serif;letter-spacing:.08em"><svg width="34" height="19" viewBox="0 0 34 19"><path d="M2 18 L17 2 L32 18" fill="none" stroke="#C6F135" stroke-width="4"/><path d="M9 18 L17 10 L25 18" fill="none" stroke="#C6F135" stroke-width="4"/></svg>ATLAS</div>
+      <div><div class="rot">Olá, Luiz</div><h1 class="tit" style="font-size:32px">Minhas obras</h1></div>
+      <div class="card notebook"><span class="bol"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span><div style="flex:1"><b>Notebook do escritório</b><div class="txt" style="font-size:13px">● Ligado · trabalhando</div></div></div>
+      <div class="obra" data-ir="testes">
+        <div class="linha" style="justify-content:space-between"><b>Ponto</b><span class="selo">PROTÓTIPO V3</span></div>
+        <span class="txt" style="font-size:14px">Telas aprovadas. Pronto para a obra.</span>
+        <div class="mini-teste"><b>63%</b><div style="flex:1"><div class="bar"><i style="width:63%;background:var(--az)"></i><i style="width:31%;background:var(--vm);margin-left:auto"></i></div></div><span>teste 1</span></div>
+        <span class="nota">Testar a ideia · 500 agentes de IA · toque para ver</span>
+      </div>
+    </div>
+    <nav class="menu">
+      <button class="on"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>Obras</button>
+      <button><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Nova obra</button>
+      <label><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>Foto para a Ajuda</label>
+      <button><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>Sair</button>
+    </nav>
+  </section>
+
+  <!-- 2 APROVAR -->
+  <section class="tela" id="aprovar" hidden>
+    <div class="topo"><button class="voltar" data-ir="obras">‹</button><span class="rot">Ponto · telas aprovadas</span></div>
+    <div class="rolo">
+      <h1 class="tit">Pronto para a obra.</h1>
+      <div class="card"><span class="rot">O que vai ser construído · 8 etapas</span><span class="txt" style="font-size:14px">Base e login · Bater ponto · Minhas horas · Equipe · Obras · Folha · Ajustes · Perfil</span><span class="nota">≈ 2 dias no seu plano Pro, com pausas da cota.</span></div>
+      <div class="card lime">
+        <span class="rot" style="color:var(--lime)">O Atlas sugere · antes de construir</span>
+        <b style="font-size:20px;line-height:1.25">Quer ver como 500 clientes reagem ao Ponto?</b>
+        <canvas id="cvMini" style="width:100%;height:120px;border-radius:12px;background:#0e1012"></canvas>
+        <span class="txt" style="font-size:14px">O notebook cria 500 pessoas diferentes, mostra as telas para cada uma e conta o que acharam: o que agradou, o que incomodou e quanto pagariam.</span>
+        <div class="tags"><span>≈ 25 MIN</span><span>USA A SUA COTA</span><span>PODE BLOQUEAR O CELULAR</span></div>
+        <span class="nota">São agentes de IA, não pessoas reais: um termômetro, não pesquisa de mercado. O Atlas não recomenda nem garante nada.</span>
+      </div>
+    </div>
+    <div class="rodape"><button class="botao" data-ir="qtd">Testar a ideia →</button><button class="botao sec">Construir direto</button></div>
+  </section>
+
+  <!-- 3 QUANTIDADE -->
+  <section class="tela" id="qtd" hidden>
+    <div class="topo"><button class="voltar" data-ir="aprovar">‹</button><span class="rot">Ponto · testar a ideia</span></div>
+    <div class="rolo">
+      <h1 class="tit">Quantas pessoas vão testar?</h1>
+      <div class="qtd" id="qtdOps">
+        <button class="q" aria-checked="false" data-q="100"><b>100</b>rápido · ≈ 6 min</button>
+        <button class="q" aria-checked="false" data-q="250"><b>250</b>≈ 13 min</button>
+        <button class="q" aria-checked="true" data-q="500"><b>500</b>recomendado · ≈ 25 min</button>
+        <button class="q" aria-checked="false" data-q="1000"><b>1.000</b>máximo · ≈ 50 min</button>
+      </div>
+      <span class="nota" id="notaMil" hidden>1.000 traz mais variedade de falas, mas gasta o dobro da cota de 500. Os números mudam pouco.</span>
+      <label class="chk"><input type="checkbox" checked>Usar os mesmos agentes do teste 1 (para comparar de forma justa)</label>
+      <div class="aviso"><span class="i">!</span><span><b>Usa a sua cota do Claude.</b> Se ela acabar no meio, o teste pausa e continua sozinho. O notebook precisa ficar ligado com o Atlas aberto. Quando terminar, o Atlas avisa aqui no celular.</span></div>
+      <span class="nota">São agentes de IA, não pessoas reais. Serve como termômetro, não como pesquisa de mercado.</span>
+    </div>
+    <div class="rodape"><button class="botao" id="comecar" data-ir="vivo">Começar com 500 pessoas →</button></div>
+  </section>
+
+  <!-- 4 AO VIVO -->
+  <section class="tela" id="vivo" hidden>
+    <div class="topo"><button class="voltar" data-ir="obras">‹</button><span class="rot">Ponto · teste 2 · ao vivo</span></div>
+    <div class="rolo">
+      <div class="praca"><canvas id="cv"></canvas><div class="hud"><span id="hudF">CONVERSANDO · RODADA 3 DE 6</span><b id="hudN">500</b><span>DE 500 PESSOAS</span></div><button class="calorbt" id="calor" aria-pressed="false">Mapa por grupo</button><div class="leg"><span><i style="background:var(--az)"></i>usaria</span><span><i style="background:var(--vm)"></i>não</span><span><i style="background:#7E857C"></i>pensando</span></div></div>
+      <div class="placar"><div><b class="az" id="pA">0</b><span>usariam</span></div><div><b class="vm" id="pV">0</b><span>não usariam</span></div><div><b id="pP">0</b><span>em dúvida</span></div></div>
+      <div class="bar"><i id="bA" style="background:var(--az);width:0"></i><i id="bV" style="background:var(--vm);width:0;margin-left:auto"></i></div>
+      <ol class="fases"><li class="feito"><i>✓</i>Criando 500 pessoas diferentes</li><li class="feito"><i>✓</i>Mostrando as telas para cada uma</li><li class="agora"><i>3</i>A conversa: postam, comentam, discutem</li><li><i>4</i>Montando o relatório</li></ol>
+      <span class="rot">O que elas estão dizendo</span>
+      <div class="feed" id="feed"></div>
+      <span class="nota">Quem está fazendo o teste é o notebook. Pode bloquear o celular: o Atlas avisa quando ficar pronto.</span>
+    </div>
+    <div class="rodape"><button class="botao sec" id="simPronto">Simular “ficou pronto” (aviso no celular)</button></div>
+  </section>
+
+  <!-- 5 RELATÓRIO -->
+  <section class="tela" id="rel" hidden>
+    <div class="topo"><button class="voltar" data-ir="testes">‹</button><span class="rot">Ponto · teste 2 · salvo</span></div>
+    <div class="rolo">
+      <h1 class="tit">O que 488 agentes de IA acharam do Ponto</h1>
+      <div class="aviso"><span class="i">!</span><span><b>Isto é um termômetro, não uma pesquisa de mercado.</b> São agentes de IA, não pessoas reais. Use para achar problemas e ideias antes de construir. O Atlas não recomenda nem garante nada.</span></div>
+      <div class="card"><span class="rot">O termômetro</span><div class="ver"><div class="anel"><div><span><b>63%</b><small>usariam</small></span></div></div><div style="display:flex;flex-direction:column;gap:4px"><b style="font-size:17px;line-height:1.25">Mais a favor do que contra.</b><span class="txt" style="font-size:13px">305 usariam, 155 não, 28 em dúvida. Quem mais gostou: Mestre de obras (80%).</span></div></div><span class="nota">Depois da conversa, 38 mudaram de ideia (27 passaram a gostar).</span></div>
+      <div class="card"><span class="rot">Quanto pagariam por mês</span><div class="hist"><div><i style="height:30%"></i><span>R$ 0</span></div><div><i style="height:52%"></i><span>até 19</span></div><div><i class="on" style="height:100%"></i><span>até 29</span></div><div><i style="height:64%"></i><span>até 49</span></div><div><i style="height:22%"></i><span>+49</span></div></div><span class="nota">O mais escolhido: até R$ 29. Hoje o Ponto está em R$ 49.</span></div>
+      <div class="card"><span class="rot">Pontos fortes</span><div class="it az"><b>Bater ponto com foto</b><span>212</span><q>“Acaba a briga de quem chegou atrasado.” · Marta, 41</q></div><div class="it az"><b>Horas prontas para a folha</b><span>174</span></div></div>
+      <div class="card"><span class="rot">Pontos fracos</span><div class="it vm"><b>Sem internet na obra</b><span>141</span><q>“No meu canteiro o sinal some.” · Raimundo, 58</q></div><div class="it vm"><b>Caro para equipe pequena</b><span>117</span></div></div>
+      <div class="card"><span class="rot">Quem gostou, por tipo</span><div class="dims" id="dims"></div><div id="duelos" style="display:flex;flex-direction:column;gap:12px"></div><span class="nota">Linhas apagadas têm menos de 20 agentes.</span></div>
+      <div class="card"><span class="rot">Entreviste um agente</span>
+        <button class="ag" data-agente="0"><span class="av vm">R</span><span><b>Raimundo, 58</b>empreiteiro · Betim</span><span class="sl vm">CONTRA</span></button>
+        <button class="ag" data-agente="1"><span class="av az">M</span><span><b>Marta, 41</b>mestre de obras · Contagem</span><span class="sl az">FÃ</span></button>
+        <button class="ag" data-agente="2"><span class="av az">R</span><span><b>Renato, 55</b>dono de construtora</span><span class="sl" style="color:var(--lime)">MUDOU</span></button>
+        <button class="ag" data-agente="lista" style="border-style:dashed"><span class="av">+</span><span><b>Procurar outro agente</b>nome, profissão ou opinião</span><span></span></button>
+      </div>
+      <div class="card" id="ideias"><span class="rot">Ideias para o protótipo</span><span class="nota">Marque as que você quer. A decisão é sua.</span>
+        <label class="sug sel"><input type="checkbox" checked><span><b>Bater ponto sem internet</b>Guarda no celular e envia quando o sinal voltar. (141 agentes)</span></label>
+        <label class="sug sel"><input type="checkbox" checked><span><b>Plano para equipe pequena</b>Até 5 pessoas por R$ 29. (117 agentes)</span></label>
+        <label class="sug"><input type="checkbox"><span><b>Ponto pelo encarregado</b>Para quem não tem celular bom.</span></label>
+        <div class="entrada"><input placeholder="Outra mudança sua (fale ou escreva)"><button class="mic" aria-label="Falar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div>
+      </div>
+      <div class="card" id="revisando" hidden><div class="feito"><span class="ok">✓</span><span><b>O notebook está revisando o protótipo.</b> Vai virar a versão 4, com as ideias marcadas. A versão 3 continua guardada. O Atlas avisa aqui quando ela estiver pronta para você aprovar.</span></div></div>
+    </div>
+    <div class="rodape"><button class="botao" id="revisar">Revisar o protótipo com 2 ideias →</button></div>
+  </section>
+
+  <!-- 7 TESTES SALVOS -->
+  <section class="tela" id="testes" hidden>
+    <div class="topo"><button class="voltar" data-ir="obras">‹</button><span class="rot">Ponto · testar a ideia</span></div>
+    <div class="rolo">
+      <h1 class="tit">Seus testes</h1>
+      <div class="card"><span class="rot">Comparar · teste 1 × teste 2</span><div class="cmp"><div><small>TESTE 1 · V3</small><b>61%</b></div><span style="color:var(--mute)">→</span><div><small>TESTE 2 · V4</small><b class="az">72%</b></div></div>
+        <div class="it az"><b>“Sem internet na obra”</b><span>141 → 22</span></div><div class="it az"><b>“Caro para equipe pequena”</b><span>117 → 41</span></div><div class="it vm"><b>“Caro para equipe grande” (novo)</b><span>0 → 37</span></div>
+        <span class="nota">Os mesmos 500 agentes nos dois testes. Mesmo assim, diferenças pequenas podem ser só variação da IA.</span></div>
+      <div class="ht on" data-ir="rel"><div class="n"><b>Teste 2</b><span>hoje, 08:10</span></div><div class="tags"><span>PROTÓTIPO V4</span><span>500 AGENTES</span></div><div class="bar"><i style="width:72%;background:var(--az)"></i><i style="width:20%;background:var(--vm);margin-left:auto"></i></div><span class="txt" style="font-size:13px">Mais citado contra: <b style="color:var(--text)">caro para equipe grande</b></span></div>
+      <div class="ht" data-ir="rel"><div class="n"><b>Teste 1</b><span>27/11, 18:02</span></div><div class="tags"><span>PROTÓTIPO V3</span><span>500 AGENTES</span></div><div class="bar"><i style="width:61%;background:var(--az)"></i><i style="width:31%;background:var(--vm);margin-left:auto"></i></div><span class="txt" style="font-size:13px">Mais citado contra: <b style="color:var(--text)">sem internet na obra</b></span></div>
+    </div>
+    <div class="rodape"><button class="botao" data-ir="qtd">+ Novo teste</button></div>
+  </section>
+
+  <!-- 6 ENTREVISTA -->
+  <div class="folha" id="folha" hidden>
+    <div class="folha-in">
+      <div class="alca"></div>
+      <div class="linha" style="justify-content:space-between"><span class="rot">Entrevistas · teste 2</span><button class="voltar" id="fecharFolha" style="width:36px;height:36px">✕</button></div>
+      <div class="tips" id="tips"></div>
+      <div id="vistaLista" style="display:none;flex-direction:column;gap:8px;flex:1;min-height:0">
+        <input class="busca" placeholder="Procurar por nome, profissão, cidade…">
+        <div class="dims" id="filtros"></div>
+        <div id="listaAg" style="display:flex;flex-direction:column;gap:6px;overflow:auto"></div>
+      </div>
+      <div id="vistaChat" style="display:flex;flex-direction:column;gap:10px;flex:1;min-height:0">
+        <div class="linha" style="gap:10px" id="quem"></div>
+        <div class="chat" id="chat"></div>
+        <div class="chips" id="sugs"></div>
+        <div class="entrada"><input id="campo" placeholder="Pergunte ou fale…"><button class="mic" id="enviar" aria-label="Falar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div>
+      </div>
+      <span class="nota">É um agente de IA fazendo um papel, não uma pessoa real. Fica salvo neste teste.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s)
+let atual = 'obras'
+function ir(id) {
+  if (id === 'entrevista') { ir('rel'); abrirFolha(0); return }
+  document.querySelectorAll('.tela').forEach((t) => (t.hidden = t.id !== id))
+  document.querySelectorAll('.guia button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.ir === id))
+  $('#folha').hidden = true; $('#push').hidden = true
+  atual = id
+  if (id === 'vivo') comecarVivo()
+}
+document.addEventListener('click', (e) => { const el = e.target.closest('[data-ir]'); if (el && !el.disabled) ir(el.dataset.ir) })
+
+// quantidade
+document.querySelectorAll('.q').forEach((b) => b.onclick = () => {
+  document.querySelectorAll('.q').forEach((x) => x.setAttribute('aria-checked', x === b))
+  $('#notaMil').hidden = b.dataset.q !== '1000'
+  $('#comecar').textContent = `Começar com ${Number(b.dataset.q).toLocaleString('pt-BR')} pessoas →`
+})
+
+// ---------- Praça (mesma do computador, em tamanho de celular) ----------
+const N = 140
+const PROF = ['Mestre de obras', 'Dono', 'Pedreiro', 'RH', 'Contador']
+const ags = Array.from({ length: N }, (_, i) => { const g = i % 5; const a = (g / 5) * 6.283 - 3.14 + (((i * 0.618) % 1) * 0.9 + 0.05) * (6.283 / 5); const r = 2.6 + Math.sqrt(((i * 7) % N) / N) * 8.5; return { x: Math.cos(a) * r, y: Math.sin(a) * r, g, r: null, alvo: [0.8, 0.45, 0.3, 0.67, 0.6][g] } })
+let arcos = [], calor = false, tVivo = 0
+function proj(W, H, s, x, y, z) { return [W / 2 + (x - y) * 0.866 * s, H * 0.58 + (x + y) * 0.5 * s - z * s] }
+function desenhar(cv, mini) {
+  const d = Math.min(2, devicePixelRatio || 1), R = cv.getBoundingClientRect(); if (cv.width !== Math.round(R.width * d)) { cv.width = Math.round(R.width * d); cv.height = Math.round(R.height * d) }
+  const c = cv.getContext('2d'), W = cv.width, H = cv.height, s = Math.min(W, H) / (mini ? 14 : 22), t = performance.now() / 1000
+  c.clearRect(0, 0, W, H)
+  const c0 = proj(W, H, s, 0, 0, 0); c.save(); c.translate(c0[0], c0[1]); c.scale(1, .577); const gr = c.createRadialGradient(0, 0, 0, 0, 0, s * 3); gr.addColorStop(0, 'rgba(198,241,53,.3)'); gr.addColorStop(1, 'rgba(198,241,53,0)'); c.fillStyle = gr; c.beginPath(); c.arc(0, 0, s * 3.2, 0, 6.29); c.fill(); c.restore()
+  if (calor && !mini) for (let g = 0; g < 5; g++) { const a0 = (g / 5) * 6.283 - 3.14, a1 = ((g + 1) / 5) * 6.283 - 3.14; const f = [0.8, 0.45, 0.3, 0.67, 0.6][g]; c.beginPath(); for (let k = 0; k <= 16; k++) { const a = a0 + (a1 - a0) * k / 16, q = proj(W, H, s, Math.cos(a) * 11.6, Math.sin(a) * 11.6, 0); k ? c.lineTo(...q) : c.moveTo(...q) } for (let k = 16; k >= 0; k--) { const a = a0 + (a1 - a0) * k / 16; c.lineTo(...proj(W, H, s, Math.cos(a) * 2.7, Math.sin(a) * 2.7, 0)) } c.closePath(); c.fillStyle = f >= .5 ? `rgba(76,141,255,${.15 + (f - .5)})` : `rgba(255,90,78,${.15 + (.5 - f)})`; c.fill(); c.strokeStyle = '#0e1012'; c.lineWidth = 3; c.stroke() }
+  const pul = .5 + .5 * Math.sin(t * 2)
+  const cubo = (cx, cy, w, dd, h, al) => { const p = (x, y, z) => proj(W, H, s, x, y, z); const b = [p(cx - w, cy - dd, 0), p(cx + w, cy - dd, 0), p(cx + w, cy + dd, 0), p(cx - w, cy + dd, 0)], tp = [p(cx - w, cy - dd, h), p(cx + w, cy - dd, h), p(cx + w, cy + dd, h), p(cx - w, cy + dd, h)]; const face = (pts, f) => { c.beginPath(); pts.forEach((q, i) => i ? c.lineTo(...q) : c.moveTo(...q)); c.closePath(); c.fillStyle = f; c.fill(); c.setLineDash([4, 4]); c.strokeStyle = `rgba(198,241,53,${al})`; c.lineWidth = 1.1; c.stroke() }; face([b[1], b[2], tp[2], tp[1]], 'rgba(198,241,53,.07)'); face([b[2], b[3], tp[3], tp[2]], 'rgba(198,241,53,.04)'); face(tp, `rgba(198,241,53,${.1 + pul * .05})`); c.setLineDash([]) }
+  cubo(0, 0, 1.1, 1.1, 2.5, .5 + pul * .25)
+  for (let k = 0; k < 10; k++) { const a = k * .7 + t * (.6 + k % 4 * .2), r = 1.6 + k % 5 * .35, q = proj(W, H, s, Math.cos(a) * r, Math.sin(a) * r, .6 + k % 3 * .7); c.fillStyle = '#F4FFD6'; c.shadowColor = '#C6F135'; c.shadowBlur = 8; c.beginPath(); c.arc(q[0], q[1], mini ? 1.6 : 2, 0, 6.29); c.fill(); c.shadowBlur = 0 }
+  ;[...ags].sort((a, b) => a.x + a.y - b.x - b.y).forEach((a) => { const q = proj(W, H, s, a.x, a.y, 0), k = s * .2; c.globalAlpha = calor && !mini ? .3 : 1; c.fillStyle = a.r === 'u' ? '#4C8DFF' : a.r === 'n' ? '#FF5A4E' : '#7E857C'; c.beginPath(); c.roundRect(q[0] - k * .55, q[1] - k * 2.1, k * 1.1, k * 2, k * .5); c.fill(); c.beginPath(); c.arc(q[0], q[1] - k * 2.55, k * .5, 0, 6.29); c.fill(); c.globalAlpha = 1 })
+  if (!calor) arcos = arcos.filter((u) => { u.t += .015; if (u.t > 1) return false; if (u.t < 0) return true; const pa = proj(W, H, s, u.a.x, u.a.y, .7), pb = proj(W, H, s, u.b.x, u.b.y, .7), dd = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]), mx = (pa[0] + pb[0]) / 2, my = (pa[1] + pb[1]) / 2 - dd * .35, al = Math.sin(u.t * Math.PI); c.strokeStyle = u.cor.replace(')', `,${.55 * al})`).replace('rgb', 'rgba'); c.lineWidth = 1.3; c.beginPath(); c.moveTo(...pa); c.quadraticCurveTo(mx, my, ...pb); c.stroke(); const tt = u.t, x = (1 - tt) ** 2 * pa[0] + 2 * (1 - tt) * tt * mx + tt * tt * pb[0], y = (1 - tt) ** 2 * pa[1] + 2 * (1 - tt) * tt * my + tt * tt * pb[1]; c.fillStyle = '#fff'; c.beginPath(); c.arc(x, y, 2.3, 0, 6.29); c.fill(); return true })
+  if (calor && !mini) { c.textAlign = 'center'; for (let g = 0; g < 5; g++) { const a = ((g + .5) / 5) * 6.283 - 3.14, q = proj(W, H, s, Math.cos(a) * 7.2, Math.sin(a) * 7.2, 0), f = [80, 45, 30, 67, 60][g], fs = 11 * (W / cv.getBoundingClientRect().width); c.font = `600 ${fs}px Geist,system-ui,sans-serif`; const w = c.measureText(PROF[g]).width + fs * 1.4; c.fillStyle = 'rgba(14,16,18,.92)'; c.strokeStyle = f >= 50 ? '#4C8DFF' : '#FF5A4E'; c.beginPath(); c.roundRect(q[0] - w / 2, q[1] - fs * 1.5, w, fs * 3, fs * .5); c.fill(); c.stroke(); c.fillStyle = '#EDEFEA'; c.fillText(PROF[g], q[0], q[1] - fs * .15); c.fillStyle = f >= 50 ? '#8DB5FF' : '#FF8D85'; c.fillText(`${f}% a favor`, q[0], q[1] + fs * 1.05) } c.textAlign = 'start' }
+}
+const FALAS = [['n', 'No meu canteiro o sinal some.'], ['u', 'Acaba a briga de quem chegou atrasado.'], ['u', 'Me economiza a tarde de sexta.'], ['n', 'R$ 49 pesa para 3 pessoas.'], ['u', 'Concordo com a Marta, a foto resolve.'], ['n', 'Metade do meu pessoal tem celular velho.']]
+const NOMES = ['Raimundo, 58', 'Marta, 41', 'Jéssica, 27', 'Diego, 24', 'Renato, 55', 'Seu Lino, 63']
+let timer = null
+function comecarVivo() {
+  ags.forEach((a, i) => (a.r = i % 3 === 0 ? null : (((i * 37) % 100) / 100 < a.alvo ? 'u' : 'n'))); $('#feed').innerHTML = ''
+  clearInterval(timer); let k = 0
+  timer = setInterval(() => {
+    if (atual !== 'vivo') return clearInterval(timer)
+    const sem = ags.filter((a) => !a.r); for (let j = 0; j < 4 && sem.length; j++) { const a = sem.splice(Math.floor(Math.random() * sem.length), 1)[0]; a.r = Math.random() < a.alvo ? 'u' : 'n' }
+    for (let j = 0; j < 3; j++) { const a = ags[Math.floor(Math.random() * N)], b = ags[Math.floor(Math.random() * N)]; arcos.push({ a, b, t: -Math.random(), cor: a.r === 'n' ? 'rgb(255,90,78)' : 'rgb(76,141,255)' }) }
+    const f = FALAS[k % FALAS.length], d = document.createElement('div'); d.className = 'fala ' + (f[0] === 'u' ? 'az' : 'vm'); d.innerHTML = `<b>${NOMES[k % NOMES.length]}</b> ${f[1]}`; $('#feed').prepend(d); while ($('#feed').children.length > 4) $('#feed').lastChild.remove(); k++
+    const u = ags.filter((a) => a.r === 'u').length, n = ags.filter((a) => a.r === 'n').length, p = N - u - n, esc = 500 / N
+    $('#pA').textContent = Math.round(u * esc); $('#pV').textContent = Math.round(n * esc); $('#pP').textContent = Math.round(p * esc)
+    $('#bA').style.width = (u / N * 100) + '%'; $('#bV').style.width = (n / N * 100) + '%'
+  }, 1100)
+}
+$('#calor').onclick = () => { calor = !calor; $('#calor').setAttribute('aria-pressed', calor) }
+$('#simPronto').onclick = () => { $('#push').hidden = false }
+;(function loop() { if (atual === 'vivo') desenhar($('#cv')); if (atual === 'aprovar') { if (!ags[0].r) ags.forEach((a, i) => (a.r = i % 4 === 0 ? null : (i % 3 ? 'u' : 'n'))); if (Math.random() < .08) { const a = ags[Math.floor(Math.random() * N)], b = ags[Math.floor(Math.random() * N)]; arcos.push({ a, b, t: 0, cor: 'rgb(76,141,255)' }) } desenhar($('#cvMini'), true) } requestAnimationFrame(loop) })()
+
+// ---------- relatório: duelo por tipo ----------
+const DIMS = { 'Profissão': [['Mestre de obras', 100, 80, 15], ['RH', 90, 67, 28], ['Dono', 110, 58, 35], ['Pedreiro', 100, 30, 60], ['Estagiário', 12, 50, 42]], 'Idade': [['18 a 29', 120, 70, 22], ['30 a 44', 160, 66, 27], ['45 a 59', 130, 58, 34], ['60 ou mais', 78, 36, 55]], 'Celular': [['Usa tudo', 150, 78, 16], ['Só WhatsApp', 140, 44, 48], ['Celular velho', 60, 25, 66]] }
+let dim = 'Profissão'
+function duelos() {
+  $('#dims').innerHTML = Object.keys(DIMS).map((k) => `<button aria-pressed="${k === dim}">${k}</button>`).join('')
+  $('#dims').querySelectorAll('button').forEach((b) => (b.onclick = () => { dim = b.textContent; duelos() }))
+  $('#duelos').innerHTML = DIMS[dim].map(([n, q, f, c]) => `<div class="duelo${q < 20 ? ' poucos' : ''}"><div class="cab"><span>${n}<small>${q} agentes</small></span></div><div class="db"><i style="width:${f}%;background:var(--az)"></i><i style="width:${100 - f - c}%;background:var(--dv)"></i><i style="width:${c}%;background:var(--vm)"></i></div><div class="nums"><span class="az">${f}% a favor</span><span class="vm">${c}% contra</span></div></div>`).join('')
+}
+duelos()
+
+// ideias
+function contaIdeias() { const n = document.querySelectorAll('#ideias input[type=checkbox]:checked').length; document.querySelectorAll('#ideias .sug').forEach((l) => l.classList.toggle('sel', l.querySelector('input').checked)); $('#revisar').textContent = n ? `Revisar o protótipo com ${n} ${n === 1 ? 'ideia' : 'ideias'} →` : 'Marque pelo menos uma ideia'; $('#revisar').disabled = !n }
+document.querySelectorAll('#ideias input[type=checkbox]').forEach((c) => (c.onchange = contaIdeias))
+$('#revisar').onclick = () => { $('#ideias').hidden = true; $('#revisando').hidden = false; $('#revisar').textContent = 'Voltar para Minhas obras'; $('#revisar').onclick = () => { ir('obras') } }
+
+// ---------- entrevista ----------
+const AG = [{ n: 'Raimundo', i: 58, c: 'vm', sobre: 'empreiteiro · Betim · 14 pessoas · só WhatsApp', fala: 'No meu canteiro o sinal some. Como eu bato ponto assim?', sel: 'CONTRA' }, { n: 'Marta', i: 41, c: 'az', sobre: 'mestre de obras · Contagem · desconfiada', fala: 'Acaba a briga de quem chegou atrasado.', sel: 'FÃ' }, { n: 'Renato', i: 55, c: 'az', sobre: 'dono de construtora · Ribeirão Preto · 60 pessoas', fala: 'Achei caro, mas a Marta me convenceu na conversa.', sel: 'MUDOU' }, { n: 'Diego', i: 24, c: 'vm', sobre: 'pedreiro · Sorocaba · celular velho', fala: 'Meu celular não aguenta mais um app.', sel: 'CONTRA' }, { n: 'Jéssica', i: 27, c: 'az', sobre: 'RH de empreiteira · BH · planilha', fala: 'Me economiza uma tarde toda sexta.', sel: 'FÃ' }]
+const RESP = { 0: ['Olha, lá no Betim o sinal é fraco o dia todo. Se o ponto ficasse guardado no celular e subisse depois, aí eu pensava. Pagar R$ 49 pra não funcionar? Não.', 'R$ 29 eu até pagava, se funcionar sem internet.'], 1: ['O que mais gostei foi a foto com a localização. Acaba a conversa de “cheguei 7h”.', 'Pagaria uns R$ 39. Mais que isso, aí aperta.'], 2: ['No começo achei caro. Mas fiz a conta das horas que o RH perde fechando a folha e mudei de ideia.', 'Se tivesse plano por obra, eu assinava hoje.'] }
+let abertos = [0], ag = 0, conv = {}
+function abrirFolha(i) { $('#folha').hidden = false; if (i === 'lista') return mostrarLista(); if (!abertos.includes(i)) abertos.push(i); ag = i; mostrarChat() }
+function tips() { $('#tips').innerHTML = abertos.map((i) => `<button class="tip ${AG[i].c}" aria-selected="${ag === i}" data-t="${i}"><i></i>${AG[i].n}, ${AG[i].i}</button>`).join('') + `<button class="tip mais" aria-selected="${ag === 'lista'}" data-t="lista">+ agente</button>`; $('#tips').querySelectorAll('button').forEach((b) => (b.onclick = () => (b.dataset.t === 'lista' ? mostrarLista() : (ag = +b.dataset.t, mostrarChat())))) }
+function mostrarChat() {
+  $('#vistaLista').style.display = 'none'; $('#vistaChat').style.display = 'flex'; tips(); const a = AG[ag]
+  $('#quem').innerHTML = `<span class="av ${a.c}">${a.n[0]}</span><div style="flex:1"><b>${a.n}, ${a.i}</b><div class="nota" style="font-size:12px">${a.sobre}</div></div><span class="sl ${a.c}" ${a.sel === 'MUDOU' ? 'style="color:var(--lime)"' : ''}>${a.sel}</span>`
+  $('#chat').innerHTML = `<div class="msg"><small>Ao olhar as telas</small>${a.fala}</div>` + (conv[ag] || []).map((m) => `<div class="msg ${m[0] ? 'eu' : ''}">${m[1]}</div>`).join('')
+  const sg = a.c === 'vm' ? ['Por que você não usaria?', 'Quanto pagaria, de verdade?', 'O que faria você mudar de ideia?'] : ['O que mais te agradou?', 'Quanto pagaria, de verdade?', 'O que faria você desistir?']
+  $('#sugs').innerHTML = sg.map((s) => `<button>${s}</button>`).join(''); $('#sugs').querySelectorAll('button').forEach((b) => (b.onclick = () => perguntar(b.textContent)))
+  $('#chat').scrollTop = 1e6
+}
+function perguntar(t) { if (!t.trim()) return; const i = ag; (conv[i] = conv[i] || []).push([1, t]); mostrarChat(); setTimeout(() => { const r = RESP[i] || ['Eu usaria se fosse mais simples.']; conv[i].push([0, r[(conv[i].length / 2 | 0) % r.length]]); if (ag === i) mostrarChat() }, 900) }
+$('#enviar').onclick = () => { perguntar($('#campo').value); $('#campo').value = '' }
+$('#campo').onkeydown = (e) => { if (e.key === 'Enter') $('#enviar').onclick() }
+function mostrarLista() {
+  ag = 'lista'; tips(); $('#vistaChat').style.display = 'none'; $('#vistaLista').style.display = 'flex'
+  $('#filtros').innerHTML = ['Todos', 'A favor', 'Contra', 'Mudou de ideia'].map((f, i) => `<button aria-pressed="${i === 0}">${f}</button>`).join('')
+  $('#listaAg').innerHTML = AG.map((a, i) => `<button class="ag" data-l="${i}"><span class="av ${a.c}">${a.n[0]}</span><span><b>${a.n}, ${a.i}</b>${a.sobre.split(' · ').slice(0, 2).join(' · ')}</span><span class="sl ${a.c}">${a.sel}</span></button>`).join('')
+  $('#listaAg').querySelectorAll('[data-l]').forEach((b) => (b.onclick = () => abrirFolha(+b.dataset.l)))
+}
+document.querySelectorAll('[data-agente]').forEach((b) => (b.onclick = () => abrirFolha(b.dataset.agente === 'lista' ? 'lista' : +b.dataset.agente)))
+$('#fecharFolha').onclick = () => { $('#folha').hidden = true }
+$('#folha').onclick = (e) => { if (e.target.id === 'folha') $('#folha').hidden = true }
+ir('obras')
+</script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 // Os métodos "atômicos" não têm await no meio: em JS cada um roda inteiro, equivalendo ao UPDATE/RPC do Postgres.
 import type { AssinaturaPush, CanalPush } from './push.ts'
 import { dominioRegistravel, LIMIARES_AUDITORIA, PROVEDORES_COMUNS, protegeProvedor } from './auditoria.ts'
-import type { CanalCelular, Pedido, ProjetoCelular, Referencia } from './celular.ts'
+import type { CanalCelular, Pedido, ProjetoCelular, Referencia, TesteCelular } from './celular.ts'
 import type { Ativacao, BarradaTeste, EventoRadar, CondicaoLicenca, ConfigDegustacao, Cliente, Codigo, ContaGateway, Entrega, Licenca, LiberacaoAtomica, Link, NovaCompra, Ocorrencia, OcorrenciaAdmin, Pagamento, SessaoCheckout, Personalizacao, StatusObraLinha, StatusPagamento, Store, Troca, TrocaAtomica, EventoPolitica, SituacaoPolitica, ConviteTeste, Testador } from './tipos.ts'
 
 export class StoreMemoria implements Store {
@@ -433,6 +433,7 @@ export function criarCanalCelularMemoria() {
   const sinais = new Map<string, { visto_em: Date; ocupado: string | null }>()
   const pedidos: Pedido[] = []
   const projetos = new Map<string, ProjetoCelular>()
+  const testes = new Map<string, TesteCelular>()
   const referencias = new Map<string, Referencia>()
   const copia = <T>(x: T): T => structuredClone(x)
   const canal: CanalCelular & { pedidos: Pedido[]; referencias: Map<string, Referencia> } = {
@@ -455,6 +456,8 @@ export function criarCanalCelularMemoria() {
     },
     async pedidosRecentes(l, limite) { return pedidos.filter((p) => p.licenca_id === l).sort((a, b) => b.criado_em.getTime() - a.criado_em.getTime()).slice(0, limite).map(copia) },
     async salvarProjeto(l, p) { projetos.set(`${l}|${p.obra_id}`, copia(p)) },
+    async salvarTeste(l, t) { testes.set(`${l}|${t.obra_id}`, copia(t)) },
+    async testes(l) { return [...testes.entries()].filter(([k]) => k.startsWith(`${l}|`)).map(([, v]) => copia(v)).sort((a, b) => b.atualizado_em.getTime() - a.atualizado_em.getTime()) },
     async projetos(l) { return [...projetos.entries()].filter(([k]) => k.startsWith(`${l}|`)).map(([, v]) => copia(v)).sort((a, b) => b.atualizado_em.getTime() - a.atualizado_em.getTime()) },
     async guardarReferencia(id, r) { referencias.set(id, copia(r)) },
     async contarReferencias(l) { return [...referencias.values()].filter((r) => r.licenca_id === l).length },

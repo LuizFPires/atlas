@@ -4,9 +4,11 @@ import type { PortalApi } from '../web/portal-api'
 import type { ObraStatus } from '../web/obras-status'
 import { criarPrototipoFixture, montarNavegavel } from '../app/ponte-prototipo'
 import { ESTILOS_EXEMPLO } from '../app/ponte-estilo'
+import { criarTestarFixture, type PonteTestar } from '../app/ponte-testar'
+import { lerResumoTeste, montarResumoTeste, type ResumoTesteCelular } from '../app/teste-celular'
 
 export type FaseProjeto = 'na_fila' | 'desenhando' | 'telas_prontas' | 'ajustando' | 'pensando_nomes' | 'nomes_prontos' | 'pronto_para_construir' | 'construindo' | 'erro'
-export type TipoPedido = 'obra_nova' | 'ajuste' | 'aprovar_telas' | 'nome' | 'construir' | 'pausar' | 'continuar' | 'foto_ajuda'
+export type TipoPedido = 'obra_nova' | 'ajuste' | 'aprovar_telas' | 'nome' | 'construir' | 'pausar' | 'continuar' | 'foto_ajuda' | 'testar' | 'entrevistar'
 
 export interface Projeto {
   obra_id: string
@@ -23,6 +25,8 @@ export interface EstadoCelular {
   computador: { ligado: boolean; visto_em: string | null; ocupado: string | null }
   projetos: Projeto[]
   pedidos: PedidoResumo[]
+  /** Testar a ideia: o resumo que o notebook publicou de cada obra (por id da obra). */
+  testes: Record<string, ResumoTesteCelular>
 }
 export interface Visual { modo: 'prints' | 'marca' | 'sugere'; observacao: string; cores: string[]; referencias: string[] }
 
@@ -55,6 +59,7 @@ export function lerEstado(d: Record<string, unknown>): EstadoCelular {
   return {
     computador: { ligado: c.ligado === true, visto_em: typeof c.visto_em === 'string' ? c.visto_em : null, ocupado: typeof c.ocupado === 'string' ? c.ocupado : null },
     projetos, pedidos,
+    testes: Object.fromEntries((Array.isArray(d.testes) ? d.testes : []).flatMap((t) => { const id = t && typeof t === 'object' ? (t as { obra_id?: unknown }).obra_id : null; const r = lerResumoTeste(t); return typeof id === 'string' && r ? [[id, r]] : [] })),
   }
 }
 
@@ -110,6 +115,9 @@ export function criarApiCelularFixture(opcoes: { logado?: boolean; ligado?: bool
   const falhas = new Map<TipoPedido, string>()
   const projetos = new Map<string, Projeto>()
   const proto = criarPrototipoFixture()
+  /** O "notebook" de mentira também testa a ideia: a obra o1 já tem um teste pronto. */
+  const testar = new Map<string, PonteTestar>([['o1', criarTestarFixture()]])
+  const resultados = new Map<number, { estado: 'feito' | 'erro'; mensagem: string }>()
   let telasDoc: string | null = null
   const obras: ObraStatus[] = [
     { id: 'o1', nome: 'Agenda da Barbearia', etapa_atual: { numero: 4, rotulo: 'Marcação pelo cliente' }, total_etapas: 7, percentual: 62, estado: 'construindo', ativa_agora: true, ultima_noticia: 'Trabalhando em: Marcação pelo cliente.', quando: new Date(Date.now() - 8 * 60_000).toISOString() },
@@ -120,6 +128,7 @@ export function criarApiCelularFixture(opcoes: { logado?: boolean; ligado?: bool
   /** Cada leitura do estado é um "passo" do notebook. */
   const andar = async () => {
     if (!ligado) return
+    for (const [id, f] of testar) for (const t of await f.listar(id)) if (t.estado === 'rodando') await f.estado(id, t.n)
     for (const p of projetos.values()) {
       if (p.fase === 'desenhando') {
         const feitas = Math.min(p.progresso.total, p.progresso.feitas + 2)
@@ -148,13 +157,22 @@ export function criarApiCelularFixture(opcoes: { logado?: boolean; ligado?: bool
     async estado() {
       await andar()
       return { computador: { ligado, visto_em: new Date().toISOString(), ocupado: ligado && [...projetos.values()].some((p) => p.fase === 'desenhando') ? 'Desenhando as telas' : null }, projetos: [...projetos.values()].map((p) => structuredClone(p)),
-        pedidos: pedidos.map((p, i) => ({ id: String(i + 1).padStart(32, '0'), tipo: p.tipo, obra_id: p.obra_id, estado: falhas.has(p.tipo) ? 'erro' as const : 'pendente' as const, mensagem: falhas.get(p.tipo) ?? '', criado_em: new Date().toISOString() })) }
+        pedidos: pedidos.map((p, i) => ({ id: String(i + 1).padStart(32, '0'), tipo: p.tipo, obra_id: p.obra_id, estado: falhas.has(p.tipo) ? 'erro' as const : resultados.get(i)?.estado ?? 'pendente' as const, mensagem: falhas.get(p.tipo) ?? resultados.get(i)?.mensagem ?? '', criado_em: new Date().toISOString() })),
+        testes: Object.fromEntries((await Promise.all([...testar].map(async ([id, f]) => [id, await montarResumoTeste(f, id)] as const))).filter((x): x is [string, ResumoTesteCelular] => !!x[1])) }
     },
     async obras() { return structuredClone(obras) },
     async pedir(tipo, obraId, dados) {
       const obra_id = obraId ?? `c${String(pedidos.length).padStart(16, '0')}`
       pedidos.push({ tipo, obra_id, dados })
+      const i = pedidos.length - 1
       const p = projetos.get(obra_id)
+      const d = dados as { quantidade?: number; mesmos?: boolean; teste?: number; agente?: string; pergunta?: string; texto?: string }
+      const f = testar.get(obra_id) ?? (tipo === 'testar' ? (testar.set(obra_id, criarTestarFixture()), testar.get(obra_id)!) : null)
+      if (ligado && f && !falhas.has(tipo)) {
+        if (tipo === 'testar') { const ant = d.mesmos ? (await f.listar(obra_id)).find((t) => t.estado === 'pronto') : null; await f.iniciar(obra_id, { quantidade: (d.quantidade ?? 500) as 500, mesmosDe: ant?.n ?? null }).catch(() => {}); resultados.set(i, { estado: 'feito', mensagem: '' }) }
+        if (tipo === 'entrevistar') { await f.entrevistar(obra_id, d.teste ?? 1, d.agente ?? '', d.pergunta ?? '').then(() => resultados.set(i, { estado: 'feito', mensagem: '' }), (e) => resultados.set(i, { estado: 'erro', mensagem: (e as Error).message })) }
+        if (tipo === 'ajuste' && !p) resultados.set(i, { estado: 'feito', mensagem: 'versao:4' })
+      }
       if (tipo === 'obra_nova') projetos.set(obra_id, novo(obra_id, 'Barbearia três cadeiras'))
       else if (p && tipo === 'ajuste') p.fase = 'ajustando'
       else if (p && tipo === 'aprovar_telas') p.fase = 'pensando_nomes'

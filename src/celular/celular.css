@@ -129,6 +129,44 @@
 .cel-obra-noticia time { font: 500 13px 'Geist Mono', monospace; color: var(--mute2); flex: none; }
 
 /* M58 — foto para a Ajuda */
-.cel-menu__foto { position: relative; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+/* Luiz, 28/11/2026: no mesmo padrão dos vizinhos (ícone em cima, nome embaixo). */
+.cel-menu__foto { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; font: 500 12px 'Geist', sans-serif; color: var(--mute); min-width: 72px; padding: 4px; cursor: pointer; white-space: nowrap; }
 .cel-menu__foto input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .cel-menu__aviso { flex-basis: 100%; margin: 6px 0 0; font-size: 13px; color: #B4BBB2; }
+/* Testar a ideia no celular (protótipo aprovado em 28/11/2026). As telas são as do computador, em uma coluna. */
+.cel-testar { text-align: left; color: var(--text); font-family: 'Geist', sans-serif; cursor: pointer; }
+.cel-testar b { font-size: 17px; }
+.cel-testar--convite { border-color: var(--lime); cursor: default; }
+.cel-testar .cel-sub .at-icone, .cel-testar .cel-sub svg { width: 14px; height: 14px; transform: rotate(180deg); }
+.cel-testar__res { display: flex; align-items: center; gap: 12px; }
+.cel-testar__res b { font: 600 24px 'Geist Mono', monospace; color: #4C8DFF; }
+.cel-testar__bar { flex: 1; display: flex; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.cel-testar__bar i { display: block; height: 100%; }
+.cel-testar__tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.cel-testar__tags span { font: 600 10px 'Geist Mono', monospace; letter-spacing: .06em; padding: 5px 8px; border-radius: 999px; border: 1px solid var(--cardB); color: var(--mute); }
+.cel-testar-tela .cel-corpo { padding-top: 6px; }
+.cel-testar-tela .at-testar__qtd { grid-template-columns: 1fr 1fr; }
+.cel-testar-tela .at-testar__lista, .cel-testar-tela .at-testar__sim { grid-template-columns: minmax(0, 1fr); }
+.cel-testar-tela .at-rel__grade { grid-template-columns: minmax(0, 1fr); }
+.cel-testar-tela .at-rel__grade > * { grid-column: auto !important; }
+.cel-testar-tela .at-rel__ver { flex-direction: row; align-items: center; }
+.cel-testar-tela .at-rel__anel { width: 92px; height: 92px; } .cel-testar-tela .at-rel__anel > div { width: 70px; height: 70px; }
+.cel-testar-tela .at-rel__duelo { grid-template-columns: minmax(0, 1fr) auto auto; row-gap: 4px; }
+.cel-testar-tela .at-rel__db { grid-column: 1 / -1; order: 5; }
+.cel-testar-tela .at-rel__duelo > b small { display: none; }
+.cel-testar-tela .at-testar__acoes { flex-direction: column-reverse; align-items: stretch; }
+.cel-testar-tela .at-testar__acoes--esq { flex-direction: row; }
+.cel-testar-tela .at-rel__pedido { flex-direction: column; align-items: stretch; }
+.cel-testar-tela .at-praca { min-height: 260px; }
+/* entrevista: folha que sobe de baixo, em vez da gaveta lateral */
+.cel-testar-tela .at-gaveta { top: 10%; left: 0; width: 100%; border-left: 0; border-top: 1px solid var(--cardB); border-radius: 24px 24px 0 0; padding: 14px 16px calc(20px + env(safe-area-inset-bottom)); animation: cel-folha .25s ease; }
+.cel-testar-tela .at-gaveta::before { content: ''; width: 40px; height: 5px; border-radius: 3px; background: var(--cardB); align-self: center; flex: none; }
+.cel-testar-tela .at-gaveta__tips, .cel-testar-tela .at-gaveta__sug { flex-wrap: nowrap; overflow-x: auto; }
+.cel-testar-tela .at-gaveta__tip, .cel-testar-tela .at-gaveta__sug button { flex: none; }
+.cel-testar-tela .at-gaveta__in textarea { font-size: 16px; }
+@keyframes cel-folha { from { transform: translateY(40px); opacity: .4 } }
+.cel-testar-tela .at-testar__acoes--esq { flex-wrap: wrap; }
+.cel-testar-tela .at-testar__acoes--esq .at-botao { width: 100%; white-space: normal; }
+.cel-testar-tela .at-praca__fas div { width: 70px; }
+.cel-testar-tela .at-praca__ctl button { padding: 6px 9px; font-size: 10px; }
+.cel-testar-tela .at-testar__hud { top: 34px; }

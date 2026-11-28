@@ -7,7 +7,7 @@ import { validarInstancia } from './instancia.ts'
 import { limparRadar, radar, resolverSinal } from './radar.ts'
 import { obrasDoPortal, publicarStatusObras } from './status-obras.ts'
 import { assinarPush, avisarCelular, type CanalPush, chavePublica, type EnvioPush } from './push.ts'
-import { baixarReferencia, type CanalCelular, enviarReferencia, estadoDoCelular, pedirPeloCelular, publicarProjeto, responderPedido, sinalDoComputador } from './celular.ts'
+import { baixarReferencia, type CanalCelular, enviarReferencia, estadoDoCelular, pedirPeloCelular, publicarProjeto, publicarTeste, responderPedido, sinalDoComputador } from './celular.ts'
 import { entregarKit, type CarregarKit } from './kit.ts'
 import { gerarLink } from './links.ts'
 import { type Deps, ErroRegra } from './tipos.ts'
@@ -295,6 +295,10 @@ async function tratarRota(ctx: Contexto, req: Request): Promise<Response> {
       case '/celular/projeto': {
         const o = b as Record<string, unknown>
         return json(await publicarProjeto(ctx.deps, ctx.celular, ctx.prototipos, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obra_id: o.obra_id, projeto: o.projeto, documento: o.documento }))
+      }
+      case '/celular/teste': {
+        const o = b as Record<string, unknown>
+        return json(await publicarTeste(ctx.deps, ctx.celular, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, obra_id: o.obra_id, teste: o.teste }))
       }
       case '/celular/avisar':
         return json(await avisarCelular(ctx.deps, ctx.push, ctx.enviarPush, { email: b.email, computador_hash: b.computador_hash, token_dispositivo: dispositivo, titulo: (b as Record<string, unknown>).titulo, texto: (b as Record<string, unknown>).texto }))

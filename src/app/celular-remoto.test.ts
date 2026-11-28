@@ -8,6 +8,8 @@ import { criarConstrucaoFixture, criarModoObraFixture } from './ponte-construcao
 import { criarPainelFixture } from './ponte-painel'
 import { criarArquivosFixture } from './ponte-arquivos'
 import type { ObraStatus } from '../web/obras-status'
+import { criarTestarFixture } from './ponte-testar'
+import type { ResumoTesteCelular } from './teste-celular'
 
 const JPG = 'data:image/jpeg;base64,/9j/4AAQ'
 const relato = 'Tenho uma barbearia com 3 cadeiras e a agenda vive dando horário duplicado no caderno.'
@@ -189,4 +191,79 @@ test('foto_ajuda: baixa a foto e entrega à Ajuda do notebook', async () => {
   await new Promise((r) => setTimeout(r, 20))
   expect(recebidas).toEqual([JPG])
   expect(respostas.at(-1)).toEqual(expect.objectContaining({ estado: 'feito' }))
+})
+
+// Testar a ideia pelo celular (Luiz, 28/11/2026).
+describe('testar a ideia pelo celular', () => {
+  async function comTeste(fila: PedidoRemoto[][]) {
+    const m = montar(fila)
+    const testar = criarTestarFixture()
+    const testes: Array<{ obra: string; r: ResumoTesteCelular }> = []
+    m.canal.teste = async (obra, r) => { testes.push({ obra, r: structuredClone(r) }) }
+    const pasta = (await m.pontes.obras.criarSubpasta('Ponto')).pasta
+    const ex = criarExecutorRemoto({ ...m.pontes, testar }, m.canal, m.memoria, { intervaloProgressoMs: 5 })
+    return { ...m, ex, testar, testes, pasta }
+  }
+
+  test('testar: começa o teste na obra do computador com os mesmos agentes do último e publica o resumo', async () => {
+    const t = await comTeste([])
+    const ini = vi.spyOn(t.testar, 'iniciar')
+    const ex = criarExecutorRemoto({ ...t.pontes, testar: t.testar }, { ...t.canal, sinal: (() => { let v = true; return async () => (v ? (v = false, [pedido({ tipo: 'testar', obra_id: t.pasta, dados: { quantidade: 250, mesmos: true } })]) : []) })() }, t.memoria)
+    await ex.batida(); await ex.ocioso()
+    expect(ini).toHaveBeenCalledWith(t.pasta, { quantidade: 250, mesmosDe: 1, versao: null })
+    expect(t.respostas).toEqual([{ id: 'a'.repeat(32), estado: 'feito', mensagem: '' }])
+    expect(t.testes.at(-1)!.obra).toBe(t.pasta)
+    expect(t.testes.at(-1)!.r.testes.map((x) => x.n)).toEqual([2, 1])
+  })
+
+  test('testar com um teste já rodando (dois toques ou reentrega): não começa outro', async () => {
+    const t = await comTeste([])
+    await t.testar.iniciar(t.pasta, { quantidade: 100 })
+    const ini = vi.spyOn(t.testar, 'iniciar')
+    const ex = criarExecutorRemoto({ ...t.pontes, testar: t.testar }, { ...t.canal, sinal: async () => [pedido({ tipo: 'testar', obra_id: t.pasta, dados: { quantidade: 500, mesmos: false } })] }, t.memoria)
+    await ex.batida(); await ex.ocioso()
+    expect(ini).not.toHaveBeenCalled()
+  })
+
+  test('entrevistar: pergunta ao agente, publica a resposta e deixa a batida rápida por uns minutos', async () => {
+    const t = await comTeste([])
+    const ex = criarExecutorRemoto({ ...t.pontes, testar: t.testar }, { ...t.canal, sinal: (() => { let v = true; return async () => (v ? (v = false, [pedido({ tipo: 'entrevistar', obra_id: t.pasta, dados: { teste: 1, agente: 'a3', pergunta: 'Por que não usaria?' } })]) : []) })() }, t.memoria)
+    expect(ex.rapido()).toBe(false)
+    await ex.batida(); await ex.ocioso()
+    expect(ex.rapido()).toBe(true)
+    const ultimo = t.testes.at(-1)!.r
+    expect(ultimo.entrevistas['1'].a3.map((m) => m.de)).toEqual(['voce', 'agente'])
+    expect(ultimo.cenas['1'].agentes.some((a) => a.id === 'a3')).toBe(true) // quem foi entrevistado sempre vai na amostra
+  })
+
+  test('sem o teste neste notebook: responde com frase de leigo', async () => {
+    const m = montar([[pedido({ tipo: 'testar', obra_id: 'ponto', dados: { quantidade: 100 } })]])
+    await m.ex.batida(); await m.ex.ocioso()
+    expect(m.respostas[0]).toEqual({ id: 'a'.repeat(32), estado: 'erro', mensagem: 'Este notebook ainda não tem o teste da ideia. Atualize o Atlas no computador.' })
+  })
+
+  test('ideias do teste numa obra do computador: só cria a versão nova do protótipo e responde com ela', async () => {
+    const t = await comTeste([])
+    await t.pontes.prototipo.desenhar(t.pasta, 'Ponto', null, 'relato')
+    const ex = criarExecutorRemoto({ ...t.pontes, testar: t.testar }, { ...t.canal, sinal: (() => { let v = true; return async () => (v ? (v = false, [pedido({ tipo: 'ajuste', obra_id: t.pasta, dados: { texto: '- Bater ponto sem internet' } })]) : []) })() }, t.memoria)
+    await ex.batida(); await ex.ocioso()
+    expect(t.respostas.at(-1)).toEqual({ id: 'a'.repeat(32), estado: 'feito', mensagem: 'versao:2' })
+    expect(t.projetos).toEqual([]) // obra do computador não vira "projeto" no celular
+  })
+
+  test('publicarTestes: sobe só as obras com teste e não repete o que não mudou', async () => {
+    const t = await comTeste([])
+    await t.ex.publicarTestes()
+    await t.ex.publicarTestes()
+    expect(t.testes.map((x) => x.obra)).toEqual([t.pasta])
+  })
+})
+
+test('entrevista que falha no notebook (cota do Claude): o celular recebe o código para explicar do mesmo jeito do computador', async () => {
+  const m = montar([[pedido({ tipo: 'entrevistar', obra_id: 'ponto', dados: { teste: 1, agente: 'a3', pergunta: 'oi' } })]])
+  const testar = { ...criarTestarFixture(), entrevistar: async () => { throw new Error('claude-cota') } }
+  await m.pontes.obras.criarSubpasta('ponto')
+  const ex = criarExecutorRemoto({ ...m.pontes, testar }, m.canal, m.memoria)
+  await ex.batida(); await ex.ocioso()
+  expect(m.respostas[0]).toEqual({ id: 'a'.repeat(32), estado: 'erro', mensagem: 'codigo:claude-cota' })
 })

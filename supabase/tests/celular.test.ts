@@ -172,3 +172,49 @@ describe('foto do celular para a Ajuda do Atlas', () => {
     expect((await cel('/portal/celular/pedido', { tipo: 'foto_ajuda', obra_id: 'ajuda', dados: {} })).status).toBe(400)
   })
 })
+
+// Testar a ideia no celular (Luiz, 28/11/2026: "O app do Atlas podia ter essa etapa… na tela do móbile").
+describe('testar a ideia pelo celular', () => {
+  it('pedidos testar e entrevistar chegam ao notebook com os dados conferidos', async () => {
+    const { pc, cel } = await preparar()
+    expect((await cel('/portal/celular/pedido', { tipo: 'testar', obra_id: 'ponto', dados: { quantidade: 500, mesmos: true, extra: 'x' } })).status).toBe(200)
+    expect((await cel('/portal/celular/pedido', { tipo: 'entrevistar', obra_id: 'ponto', dados: { teste: 2, agente: 'a0003', pergunta: '  Por que não usaria?  ' } })).status).toBe(200)
+    const s = await (await pc('/celular/sinal', { ocupado: null })).json()
+    expect(s.pedidos.map((p: { tipo: string; dados: unknown }) => [p.tipo, p.dados])).toEqual([
+      ['testar', { quantidade: 500, mesmos: true }],
+      ['entrevistar', { teste: 2, agente: 'a0003', pergunta: 'Por que não usaria?' }],
+    ])
+  })
+
+  it('recusa quantidade fora da lista, agente ou teste estranho e pergunta vazia ou enorme', async () => {
+    const { cel } = await preparar()
+    const pedido = (tipo: string, dados: object) => cel('/portal/celular/pedido', { tipo, obra_id: 'ponto', dados })
+    expect((await pedido('testar', { quantidade: 300 })).status).toBe(400)
+    expect((await pedido('testar', { quantidade: '500' })).status).toBe(400)
+    expect((await pedido('entrevistar', { teste: 1, agente: '../x', pergunta: 'oi' })).status).toBe(400)
+    expect((await pedido('entrevistar', { teste: 0, agente: 'a0001', pergunta: 'oi' })).status).toBe(400)
+    expect((await pedido('entrevistar', { teste: 1, agente: 'a0001', pergunta: '   ' })).status).toBe(400)
+    expect((await pedido('entrevistar', { teste: 1, agente: 'a0001', pergunta: 'x'.repeat(401) })).status).toBe(400)
+  })
+
+  it('o notebook publica o resumo do teste; o celular do dono lê, o de outro não vê', async () => {
+    const { pc, cel } = await preparar()
+    const teste = { testes: [{ n: 1, estado: 'pronto', termometro: { pctUsaria: 63 } }], relatorios: { '1': { porTipo: { 'Profissão': [{ valor: 'Mestre de obras', pctUsaria: 80 }] } } } }
+    expect((await pc('/celular/teste', { obra_id: 'ponto', teste })).status).toBe(200)
+    const e = await (await cel('/portal/celular')).json()
+    expect(e.testes).toEqual([expect.objectContaining({ obra_id: 'ponto', ...teste })])
+    expect((await (await cel('/portal/celular', {}, JWT_BETO)).json()).testes).toEqual([])
+  })
+
+  it('resumo do teste: só JSON simples, texto limpo, nada de chaves perigosas nem tamanho exagerado', async () => {
+    const { pc, cel } = await preparar()
+    expect((await pc('/celular/teste', { obra_id: 'ponto', teste: { a: 'oi‮texto' } })).status).toBe(200)
+    expect((await (await cel('/portal/celular')).json()).testes[0].a).not.toContain('‮')
+    expect((await pc('/celular/teste', { obra_id: 'ponto', teste: JSON.parse('{"__proto__": {"x": 1}}') })).status).toBe(400)
+    expect((await pc('/celular/teste', { obra_id: 'ponto', teste: { 'a<b>': 1 } })).status).toBe(400)
+    expect((await pc('/celular/teste', { obra_id: 'ponto', teste: { lista: Array.from({ length: 200 }, () => 1) } })).status).toBe(400)
+    expect((await pc('/celular/teste', { obra_id: 'ponto', teste: { muitos: Array.from({ length: 150 }, () => 'x'.repeat(600)) } })).status).toBe(400)
+    expect((await pc('/celular/teste', { obra_id: '../ponto', teste: {} })).status).toBe(400)
+    expect((await pc('/celular/teste', { obra_id: 'ponto', teste: {} }, {})).status).toBeGreaterThanOrEqual(400)
+  })
+})

@@ -150,6 +150,8 @@ const EXPLICACOES: Record<string, Explicacao> = {
   'teste-em-andamento': { houve: 'Já tem um teste da ideia rodando nesta obra.', fazer: 'Espere ele terminar (ou continuar sozinho quando a cota voltar) e comece outro depois.' },
   'quantidade-invalida': { houve: 'Essa quantidade de agentes não existe.', fazer: 'Escolha 100, 250, 500 ou 1.000.' },
   'teste-invalido': { houve: 'Não achei esse teste nesta obra.', fazer: 'Volte para a lista de testes e escolha de novo.' },
+  'notebook-recusou': { houve: 'O notebook não conseguiu fazer isso agora.', fazer: 'Confira se ele está ligado com o Atlas aberto (e atualizado) e tente de novo.' },
+  'notebook-demorou': { houve: 'O notebook não respondeu a tempo.', fazer: 'Confira se ele está ligado com o Atlas aberto. O pedido continua na fila: quando ele ligar, faz sozinho.' },
   'agente-invalido': { houve: 'Não achei esse agente neste teste.', fazer: 'Feche a conversa e escolha o agente de novo na lista.' },
   'pergunta-vazia': { houve: 'A pergunta ficou vazia.', fazer: 'Escreva ou fale a pergunta e toque em Perguntar.' },
   'entrevista-falhou': { houve: 'O agente não conseguiu responder agora.', fazer: 'Toque em Perguntar de novo. Se continuar, tente outra pergunta.' },

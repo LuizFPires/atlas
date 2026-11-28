@@ -13,9 +13,12 @@ import { textoAvanco } from '../app/avanco'
 import { ambienteDoNavegador, ligarAvisos, situacaoDosAvisos, type SituacaoAvisos } from './avisos'
 import { semFaceId, type FaceId } from './faceid'
 import { predioSvg } from './predio'
+import { CartaoTestar, TelaTestar } from './TestarCelular'
+import { leitorComCache } from './ponte-testar-celular'
+import type { ResumoTesteCelular } from '../app/teste-celular'
 import './celular.css'
 
-type Tela = 'entrar' | 'faceid-ligar' | 'faceid-abrir' | 'obras' | 'ideia' | 'visual' | 'projeto' | 'obra' | 'desligado'
+type Tela = 'entrar' | 'faceid-ligar' | 'faceid-abrir' | 'obras' | 'ideia' | 'visual' | 'projeto' | 'obra' | 'desligado' | 'testar'
 type Aba = 'andamento' | 'concluidas' | 'paradas' | 'excluidas'
 
 const protegido = (d: string) => d.startsWith('<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src \'none\'')
@@ -439,7 +442,7 @@ function NomeTela({ projeto, onVoltar, onUsar }: { projeto: Projeto; onVoltar: (
   )
 }
 
-function AprovarTela({ projeto, ligado, onVoltar, onConstruir }: { projeto: Projeto; ligado: boolean; onVoltar: () => void; onConstruir: (modo: 'auto' | 'passo') => Promise<void> }) {
+function AprovarTela({ projeto, ligado, onVoltar, onConstruir, teste, onTestar }: { projeto: Projeto; ligado: boolean; onVoltar: () => void; onConstruir: (modo: 'auto' | 'passo') => Promise<void>; teste?: ResumoTesteCelular | null; onTestar?: () => void }) {
   const [modo, setModo] = useState<'auto' | 'passo'>('auto')
   const [indo, setIndo] = useState(false)
   return (
@@ -461,6 +464,7 @@ function AprovarTela({ projeto, ligado, onVoltar, onConstruir }: { projeto: Proj
             <button key={m} type="button" className="cel-opcao" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }} aria-pressed={modo === m} onClick={() => setModo(m)}><b>{t}</b><small>{s}</small></button>
           ))}
         </div>
+        {onTestar && <CartaoTestar resumo={teste ?? null} nome={projeto.nome} convite onAbrir={onTestar} />}
       </div>
       <footer className="cel-rodape">
         <button type="button" className="cel-botao" disabled={indo} onClick={async () => { setIndo(true); try { await onConstruir(modo) } finally { setIndo(false) } }}><Icone nome="play" />Deixar o Atlas construir</button>
@@ -480,7 +484,7 @@ function avisoDoPedido(p: PedidoResumo | null, obra: ObraStatus | null): { texto
   return { texto: pausa ? 'Pedido de pausa enviado. O notebook para em até 1 minuto (ele precisa estar ligado e com o Atlas aberto).' : 'Pedido enviado. O notebook continua a obra em até 1 minuto (ele precisa estar ligado e com o Atlas aberto).', erro: false }
 }
 
-function ObraTela({ obra, projeto, pedido, onVoltar, onPausar, onContinuar }: { obra: ObraStatus | null; projeto: Projeto | null; pedido: PedidoResumo | null; onVoltar: () => void; onPausar: () => Promise<void>; onContinuar: () => Promise<void> }) {
+function ObraTela({ obra, projeto, pedido, onVoltar, onPausar, onContinuar, teste, onTestar }: { obra: ObraStatus | null; projeto: Projeto | null; pedido: PedidoResumo | null; onVoltar: () => void; onPausar: () => Promise<void>; onContinuar: () => Promise<void>; teste?: ResumoTesteCelular | null; onTestar?: () => void }) {
   const aviso = avisoDoPedido(pedido, obra)
   const [indo, setIndo] = useState(false)
   const pausada = obra?.estado === 'pausada'
@@ -516,6 +520,7 @@ function ObraTela({ obra, projeto, pedido, onVoltar, onPausar, onContinuar }: { 
             ? <span className="cel-obra-noticia"><time>{hora(obra.quando)}</time>{obra.ultima_noticia || 'Sem novidades ainda.'}</span>
             : <span className="cel-obra-noticia">As notícias da obra aparecem aqui assim que o notebook começar.</span>}
         </div>
+        {onTestar && <CartaoTestar resumo={teste ?? null} nome={nome} onAbrir={onTestar} />}
       </div>
       <footer className="cel-rodape">
         {aviso && <p role={aviso.erro ? 'alert' : 'status'} className={`cel-sub${aviso.erro ? ' cel-erro' : ''}`} style={{ lineHeight: 1.45, margin: '0 0 8px' }}>{aviso.texto}</p>}
@@ -634,6 +639,9 @@ export function AppCelular({ api, intervalo = 4000, faceId = semFaceId }: { api:
     return r
   }
   const projeto = (obraId && estado?.projetos.find((p) => p.obra_id === obraId)) || null
+  // Testar a ideia: leitura do estado com cache, para as partes da tela do teste não martelarem o servidor.
+  const lerTestes = useMemo(() => leitorComCache(api), [api])
+  const [voltaTestar, setVoltaTestar] = useState<'obra' | 'projeto'>('obra')
   const ligado = estado?.computador.ligado ?? false
   const irObras = () => { setTela('obras'); setObraId(null) }
   // M58: a foto vai para a Ajuda do Atlas no computador (o notebook baixa e mostra na conversa).
@@ -676,7 +684,11 @@ export function AppCelular({ api, intervalo = 4000, faceId = semFaceId }: { api:
     // O mais novo (o servidor manda do mais novo para o mais velho; pela data, para não depender da ordem).
     const pedidoDaObra = (estado?.pedidos ?? []).filter((p) => p.obra_id === obraId && (p.tipo === 'pausar' || p.tipo === 'continuar'))
       .sort((a, b) => b.criado_em.localeCompare(a.criado_em) || b.id.localeCompare(a.id))[0] ?? null
-    return <ObraTela obra={obra} projeto={projeto} pedido={pedidoDaObra} onVoltar={irObras} onPausar={async () => { await pedir('pausar', obraId) }} onContinuar={async () => { await pedir('continuar', obraId) }} />
+    return <ObraTela obra={obra} projeto={projeto} pedido={pedidoDaObra} onVoltar={irObras} onPausar={async () => { await pedir('pausar', obraId) }} onContinuar={async () => { await pedir('continuar', obraId) }} teste={estado?.testes[obraId] ?? null} onTestar={() => { setVoltaTestar('obra'); setTela('testar') }} />
+  }
+  if (tela === 'testar' && obraId) {
+    const nomeObra = obras.find((o) => o.id === obraId)?.nome ?? projeto?.nome ?? 'Obra'
+    return <TelaTestar api={api} obraId={obraId} nome={nomeObra} ler={lerTestes} ligado={ligado} onVoltar={() => setTela(voltaTestar)} />
   }
   if (tela === 'projeto' && obraId) {
     const f = projeto?.fase ?? 'na_fila'
@@ -692,7 +704,7 @@ export function AppCelular({ api, intervalo = 4000, faceId = semFaceId }: { api:
     }
     if (f === 'telas_prontas' || f === 'ajustando') return <PrototipoTela api={api} projeto={projeto} onVoltar={irObras} onAjuste={async (t) => { await pedir('ajuste', obraId, { texto: t }) }} onAprovar={() => void pedir('aprovar_telas', obraId)} />
     if (f === 'pensando_nomes' || f === 'nomes_prontos') return <NomeTela projeto={projeto} onVoltar={irObras} onUsar={async (n) => { await pedir('nome', obraId, { nome: n }) }} />
-    return <AprovarTela projeto={projeto} ligado={ligado} onVoltar={irObras} onConstruir={async (modo) => { await pedir('construir', obraId, { modo }); setTela('obra') }} />
+    return <AprovarTela projeto={projeto} ligado={ligado} onVoltar={irObras} onConstruir={async (modo) => { await pedir('construir', obraId, { modo }); setTela('obra') }} teste={estado?.testes[obraId] ?? null} onTestar={() => { setVoltaTestar('projeto'); setTela('testar') }} />
   }
   return (
     <Obras api={api} estado={estado} obras={obras} nome={nome} menu={menu}

@@ -667,6 +667,13 @@ export function criarCanalCelular(): CanalCelular {
       const linhas = await ler(() => t('celular_projetos').select('obra_id,dados,telas_token,atualizado_em').eq('licenca_id', l).order('atualizado_em', { ascending: false }), 50)
       return linhas.map((r: any) => ({ ...r.dados, obra_id: r.obra_id, telas_token: r.telas_token ?? null, atualizado_em: new Date(r.atualizado_em) }))
     },
+    async salvarTeste(l, x) {
+      ok(await t('celular_testes').upsert({ licenca_id: l, obra_id: x.obra_id, dados: x.dados, atualizado_em: iso(x.atualizado_em) }), 'celular salvarTeste')
+    },
+    async testes(l) {
+      const linhas = await ler(() => t('celular_testes').select('obra_id,dados,atualizado_em').eq('licenca_id', l).order('atualizado_em', { ascending: false }), 20)
+      return linhas.map((r: any) => ({ obra_id: r.obra_id, dados: r.dados ?? {}, atualizado_em: new Date(r.atualizado_em) }))
+    },
     async guardarReferencia(id, r) { ok(await t('celular_referencias').insert({ id, licenca_id: r.licenca_id, imagem: r.imagem, criada_em: iso(r.criada_em) }), 'celular guardarReferencia') },
     async contarReferencias(l) {
       const r = await t('celular_referencias').select('id', { count: 'exact', head: true }).eq('licenca_id', l)

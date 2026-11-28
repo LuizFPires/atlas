@@ -76,11 +76,13 @@ test('reação torta não vira resposta; preço absurdo vira "não disse"', () =
 test('teste completo com 100 agentes: lotes de 20, contas feitas pelo programa, temas só com ids de verdade, aviso de que são agentes de IA', async () => {
   const { raiz, cwd } = obra()
   const disparo = disparoFalso()
-  const t = criarTestarIdeia({ raiz, disparo, agendar: () => {} })
+  const prontos = []
+  const t = criarTestarIdeia({ raiz, disparo, agendar: () => {}, aoPronto: (pasta, x, rel) => prontos.push([pasta, x, rel.geral.total]) })
   const { n } = await t.iniciar('ponto', { quantidade: 100 })
   await rodarAte(t, 'ponto', n)
   const e = await t.estado('ponto', n)
   assert.equal(e.estado, 'pronto')
+  assert.deepEqual(prontos, [['ponto', n, 100]]) // uma vez só: vira o aviso "o teste ficou pronto" no celular
   assert.equal(disparo.chamadas, 1 + 5 + 6 + 1)
   const r = await t.relatorio('ponto', n)
   assert.match(r.aviso, /agentes de IA, não pessoas reais/)
