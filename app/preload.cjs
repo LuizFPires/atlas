@@ -141,6 +141,13 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     cancelar: (conta) => chamar('atlas:contas:cancelar', String(conta)),
     aposLigar: (pasta) => chamar('atlas:contas:aposLigar', String(pasta)),
   },
+  resend: {
+    situacao: () => chamar('atlas:resend:situacao'),
+    guardarChave: (chave) => chamar('atlas:resend:guardarChave', String(chave)),
+    escolherDominio: (dominio) => chamar('atlas:resend:escolherDominio', String(dominio)),
+    conferir: () => chamar('atlas:resend:conferir'),
+    abrirChaves: (b) => chamar('atlas:resend:abrirChaves', { x: Number(b?.x), y: Number(b?.y), width: Number(b?.width), height: Number(b?.height) }),
+  },
   // Roteiro da ideia: quais tópicos o relato já respondeu e, no fim, o que faltou.
   ideia: { conferir: (relato, fim) => chamar('atlas:ideia:conferir', String(relato ?? ''), fim === true) },
   prototipo: {

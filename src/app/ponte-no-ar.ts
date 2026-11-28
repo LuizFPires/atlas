@@ -20,6 +20,8 @@ export interface EstadoNoAr {
   avisos: string[]
   /** A conta de dono que o Atlas criou no sistema (e-mail da licença). A senha o dono cria em "Esqueci minha senha". */
   acesso?: { email: string; novo: boolean; senha?: boolean } | null
+  /** Resend ligado nesta obra (28/11/2026): os e-mails do sistema saem do domínio do cliente. */
+  email?: { dominio: string } | null
   /** A cota do plano do Claude acabou: a obra espera renovar sozinha e continua de onde parou (não é erro). */
   esperandoCota?: boolean
   /** O que a etapa de agora está fazendo (PG1Progresso). pct = contagem real; null = a tela anda pelo tempo de costume (s). */

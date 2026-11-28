@@ -813,3 +813,22 @@ test('pedirAuthSupabase e pedirApiSupabase: só os caminhos da senha e da config
   await pedirApiSupabase('PATCH', '/v1/projects/abcdefghijklmnopqrst/config/auth', {}, 't', { enviar })
   await assert.rejects(pedirApiSupabase('PATCH', '/v1/projects/abcdefghijklmnopqrst/database/query', {}, 't', { enviar }))
 })
+
+test('Resend verificado: o login do sistema passa a mandar e-mail pelo Resend do domínio do cliente (só o domínio fica no registro)', async () => {
+  const { raiz, cwd } = obraComLogin()
+  const patches = []
+  const { d } = deps()
+  const cfg = { dominio: 'ampla.com.br', senha: 're_' + 'E'.repeat(30) }
+  const n = criarNoAr({ raiz, ...d, apiSupabase: comConfig(d.apiSupabase, { site_url: 'https://ponto.vercel.app', uri_allow_list: 'https://ponto.vercel.app/**' }, patches), emailDoDono: async () => 'gui@exemplo.com', authSupabase: async () => ({ id: UID }), emailDoSistema: async () => cfg })
+  await n.iniciar('ponto', 'ponto'); await n._esperar('ponto')
+  assert.deepEqual(patches, [{ external_email_enabled: true, smtp_admin_email: 'nao-responda@ampla.com.br', smtp_host: 'smtp.resend.com', smtp_port: '465', smtp_user: 'resend', smtp_pass: cfg.senha, smtp_sender_name: 'ponto' }])
+  assert.deepEqual(n.estado('ponto').email, { dominio: 'ampla.com.br' })
+  const reg = fs.readFileSync(path.join(cwd, '.atlas', 'no-ar.json'), 'utf8')
+  assert.ok(!reg.includes('re_E'), 'a chave de envio não vai para arquivo')
+  // obra já publicada: ligarEmails() direto (quando o domínio verifica depois)
+  patches.length = 0
+  assert.deepEqual(await n.ligarEmails('ponto'), { ok: true, dominio: 'ampla.com.br' })
+  assert.equal(patches.length, 1)
+  const sem = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), emailDoSistema: async () => null })
+  assert.deepEqual(await sem.ligarEmails('ponto'), { ok: false, motivo: 'resend-sem-dominio' })
+})

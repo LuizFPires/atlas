@@ -79,3 +79,10 @@ test('tela larga: sem moldura e sem os passos da instalação à esquerda', () =
   expect(container.querySelector('.at-ativ-fundo')).toBeNull()
   expect(container.querySelector('.at-ativ__lado')).toBeNull()
 })
+
+test('Resend aparece como 4ª conta, opcional: não conta no "faltam" e não trava o último passo', async () => {
+  const { criarResendFixture } = await import('./ponte-resend')
+  render(<TemaProvider><LigarContas ponte={criarLigarContasFixture(['github', 'supabase', 'hosp'])} resend={criarResendFixture()} onContinuar={() => {}} onVoltar={() => {}} sondagemMs={20} /></TemaProvider>)
+  expect(await screen.findByRole('group', { name: 'Resend, o carteiro' })).toHaveTextContent('Opcional · recomendada')
+  expect(await screen.findByRole('button', { name: 'Tudo ligado · Último passo →' })).toBeEnabled()
+})

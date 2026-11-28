@@ -1,0 +1,24 @@
+/* Resend, o carteiro (28/11/2026; protótipo aprovado, telas 2 e 3). Usa as classes da tela das contas (at-ligar__*). */
+.at-rs__opc { font: 600 11px var(--font-mono); letter-spacing: 0.08em; color: var(--aviso-txt, #F2B33D); }
+.at-rs__por { font-size: 14px; line-height: 1.5; color: var(--mute); padding: 0 4px 4px 44px; }
+.at-rs__por b { color: var(--text); }
+.at-rs__passo { font: 600 11px var(--font-mono); letter-spacing: 0.12em; color: var(--mute2, var(--mute)); }
+.at-rs__prov { display: flex; gap: 6px; flex-wrap: wrap; }
+.at-rs__prov button { min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--card-b); background: transparent; color: var(--mute); font: 500 13px var(--font-text); cursor: pointer; }
+.at-rs__prov button[aria-pressed='true'] { background: var(--soft); border-color: var(--lime); color: var(--text); }
+.at-rs__dns { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+.at-rs__dns th { text-align: left; font: 600 10px var(--font-mono); letter-spacing: 0.1em; color: var(--mute2, var(--mute)); padding: 6px 8px; }
+.at-rs__dns th:nth-child(1) { width: 52px; } .at-rs__dns th:nth-child(2) { width: 26%; } .at-rs__dns th:nth-child(4) { width: 76px; } .at-rs__dns th:nth-child(5) { width: 96px; }
+.at-rs__dns td { padding: 9px 8px; border-top: 1px solid var(--card-b); vertical-align: middle; }
+.at-rs__dns code { font: 12px var(--font-mono); color: var(--text); word-break: break-all; }
+.at-rs__dns small { color: var(--mute2, var(--mute)); }
+.at-rs__copiar { min-height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--card-b); background: var(--card2); color: var(--text); font: 600 12px var(--font-text); cursor: pointer; }
+.at-rs__st { font: 600 10px var(--font-mono); letter-spacing: 0.08em; padding: 3px 7px; border-radius: 6px; white-space: nowrap; }
+.at-rs__st--ok { background: var(--soft); color: var(--lime-txt, var(--lime)); }
+.at-rs__st--esperando { background: rgb(242 179 61 / 0.16); color: var(--aviso-txt, #F2B33D); }
+.at-rs__st--falhou { background: rgb(229 83 75 / 0.14); color: var(--erro); }
+.at-rs__espera { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; background: rgb(242 179 61 / 0.1); border: 1px solid rgb(242 179 61 / 0.35); font-size: 14px; line-height: 1.5; }
+.at-rs__pulso { width: 10px; height: 10px; flex: none; border-radius: 5px; background: var(--aviso, #F2B33D); animation: at-rs-pulso 1.4s infinite; }
+@keyframes at-rs-pulso { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .at-rs__pulso { animation: none; } }
+.at-rs__acoes { display: flex; justify-content: flex-end; }

@@ -9,6 +9,8 @@ import './app.css'
 import './claude.css'
 import './contas.css'
 import './ligar-contas.css'
+import { ResendConta } from './ResendConta'
+import type { PonteResend } from './ponte-resend'
 
 /** As três contas, na ordem do protótipo (C1Contas). "Ligar a Vercel" e não "o Vercel": é a vitrine. */
 const LINHAS: { id: ContaLigavel; nome: string; artigo: 'o' | 'a'; papel: string; tipo: 'codigo' | 'chave'; dica: { en: string; pt: string } }[] = [
@@ -33,6 +35,8 @@ interface Props {
   sondagemMs?: number
   /** Texto do botão final (dentro de uma obra: "voltar à obra"). */
   rotuloContinuar?: string
+  /** Resend, o carteiro (28/11/2026): 4ª conta, opcional. Sem ela a tela mostra só as três. */
+  resend?: PonteResend
 }
 
 const ret = (el: HTMLElement | null): Retangulo => {
@@ -45,7 +49,7 @@ const ret = (el: HTMLElement | null): Retangulo => {
  * cada uma aqui: GitHub e Vercel mostram um código que a pessoa cola no site ao lado; o Supabase pede uma chave colada aqui.
  * A pessoa nunca digita comando nem senha. O último passo só aparece com as três ligadas.
  */
-export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemMs = 3000, rotuloContinuar = 'Tudo ligado · Último passo →' }: Props) {
+export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemMs = 3000, rotuloContinuar = 'Tudo ligado · Último passo →', resend }: Props) {
   const [linhas, setLinhas] = useState<Record<ContaLigavel, Linha>>({ github: { estado: 'pendente', usuario: null }, supabase: { estado: 'pendente', usuario: null }, hosp: { estado: 'pendente', usuario: null } })
   const [chave, setChave] = useState('')
   const [avisoChave, setAvisoChave] = useState('')
@@ -190,6 +194,7 @@ export function LigarContas({ ponte, onContinuar, onVoltar, navegador, sondagemM
                   </div>
                 )
               })}
+              {resend && <ResendConta ponte={resend} onde={() => ret(area.current)} />}
               {aviso && <p className="at-ativ__erro" role="alert">{aviso}</p>}
               <div className="at-ativ__rodape at-claude__acoes">
                 <Botao variante="secundario" onClick={onVoltar}>← Voltar</Botao>

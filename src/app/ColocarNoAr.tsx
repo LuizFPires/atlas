@@ -336,6 +336,15 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
                 <span className="at-noar__nota">Daqui pra frente, cada mudança que você pedir em "Pedir mudança" fica pronta numa versão de teste. Você confere e ela só entra no ar quando você clicar em "Colocar no ar".</span>
               </section>
               {estado?.acesso && <AcessoDoDono key={estado.acesso.email} acesso={estado.acesso} endereco={estado.endereco} definirSenha={noAr.definirSenha ? (senha) => noAr.definirSenha!(obra.pasta, senha) : undefined} />}
+              {estado?.acesso && (
+                <section className="at-noar__card at-acd" aria-label="E-mails do sistema">
+                  <div className="at-acd__linha"><span className="at-noar__rot">E-MAILS DO SISTEMA</span><span className={`at-acd__tag at-acd__tag--${estado.email ? 'ok' : 'limitado'}`}>{estado.email ? 'LIGADO' : 'LIMITADO'}</span></div>
+                  {estado.email
+                    ? <span className="at-acd__txt">Os e-mails do sistema (como “Esqueci minha senha” e convites) saem de <b>nao-responda@{estado.email.dominio}</b>, pelo seu Resend, para qualquer pessoa.</span>
+                    : <span className="at-acd__txt">Hoje o sistema só consegue mandar e-mail (como “Esqueci minha senha”) para quem é da sua equipe no Supabase, até 2 por hora. Ligue o Resend para mandar para qualquer pessoa, do seu domínio.</span>}
+                  {!estado.email && onLigarContas && <div className="at-acd__pe"><button type="button" className="at-acd__sec" onClick={onLigarContas}>Ligar o Resend →</button></div>}
+                </section>
+              )}
               {(onDominio || dominio || onLojas || lojas || onVender) && (
                 <section className="at-noar__card at-noar__card--calmo">
                   <span className="at-noar__rot">PRÓXIMOS PASSOS · SÓ SE VOCÊ QUISER</span>

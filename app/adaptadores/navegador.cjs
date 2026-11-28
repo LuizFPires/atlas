@@ -28,7 +28,7 @@ const GUIAS_SITE = {
   stripe: 'https://dashboard.stripe.com/register',
   asaas: 'https://www.asaas.com/onboarding/createAccount',
 }
-const DOMINIOS = ['github.com', 'supabase.com', 'vercel.com', 'stripe.com', 'registro.br', 'asaas.com']
+const DOMINIOS = ['github.com', 'supabase.com', 'vercel.com', 'stripe.com', 'registro.br', 'asaas.com', 'resend.com']
 
 function urlPermitida(url) {
   let u
