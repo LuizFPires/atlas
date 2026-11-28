@@ -48,7 +48,17 @@ export interface PonteNoAr {
   conferirAntes?(pasta: string): Promise<AntesDoNoAr>
   /** Senha do dono criada no Atlas (28/11/2026): grava direto na conta do sistema, sem e-mail. Nunca é guardada. */
   definirSenha?(pasta: string, senha: string): Promise<{ ok: true }>
+  /** Pessoas da equipe (U1UsarSistema, 28/11/2026): papéis internos da obra, quem entra, colocar, nova senha e tirar acesso.
+   *  A senha inicial volta só na resposta (para o dono mandar pelo WhatsApp) e nunca é guardada. */
+  papeis?(pasta: string): Promise<PapelDaEquipe[]>
+  pessoas?(pasta: string): Promise<PessoaDaEquipe[]>
+  colocarPessoa?(pasta: string, p: { nome: string; email: string; papel: string }): Promise<{ ok: true; id: string | null; senha: string }>
+  novaSenha?(pasta: string, id: string): Promise<{ ok: true; senha: string }>
+  tirarAcesso?(pasta: string, id: string): Promise<{ ok: true }>
 }
+
+export interface PapelDaEquipe { id: string; nome: string; descricao: string }
+export interface PessoaDaEquipe { id: string; email: string; nome: string; papel: string; voce: boolean; bloqueado: boolean; trocarSenha: boolean }
 
 export interface AntesDoNoAr { precisaBanco: boolean; bancoNovo: boolean; contaLigada: boolean; bancosAtivos: number | null }
 
@@ -76,6 +86,7 @@ const esperaFalsa = (ms: number) => new Promise((r) => setTimeout(r, ms))
 /** Simulação para o modo fixture: os passos andam sozinhos; o nome "ponto" está ocupado (para testar as sugestões). */
 export function criarNoArFixture({ passoMs = 700, reprovar = false }: { passoMs?: number; reprovar?: boolean } = {}): PonteNoAr {
   const estados = new Map<string, EstadoNoAr>()
+  const equipeFixture = new Map<string, PessoaDaEquipe[]>()
   const ids = PASSOS_NO_AR.map((p) => p.id)
   const base = (nome: string | null): EstadoNoAr => ({ fase: 'parado', nome, passos: ids.map((id) => ({ id, estado: 'falta' })), achados: [], endereco: null, erro: null, avisos: [] })
   let reprova = reprovar
@@ -119,6 +130,32 @@ export function criarNoArFixture({ passoMs = 700, reprovar = false }: { passoMs?
       if (senha.length < 8) throw new Error('senha-curta')
       const e = estados.get(pasta)
       if (e?.acesso) estados.set(pasta, { ...e, acesso: { ...e.acesso, senha: true } })
+      return { ok: true as const }
+    },
+    async papeis() { return [{ id: 'dono', nome: 'Dono', descricao: 'vê e muda tudo' }, { id: 'equipe', nome: 'Funcionário', descricao: 'usa o dia a dia' }] },
+    async pessoas(pasta) {
+      const e = estados.get(pasta)
+      const dono: PessoaDaEquipe = { id: '00000000-0000-0000-0000-000000000000', email: e?.acesso?.email ?? 'voce@empresa.com.br', nome: '', papel: 'dono', voce: true, bloqueado: false, trocarSenha: false }
+      return [dono, ...(equipeFixture.get(pasta) ?? [])].map((x) => ({ ...x }))
+    },
+    async colocarPessoa(pasta, { nome, email, papel }) {
+      if (!nome.trim() || !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email.trim())) throw new Error('pessoa-invalida')
+      const lista = equipeFixture.get(pasta) ?? []
+      if (lista.some((x) => x.email === email.trim().toLowerCase())) throw new Error('pessoa-ja-existe')
+      const id = `${String(lista.length + 1).padStart(8, '0')}-0000-0000-0000-000000000000`
+      lista.push({ id, email: email.trim().toLowerCase(), nome: nome.trim(), papel, voce: false, bloqueado: false, trocarSenha: true })
+      equipeFixture.set(pasta, lista)
+      return { ok: true as const, id, senha: 'ponte-azul-farol-47' }
+    },
+    async novaSenha(pasta, id) {
+      const p = (equipeFixture.get(pasta) ?? []).find((x) => x.id === id)
+      if (p) p.trocarSenha = true
+      return { ok: true as const, senha: 'trilha-verde-ilha-12' }
+    },
+    async tirarAcesso(pasta, id) {
+      const p = (equipeFixture.get(pasta) ?? []).find((x) => x.id === id)
+      if (!p) throw new Error('nao-pode-tirar-dono')
+      p.bloqueado = true
       return { ok: true as const }
     },
     async corrigir(pasta) {

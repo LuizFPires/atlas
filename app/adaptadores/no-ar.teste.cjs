@@ -832,3 +832,90 @@ test('Resend verificado: o login do sistema passa a mandar e-mail pelo Resend do
   const sem = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), emailDoSistema: async () => null })
   assert.deepEqual(await sem.ligarEmails('ponto'), { ok: false, motivo: 'resend-sem-dominio' })
 })
+
+// Pessoas da equipe (Luiz, 28/11/2026, abas 4 e 5 aprovadas): o dono coloca gente da equipe pelo Atlas, sem depender de e-mail.
+function obraPublicada(papeis) {
+  const o = obraComLogin()
+  fs.mkdirSync(path.join(o.cwd, '.atlas'), { recursive: true })
+  fs.writeFileSync(path.join(o.cwd, '.atlas', 'no-ar.json'), JSON.stringify({ versao: 1, nome: 'ponto', ref: 'abcdefghijklmnopqrst', endereco: 'https://ponto.vercel.app', acesso: { email: 'gui@exemplo.com', novo: true, id: UID, senha: true } }))
+  if (papeis !== undefined) { fs.mkdirSync(path.join(o.cwd, 'docs'), { recursive: true }); fs.writeFileSync(path.join(o.cwd, 'docs', 'papeis.json'), typeof papeis === 'string' ? papeis : JSON.stringify(papeis)) }
+  return o
+}
+const PAPEIS4 = { papeis: [
+  { id: 'dono', nome: 'Dono', descricao: 'vê e muda tudo', interno: true },
+  { id: 'gerente', nome: 'Gerente', descricao: 'cuida da agenda', interno: true },
+  { id: 'profissional', nome: 'Profissional', descricao: 'vê os próprios horários', interno: true },
+  { id: 'cliente', nome: 'Cliente', descricao: 'marca horário', interno: false },
+] }
+const U2 = 'aaaaaaaa-2222-3333-4444-555555555555'
+
+test('papéis da equipe: lê docs/papeis.json da obra (só os internos); sem o arquivo, dono e funcionário', async () => {
+  const { raiz } = obraPublicada(PAPEIS4)
+  const { d } = deps()
+  const n = criarNoAr({ raiz, ...d })
+  assert.deepEqual((await n.papeis('ponto')).map((p) => p.id), ['dono', 'gerente', 'profissional'])
+  const o2 = obraPublicada()
+  const n2 = criarNoAr({ raiz: o2.raiz, ...d })
+  assert.deepEqual((await n2.papeis('ponto')).map((p) => [p.id, p.nome]), [['dono', 'Dono'], ['equipe', 'Funcionário']])
+  const o3 = obraPublicada('{ quebrado')
+  assert.deepEqual((await criarNoAr({ raiz: o3.raiz, ...d }).papeis('ponto')).map((p) => p.id), ['dono', 'equipe'])
+})
+
+test('colocar uma pessoa: cria a conta confirmada com papel, nome e senha inicial que obriga trocar; a senha não vai para arquivo', async () => {
+  const { raiz, cwd } = obraPublicada(PAPEIS4)
+  const chamadas = []
+  const { d } = deps()
+  const n = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), authSupabase: async (ref, m, c, corpo, chave) => { chamadas.push({ m, c, corpo, chave }); return { id: U2 } } })
+  const r = await n.colocarPessoa('ponto', { nome: ' Rafael Souza ', email: ' Rafael@Ampla.com.br ', papel: 'gerente' })
+  assert.equal(r.ok, true)
+  assert.equal(r.id, U2)
+  assert.match(r.senha, /^[a-z]+-[a-z]+-[a-z]+-\d{2}$/)
+  assert.ok(r.senha.length >= 12)
+  assert.deepEqual(chamadas, [{ m: 'POST', c: '/auth/v1/admin/users', chave: 'sb_secret_' + 'S'.repeat(40), corpo: { email: 'rafael@ampla.com.br', password: r.senha, email_confirm: true, app_metadata: { papel: 'gerente', trocar_senha: true }, user_metadata: { nome: 'Rafael Souza' } } }])
+  const tudo = fs.readdirSync(path.join(cwd, '.atlas')).map((f) => fs.readFileSync(path.join(cwd, '.atlas', f), 'utf8')).join('\n')
+  assert.ok(!tudo.includes(r.senha))
+})
+
+test('colocar uma pessoa: recusa papel de fora da equipe, e-mail torto, nome vazio e e-mail que já tem conta', async () => {
+  const { raiz } = obraPublicada(PAPEIS4)
+  const { d } = deps()
+  const n = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), authSupabase: async () => { throw Object.assign(new Error('supabase-422'), { detalhe: 'email_exists' }) } })
+  await assert.rejects(n.colocarPessoa('ponto', { nome: 'Ana', email: 'ana@x.com', papel: 'cliente' }), /papel-invalido/)
+  await assert.rejects(n.colocarPessoa('ponto', { nome: 'Ana', email: 'ana', papel: 'gerente' }), /pessoa-invalida/)
+  await assert.rejects(n.colocarPessoa('ponto', { nome: '  ', email: 'ana@x.com', papel: 'gerente' }), /pessoa-invalida/)
+  await assert.rejects(n.colocarPessoa('ponto', { nome: 'Ana', email: 'ana@x.com', papel: 'gerente' }), /pessoa-ja-existe/)
+})
+
+test('pessoas da equipe: lista quem é da equipe (o dono primeiro, marcado), sem o público, com quem foi bloqueado e quem ainda vai trocar a senha', async () => {
+  const { raiz } = obraPublicada(PAPEIS4)
+  const { d } = deps()
+  const users = [
+    { id: U2, email: 'rafael@ampla.com.br', user_metadata: { nome: 'Rafael' }, app_metadata: { papel: 'gerente', trocar_senha: true } },
+    { id: 'bbbbbbbb-2222-3333-4444-555555555555', email: 'cli@x.com', app_metadata: { papel: 'cliente' } },
+    { id: 'cccccccc-2222-3333-4444-555555555555', email: 'ex@ampla.com.br', user_metadata: { nome: 'Ex' }, app_metadata: { papel: 'profissional' }, banned_until: '3000-01-01T00:00:00Z' },
+    { id: UID, email: 'gui@exemplo.com', app_metadata: { papel: 'dono' } },
+  ]
+  const n = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), authSupabase: async () => ({ users }) })
+  const r = await n.pessoas('ponto')
+  assert.deepEqual(r.map((p) => [p.email, p.papel, p.voce, p.bloqueado, p.trocarSenha]), [
+    ['gui@exemplo.com', 'dono', true, false, false],
+    ['rafael@ampla.com.br', 'gerente', false, false, true],
+    ['ex@ampla.com.br', 'profissional', false, true, false],
+  ])
+  assert.equal(r[1].nome, 'Rafael')
+})
+
+test('nova senha e tirar acesso: só por id de verdade; o dono não tira o próprio acesso', async () => {
+  const { raiz } = obraPublicada(PAPEIS4)
+  const chamadas = []
+  const { d } = deps()
+  const n = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), authSupabase: async (ref, m, c, corpo) => { chamadas.push({ m, c, corpo }); return {} } })
+  const r = await n.novaSenha('ponto', U2)
+  assert.match(r.senha, /^[a-z]+-[a-z]+-[a-z]+-\d{2}$/)
+  assert.deepEqual(chamadas[0], { m: 'PUT', c: `/auth/v1/admin/users/${U2}`, corpo: { password: r.senha, app_metadata: { trocar_senha: true } } })
+  assert.deepEqual(await n.tirarAcesso('ponto', U2), { ok: true })
+  assert.deepEqual(chamadas[1], { m: 'PUT', c: `/auth/v1/admin/users/${U2}`, corpo: { ban_duration: '876000h' } })
+  await assert.rejects(n.tirarAcesso('ponto', UID), /nao-pode-tirar-dono/)
+  await assert.rejects(n.novaSenha('ponto', '../x'), /pessoa-invalida/)
+  assert.equal(chamadas.length, 2)
+})

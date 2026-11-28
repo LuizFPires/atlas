@@ -244,6 +244,11 @@ contextBridge.exposeInMainWorld('atlasDesktop', {
     corrigir: (pasta) => chamar('atlas:noar:corrigir', String(pasta)),
     conferirAntes: (pasta) => chamar('atlas:noar:conferirAntes', String(pasta)),
     definirSenha: (pasta, senha) => chamar('atlas:noar:definirSenha', String(pasta), String(senha)),
+    papeis: (pasta) => chamar('atlas:noar:papeis', String(pasta)),
+    pessoas: (pasta) => chamar('atlas:noar:pessoas', String(pasta)),
+    colocarPessoa: (pasta, p) => chamar('atlas:noar:colocarPessoa', String(pasta), { nome: String(p?.nome ?? ''), email: String(p?.email ?? ''), papel: String(p?.papel ?? '') }),
+    novaSenha: (pasta, id) => chamar('atlas:noar:novaSenha', String(pasta), String(id)),
+    tirarAcesso: (pasta, id) => chamar('atlas:noar:tirarAcesso', String(pasta), String(id)),
   },
   vendas: {
     // Página de vendas (M61): a chave do gateway passa só daqui ao processo principal, que a põe direto na Vercel do cliente.

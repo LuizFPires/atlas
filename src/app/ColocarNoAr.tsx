@@ -45,6 +45,8 @@ interface Props {
   abrirSiteLojas?: (destino: DestinoSite) => Promise<void>
   /** M60: "Quer vender o [app] para outras empresas?" (opcional; sem tocar, nada muda). */
   onVender?: () => void
+  /** No ar (U1UsarSistema, 28/11/2026): o que vem depois mora na aba "Usar o sistema"; a tela leva o cliente até lá. */
+  onPronto?: () => void
 }
 
 type Tela = 'pronta' | 'endereco'
@@ -62,7 +64,7 @@ export function motivoDaCorrecao(codigo: string): string {
   return motivoDoTravamento(codigo, 'Não consegui mandar as correções.')
 }
 
-export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro, onGuiaRegistro, dominioAberto = false, lojas, onGuiaLojas, lojasAberto = false, abrirSiteLojas, onVender }: Props) {
+export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, onDominio, onLojas, onAjuda, onLigarContas, intervaloMs = 2000, dominio, abrirRegistro, onGuiaRegistro, dominioAberto = false, lojas, onGuiaLojas, lojasAberto = false, abrirSiteLojas, onVender, onPronto }: Props) {
   const [vendoDominio, setVendoDominio] = useState(dominioAberto)
   const [vendoLojas, setVendoLojas] = useState(lojasAberto)
   const [enderecoDominio, setEnderecoDominio] = useState<string | null>(null)
@@ -166,6 +168,7 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
   const [painel, setPainel] = useState(false)
   const temAcompanhamento = Boolean(estado && (fase === 'rodando' || fase === 'corrigindo' || fase === 'erro' || (estado.diario?.length ?? 0) > 0) && fase !== 'parado')
   const noArAgora = fase === 'noar'
+  useEffect(() => { if (noArAgora && !vendoDominio && !vendoLojas && onPronto) onPronto() }, [noArAgora, vendoDominio, vendoLojas, onPronto])
   const link = useMemo(() => (noArAgora ? enderecoDoSistema(enderecoDominio ?? estado?.endereco ?? null) : null), [noArAgora, enderecoDominio, estado?.endereco])
   const matriz = useMemo(() => (link ? matrizQr(link) : null), [link])
   const predio = useMemo(() => `data:image/svg+xml;utf8,${encodeURIComponent(predioSvg({ andares, prontos: andares, altura: 560 }))}`, [andares])
@@ -318,7 +321,8 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
           {noArAgora && vendoLojas && lojas && onGuiaLojas && (
             <Lojas pasta={obra.pasta} appNome={obra.nome} lojas={lojas} onGuia={onGuiaLojas} dominio={enderecoDominio ? enderecoDominio.replace(/^https:\/\//, '') : null} onVoltar={() => setVendoLojas(false)} abrirSite={abrirSiteLojas} />
           )}
-          {noArAgora && !vendoDominio && !vendoLojas && (
+          {noArAgora && !vendoDominio && !vendoLojas && onPronto && <span className="at-noar__nota">No ar. Abrindo “Usar o sistema”…</span>}
+          {noArAgora && !vendoDominio && !vendoLojas && !onPronto && (
             <>
               <section className="at-noar__card at-noar__card--lime">
                 <span className="at-noar__rot at-noar__rot--lime">ESTÁ NO AR · ENTREGA DAS CHAVES</span>

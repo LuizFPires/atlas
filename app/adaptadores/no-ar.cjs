@@ -226,6 +226,28 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
     return null
   }
 
+  const PAPEIS_PADRAO = [{ id: 'dono', nome: 'Dono', descricao: 'vê e muda tudo', interno: true }, { id: 'equipe', nome: 'Funcionário', descricao: 'usa o dia a dia', interno: true }]
+  function papeisDaObra(pasta) {
+    let j = null
+    try { j = JSON.parse(fs.readFileSync(path.join(cwdDe(pasta), 'docs', 'papeis.json'), 'utf8')) } catch { j = null }
+    const lista = j && Array.isArray(j.papeis) ? j.papeis : []
+    const ok = lista
+      .filter((p) => p && typeof p.id === 'string' && /^[a-z][a-z0-9_-]{0,30}$/.test(p.id) && typeof p.nome === 'string' && p.nome.trim() && p.interno === true)
+      .map((p) => ({ id: p.id, nome: p.nome.trim().slice(0, 40), descricao: typeof p.descricao === 'string' ? p.descricao.trim().slice(0, 80) : '' }))
+    return ok.length ? ok : PAPEIS_PADRAO.map(({ interno, ...p }) => p) // eslint-disable-line no-unused-vars
+  }
+  async function acessoDoBanco(pasta) {
+    cwdDe(pasta)
+    const reg = lerRegistro(pasta)
+    if (!reg.ref || !authSupabase) throw new Error('sem-publicacao')
+    const { secreta } = await chaveSecretaDoBanco(reg.ref)
+    if (!secreta) throw new Error('supabase-sem-chave')
+    return { reg, secreta }
+  }
+  const PALAVRAS = ['ponte', 'azul', 'casa', 'sol', 'lua', 'rio', 'mar', 'vento', 'pedra', 'folha', 'trem', 'barco', 'nuvem', 'campo', 'verde', 'ouro', 'prata', 'cedro', 'ipe', 'onda', 'serra', 'praia', 'vila', 'porto', 'bola', 'gato', 'pato', 'leao', 'tigre', 'urso', 'lima', 'uva', 'coco', 'cafe', 'mel', 'pao', 'fogo', 'gelo', 'neve', 'areia', 'flor', 'jardim', 'torre', 'farol', 'ilha', 'lago', 'monte', 'trilha']
+  /** Senha inicial fácil de ditar ("ponte-azul-farol-47"): ~26 bits, vale só até a pessoa trocar no primeiro acesso. */
+  const senhaInicial = () => `${[0, 1, 2].map(() => PALAVRAS[crypto.randomInt(PALAVRAS.length)]).join('-')}-${String(crypto.randomInt(100)).padStart(2, '0')}`
+
   /** Primeiro acesso (Guilherme, 27/11/2026): o sistema só entra por convite e ninguém criava a conta do dono. O Atlas cria a
    *  conta com o e-mail da licença (confirmada, sem senha, papel "dono" no app_metadata, que só o servidor muda). A senha o
    *  dono cria em "Esqueci minha senha" na tela de entrada. O Atlas não define, não vê e não guarda senha. */
@@ -653,6 +675,84 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
       } finally { secreta = null }
       const e = jobs.get(pasta)
       if (e && e.acesso) e.acesso = { ...e.acesso, senha: true }
+      return { ok: true }
+    },
+
+    /** Papéis da equipe (Luiz, 28/11/2026): vêm do sistema construído (docs/papeis.json, skill login-usuarios). Só os internos;
+     *  sem o arquivo (obras antigas), dono e funcionário. */
+    async papeis(pasta) {
+      return papeisDaObra(String(pasta))
+    },
+    /** Quem é da equipe no sistema (o público que se cadastra sozinho fica de fora). O dono primeiro. */
+    async pessoas(pasta) {
+      pasta = String(pasta)
+      const { reg, secreta: s0 } = await acessoDoBanco(pasta)
+      let secreta = s0
+      const internos = new Set(papeisDaObra(pasta).map((p) => p.id))
+      const lista = []
+      try {
+        for (let pagina = 1; pagina <= 20; pagina++) {
+          const r = await authSupabase(reg.ref, 'GET', `/auth/v1/admin/users?page=${pagina}&per_page=200`, null, secreta)
+          const us = Array.isArray(r) ? r : (r && Array.isArray(r.users) ? r.users : [])
+          lista.push(...us)
+          if (us.length < 200) break
+        }
+      } finally { secreta = null }
+      const donoEmail = reg.acesso && typeof reg.acesso.email === 'string' ? reg.acesso.email.toLowerCase() : ''
+      const agoraMs = agora().getTime()
+      return lista
+        .filter((u) => u && typeof u.id === 'string' && UUID.test(u.id) && typeof u.email === 'string')
+        .map((u) => {
+          const am = (u.app_metadata && typeof u.app_metadata === 'object') ? u.app_metadata : {}
+          const nome = u.user_metadata && typeof u.user_metadata.nome === 'string' ? u.user_metadata.nome.slice(0, 80) : ''
+          const voce = (reg.acesso && reg.acesso.id === u.id) || u.email.toLowerCase() === donoEmail
+          const papel = typeof am.papel === 'string' ? am.papel : (voce ? 'dono' : '')
+          const ban = u.banned_until ? Date.parse(u.banned_until) : NaN
+          return { id: u.id, email: u.email.toLowerCase(), nome, papel, voce, bloqueado: Number.isFinite(ban) && ban > agoraMs, trocarSenha: am.trocar_senha === true }
+        })
+        .filter((p) => p.voce || internos.has(p.papel))
+        .sort((a, b) => Number(b.voce) - Number(a.voce))
+    },
+    /** Coloca uma pessoa da equipe: conta confirmada, papel da lista, senha inicial que obriga trocar no primeiro acesso.
+     *  A senha volta só nesta resposta (para o dono mandar pelo WhatsApp); não vai para arquivo nem log. */
+    async colocarPessoa(pasta, { nome, email, papel } = {}) {
+      pasta = String(pasta)
+      nome = typeof nome === 'string' ? nome.trim().replace(/\s+/g, ' ') : ''
+      email = typeof email === 'string' ? email.trim().toLowerCase() : ''
+      if (!nome || nome.length > 80 || !EMAIL.test(email)) throw new Error('pessoa-invalida')
+      if (!papeisDaObra(pasta).some((p) => p.id === papel)) throw new Error('papel-invalido')
+      const { reg, secreta: s0 } = await acessoDoBanco(pasta)
+      let secreta = s0
+      let senha = senhaInicial()
+      try {
+        const u = await authSupabase(reg.ref, 'POST', '/auth/v1/admin/users', { email, password: senha, email_confirm: true, app_metadata: { papel, trocar_senha: true }, user_metadata: { nome } }, secreta)
+        const id = u && typeof u.id === 'string' && UUID.test(u.id) ? u.id : null
+        return { ok: true, id, senha }
+      } catch (err) {
+        const txt = `${err && err.message} ${err && err.detalhe}`
+        if (/\b422\b|email_exists|already (been )?registered|already exists/i.test(txt)) throw new Error('pessoa-ja-existe')
+        throw err
+      } finally { secreta = null; senha = null }
+    },
+    /** Nova senha inicial (esqueceu a senha sem e-mail ligado): a pessoa troca no próximo acesso. */
+    async novaSenha(pasta, id) {
+      pasta = String(pasta)
+      if (typeof id !== 'string' || !UUID.test(id)) throw new Error('pessoa-invalida')
+      const { reg, secreta: s0 } = await acessoDoBanco(pasta)
+      let secreta = s0
+      const senha = senhaInicial()
+      try { await authSupabase(reg.ref, 'PUT', `/auth/v1/admin/users/${id}`, { password: senha, app_metadata: { trocar_senha: true } }, secreta) } finally { secreta = null }
+      return { ok: true, senha }
+    },
+    /** Tirar o acesso: a conta fica bloqueada no Supabase Auth (os dados que ela lançou continuam no sistema). */
+    async tirarAcesso(pasta, id) {
+      pasta = String(pasta)
+      if (typeof id !== 'string' || !UUID.test(id)) throw new Error('pessoa-invalida')
+      const reg0 = lerRegistro(pasta)
+      if (reg0.acesso && reg0.acesso.id === id) throw new Error('nao-pode-tirar-dono')
+      const { reg, secreta: s0 } = await acessoDoBanco(pasta)
+      let secreta = s0
+      try { await authSupabase(reg.ref, 'PUT', `/auth/v1/admin/users/${id}`, { ban_duration: '876000h' }, secreta) } finally { secreta = null }
       return { ok: true }
     },
 

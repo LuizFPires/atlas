@@ -65,7 +65,7 @@ test('domínio próprio → passo a passo do Registro.br com o servidor para cop
 test('lojas (M59): pergunta, passo a passo da Apple e a conta fica marcada ao terminar', { timeout: 20000 }, async () => {
   await ate(criarNoArFixture({ passoMs: 5 }))
   await userEvent.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
-  await userEvent.click(await screen.findByRole('button', { name: /App Store e no Google Play/ }, { timeout: 6000 }))
+  await userEvent.click(await screen.findByRole('button', { name: /App Store e Google Play/ }, { timeout: 6000 }))
   await userEvent.click(await screen.findByRole('button', { name: 'Seguir →' }))
   await userEvent.click(await screen.findByRole('button', { name: 'Passo a passo: Conta da Apple' }))
   expect(await screen.findByText('PASSO 1 DE 6')).toBeInTheDocument()
@@ -77,7 +77,7 @@ test('lojas (M59): pergunta, passo a passo da Apple e a conta fica marcada ao te
 test('lançamento (M60): da obra no ar para "Lançamentos", começar, escolher o Asaas e a obra aparece na lista', { timeout: 20000 }, async () => {
   await ate(criarNoArFixture({ passoMs: 5 }))
   await userEvent.click(await screen.findByRole('button', { name: 'Colocar no ar →' }))
-  await userEvent.click(await screen.findByRole('button', { name: /Quer vender o .* para outras empresas/ }, { timeout: 6000 }))
+  await userEvent.click(await screen.findByRole('button', { name: /Vender o .* para outras empresas/ }, { timeout: 6000 }))
   await userEvent.click(await screen.findByRole('button', { name: 'Começar o lançamento →' }))
   await userEvent.click(await screen.findByRole('button', { name: 'Escolher o Asaas →' }))
   await userEvent.click(await screen.findByRole('button', { name: 'Já criei a conta' }))

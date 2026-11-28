@@ -15,3 +15,5 @@
 @media (max-width: 900px) {
   .at-abobra, .at-pn__topo:has(.at-abobra__abas) { margin-left: -16px; margin-right: -16px; padding: 10px 16px; }
 }
+.at-abobra__pto { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 3px rgb(198 241 53 / 0.2); vertical-align: middle; }
+.at-abobra__aba--on .at-abobra__pto { background: var(--on-lime); box-shadow: none; }

@@ -43,7 +43,7 @@ export function AcessoDoDono({ acesso, endereco, definirSenha }: Props) {
           <span className="at-acd__ic" aria-hidden="true">✓</span>
           <div>
             <b>Senha criada.</b>
-            <span>Entre no sistema com <b>{acesso.email}</b> e a senha que você criou. Depois você convida a sua equipe por dentro do sistema.</span>
+            <span>Entre no sistema com <b>{acesso.email}</b> e a senha que você criou. A sua equipe você coloca em Usar o sistema → Pessoas da equipe.</span>
           </div>
         </div>
         <div className="at-acd__pe">
