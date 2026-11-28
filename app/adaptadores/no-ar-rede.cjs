@@ -35,8 +35,10 @@ function pedir({ host, metodo, caminho, corpo = null, cabecalhos = {}, timeoutMs
 }
 
 async function pedirApiSupabase(metodo, caminho, corpo, token, { enviar = pedir } = {}) {
-  if (!['GET', 'POST'].includes(metodo)) throw new Error('metodo-invalido')
+  if (!['GET', 'POST', 'PATCH'].includes(metodo)) throw new Error('metodo-invalido')
   if (typeof caminho !== 'string' || !/^\/v1\/[a-z0-9/_-]+(\?reveal=true)?$/.test(caminho) || caminho.includes('..')) throw new Error('caminho-invalido')
+  // PATCH só para a configuração de login do projeto (links de senha e envio de e-mail).
+  if (metodo === 'PATCH' && !/^\/v1\/projects\/[a-z0-9]{10,40}\/config\/auth$/.test(caminho)) throw new Error('caminho-invalido')
   if (typeof token !== 'string' || !token) throw new Error('sem-token')
   const r = await enviar({ host: HOST_API, metodo, caminho, corpo, cabecalhos: { Accept: 'application/json', Authorization: `Bearer ${token}` } })
   if (r.status < 200 || r.status >= 300) {
@@ -54,8 +56,12 @@ async function pedirApiSupabase(metodo, caminho, corpo, token, { enviar = pedir 
 // no endereço nem no erro.
 async function pedirAuthSupabase(ref, metodo, caminho, corpo, chave, { enviar = pedir } = {}) {
   if (typeof ref !== 'string' || !/^[a-z0-9]{10,40}$/.test(ref)) throw new Error('caminho-invalido')
-  if (!['POST'].includes(metodo)) throw new Error('metodo-invalido')
-  if (caminho !== '/auth/v1/admin/users') throw new Error('caminho-invalido')
+  // POST cria a conta do dono; GET lista (para achar a conta pelo e-mail); PUT grava a senha que o dono digitou no Atlas.
+  const ok = (metodo === 'POST' && caminho === '/auth/v1/admin/users')
+    || (metodo === 'GET' && /^\/auth\/v1\/admin\/users\?page=\d{1,3}&per_page=\d{1,4}$/.test(caminho))
+    || (metodo === 'PUT' && /^\/auth\/v1\/admin\/users\/[0-9a-f-]{36}$/.test(caminho))
+  if (!['POST', 'GET', 'PUT'].includes(metodo)) throw new Error('metodo-invalido')
+  if (!ok) throw new Error('caminho-invalido')
   if (typeof chave !== 'string' || !chave) throw new Error('sem-token')
   const r = await enviar({ host: `${ref}.supabase.co`, metodo, caminho, corpo, cabecalhos: { Accept: 'application/json', apikey: chave, Authorization: `Bearer ${chave}` } })
   if (r.status < 200 || r.status >= 300) {

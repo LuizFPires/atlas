@@ -55,6 +55,10 @@ const EXPLICACOES: Record<string, Explicacao> = {
   'outra-obra-trabalhando': { houve: 'Outra obra está trabalhando agora neste computador (o Claude trabalha uma obra de cada vez).', fazer: 'Escolha se esta obra entra na fila ou passa na frente.' },
   'ja-iniciada': { houve: 'Esta obra já começou a ser construída.', fazer: 'Acompanhe pelo Canteiro de obras.' },
   // Controles do pós-obra (Guilherme, 27/11/2026): cancelar, descartar e publicar agora.
+  // Senha do dono criada no Atlas (28/11/2026).
+  'senha-curta': { houve: 'A senha precisa ter 8 letras ou mais.', fazer: 'Escolha uma senha um pouco maior e salve de novo.' },
+  'senha-longa': { houve: 'Essa senha é longa demais para o sistema.', fazer: 'Use uma senha mais curta.' },
+  'sem-acesso': { houve: 'Não achei a sua conta de dono no sistema.', fazer: 'Toque em "Colocar no ar" de novo: o Atlas cria a conta e você cria a senha em seguida.' },
   'nao-cancelavel': { houve: 'Esse pedido não pode mais ser cancelado: ele já ficou pronto ou já saiu da fila.', fazer: 'Se ele já está pronto, use Descartar quando aparecer para conferir.' },
   'ja-pronta': { houve: 'Essa mudança acabou de ficar pronta, então não dá mais para cancelar.', fazer: 'Quando ela aparecer para conferir, use Descartar.' },
   'nao-descartavel': { houve: 'Só dá para descartar uma mudança pronta que ainda não foi para o ar.', fazer: 'Para tirar algo que já está no ar, peça em Pedir mudança.' },

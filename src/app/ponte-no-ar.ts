@@ -19,7 +19,7 @@ export interface EstadoNoAr {
   erro: { passo: IdPassoNoAr; motivo: string; detalhe?: string } | null
   avisos: string[]
   /** A conta de dono que o Atlas criou no sistema (e-mail da licença). A senha o dono cria em "Esqueci minha senha". */
-  acesso?: { email: string; novo: boolean } | null
+  acesso?: { email: string; novo: boolean; senha?: boolean } | null
   /** A cota do plano do Claude acabou: a obra espera renovar sozinha e continua de onde parou (não é erro). */
   esperandoCota?: boolean
   /** O que a etapa de agora está fazendo (PG1Progresso). pct = contagem real; null = a tela anda pelo tempo de costume (s). */
@@ -44,6 +44,8 @@ export interface PonteNoAr {
   corrigir(pasta: string): Promise<EstadoNoAr>
   /** Antes de começar: precisa de banco, a conta está ligada e quantos bancos ativos ela já tem (grátis = 2). Opcional. */
   conferirAntes?(pasta: string): Promise<AntesDoNoAr>
+  /** Senha do dono criada no Atlas (28/11/2026): grava direto na conta do sistema, sem e-mail. Nunca é guardada. */
+  definirSenha?(pasta: string, senha: string): Promise<{ ok: true }>
 }
 
 export interface AntesDoNoAr { precisaBanco: boolean; bancoNovo: boolean; contaLigada: boolean; bancosAtivos: number | null }
@@ -111,6 +113,12 @@ export function criarNoArFixture({ passoMs = 700, reprovar = false }: { passoMs?
       return structuredClone(e)
     },
     async estado(pasta) { return structuredClone(estados.get(pasta) ?? base(null)) },
+    async definirSenha(pasta, senha) {
+      if (senha.length < 8) throw new Error('senha-curta')
+      const e = estados.get(pasta)
+      if (e?.acesso) estados.set(pasta, { ...e, acesso: { ...e.acesso, senha: true } })
+      return { ok: true as const }
+    },
     async corrigir(pasta) {
       const e = estados.get(pasta)
       if (!e) throw new Error('nada-para-corrigir')

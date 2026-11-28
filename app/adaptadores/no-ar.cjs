@@ -101,6 +101,7 @@ const { RE_INSTAVEL, RE_BUILD } = require('./contas-cli.cjs')
 // A Vercel (plano grátis) recusa publicar quando não reconhece quem assinou a última mudança no GitHub (as mudanças da obra
 // saem assinadas pelo Atlas). Guilherme, 27/11/2026: "Deploy bloqueado".
 const RE_BLOQUEADO = /deployment (was )?blocked|commit author|contributing access|associate the committer|no git user associated|git author .{0,40}(access|member)/i
+const UUID = /^[0-9a-f-]{36}$/
 const EMAIL = /^[^\s@<>()",;:]{1,64}@[a-z0-9.-]{1,180}\.[a-z]{2,24}$/i
 /** A chave secreta do banco (só em memória, para criar a conta do dono): a nova ('secret') ou a antiga ('service_role'). */
 function chaveSecreta(lista) {
@@ -153,7 +154,10 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
     if (typeof j.ref === 'string' && /^[a-z0-9]{10,40}$/.test(j.ref)) out.ref = j.ref
     if (typeof j.endereco === 'string' && /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(j.endereco)) out.endereco = j.endereco
     if (typeof j.quando === 'string') out.quando = j.quando.slice(0, 40)
-    if (j.acesso && typeof j.acesso.email === 'string' && EMAIL.test(j.acesso.email)) out.acesso = { email: j.acesso.email, novo: j.acesso.novo === true }
+    if (j.acesso && typeof j.acesso.email === 'string' && EMAIL.test(j.acesso.email)) {
+      out.acesso = { email: j.acesso.email, novo: j.acesso.novo === true, senha: j.acesso.senha === true }
+      if (typeof j.acesso.id === 'string' && UUID.test(j.acesso.id)) out.acesso.id = j.acesso.id
+    }
     return out
   }
   const gravarRegistro = (pasta, r) => { pastaAtlas(raiz, String(pasta)); gravarAtomico(arquivoRegistro(pasta), JSON.stringify({ versao: 1, ...r }) + '\n') }
@@ -170,13 +174,53 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
     try { if (fs.existsSync(pausaGit(cwd)) && !fs.existsSync(git)) fs.renameSync(pausaGit(cwd), git) } catch { /* tenta na próxima */ }
   }
 
+  /** Os links de senha e confirmação do Supabase apontam para localhost:3000 num projeto novo (Guilherme, 28/11/2026: "não
+   *  funcionou o reset de senha"). Aponta para o endereço do sistema, sem trocar um endereço que o cliente já configurou. */
+  async function ajustarLinks(ref, token, endereco) {
+    if (!ref || !token || typeof endereco !== 'string' || !/^https:\/\/[a-z0-9.-]+$/i.test(endereco)) return false
+    try {
+      const c = (await apiSupabase('GET', `/v1/projects/${ref}/config/auth`, null, token)) || {}
+      const atual = typeof c.site_url === 'string' ? c.site_url : ''
+      const lista = typeof c.uri_allow_list === 'string' && c.uri_allow_list ? c.uri_allow_list.split(',').map((x) => x.trim()).filter(Boolean) : []
+      const novo = `${endereco}/**`
+      const corpo = {}
+      if (!atual || /localhost|127\.0\.0\.1/i.test(atual)) corpo.site_url = endereco
+      if (!lista.includes(novo)) corpo.uri_allow_list = [...lista, novo].join(',')
+      if (!Object.keys(corpo).length) return true
+      await apiSupabase('PATCH', `/v1/projects/${ref}/config/auth`, corpo, token)
+      return true
+    } catch { return false }
+  }
+  async function chaveSecretaDoBanco(ref) {
+    let token = null
+    try { token = await cofre.ler(CHAVE_SUPABASE) } catch { token = null }
+    if (!token) return { token: null, secreta: null }
+    try { return { token, secreta: chaveSecreta(await apiSupabase('GET', `/v1/projects/${ref}/api-keys?reveal=true`, null, token)) } } catch { return { token, secreta: null } }
+  }
+  async function acharIdDoDono(ref, email, secreta) {
+    for (let pagina = 1; pagina <= 20; pagina++) {
+      const r = await authSupabase(ref, 'GET', `/auth/v1/admin/users?page=${pagina}&per_page=200`, null, secreta)
+      const lista = Array.isArray(r) ? r : (r && Array.isArray(r.users) ? r.users : [])
+      const u = lista.find((x) => x && typeof x.email === 'string' && x.email.toLowerCase() === email)
+      if (u && typeof u.id === 'string' && UUID.test(u.id)) return u.id
+      if (lista.length < 200) break
+    }
+    return null
+  }
+
   /** Primeiro acesso (Guilherme, 27/11/2026): o sistema só entra por convite e ninguém criava a conta do dono. O Atlas cria a
    *  conta com o e-mail da licença (confirmada, sem senha, papel "dono" no app_metadata, que só o servidor muda). A senha o
    *  dono cria em "Esqueci minha senha" na tela de entrada. O Atlas não define, não vê e não guarda senha. */
   async function passoAcesso(pasta, e) {
     const reg = lerRegistro(pasta)
     if (!reg.ref || !authSupabase || !usaLogin(cwdDe(pasta))) return 'pulado'
-    if (reg.acesso) { e.acesso = reg.acesso; return 'feito' }
+    if (reg.acesso) {
+      e.acesso = reg.acesso
+      let t = null
+      try { t = await cofre.ler(CHAVE_SUPABASE) } catch { t = null }
+      await ajustarLinks(reg.ref, t, reg.endereco || e.endereco) // obras publicadas antes de 28/11 também passam a ter os links certos
+      return 'feito'
+    }
     let email = null
     try { email = await emailDoDono() } catch { email = null }
     if (typeof email !== 'string' || !EMAIL.test(email.trim())) { e.avisos.push('Não achei o seu e-mail para criar o seu acesso ao sistema. Crie pela tela de entrada ou peça ao Atlas em "Pedir mudança".'); return 'atencao' }
@@ -187,16 +231,19 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
     let secreta = null
     try { secreta = token ? chaveSecreta(await apiSupabase('GET', `/v1/projects/${reg.ref}/api-keys?reveal=true`, null, token)) : null } catch { secreta = null }
     if (!secreta) { e.avisos.push('Não consegui criar o seu acesso ao sistema agora. Tente "Colocar no ar" de novo mais tarde.'); return 'atencao' }
+    await ajustarLinks(reg.ref, token, reg.endereco || e.endereco)
     let novo = true
+    let id = null
     try {
-      await authSupabase(reg.ref, 'POST', '/auth/v1/admin/users', { email, email_confirm: true, app_metadata: { papel: 'dono' } }, secreta)
+      const u = await authSupabase(reg.ref, 'POST', '/auth/v1/admin/users', { email, email_confirm: true, app_metadata: { papel: 'dono' } }, secreta)
+      id = u && typeof u.id === 'string' && UUID.test(u.id) ? u.id : null
     } catch (err) {
       const txt = `${err && err.message} ${err && err.detalhe}`
       if (!/\b422\b|email_exists|already (been )?registered|already exists/i.test(txt)) { e.avisos.push('Não consegui criar o seu acesso ao sistema agora. Tente "Colocar no ar" de novo mais tarde.'); return 'atencao' }
       novo = false
     }
     secreta = null
-    e.acesso = { email, novo }
+    e.acesso = { email, novo, senha: false, ...(id ? { id } : {}) }
     gravarRegistro(pasta, { ...lerRegistro(pasta), acesso: e.acesso })
     contar(e, novo ? `Acesso de dono criado para ${email}.` : `${email} já tinha acesso ao sistema.`)
     return 'feito'
@@ -549,6 +596,28 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
       } catch { bancosAtivos = null }
       return { precisaBanco: true, bancoNovo, contaLigada, bancosAtivos }
     },
+    /** Senha do dono criada no próprio Atlas (Guilherme, 28/11/2026): grava direto na conta do sistema; não fica em arquivo,
+     *  em log nem na resposta. Sem e-mail e sem link. */
+    async definirSenha(pasta, senha) {
+      pasta = String(pasta)
+      cwdDe(pasta)
+      if (typeof senha !== 'string' || senha.length < 8) throw new Error('senha-curta')
+      if (Buffer.byteLength(senha, 'utf8') > 72) throw new Error('senha-longa')
+      const reg = lerRegistro(pasta)
+      if (!reg.ref || !reg.acesso || !authSupabase) throw new Error('sem-acesso')
+      let { secreta } = await chaveSecretaDoBanco(reg.ref)
+      if (!secreta) throw new Error('supabase-sem-chave')
+      try {
+        const id = reg.acesso.id || await acharIdDoDono(reg.ref, reg.acesso.email, secreta)
+        if (!id) throw new Error('sem-acesso')
+        await authSupabase(reg.ref, 'PUT', `/auth/v1/admin/users/${id}`, { password: senha }, secreta)
+        gravarRegistro(pasta, { ...lerRegistro(pasta), acesso: { ...reg.acesso, id, senha: true } })
+      } finally { secreta = null }
+      const e = jobs.get(pasta)
+      if (e && e.acesso) e.acesso = { ...e.acesso, senha: true }
+      return { ok: true }
+    },
+
     async corrigir(pasta) {
       pasta = String(pasta)
       const e = jobs.get(pasta)
