@@ -1,0 +1,15 @@
+/* Praça do "Testar a ideia" (TI1TestarIdeia, aprovado em 28/11/2026). O canvas é sempre escuro, como o canteiro. */
+.at-praca { position: relative; width: 100%; aspect-ratio: 16 / 10; min-height: 320px; border-radius: 14px; overflow: hidden; background: radial-gradient(120% 90% at 50% 55%, #1b1f22 0%, #0e1012 70%); border: 1px solid var(--card-b); }
+.at-praca__cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.at-praca__bal { position: absolute; transform: translate(-50%, -100%); max-width: 180px; padding: 5px 9px; border-radius: 10px; background: rgba(14,16,18,.92); border: 1px solid var(--c); color: #EDEFEA; font: 500 12px/1.3 Geist, sans-serif; pointer-events: none; animation: at-praca-bal 3s ease forwards; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@keyframes at-praca-bal { 0% { opacity: 0; margin-top: 6px } 12% { opacity: 1; margin-top: 0 } 80% { opacity: 1 } 100% { opacity: 0; margin-top: -8px } }
+.at-praca__ctl { position: absolute; top: 12px; right: 12px; }
+.at-praca__ctl button { font: 600 11px/1 "Geist Mono", monospace; text-transform: uppercase; letter-spacing: .06em; padding: 8px 12px; border-radius: 999px; border: 1px solid rgba(237,239,234,.2); background: rgba(14,16,18,.8); color: #EDEFEA; cursor: pointer; }
+.at-praca__ctl button[aria-pressed='true'] { border-color: #C6F135; background: rgba(198,241,53,.14); color: #C6F135; }
+.at-praca__fas { position: absolute; top: 12px; left: 12px; display: flex; align-items: center; gap: 8px; font: 600 10px/1 "Geist Mono", monospace; color: #9AA197; }
+.at-praca__fas div { display: flex; width: 160px; height: 6px; border-radius: 3px; background: rgba(237,239,234,.08); overflow: hidden; }
+.at-praca__fas i { display: block; height: 100%; transition: width .6s ease; }
+.at-praca__leg { position: absolute; left: 12px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 12px; font: 500 11px/1 Geist, sans-serif; color: #9AA197; }
+.at-praca__leg span { display: inline-flex; align-items: center; gap: 5px; }
+.at-praca__leg i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+@media (prefers-reduced-motion: reduce) { .at-praca__bal { animation: none; } }

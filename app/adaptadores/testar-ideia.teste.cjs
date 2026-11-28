@@ -81,7 +81,7 @@ test('teste completo com 100 agentes: lotes de 20, contas feitas pelo programa, 
   await rodarAte(t, 'ponto', n)
   const e = await t.estado('ponto', n)
   assert.equal(e.estado, 'pronto')
-  assert.equal(disparo.chamadas, 1 + 5 + 1)
+  assert.equal(disparo.chamadas, 1 + 5 + 6 + 1)
   const r = await t.relatorio('ponto', n)
   assert.match(r.aviso, /agentes de IA, não pessoas reais/)
   assert.match(r.aviso, /não recomenda nem garante/)
@@ -122,7 +122,7 @@ test('cota acabou no meio: pausa, guarda o que já fez e retoma de onde parou', 
   await rodarAte(t, 'ponto', n)
   e = await t.estado('ponto', n)
   assert.equal(e.estado, 'pronto')
-  assert.equal(disparo.chamadas, 1 + 2 + 1 + 3 + 1) // os 2 lotes feitos não são perguntados de novo
+  assert.equal(disparo.chamadas, 1 + 2 + 1 + 3 + 6 + 1) // os 2 lotes feitos não são perguntados de novo
 })
 
 test('"mesmos agentes": o teste novo reaproveita os agentes e o entendimento do anterior; histórico do mais novo para o mais antigo', async () => {
@@ -137,7 +137,7 @@ test('"mesmos agentes": o teste novo reaproveita os agentes e o entendimento do 
   const ag1 = JSON.parse(fs.readFileSync(path.join(cwd, '.atlas', 'testes', '1', 'agentes.json'), 'utf8'))
   const ag2 = JSON.parse(fs.readFileSync(path.join(cwd, '.atlas', 'testes', '2', 'agentes.json'), 'utf8'))
   assert.deepEqual(ag1, ag2)
-  assert.equal(disparo2.chamadas, 5 + 1) // sem "entender" de novo
+  assert.equal(disparo2.chamadas, 5 + 6 + 1) // sem "entender" de novo
   const h = await t2.listar('ponto')
   assert.deepEqual(h.map((x) => [x.n, x.mesmosDe, x.versao]), [[2, 1, 'v4'], [1, null, null]])
   assert.ok(h[0].termometro.pctUsaria > 0)
@@ -158,4 +158,45 @@ test('contas: porcentagens por tipo e preço em faixas', () => {
   assert.deepEqual(c.porTipo.T.map((x) => [x.valor, x.pctUsaria]), [['y', 100], ['x', 50]])
   assert.deepEqual(c.preco.map((p) => p.n), [1, 0, 1, 0, 1])
   assert.equal(c.mediana, 29)
+})
+
+// Parte 2: a conversa entre os agentes (rodadas, como no MiroFish: só uma parte fala em cada rodada).
+function disparoConversa(base) {
+  return {
+    ...base,
+    async perguntar(pasta, pedido) {
+      if (pedido.includes('CONVERSA:')) {
+        base.pedidos.push(pedido)
+        const quem = [...pedido.split('QUEM FALA AGORA:')[1].matchAll(/- (a\d{4}):/g)].map((m) => m[1])
+        const posts = [...pedido.split('QUEM FALA AGORA:')[0].matchAll(/\[(p\d+)\]/g)].map((m) => m[1])
+        return JSON.stringify(quem.map((id, i) => i % 4 === 0
+          ? { id, acao: 'discutir', em: posts[0] || null, texto: 'discordo, sem sinal não dá', muda: null }
+          : i % 4 === 1 ? { id, acao: 'comentar', em: posts[1] || 'p9999', texto: 'boa ideia', muda: i % 8 === 1 ? 'usaria' : null }
+            : i % 4 === 2 ? { id, acao: 'postar', em: null, texto: 'testei e gostei', muda: 'talvez' } : { id, acao: 'nada' }))
+      }
+      return base.perguntar(pasta, pedido)
+    },
+  }
+}
+
+test('conversa: 6 rodadas com parte dos agentes; ações conferidas (post que não existe vira post novo); mudanças de opinião contadas', async () => {
+  const { raiz, cwd } = obra()
+  const base = disparoFalso()
+  const t = criarTestarIdeia({ raiz, disparo: disparoConversa(base), agendar: () => {} })
+  const { n } = await t.iniciar('ponto', { quantidade: 100 })
+  await t._rodar('ponto', n)
+  const ev = JSON.parse(fs.readFileSync(path.join(cwd, '.atlas', 'testes', String(n), 'conversa.json'), 'utf8'))
+  assert.equal(new Set(ev.map((e) => e.rodada)).size, 6)
+  assert.ok(ev.every((e) => ['postar', 'comentar', 'discutir'].includes(e.acao)))
+  assert.ok(ev.filter((e) => e.acao !== 'postar').every((e) => typeof e.para === 'string'))
+  assert.ok(!JSON.stringify(ev).includes('p9999'))
+  const r = await t.relatorio('ponto', n)
+  assert.ok(r.mudaram > 0)
+  assert.ok(r.conversa.postam > 0 && r.conversa.comentam > 0 && r.conversa.discutem > 0)
+  const falaram = new Set(ev.map((e) => e.de))
+  assert.ok(falaram.size < 100)
+  const cena = await t.cena('ponto', n)
+  assert.equal(cena.agentes.length, 100)
+  assert.ok(cena.agentes.every((a) => ['usaria', 'nao', 'duvida', null].includes(a.r)))
+  assert.ok(cena.eventos.length > 0 && cena.eventos.length <= 300)
 })

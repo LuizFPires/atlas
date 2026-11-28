@@ -13,6 +13,7 @@ export interface ResumoTeste {
   motivo: string | null
   feitos: number
   olhados: number
+  rodada?: number
   termometro: ContagemTeste | null
   maisContra: string | null
 }
@@ -28,13 +29,21 @@ export interface RelatorioTeste {
   fortes: TemaRelatorio[]
   fracos: TemaRelatorio[]
   ideias: { titulo: string; como: string; tema: string | null; n: number }[]
+  conversa: { postam: number; comentam: number; discutem: number }
+  mudaram: number
+  passaramAGostar: number
   criadoEm: string
 }
+export type Opiniao = 'usaria' | 'nao' | 'duvida'
+export interface AgenteNaCena { id: string; nome: string; idade: number; tracos: Record<string, string>; r: Opiniao | null; fala: string | null }
+export interface EventoConversa { rodada: number; de: string; para: string | null; acao: 'postar' | 'comentar' | 'discutir'; texto: string; r: Opiniao }
+export interface CenaTeste { agentes: AgenteNaCena[]; eventos: EventoConversa[] }
 export interface PonteTestar {
   listar(pasta: string): Promise<ResumoTeste[]>
   iniciar(pasta: string, o: { quantidade: Quantidade; mesmosDe?: number | null; versao?: string | null }): Promise<{ n: number }>
   estado(pasta: string, n: number): Promise<ResumoTeste | null>
   relatorio(pasta: string, n: number): Promise<RelatorioTeste | null>
   retomar(pasta: string, n: number): Promise<{ ok: true }>
+  cena(pasta: string, n: number): Promise<CenaTeste>
   aoMudar?(f: (n: number) => void): () => void
 }
