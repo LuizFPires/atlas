@@ -207,3 +207,21 @@ test('tampa já ajustada: começa direto, sem aviso', async () => {
   expect(iniciar).toHaveBeenCalled()
   expect(screen.queryByRole('dialog')).toBeNull()
 })
+
+// TI1TestarIdeia (Luiz, 28/11/2026): "indicação do Atlas para o uso logo após o protótipo".
+test('sugere testar a ideia com 500 agentes de IA antes de construir, sem obrigar', async () => {
+  const onTestarIdeia = vi.fn()
+  const user = userEvent.setup()
+  render(<TemaProvider><Aprovar obra={obra} construcao={criarConstrucaoFixture()} claude={criarClaudeFixture({ conectado: true, plano: 'pro' })} modos={criarModoObraFixture()} onVoltar={vi.fn()} onTestarIdeia={onTestarIdeia} /></TemaProvider>)
+  const card = await screen.findByRole('region', { name: 'Testar a ideia antes de construir' })
+  expect(within(card).getByText('Quer ver como 500 clientes reagem ao Agenda da Barbearia do Zé?')).toBeInTheDocument()
+  expect(within(card).getByText(/agentes de IA, não pessoas reais/)).toBeInTheDocument()
+  await user.click(within(card).getByRole('button', { name: 'Testar a ideia →' }))
+  expect(onTestarIdeia).toHaveBeenCalled()
+})
+
+test('sem o teste da ideia disponível, o cartão não aparece', async () => {
+  montar()
+  await screen.findByText('Base e login')
+  expect(screen.queryByRole('region', { name: 'Testar a ideia antes de construir' })).toBeNull()
+})
