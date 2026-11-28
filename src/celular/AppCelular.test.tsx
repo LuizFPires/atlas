@@ -193,3 +193,34 @@ test('obra em andamento sem ninguém trabalhando neste instante: não aparece co
   expect(screen.queryByText('Parada')).toBeNull()
   expect(screen.getByRole('button', { name: 'Pausar' })).toBeInTheDocument()
 })
+
+// Testar a ideia no celular (protótipo aprovado pelo Luiz em 28/11/2026).
+test('na obra, o cartão mostra o último teste da ideia e abre o relatório, com o aviso de que são agentes de IA', async () => {
+  const api = criarApiCelularFixture()
+  render(<AppCelular api={api} intervalo={20} />)
+  await userEvent.click(await screen.findByRole('button', { name: /Agenda da Barbearia/ }))
+  const cartao = await screen.findByRole('button', { name: /Testar a ideia · teste 1/ })
+  expect(within(cartao).getByText('63%')).toBeInTheDocument()
+  await userEvent.click(cartao)
+  await userEvent.click(await screen.findByRole('button', { name: 'Abrir relatório' }))
+  expect(await screen.findByText('Isto é um termômetro, não uma pesquisa de mercado.')).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Voltar para a obra' }))
+  expect(await screen.findByRole('button', { name: /Testar a ideia · teste 1/ })).toBeInTheDocument()
+})
+
+test('notebook desligado: a tela do teste avisa que o teste novo começa quando ele ligar', async () => {
+  const api = criarApiCelularFixture({ ligado: false })
+  render(<AppCelular api={api} intervalo={20} />)
+  await userEvent.click(await screen.findByRole('button', { name: /Agenda da Barbearia/ }))
+  await userEvent.click(await screen.findByRole('button', { name: /Testar a ideia · teste 1/ }))
+  expect(await screen.findByText(/um teste novo ou uma entrevista começam quando ele ligar/)).toBeInTheDocument()
+})
+
+// Luiz, 28/11/2026: "o ícone das fotos ali ficasse no padrão dos 2 ícones vizinhos".
+test('menu de baixo: "Foto para a Ajuda" no mesmo formato dos vizinhos (ícone em cima, nome embaixo)', async () => {
+  render(<AppCelular api={criarApiCelularFixture()} intervalo={20} />)
+  await screen.findByRole('heading', { name: 'Minhas obras' })
+  const foto = screen.getByLabelText('Foto para a Ajuda do Atlas').closest('label')!
+  expect(foto.className).toBe('cel-menu__foto')
+  expect(foto.firstElementChild?.tagName.toLowerCase()).toBe('svg')
+})

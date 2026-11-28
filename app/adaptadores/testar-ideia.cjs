@@ -200,9 +200,9 @@ function contas(agentes, reacoes) {
 
 /**
  * deps: { raiz, disparo (modelo rápido: perguntar(null, pedido, opts) → texto), agora, agendar(fn, ms) (retomar depois da cota),
- *         avisar(pasta, n) (a tela recarrega) }
+ *         avisar(pasta, n) (a tela recarrega), aoPronto(pasta, n, relatorio) (aviso no celular) }
  */
-function criarTestarIdeia({ raiz, disparo, agora = () => new Date(), agendar = (fn, ms) => setTimeout(fn, ms), avisar = () => {} }) {
+function criarTestarIdeia({ raiz, disparo, agora = () => new Date(), agendar = (fn, ms) => setTimeout(fn, ms), avisar = () => {}, aoPronto = () => {} }) {
   const rodando = new Map()
   const cwdDe = (pasta) => pastaDaObra(raiz, String(pasta))
   const dirTestes = (cwd) => path.join(cwd, '.atlas', 'testes')
@@ -371,6 +371,7 @@ function criarTestarIdeia({ raiz, disparo, agora = () => new Date(), agendar = (
         else throw new Error('etapa-invalida')
         gravar(cwd, n, 'teste.json', { ...meta, estado: meta.etapa === 'pronto' ? 'pronto' : 'rodando' })
         avisar(n)
+        if (meta.etapa === 'pronto') { try { aoPronto(pasta, n, ler(cwd, n, 'relatorio.json', null)) } catch { /* o aviso nunca atrapalha o teste */ } }
       }
     } catch (e) {
       const cota = e && e.message === 'claude-cota'

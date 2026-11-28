@@ -4,7 +4,7 @@ import { cabecalhoDispositivo, lerAtivacao } from './ativacao-api'
 import type { CanalRemoto, PedidoRemoto, TipoPedido } from './celular-remoto'
 import type { PonteDesktop } from './ponte'
 
-const TIPOS: TipoPedido[] = ['obra_nova', 'ajuste', 'aprovar_telas', 'nome', 'construir', 'pausar', 'continuar', 'foto_ajuda']
+const TIPOS: TipoPedido[] = ['obra_nova', 'ajuste', 'aprovar_telas', 'nome', 'construir', 'pausar', 'continuar', 'foto_ajuda', 'testar', 'entrevistar']
 
 function pedidoValido(x: unknown): x is PedidoRemoto {
   if (!x || typeof x !== 'object') return false
@@ -41,5 +41,6 @@ export function criarCanalRemotoApi(ponte: Pick<PonteDesktop, 'cofre' | 'hashCom
       return d.imagem
     },
     async status(obras) { await postar('/status-obras/publicar', { obras }) },
+    async teste(obraId, resumo) { await postar('/celular/teste', { obra_id: obraId, teste: resumo }) },
   }
 }

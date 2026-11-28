@@ -130,6 +130,8 @@ const testarIdeia = require('./adaptadores/testar-ideia.cjs').criarTestarIdeia({
   raiz: obras.raiz(),
   disparo: criarDisparo({ recursos: recursosClaude, modelo: () => ['--model', 'claude-haiku-5-5'], raiz: obras.raiz(), dadosApp: require('node:path').join(app.getPath('userData'), 'git-isolado'), claudeEstado: () => claude.estado() }),
   avisar: (n) => { if (janelaPrincipal && !janelaPrincipal.isDestroyed()) janelaPrincipal.webContents.send('atlas:testar:mudou', Number(n)) },
+  // Aviso no celular (28/11/2026): o teste roda uns 25 minutos; o dono fica sabendo quando terminar.
+  aoPronto: (pasta, _n, rel) => { const g = rel && rel.geral; void avisoCelular.avisar('O teste da ideia ficou pronto', `${String(nomeDaObra(pasta)).slice(0, 60)}: ${g ? `${g.pctUsaria}% dos agentes de IA usariam. ` : ''}Toque para ver o relatório.`) },
 })
 const estilo = criarEstilo({ raiz: obras.raiz(), disparo: disparoLeve })
 const prototipo = criarPrototipo({ raiz: obras.raiz(), disparo })

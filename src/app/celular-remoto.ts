@@ -16,8 +16,10 @@ import { momentoDaObra } from './momento-obra'
 import type { PonteObras } from './ponte-obras'
 import type { PonteArquivos } from './ponte-arquivos'
 import type { ObraStatus } from '../web/obras-status'
+import type { PonteTestar } from './ponte-testar'
+import { montarResumoTeste, type ResumoTesteCelular } from './teste-celular'
 
-export type TipoPedido = 'obra_nova' | 'ajuste' | 'aprovar_telas' | 'nome' | 'construir' | 'pausar' | 'continuar' | 'foto_ajuda'
+export type TipoPedido = 'obra_nova' | 'ajuste' | 'aprovar_telas' | 'nome' | 'construir' | 'pausar' | 'continuar' | 'foto_ajuda' | 'testar' | 'entrevistar'
 export type FaseProjeto = 'na_fila' | 'desenhando' | 'telas_prontas' | 'ajustando' | 'pensando_nomes' | 'nomes_prontos' | 'pronto_para_construir' | 'construindo' | 'erro'
 
 export interface PedidoRemoto { id: string; tipo: TipoPedido; obra_id: string; dados: Record<string, unknown>; criado_em: string }
@@ -40,6 +42,8 @@ export interface CanalRemoto {
   referencia(id: string): Promise<string>
   /** Status das obras (M30): a lista substitui o que o servidor tinha. */
   status(obras: ObraStatus[]): Promise<void>
+  /** Testar a ideia: o resumo dos testes de uma obra (substitui o anterior). */
+  teste?(obraId: string, resumo: ResumoTesteCelular): Promise<void>
 }
 
 /** O que o notebook lembra de cada obra que nasceu no celular (obra_id do servidor → pasta daqui). */
@@ -60,13 +64,17 @@ export interface PontesRemoto {
   arquivos: PonteArquivos
   /** M58: a foto que o celular mandou para a Ajuda do Atlas (data URL). */
   aoFotoAjuda?: (dataUrl: string) => Promise<void> | void
+  /** Testar a ideia (28/11/2026): o mesmo motor da aba do computador. */
+  testar?: PonteTestar
 }
 
 const OCUPADO: Record<TipoPedido, string> = {
   obra_nova: 'Desenhando as telas', ajuste: 'Ajustando as telas', aprovar_telas: 'Pensando nos nomes', nome: 'Guardando o nome',
   construir: 'Preparando a obra', pausar: 'Pausando a obra', continuar: 'Continuando a obra', foto_ajuda: 'Levando a foto para a Ajuda',
+  testar: 'Começando o teste da ideia', entrevistar: 'Entrevistando um agente',
 }
 const NAO_CONHECE = 'Essa obra não está neste notebook. Abra o Atlas no computador onde ela foi criada.'
+const SEM_TESTE = 'Este notebook ainda não tem o teste da ideia. Atualize o Atlas no computador.'
 
 class ErroLeigo extends Error {}
 
@@ -87,6 +95,8 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
   const conhecidos = new Set<string>()
   let atual: PedidoRemoto | null = null
   let rodando: Promise<void> | null = null
+  /** Depois de uma entrevista, a batida fica mais rápida por uns minutos (a conversa não espera 20 s a cada pergunta). */
+  let rapidoAte = 0
   const intervalo = opcoes.intervaloProgressoMs ?? 8000
 
   const ligada = (obraId: string): ObraLigada => {
@@ -178,10 +188,14 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
     switch (ped.tipo) {
       case 'obra_nova': return obraNova(ped)
       case 'ajuste': {
+        // Ideias do teste (28/11/2026) também chegam aqui, e podem ser de uma obra criada no computador: aí só cria a versão nova
+        // do protótipo (o dono aprova na aba Protótipo). A resposta leva a versão para o celular mostrar.
+        if (!memoria.ler()[ped.obra_id]) { const o = await ligadaOuPasta(ped.obra_id); const r = await p.prototipo.ajustar(o.pasta, String(ped.dados.texto ?? '')); return `versao:${r.estado.atual}` }
         const o = ligada(ped.obra_id)
         await canal.projeto(ped.obra_id, vazio(o.nome, 'ajustando', { progresso: { feitas: 0, total: 0, atual: 'Ajustando as telas', telas: [] } }))
-        await p.prototipo.ajustar(o.pasta, String(ped.dados.texto ?? ''))
-        return publicarTelas(ped.obra_id, o, 'telas_prontas')
+        const r = await p.prototipo.ajustar(o.pasta, String(ped.dados.texto ?? ''))
+        await publicarTelas(ped.obra_id, o, 'telas_prontas')
+        return `versao:${r.estado.atual}`
       }
       case 'aprovar_telas': {
         const o = ligada(ped.obra_id)
@@ -210,6 +224,51 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
       case 'pausar': { const o = await ligadaOuPasta(ped.obra_id); await p.painel.pausar(o.pasta); return publicarStatus(true) }
       case 'continuar': { const o = await ligadaOuPasta(ped.obra_id); await p.painel.continuar(o.pasta); return publicarStatus(true) }
       case 'foto_ajuda': { const d = await canal.referencia(String(ped.dados.referencia ?? '')); await p.aoFotoAjuda?.(d); return }
+      case 'testar': {
+        if (!p.testar) throw new ErroLeigo(SEM_TESTE)
+        const o = await ligadaOuPasta(ped.obra_id)
+        const testes = await p.testar.listar(o.pasta)
+        // Já tem um rodando (reentrega depois de desligar no meio, ou dois toques): não começa outro, só mostra o que está rodando.
+        if (testes.some((t) => t.estado === 'rodando' || t.estado === 'pausado-cota')) return publicarTeste(ped.obra_id, o.pasta, true)
+        const anterior = ped.dados.mesmos === true ? testes.find((t) => t.estado === 'pronto') ?? null : null
+        const est = await p.prototipo.estado(o.pasta).catch(() => null)
+        const versao = est && est.versoes.length ? `v${est.atual}` : null
+        await p.testar.iniciar(o.pasta, { quantidade: Number(ped.dados.quantidade) as 100 | 250 | 500 | 1000, mesmosDe: anterior?.n ?? null, versao })
+        return publicarTeste(ped.obra_id, o.pasta, true)
+      }
+      case 'entrevistar': {
+        if (!p.testar) throw new ErroLeigo(SEM_TESTE)
+        const o = await ligadaOuPasta(ped.obra_id)
+        rapidoAte = Date.now() + 3 * 60_000
+        await p.testar.entrevistar(o.pasta, Number(ped.dados.teste), String(ped.dados.agente ?? ''), String(ped.dados.pergunta ?? ''))
+        return publicarTeste(ped.obra_id, o.pasta, true)
+      }
+    }
+  }
+
+  // Testar a ideia: o que foi publicado por último de cada obra (só reenvia o que mudou; força a cada 5 min).
+  const ultimoTeste = new Map<string, { chave: string; em: number }>()
+  async function publicarTeste(obraId: string, pasta: string, forcar = false) {
+    if (!p.testar || !canal.teste) return
+    const r = await montarResumoTeste(p.testar, pasta)
+    if (!r) return
+    const chave = JSON.stringify(r)
+    const u = ultimoTeste.get(obraId)
+    if (!forcar && u && u.chave === chave && Date.now() - u.em < 5 * 60_000) return
+    await canal.teste(obraId, r)
+    ultimoTeste.set(obraId, { chave, em: Date.now() })
+  }
+  /** Confere os testes de todas as obras daqui (o celular vê o andamento ao vivo). Só sobe o que mudou. */
+  async function publicarTestes() {
+    if (!p.testar || !canal.teste) return
+    const ligadas = memoria.ler()
+    const porPasta = new Map(Object.entries(ligadas).map(([id, o]) => [o.pasta, id]))
+    const pastas = await p.obras.listar().catch(() => [] as string[])
+    for (const o of Object.values(ligadas)) if (!pastas.includes(o.pasta)) pastas.push(o.pasta)
+    for (const pasta of pastas.slice(0, 20)) {
+      const id = porPasta.get(pasta) ?? pasta
+      if (!/^[\w.-]{1,64}$/.test(id)) continue
+      await publicarTeste(id, pasta).catch(() => {})
     }
   }
 
@@ -218,14 +277,16 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
       atual = fila.shift()!
       const ped = atual
       try {
-        await executar(ped)
-        await canal.responder(ped.id, 'feito', '').catch(() => {})
+        const r = await executar(ped)
+        await canal.responder(ped.id, 'feito', typeof r === 'string' ? r : '').catch(() => {})
       } catch (e) {
         if (ped.tipo === 'obra_nova' || ped.tipo === 'ajuste') {
           const o = memoria.ler()[ped.obra_id]
           if (o) await canal.projeto(ped.obra_id, vazio(o.nome, 'erro', { mensagem: frase(e) })).catch(() => {})
         }
-        await canal.responder(ped.id, 'erro', frase(e)).catch(() => {})
+        // Teste e entrevista: o celular mostra a mesma explicação do computador, então vai o código do erro (ex.: claude-cota).
+        const cod = (ped.tipo === 'testar' || ped.tipo === 'entrevistar') && !(e instanceof ErroLeigo) && e instanceof Error && /^[a-z][a-z0-9-]{2,40}$/.test(e.message) ? e.message : null
+        await canal.responder(ped.id, 'erro', cod ? `codigo:${cod}` : frase(e)).catch(() => {})
       }
       atual = null
       conhecidos.delete(ped.id)
@@ -288,6 +349,9 @@ export function criarExecutorRemoto(p: PontesRemoto, canal: CanalRemoto, memoria
     /** Espera a fila esvaziar (testes e desligamento). */
     async ocioso() { while (rodando) await rodando },
     publicarStatus,
+    publicarTestes,
+    /** Se agora a batida deve ser rápida (alguém está entrevistando um agente pelo celular). */
+    rapido: () => Date.now() < rapidoAte,
   }
 }
 
@@ -307,12 +371,18 @@ export function criarMemoriaRemotoFixture(): MemoriaRemoto {
 /** Liga o notebook ao celular enquanto `executor` existir: batida a cada 20 s e o andamento das obras conferido a cada 30 s
  *  (só sobe quando mudou). Antes era a cada 2 min e o celular mostrava 1% com o notebook em 2,72% (Eduardo, 26/11/2026). */
 export const BATIDA_MS = 20_000
+export const BATIDA_RAPIDA_MS = 5_000
 export const STATUS_MS = 30_000
+export const TESTES_MS = 15_000
 export function ligarCelularRemoto(ex: ReturnType<typeof criarExecutorRemoto>): () => void {
-  const bater = () => { void ex.batida().catch(() => {}) }
+  let ultima = 0
+  const bater = () => { ultima = Date.now(); void ex.batida().catch(() => {}) }
   const status = () => { void ex.publicarStatus().catch(() => {}) }
-  bater(); status()
-  const t = setInterval(bater, BATIDA_MS)
+  const testes = () => { void ex.publicarTestes().catch(() => {}) }
+  bater(); status(); testes()
+  // Batida a cada 20 s; a cada 5 s enquanto alguém entrevista um agente pelo celular.
+  const t = setInterval(() => { if (Date.now() - ultima >= (ex.rapido() ? BATIDA_RAPIDA_MS : BATIDA_MS) - 500) bater() }, BATIDA_RAPIDA_MS)
   const s = setInterval(status, STATUS_MS)
-  return () => { clearInterval(t); clearInterval(s) }
+  const q = setInterval(testes, TESTES_MS)
+  return () => { clearInterval(t); clearInterval(s); clearInterval(q) }
 }

@@ -13,10 +13,11 @@ interface Props {
   /** Revisa o protótipo com o pedido e devolve o número da versão nova (para aprovar na aba Protótipo). */
   revisarPrototipo?: (pedido: string) => Promise<number>
   onVerPrototipo?: () => void
+  ondeAprovar?: string
 }
 const mil = (n: number) => n.toLocaleString('pt-BR')
 
-export function RelatorioTesteView({ rel, resumo, nome, cena, pasta, ponte, onVoltar, onDeNovo, revisarPrototipo, onVerPrototipo }: Props) {
+export function RelatorioTesteView({ rel, resumo, nome, cena, pasta, ponte, onVoltar, onDeNovo, revisarPrototipo, onVerPrototipo, ondeAprovar = 'na aba Protótipo' }: Props) {
   const [gaveta, setGaveta] = useState<string | 'lista' | null>(null)
   const g = rel.geral
   const v = frasesDoVeredito(rel)
@@ -77,7 +78,7 @@ export function RelatorioTesteView({ rel, resumo, nome, cena, pasta, ponte, onVo
             </div>
           </Cartao>
         )}
-        {revisarPrototipo && <Ideias pasta={pasta} n={resumo.n} rel={rel} revisarPrototipo={revisarPrototipo} onVerPrototipo={onVerPrototipo} />}
+        {revisarPrototipo && <Ideias pasta={pasta} n={resumo.n} rel={rel} revisarPrototipo={revisarPrototipo} onVerPrototipo={onVerPrototipo} ondeAprovar={ondeAprovar} />}
       </div>
       {gaveta && <GavetaEntrevistas pasta={pasta} n={resumo.n} ponte={ponte} agentes={cena.agentes} aberto={gaveta} onFechar={() => setGaveta(null)} />}
       <div className="at-testar__acoes">
@@ -124,7 +125,7 @@ function sugeridos(agentes: AgenteNaCena[]): AgenteNaCena[] {
   return [...new Map(escolhas.filter((a): a is AgenteNaCena => !!a).map((a) => [a.id, a])).values()].slice(0, 4)
 }
 
-function Ideias({ pasta, n, rel, revisarPrototipo, onVerPrototipo }: { pasta: string; n: number; rel: RelatorioTeste; revisarPrototipo: (pedido: string) => Promise<number>; onVerPrototipo?: () => void }) {
+function Ideias({ pasta, n, rel, revisarPrototipo, onVerPrototipo, ondeAprovar }: { pasta: string; n: number; rel: RelatorioTeste; revisarPrototipo: (pedido: string) => Promise<number>; onVerPrototipo?: () => void; ondeAprovar: string }) {
   const [marcadas, setMarcadas] = useState<Set<number>>(() => new Set(rel.ideias.slice(0, 2).map((_, i) => i)))
   const [outra, setOutra] = useState('')
   const [escrevendo, setEscrevendo] = useState(false)
@@ -142,8 +143,8 @@ function Ideias({ pasta, n, rel, revisarPrototipo, onVerPrototipo }: { pasta: st
         <div className="at-rel__feito" role="status">
           <span className="at-rel__ok" aria-hidden="true">{rev.estado === 'erro' ? '!' : '✓'}</span>
           <div>
-            {rev.estado === 'revisando' && <><b>O Atlas está revisando o protótipo.</b> Vai virar uma versão nova, com {rev.ideias.map((t) => `“${t}”`).join(', ')}. A versão de agora continua guardada. Pode trocar de aba: quando ficar pronta, ela aparece no Protótipo para você aprovar.</>}
-            {rev.estado === 'pronta' && <><b>A versão {rev.versao} do protótipo está pronta.</b> Revise e aprove na aba Protótipo. Depois, rode o teste de novo com os mesmos agentes para comparar.</>}
+            {rev.estado === 'revisando' && <><b>O Atlas está revisando o protótipo.</b> Vai virar uma versão nova, com {rev.ideias.map((t) => `“${t}”`).join(', ')}. A versão de agora continua guardada. Pode sair desta tela: quando ficar pronta, você aprova {ondeAprovar}.</>}
+            {rev.estado === 'pronta' && <><b>{rev.versao ? `A versão ${rev.versao} do protótipo está pronta.` : 'A versão nova do protótipo está pronta.'}</b> Revise e aprove {ondeAprovar}. Depois, rode o teste de novo com os mesmos agentes para comparar.</>}
             {rev.estado === 'erro' && <><b>Não deu para revisar o protótipo agora.</b> {textoDaTrava(rev.erro, 'A revisão do protótipo')}</>}
             <div className="at-rel__passos"><span className="ok">✓ Ideias enviadas</span><span className={rev.estado === 'revisando' ? 'ag' : rev.estado === 'pronta' ? 'ok' : ''}>{rev.estado === 'pronta' ? '✓ Protótipo revisado' : 'Revisando as telas…'}</span><span>Você aprova a versão nova</span><span>Testar de novo com os mesmos agentes</span></div>
             {rev.estado === 'pronta' && onVerPrototipo && <div className="at-testar__acoes at-testar__acoes--esq"><Botao onClick={() => { esquecerRevisao(chave); onVerPrototipo() }}>Ver a versão {rev.versao} no Protótipo →</Botao></div>}

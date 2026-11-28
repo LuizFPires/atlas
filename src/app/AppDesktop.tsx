@@ -381,9 +381,9 @@ export function AppDesktop({ ponte = ponteInicial(), api, claude, contas, celula
       setFotoCelular(foto)
       setPainelAjuda((a) => a ?? { contexto: { origem: 'menu', ...(pasta ? { pasta } : {}) }, n: Date.now() })
     }
-    const ex = criarExecutorRemoto({ obras: ponteObras, prototipo: pontePrototipo, estilo: ponteEstilo, batismo: ponteBatismo, construcao: pontesModo.construcao, modos: pontesModo.modos, painel: pontePainel, arquivos: ponteArquivos, aoFotoAjuda }, canal, criarMemoriaRemotoLocal())
+    const ex = criarExecutorRemoto({ obras: ponteObras, prototipo: pontePrototipo, estilo: ponteEstilo, batismo: ponteBatismo, construcao: pontesModo.construcao, modos: pontesModo.modos, painel: pontePainel, arquivos: ponteArquivos, aoFotoAjuda, testar: ponteTestar }, canal, criarMemoriaRemotoLocal())
     return ligarCelularRemoto(ex)
-  }, [remotoLigado, ponte, ponteObras, pontePrototipo, ponteEstilo, ponteBatismo, pontesModo, pontePainel, ponteArquivos, ponteAjuda])
+  }, [remotoLigado, ponte, ponteObras, pontePrototipo, ponteEstilo, ponteBatismo, pontesModo, pontePainel, ponteArquivos, ponteAjuda, ponteTestar])
 
   useEffect(() => {
     let vivo = true
