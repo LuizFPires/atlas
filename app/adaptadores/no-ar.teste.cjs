@@ -653,7 +653,7 @@ test('primeiro acesso: cria a conta do dono com o e-mail da licença (confirmada
   const e = n.estado('ponto')
   assert.equal(e.fase, 'noar', JSON.stringify(e.erro))
   assert.equal(e.passos.find((p) => p.id === 'acesso').estado, 'feito')
-  assert.deepEqual(e.acesso, { email: 'gui@exemplo.com', novo: true })
+  assert.deepEqual(e.acesso, { email: 'gui@exemplo.com', novo: true, senha: false })
   assert.equal(criadas.length, 1)
   assert.deepEqual(criadas[0], { ref: 'abcdefghijklmnopqrst', m: 'POST', c: '/auth/v1/admin/users', corpo: { email: 'gui@exemplo.com', email_confirm: true, app_metadata: { papel: 'dono' } }, chave: 'sb_secret_' + 'S'.repeat(40) })
   assert.ok(!('password' in criadas[0].corpo), 'o Atlas não define senha')
@@ -663,7 +663,7 @@ test('primeiro acesso: cria a conta do dono com o e-mail da licença (confirmada
   await n.iniciar('ponto', 'ponto')
   await n._esperar('ponto')
   assert.equal(criadas.length, 1)
-  assert.deepEqual(n.estado('ponto').acesso, { email: 'gui@exemplo.com', novo: true })
+  assert.deepEqual(n.estado('ponto').acesso, { email: 'gui@exemplo.com', novo: true, senha: false })
 })
 
 test('primeiro acesso: o e-mail já tinha conta (422) segue normal, sem erro', async () => {
@@ -674,7 +674,7 @@ test('primeiro acesso: o e-mail já tinha conta (422) segue normal, sem erro', a
   await n._esperar('ponto')
   const e = n.estado('ponto')
   assert.equal(e.fase, 'noar')
-  assert.deepEqual(e.acesso, { email: 'gui@exemplo.com', novo: false })
+  assert.deepEqual(e.acesso, { email: 'gui@exemplo.com', novo: false, senha: false })
 })
 
 test('primeiro acesso: sistema sem entrada com senha pula; sem e-mail ou sem chave avisa, mas o sistema fica no ar', async () => {
@@ -745,4 +745,71 @@ test('licença: email() devolve o e-mail guardado no cofre (ou null)', async () 
   assert.equal(await com.email(), 'gui@exemplo.com')
   const sem = criarLicenca({ cofre: cofreMem(), hashComputador: async () => 'h' })
   assert.equal(await sem.email(), null)
+})
+
+
+// Guilherme, 28/11/2026: "não funcionou o reset de senha". O e-mail padrão do Supabase só vai para a equipe do projeto e o link
+// apontava para localhost:3000. Agora: links apontados para o endereço do sistema e senha criada no próprio Atlas.
+const UID = '11111111-2222-3333-4444-555555555555'
+function comConfig(base, cfg, patches) {
+  return comChaves(async (m, c, corpo) => {
+    if (c.endsWith('/config/auth')) { if (m === 'PATCH') { patches.push(corpo); return {} } return cfg }
+    return base(m, c, corpo)
+  })
+}
+
+test('links de senha: troca o localhost:3000 do projeto novo pelo endereço do sistema e libera o endereço para voltar', async () => {
+  const { raiz } = obraComLogin()
+  const patches = []
+  const { d } = deps()
+  const n = criarNoAr({ raiz, ...d, apiSupabase: comConfig(d.apiSupabase, { site_url: 'http://localhost:3000', uri_allow_list: '' }, patches), emailDoDono: async () => 'gui@exemplo.com', authSupabase: async () => ({ id: UID }) })
+  await n.iniciar('ponto', 'ponto'); await n._esperar('ponto')
+  assert.deepEqual(patches, [{ site_url: 'https://ponto.vercel.app', uri_allow_list: 'https://ponto.vercel.app/**' }])
+})
+
+test('links de senha: endereço que o cliente já configurou fica; só acrescenta o do sistema à lista', async () => {
+  const { raiz } = obraComLogin()
+  const patches = []
+  const { d } = deps()
+  const n = criarNoAr({ raiz, ...d, apiSupabase: comConfig(d.apiSupabase, { site_url: 'https://ponto.com.br', uri_allow_list: 'https://ponto.com.br/**' }, patches), emailDoDono: async () => 'gui@exemplo.com', authSupabase: async () => ({ id: UID }) })
+  await n.iniciar('ponto', 'ponto'); await n._esperar('ponto')
+  assert.deepEqual(patches, [{ uri_allow_list: 'https://ponto.com.br/**,https://ponto.vercel.app/**' }])
+})
+
+test('senha do dono criada no Atlas: grava na conta (PUT com a chave secreta), marca "senha criada" e não guarda a senha', async () => {
+  const { raiz, cwd } = obraComLogin()
+  const chamadas = []
+  const { d } = deps()
+  const n = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), emailDoDono: async () => 'gui@exemplo.com', authSupabase: async (ref, m, c, corpo, chave) => { chamadas.push({ m, c, corpo, chave }); return m === 'POST' ? { id: UID } : {} } })
+  await n.iniciar('ponto', 'ponto'); await n._esperar('ponto')
+  await assert.rejects(n.definirSenha('ponto', 'curta'), /senha-curta/)
+  assert.deepEqual(await n.definirSenha('ponto', 'pontodaampla26'), { ok: true })
+  const put = chamadas.find((x) => x.m === 'PUT')
+  assert.deepEqual(put, { m: 'PUT', c: `/auth/v1/admin/users/${UID}`, corpo: { password: 'pontodaampla26' }, chave: 'sb_secret_' + 'S'.repeat(40) })
+  assert.equal(n.estado('ponto').acesso.senha, true)
+  const reg = fs.readFileSync(path.join(cwd, '.atlas', 'no-ar.json'), 'utf8')
+  assert.ok(!reg.includes('pontodaampla26') && !reg.includes('sb_secret_'), 'nem a senha nem a chave vão para arquivo')
+  assert.match(reg, /"senha":true/)
+})
+
+test('senha do dono: conta criada antes (sem id guardado) é achada pelo e-mail', async () => {
+  const { raiz, cwd } = obraComLogin()
+  fs.mkdirSync(path.join(cwd, '.atlas'), { recursive: true })
+  fs.writeFileSync(path.join(cwd, '.atlas', 'no-ar.json'), JSON.stringify({ versao: 1, nome: 'ponto', ref: 'abcdefghijklmnopqrst', endereco: 'https://ponto.vercel.app', acesso: { email: 'gui@exemplo.com', novo: true } }))
+  const chamadas = []
+  const { d } = deps()
+  const n = criarNoAr({ raiz, ...d, apiSupabase: comChaves(d.apiSupabase), authSupabase: async (ref, m, c) => { chamadas.push(`${m} ${c}`); return m === 'GET' ? { users: [{ id: 'aaaaaaaa-2222-3333-4444-555555555555', email: 'outra@x.com' }, { id: UID, email: 'Gui@Exemplo.com' }] } : {} } })
+  assert.deepEqual(await n.definirSenha('ponto', 'pontodaampla26'), { ok: true })
+  assert.deepEqual(chamadas, ['GET /auth/v1/admin/users?page=1&per_page=200', `PUT /auth/v1/admin/users/${UID}`])
+})
+
+test('pedirAuthSupabase e pedirApiSupabase: só os caminhos da senha e da configuração de login', async () => {
+  const { pedirAuthSupabase, pedirApiSupabase } = require('./no-ar-rede.cjs')
+  const enviar = async () => ({ status: 200, corpo: '{}' })
+  await pedirAuthSupabase('abcdefghijklmnopqrst', 'PUT', `/auth/v1/admin/users/${UID}`, { password: 'x' }, 'k', { enviar })
+  await pedirAuthSupabase('abcdefghijklmnopqrst', 'GET', '/auth/v1/admin/users?page=1&per_page=200', null, 'k', { enviar })
+  await assert.rejects(pedirAuthSupabase('abcdefghijklmnopqrst', 'PUT', '/auth/v1/admin/users', {}, 'k', { enviar }))
+  await assert.rejects(pedirAuthSupabase('abcdefghijklmnopqrst', 'GET', '/auth/v1/admin/users?page=1&per_page=200&x=1', null, 'k', { enviar }))
+  await pedirApiSupabase('PATCH', '/v1/projects/abcdefghijklmnopqrst/config/auth', {}, 't', { enviar })
+  await assert.rejects(pedirApiSupabase('PATCH', '/v1/projects/abcdefghijklmnopqrst/database/query', {}, 't', { enviar }))
 })

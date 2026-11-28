@@ -446,6 +446,8 @@ handle('atlas:noar:sugerir', async (pasta, obraNome, extra) => { await garantirF
 handle('atlas:noar:livre', (nome, pasta) => noAr.nomeLivre(String(nome), pasta === undefined ? null : String(pasta)))
 handle('atlas:noar:iniciar', async (pasta, nome) => { await garantirFerramentas(); return noAr.iniciar(String(pasta), String(nome)) })
 handle('atlas:noar:estado', (pasta) => noAr.estado(String(pasta)))
+// Senha do dono (28/11/2026): vai direto para a conta do sistema; nunca é guardada nem registrada.
+handle('atlas:noar:definirSenha', (pasta, senha) => noAr.definirSenha(String(pasta), String(senha)))
 handle('atlas:noar:corrigir', (pasta) => noAr.corrigir(String(pasta)))
 handle('atlas:noar:conferirAntes', (pasta) => noAr.conferirAntes(String(pasta)))
 handle('atlas:lancamento:estado', (pasta) => lancamento.estado(String(pasta)))

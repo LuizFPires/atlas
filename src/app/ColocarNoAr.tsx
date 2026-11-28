@@ -1,3 +1,4 @@
+import { AcessoDoDono } from './AcessoDoDono'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { predioSvg } from '../celular/predio'
 import { motivoDoTravamento } from './motivo-travou'
@@ -334,15 +335,7 @@ export function ColocarNoAr({ obra, noAr, andares = 12, extra = '', onVoltar, on
                 {estado?.avisos.map((a) => <span key={a} className="at-noar__nota">{a}</span>)}
                 <span className="at-noar__nota">Daqui pra frente, cada mudança que você pedir em "Pedir mudança" fica pronta numa versão de teste. Você confere e ela só entra no ar quando você clicar em "Colocar no ar".</span>
               </section>
-              {estado?.acesso && (
-                <section className="at-noar__card at-noar__card--calmo" aria-label="Seu acesso">
-                  <span className="at-noar__rot">SEU ACESSO DE DONO</span>
-                  <b className="at-noar__tit at-noar__tit--m">{estado.acesso.email}</b>
-                  <span className="at-noar__txt">{estado.acesso.novo
-                    ? <>Na primeira vez, abra o sistema, toque em <b>“Esqueci minha senha”</b> e use este e-mail para criar a sua senha. Depois você convida a sua equipe por dentro do sistema.</>
-                    : <>Este e-mail já tinha conta no sistema. Se não lembra a senha, toque em <b>“Esqueci minha senha”</b> na tela de entrada.</>}</span>
-                </section>
-              )}
+              {estado?.acesso && <AcessoDoDono key={estado.acesso.email} acesso={estado.acesso} endereco={estado.endereco} definirSenha={noAr.definirSenha ? (senha) => noAr.definirSenha!(obra.pasta, senha) : undefined} />}
               {(onDominio || dominio || onLojas || lojas || onVender) && (
                 <section className="at-noar__card at-noar__card--calmo">
                   <span className="at-noar__rot">PRÓXIMOS PASSOS · SÓ SE VOCÊ QUISER</span>

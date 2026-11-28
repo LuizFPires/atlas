@@ -1,5 +1,5 @@
 import userEvent from '@testing-library/user-event'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { TemaProvider } from '../tema/tema'
 import { ColocarNoAr } from './ColocarNoAr'
 import { criarNoArFixture, explicarErro, noArIndisponivel, type EstadoNoAr, type PonteNoAr } from './ponte-no-ar'
@@ -259,13 +259,44 @@ test('publicando: sem bolinha girando; a etapa de agora tem anel, barra com o qu
   expect(screen.getByRole('button', { name: 'Painel de acompanhamento' })).toBeInTheDocument()
 })
 
-test('no ar com o acesso de dono criado: mostra o e-mail e como criar a senha (Esqueci minha senha)', async () => {
-  const noar: EstadoNoAr = { fase: 'noar', nome: 'pontoampla', passos: [], achados: [], endereco: 'https://pontoampla.vercel.app', erro: null, avisos: [], acesso: { email: 'gui@exemplo.com', novo: true } }
-  montar({ ...criarNoArFixture(), estado: async () => noar })
+// Guilherme, 28/11/2026: "não funcionou o reset de senha". A senha do dono é criada aqui, sem e-mail.
+test('no ar: o dono cria a senha no próprio Atlas (8 letras, as duas iguais) e vê "Senha criada" com o botão para abrir o sistema', async () => {
+  const user = userEvent.setup()
+  const noar: EstadoNoAr = { fase: 'noar', nome: 'pontoampla', passos: [], achados: [], endereco: 'https://pontoampla.vercel.app', erro: null, avisos: [], acesso: { email: 'gui@exemplo.com', novo: true, senha: false } }
+  const senhas: string[] = []
+  montar({ ...criarNoArFixture(), estado: async () => noar, definirSenha: async (_p: string, s: string) => { senhas.push(s); return { ok: true as const } } })
   const card = await screen.findByRole('region', { name: 'Seu acesso' })
   expect(card).toHaveTextContent('gui@exemplo.com')
-  expect(card).toHaveTextContent('Esqueci minha senha')
-  expect(card).toHaveTextContent('criar a sua senha')
+  expect(card).not.toHaveTextContent('Esqueci minha senha')
+  const salvar = within(card).getByRole('button', { name: 'Salvar senha' })
+  await user.type(within(card).getByLabelText('Senha'), 'curta')
+  expect(salvar).toBeDisabled()
+  await user.clear(within(card).getByLabelText('Senha'))
+  await user.type(within(card).getByLabelText('Senha'), 'pontodaampla26')
+  await user.type(within(card).getByLabelText('Repita a senha'), 'pontodaampla2')
+  expect(salvar).toBeDisabled()
+  await user.type(within(card).getByLabelText('Repita a senha'), '6')
+  await user.click(salvar)
+  expect(senhas).toEqual(['pontodaampla26'])
+  const ok = await screen.findByRole('region', { name: 'Seu acesso' })
+  expect(ok).toHaveTextContent('Senha criada.')
+  expect(within(ok).getByRole('link', { name: 'Abrir o sistema ↗' })).toHaveAttribute('href', 'https://pontoampla.vercel.app')
+  await user.click(within(ok).getByRole('button', { name: 'Trocar a senha' }))
+  expect(screen.getByText('Escolha a nova senha.')).toBeInTheDocument()
+})
+
+test('no ar com a senha já criada: mostra direto "Senha criada"; erro ao salvar é explicado', async () => {
+  const noar: EstadoNoAr = { fase: 'noar', nome: 'pontoampla', passos: [], achados: [], endereco: 'https://pontoampla.vercel.app', erro: null, avisos: [], acesso: { email: 'gui@exemplo.com', novo: true, senha: true } }
+  montar({ ...criarNoArFixture(), estado: async () => noar, definirSenha: async () => { throw new Error('supabase-sem-chave') } })
+  const card = await screen.findByRole('region', { name: 'Seu acesso' })
+  expect(card).toHaveTextContent('Senha criada.')
+  const user = userEvent.setup()
+  await user.click(within(card).getByRole('button', { name: 'Trocar a senha' }))
+  const c2 = screen.getByRole('region', { name: 'Seu acesso' })
+  await user.type(within(c2).getByLabelText('Senha'), 'pontodaampla26')
+  await user.type(within(c2).getByLabelText('Repita a senha'), 'pontodaampla26')
+  await user.click(within(c2).getByRole('button', { name: 'Salvar senha' }))
+  expect(await screen.findByRole('alert')).toHaveTextContent('Supabase não está ligada')
 })
 
 test('a Vercel bloqueou pelo autor das mudanças: explica sem mandar mexer no GitHub', () => {

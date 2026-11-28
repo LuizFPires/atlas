@@ -134,3 +134,28 @@
 .at-noar__passos--grande .at-prog__agora, .at-noar__passos--grande .at-prog__pulso { font-size: 13px; }
 .at-noar__passos--grande .at-prog__barra { height: 6px; border-radius: 3px; }
 @media (max-width: 1100px) { .at-noar__painel { grid-template-columns: minmax(0, 1fr); } }
+
+/* Seu acesso de dono: senha criada no Atlas (28/11/2026) */
+.at-acd { display: flex; flex-direction: column; gap: 10px; }
+.at-acd--ok { border-color: var(--lime) !important; }
+.at-acd__rot-ok { color: var(--lime-txt, var(--lime)) !important; }
+.at-acd__email { font-size: 17px; }
+.at-acd__txt { font-size: 14px; line-height: 1.5; color: var(--mute); }
+.at-acd__campo { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--mute); }
+.at-acd__inp { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--card-b); background: var(--bg); }
+.at-acd__inp--ok { border-color: var(--lime); }
+.at-acd__inp input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--text); font: 15px var(--font-text); }
+.at-acd__inp button { background: none; border: 0; color: var(--mute); font: 13px var(--font-text); cursor: pointer; min-height: 36px; }
+.at-acd__regras { display: flex; gap: 14px; font-size: 12px; color: var(--mute2, var(--mute)); }
+.at-acd__v { color: var(--lime-txt, var(--lime)); }
+.at-acd__erro { color: var(--erro); font-size: 14px; }
+.at-acd__pe { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+.at-acd__nota { margin-right: auto; font-size: 12px; color: var(--mute2, var(--mute)); }
+.at-acd__prim { display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 12px; border: none; background: var(--lime); color: var(--on-lime); font: 700 14px var(--font-text); cursor: pointer; text-decoration: none; white-space: nowrap; }
+.at-acd__prim:disabled { opacity: 0.5; cursor: default; }
+.at-acd__sec { height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--card-b); background: transparent; color: var(--text); font: 600 14px var(--font-text); cursor: pointer; white-space: nowrap; }
+.at-acd__ok { display: flex; gap: 12px; align-items: flex-start; }
+.at-acd__ok > div { display: flex; flex-direction: column; gap: 2px; font-size: 14px; color: var(--mute); }
+.at-acd__ok > div > b { font-size: 16px; color: var(--text); }
+.at-acd__ok span b { color: var(--text); }
+.at-acd__ic { width: 30px; height: 30px; flex: none; border-radius: 15px; background: var(--lime); color: var(--on-lime); display: grid; place-items: center; font-weight: 800; }
