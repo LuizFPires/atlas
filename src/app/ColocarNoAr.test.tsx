@@ -304,3 +304,17 @@ test('a Vercel bloqueou pelo autor das mudanças: explica sem mandar mexer no Gi
   expect(e.frase).toMatch(/não reconheceu quem assinou/)
   expect(e.fazer).toMatch(/não precisa mexer no GitHub/)
 })
+
+test('no ar: o cartão "E-mails do sistema" diz que está limitado e oferece ligar o Resend; ligado mostra o remetente', async () => {
+  const user = userEvent.setup()
+  const onLigarContas = vi.fn()
+  const base: EstadoNoAr = { fase: 'noar', nome: 'p', passos: [], achados: [], endereco: 'https://p.vercel.app', erro: null, avisos: [], acesso: { email: 'gui@exemplo.com', novo: true, senha: true } }
+  const { unmount } = montar({ ...criarNoArFixture(), estado: async () => base }, { onLigarContas })
+  const card = await screen.findByRole('region', { name: 'E-mails do sistema' })
+  expect(card).toHaveTextContent('LIMITADO')
+  await user.click(within(card).getByRole('button', { name: 'Ligar o Resend →' }))
+  expect(onLigarContas).toHaveBeenCalled()
+  unmount()
+  montar({ ...criarNoArFixture(), estado: async () => ({ ...base, email: { dominio: 'ampla.com.br' } }) })
+  expect(await screen.findByRole('region', { name: 'E-mails do sistema' })).toHaveTextContent('nao-responda@ampla.com.br')
+})

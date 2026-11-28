@@ -31,6 +31,7 @@ import type { PonteIdeia } from './ponte-ideia'
 import type { PonteNavegador } from './ponte-navegador'
 import type { PonteContas } from './ponte-contas'
 import type { PonteLigarContas } from './ponte-ligar-contas'
+import type { PonteResend } from './ponte-resend'
 import type { PonteTravas } from './ponte-travas'
 import type { PontePlanilha } from './ponte-planilha'
 import type { PonteTampa } from './Aprovar'
@@ -107,6 +108,8 @@ export interface PonteDesktop {
   contas?: PonteContas
   /** Ligar as contas a este computador (C1Contas): gh, Vercel e chave do Supabase. */
   ligarContas?: PonteLigarContas
+  /** Resend, o carteiro (28/11/2026): 4ª conta, opcional. */
+  resend?: PonteResend
   /** Fichas de trava na obra (T1Travas): site da trava e "deixar público até o GitHub voltar". */
   travas?: PonteTravas
   /** Começar por uma planilha (X1–X3): raio-X, o que entendi, voz. */

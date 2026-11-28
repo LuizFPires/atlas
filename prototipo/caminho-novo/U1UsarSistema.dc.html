@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas · senha do dono e Resend</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#141619;--card:#1E2125;--card2:#22262B;--cb:#2C3036;--line:#2A2E33;--text:#EDEFEA;--mute:#B4BBB2;--mute2:#8E968C;--lime:#C6F135;--soft:#2A3A12;--amb:#F2B14A;--ambsoft:#3A2E14}
+*{box-sizing:border-box;min-width:0}[hidden]{display:none!important}
+body{margin:0;background:#0B0C0E;color:var(--text);font:15px/1.5 'Geist',system-ui,sans-serif}
+.abas{display:flex;gap:8px;flex-wrap:wrap;padding:14px max(3vw,12px)}
+.abas button{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--cb);background:var(--card);color:var(--text);font:600 14px 'Geist',sans-serif;cursor:pointer}
+.abas button[aria-pressed=true]{background:var(--lime);color:#141619;border-color:var(--lime)}
+.palco{padding:0 max(3vw,12px) 28px}
+.moldura{position:relative;overflow:hidden;border-radius:14px;border:1px solid var(--cb)}
+.tela{position:absolute;left:0;top:0;width:1440px;height:900px;transform-origin:0 0;background:var(--bg);display:grid;grid-template-columns:220px 1fr}
+.tela[hidden]{display:none}
+.menu{background:#101214;border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:6px}
+.logo{font:700 20px 'Geist',sans-serif;letter-spacing:.04em;margin-bottom:18px}
+.mi{padding:9px 12px;border-radius:10px;color:var(--mute);font-size:14px}.mi.on{background:var(--card);color:var(--text)}
+.main{padding:22px 30px;display:flex;flex-direction:column;gap:14px;position:relative;min-height:0}
+.topo small{font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:var(--mute2)}
+.topo h1{margin:2px 0 0;font-size:22px}
+.r{font:600 11px 'Geist Mono',monospace;letter-spacing:.12em;color:var(--mute2)}
+.rl{color:var(--lime)}
+.card{padding:18px 20px;border-radius:18px;background:var(--card);border:1px solid var(--cb);display:flex;flex-direction:column;gap:10px}
+.card.lime{border-color:var(--lime)}
+.bt{white-space:nowrap;min-height:44px;padding:0 18px;border-radius:12px;border:1px solid var(--cb);background:var(--card2);color:var(--text);font:600 14px 'Geist',sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.bt.lime{background:var(--lime);color:#141619;border-color:var(--lime)}
+.bt.mini{min-height:32px;padding:0 10px;font-size:12px;border-radius:8px}
+.nota{font-size:13px;color:var(--mute2)}
+.marca{position:absolute;left:30px;bottom:8px;font-size:12px;color:var(--mute2)}
+/* tela no ar */
+.noar{display:grid;grid-template-columns:1fr 520px;gap:18px;flex:1;min-height:0}
+#t4 .noar{margin-bottom:22px}
+.palco3d{border-radius:18px;border:1px solid var(--cb);background:radial-gradient(ellipse at 50% 90%,#2A2416 0,#15181B 60%);position:relative;overflow:hidden}
+.palco3d b.p{position:absolute;left:24px;top:18px;font:700 54px 'Geist',sans-serif;color:var(--lime)}
+.predio{position:absolute;left:50%;bottom:-20px;width:220px;height:520px;transform:translateX(-50%);background:repeating-linear-gradient(0deg,#1D2024 0 30px,#14171A 30px 34px);border-radius:6px 6px 0 0;box-shadow:inset 0 0 0 2px #2C3036}
+.predio::before{content:'';position:absolute;inset:16px;background:repeating-linear-gradient(90deg,#E8C65A 0 18px,transparent 18px 34px),repeating-linear-gradient(0deg,transparent 0 12px,#14171A 12px 34px);opacity:.75;mix-blend-mode:screen}
+.col{display:flex;flex-direction:column;gap:12px;overflow:auto;min-height:0}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo label{font-size:13px;color:var(--mute)}
+.inp{display:flex;align-items:center;gap:8px;height:46px;padding:0 12px;border-radius:12px;border:1px solid var(--cb);background:var(--bg)}
+.inp input{flex:1;background:none;border:0;outline:0;color:var(--text);font:15px 'Geist',sans-serif}
+.inp.ok{border-color:var(--lime)}
+.olho{background:none;border:0;color:var(--mute);cursor:pointer;font-size:13px}
+.regras{display:flex;gap:14px;font-size:12px;color:var(--mute2)}.regras .v{color:var(--lime)}
+.okbox{display:flex;gap:12px;align-items:flex-start}
+.ic{width:30px;height:30px;flex:none;border-radius:15px;background:var(--lime);color:#141619;display:grid;place-items:center;font-weight:800}
+.email-card .lin{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tag{font:600 10px 'Geist Mono',monospace;letter-spacing:.08em;padding:3px 7px;border-radius:6px;white-space:nowrap}
+.tag.amb{background:var(--ambsoft);color:var(--amb)}.tag.ok{background:var(--soft);color:var(--lime)}
+/* contas */
+.contas{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.conta{padding:16px;border-radius:16px;background:var(--card);border:1px solid var(--cb);display:flex;flex-direction:column;gap:8px;min-height:190px}
+.conta.on{border-color:#3C4A22}
+.conta.foco{border-color:var(--lime);box-shadow:0 0 0 3px rgba(198,241,53,.12)}
+.conta h3{margin:0;font-size:17px}.conta .sub{font-size:13px;color:var(--mute)}
+.lig{font:600 11px 'Geist Mono',monospace;color:var(--lime)}
+.opc{font:600 10px 'Geist Mono',monospace;letter-spacing:.08em;color:var(--amb)}
+.passos{display:grid;grid-template-columns:300px 1fr;gap:16px;flex:1;min-height:0}
+.trilho{display:flex;flex-direction:column;gap:8px}
+.ps{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;border:1px solid var(--cb);background:var(--card);font-size:14px;color:var(--mute)}
+.ps i{width:24px;height:24px;border-radius:12px;display:grid;place-items:center;font:700 12px 'Geist',sans-serif;font-style:normal;background:var(--card2);border:1px solid var(--cb)}
+.ps.feito i{background:var(--lime);color:#141619;border-color:var(--lime)}.ps.agora{border-color:var(--lime);color:var(--text)}.ps.agora i{border-color:var(--lime);color:var(--lime)}
+.dns{width:100%;border-collapse:collapse;font-size:13px}
+.dns th{text-align:left;font:600 10px 'Geist Mono',monospace;letter-spacing:.1em;color:var(--mute2);padding:6px 8px}
+.dns td{padding:9px 8px;border-top:1px solid var(--line);vertical-align:middle}
+.dns code{font:12px 'Geist Mono',monospace;color:var(--text);word-break:break-all}
+.dns .st{white-space:nowrap}
+.esp{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--ambsoft);border:1px solid #5A4520;font-size:14px}
+.pulso{width:10px;height:10px;border-radius:5px;background:var(--amb);animation:p 1.4s infinite}@keyframes p{50%{opacity:.3}}
+.prov{display:flex;gap:8px;flex-wrap:wrap}.prov span{padding:6px 10px;border-radius:999px;border:1px solid var(--cb);font-size:12px;color:var(--mute)}
+.prov span.on{border-color:var(--lime);color:var(--text);background:var(--soft)}
+.opcoes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.op{text-align:left;padding:16px;border-radius:16px;background:var(--card);border:1px solid var(--cb);display:flex;flex-direction:column;gap:6px;color:var(--mute);font:14px 'Geist',sans-serif;cursor:pointer}
+.op b{font-size:17px;color:var(--text)}.op .tag{align-self:flex-start;margin-top:auto}
+.op.on{border-color:var(--lime);box-shadow:0 0 0 3px rgba(198,241,53,.12)}
+.nomes{display:flex;flex-direction:column;gap:8px}
+.nm{display:grid;grid-template-columns:260px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;border:1px solid var(--cb);background:var(--card2);font-size:14px;color:var(--mute)}
+.nm b{color:var(--text);font-size:15px}.nm.on{border-color:var(--lime)}.nm.off{opacity:.55}
+.passos2{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--mute)}
+.alerta{padding:12px 14px;border-radius:12px;background:var(--ambsoft);border:1px solid #5A4520;font-size:14px;line-height:1.5}
+.t3{grid-template-columns:220px 1fr 380px}.t3.sem-lado{grid-template-columns:220px 1fr}.t3.sem-lado .lado{display:none}
+.lado{border-left:1px solid var(--line);background:#0E1012;display:flex;flex-direction:column}
+.lbar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.lbar .url{flex:1;font:12px 'Geist Mono',monospace;color:var(--mute);background:var(--card);padding:6px 10px;border-radius:8px}
+.lpg{padding:18px;display:flex;flex-direction:column;gap:10px;color:var(--text)}.lpg[hidden]{display:none}
+.lrow{display:flex;justify-content:space-between;padding:10px 12px;border:1px solid var(--cb);border-radius:10px;font-size:13px;color:var(--mute)}.lrow b{color:var(--text)}
+.lbtn{padding:12px;border-radius:10px;background:#fff;color:#000;text-align:center;font-weight:600;outline:3px solid var(--lime);outline-offset:3px}
+.ldica{padding:12px;border-radius:12px;background:var(--limesoft,rgba(198,241,53,.12));border:1px solid var(--lime);font-size:13px;line-height:1.5}
+.quem{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:14px;background:rgba(198,241,53,.10);border:1px solid var(--lime);font-size:14px;line-height:1.5;color:var(--mute)}
+.quem b{display:block;color:var(--text);font-size:15px;margin-bottom:2px}
+.quem .qi{flex:none;width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:rgba(198,241,53,.18);color:var(--lime)}
+.quem--p{padding:10px 12px;font-size:13px;display:block}
+.lin{display:flex;justify-content:space-between;align-items:center;gap:10px}.tag:not(.ok):not(.amb){background:var(--card2);color:var(--mute);border:1px solid var(--cb)}
+.fatos{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:10px}
+.fatos>div{display:flex;flex-direction:column;gap:3px;padding:12px;border-radius:12px;background:rgba(0,0,0,.25);border:1px solid var(--cb);font-size:13px;color:var(--mute)}
+.fatos b{color:var(--text);font-size:15px}
+.lk{color:var(--lime);font-size:13px;cursor:pointer}
+.card.calmo{background:transparent;border-style:dashed}
+.prox{display:grid;grid-template-columns:1fr auto 20px;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;border:1px solid var(--cb);background:var(--card2);font-size:13px;color:var(--mute);cursor:pointer}
+.prox b{display:block;color:var(--text);font-size:15px}.prox .vd{color:var(--lime)}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.papeis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pp{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px;border-radius:12px;background:var(--card2);border:1px solid var(--cb);color:var(--text);font:600 15px 'Geist',sans-serif;cursor:pointer}
+.pp span{font-weight:400;font-size:13px;color:var(--mute)}.pp.on{border-color:var(--lime);background:rgba(198,241,53,.10)}
+.senha-ini{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.3);border:1px solid var(--cb)}
+.senha-ini b{flex:1;font:600 18px 'Geist Mono',monospace}
+.recado{padding:12px 14px;border-radius:12px;background:var(--card2);border:1px solid var(--cb);font-size:13px;color:var(--mute);line-height:1.5}
+.pess{display:grid;grid-template-columns:36px 1fr auto auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--mute)}
+.pess b{display:block;color:var(--text);font-size:14px}.pess[hidden]{display:none}
+.av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--card2);border:1px solid var(--cb);color:var(--text);font-weight:600}
+.abob{display:flex;justify-content:flex-start;padding:0;gap:6px;border-bottom:1px solid var(--line);margin-top:-4px}
+.abob span{padding:10px 14px;font-size:14px;color:var(--mute);border-bottom:2px solid transparent;display:flex;align-items:center;gap:8px}
+.abob span.on{color:var(--text);border-bottom-color:var(--lime);font-weight:600}
+.pto{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 0 3px rgba(198,241,53,.2)}
+.metades{display:grid;grid-template-columns:1fr 1fr;gap:22px;flex:1;min-height:0;margin-bottom:22px}
+.metade{display:flex;flex-direction:column;gap:12px;overflow:auto;min-height:0}
+.metade+.metade{border-left:1px solid var(--line);padding-left:22px}
+.mtit{display:flex;align-items:center;gap:10px}.mtit b{font-size:17px;flex:1}
+.pto.off{background:var(--mute2);box-shadow:none}
+.endq{display:flex;gap:14px;align-items:center;padding:12px;border-radius:12px;background:rgba(0,0,0,.25);border:1px solid var(--cb)}
+.qrf{width:76px;height:76px;border-radius:8px;flex:none;background:#fff;background-image:repeating-linear-gradient(90deg,#141619 0 6px,transparent 6px 12px),repeating-linear-gradient(0deg,#141619 0 6px,transparent 6px 14px);background-blend-mode:multiply;border:6px solid #fff}
+.prox.grande{grid-template-columns:36px 1fr auto 20px;padding:16px}
+.prox .qi{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(198,241,53,.12);color:var(--lime)}
+</style></head><body>
+<nav class="abas">
+ <button id="b1" aria-pressed="true">1 · Senha do dono criada no Atlas</button>
+ <button id="b2" aria-pressed="false">2 · Resend: a 4ª conta (o carteiro)</button>
+ <button id="b3" aria-pressed="false">3 · Resend: o domínio (automático)</button>
+ <button id="b4" aria-pressed="false">4 · Aba “Usar o sistema” (grátis)</button>
+ <button id="b5" aria-pressed="false">5 · Pessoas da equipe</button>
+</nav>
+<div class="palco"><div class="moldura" id="m">
+
+<!-- 4 · PRONTO PARA USAR -->
+<section class="tela" id="t4" hidden>
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Canteiro de obras</span><span class="mi">Obras concluídas</span><span class="mi">Lançamentos</span></aside>
+ <div class="main">
+  <div class="topo"><small>← CANTEIRO DE OBRAS</small><h1>Ponto</h1></div>
+  <div class="abob"><span>Obra</span><span>Cronograma</span><span>Desempenho</span><span>Protótipo</span><span>Pedir mudança</span><span class="on"><i class="pto"></i>Usar o sistema</span></div>
+  <div class="metades">
+   <div class="metade">
+    <div class="mtit"><span class="pto"></span><b>Usando agora</b><span class="tag ok">R$ 0 POR MÊS</span></div>
+    <div class="card lime">
+     <span class="r rl">PRONTO PARA USAR · ENTREGA DAS CHAVES</span>
+     <b style="font-size:21px">Seu sistema já está funcionando.</b>
+     <span style="font-size:14px;color:var(--mute);line-height:1.5">Você e a sua equipe já podem usar tudo. <b style="color:var(--text)">Não precisa pagar nada nem comprar domínio.</b> Só entra quem você cadastrar.</span>
+     <div class="endq">
+      <div class="qrf" aria-hidden="true"></div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex:1"><span class="r">ENDEREÇO GRÁTIS</span><b style="font-size:16px">ponto-sistema.vercel.app</b><span style="font-size:13px;color:var(--mute)">Aponte a câmera do celular para abrir e instalar.</span></div>
+     </div>
+     <div style="display:flex;gap:10px;justify-content:flex-end"><button class="bt">Mandar pelo WhatsApp</button><button class="bt lime">Abrir o sistema ↗</button></div>
+    </div>
+    <div class="card">
+     <div class="lin"><span class="r">PESSOAS DA EQUIPE · 3</span><button class="bt mini" onclick="ver(4)">+ Colocar uma pessoa</button></div>
+     <div class="pess"><span class="av">G</span><span><b>Guilherme (você)</b><span>guilherme@amplaconstrutora.com.br</span></span><span class="tag ok">DONO</span><span class="lk">Trocar senha</span></div>
+     <div class="pess"><span class="av">E</span><span><b>Eduardo</b><span>eduardo@amplaconstrutora.com.br</span></span><span class="tag">FUNCIONÁRIO</span><span class="lk">Nova senha · Tirar</span></div>
+     <div class="pess"><span class="av">R</span><span><b>Rafael Souza</b><span>rafael@amplaconstrutora.com.br</span></span><span class="tag">FUNCIONÁRIO</span><span class="lk">Nova senha · Tirar</span></div>
+    </div>
+   </div>
+   <div class="metade">
+    <div class="mtit"><span class="pto off"></span><b>Abrir para clientes</b><span class="tag">SÓ SE VOCÊ QUISER</span></div>
+    <span style="font-size:14px;color:var(--mute);line-height:1.5">Para usar com a sua equipe, o lado esquerdo já basta. Estes passos são para quando <b style="color:var(--text)">clientes e o público</b> forem usar, com cara mais profissional. Quando algo tem custo, você paga direto a quem vende, nunca ao Atlas.</span>
+    <div class="prox grande" onclick="ver(2)"><span class="qi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg></span><span><b>Usar meu domínio</b><span>ponto.com.br no lugar do .vercel.app</span></span><span class="tag">PAGO · DOMÍNIO</span><span class="vd">→</span></div>
+    <div class="prox grande" onclick="ver(1)"><span class="qi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><span><b>E-mails para qualquer pessoa</b><span>“Esqueci minha senha” e avisos, pelo Resend</span></span><span class="tag">GRÁTIS · PEDE DOMÍNIO</span><span class="vd">→</span></div>
+    <div class="prox grande"><span class="qi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></span><span><b>App Store e Google Play</b><span>o Ponto aparece nas lojas, com ícone e página</span></span><span class="tag">PAGO · LOJAS</span><span class="vd">→</span></div>
+    <div class="prox grande"><span class="qi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h2l2.4 12h11.2L21 7H6"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg></span><span><b>Vender o Ponto para outras empresas</b><span>página de vendas e cobrança na sua conta</span></span><span class="tag">OPCIONAL</span><span class="vd">→</span></div>
+   </div>
+  </div>
+  <span class="marca">Protótipo · o prédio 3D fica na aba Obra; esta aba é só para usar e abrir para clientes.</span>
+ </div>
+</section>
+
+<!-- 5 · PESSOAS DA EQUIPE -->
+<section class="tela" id="t5" hidden>
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Canteiro de obras</span><span class="mi">Obras concluídas</span><span class="mi">Lançamentos</span></aside>
+ <div class="main">
+  <div class="topo"><small>← PONTO · USAR O SISTEMA</small><h1>Pessoas da equipe</h1></div>
+  <span style="color:var(--mute)">Quem você colocar aqui entra no Ponto com e-mail e senha. O Atlas cria a conta na hora, sem depender de e-mail chegar.</span>
+  <div class="duas">
+   <div class="card" id="pForm">
+    <span class="r">COLOCAR UMA PESSOA</span>
+    <div class="campo"><label>Nome</label><div class="inp ok"><input value="Rafael Souza"></div></div>
+    <div class="campo"><label>E-mail (é o login dela; não precisa ser um e-mail que funcione)</label><div class="inp ok"><input value="rafael@amplaconstrutora.com.br"></div></div>
+    <div class="campo"><label>O que ela pode fazer</label>
+     <div class="papeis"><button class="pp on">Funcionário<span>usa o dia a dia</span></button><button class="pp">Dono<span>vê e muda tudo</span></button></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end"><button class="bt lime" id="criarP">Criar acesso</button></div>
+   </div>
+   <div class="card lime" id="pOk" hidden>
+    <span class="r rl">ACESSO CRIADO</span>
+    <div class="okbox"><span class="ic">✓</span><div><b style="font-size:16px">Rafael já pode entrar.</b><br><span style="color:var(--mute);font-size:14px">Mande para ele o endereço, o login e a senha inicial. No primeiro acesso o sistema pede para ele trocar a senha.</span></div></div>
+    <div class="senha-ini"><span class="r">SENHA INICIAL</span><b>ponte-azul-47</b><button class="bt mini">Copiar</button></div>
+    <div class="recado">Oi Rafael! Seu acesso ao Ponto: ponto-sistema.vercel.app · login rafael@amplaconstrutora.com.br · senha ponte-azul-47 (troque no primeiro acesso).</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end"><button class="bt" id="outraP">Colocar outra pessoa</button><button class="bt lime">Mandar pelo WhatsApp</button></div>
+    <span class="nota">O Atlas mostra a senha só agora e não guarda. Se perder, é só gerar outra.</span>
+   </div>
+   <div class="card">
+    <span class="r">QUEM JÁ ENTRA</span>
+    <div class="pess"><span class="av">G</span><span><b>Guilherme</b><span>guilherme@amplaconstrutora.com.br</span></span><span class="tag ok">DONO</span><span class="lk">você</span></div>
+    <div class="pess"><span class="av">E</span><span><b>Eduardo</b><span>eduardo@amplaconstrutora.com.br</span></span><span class="tag">FUNCIONÁRIO</span><span class="lk">Nova senha · Tirar acesso</span></div>
+    <div class="pess" id="pRafael" hidden><span class="av">R</span><span><b>Rafael Souza</b><span>rafael@amplaconstrutora.com.br</span></span><span class="tag">FUNCIONÁRIO</span><span class="lk">Nova senha · Tirar acesso</span></div>
+    <span class="nota">Esqueceu a senha? Sem e-mail ligado, quem resolve é o dono: toque em “Nova senha” e mande pelo WhatsApp.</span>
+   </div>
+  </div>
+  <span class="marca">Protótipo · clique em “Criar acesso”. Os papéis vêm do próprio sistema construído (dono, funcionário, cliente…).</span>
+ </div>
+</section>
+
+<!-- 1 · SENHA -->
+<section class="tela" id="t1">
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Canteiro de obras</span><span class="mi">Obras concluídas</span><span class="mi">Lançamentos</span></aside>
+ <div class="main">
+  <div class="topo"><small>← CANTEIRO DE OBRAS</small><h1>Ponto</h1></div>
+  <div class="noar">
+   <div class="palco3d"><b class="p">100%</b><div class="predio"></div></div>
+   <div class="col">
+    <div class="card lime"><span class="r rl">ESTÁ NO AR · ENTREGA DAS CHAVES</span><b style="font-size:17px">ponto-sistema.vercel.app</b><span class="nota">Daqui pra frente, cada mudança que você pedir fica pronta numa versão de teste. Você confere e ela só entra no ar quando você clicar em "Colocar no ar".</span></div>
+    <!-- estado A: criar senha -->
+    <div class="card" id="senhaA">
+     <span class="r">SEU ACESSO DE DONO</span>
+     <b style="font-size:17px">guilherme@amplaconstrutora.com.br</b>
+     <span style="color:var(--mute);font-size:14px">Crie aqui a senha que você vai usar para entrar no sistema. Não precisa esperar e-mail.</span>
+     <div class="campo"><label>Senha</label><div class="inp ok"><input type="password" value="pontodaampla26" id="s1"><button class="olho" data-o="s1">mostrar</button></div></div>
+     <div class="campo"><label>Repita a senha</label><div class="inp ok"><input type="password" value="pontodaampla26" id="s2"><button class="olho" data-o="s2">mostrar</button></div></div>
+     <div class="regras"><span class="v">✓ 8 letras ou mais</span><span class="v">✓ as duas iguais</span></div>
+     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span class="nota">O Atlas grava a senha direto na sua conta do sistema e não guarda em lugar nenhum.</span><button class="bt lime" id="salvar">Salvar senha</button></div>
+    </div>
+    <!-- estado B: salva -->
+    <div class="card lime" id="senhaB" hidden>
+     <span class="r rl">SEU ACESSO DE DONO</span>
+     <div class="okbox"><span class="ic">✓</span><div><b style="font-size:16px">Senha criada.</b><br><span style="color:var(--mute);font-size:14px">Entre no sistema com <b style="color:var(--text)">guilherme@amplaconstrutora.com.br</b> e a senha que você acabou de criar. Depois você convida a sua equipe por dentro do sistema.</span></div></div>
+     <div style="display:flex;gap:10px;justify-content:flex-end"><button class="bt" id="trocar">Trocar a senha</button><button class="bt lime">Abrir o sistema ↗</button></div>
+    </div>
+    <div class="card email-card">
+     <div class="lin"><span class="r">E-MAILS DO SISTEMA</span><span class="tag amb">LIMITADO</span></div>
+     <span style="font-size:14px;color:var(--mute)">Hoje o sistema só consegue mandar e-mail (como “Esqueci minha senha”) para quem é da sua equipe no Supabase, até 2 por hora. Ligue o Resend para mandar para qualquer pessoa, do seu domínio.</span>
+     <div style="display:flex;justify-content:flex-end"><button class="bt" onclick="ver(1)">Ligar o Resend →</button></div>
+    </div>
+   </div>
+  </div>
+  <span class="marca">Protótipo · clique em “Salvar senha” para ver o estado seguinte.</span>
+ </div>
+</section>
+
+<!-- 2 · CONTAS -->
+<section class="tela" id="t2" hidden>
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Canteiro de obras</span><span class="mi">Obras concluídas</span><span class="mi">Lançamentos</span></aside>
+ <div class="main">
+  <div class="topo"><small>CONTAS LIGADAS</small><h1>As contas do seu sistema</h1></div>
+  <span style="color:var(--mute)">Todas as contas são suas, no seu nome. O Atlas só usa para construir e publicar o seu sistema.</span>
+  <div class="contas">
+   <div class="conta on"><span class="lig">● LIGADA</span><h3>GitHub · o cofre</h3><span class="sub">Guarda o código do seu sistema.</span><span class="nota" style="margin-top:auto">guilhermemartins10-x</span></div>
+   <div class="conta on"><span class="lig">● LIGADA</span><h3>Supabase · o caderno</h3><span class="sub">Guarda os dados e os logins.</span><span class="nota" style="margin-top:auto">chave conferida</span></div>
+   <div class="conta on"><span class="lig">● LIGADA</span><h3>Vercel · a vitrine</h3><span class="sub">Deixa o sistema no ar.</span><span class="nota" style="margin-top:auto">guilhermemartins10-x</span></div>
+   <div class="conta foco"><span class="opc">OPCIONAL · RECOMENDADA</span><h3>Resend · o carteiro</h3><span class="sub">Manda os e-mails do sistema para qualquer pessoa: senha, convites, avisos.</span><span class="nota">Grátis até 100 e-mails por dia.</span><button class="bt lime" style="margin-top:auto" id="ligarR">Ligar o Resend</button></div>
+  </div>
+  <div class="card" id="chaveR" hidden>
+   <span class="r">LIGAR O RESEND · 1 DE 2</span>
+   <b style="font-size:17px">Cole a chave do Resend</b>
+   <span style="color:var(--mute);font-size:14px">1. Abra o Resend (ao lado) e entre com sua conta, ou crie uma grátis. 2. Em <b style="color:var(--text)">API Keys</b>, toque em “Create API Key”, dê o nome “Atlas” e copie. 3. Cole aqui.</span>
+   <div class="inp ok" style="max-width:640px"><input type="password" value="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"><span class="tag ok">CHAVE CONFERIDA</span></div>
+   <span class="nota">A chave fica no cofre do seu computador, como a do Supabase. O Atlas nunca vê a sua senha do Resend.</span>
+   <div style="display:flex;justify-content:flex-end"><button class="bt lime" onclick="ver(2)">Continuar: o domínio →</button></div>
+  </div>
+  <span class="marca">Protótipo · “Ligar o Resend” abre o passo da chave.</span>
+ </div>
+</section>
+
+<!-- 3 · DOMÍNIO (automático) -->
+<section class="tela t3" id="t3" hidden>
+ <aside class="menu"><div class="logo">ATLAS</div><span class="mi">+ Nova obra</span><span class="mi on">Canteiro de obras</span><span class="mi">Obras concluídas</span><span class="mi">Lançamentos</span></aside>
+ <div class="main">
+  <div class="topo"><small>LIGAR O RESEND · 2 DE 2</small><h1>O domínio dos seus e-mails</h1></div>
+  <span style="color:var(--mute)">O Resend só manda e-mail para qualquer pessoa de um domínio seu. O Atlas cuida do resto sozinho.</span>
+  <div class="opcoes" id="opcoes">
+   <button class="op on" data-op="nao"><span class="r">NÃO TENHO DOMÍNIO</span><b>Quero um agora</b><span>Você escolhe o nome, compra na sua Vercel e o Atlas configura tudo.</span><span class="tag ok">0 PASSOS DEPOIS</span></button>
+   <button class="op" data-op="vercel"><span class="r">JÁ TENHO, NA VERCEL</span><b>Comprei na Vercel</b><span>O Atlas acha o domínio na sua conta e configura tudo.</span><span class="tag ok">AUTOMÁTICO</span></button>
+   <button class="op" data-op="br"><span class="r">JÁ TENHO, EM OUTRO LUGAR</span><b>Registro.br, GoDaddy…</b><span>Uma troca de uma vez só. Depois, o Atlas faz tudo pela Vercel.</span><span class="tag amb">1 PASSO</span></button>
+  </div>
+
+  <div class="card" data-painel="nao">
+   <span class="r">ESCOLHA O NOME</span>
+   <div style="display:flex;gap:10px"><div class="inp ok" style="flex:1"><input value="barbeariadoze"></div><button class="bt">Procurar</button></div>
+   <div class="nomes">
+    <div class="nm on"><b>barbeariadoze.com</b><span>livre · US$ 11 por ano</span><span class="tag ok">RECOMENDADO</span></div>
+    <div class="nm"><b>barbeariadoze.shop</b><span>livre · US$ 3 por ano</span></div>
+    <div class="nm"><b>barbeariadoze.salon</b><span>livre · US$ 29 por ano</span></div>
+    <div class="nm off"><b>barbeariadoze.com.br</b><span>a Vercel não vende .com.br · use “Já tenho, em outro lugar” depois de comprar no Registro.br</span></div>
+   </div>
+     <div class="quem"><span class="qi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span><div><b>Você está comprando da Vercel, não do Atlas.</b><span>O domínio é seu, fica na sua conta da Vercel e é cobrado no seu cartão, pela Vercel. O Atlas não vende domínio, não recebe nada por essa compra e não responde por ela: nota, renovação e reembolso são com a Vercel. A Vercel pede a sua confirmação antes de cobrar.</span></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span class="nota">Depois da compra você não faz mais nada: o Atlas configura tudo.</span><button class="bt lime">Comprar barbeariadoze.com →</button></div>
+  </div>
+
+  <div class="card" data-painel="vercel" hidden>
+   <span class="r">DOMÍNIOS NA SUA VERCEL</span>
+   <div class="nomes"><div class="nm on"><b>pontoampla.com</b><span>na sua Vercel · servidores da Vercel</span><span class="tag ok">PRONTO PARA USAR</span></div></div>
+   <div class="passos2"><span>✓ O Atlas cria os registros do Resend na sua Vercel</span><span>✓ O Resend confere (alguns minutos)</span><span>✓ Os e-mails do sistema passam a sair de nao-responda@pontoampla.com</span></div>
+   <div style="display:flex;justify-content:flex-end"><button class="bt lime">Usar pontoampla.com →</button></div>
+  </div>
+
+  <div class="card" data-painel="br" hidden>
+   <span class="r">SEU DOMÍNIO</span>
+   <div style="display:flex;gap:10px"><div class="inp ok" style="flex:1"><input value="amplaconstrutora.com.br"></div><button class="bt">Conferir</button></div>
+   <div class="alerta"><b>Este domínio já recebe e-mails</b> (o e-mail da sua empresa). Para não mexer nele, o Atlas usa um endereço só para o sistema: <b>avisos.amplaconstrutora.com.br</b>. O e-mail da empresa continua igual.</div>
+   <span class="r" style="margin-top:4px">O SEU ÚNICO PASSO · NO REGISTRO.BR</span>
+   <span style="font-size:14px;color:var(--mute)">O Registro.br abre aqui ao lado, dentro do Atlas. Você entra com a <b style="color:var(--text)">sua</b> senha (o Atlas nunca vê). Depois toque em <b style="color:var(--text)">Editar zona → Nova entrada</b> e cole estas duas linhas:</span>
+   <table class="dns"><thead><tr><th>TIPO</th><th>NOME</th><th>VALOR</th><th></th></tr></thead><tbody>
+    <tr><td>NS</td><td><code>avisos</code></td><td><code>ns1.vercel-dns.com</code></td><td><button class="bt mini">Copiar</button></td></tr>
+    <tr><td>NS</td><td><code>avisos</code></td><td><code>ns2.vercel-dns.com</code></td><td><button class="bt mini">Copiar</button></td></tr>
+   </tbody></table>
+   <div class="esp"><span class="pulso"></span><span><b>Esperando o Registro.br.</b> O Atlas confere sozinho a cada minuto. Assim que chegar, ele cria tudo na sua Vercel e liga os e-mails. Pode fechar o Atlas.</span></div>
+   <div style="display:flex;gap:10px;justify-content:flex-end"><span class="nota">O Registro.br já está aberto aqui ao lado, dentro do Atlas →</span></div>
+   <span class="nota">Domínio sem e-mail da empresa (novo)? Aí o passo é trocar os “Servidores DNS” do domínio inteiro para os da Vercel, e o site também passa a usar o domínio.</span>
+  </div>
+  <span class="marca">Protótipo · a lista de nomes e os preços vêm da própria Vercel; os registros, do Resend.</span>
+ </div>
+ <aside class="lado" id="lado">
+  <div class="lbar"><span class="r">NAVEGADOR DO ATLAS</span><span class="url" id="lurl">vercel.com/domains</span><button class="bt mini">Fechar</button></div>
+  <div class="lpg" data-site="nao">
+   <b style="font-size:18px">Comprar barbeariadoze.com</b>
+   <div class="lrow"><span>barbeariadoze.com · 1 ano</span><b>US$ 11</b></div>
+   <div class="lrow"><span>Vendedor</span><b>Vercel Inc.</b></div><div class="lrow"><span>Cartão</span><b>o seu, cadastrado na Vercel</b></div>
+   <div class="lbtn">Confirmar compra</div>
+   <div class="quem quem--p"><b>Compra entre você e a Vercel.</b><span>O Atlas não recebe nada por ela.</span></div><div class="ldica"><b>Toque em “Confirmar compra”.</b> Quem confirma é você. Depois o Atlas fecha esta janela e configura tudo.</div>
+  </div>
+  <div class="lpg" data-site="br" hidden>
+   <b style="font-size:18px">registro.br · amplaconstrutora.com.br</b>
+   <div class="lrow"><span>Entrar</span><b>com a sua senha</b></div>
+   <div class="lrow"><span>DNS → Editar zona</span><b>Nova entrada</b></div>
+   <div class="lrow"><span>avisos · NS</span><b>ns1.vercel-dns.com</b></div>
+   <div class="lrow"><span>avisos · NS</span><b>ns2.vercel-dns.com</b></div>
+   <div class="lbtn">Salvar alterações</div>
+   <div class="ldica"><b>Entre com a sua senha</b> (o Atlas não vê). O Atlas mostra aqui onde tocar a cada passo e confere sozinho quando terminar.</div>
+  </div>
+ </aside>
+</section>
+
+</div></div>
+<script>
+const m=document.getElementById('m');const ts=[1,2,3,4,5].map(n=>document.getElementById('t'+n));const bs=[1,2,3,4,5].map(n=>document.getElementById('b'+n));
+const ajustar=()=>{const s=Math.min(1,m.clientWidth/1440);for(const t of ts)t.style.transform='scale('+s+')';m.style.height=(900*s)+'px'};
+new ResizeObserver(ajustar).observe(m);ajustar();
+function ver(n){ts.forEach((t,i)=>t.hidden=i!==n);bs.forEach((b,i)=>b.setAttribute('aria-pressed',i===n))}
+bs.forEach((b,i)=>b.onclick=()=>ver(i));
+document.querySelectorAll('.olho').forEach(b=>b.onclick=()=>{const i=document.getElementById(b.dataset.o);i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'mostrar':'esconder'});
+document.getElementById('salvar').onclick=()=>{senhaA.hidden=true;senhaB.hidden=false};
+document.getElementById('trocar').onclick=()=>{senhaA.hidden=false;senhaB.hidden=true};
+document.getElementById('ligarR').onclick=()=>{chaveR.hidden=false};
+document.querySelectorAll('.op').forEach(b=>b.onclick=()=>{document.querySelectorAll('.op').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('[data-painel]').forEach(p=>p.hidden=p.dataset.painel!==b.dataset.op);const o=b.dataset.op;document.getElementById('t3').classList.toggle('sem-lado',o==='vercel');document.querySelectorAll('[data-site]').forEach(p=>p.hidden=p.dataset.site!==o);document.getElementById('lurl').textContent=o==='br'?'registro.br/painel':'vercel.com/domains'});
+document.getElementById('criarP').onclick=()=>{pForm.hidden=true;pOk.hidden=false;pRafael.hidden=false};
+document.getElementById('outraP').onclick=()=>{pForm.hidden=false;pOk.hidden=true};
+document.querySelectorAll('.pp').forEach(b=>b.onclick=()=>document.querySelectorAll('.pp').forEach(x=>x.classList.toggle('on',x===b)));
+</script>
+</body></html>

@@ -159,3 +159,8 @@
 .at-acd__ok > div > b { font-size: 16px; color: var(--text); }
 .at-acd__ok span b { color: var(--text); }
 .at-acd__ic { width: 30px; height: 30px; flex: none; border-radius: 15px; background: var(--lime); color: var(--on-lime); display: grid; place-items: center; font-weight: 800; }
+.at-acd__linha { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.at-acd__tag { font: 600 10px var(--font-mono); letter-spacing: 0.08em; padding: 3px 7px; border-radius: 6px; }
+.at-acd__tag--ok { background: var(--soft); color: var(--lime-txt, var(--lime)); }
+.at-acd__tag--limitado { background: rgb(242 179 61 / 0.16); color: var(--aviso-txt, #F2B33D); }
+.at-acd__txt b { color: var(--text); }

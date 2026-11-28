@@ -141,6 +141,8 @@ const EXPLICACOES: Record<string, Explicacao> = {
   'vercel-dns': { houve: 'A Vercel ainda não enxerga o seu domínio apontado para ela.', fazer: 'Mudanças no Registro.br levam até algumas horas para valer. Tente de novo mais tarde.' },
   'dns-indisponivel': { houve: 'Não consegui conferir o domínio agora.', fazer: 'Tente de novo em alguns minutos.' },
   'dominio-invalido': { houve: 'Esse domínio não está escrito do jeito certo.', fazer: 'Confira: tem que terminar em .com.br (ou outro final do Registro.br), sem https:// nem barras.' },
+  'resend-sem-chave': { houve: 'A chave do Resend sumiu deste computador.', fazer: 'Abra Contas, toque em Ligar o Resend e cole a chave de novo; o Atlas continua de onde parou.' },
+  'resend-falhou': { houve: 'O Resend não respondeu do jeito esperado ao preparar o domínio dos e-mails.', fazer: 'Espere uns minutos e tente de novo. Se continuar, toque em Pedir ajuda ao Atlas.' },
   'nome-ocupado': { houve: 'Esse nome de endereço já é de outra pessoa.', fazer: 'Escolha um dos nomes sugeridos ou escreva outro.' },
   'nome-invalido': { houve: 'Esse nome não serve como endereço de internet.', fazer: 'Use só letras, números e hífen, sem acento nem espaço.' },
   'sem-nome-livre': { houve: 'Não achei um nome livre parecido com o da obra.', fazer: 'Escreva outro nome para o endereço.' },

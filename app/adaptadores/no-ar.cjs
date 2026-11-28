@@ -141,7 +141,7 @@ function resumoDoErro(saida) {
   return (importantes.length ? importantes : limpas.slice(-4)).join(' · ').slice(0, 600)
 }
 
-function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupabase = null, emailDoDono = async () => null, sondar, perguntar, corrigir, linhaRodando = () => false, esperar = (ms) => new Promise((r) => setTimeout(r, ms)), agora = () => new Date(), gerarSenha = () => crypto.randomBytes(24).toString('base64url'), esperaBancoMs = 10_000, tentativasBanco = 120, esperaCotaMs = 10 * 60_000, esperasCota = 7 * 24 * 6 }) {
+function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupabase = null, emailDoDono = async () => null, emailDoSistema = async () => null, sondar, perguntar, corrigir, linhaRodando = () => false, esperar = (ms) => new Promise((r) => setTimeout(r, ms)), agora = () => new Date(), gerarSenha = () => crypto.randomBytes(24).toString('base64url'), esperaBancoMs = 10_000, tentativasBanco = 120, esperaCotaMs = 10 * 60_000, esperasCota = 7 * 24 * 6 }) {
   const jobs = new Map() // pasta -> estado vivo
 
   const arquivoRegistro = (pasta) => caminhoSeguro(raiz, String(pasta), '.atlas', 'no-ar.json')
@@ -154,6 +154,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
     if (typeof j.ref === 'string' && /^[a-z0-9]{10,40}$/.test(j.ref)) out.ref = j.ref
     if (typeof j.endereco === 'string' && /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(j.endereco)) out.endereco = j.endereco
     if (typeof j.quando === 'string') out.quando = j.quando.slice(0, 40)
+    if (j.email && typeof j.email.dominio === 'string' && /^[a-z0-9.-]{4,190}$/.test(j.email.dominio)) out.email = { dominio: j.email.dominio }
     if (j.acesso && typeof j.acesso.email === 'string' && EMAIL.test(j.acesso.email)) {
       out.acesso = { email: j.acesso.email, novo: j.acesso.novo === true, senha: j.acesso.senha === true }
       if (typeof j.acesso.id === 'string' && UUID.test(j.acesso.id)) out.acesso.id = j.acesso.id
@@ -191,6 +192,23 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
       return true
     } catch { return false }
   }
+  /** Resend (28/11/2026): o envio de e-mail do login do sistema passa a sair pelo Resend do cliente, do domínio dele. A senha
+   *  (chave só de envio) vai direto para o Supabase; no registro fica só o domínio. */
+  async function ligarEmailNoBanco(pasta, ref, token, cfg, nome) {
+    if (!ref || !token || !cfg || typeof cfg.senha !== 'string' || typeof cfg.dominio !== 'string') return false
+    await apiSupabase('PATCH', `/v1/projects/${ref}/config/auth`, {
+      external_email_enabled: true, smtp_admin_email: `nao-responda@${cfg.dominio}`, smtp_host: 'smtp.resend.com', smtp_port: '465',
+      smtp_user: 'resend', smtp_pass: cfg.senha, smtp_sender_name: String(nome || 'Sistema').slice(0, 60),
+    }, token)
+    gravarRegistro(pasta, { ...lerRegistro(pasta), email: { dominio: cfg.dominio } })
+    return true
+  }
+  async function ligarEmailSeHouver(pasta, ref, token, e) {
+    let cfg = null
+    try { cfg = await emailDoSistema() } catch { cfg = null }
+    if (!cfg) return
+    try { if (await ligarEmailNoBanco(pasta, ref, token, cfg, e.nome)) { e.email = { dominio: cfg.dominio }; contar(e, `E-mails do sistema saindo de nao-responda@${cfg.dominio}.`) } } catch { e.avisos.push('Não consegui ligar os e-mails do sistema pelo Resend agora. O Atlas tenta de novo na próxima publicação.') }
+  }
   async function chaveSecretaDoBanco(ref) {
     let token = null
     try { token = await cofre.ler(CHAVE_SUPABASE) } catch { token = null }
@@ -219,6 +237,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
       let t = null
       try { t = await cofre.ler(CHAVE_SUPABASE) } catch { t = null }
       await ajustarLinks(reg.ref, t, reg.endereco || e.endereco) // obras publicadas antes de 28/11 também passam a ter os links certos
+      await ligarEmailSeHouver(pasta, reg.ref, t, e)
       return 'feito'
     }
     let email = null
@@ -246,11 +265,12 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
     e.acesso = { email, novo, senha: false, ...(id ? { id } : {}) }
     gravarRegistro(pasta, { ...lerRegistro(pasta), acesso: e.acesso })
     contar(e, novo ? `Acesso de dono criado para ${email}.` : `${email} já tinha acesso ao sistema.`)
+    await ligarEmailSeHouver(pasta, reg.ref, token, e)
     return 'feito'
   }
 
-  const novoEstado = (nome) => ({ fase: 'rodando', nome, passos: Object.fromEntries(PASSOS.map((p) => [p, 'falta'])), achados: [], endereco: null, erro: null, avisos: [], acesso: null, esperandoCota: false, sub: null, duracoes: {}, diario: [], inicioPasso: null })
-  const publico = (e) => e && ({ fase: e.fase, nome: e.nome, passos: PASSOS.map((id) => ({ id, estado: e.passos[id] })), achados: [...e.achados], endereco: e.endereco, erro: e.erro, avisos: [...e.avisos], acesso: e.acesso ? { ...e.acesso } : null, esperandoCota: e.esperandoCota === true, sub: e.sub ? { ...e.sub } : null, duracoes: { ...(e.duracoes || {}) }, diario: (e.diario || []).map((l) => ({ ...l })) })
+  const novoEstado = (nome) => ({ fase: 'rodando', nome, passos: Object.fromEntries(PASSOS.map((p) => [p, 'falta'])), achados: [], endereco: null, erro: null, avisos: [], acesso: null, email: null, esperandoCota: false, sub: null, duracoes: {}, diario: [], inicioPasso: null })
+  const publico = (e) => e && ({ fase: e.fase, nome: e.nome, passos: PASSOS.map((id) => ({ id, estado: e.passos[id] })), achados: [...e.achados], endereco: e.endereco, erro: e.erro, avisos: [...e.avisos], acesso: e.acesso ? { ...e.acesso } : null, email: e.email ? { ...e.email } : null, esperandoCota: e.esperandoCota === true, sub: e.sub ? { ...e.sub } : null, duracoes: { ...(e.duracoes || {}) }, diario: (e.diario || []).map((l) => ({ ...l })) })
 
   // Acompanhamento (PG1Progresso, 27/11/2026): o que a etapa faz agora, quanto já foi DE VERDADE e o diário com hora.
   const ms = () => agora().getTime()
@@ -572,7 +592,7 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
       const e = jobs.get(pasta)
       if (e) return publico(e)
       const reg = lerRegistro(pasta)
-      if (reg.endereco) return { fase: 'noar', nome: reg.nome || null, passos: PASSOS.map((id) => ({ id, estado: 'feito' })), achados: [], endereco: reg.endereco, erro: null, avisos: [], acesso: reg.acesso || null }
+      if (reg.endereco) return { fase: 'noar', nome: reg.nome || null, passos: PASSOS.map((id) => ({ id, estado: 'feito' })), achados: [], endereco: reg.endereco, erro: null, avisos: [], acesso: reg.acesso || null, email: reg.email || null }
       return { fase: 'parado', nome: reg.nome || null, passos: PASSOS.map((id) => ({ id, estado: 'falta' })), achados: [], endereco: null, erro: null, avisos: [] }
     },
     /** A vistoria achou pontos: manda pela linha da obra e recomeça sozinho quando a linha terminar (a tela chama de novo). */
@@ -596,6 +616,24 @@ function criarNoAr({ raiz, cofre, vercel, supabase, git, apiSupabase, authSupaba
       } catch { bancosAtivos = null }
       return { precisaBanco: true, bancoNovo, contaLigada, bancosAtivos }
     },
+    /** Resend verificado: liga os e-mails do sistema desta obra (já publicada). */
+    async ligarEmails(pasta) {
+      pasta = String(pasta)
+      cwdDe(pasta)
+      const reg = lerRegistro(pasta)
+      if (!reg.ref || !reg.endereco) return { ok: false, motivo: 'sem-publicacao' }
+      const cfg = await emailDoSistema()
+      if (!cfg) return { ok: false, motivo: 'resend-sem-dominio' }
+      let token = null
+      try { token = await cofre.ler(CHAVE_SUPABASE) } catch { token = null }
+      if (!token) return { ok: false, motivo: 'supabase-sem-chave' }
+      await ajustarLinks(reg.ref, token, reg.endereco)
+      await ligarEmailNoBanco(pasta, reg.ref, token, cfg, reg.nome)
+      const e = jobs.get(pasta)
+      if (e) e.email = { dominio: cfg.dominio }
+      return { ok: true, dominio: cfg.dominio }
+    },
+
     /** Senha do dono criada no próprio Atlas (Guilherme, 28/11/2026): grava direto na conta do sistema; não fica em arquivo,
      *  em log nem na resposta. Sem e-mail e sem link. */
     async definirSenha(pasta, senha) {

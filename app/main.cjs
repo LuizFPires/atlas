@@ -161,7 +161,10 @@ const casos = criarCasos({ cofre, hashComputador: async () => hash() })
 const publicar = criarPublicar({ raiz: obras.raiz(), shell, cofre })
 // Colocar no ar com um clique (M56): contas do cliente já ligadas (contas-cli), Claude só leitor na vistoria, correções pela linha da obra.
 const { criarNoAr } = require('./adaptadores/no-ar.cjs')
-const { pedirApiSupabase, pedirAuthSupabase, sondarSite, sondarDominio } = require('./adaptadores/no-ar-rede.cjs')
+const { pedirApiSupabase, pedirAuthSupabase, sondarSite, sondarDominio, pedir: pedirHttps } = require('./adaptadores/no-ar-rede.cjs')
+// Resend, o carteiro (28/11/2026): 4ª conta, opcional, para o sistema mandar e-mail para qualquer pessoa.
+const { criarResend } = require('./adaptadores/resend.cjs')
+const resend = criarResend({ cofre, dados: app.getPath('userData'), pedir: (o) => pedirHttps(o) })
 const noAr = criarNoAr({
   raiz: obras.raiz(), cofre,
   vercel: (args, o = {}) => contasCli.rodarFerramenta('vercel', args, o),
@@ -171,6 +174,7 @@ const noAr = criarNoAr({
   apiSupabase: (metodo, caminho, corpo, token) => pedirApiSupabase(metodo, caminho, corpo, token),
   authSupabase: (ref, metodo, caminho, corpo, chave) => pedirAuthSupabase(ref, metodo, caminho, corpo, chave),
   emailDoDono: () => licenca.email(),
+  emailDoSistema: () => resend.paraSupabase(),
   sondar: (url) => sondarSite(url),
   perguntar: (pasta, pedido) => disparo.perguntar(pasta, pedido, { permitirGit: true, tipo: 'vistoria' }),
   linhaRodando: (pasta) => construcao.linha.rodando(pasta),
@@ -567,6 +571,28 @@ handle('atlas:contas:siteFora', (conta) => {
   if (u) void shell.openExternal(u)
 })
 handle('atlas:contas:abrirChaves', (b) => navegador.abrirEndereco('https://supabase.com/dashboard/account/tokens', b))
+// Resend: chave, domínio e verificação. Quando o domínio verifica, liga os e-mails de todas as obras já publicadas.
+handle('atlas:resend:situacao', () => resend.situacao())
+handle('atlas:resend:guardarChave', (chave) => resend.guardarChave(String(chave ?? '')))
+handle('atlas:resend:escolherDominio', async (dominio) => { const s = await resend.escolherDominio(String(dominio ?? '')); vigiarResend(); return s })
+handle('atlas:resend:conferir', () => conferirResend())
+handle('atlas:resend:abrirChaves', (b) => navegador.abrirEndereco('https://resend.com/api-keys', b))
+async function ligarEmailsDasObras() {
+  for (const o of await obras.listar().catch(() => [])) { try { await noAr.ligarEmails(o.pasta || o) } catch { /* tenta na próxima publicação */ } }
+}
+async function conferirResend() {
+  const s = await resend.conferir()
+  if (s.estado === 'verificado') { pararVigiaResend(); if (s.virouVerificado) await ligarEmailsDasObras() }
+  return s
+}
+let vigiaResend = null
+function pararVigiaResend() { if (vigiaResend) { clearInterval(vigiaResend); vigiaResend = null } }
+function vigiarResend() {
+  if (vigiaResend) return
+  vigiaResend = setInterval(() => { void conferirResend().catch(() => {}) }, 60_000)
+}
+// Ao abrir: domínio esperando confirmação => continua conferindo de minuto em minuto ("pode fechar o Atlas").
+app.whenReady().then(async () => { try { const s = await resend.situacao(); if (s.ligado && s.estado === 'esperando') vigiarResend() } catch { /* sem Resend */ } })
 handle('atlas:contas:chaveSupabase', async (chave) => { return contasCli.guardarChaveSupabase(String(chave ?? '')) })
 handle('atlas:contas:cancelar', (conta) => contasCli.cancelar(String(conta)))
 // Conta religada (27/11/2026): fecha as travas "conta desligada" das contas que voltaram e a obra parada por elas continua sozinha.
